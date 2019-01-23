@@ -262,6 +262,7 @@ repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
 
+Using original prolongator
 repartition: rebalance P and R = 1
 repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
@@ -271,6 +272,7 @@ write start = -1   [default]
 write end = -1   [default]
 
 Build (MueLu::RebalanceTransferFactory)
+Using original restrictor
 repartition: rebalance P and R = 1
 repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
@@ -280,7 +282,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Max coarse size (<= 2000) achieved
@@ -576,6 +577,7 @@ repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
 
+Using original prolongator
 repartition: rebalance P and R = 1
 repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
@@ -585,6 +587,7 @@ write start = -1   [default]
 write end = -1   [default]
 
 Build (MueLu::RebalanceTransferFactory)
+Using original restrictor
 repartition: rebalance P and R = 1
 repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
@@ -594,7 +597,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (<Direct> solver interface)

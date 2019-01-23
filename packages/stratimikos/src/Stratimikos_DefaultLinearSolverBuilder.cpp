@@ -217,7 +217,7 @@ void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
 
 
 void DefaultLinearSolverBuilder::writeParamsFile(
-  const Thyra::LinearOpWithSolveFactoryBase<double> &lowsFactory,
+  const Thyra::LinearOpWithSolveFactoryBase<double> &/* lowsFactory */,
   const std::string &outputXmlFileName
   ) const
 {

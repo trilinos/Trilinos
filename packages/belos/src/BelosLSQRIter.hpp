@@ -180,7 +180,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return This method returns a null pointer because residuals aren't used with LSQR.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return Teuchos::null; }
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return Teuchos::null; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -343,7 +343,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   /////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void LSQRIter<ScalarType,MV,OP>::initializeLSQR(LSQRIterationState<ScalarType,MV>& newstate)
+  void LSQRIter<ScalarType,MV,OP>::initializeLSQR(LSQRIterationState<ScalarType,MV>& /* newstate */)
   {
     using Teuchos::RCP;
 

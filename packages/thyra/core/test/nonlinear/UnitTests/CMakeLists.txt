@@ -10,6 +10,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
   
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ModelEvaluatorDefaultBase
+  SOURCES
+    ModelEvaluatorDefaultBase_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS thyra_nonlinear_test_models
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
   
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultNonlinearSolverBuilder

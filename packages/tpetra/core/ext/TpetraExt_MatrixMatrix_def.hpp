@@ -374,6 +374,8 @@ void Jacobi(Scalar omega,
       int mm_optimization_core_count=0;
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount ());
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       auto & ip1slist = importParams1->sublist("matrixmatrix: kernel params",false);
       ip1slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
@@ -400,6 +402,8 @@ void Jacobi(Scalar omega,
       int mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount () );
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       auto & ip2slist = importParams2->sublist("matrixmatrix: kernel params",false);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       ip2slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       ip2slist.set("isMatrixMatrix_TransferAndFillComplete",isMM);
   }
@@ -1272,7 +1276,7 @@ addUnsorted(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -1344,7 +1348,7 @@ convertToGlobalAndAdd(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
   GO minGlobalCol,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
@@ -1502,8 +1506,10 @@ void mult_AT_B_newmatrix(
       importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       auto & sip1 = importParams1->sublist("matrixmatrix: kernel params",false);
       sip1.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       sip1.set("isMatrixMatrix_TransferAndFillComplete",isMM);
@@ -1516,8 +1522,10 @@ void mult_AT_B_newmatrix(
       importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       auto & sip2 = importParams2->sublist("matrixmatrix: kernel params",false);
       sip2.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       sip2.set("isMatrixMatrix_TransferAndFillComplete",isMM);
@@ -1563,8 +1571,11 @@ void mult_AT_B_newmatrix(
     if(!params.is_null()) {
         Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
         Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-        int foundcount = params_sublist.get("MM_TAFC_OptimizationCoreCount",3000);
-        labelList_subList.set("MM_TAFC_OptimizationCoreCount",foundcount,"Core Count above which the optimized neighbor discovery is used");
+        int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+        mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+        labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
 
         labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
                       "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
@@ -1588,8 +1599,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label,
-  const Teuchos::RCP<Teuchos::ParameterList>& params)
+  const std::string& /* label */,
+  const Teuchos::RCP<Teuchos::ParameterList>& /* params */)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -2322,14 +2333,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
                                                                                                const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#else
+  (void)label;
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2972,14 +2985,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
                                                                                                const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#else
+  (void)label;
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -3281,15 +3296,15 @@ void import_and_extract_views(
     labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
                   "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
 
-    int mm_optimization_core_count=2999; // ~3000 for serrano    
+    int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
     // Minor speedup tweak - avoid computing the global constants
     Teuchos::ParameterList params_sublist;
     if(!params.is_null()) {
         labelList.set("compute global constants", params->get("compute global constants",false));
         params_sublist = params->sublist("matrixmatrix: kernel params",false);
         mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
     }
     labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
     

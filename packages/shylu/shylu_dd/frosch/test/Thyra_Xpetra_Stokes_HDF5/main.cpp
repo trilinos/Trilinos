@@ -84,22 +84,23 @@
 
 // Xpetra include
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 #include <Xpetra_Parameters.hpp>
+#include <Xpetra_UseDefaultTypes.hpp>
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-typedef unsigned UN;
-typedef double SC;
-typedef int LO;
-typedef int GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
-typedef DefaultNode NO;
+typedef unsigned                                    UN;
+typedef Scalar                                      SC;
+typedef LocalOrdinal                                LO;
+typedef GlobalOrdinal                               GO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 using namespace std;
 using namespace EpetraExt;
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
     
-    RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
+    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
     
     CommandLineProcessor My_CLP;
     
@@ -151,6 +152,7 @@ int main(int argc, char *argv[])
     MPI_Comm_split(MPI_COMM_WORLD,color,CommWorld->getRank(),&COMM);
     RCP<Epetra_MpiComm> EpetraComm(new Epetra_MpiComm(COMM));
     
+#ifdef HAVE_EPETRAEXT_HDF5
     if (color==0) {
         
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
@@ -288,6 +290,7 @@ int main(int argc, char *argv[])
         
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;        
     }
+#endif
     
     return(EXIT_SUCCESS);
     

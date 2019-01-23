@@ -13,6 +13,14 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+# gcd 26 Oct 2018: Part of the great de-templating effort, 
+# allows users to switch at CMake time between using the old template
+# parameters, using Tpetra_ENABLE_DEPRECATED_CODE.  By default,
+# this will be set to "ON", to keep old behaviors.
+
+SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+MESSAGE (STATUS "Whether Tpetra enables deprecated code at compile time. Default is ON (deprecated code enabled).")
+
 # mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
 # This doesn't meant that users actually want to instantiate Tpetra
 # objects for CUDA.  See Trilinos GitHub issue #1939.
@@ -825,6 +833,7 @@ GLOBAL_SET(HAVE_TPETRA_FLOAT ${Tpetra_INST_FLOAT})
 # linking when ETI is ON, with downstream packages like Thyra, which
 # get used in surprising places, e.g., in Ifpack2).
 IF (Tpetra_INST_FLOAT)
+
   IF (NOT DEFINED Teuchos_ENABLE_FLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but Teuchos_ENABLE_FLOAT is not defined.  Tpetra needs Teuchos to support float.  Please set Teuchos_ENABLE_FLOAT:BOOL=ON, reconfigure, and rebuild.")
   ELSEIF (NOT Teuchos_ENABLE_FLOAT)
@@ -836,6 +845,13 @@ IF (Tpetra_INST_FLOAT)
   ELSEIF (NOT HAVE_TEUCHOS_BLASFLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
   ENDIF ()
+
+ELSE () # Tpetra_INST_FLOAT is OFF
+
+  IF (DEFINED Teuchos_ENABLE_FLOAT AND Teuchos_ENABLE_FLOAT)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = float), but Teuchos_ENABLE_FLOAT is ON.  This will cause downstream link errors, likely in Stratimikos.  See GitHub Issues 4059 and 4080 for details.  Best practice: Do NOT set Tpetra_INST_FLOAT OR Teuchos_ENABLE_FLOAT explicitly.  Instead, set Trilinos_ENABLE_FLOAT explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
+  ENDIF ()
+
 ENDIF ()
 
 # Decide whether to instantiate / test Scalar = std::complex<float> and/or
@@ -910,6 +926,12 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ENDIF ()
+ELSE () # Tpetra_INST_COMPLEX_DOUBLE is OFF
+
+  IF (DEFINED Teuchos_ENABLE_COMPLEX AND Teuchos_ENABLE_COMPLEX)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = std::complex<double>), but Teuchos_ENABLE_COMPLEX is ON.  This will cause downstream link errors, likely in Thyra or Stratimikos.  See GitHub Issue 4080 for details.  Best practice: Do NOT set Tpetra_INST_COMPLEX_DOUBLE OR Teuchos_ENABLE_COMPLEX explicitly.  Instead, set Trilinos_ENABLE_COMPLEX_DOUBLE explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
+  ENDIF ()
+
 ENDIF ()
 
 # Set up the Tpetra_INST_COMPLEX_FLOAT option: whether to instantiate
@@ -949,7 +971,17 @@ IF (Tpetra_INST_COMPLEX_FLOAT)
   ELSEIF (NOT HAVE_COMPLEX_BLAS)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ENDIF ()
+
+ELSE () # Tpetra_INST_COMPLEX_FLOAT is OFF
+
+  IF (DEFINED Teuchos_ENABLE_COMPLEX AND Teuchos_ENABLE_COMPLEX)
+    IF (DEFINED Teuchos_ENABLE_FLOAT AND Teuchos_ENABLE_FLOAT)
+      MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = std::complex<float>), but Teuchos_ENABLE_COMPLEX is ON and Teuchos_ENABLE_FLOAT is ON.  This will cause downstream link errors, likely in Thyra or Stratimikos.  See GitHub Issue 4080 for details.  Best practice: Do NOT set Tpetra_INST_COMPLEX_FLOAT, Teuchos_ENABLE_COMPLEX, or Teuchos_ENABLE_FLOAT explicitly.  Instead, set Trilinos_ENABLE_COMPLEX_FLOAT explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
+    ENDIF ()
+  ENDIF ()
+
 ENDIF ()
+
 
 # Optionally enable explicit template instantiation (ETI) and tests
 # for Scalar = __float128.  __float128 is a GCC-specific C++ language
@@ -973,7 +1005,7 @@ ELSE ()
 ENDIF ()
 
 # Set up the Tpetra_INST_FLOAT128 option: whether to instantiate /
-# test Scalar = std::complex<float>.  It is OFF by default.  Users may
+# test Scalar = __float128.  It is OFF by default.  Users may
 # shut this off explicitly by setting Tpetra_INST_FLOAT128=OFF.
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_FLOAT128

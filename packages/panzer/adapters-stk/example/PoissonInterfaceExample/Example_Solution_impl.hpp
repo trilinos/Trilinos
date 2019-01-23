@@ -51,8 +51,8 @@ namespace Example {
 template <typename EvalT,typename Traits>
 Solution<EvalT,Traits>::Solution(const std::string& name,
                                  const panzer::IntegrationRule& ir,
-                                 const bool linear_Robin)
-  : linear_Robin(linear_Robin)
+                                 const bool in_linear_Robin)
+  : linear_Robin(in_linear_Robin)
 {
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
   ir_degree = ir.cubature_degree;

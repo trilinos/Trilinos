@@ -196,14 +196,14 @@ void StringConditionConverter::addSpecificXMLTraits(
 
 RCP<ParameterCondition>
 BoolConditionConverter::getSpecificParameterCondition(
-  const XMLObject& xmlObj,
+  const XMLObject& /* xmlObj */,
   RCP<ParameterEntry> parameterEntry) const
 {
   return rcp(new BoolCondition(parameterEntry));
 }
 
 void BoolConditionConverter::addSpecificXMLTraits(
-  RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
+  RCP<const ParameterCondition> /* condition */, XMLObject& /* xmlObj */) const
 {}
 
 

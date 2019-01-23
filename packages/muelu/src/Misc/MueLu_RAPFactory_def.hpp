@@ -134,9 +134,9 @@ namespace MueLu {
         // Reuse pattern if available (multiple solve)
         RCP<ParameterList> APparams;
         if(pL.isSublist("matrixmatrix: kernel params"))
-          APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+          APparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
         else
-          APparams= rcp(new ParameterList);
+          APparams = rcp(new ParameterList);
 
         // By default, we don't need global constants for A*P
         APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
@@ -160,8 +160,10 @@ namespace MueLu {
 
         // Reuse coarse matrix memory if available (multiple solve)
         RCP<ParameterList> RAPparams;
-        if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-        else RAPparams= rcp(new ParameterList);
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          RAPparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+        else
+          RAPparams = rcp(new ParameterList);
 
 
 
@@ -220,7 +222,10 @@ namespace MueLu {
         Set(coarseLevel, "RAP reuse data", RAPparams);
       } else {
         RCP<ParameterList> RAPparams;
-        RAPparams= rcp(new ParameterList);
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          RAPparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+        else
+          RAPparams = rcp(new ParameterList);
 
         // We *always* need global constants for the RAP, but not for the temps
         RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));

@@ -75,7 +75,7 @@ int ilog2i(size_t n)
 {
   size_t       i  = 0;
   unsigned int n1 = n;
-  while (n1 >>= 1 != 0u) {
+  while ((n1 >>= 1) != 0u) {
     ++i;
   }
 

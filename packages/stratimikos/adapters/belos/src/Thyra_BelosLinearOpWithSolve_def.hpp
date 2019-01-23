@@ -488,7 +488,7 @@ BelosLinearOpWithSolve<Scalar>::solveSupportsImpl(EOpTransp M_trans) const
 template<class Scalar>
 bool
 BelosLinearOpWithSolve<Scalar>::solveSupportsNewImpl(EOpTransp transp,
-  const Ptr<const SolveCriteria<Scalar> > solveCriteria) const
+  const Ptr<const SolveCriteria<Scalar> > /* solveCriteria */) const
 {
   // Only support forward solve right now!
   if (real_trans(transp)==NOTRANS) return true;

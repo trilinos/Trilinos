@@ -208,7 +208,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Max coarse size (<= 2000) achieved
@@ -322,7 +321,6 @@ RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})

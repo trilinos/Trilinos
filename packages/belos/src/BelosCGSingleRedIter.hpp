@@ -176,7 +176,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A std::vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return R_; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -204,7 +204,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   bool isInitialized() { return initialized_; }
 
   //! Sets whether or not to store the diagonal for condition estimation
-  void setDoCondEst(bool val){/*ignored*/}
+  void setDoCondEst(bool /* val */){/*ignored*/}
 
   //! Gets the diagonal for condition estimation (NOT_IMPLEMENTED)
   Teuchos::ArrayView<MagnitudeType> getDiag() { 
@@ -281,7 +281,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   CGSingleRedIter<ScalarType,MV,OP>::CGSingleRedIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 						     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 						     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-						     Teuchos::ParameterList &params ):
+						     Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
     stest_(tester),

@@ -123,7 +123,7 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
    TEUCHOS_ASSERT(dimension_!=0);
 
    stk::mesh::Part * sideset = metaData_->get_part(name);
-   if(sideset==NULL)
+   if(sideset==nullptr)
       sideset = &metaData_->declare_part_with_topology(name,
          stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
    sidesets_.insert(std::make_pair(name,sideset));
@@ -135,7 +135,7 @@ void STK_Interface::addNodeset(const std::string & name)
    TEUCHOS_ASSERT(dimension_!=0);
 
    stk::mesh::Part * nodeset = metaData_->get_part(name);
-   if(nodeset==NULL) {
+   if(nodeset==nullptr) {
       const CellTopologyData * ctData = shards::getCellTopologyData<shards::Node>();
       nodeset = &metaData_->declare_part_with_topology(name,
          stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
@@ -230,12 +230,15 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    procRank_ = stk::parallel_machine_rank(*mpiComm_->getRawMpiComm());
 
    // associating the field with a part: universal part!
-   stk::mesh::put_field( *coordinatesField_ , metaData_->universal_part(), getDimension());
-   stk::mesh::put_field( *edgesField_ , metaData_->universal_part(), getDimension());
+   stk::mesh::FieldTraits<VectorFieldType>::data_type* init_vf = nullptr; // gcc 4.8 hack
+   stk::mesh::FieldTraits<ProcIdFieldType>::data_type* init_pid = nullptr; // gcc 4.8 hack
+   stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr; // gcc 4.8 hack
+   stk::mesh::put_field_on_mesh( *coordinatesField_ , metaData_->universal_part(), getDimension(),init_vf);
+   stk::mesh::put_field_on_mesh( *edgesField_ , metaData_->universal_part(), getDimension(),init_vf);
    if (dimension_ > 2)
-     stk::mesh::put_field( *facesField_ , metaData_->universal_part(), getDimension());
-   stk::mesh::put_field( *processorIdField_ , metaData_->universal_part());
-   stk::mesh::put_field( *loadBalField_ , metaData_->universal_part());
+     stk::mesh::put_field_on_mesh( *facesField_ , metaData_->universal_part(), getDimension(),init_vf);
+   stk::mesh::put_field_on_mesh( *processorIdField_ , metaData_->universal_part(),init_pid);
+   stk::mesh::put_field_on_mesh( *loadBalField_ , metaData_->universal_part(),init_sol);
 
    initializeFieldsInSTK(fieldNameToSolution_, setupIO);
    initializeFieldsInSTK(fieldNameToCellField_, setupIO);
@@ -299,8 +302,9 @@ void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,s
 
    {
       std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+      stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr; // gcc 4.8 hack
       for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-         stk::mesh::put_field(*(*uniqueFieldIter),metaData_->universal_part());
+        stk::mesh::put_field_on_mesh(*(*uniqueFieldIter),metaData_->universal_part(),init_sol);
    }
 
 #ifdef PANZER_HAVE_IOSS
@@ -465,8 +469,8 @@ void STK_Interface::addEdges()
 
        // set coordinate vector
        double * edgeCoords = stk::mesh::field_data(*edgesField_,edge);
-       for(std::size_t i=0;i<getDimension();++i)
-          edgeCoords[i] = (node_coord_1[i]+node_coord_2[i])/2.0;
+       for(std::size_t j=0;j<getDimension();++j)
+          edgeCoords[j] = (node_coord_1[j]+node_coord_2[j])/2.0;
      }
    }
 }
@@ -491,11 +495,11 @@ void STK_Interface::addFaces()
 
       // set coordinate vector
       double * faceCoords = stk::mesh::field_data(*facesField_,face);
-      for(std::size_t i=0;i<getDimension();++i){
-        faceCoords[i] = 0.0;
-        for(std::size_t j=0;j<num_relations;++j)
-          faceCoords[i] += stk::mesh::field_data(*coordinatesField_,relations[j])[i];
-        faceCoords[i] /= double(num_relations);
+      for(std::size_t j=0;j<getDimension();++j){
+        faceCoords[j] = 0.0;
+        for(std::size_t k=0;k<num_relations;++k)
+          faceCoords[j] += stk::mesh::field_data(*coordinatesField_,relations[k])[j];
+        faceCoords[j] /= double(num_relations);
       }
     }
   }

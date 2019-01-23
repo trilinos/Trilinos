@@ -197,6 +197,22 @@ public:
                const map_type& meshMap,
                const LO blockSize);
 
+  /// \brief View an existing Vector.
+  ///
+  /// \param X_vec [in/out] The Vector view.  It MUST have view
+  ///   semantics; otherwise this constructor throws.  Its Map must be
+  ///   the same (in the sense of isSameAs) as the point Map
+  ///   corresponding to the given mesh Map and block size.
+  ///
+  /// \param meshMap [in] The mesh Map to use for interpreting the
+  ///   given Vector (in place) as a BlockVector.
+  ///
+  /// \param blockSize [in] The number of degrees of freedom per mesh
+  ///   point.  We assume that this is the same for all mesh points.
+  BlockVector (const vec_type& X_vec,
+               const map_type& meshMap,
+               const LO blockSize);
+
   /// \brief View an existing BlockVector using a different mesh
   ///   Map, supplying the corresponding point Map.
   ///

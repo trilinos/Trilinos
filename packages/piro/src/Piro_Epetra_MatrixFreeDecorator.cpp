@@ -388,7 +388,7 @@ int  Piro::Epetra::MatrixFreeOperator::SetUseTranspose(bool UseTranspose)
    return 0;
 }
 int  Piro::Epetra::MatrixFreeOperator::ApplyInverse
-    (const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+    (const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
      " Piro::Epetra::MatrixFreeOperator does not support applyInverse");

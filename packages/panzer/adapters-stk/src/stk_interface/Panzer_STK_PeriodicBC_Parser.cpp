@@ -292,118 +292,118 @@ Teuchos::RCP<const PeriodicBC_MatcherBase>
 PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
 {
    std::vector<std::string> params;
-   std::string matcher, bndry1, bndry2;
+   std::string s_matcher, bndry1, bndry2;
 
-   buildMatcher_Tokenize_withParams(buildStr,matcher,params,bndry1,bndry2);
+   buildMatcher_Tokenize_withParams(buildStr,s_matcher,params,bndry1,bndry2);
 
-   if(matcher=="x-coord") {
+   if(s_matcher=="x-coord") {
      panzer_stk::CoordMatcher matcher(0,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="y-coord") {
+   if(s_matcher=="y-coord") {
      panzer_stk::CoordMatcher matcher(1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="z-coord") {
+   if(s_matcher=="z-coord") {
      panzer_stk::CoordMatcher matcher(2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="x-edge") {
+   if(s_matcher=="x-edge") {
      panzer_stk::CoordMatcher matcher(0,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
-   if(matcher=="y-edge") {
+   if(s_matcher=="y-edge") {
      panzer_stk::CoordMatcher matcher(1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
-   if(matcher=="z-edge") {
+   if(s_matcher=="z-edge") {
      panzer_stk::CoordMatcher matcher(2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
-   if(matcher=="xy-coord" || matcher=="yx-coord") {
+   if(s_matcher=="xy-coord" || s_matcher=="yx-coord") {
      panzer_stk::PlaneMatcher matcher(0,1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="xz-coord" || matcher=="zx-coord") {
+   if(s_matcher=="xz-coord" || s_matcher=="zx-coord") {
      panzer_stk::PlaneMatcher matcher(0,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="yz-coord" || matcher=="zy-coord") {
+   if(s_matcher=="yz-coord" || s_matcher=="zy-coord") {
      panzer_stk::PlaneMatcher matcher(1,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="xy-edge" || matcher=="yx-edge") {
+   if(s_matcher=="xy-edge" || s_matcher=="yx-edge") {
      panzer_stk::PlaneMatcher matcher(0,1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
-   if(matcher=="xz-edge" || matcher=="zx-edge") {
+   if(s_matcher=="xz-edge" || s_matcher=="zx-edge") {
      panzer_stk::PlaneMatcher matcher(0,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
-   if(matcher=="yz-edge" || matcher=="zy-edge") {
+   if(s_matcher=="yz-edge" || s_matcher=="zy-edge") {
      panzer_stk::PlaneMatcher matcher(1,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
-   if(matcher=="xy-face" || matcher=="yx-face") {
+   if(s_matcher=="xy-face" || s_matcher=="yx-face") {
      panzer_stk::PlaneMatcher matcher(0,1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
    }
 
-   if(matcher=="xz-face" || matcher=="zx-face") {
+   if(s_matcher=="xz-face" || s_matcher=="zx-face") {
      panzer_stk::PlaneMatcher matcher(0,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
    }
 
-   if(matcher=="yz-face" || matcher=="zy-face") {
+   if(s_matcher=="yz-face" || s_matcher=="zy-face") {
      panzer_stk::PlaneMatcher matcher(1,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
    }
 
-   if(matcher=="(xy)z-quarter-coord") {
+   if(s_matcher=="(xy)z-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(0,1,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="(yx)z-quarter-coord") {
+   if(s_matcher=="(yx)z-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(1,0,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="(xz)y-quarter-coord") {
+   if(s_matcher=="(xz)y-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(0,2,1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="(zx)y-quarter-coord") {
+   if(s_matcher=="(zx)y-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(2,0,1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="(yz)x-quarter-coord") {
+   if(s_matcher=="(yz)x-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(1,2,0,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
-   if(matcher=="(zy)x-quarter-coord") {
+   if(s_matcher=="(zy)x-quarter-coord") {
      panzer_stk::QuarterPlaneMatcher matcher(2,1,0,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
        "Failed parsing parameter list: could not find periodic boundary "
-       "condition matcher \"" << matcher << "\" "
+       "condition matcher \"" << s_matcher << "\" "
        "in string \"" << buildStr << "\"");
 
    return Teuchos::null;

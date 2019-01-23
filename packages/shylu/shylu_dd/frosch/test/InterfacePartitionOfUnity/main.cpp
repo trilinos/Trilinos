@@ -55,15 +55,17 @@
 
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
+#include <Xpetra_DefaultPlatform.hpp>
+#include <Xpetra_UseDefaultTypes.hpp>
 
 #include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
 
 #include <FROSch_Tools_decl.hpp>
 
-typedef unsigned UN;
-typedef double SC;
-typedef int LO;
-typedef int GO;
+typedef unsigned                                    UN;
+typedef Scalar                                      SC;
+typedef LocalOrdinal                                LO;
+typedef GlobalOrdinal                               GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 int main(int argc, char *argv[])
@@ -72,30 +74,30 @@ int main(int argc, char *argv[])
     using namespace Teuchos;
     using namespace Xpetra;
     using namespace FROSch;
-    
+
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-    
-    RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
-    
+
+    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
     CommandLineProcessor My_CLP;
-    
+
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
-    
+
     int M = 4;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 3;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");
     bool useepetra = true;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-    
+
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
-    
+
     int N;
     int color=1;
     if (Dimension == 2) {
@@ -111,20 +113,20 @@ int main(int argc, char *argv[])
     } else {
         assert(false);
     }
-    
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-    
+
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
-    
+
     if (color==0) {
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
-    
+
         ParameterList GaleriList;
         GaleriList.set("nx", int(N*M));
         GaleriList.set("ny", int(N*M));
@@ -132,7 +134,7 @@ int main(int argc, char *argv[])
         GaleriList.set("mx", int(N));
         GaleriList.set("my", int(N));
         GaleriList.set("mz", int(N));
-    
+
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
         RCP<Matrix<SC,LO,GO,NO> > K;
@@ -147,23 +149,23 @@ int main(int argc, char *argv[])
             RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         }
-    
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
         RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(K);
-        
+
         RCP<Map<LO,GO,NO> > RepeatedNodesMap;
         ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedDofMaps;
         BuildDofMaps(RepeatedMap,1,NodeWise,RepeatedNodesMap,RepeatedDofMaps);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Interface Partition of Unity #\n#############\n" << endl;
         RCP<const Teuchos::Comm<int> > SerialComm = createSerialComm<int>();
-        
+
         RCP<ParameterList> parameterList = getParametersFromXmlFile("ParametersIPOU.xml");;
         RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > IPOU(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(RepeatedMap->getComm(),SerialComm,Dimension,1,RepeatedNodesMap,RepeatedDofMaps,parameterList));
         IPOU->removeDirichletNodes();
         IPOU->sortInterface(K);
         IPOU->computePartitionOfUnity();
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 

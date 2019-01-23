@@ -527,9 +527,9 @@ applyDirichletBCs(const LinearObjContainer & counter,
     TEUCHOS_ASSERT(count_array.size()==f_in_array.size());
     TEUCHOS_ASSERT(count_array.size()==f_out_array.size());
 
-    for(Teuchos::ArrayRCP<double>::size_type i=0;i<count_array.size();i++) {
-      if(count_array[i]!=0.0)
-        f_out_array[i] = f_in_array[i];
+    for(Teuchos::ArrayRCP<double>::size_type j=0;j<count_array.size();++j) {
+      if(count_array[j]!=0.0)
+        f_out_array[j] = f_in_array[j];
     }
   }
 }
@@ -1694,18 +1694,18 @@ buildFilteredGhostedGraph(int i,int j) const
        // false implies that storage is not optimzied 
 
    // remove filtered column entries
-   for(int i=0;i<filteredGraph->NumMyRows();i++) {
+   for(int k=0;k<filteredGraph->NumMyRows();++k) {
      std::vector<int> removedIndices;
      int numIndices = 0;
      int * indices = 0;
-     TEUCHOS_ASSERT(filteredGraph->ExtractMyRowView(i,numIndices,indices)==0);
+     TEUCHOS_ASSERT(filteredGraph->ExtractMyRowView(k,numIndices,indices)==0);
 
-     for(int j=0;j<numIndices;j++) {
-       if(ghostedActive[indices[j]]==0)
-         removedIndices.push_back(indices[j]);
+     for(int m=0;m<numIndices;++m) {
+       if(ghostedActive[indices[m]]==0)
+         removedIndices.push_back(indices[m]);
      }
 
-     TEUCHOS_ASSERT(filteredGraph->RemoveMyIndices(i,Teuchos::as<int>(removedIndices.size()),&removedIndices[0])==0);
+     TEUCHOS_ASSERT(filteredGraph->RemoveMyIndices(k,Teuchos::as<int>(removedIndices.size()),&removedIndices[0])==0);
    }
 
    // finish filling the graph

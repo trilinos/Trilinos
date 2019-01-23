@@ -41,6 +41,9 @@ namespace mini_em {
                                const double & betaz2_,
                                const std::string& DoF_);
 
+    void postRegistrationSetup(typename Traits::SetupData d,
+                               PHX::FieldManager<Traits>& fm);
+
     void evaluateFields(typename Traits::EvalData d);
 
 
@@ -49,7 +52,7 @@ namespace mini_em {
 
     PHX::MDField<ScalarT,Cell,Point,Dim,Dim> conductivity;
     PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
-    int ir_degree, ir_dim;
+    int ir_degree, ir_dim, ir_index;
     double sigma0, betax0, betay0, betaz0;
     double sigma1, betax1, betay1, betaz1;
     double sigma2, betax2, betay2, betaz2;

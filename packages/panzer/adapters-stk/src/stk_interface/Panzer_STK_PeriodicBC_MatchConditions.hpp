@@ -72,8 +72,8 @@ class CoordMatcher {
          ss << params[0];
          ss >> error_;
          if(params.size()==2){
-           std::string errStr = params[1] + " is not a valid periodic option (try \"relative\")";
-           TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr);
+           std::string errStr2 = params[1] + " is not a valid periodic option (try \"relative\")";
+           TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr2);
            relative_ = true;
          }
       }
@@ -128,8 +128,8 @@ class PlaneMatcher {
          ss << params[0];
          ss >> error_; 
          if(params.size()==2){
-           std::string errStr = params[1] + " is not a valid periodic option (try \"relative\")";
-           TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr);
+           std::string errStr2 = params[1] + " is not a valid periodic option (try \"relative\")";
+           TEUCHOS_TEST_FOR_EXCEPTION(params[1]!="relative",std::logic_error,errStr2);
            relative_ = true;
          }
       }

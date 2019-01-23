@@ -1,0 +1,130 @@
+<ParameterList name="MueLu">
+
+  <!-- Configuration of the Xpetra operator (fine level) -->
+  <ParameterList name="Matrix">
+    <Parameter name="PDE equations"                   type="int" value="3"/> <!-- Number of PDE equations at each grid node.-->
+  </ParameterList>
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+      <Parameter name="aggregation: drop tol"               type="double" value="0.00"/>
+    </ParameterList>
+
+    <ParameterList name="myAggregationFact">
+      <Parameter name="factory"                                   type="string" value="StructuredAggregationFactory"/>
+      <Parameter name="aggregation: coupling"                     type="string" value="uncoupled"/>
+      <Parameter name="aggregation: output type"                  type="string" value="CrsGraph"/>
+      <Parameter name="aggregation: coarsening order"             type="int"    value="0"/>
+      <Parameter name="aggregation: coarsening rate"              type="string" value="{3}"/>
+      <Parameter name="Graph"                                     type="string" value="myCoalesceDropFact"/>
+      <Parameter name="DofsPerNode"                               type="string" value="myCoalesceDropFact"/>
+    </ParameterList>
+
+    <ParameterList name="myCoarseMapFact">
+      <Parameter name="factory"                             type="string" value="CoarseMapFactory"/>
+      <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
+    </ParameterList>
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                             type="string" value="GeometricInterpolationPFactory"/>
+      <Parameter name="gmg: build coarse coordinates"       type="bool"   value="true"/>
+      <Parameter name="gmg: interpolation order"            type="int"    value="0"/>
+      <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
+      <Parameter name="coarseCoordinatesFineMap"            type="string" value="myAggregationFact"/>
+      <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
+    </ParameterList>
+
+    <!-- <ParameterList name="myCoordTransferFact"> -->
+    <!--   <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/> -->
+    <!--   <Parameter name="structured aggregation"              type="bool"   value="true"/> -->
+    <!-- </ParameterList> -->
+
+    <ParameterList name="myNullspaceFact">
+      <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
+      <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+    </ParameterList>
+
+    <!-- <ParameterList name="myAggExport"> -->
+    <!--   <Parameter name="factory"                             type="string" value="AggregationExportFactory"/> -->
+    <!--   <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/> -->
+    <!--   <Parameter name="aggregation: output filename"        type="string" value="structured_aggs"/> -->
+    <!--   <Parameter name="aggregation: output file: agg style" type="string" value="Jacks"/> -->
+    <!--   <Parameter name="aggregation: output file: agg style" type="string" value="Convex Hulls"/> -->
+    <!-- </ParameterList> -->
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <!-- <ParameterList name="TransferFactories"> -->
+      <!--   <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/> -->
+      <!-- <Parameter name="AggregationExportFactory"                type="string" value="myAggExport"/> -->
+      <!-- </ParameterList> -->
+    </ParameterList>
+
+    <!-- ===========  SMOOTHING  =========== -->
+    <ParameterList name="myILU">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"  type="string" value="RILUK"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="schwarz: overlap level"           type="int"    value="1"/>
+        <Parameter name="schwarz: combine mode"            type="string" value="Zero"/>
+        <Parameter name="schwarz: use reordering"          type="bool"   value="false"/>
+        <Parameter name="fact: iluk level-of-fill"         type="int"    value="0"/>
+        <Parameter name="fact: absolute threshold"         type="double" value="0."/>
+        <Parameter name="fact: relative threshold"         type="double" value="1."/>
+        <Parameter name="fact: relax value"                type="double" value="0."/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myChebyshev">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"  type="string" value="CHEBYSHEV"/>
+      <ParameterList name="ParameterList">
+        <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>
+        <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/>
+        <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+        <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="6"/> <!-- Max number of levels -->
+    <Parameter name="cycle type"                            type="string"   value="W"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    <ParameterList name="All">
+      <Parameter name="PreSmoother"                         type="string"   value="myChebyshev"/>
+      <Parameter name="PostSmoother"                        type="string"   value="myChebyshev"/>
+      <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
+      <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>
+      <Parameter name="lCoarseNodesPerDim"                  type="string"   value="myAggregationFact"/>
+      <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
+      <Parameter name="A"                                   type="string"   value="myRAPFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+      <!-- <Parameter name="CoarseSolver"                        type="string"   value="myILU"/> -->
+      <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
+      <Parameter name="lNodesPerDim"                        type="string"   value="myProlongatorFact"/>
+      <Parameter name="numDimensions"                       type="string"   value="myProlongatorFact"/>
+      <!-- <Parameter name="CoarseNumZLayers"                    type="string"   value="myLineDetectionFact"/> -->
+      <!-- <Parameter name="LineDetection_VertLineIds"           type="string"   value="myLineDetectionFact"/> -->
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

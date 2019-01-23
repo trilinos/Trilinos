@@ -247,13 +247,13 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
     INT nodes_in_elem;
 
-    if (ex_get_block(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], elem_type, &(mesh->eb_cnts[cnt]), &nodes_in_elem,
-                     nullptr, nullptr, nullptr) < 0) {
+    if (ex_get_block(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], elem_type, &(mesh->eb_cnts[cnt]),
+                     &nodes_in_elem, nullptr, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: unable to get element block");
       ex_close(exoid);
       return 0;
     }
-    mesh->eb_npe[cnt] = nodes_in_elem;
+    mesh->eb_npe[cnt]  = nodes_in_elem;
     mesh->eb_type[cnt] = get_elem_type(elem_type, nodes_in_elem, mesh->num_dims);
 
     if (mesh->eb_cnts[cnt] == 0) {
@@ -316,7 +316,7 @@ template <typename INT>
 int read_mesh(const std::string &exo_file, Problem_Description *problem,
               Mesh_Description<INT> *mesh, Weight_Description<INT> *weight)
 {
-  float  version, *xptr, *yptr, *zptr;
+  float version, *xptr, *yptr, *zptr;
   /*---------------------------Execution Begins--------------------------------*/
 
   /* Open the ExodusII file */
@@ -332,9 +332,11 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 3: zptr = (mesh->coords) + 2 * (mesh->num_nodes);
+    case 3:
+      zptr = (mesh->coords) + 2 * (mesh->num_nodes);
       /* FALLTHRU */
-    case 2: yptr = (mesh->coords) + (mesh->num_nodes);
+    case 2:
+      yptr = (mesh->coords) + (mesh->num_nodes);
       /* FALLTHRU */
     case 1: xptr = mesh->coords;
     }

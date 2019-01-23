@@ -236,7 +236,7 @@ SerialComm<Ordinal>::SerialComm()
 {}
 
 template<typename Ordinal>
-SerialComm<Ordinal>::SerialComm(const SerialComm<Ordinal>& other)
+SerialComm<Ordinal>::SerialComm(const SerialComm<Ordinal>& /* other */)
 {}
 
 
@@ -372,10 +372,10 @@ void SerialComm<Ordinal>::ssend(
 
 template<typename Ordinal>
 void
-SerialComm<Ordinal>::ssend (const Ordinal bytes,
-                            const char sendBuffer[],
-                            const int destRank,
-                            const int tag) const
+SerialComm<Ordinal>::ssend (const Ordinal /* bytes */,
+                            const char* /* sendBuffer */,
+                            const int /* destRank */,
+                            const int /* tag */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error
