@@ -406,7 +406,7 @@ SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix()
 {}
 
 template<typename OrdinalType, typename ScalarType>
-SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix( OrdinalType numRowsCols_in, OrdinalType numCols_in, bool zeroOut)
+SerialTriDiMatrix<OrdinalType, ScalarType>::SerialTriDiMatrix( OrdinalType numRowsCols_in, OrdinalType /* numCols_in */, bool zeroOut)
   : CompObject(), numRowsCols_(numRowsCols_in) {
 
   OrdinalType numvals = (numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
