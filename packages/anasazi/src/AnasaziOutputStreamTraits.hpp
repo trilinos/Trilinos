@@ -73,7 +73,7 @@ struct OutputStreamTraits {
   // The input argument, op, is presumed to be a valid object that can be queried to
   // determine the correct output stream.
   static Teuchos::RCP<Teuchos::FancyOStream>
-  getOutputStream (const OperatorType& op, int rootRank = 0)
+  getOutputStream (const OperatorType& /* op */, int rootRank = 0)
   {
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 

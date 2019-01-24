@@ -64,10 +64,10 @@ public:
 template <typename Scalar, typename VectorType>
 void
 SolutionObserverBase<Scalar, VectorType>::observeResponse(
-      int j,
-      const Teuchos::RCP<Thyra::ModelEvaluatorBase::OutArgs<Scalar> >& outArgs,
-      const Teuchos::RCP<Teuchos::Array<Teuchos::RCP<VectorType> > > &responses,
-      const Teuchos::RCP<VectorType> &g)
+      int /* j */,
+      const Teuchos::RCP<Thyra::ModelEvaluatorBase::OutArgs<Scalar> >& /* outArgs */,
+      const Teuchos::RCP<Teuchos::Array<Teuchos::RCP<VectorType> > > &/* responses */,
+      const Teuchos::RCP<VectorType> &/* g */)
 {
   // Nothing to do by default
 }
