@@ -107,8 +107,7 @@ struct UserDataAndName
 public:
     UserDataAndName(const std::vector<std::string>& my_parts, const std::string& my_db_name, DataLocation loc) :
         m_partNames(my_parts),
-        m_dbName(my_db_name),
-        m_location(loc) {}
+        m_dbName(my_db_name) {}
 
     const std::vector<std::string>& get_parts() const {return m_partNames;}
     const std::string& db_name() const {return m_dbName;}
@@ -116,7 +115,6 @@ public:
 private:
     std::vector<std::string> m_partNames;
     std::string  m_dbName;
-    DataLocation m_location;
 };
 
 }//namespace io
