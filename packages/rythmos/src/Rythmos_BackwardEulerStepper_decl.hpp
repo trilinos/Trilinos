@@ -88,14 +88,14 @@ template<class Scalar>
     }
 
     void serialize(
-        const StateSerializerStrategy<Scalar>& stateSerializer,
-        std::ostream& oStream
+        const StateSerializerStrategy<Scalar>& /* stateSerializer */,
+        std::ostream& /* oStream */
         ) const
     { }
 
     void deSerialize(
-        const StateSerializerStrategy<Scalar>& stateSerializer,
-        std::istream& iStream
+        const StateSerializerStrategy<Scalar>& /* stateSerializer */,
+        std::istream& /* iStream */
         )
     { }
 
