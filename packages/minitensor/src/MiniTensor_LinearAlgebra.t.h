@@ -109,7 +109,6 @@ inverse_fast23(Tensor<T, N> const & A)
         -A(0,1)*A(1,0) + A(0,0)*A(1,1)
         ) / determinant;
     }
-    break;
 
   case 2:
     {
@@ -117,11 +116,9 @@ inverse_fast23(Tensor<T, N> const & A)
       assert(determinant != 0.0);
       return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
     }
-    break;
 
   case 1:
     return Tensor<T, N>(1, Filler::ONES) / A(0,0);
-    break;
 
   default:
     break;
@@ -161,7 +158,6 @@ solve_full_pivot(Tensor<T, N> const & A, RHS const & b)
       B(0, i) = b(0, i) / A(0, 0);
     }
     return B;
-    break;
 
   default:
     break;
@@ -1536,7 +1532,7 @@ polar_rotation(Tensor<T, N> const & A)
 
   Index
   num_iter = 0;
- 
+
   while (num_iter < max_iter) {
 
     Tensor<T, N>

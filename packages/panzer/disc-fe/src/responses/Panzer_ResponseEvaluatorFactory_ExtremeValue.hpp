@@ -95,7 +95,7 @@ public:
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName) const;
 
    virtual Teuchos::RCP<ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<WorksetDescriptor> & wkstDesc) const 
+                                                          const std::vector<WorksetDescriptor> & /* wkstDesc */) const 
    { return buildResponseObject(responseName); }
 
    /** Build and register evaluators for a response on a particular physics

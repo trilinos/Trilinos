@@ -1464,7 +1464,7 @@ namespace Tpetra {
     OutMapType
     MapCloner<OutMapType, InMapType>::
     clone (const InMapType& mapIn,
-           const Teuchos::RCP<out_node_type>& nodeOut)
+           const Teuchos::RCP<out_node_type>& /* nodeOut */)
     {
       static_assert (std::is_same<typename OutMapType::local_ordinal_type,
                                   typename InMapType::local_ordinal_type>::value,

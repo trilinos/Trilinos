@@ -1047,7 +1047,7 @@ namespace Tpetra {
       readBanner (std::istream& in,
                   size_t& lineNumber,
                   const bool tolerant=false,
-                  const bool debug=false,
+                  const bool /* debug */=false,
                   const bool isGraph=false)
       {
         using Teuchos::MatrixMarket::Banner;
@@ -1139,7 +1139,7 @@ namespace Tpetra {
                      const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
                      const Teuchos::RCP<const comm_type>& pComm,
                      const bool tolerant = false,
-                     const bool debug = false)
+                     const bool /* debug */ = false)
       {
         using Teuchos::MatrixMarket::readCoordinateDimensions;
         using Teuchos::Tuple;

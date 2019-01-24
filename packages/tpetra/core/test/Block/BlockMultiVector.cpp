@@ -43,6 +43,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockMultiVector.hpp"
+#include "Tpetra_BlockVector.hpp"
 
 namespace {
 
@@ -161,6 +162,17 @@ namespace {
     // TEST_ASSERT( ! W.getMap ().is_null () );
     // TEST_ASSERT( ! W.getMap ().is_null () && W.getMap ()->isSameAs (meshMap) );
     // TEST_ASSERT( W.getPointMap ().isSameAs (X.getPointMap ()) );
+
+    // Test BlockVector constructor
+    typedef Tpetra::BlockVector<Scalar, LO, GO, Node> BV;
+    typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    Teuchos::RCP<const vec_type> V1 = X_mv.getVector (0);
+    BV V (*V1, meshMap, blockSize);
+    vec_type V2 = V.getVectorView ();
+    TEST_EQUALITY( V1->getLocalViewHost ().data (),
+                   V2.getLocalViewHost ().data () );
+    TEST_EQUALITY( V1->getLocalViewDevice ().data (),
+                   V2.getLocalViewDevice ().data () );
   }
 
   // Test BlockMultiVector::getMultiVectorView.  It must return a
@@ -559,5 +571,3 @@ namespace {
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
-
-

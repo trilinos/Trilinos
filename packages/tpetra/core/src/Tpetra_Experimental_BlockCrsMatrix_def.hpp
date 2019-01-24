@@ -1254,13 +1254,13 @@ public:
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                   const MultiVector<Scalar,LO,GO,Node> &B,
-                   const MultiVector<Scalar,LO,GO,Node> &D,
-                   const Scalar& dampingFactor,
-                   const ESweepDirection direction,
-                   const int numSweeps,
-                   const bool zeroInitialGuess) const
+  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &/* X */,
+                   const MultiVector<Scalar,LO,GO,Node> &/* B */,
+                   const MultiVector<Scalar,LO,GO,Node> &/* D */,
+                   const Scalar& /* dampingFactor */,
+                   const ESweepDirection /* direction */,
+                   const int /* numSweeps */,
+                   const bool /* zeroInitialGuess */) const
   {
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
@@ -1272,14 +1272,14 @@ public:
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
-                            const MultiVector<Scalar,LO,GO,Node>& B,
-                            const MultiVector<Scalar,LO,GO,Node>& D,
-                            const Teuchos::ArrayView<LO>& rowIndices,
-                            const Scalar& dampingFactor,
-                            const ESweepDirection direction,
-                            const int numSweeps,
-                            const bool zeroInitialGuess) const
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& /* X */,
+                            const MultiVector<Scalar,LO,GO,Node>& /* B */,
+                            const MultiVector<Scalar,LO,GO,Node>& /* D */,
+                            const Teuchos::ArrayView<LO>& /* rowIndices */,
+                            const Scalar& /* dampingFactor */,
+                            const ESweepDirection /* direction */,
+                            const int /* numSweeps */,
+                            const bool /* zeroInitialGuess */) const
   {
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
@@ -2657,7 +2657,7 @@ public:
     unpackRowCount (const typename ::Tpetra::Details::PackTraits<LO, D>::input_buffer_type& imports,
                     const size_t offset,
                     const size_t numBytes,
-                    const size_t numBytesPerValue)
+                    const size_t /* numBytesPerValue */)
     {
       using Kokkos::subview;
       using ::Tpetra::Details::PackTraits;
@@ -2843,7 +2843,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   packAndPrepareNew (const ::Tpetra::SrcDistObject& source,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
+                     Kokkos::DualView<packet_type*, buffer_device_type>& exports,
                      const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                      size_t& constantNumPackets,
                      Distributor& /* distor */)
@@ -2986,11 +2986,8 @@ public:
     // We use a "struct of arrays" approach to packing each row's
     // entries.  All the column indices (as global indices) go first,
     // then all their owning process ranks, and then the values.
-    exports.resize (totalNumBytes/numBytesPerValue);
+    exports.resize (totalNumBytes);
     if (totalNumEntries > 0) {
-      // exports is resized in the above and we assume the data on device is invalidated.
-      Kokkos::View<char*,host_exec> exportsByteHost ((char*)exports.view_host().data(), totalNumBytes);
-
       // Current position (in bytes) in the 'exports' output array.
       Kokkos::View<size_t*, host_exec> offset("offset", numExportLIDs+1);
       {
@@ -3054,7 +3051,7 @@ public:
             //   host scratch space somehow is not considered same as the host_exec
             // Copy the row's data into the current spot in the exports array.
             const size_t numBytes = packRowForBlockCrs<impl_scalar_type,LO,GO,host_exec>
-              (exportsByteHost,
+              (exports.view_host(),
                offset(i),
                numEnt,
                Kokkos::View<const GO*,host_exec>(gblColInds.data(), maxRowLength),
@@ -3078,11 +3075,12 @@ public:
     } // if totalNumEntries > 0
 
     if (debug) {
-      std::ostream& err = this->markLocalErrorAndGetStream ();
+      std::ostringstream os;
       const bool lclSuccess = ! (* (this->localError_));
-      err << prefix
-          << (lclSuccess ? "succeeded" : "FAILED")
-          << " (totalNumEntries = " << totalNumEntries << ") ***" << std::endl;
+      os << prefix
+         << (lclSuccess ? "succeeded" : "FAILED")
+         << std::endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -3091,7 +3089,7 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                       const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
+                       const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
                        const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                        const size_t /* constantNumPackets */,
                        Distributor& /* distor */,
@@ -3192,8 +3190,6 @@ public:
       std::cerr << os.str ();
     }
 
-    Kokkos::View<char*,host_exec> importsByteHost((char*)imports.view_host().data(), imports.extent(0)*numBytesPerValue);
-
     if (importLIDs.need_sync_host()) {
       Kokkos::DualView<const local_ordinal_type*, device_type> importLIDsTemp = importLIDs;
       importLIDsTemp.sync_host();
@@ -3242,7 +3238,7 @@ public:
           const size_t numBytes = numPacketsPerLIDHost(i);
           const size_t numEnt =
             unpackRowCount<impl_scalar_type, LO, GO, host_exec>
-            (importsByteHost, offval, numBytes, numBytesPerValue);
+            (imports.view_host(), offval, numBytes, numBytesPerValue);
 
           if (numBytes > 0) {
             if (numEnt > maxRowNumEnt) {
@@ -3269,7 +3265,7 @@ public:
             unpackRowForBlockCrs<impl_scalar_type, LO, GO, host_exec>
             (Kokkos::View<GO*,host_exec>(gidsOut.data(), numEnt),
              Kokkos::View<impl_scalar_type*,host_exec>(valsOut.data(), numScalarEnt),
-             importsByteHost,
+             imports.view_host(),
              offval, numBytes, numEnt,
              numBytesPerValue, blockSize);
 
@@ -3775,10 +3771,10 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowCopy (GO GlobalRow,
-                    const Teuchos::ArrayView<GO> &Indices,
-                    const Teuchos::ArrayView<Scalar> &Values,
-                    size_t &NumEntries) const
+  getGlobalRowCopy (GO /* GlobalRow */,
+                    const Teuchos::ArrayView<GO> &/* Indices */,
+                    const Teuchos::ArrayView<Scalar> &/* Values */,
+                    size_t &/* NumEntries */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowCopy: "
@@ -3789,9 +3785,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowView (GO GlobalRow,
-                    Teuchos::ArrayView<const GO> &indices,
-                    Teuchos::ArrayView<const Scalar> &values) const
+  getGlobalRowView (GO /* GlobalRow */,
+                    Teuchos::ArrayView<const GO> &/* indices */,
+                    Teuchos::ArrayView<const Scalar> &/* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
@@ -3802,9 +3798,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (LO LocalRow,
-                   Teuchos::ArrayView<const LO>& indices,
-                   Teuchos::ArrayView<const Scalar>& values) const
+  getLocalRowView (LO /* LocalRow */,
+                   Teuchos::ArrayView<const LO>& /* indices */,
+                   Teuchos::ArrayView<const Scalar>& /* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: "
@@ -3867,7 +3863,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::leftScale: "
@@ -3878,7 +3874,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::rightScale: "

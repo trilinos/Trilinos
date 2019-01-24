@@ -1,17 +1,22 @@
 ADD_SUBDIRECTORIES(
     Import_Tpetra
+)
+
+IF(NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+ADD_SUBDIRECTORIES(
     InterfacePartitionOfUnity
     InterfaceSets
     LocalPartitionOfUnityBasis
 )
+ENDIF()
 
-IF(ShyLU_DDFROSch_ENABLE_Belos AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
+IF(ShyLU_DDFROSch_ENABLE_Belos AND KOKKOS_ENABLE_SERIAL AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
 ADD_SUBDIRECTORIES(
     Thyra_Xpetra_Laplace
 )
 ENDIF()
 
-IF(ShyLU_DDFROSch_ENABLE_Belos AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra AND ShyLU_DDFROSch_ENABLE_EpetraExt AND ShyLU_DDFROSch_ENABLE_HDF5)
+IF(ShyLU_DDFROSch_ENABLE_Belos AND KOKKOS_ENABLE_SERIAL AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra AND ShyLU_DDFROSch_ENABLE_EpetraExt AND ShyLU_DDFROSch_ENABLE_HDF5)
 ADD_SUBDIRECTORIES(
     Thyra_Xpetra_Stokes_HDF5
 )

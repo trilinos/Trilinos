@@ -170,7 +170,7 @@ void
 CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 insertGlobalValues (GlobalOrdinal globalRow,
                     const Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                    const Teuchos::ArrayView<const Scalar> &values)
+                    const Teuchos::ArrayView<const Scalar> &/* values */)
 {
   typename std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>::iterator
     iter = graph_.find (globalRow);

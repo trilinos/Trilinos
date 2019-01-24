@@ -264,7 +264,7 @@ bool AmesosLinearOpWithSolve::solveSupportsImpl(EOpTransp M_trans) const
 
 
 bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureTypeImpl(
-  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp /* M_trans */, const SolveMeasureType& /* solveMeasureType */
   ) const
 {
   return true; // I am a direct solver so I should be able to do it all!
@@ -276,7 +276,7 @@ AmesosLinearOpWithSolve::solveImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<double> &B,
   const Ptr<MultiVectorBase<double> > &X,
-  const Ptr<const SolveCriteria<double> > solveCriteria
+  const Ptr<const SolveCriteria<double> > /* solveCriteria */
   ) const
 {
   using Teuchos::rcpFromPtr;

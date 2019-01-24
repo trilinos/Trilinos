@@ -91,7 +91,7 @@ namespace Tpetra {
        GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        LocalGlobal lOrG,
-       const Teuchos::RCP<Node> &node) :
+       const Teuchos::RCP<Node> &/* node */) :
     comm_ (comm),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -244,7 +244,7 @@ namespace Tpetra {
        size_t numLocalElements,
        GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       const Teuchos::RCP<Node> &node) :
+       const Teuchos::RCP<Node> &/* node */) :
     comm_ (comm),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -418,6 +418,10 @@ namespace Tpetra {
 
     return debugGlobalSum;
 #else
+    (void)numGlobalElements;
+    (void)numLocalElements;
+    (void)indexBase;
+    (void)comm;
     return static_cast<global_size_t> (0);
 #endif // HAVE_TPETRA_DEBUG
   }
@@ -729,7 +733,7 @@ namespace Tpetra {
        const Teuchos::ArrayView<const GlobalOrdinal>& entryList,
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-       const Teuchos::RCP<Node>& node) :
+       const Teuchos::RCP<Node>& /* node */) :
     comm_ (comm),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
