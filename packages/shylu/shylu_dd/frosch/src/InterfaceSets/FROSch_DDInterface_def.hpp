@@ -62,6 +62,7 @@ namespace FROSch {
     Interface_ (new EntitySet<SC,LO,GO,NO>(InterfaceType)),
     Interior_ (new EntitySet<SC,LO,GO,NO>(InteriorType)),
     CoarseNodes_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
+    ConnectivityEntities_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
     EntitySetVector_ (),
     NodesMap_ (localToGlobalMap),
     UniqueNodesMap_ ()
@@ -332,6 +333,31 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
+    int DDInterface<SC,LO,GO,NO>::identifyConnectivityEntities(UNVecPtr multiplicities,
+                                                               EntityFlagVecPtr flags)
+    {
+        if (multiplicities.is_null()) {
+            multiplicities = UNVecPtr(1,2);
+        }
+        if (flags.is_null()) {
+            flags = EntityFlagVecPtr(4);
+            flags[0] = DefaultFlag;
+            flags[1] = StraightFlag;
+            flags[2] = ShortFlag;
+            flags[3] = NodeFlag;
+        }
+        
+        for (UN j=0; j<multiplicities.size(); j++) {
+            for (UN i=0; i<EntitySetVector_[multiplicities[j]]->getNumEntities(); i++) {
+                if (std::binary_search(flags.begin(),flags.end(),EntitySetVector_[multiplicities[j]]->getEntity(i)->getEntityFlag())) {
+                    ConnectivityEntities_->addEntity(EntitySetVector_[multiplicities[j]]->getEntity(i));
+                }
+            }
+        }
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
     typename DDInterface<SC,LO,GO,NO>::UN DDInterface<SC,LO,GO,NO>::getDimension() const
     {
         return Dimension_;
@@ -401,6 +427,12 @@ namespace FROSch {
     typename DDInterface<SC,LO,GO,NO>::EntitySetPtrConstVecPtr & DDInterface<SC,LO,GO,NO>::getEntitySetVector() const
     {
         return EntitySetVector_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::EntitySetPtrConstVecPtr & DDInterface<SC,LO,GO,NO>::getConnectivityEntities() const
+    {
+        return ConnectivityEntities_;
     }
     
     template <class SC,class LO,class GO,class NO>

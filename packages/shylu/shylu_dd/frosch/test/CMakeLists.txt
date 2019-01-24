@@ -1,4 +1,3 @@
-IF(KOKKOS_ENABLE_SERIAL)
 ADD_SUBDIRECTORIES(
     RepMap_test
     TwoLevelPreconditioner
@@ -7,7 +6,6 @@ ADD_SUBDIRECTORIES(
     InterfaceSets
     LocalPartitionOfUnityBasis
 )
-ENDIF()
 
 IF(ShyLU_DDFROSch_ENABLE_Belos AND KOKKOS_ENABLE_SERIAL AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
 ADD_SUBDIRECTORIES(

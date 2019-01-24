@@ -496,6 +496,7 @@ namespace FROSch {
                         numEntitiesGlobal[i] = 0;
                     }
                 }
+                FROSCH_ASSERT(dimension==2 && numEntitiesGlobal[3]==0,"dimension==2 && global number of faces (edges)!=0");
                 
                 if (this->Verbose_) {
                     
@@ -503,9 +504,16 @@ namespace FROSch {
                     --------------------------------------------\n\
                     # vertices:       --- " << numEntitiesGlobal[0] << "\n\
                     # shortEdges:     --- " << numEntitiesGlobal[1] << "\n\
-                    # straightEdges:  --- " << numEntitiesGlobal[2] << "\n\
+                    # straightEdges:  --- " << numEntitiesGlobal[2] << "\n";
+                    if (dimension==2) {
+                    std::cout << "\
+                    # edges:          --- " << numEntitiesGlobal[4] << "\n";
+                    } else if (dimension==3) {
+                    std::cout << "\
                     # edges:          --- " << numEntitiesGlobal[3] << "\n\
-                    # faces:          --- " << numEntitiesGlobal[4] << "\n\
+                    # faces:          --- " << numEntitiesGlobal[4] << "\n";
+                    }
+                    std::cout << "\
                     --------------------------------------------\n\
                     Coarse space:\n\
                     --------------------------------------------\n\
