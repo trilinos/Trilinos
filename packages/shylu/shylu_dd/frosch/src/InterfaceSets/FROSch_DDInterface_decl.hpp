@@ -85,6 +85,8 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
         typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
         
+        typedef Teuchos::ArrayRCP<EntityFlag> EntityFlagVecPtr;
+        
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
         
@@ -127,6 +129,13 @@ namespace FROSch {
                                           MultiVectorPtr &nodeList = Teuchos::null,
                                           DistanceFunction distanceFunction = ConstantDistanceFunction);
         
+        //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain
+        //! level. By default, we identify all entities with multiplicity 2. Afterwards, the corresponding entities can
+        //! be obtained using the function getConnectivityEntities().
+        //! If short or straight edges should be omitted, the function flagEntities() has to be called in advance.
+        int identifyConnectivityEntities(UNVecPtr multiplicities = Teuchos::null,
+                                         EntityFlagVecPtr flags = Teuchos::null);
+        
         UN getDimension() const;
         
         UN getDofsPerNode() const;
@@ -154,6 +163,10 @@ namespace FROSch {
         EntitySetConstPtr & getCoarseNodes() const;
         
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
+        
+        //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
+        //! level. They have to identified first using the function identifyConnectivityEntities().
+        EntitySetPtrConstVecPtr & getConnectivityEntities() const;
         
         ConstMapPtr getNodesMap() const;
         
@@ -185,6 +198,7 @@ namespace FROSch {
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
         EntitySetPtr CoarseNodes_;
+        EntitySetPtr ConnectivityEntities_;
         EntitySetPtrVecPtr EntitySetVector_;
         
         MapPtr NodesMap_;
