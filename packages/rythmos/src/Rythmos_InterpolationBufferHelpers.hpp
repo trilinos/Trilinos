@@ -197,7 +197,7 @@ template<class Scalar>
 void Rythmos::assertNoTimePointsBeforeCurrentTimeRange(
   const InterpolationBufferBase<Scalar> &interpBuffer,
   const Array<Scalar>& time_vec,
-  const int &startingTimePointIndex
+  const int &/* startingTimePointIndex */
   )
 {
   typedef ScalarTraits<Scalar> ST;

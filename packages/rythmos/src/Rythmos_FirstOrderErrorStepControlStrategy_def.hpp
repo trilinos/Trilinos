@@ -234,8 +234,8 @@ void FirstOrderErrorStepControlStrategy<Scalar>::setRequestedStepSize(
 
 template<class Scalar>
 void FirstOrderErrorStepControlStrategy<Scalar>::nextStepSize(
-  const StepperBase<Scalar>& stepper, Scalar* stepSize,
-  StepSizeType* stepSizeType, int* order)
+  const StepperBase<Scalar>& /* stepper */, Scalar* stepSize,
+  StepSizeType* stepSizeType, int* /* order */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!((stepControlState_ == BEFORE_FIRST_STEP) ||
                                (stepControlState_ == MID_STEP) ||
@@ -265,7 +265,7 @@ void FirstOrderErrorStepControlStrategy<Scalar>::nextStepSize(
 
 template<class Scalar>
 void FirstOrderErrorStepControlStrategy<Scalar>::setCorrection(
-     const StepperBase<Scalar>& stepper
+     const StepperBase<Scalar>& /* stepper */
     ,const RCP<const Thyra::VectorBase<Scalar> >& soln
     ,const RCP<const Thyra::VectorBase<Scalar> >& dx
     ,int solveStatus)
@@ -281,7 +281,7 @@ void FirstOrderErrorStepControlStrategy<Scalar>::setCorrection(
 
 template<class Scalar>
 bool FirstOrderErrorStepControlStrategy<Scalar>::acceptStep(
-  const StepperBase<Scalar>& stepper, Scalar* value)
+  const StepperBase<Scalar>& /* stepper */, Scalar* /* value */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
@@ -329,7 +329,7 @@ bool FirstOrderErrorStepControlStrategy<Scalar>::acceptStep(
 
 template<class Scalar>
 AttemptedStepStatusFlag FirstOrderErrorStepControlStrategy<Scalar>::rejectStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
@@ -382,7 +382,7 @@ AttemptedStepStatusFlag FirstOrderErrorStepControlStrategy<Scalar>::rejectStep(
 
 template<class Scalar>
 void FirstOrderErrorStepControlStrategy<Scalar>::completeStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,

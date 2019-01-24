@@ -170,7 +170,7 @@ SimpleStepControlStrategy<Scalar>::SimpleStepControlStrategy()
 
 template<class Scalar>
 void SimpleStepControlStrategy<Scalar>::initialize(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   using Teuchos::as;
   // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
@@ -231,8 +231,8 @@ void SimpleStepControlStrategy<Scalar>::setRequestedStepSize(
 
 template<class Scalar>
 void SimpleStepControlStrategy<Scalar>::nextStepSize(
-  const StepperBase<Scalar>& stepper, Scalar* stepSize,
-  StepSizeType* stepSizeType, int* order)
+  const StepperBase<Scalar>& /* stepper */, Scalar* stepSize,
+  StepSizeType* stepSizeType, int* /* order */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!((stepControlState_ == BEFORE_FIRST_STEP) ||
                                (stepControlState_ == MID_STEP) ||
@@ -262,7 +262,7 @@ void SimpleStepControlStrategy<Scalar>::nextStepSize(
 
 template<class Scalar>
 void SimpleStepControlStrategy<Scalar>::setCorrection(
-     const StepperBase<Scalar>& stepper
+     const StepperBase<Scalar>& /* stepper */
     ,const RCP<const Thyra::VectorBase<Scalar> >& soln
     ,const RCP<const Thyra::VectorBase<Scalar> >& dx
     ,int solveStatus)
@@ -278,7 +278,7 @@ void SimpleStepControlStrategy<Scalar>::setCorrection(
 
 template<class Scalar>
 bool SimpleStepControlStrategy<Scalar>::acceptStep(
-  const StepperBase<Scalar>& stepper, Scalar* value)
+  const StepperBase<Scalar>& /* stepper */, Scalar* /* value */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
@@ -308,7 +308,7 @@ bool SimpleStepControlStrategy<Scalar>::acceptStep(
 
 template<class Scalar>
 AttemptedStepStatusFlag SimpleStepControlStrategy<Scalar>::rejectStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
@@ -363,7 +363,7 @@ AttemptedStepStatusFlag SimpleStepControlStrategy<Scalar>::rejectStep(
 
 template<class Scalar>
 void SimpleStepControlStrategy<Scalar>::completeStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
