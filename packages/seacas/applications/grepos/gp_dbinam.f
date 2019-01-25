@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,7 +34,7 @@ C=======================================================================
       SUBROUTINE DBINAM (NDB, OPTION, NDIM, NELBLK, NUMNPS, NUMESS,
      *  NNDIM, NNELB, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
      &  IXGV, IXNV, IXEV, IXNSV, IXSSV, A, IA,
-     *  KIEVOK, KNSVOK, KSSVOK, 
+     *  KIEVOK, KNSVOK, KSSVOK,
      *  C, KNAMES, EXODUS, *)
 C=======================================================================
 C   --*** DBINAM *** (EXOLIB) Read database names
@@ -94,7 +94,7 @@ C   --   PCKSTR - (STRLIB) Remove embedded blanks
 
       include 'exodusII.inc'
       include 'gp_namlen.blk'
-      
+
       PARAMETER (MAXDIM=6)
 
       INTEGER NDB
@@ -143,7 +143,7 @@ C --Get the name indices
         IXNSE = IXNSV + NVARNS - 1
         IXSSV = IXNSE + 1
         IXSSE = IXSSV + NVARSS - 1
-        
+
 C ... Allocate space for variable names
         nname = nvargl + nvarnp + nvarel + nvarns + nvarss
         call mcrsrv('NAMES', knames, nname*maxnam)
@@ -158,24 +158,24 @@ C ... Read variable names (wrapper used to get character length correct)
         ioff = ioff + (nvargl * maxnam)
         call rdnam2(ndb, c(knames+ioff), nvarnp, 'n', ierr)
         if (ierr .ne. 0) go to 180
-        
+
         ioff = ioff + (nvarnp * maxnam)
         call rdnam2(ndb, c(knames+ioff), nvarel, 'e', ierr)
         if (ierr .ne. 0) go to 180
-        
+
         ioff = ioff + (nvarel * maxnam)
         call rdnam2(ndb, c(knames+ioff), nvarns, 'm', ierr)
         if (ierr .ne. 0) go to 180
-        
+
         ioff = ioff + (nvarns * maxnam)
         call rdnam2(ndb, c(knames+ioff), nvarss, 's', ierr)
         if (ierr .ne. 0) go to 180
-        
+
       END IF
 C ... Read the element block variable truth table
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'T') .GT. 0)) THEN
         kmax = max(nelblk*nvarel, numnps*nvarns, numess*nvarss)
-        
+
         CALL MDRSRV ('ITMP',    KITMP,  KMAX)
         CALL MDRSRV ('ISEVOK',  KIEVOK, NELBLK * NVAREL)
         CALL MDRSRV ('ISNSVOK', KNSVOK, NUMNPS * NVARNS)
@@ -185,13 +185,13 @@ C ... Read the element block variable truth table
 
         CALL DBINM1 (NDB, 'E', OPTION, NELBLK, NVAREL, IA(KIEVOK),
      &    IA(KIEVOK), IA(KITMP), IERR, MAX(NELBLK,1), *210)
-        
+
         CALL DBINM1 (NDB, 'M', OPTION, NUMNPS, NVARNS, IA(KNSVOK),
      &    IA(KNSVOK), IA(KITMP), IERR, MAX(NUMNPS,1), *210)
-        
+
         CALL DBINM1 (NDB, 'S', OPTION, NUMESS, NVARSS, IA(KSSVOK),
      &    IA(KSSVOK), IA(KITMP), IERR, MAX(NUMESS,1), *210)
-        
+
         call mddel('ITMP')
       END IF
 
@@ -212,13 +212,13 @@ C ... Read the element block variable truth table
       include 'gp_namlen.blk'
       character*(maxnam) varnam(*)
       character*1 vtype
-      
+
       ierr = 0
 C ... Initialize in case there is error
       DO 100 I = 1, nvar
         varnam(i) = '-'
  100  CONTINUE
-      
+
       if (nvar .gt. 0) then
         call exgvan (ndb, vtype, nvar, varnam, ierr)
       end if
@@ -228,4 +228,4 @@ C ... Initialize in case there is error
       call pckstr(nvar, varnam)
       return
       end
-      
+

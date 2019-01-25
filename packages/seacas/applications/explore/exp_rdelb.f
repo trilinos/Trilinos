@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE RDELB (NDB, NELBLK, IDELB, NUMELB, NUMLNK, NUMATR,
      &   A, C, KLINK, KATRIB, KATRNM, ISEOF, EBTYPE, EBNAME, NAMLEN)
@@ -63,7 +63,7 @@ C   --   ISEOF - IN/OUT - set true if end of file read
       INTEGER NUMATR(*)
       CHARACTER*(MXSTLN) EBTYPE(*)
       CHARACTER*(NAMLEN) EBNAME(*)
-      
+
       DIMENSION A(*)
       CHARACTER*1 C(*)
       LOGICAL ISEOF
@@ -91,12 +91,12 @@ C ... Read element block sizing parameters
         call exgelb(ndb, idelb(ielb), ebtype(ielb), numelb(ielb),
      &       numlnk(ielb), numatr(ielb), ierr)
         if (ierr .ne. 0) go to 120
-        
+
         if (ebtype(ielb) .eq. 'nsided' .or.
      *      ebtype(ielb) .eq. 'NSIDED') THEN
-          IELNK = IELNK + NUMLNK(IELB) 
+          IELNK = IELNK + NUMLNK(IELB)
         else
-          IELNK = IELNK + NUMLNK(IELB) * NUMELB(IELB) 
+          IELNK = IELNK + NUMLNK(IELB) * NUMELB(IELB)
       end if
       IEATR = IEATR + NUMATR(IELB) * NUMELB(IELB)
       INATR = INATR + NUMATR(IELB)
@@ -125,14 +125,14 @@ C ... Read element block connectivity and attributes
 
         CALL RDEB1 (NDB,
      &    IDELB(IELB), NUMELB(IELB), NUMLNK(IELB), NUMATR(IELB),
-     &    A(KLINK+ISLNK-1), A(KATRIB+ISATR-1), 
+     &    A(KLINK+ISLNK-1), A(KATRIB+ISATR-1),
      &    C(KATRNM+NAMLEN*INATR), NAMLEN)
 
         inatr = inatr + numatr(ielb)
  110  CONTINUE
 
 C ... Read element block names (if they exist)
-      CALL EXGNAMS(NDB, EXEBLK, nelblk, ebname, ierr) 
+      CALL EXGNAMS(NDB, EXEBLK, nelblk, ebname, ierr)
       RETURN
 
   120 CONTINUE

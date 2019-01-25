@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -64,7 +64,7 @@ C   --   ATRIBNW - IN - the new attributes if block is a 3D beam
       REAL ATRIB(*)
       REAL ATRIBNW(7)
       CHARACTER*(mxstln) NAMELB
-      
+
       IELNK = 0
       IEATR = 0
 
@@ -77,7 +77,7 @@ C ... A 3D beam needs special treatment since it has 7 attributes
 C     and the input 2D beam will only have 1 or 3 attributes.
 C     The attributes have been specified in the 'ATRIBNW' array
 C     by the user (or the defaults are used).  Need to expand the
-C     single value per block values from the ATRIBNW array into 
+C     single value per block values from the ATRIBNW array into
 C     7 values per element.
           call mdlong('ATRIBNW', KATRIB, 7*numelb)
           CALL MDSTAT (NERR, MEM)
@@ -97,7 +97,7 @@ C     7 values per element.
       subroutine geneat(ndb, idelb, atrib, atribnw, numelb)
       real atrib(*)
       real atribnw(7)
-      
+
       i = 0
       do 20 ie = 1, numelb
           do 10 ia=1, 7
@@ -109,4 +109,4 @@ C     7 values per element.
 
       return
       end
-      
+

@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,7 +34,7 @@ C -*- Mode: fortran -*-
 C=======================================================================
       SUBROUTINE SHOW (STYP, INTYP)
 C=======================================================================
-      
+
 C     --*** SHOW *** (GEN3D) Display information
 C     --   Written by Amy Gilkey - revised 03/07/88
 C     --
@@ -58,7 +58,7 @@ C     --   Uses NDIM, NUMNP, NUMEL, NELBLK,
 C     --      NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL of /DBNUMS/
 C     --   Uses XOFFS, YOFFS, ZOFFS of /XYZOFF/
 C     --   Uses ROT3D, ROTMAT of /XYZROT/
-      
+
       include 'gp_dbase.blk'
       include 'gp_dbtitl.blk'
       include 'gp_dbnums.blk'
@@ -72,25 +72,25 @@ C     --   Uses ROT3D, ROTMAT of /XYZROT/
       include 'gp_snap.blk'
       include 'gp_combine.blk'
       include 'gp_deform.blk'
-      
+
       CHARACTER*(*) STYP
       CHARACTER*(*) INTYP
-      
+
       CHARACTER*32 SHOTYP, SMTYP
       CHARACTER*80 STRING
       REAL RNUM(9)
       CHARACTER*20 RSTR(12)
       CHARACTER*20 STRA, STRB
-      
+
       CHARACTER*32 SHOTBL(2)
       SAVE SHOTBL
 C     --SHOTBL - the special save option table
-      
+
       DATA SHOTBL /
      &  'VARS    ', '        ' /
-      
+
 C     --Determine the show option
-      
+
       IF ((INTYP .EQ. ' ') .OR. (STYP .EQ. INTYP)) THEN
         SHOTYP = STYP
       ELSE
@@ -99,7 +99,7 @@ C     --Determine the show option
      &    .AND. ((SHOTYP .EQ. ' ') .OR. (SHOTYP .NE. INTYP)))
      &    SHOTYP = STYP
       END IF
-      
+
       IF (SHOTYP .EQ. 'EXECUTE') THEN
         WRITE (*, 40) 'Executing currently specified transformations'
 
@@ -138,7 +138,7 @@ C     --Determine the show option
           WRITE (*, 40)
      &      'Coordinate offsets =', (' ', RSTR(I)(:LR), I=1,NDIM)
         END IF
-        
+
       ELSE IF (SHOTYP .EQ. 'SCALE') THEN
         RNUM(1) = XSCAL
         RNUM(2) = YSCAL
@@ -146,7 +146,7 @@ C     --Determine the show option
         CALL NUMSTR (NDIM, 4, RNUM, RSTR, LR)
         WRITE (*, 40)
      &    'Coordinate scale factors =', (' ', RSTR(I)(:LR),I=1,NDIM)
-        
+
       ELSE IF (SHOTYP .EQ. 'RANDOMIZE') THEN
         RNUM(1) = XRAND
         RNUM(2) = YRAND
@@ -154,7 +154,7 @@ C     --Determine the show option
         CALL NUMSTR (NDIM, 4, RNUM, RSTR, LR)
         WRITE (*, 40)
      &    'Coordinate random factors =', (' ', RSTR(I)(:LR),I=1,NDIM)
-        
+
       ELSE IF (SHOTYP .EQ. 'ZERO') THEN
         RNUM(1) = XZERO
         RNUM(2) = YZERO
@@ -163,7 +163,7 @@ C     --Determine the show option
         WRITE (*, 40)
      &    'Minimum nonzero coordinates =', (' ', RSTR(I)(:LR),
      &    I=1,NDIM)
-        
+
       ELSE IF (SHOTYP .EQ. 'REVOLVE' .OR. SHOTYP .EQ. 'ROTATE') THEN
         IF (ROT3D) THEN
           WRITE (*, 40) 'Rotation matrix for generated mesh:'
@@ -173,7 +173,7 @@ C     --Determine the show option
         ELSE
           WRITE (*, 40) 'No rotation defined for generated mesh'
         END IF
-        
+
       ELSE IF (SHOTYP .EQ. 'REVCEN') THEN
         CALL NUMSTR (NDIM, 4, ROTCEN, RSTR, LR)
         WRITE (*, 40)
@@ -181,7 +181,7 @@ C     --Determine the show option
         IF (.NOT. ROT3D) THEN
           WRITE (*, 40) 'No rotation defined for generated mesh'
         END IF
-        
+
       ELSE IF (SHOTYP .EQ. 'DEFORM') THEN
         if (idefst .gt. 0) then
           call intstr(1, 0, IDEFST, STRA,  LR1)
@@ -191,12 +191,12 @@ C     --Determine the show option
         else
           write (*,*) 'Deformation turned off (RESET)'
         end if
-        
+
       ELSE IF (SHOTYP .EQ. 'VARS') THEN
         CALL DBPINI ('TIS', NDBIN, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
-     &    NUMNPS, LNPSNL, LNPSNL, NUMESS, LESSEL, LESSNL, LESSNL, 
+     &    NUMNPS, LNPSNL, LNPSNL, NUMESS, LESSEL, LESSNL, LESSNL,
      &    IDUM, IDUM, IDUM, ' ')
-        
+
       ELSE IF (SHOTYP .EQ. 'SMOOTH') THEN
         write (*, 40)
      $    'Smoothing Type = LAPLACIAN'
@@ -204,12 +204,12 @@ C     --Determine the show option
         call intstr (1, 0, NIT,   STRA,    LR2)
         call numstr (1, 4, R0,    RSTR(3), LR3)
         write (*, 40)
-     $    'Tolerance      = ',RSTR(1)(:LR1) 
+     $    'Tolerance      = ',RSTR(1)(:LR1)
         write (*, 40)
-     $    'Iterations     = ',STRA(:LR2) 
+     $    'Iterations     = ',STRA(:LR2)
         write (*, 40)
-     $    'Relaxation Par = ',RSTR(3)(:LR3) 
-        
+     $    'Relaxation Par = ',RSTR(3)(:LR3)
+
       ELSE IF (SHOTYP .EQ. 'USERSUBROUTINE') THEN
         write (*, 40) 'Coordinate modification by ',
      *    'user supplied subroutine (xyzmod).'
@@ -227,7 +227,7 @@ C     --Determine the show option
             WRITE (*, 40)
      &           'Node Equivalencing turned off (RESET)'
          END IF
-        
+
       ELSE IF (SHOTYP .EQ. 'SNAP' .OR. SHOTYP .EQ. 'MOVE') THEN
         if (numsnp .gt. 0) then
           do i=1, numsnp
@@ -244,7 +244,7 @@ C     --Determine the show option
             else if (usnorm(i) .eq. PEDGE) then
               string = 'along element edge'
             end if
-            
+
             if (ismtyp(i) .eq. IMOVE) then
               SMTYP = 'Move'
             else if (ismtyp(i) .eq. ISNAP) then
@@ -252,7 +252,7 @@ C     --Determine the show option
             else
               SMTYP = 'ERROR'
             end if
-            
+
             if (usnorm(i) .eq. PNORM .or. usnorm(i) .eq. PEDGE) then
               write (*, 40) SMTYP(:4), ' Sideset ', STRA(:LR1),
      *          ' to ', STRB(:LR2),' ',STRING(:LENSTR(STRING)),
@@ -303,7 +303,7 @@ C     --Determine the show option
       ELSE
         CALL PRTERR ('CMDWARN', 'Invalid SHOW option')
       END IF
-      
+
       RETURN
  40   FORMAT (1X, 20A)
  50   format (8x, 3(1pE12.5,4x))

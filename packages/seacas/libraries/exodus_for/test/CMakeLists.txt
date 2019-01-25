@@ -6,7 +6,7 @@ if ( NETCDF_NCDUMP_BINARY )
 else()
    find_program (NETCDF_NCDUMP_BINARY
 	     NAME ncdump
-	     PATHS 
+	     PATHS
 	       ${NetCDF_BINARY_DIR}
                ${Netcdf_LIBRARY_DIRS}/../bin
                $ENV{ACCESS}/bin
@@ -16,7 +16,7 @@ else()
 	        ${NetCDF_DIR}/bin
 	     )
 endif()
-	     
+
 # ===============================================
 
 
@@ -58,11 +58,11 @@ IF ( NETCDF_NCDUMP_BINARY )
    TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
 	  OUTPUT_FILE exodus_unit_tests.out
 	  PASS_ANY
-   TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
+   TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold
 		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
    COMM mpi serial
    OVERALL_NUM_MPI_PROCS 1
-   FINAL_PASS_REGULAR_EXPRESSION 
+   FINAL_PASS_REGULAR_EXPRESSION
   )
 ELSE()
   MESSAGE(STATUS

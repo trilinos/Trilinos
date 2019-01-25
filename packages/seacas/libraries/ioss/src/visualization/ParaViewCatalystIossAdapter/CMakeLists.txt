@@ -13,7 +13,7 @@ endif()
 find_package(ParaView REQUIRED COMPONENTS vtkPVCatalyst vtkPVPythonCatalyst)
 include(${PARAVIEW_USE_FILE})
 
-set(PARAVIEW_PYTHON_LIBRARY_RPATH_DIRECTORY CACHE 
+set(PARAVIEW_PYTHON_LIBRARY_RPATH_DIRECTORY CACHE
     FILEPATH "Path to the directory containing the Python library used by ParaView.")
 
 if(PARAVIEW_PYTHON_LIBRARY_RPATH_DIRECTORY)

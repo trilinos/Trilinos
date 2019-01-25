@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,11 +30,11 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-      subroutine getss(ndbin, numess, idess, neess, ndess, ixeess, 
+      subroutine getss(ndbin, numess, idess, neess, ndess, ixeess,
      *  ixdess, lteess, ltsess, ltssnc, kfacss, a, allone, lessdf,
      *  *)
-      
-      
+
+
       integer idess(*), neess(*), ndess(*), ixeess(*), ixdess(*)
       integer lteess(*), ltsess(*)
       integer ltssnc(*)
@@ -42,11 +42,11 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       logical allone
 
       character*256 STRING
-      
+
 C ... Get the sideset ids
       call exgssi(ndbin, idess, ierr)
       if (ierr .gt. 0) return 1
-      
+
       isoff = 1
       inoff = 1
       idoff = 1
@@ -59,7 +59,7 @@ C ... Get the sideset ids
         return 1
       end if
 
-C ... Read each sideset      
+C ... Read each sideset
       itotdf = 0
       do 104 i=1, numess
 
@@ -70,7 +70,7 @@ C ... Get the sideset parameters
            call exerr('grepos/getss', 'Error from exgsp', ierr)
            return 1
         end if
-        
+
         if (nsides .gt. 0) then
           call exgss(ndbin, idess(i), lteess(isoff), ltsess(isoff),
      *      ierr)
@@ -80,7 +80,7 @@ C ... Get the sideset parameters
             return 1
           end if
         end if
-        
+
 C ... Count number of nodes in the node list
         incnt = 0
         do 102 ii = 0, nsides-1
@@ -98,18 +98,18 @@ C ... Count number of nodes in the node list
 
       call mdlong('FACESS', kfacss, itotdf)
       lessdf = itotdf
-      
+
       inoff = 0
       do i=1, numess
          call exgsp(ndbin, idess(i), nsides, ndist, ierr)
-         
+
 C     ... See if the number of distribution factors is 0 or 'incnt'
          if (ndist .eq. 0 .or. ndist .ne. ndess(i)) then
 C     ... Fill in the missing dist factors with '1.0'
             do ii = 0, ndess(i)-1
                a(kfacss+inoff+ii) = 1.0
             end do
-         else 
+         else
 C ... Read in the existing distribution factors
             call exgssd(ndbin, idess(i), a(kfacss+inoff), ierr)
          end if
@@ -122,10 +122,10 @@ C ... There are distribution factors, but an incorrect number
             call sqzstr(string, lstr)
             call prterr('ERROR',STRING(:LSTR))
          end if
-        
+
         inoff = inoff + ndess(i)
       end do
-      
+
 C... Check whether all distribution factors are constant for each sideset.
       lessnl = inoff - 1
       if (lessnl .gt. 0) then

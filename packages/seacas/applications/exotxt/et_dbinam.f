@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C     $Id: dbinam.f,v 1.7 2007/10/17 18:46:09 gdsjaar Exp $
 C=======================================================================
@@ -112,11 +112,11 @@ C     NVAREL - IN  - Number of element variables rea
 C     NAMGV  - OUT - Returned character array with global variable names
 C     NAMNV  - OUT - Returned character array with nodal variable names
 C     NAMEV  - OUT - Returned character array with element variable names
-C     IOERR   - OUT - error flag  
-   
+C     IOERR   - OUT - error flag
+
       character*(namlen) namgv(*), namnv(*), namev(*)
       integer ioerr
-      
+
       IOERR = 0
 
 C     Reads the names of the results variables from the database
@@ -130,21 +130,21 @@ C     call exgvan(fileid, vartyp, num_var, array_var_names(num_var), errorid)
       if (nvarel .gt. 0) then
          call exgvan(ndb, 'E', nvarel, namev, ierr)
       end if
-            
+
       DO 130 I = 1, nvargl
          CALL EXUPCS (namgv(i))
  130  CONTINUE
       CALL PCKSTR (NVARGL, namgv)
-      
+
       DO 140 I = 1, nvarnp
          CALL EXUPCS (namnv(i))
  140  CONTINUE
       CALL PCKSTR (NVARNP, namnv)
-      
+
       DO 150 I = 1, nvarel
          CALL EXUPCS (namev(i))
  150  CONTINUE
       CALL PCKSTR (NVAREL, namev)
-      
+
       return
       end

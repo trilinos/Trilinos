@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -121,17 +121,17 @@ C
      *                XXX(1,2,NG) * CCC(1,2) + XXX(1,3,NG) * CCC(1,3) +
      *                XXX(1,4,NG) * CCC(1,4) + XXX(1,5,NG) * CCC(1,5) +
      *                XXX(1,6,NG) * CCC(1,6) + XXX(1,7,NG) * CCC(1,7) +
-     *                XXX(1,8,NG) * CCC(1,8) 
+     *                XXX(1,8,NG) * CCC(1,8)
                   XINI(2) = XXX(1,1,NG) * CCC(2,1) +
      *                XXX(1,2,NG) * CCC(2,2) + XXX(1,3,NG) * CCC(2,3) +
      *                XXX(1,4,NG) * CCC(2,4) + XXX(1,5,NG) * CCC(2,5) +
      *                XXX(1,6,NG) * CCC(2,6) + XXX(1,7,NG) * CCC(2,7) +
-     *                XXX(1,8,NG) * CCC(2,8) 
+     *                XXX(1,8,NG) * CCC(2,8)
                   XINI(3) = XXX(1,1,NG) * CCC(3,1) +
      *                XXX(1,2,NG) * CCC(3,2) + XXX(1,3,NG) * CCC(3,3) +
      *                XXX(1,4,NG) * CCC(3,4) + XXX(1,5,NG) * CCC(3,5) +
      *                XXX(1,6,NG) * CCC(3,6) + XXX(1,7,NG) * CCC(3,7) +
-     *                XXX(1,8,NG) * CCC(3,8) 
+     *                XXX(1,8,NG) * CCC(3,8)
 C
                   AJ(1,1) = XXX(2,1,NG) * CCC(1,1)
      *                + XXX(2,2,NG) * CCC(1,2) + XXX(2,3,NG) * CCC(1,3)
@@ -218,7 +218,7 @@ C ... Changed from else if to if so 1 element and equal size blocks get correct 
                  VOLMN(2,MIEL) = VOLUME
                  IELM(2,MIEL)  = IEL
               END IF
-C     
+C
               if (volume .le. 0.0) then
                  write (*,*) 'Zero or negative volume at element',
      &                iel

@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,7 +31,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
       SUBROUTINE SYMSPH (LENE, LINK, NUMLNK, NUMATR, XN, YN, ZN, ATRIB,
-     *  BLKCOL, FFLAG, IDELB, VARNP, MODDET, ISPSOR, RAD, 
+     *  BLKCOL, FFLAG, IDELB, VARNP, MODDET, ISPSOR, RAD,
      *  IELBST, ISPBLK, HIDENP, *)
 C=======================================================================
 
@@ -98,7 +98,7 @@ C   --   Uses NELBLK of /DBNUMS/
       REAL RAD(NUMNP)
       INTEGER IELBST(NELBLK), ISPBLK(NUMNP)
       LOGICAL HIDENP(*)
-      
+
       LOGICAL CONTOR
 
       include 'cntr.blk'
@@ -153,7 +153,7 @@ C ... Determine if portion of sphere is in viewing window
  104  continue
       numsph = iel
 C ... Sort elements from smallest Z coord to largest.
-C     Sort is based on element center. 
+C     Sort is based on element center.
       if (is3dim) then
         call indexx (zn, ispsor, numsph, .FALSE.)
       end if
@@ -187,7 +187,7 @@ C
           IEBLST = IELB
           CALL UGRCOL (IELB, BLKCOL)
         END IF
-        
+
 C            --Draw circle
         IF (NPTSPH .GT. 1) THEN
           DO 110 N = 0, NPTSPH
@@ -197,8 +197,8 @@ C            --Draw circle
 
 C ... Fill the sphere if 'FILL' specified OR if in CONTOR mode AND
 C    the function value is within the the contour range.
-C    If  we fill with black, then we obscure the spheres that are 
-C    behind this sphere.          
+C    If  we fill with black, then we obscure the spheres that are
+C    behind this sphere.
           IF (NPTSPH .GT. 2 .AND. (FFLAG .EQ. 'FILL' .OR.
      *      (CONTOR .AND. ICOL .NE. -1))) THEN
             CALL MPD2PG (NPTSPH+1, XS, YS, 'S')

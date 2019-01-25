@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -122,38 +122,38 @@ c
 c
 c        parameters
 c
-      integer unit               
+      integer unit
 c          if > 0, the logical unit of the file to open.
 c          if < 0, the logical unit of the file to close.
 c          if = 0, close all files
-      logical ecodei             
+      logical ecodei
 c          On input, .TRUE., if program should abort
 c          if an error on opening the file occurred.
 c          .FALSE. otherwise.
-      logical ecodeo             
+      logical ecodeo
 c          On output, .TRUE. if the file opening occurred successfully.
 c          .FALSE. otherwise.
-      integer frecl              
+      integer frecl
 c          If a file is to be opened and it is a direct access file,
 c          the file's record length.
-c          If a single file ( not all files ) is to be closed, 
+c          If a single file ( not all files ) is to be closed,
 c          this parameter  = 1 to delete the file on closing.
 c          Otherwise, the default status parameter is used on the close
 c          call.
-      character type             
+      character type
 c          'o' if an old file,
 c          'n' if a new file,
 c          's' if a scratch file
 c          'u' if unknown
-      character fform            
+      character fform
 c          'u' if unformatted
 c          'f' if formatted
-      character facces           
+      character facces
 c          'd' if direct
 c           s' if sequential
-      character * (*) filn       
-c           Name of the file to open.  If ! = ' ', then filhnd calls 
-c           the SUPES routine EXNAME to get the filename associated 
+      character * (*) filn
+c           Name of the file to open.  If ! = ' ', then filhnd calls
+c           the SUPES routine EXNAME to get the filename associated
 c           with the specified unit number.
 c
 c           if unit <= 0, then all other paramaters are ignored.
@@ -161,25 +161,25 @@ c
 c
 c        declarations
 c
-      character*2048 filnam       
+      character*2048 filnam
 c           filename associated with unit
-      integer lname              
+      integer lname
 c           length of string filnam (less trailing blanks)
-      character*11 form          
+      character*11 form
 c           value of form keyword in open statement
-      character*10 access        
+      character*10 access
 c           value of access keyword in open statement
-      character*7 status         
+      character*7 status
 c           value of status keyword in open statement
-      integer lform,lstat        
+      integer lform,lstat
 c           length of form and status keywords  (less trailing blanks)
-      integer lacces             
+      integer lacces
 c           length of access keyword (less trailing blanks)
-      integer ios                
+      integer ios
 c           integer indicating error status of the open call.
 c           = 0 no error,
 c           = error code otherwise.
-      character*1 cparm          
+      character*1 cparm
 c           dummy argument for call to exparm
       character tform, ttype, tacces
 c           Temporary variables for storing modified values of fform,
@@ -191,15 +191,15 @@ c *****************************************************************
 c
 c        static declarations
 c
-      logical first              
+      logical first
       save first
 
       integer maxunits
-      parameter (maxunits=25)    
+      parameter (maxunits=25)
 c           maximum number of units that may be open at once.
-      integer numopn             
+      integer numopn
 c            number of currently open files
-      integer opnlst(maxunits)   
+      integer opnlst(maxunits)
 c            array of currently open unit
 c            numbers
 
@@ -214,7 +214,7 @@ c *********************************************************************
         numopn = 0
         first = .FALSE.
       end if
-      
+
 c      print *, 'numopen = ',numopn
 c      if ( numopn .gt. 0 )
 c     &    print *, 'list is ',(opnlst(i),i=1,numopn)

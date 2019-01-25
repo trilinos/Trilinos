@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C========================================================================
       SUBROUTINE EXTH(IGLND,INVCN,MAXLN,NOD,INVLEN,XA,YA,ZA,CNTRA,
@@ -38,10 +38,10 @@ C
 C************************************************************************
 C
 C Subroutine EXTH sets up the matrix and vectors for a least squares
-C linear interpolation/extrapolation of element variable data to the 
+C linear interpolation/extrapolation of element variable data to the
 C nodes for 3-D elements. This routine has been checked out for 8-node
 C hex and 4-node and 8-node (treated same as 4-node) tet elements.
-C In the special case of data from only 4 elements, the result is not 
+C In the special case of data from only 4 elements, the result is not
 C a true least squares fit in that the least squares error is zero.
 C
 C
@@ -57,7 +57,7 @@ C  MAXLN  INT   The maximum number of elements connected to any node
 C  NOD    INT   The local node used to get elements from INVCN
 C  INVLEN INT   The number of elements connected to NOD
 C  XA,etc REAL  Vectors containing nodal coordinates
-C  CNTRA  REAL  Array containing the coordinates of the element 
+C  CNTRA  REAL  Array containing the coordinates of the element
 C               centroids (1:3)
 C  SOLEA  REAL  The element variables
 C  SOLENA REAL  Element variables at nodes
@@ -113,7 +113,7 @@ C
       VN2 = VN2 / VNMAG
       VN3 = VN3 / VNMAG
 C
-C  Dot product of normal vector with vectors from first element 
+C  Dot product of normal vector with vectors from first element
 C  centroid to the remaining element centroids. If dot product
 C  is too small, data is coplanar - try the next vector.
 C  If dot product more then 0.1 times the vector, data is not
