@@ -959,7 +959,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
 UNIT_TEST_GROUP(double)
 #if 1
 UNIT_TEST_GROUP(int)
-UNIT_TEST_GROUP(long_long_type)
+//UNIT_TEST_GROUP(long_long_type)
 #endif
 
 }  // namespace
