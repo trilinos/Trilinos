@@ -172,12 +172,10 @@ protected:
       const ArrayView<const typename Adapter::part_t> &_partArray,
       typename Adapter::part_t &_numGlobalParts,
       ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &_metricsBase,
-      ArrayRCP<typename Adapter::scalar_t> &_globalSums){
-    globalWeightedCutsMessagesByPart <Adapter>(_env,
-            _problemComm, _graph, _partArray,
-            _numGlobalParts, _metricsBase,
-            _globalSums);
-  }
+      ArrayRCP<typename Adapter::scalar_t> &_globalSums) {
+        globalWeightedByPart <Adapter>(_env, _problemComm, _graph,
+          _partArray, _numGlobalParts, _metricsBase, _globalSums);
+      }
 public:
   virtual ~EvaluatePartition(){}
 
@@ -416,6 +414,33 @@ public:
     return graphMetrics[indexInArray]->getMetricValue("global sum");
   }
 
+  /*! \brief getTotalMessages
+   */
+  scalar_t getTotalMessages() const{
+    auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    if( graphMetrics.size() < 1 ) {
+      throw std::logic_error("getTotalMessages() was called but no metrics "
+                             "data was generated for " +
+                             std::string(GRAPH_METRICS_TYPE_NAME) + "." );
+    }
+    // TODO: Would be better to avoid hard coding the array access to [1]
+    return graphMetrics[1]->getMetricValue("global sum");
+  }
+
+
+  /*! \brief getMaxMessages
+   */
+  scalar_t getMaxMessages() const{
+    auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    if( graphMetrics.size() < 1 ) {
+      throw std::logic_error("getMaxMessages() was called but no metrics "
+                             "data was generated for " +
+                             std::string(GRAPH_METRICS_TYPE_NAME) + "." );
+    }
+    // TODO: Would be better to avoid hard coding the array access to [1]
+    return graphMetrics[1]->getMetricValue("global maximum");
+  }
+
   /*! \brief Print all metrics
    */
   void printMetrics(std::ostream &os) const {
@@ -538,20 +563,14 @@ void EvaluatePartition<Adapter>::sharedConstructor(
     RCP<const GraphModel<base_adapter_t> > graph = graphModel;
     if (graphModel == Teuchos::null) {
       graph = rcp(new GraphModel<base_adapter_t>(bia, env, problemComm,
-                                                modelFlags));
+        modelFlags));
     }
 
     // compute weighted cuts
     ArrayRCP<scalar_t> globalSums;
     try {
-      globalWeightedCutsByPart<Adapter>(env,
-                                        problemComm, graph, partArray,
-                                        numGlobalParts_, metricsBase_,
-                                        globalSums);
-      this->calculate_graph_metrics(env,
-              problemComm, graph, partArray,
-              numGlobalParts_, metricsBase_,
-              globalSums);
+      this->calculate_graph_metrics(env, problemComm, graph, partArray,
+        numGlobalParts_, metricsBase_, globalSums);
     }
     Z2_FORWARD_EXCEPTIONS;
 

@@ -626,7 +626,7 @@ template<class Scalar>
 void BackwardEulerStepper<Scalar>::addPoints(
   const Array<Scalar>& time_vec,
   const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
   )
 {
 

@@ -120,7 +120,7 @@ public:
       });
     }
   }
-  size_t team_shmem_size(int team_size ) const
+  size_t team_shmem_size(int /* team_size */ ) const
   {
     if (not use_shared_memory)
       return 0;
@@ -198,7 +198,7 @@ DOFDiv(const PHX::FieldTag & input,
 template<typename EvalT, typename TRAITS>
 void DOFDiv<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   if(not use_descriptors_)
     basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);

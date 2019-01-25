@@ -190,7 +190,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
       Y -A Epetra_MultiVector of dimension NumVectors containing result.
     \return Integer error code, set to 0 if successful.
   */
-  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return -1;}
+  virtual int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {return -1;}
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*!

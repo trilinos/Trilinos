@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     int info = 0;
     bool norm_failure = false;
     bool proc_verbose = false;
-    bool userandomrhs = true;
+    bool userandomrhs = false;
     int frequency = -1;        // frequency of status test output.
     int blocksize = 1;         // blocksize
     int numrhs = 1;            // number of right-hand sides to solve for

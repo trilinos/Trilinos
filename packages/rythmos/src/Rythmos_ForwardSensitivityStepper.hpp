@@ -923,7 +923,7 @@ bool ForwardSensitivityStepper<Scalar>::acceptsModel() const
 
 template<class Scalar>
 void ForwardSensitivityStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> >& model
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& /* model */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
@@ -934,7 +934,7 @@ void ForwardSensitivityStepper<Scalar>::setModel(
 
 template<class Scalar>
 void ForwardSensitivityStepper<Scalar>::setNonconstModel(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  const RCP<Thyra::ModelEvaluator<Scalar> >& /* model */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG( true,
@@ -1107,9 +1107,9 @@ ForwardSensitivityStepper<Scalar>::get_x_space() const
 
 template<class Scalar>
 void ForwardSensitivityStepper<Scalar>::addPoints(
-  const Array<Scalar>& time_vec,
-  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  const Array<Scalar>& /* time_vec */,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("Not implemented addPoints(...) yet but we could if we wanted!");
@@ -1217,7 +1217,7 @@ void ForwardSensitivityStepper<Scalar>::getNodes(
 
 template<class Scalar>
 void ForwardSensitivityStepper<Scalar>::removeNodes(
-  Array<Scalar>& time_vec
+  Array<Scalar>& /* time_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("Not implemented yet but we can!");
