@@ -264,11 +264,11 @@ main (int argc, char *argv[])
       TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Time", total_time);
 
       RCP<sparse_matrix_type> A;
-      RCP<vector_type> B, X_exact, X;
+      RCP<vector_type> B, X_exact, X, node_sigma;
       RCP<multivector_type> coords;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, comm, node, meshInput, inputList, problemStatistics,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
                                     out, err, verbose, debug);
       }
 
