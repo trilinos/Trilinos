@@ -529,6 +529,9 @@ namespace FROSch {
                     --------------------------------------------\n";
                 }
 
+                DDInterface_->identifyConnectivityEntities();
+                EntitySetPtrConstVecPtr Connect = DDInterface_->getConnectivityEntities();
+                
                 GOVec2D shortSubs,straightSubs,edgesSubs,facesSubs,entriesGraph;
                 entriesGraph.resize(this->K_->getMap()->getComm()->getSize());
                 
@@ -602,7 +605,6 @@ namespace FROSch {
                 } else{
                     FROSCH_ASSERT(0!=0,"Only Implemented for 2D and 3D");
                 }
-                
                 
                 Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
                 MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
