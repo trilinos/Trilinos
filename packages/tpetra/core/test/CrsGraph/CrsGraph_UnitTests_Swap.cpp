@@ -44,6 +44,8 @@
 #include <set>
 #include <unordered_map>
 #include <utility>
+#include <tuple>
+#include <vector>
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsGraph.hpp>
@@ -119,15 +121,15 @@ TEUCHOS_STATIC_SETUP()
 
 
 // comm           : a communicator with exactly 2 processes in it.
-// edges          : [ (u,v), ... ]
+// gbl_wgt_edges  : [ (u,v,w), ... ]  - weighted edges: u->v with weight w.
 // row_owners     : [ (u, pid), ... ]
 // gbl_num_columns: Max # of columns in the matrix-representation of the graph.
 //                  This should be >= the highest value of v from all edges (u,v) in edges.
 //                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
-template<class LO, class GO, class Node>
+template<class LO, class GO, class Node, class Scalar>
 Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> >
 generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
-                  const std::vector<std::pair<GO, GO>>   & gbl_edges,
+                  const std::vector<std::tuple<GO,GO,Scalar>> & gbl_wgt_edges,
                   const std::vector<std::pair<GO, int>>  & gbl_row_owners,
                   const size_t                             gbl_num_columns,
                   const bool                               do_fillComplete=true)
@@ -144,16 +146,18 @@ generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
     const int comm_rank = comm->getRank();
 
+    // fill in the row-to-columns map
     map_row_to_cols_type gbl_rows;
-    for(auto& e: gbl_edges)
+    for(auto& e: gbl_wgt_edges)
     {
-        if(gbl_rows.find(e.first) == gbl_rows.end())
+        if(gbl_rows.find(std::get<0>(e)) == gbl_rows.end())
         {
-            gbl_rows[ e.first ] = vec_go_type();
+            gbl_rows[ std::get<0>(e) ] = vec_go_type();
         }
-        gbl_rows[ e.first ].push_back(e.second);
+        gbl_rows[ std::get<0>(e) ].push_back( std::get<1>(e) );
     }
 
+    // fill in the row owner map
     map_rows_type gbl_row2pid;
     for(auto& p: gbl_row_owners) { gbl_row2pid.insert(p); }
 
@@ -163,8 +167,8 @@ generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
         std::cout << "p=0 | gbl_num_rows: " << gbl_rows.size() << std::endl;
         for(auto& p: gbl_rows)
         {
-            std::cout << "p=0 | gbl_row     : " << p.first << " (" << p.second.size() << ") ";
-            for(auto& j: p.second)
+            std::cout << "p=0 | gbl_row     : " << std::get<0>(p) << " (" << std::get<1>(p).size() << ") ";
+            for(auto& j: std::get<1>(p))
             {
                 std::cout << j << " ";
             }
@@ -247,7 +251,6 @@ generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
             {
                 gbl_inds.push_back(v);
             }
-
             if(verbose)
             {
                 std::cout << "p=" << comm_rank << " | " << "gbl_inds size = " << r.second.size() << std::endl;
@@ -259,7 +262,6 @@ generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
                 std::cout << "p=" << comm_rank << " | " << "insertGlobalIndices(" << irow << ", "
                           << r.second.size() << ", gbl_inds.data())" << std::endl;
             }
-
             output_graph->insertGlobalIndices(irow, r.second.size(), gbl_inds.data());
         }
     }
@@ -278,26 +280,247 @@ generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 }
 
 
-template<class Scalar, class LO, class GO, class Node>
+// comm           : a communicator with exactly 2 processes in it.
+// gbl_wgt_edges  : [ (u,v,w), ... ]  - weighted edges: u->v with weight w.
+// row_owners     : [ (u, pid), ... ]
+// gbl_num_columns: Max # of columns in the matrix-representation of the graph.
+//                  This should be >= the highest value of v from all edges (u,v) in edges.
+//                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
+template<class LO, class GO, class Node, class Scalar>
 Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node> >
 generate_crsmatrix(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
-                   const Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> > & graph)
+                   const Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> > & graph,
+                   const std::vector<std::tuple<GO,GO,Scalar>> & gbl_wgt_edges,
+                   const std::vector<std::pair<GO,int>> & gbl_row_owners,
+                   const size_t                           gbl_num_columns,
+                   const bool                             do_fillComplete=true)
 {
     using Teuchos::Comm;
 
-    using graph_type  = Tpetra::CrsGraph<LO, GO, Node>;           // Tpetra CrsGraph type
+    using map_type             = Tpetra::Map<LO, GO, Node>;         // Tpetra Map type
+    using map_rows_type        = std::map<GO, int>;                 // map rows to pid's
+    using vec_go_type          = std::vector<GO>;                   // vector of GlobalOrdinals
+    using map_row_to_cols_type = std::map<GO, vec_go_type>;         // Map rows to columns
+
+    //using graph_type  = Tpetra::CrsGraph<LO, GO, Node>;           // Tpetra CrsGraph type
+    //using map_type    = Tpetra::Map<LO, GO, Node>;                // Tpetra Map type (comment out to prevent unused warning)
     using matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;  // Tpetra CrsMatrix type
-    using map_type    = Tpetra::Map<LO, GO, Node>;                // Tpetra Map type
+
+    // Get test verbosity from the settings
+    const bool verbose = Tpetra::Details::Behavior::verbose() || true;
+
+    // Get my process id
+    const int comm_rank = comm->getRank();
+
+    // fill in the row-to-columns map
+    map_row_to_cols_type gbl_rows;
+    for(auto& e: gbl_wgt_edges)
+    {
+        if(gbl_rows.find(std::get<0>(e)) == gbl_rows.end())
+        {
+            gbl_rows[ std::get<0>(e) ] = vec_go_type();
+        }
+        gbl_rows[ std::get<0>(e) ].push_back( std::get<1>(e) );
+    }
+
+    // fill in the row owner map
+    map_rows_type gbl_row2pid;
+    for(auto& p: gbl_row_owners) { gbl_row2pid.insert(p); }
+
+    // Print out some debugging information on what's in the graph
+    if(verbose)
+    {
+        std::cout << "p=0 | gbl_num_rows: " << gbl_rows.size() << std::endl;
+        for(auto& p: gbl_rows)
+        {
+            std::cout << "p=0 | gbl_row     : " << std::get<0>(p) << " (" << std::get<1>(p).size() << ") ";
+            for(auto& j: std::get<1>(p))
+            {
+                std::cout << j << " ";
+            }
+            std::cout << std::endl;
+        }
+        for(auto& p: gbl_row2pid)
+            std::cout << "p=0 | gbl_row2pid : " << p.first << " => " << p.second << std::endl;
+    }
+
+
+
 
     // Create the matrix using the input graph.
     RCP<matrix_type> output_matrix(new matrix_type(graph));
 
-
     // WCMCLEN-SCAFFOLDING:  fill this in.
 
+    // graph_a/b are:  (0,0), (0,11), (1,3), (1,4), (3,2), 7,5), (7,7), (10,6)
+    //                 p0: 0,1,3
+    //                 p1: 7,10
+
+    // insertGlobalValues(GO globalRow, Teuchos::ArrayView<GO> & cols, Teuchos::ArrayView<Scalar> & vals);
+
+    if(0 == comm_rank)
+    {
+       Teuchos::Array<GO>     cols(5);
+       Teuchos::Array<Scalar> vals(5);
+       GO row_id = 0;
+       cols[0]   = 0;
+       cols[1]   = 11;
+       vals[0]   = 100;
+       vals[1]   = 111;
+       output_matrix->sumIntoGlobalValues(row_id, cols, vals);
+       row_id    = 1;
+       cols[0]   = 3;
+       cols[1]   = 4;
+       vals[0]   = 203;
+       vals[1]   = 204;
+       output_matrix->sumIntoGlobalValues(row_id, cols, vals);
+       row_id    = 3;
+       cols[0]   = 2;
+       vals[0]   = 302;
+       output_matrix->sumIntoGlobalValues(row_id, cols, vals);
+    }
+    else if(1 == comm_rank)
+    {
+        Teuchos::Array<GO>     cols(5);
+        Teuchos::Array<Scalar> vals(5);
+        GO row_id = 7;
+        cols[0] = 5;
+        cols[1] = 7;
+        vals[0] = 705;
+        vals[1] = 707;
+        output_matrix->sumIntoGlobalValues(row_id, cols, vals);
+        row_id = 10;
+        cols[0] = 6;
+        vals[0] = 1006;
+        output_matrix->sumIntoGlobalValues(row_id, cols, vals);
+    }
+
+    // FillComplete the matrix.
+    output_matrix->fillComplete();
 
     return output_matrix;
 }
+
+
+
+template<class LO, class GO, class Node, class Scalar>
+bool
+compare_crsmatrix(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
+                  Teuchos::FancyOStream                        & out,
+                  const Tpetra::CrsMatrix<Scalar,LO,GO,Node>   & matrix1,
+                  const Tpetra::CrsMatrix<Scalar,LO,GO,Node>   & matrix2)
+{
+    using Teuchos::Comm;
+
+    bool output = true;
+
+    if(!matrix1.isFillComplete() || !matrix2.isFillComplete())
+    {
+        out << "Compare: FillComplete check failed." << std::endl;
+        output = false;
+    }
+    if(!matrix1.getRangeMap()->isSameAs(*matrix2.getRangeMap()))
+    {
+        out << "Compare: RangeMap check failed." << std::endl;
+        output = false;
+    }
+    if(!matrix1.getRowMap()->isSameAs(*matrix2.getRowMap()))
+    {
+        out << "Compare: RowMap check failed." << std::endl;
+        output = false;
+    }
+    if(!matrix1.getColMap()->isSameAs(*matrix2.getColMap()))
+    {
+        out << "Compare: ColMap check failed." << std::endl;
+        output = false;
+    }
+    if(!matrix1.getDomainMap()->isSameAs(*matrix2.getDomainMap()))
+    {
+        out << "Compare: DomainMap check failed." << std::endl;
+        output = false;
+    }
+
+    auto rowptr1 = matrix1.getLocalMatrix().graph.row_map;
+    auto rowptr2 = matrix2.getLocalMatrix().graph.row_map;
+
+    auto colind1 = matrix1.getLocalMatrix().graph.entries;
+    auto colind2 = matrix2.getLocalMatrix().graph.entries;
+
+    auto values1 = matrix1.getLocalMatrix().graph.val;
+    auto values2 = matrix2.getLocalMatrix().graph.val;
+
+    if(rowptr1.extent(0) != rowptr2.extent(0))
+    {
+        out << "Compare: rowptr extent check failed." << std::endl;
+        output = false;
+    }
+    if(colind1.extent(0) != colind2.extent(0))
+    {
+        out << "Compare: colind extent check failed." << std::endl;
+        output = false;
+    }
+    if(values1.extent(0) != values2.extent(0))
+    {
+        out << "Compare: values extent check failed." << std::endl;
+        output = false;
+    }
+
+    bool success = true;
+    TEST_COMPARE_ARRAYS(rowptr1, rowptr2);
+    if(!success)
+    {
+        out << "Compare: rowptr match failed." << std::endl;
+        output = false;
+    }
+
+    TEST_COMPARE_ARRAYS(colind1, colind2);
+    if(!success)
+    {
+        out << "Compare: colind match failed." << std::endl;
+        output = false;
+    }
+
+    TEST_COMPARE_ARRAYS(values1, values2);
+    if(!success)
+    {
+        out << "Compare: values match failed." << std::endl;
+        output = false;
+    }
+
+    #if 0  // meh...
+    auto rowMap = matrix1.getRowMap();
+    const LO lclNumRows = rowMap.getNodeNumElements();
+
+    Teuchos::Array<GO> gblColIndsBuf_1;
+    Teuchos::Array<GO> gblColIndsBuf_2;
+
+    Teuchos::Array<Scalar> valsBuf_1;
+    Teuchos::Array<Scalar> valsBuf_2;
+
+    for(LO lclRow=0; lclRow<lclNumRows; lclRow++)
+    {
+        const GO gblRow = rowMap.getGlobalElement(lclRow);
+
+        size_t numEnt = matrix1.getNumEntriesInGlobalRow(gblRow);
+        if(numEnt > size_t(gblColIndsBuf_1.size()))
+        {
+            gblColIndsBuf_1.resize(numEnt);
+        }
+
+        numEnt = matrix2.getNumEntriesInGlobalRow(gblRow);
+        if(numEnt > size_t(gblColIndsBuf_2.size()))
+        {
+            gblColIndsBuf_2.resize(numEnt);
+        }
+
+        // so what gets me the # of things to resize the values arrays?!
+    }
+    #endif
+
+
+    return output;
+}
+
 
 
 //
@@ -312,13 +535,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 
     using comm_type       = Teuchos::RCP<const Teuchos::Comm<int>>;    // The comm type
 
+    using Scalar = int;
+
     using graph_type      = Tpetra::CrsGraph<LO, GO, Node>;            // Tpetra CrsGraph type
     using pair_edge_type  = std::pair<GO, GO>;                         // Edge typs, (u,v) using GlobalOrdinal type
     using pair_owner_type = std::pair<GO,int>;                         // For row owners, pairs are (rowid, comm rank)
     using vec_edges_type  = std::vector<pair_edge_type>;               // For vectors of edges
     using vec_owners_type = std::vector<pair_owner_type>;              // For vectors of owners
+    using vec_values_type = std::vector<Scalar>;
 
-    using Scalar = int;
+    using tuple_weighted_edge_type = std::tuple<GO,GO,Scalar>;         // Weighted edges (u,v,w)
+    using vec_weighted_edge_type   = std::vector<tuple_weighted_edge_type>;  // Vector of weighted edges
+
     using matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;       // Tpetra CrsMatrix type
 
 
@@ -349,18 +577,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         vec_owners_type vec_owners = {pair_owner_type(0, 0), pair_owner_type(1, 0), pair_owner_type(3, 0), pair_owner_type(7, 1),
                                       pair_owner_type(10, 1)};
 
+        // Create weighted edge pairs for graph/matrix type 1
+        vec_weighted_edge_type vec_edges_wgt = {
+            std::make_tuple(0,  0,   0),  std::make_tuple(0, 11,   11),
+            std::make_tuple(1,  3, 130),  std::make_tuple(1,  4,  104),
+            std::make_tuple(3,  2, 302),  std::make_tuple(7,  5,  705),
+            std::make_tuple(7,  7, 707),  std::make_tuple(10, 6, 1006)
+            };
+
          if(verbose)
          {
-            for(auto& p: vec_edges)  out << "e: " << p.first << ", " << p.second << std::endl;
-            for(auto& p: vec_owners) out << "o: " << p.first << ", " << p.second << std::endl;
+            for(auto& p: vec_edges)     out << "e : " << p.first << ", " << p.second << std::endl;
+            for(auto& p: vec_edges_wgt) out << "ew: " << std::get<0>(p) << ", " << std::get<1>(p) << ", " << std::get<2>(p) << std::endl;
+            for(auto& p: vec_owners)    out << "o : " << p.first << ", " << p.second << std::endl;
          }
 
         out << ">>> create graph_a" << std::endl;
-        RCP<graph_type> graph_a = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        RCP<graph_type> graph_a = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
         if(verbose) graph_a->describe(out, Teuchos::VERB_DEFAULT);
 
+        RCP<matrix_type> matrix_a = generate_crsmatrix<LO,GO,Node,Scalar>(comm, graph_a, vec_edges_wgt, vec_owners, 12);
+        if(verbose||1) matrix_a->describe(out, Teuchos::VERB_DEFAULT);
+
+
         out << ">>> create graph_b" << std::endl;
-        RCP<graph_type> graph_b = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        RCP<graph_type> graph_b = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
         if(verbose) graph_b->describe(out, Teuchos::VERB_DEFAULT);
 
         vec_edges.clear();
@@ -372,11 +613,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
                       pair_owner_type(10, 1)};
 
         out << ">>> create graph_c" << std::endl;
-        RCP<graph_type> graph_c = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        RCP<graph_type> graph_c = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
         if(verbose) graph_c->describe(out, Teuchos::VERB_DEFAULT);
 
         out << ">>> create graph_d" << std::endl;
-        RCP<graph_type> graph_d = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        RCP<graph_type> graph_d = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
         if(verbose) graph_d->describe(out, Teuchos::VERB_DEFAULT);
 
         // Verify the initial identical-to state of the graphs.
@@ -410,12 +651,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         //       Then matrix_c and matrix_d will match up with graph_c/d.
         //       Verify that they match in the same manner as the graphs.
         //       Swap matrices b and c and do the check...
-        RCP<matrix_type> matrix_a = generate_crsmatrix<Scalar,LO,GO,Node>(comm, graph_a);
+        //RCP<matrix_type> matrix_a = generate_crsmatrix<Scalar,LO,GO,Node>(comm, graph_a);
+        //RCP<matrix_type> matrix_b = generate_crsmatrix<Scalar,LO,GO,Node>(comm, graph_b);
 
-
-
-
-    }       // if(0==color) ...   i.e., if I am in the active communicator group for the test.
+    }  // if(0==color) ...   i.e., if I am in the active communicator group for the test.
 }
 
 

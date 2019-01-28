@@ -1028,17 +1028,6 @@ namespace Tpetra {
     void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
 
 
-    /// \brief True if and only if \c CrsMatrix is identical to this CrsMatrix
-    ///
-    /// This performs an _exact_ match check on the two matrices.
-    /// This is mostly used for testing the swap() command.
-    ///
-    /// \param matrix [in] a CrsMatrix to compare against this one.
-    ///
-    /// \return True if the other CrsMatrix is identical to this one.
-    bool isIdenticalTo(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix) const;
-
-
     //@}
     //! @name Methods for inserting, modifying, or removing entries
     //@{
@@ -2532,7 +2521,7 @@ namespace Tpetra {
     size_t getNodeNumEntries() const override;
 
     /// \brief Number of entries in the sparse matrix in the given
-    ///   globa row, on the calling (MPI) process.
+    ///   global row, on the calling (MPI) process.
     ///
     /// \return <tt>OrdinalTraits<size_t>::invalid()</tt>if the
     ///   specified global row index is invalid on the calling
@@ -2843,11 +2832,9 @@ namespace Tpetra {
     ///   entries of the matrix in a given row, using local column
     ///   indices.
     ///
-    /// \param localRow [in] Local index of the row for which to
-    ///   return entries.
-    /// \param colInds [out] Local column indices corresponding to
-    ///   values.
-    /// \param vals [out] Matrix values.
+    /// \param localRow   [in]  Local index of the row for which to return entries.
+    /// \param colInds    [out] Local column indices corresponding to values.
+    /// \param vals       [out] Matrix values.
     /// \param numEntries [out] Number of entries returned.
     ///
     /// Note: A std::runtime_error exception is thrown if either
@@ -2865,10 +2852,9 @@ namespace Tpetra {
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using global row and column indices.
     ///
-    /// \param GlobalRow [in] Global index of the row to view.
-    /// \param indices [out] On output: view of the global column
-    ///   indices in the row.
-    /// \param values [out] On output: view of the values in the row.
+    /// \param GlobalRow [in]  Global index of the row to view.
+    /// \param indices   [out] On output: view of the global column indices in the row.
+    /// \param values    [out] On output: view of the values in the row.
     ///
     /// \pre <tt>isLocallyIndexed () == false</tt>
     /// \post <tt>indices.size () == this->getNumEntriesInGlobalRow (GlobalRow)</tt>
@@ -2883,10 +2869,9 @@ namespace Tpetra {
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices.
     ///
-    /// \param LocalRow [in] Local index of the row to view.
-    /// \param indices [out] On output: view of the local column
-    ///   indices in the row.
-    /// \param values [out] On output: view of the values in the row.
+    /// \param LocalRow [in]  Local index of the row to view.
+    /// \param indices  [out] On output: view of the local column indices in the row.
+    /// \param values   [out] On output: view of the values in the row.
     ///
     /// \pre <tt>isGloballyIndexed () == false</tt>
     /// \post <tt>indices.size () == this->getNumEntriesInLocalRow (LocalRow)</tt>
@@ -2916,12 +2901,10 @@ namespace Tpetra {
     /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
     /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
     ///
-    /// \param lclRow [in] Local index of the row.
-    /// \param numEnt [out] Number of entries in the row that are
-    ///   stored on the calling process.
-    /// \param lclColInds [out] Local indices of the columns
-    ///   corresponding to values.
-    /// \param vals [out] Matrix values.
+    /// \param lclRow     [in]  Local index of the row.
+    /// \param numEnt     [out] Number of entries in the row that are stored on the calling process.
+    /// \param lclColInds [out] Local indices of the columns corresponding to values.
+    /// \param vals       [out] Matrix values.
     ///
     /// \return Error code; zero on no error.
     LocalOrdinal
@@ -2937,13 +2920,11 @@ namespace Tpetra {
     /// The order of arguments exactly matches those of
     /// Epetra_CrsMatrix::ExtractMyRowView.
     ///
-    /// \param lclRow [in] Local index of the row to view.
+    /// \param lclRow [in]  Local index of the row to view.
     /// \param numEnt [out] On output: Number of entries in the row.
-    /// \param val [out] On successful output: View of the values in
-    ///   the row.  Output value is undefined if not successful.
-    /// \param ind [out] On successful output: View of the local
-    ///   column indices in the row.  Output value is undefined if not
-    ///   successful.
+    /// \param val    [out] On successful output: View of the values in the row. Output value is undefined if not successful.
+    /// \param ind    [out] On successful output: View of the local column indices in the row.
+    ///                     Output value is undefined if not successful.
     ///
     /// \return Zero if successful, else a nonzero error code.
     ///

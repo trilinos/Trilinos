@@ -698,21 +698,6 @@ namespace Tpetra {
 
   }
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isIdenticalTo(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix) const
-  {
-    bool output = true;
-
-    // WCMCLEN SCAFFOLDING TODO: Implement this...
-
-
-    return output;
-  }
-
-
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::Comm<int> >
