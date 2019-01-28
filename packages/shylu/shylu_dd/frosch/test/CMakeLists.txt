@@ -1,14 +1,9 @@
 ADD_SUBDIRECTORIES(
     Import_Tpetra
-)
-
-IF(NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
-ADD_SUBDIRECTORIES(
     InterfacePartitionOfUnity
     InterfaceSets
     LocalPartitionOfUnityBasis
 )
-ENDIF()
 
 IF(ShyLU_DDFROSch_ENABLE_Belos AND KOKKOS_ENABLE_SERIAL AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
 ADD_SUBDIRECTORIES(
