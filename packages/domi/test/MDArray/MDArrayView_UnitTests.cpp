@@ -44,6 +44,8 @@
 
 #include "MDArray_UnitTest_helpers.hpp"
 
+typedef long long long_long_type;
+
 namespace
 {
 
@@ -467,8 +469,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArrayView, toString3D, T )
 
 UNIT_TEST_GROUP(int)
 #if 1
-UNIT_TEST_GROUP(long)
-UNIT_TEST_GROUP(float)
+UNIT_TEST_GROUP(long_long_type)
 UNIT_TEST_GROUP(double)
 #endif
 

@@ -42,7 +42,7 @@
 #include "Trilinos_Util.h"
 #include "Epetra_BLAS.h"
 
-void Trilinos_Util_dusmm(int m, int nrhs, int k, double alpha, SPBLASMAT *A,
+void Trilinos_Util_dusmm(int m, int nrhs, int /* k */, double alpha, SPBLASMAT *A,
 		 double *x, int xstride, double beta, double *b, int bstride)
  
 /*  Compute sparse matrix time dense matrix multiply. Only works for VBR now.

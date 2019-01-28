@@ -77,12 +77,23 @@ echo -e ""
 : ${BUILD_NUMBER:?}
 : ${WORKSPACE:?}
 
-source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 declare -i ierror=0
 #Have to keep loading git
-module load sems-git/2.10.1
-
+cuda_regex=".*(_cuda_).*"
+ride_regex=".*(ride).*"
+if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        module load git/2.10.1
+    else
+        echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
+        exit -1
+    fi
+else
+    source /projects/sems/modulefiles/utils/sems-modules-init.sh
+    module load sems-git/2.10.1
+fi
 
 #--------------------------------------------
 # Get Trilinos scripts and PR merge repo dirs
@@ -220,5 +231,3 @@ fi
 # Return to previous directory
 popd &> /dev/null
 echo -e "Set CWD = `pwd`"
-
-

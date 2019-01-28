@@ -122,7 +122,7 @@ namespace {
       }
     }
 
-    size_t team_shmem_size(int team_size ) const
+    size_t team_shmem_size(int /* team_size */ ) const
     {
       if (not use_shared_memory_)
 	return 0;
@@ -194,7 +194,7 @@ void
 DOFGradient<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
   if(not use_descriptors_)
     basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);

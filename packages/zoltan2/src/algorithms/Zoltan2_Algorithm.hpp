@@ -150,7 +150,7 @@ public:
   //          Not all partitioning algorithms will support
   //          this method.
   //
-  virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
+  virtual std::vector<coordinateModelPartBox> &
   getPartBoxesView() const
   {
     Z2_THROW_NOT_IMPLEMENTED

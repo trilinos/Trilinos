@@ -415,7 +415,7 @@ public:
 
   /*! \brief returns the part box boundary list.
    */
-  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > &
+  std::vector<Zoltan2::coordinateModelPartBox> &
   getPartBoxesView() const
   {
     return this->algorithm_->getPartBoxesView();
@@ -551,7 +551,7 @@ private:
   const RCP<const Comm<int> > comm_;       // the problem communicator
 
   //part box boundaries as a result of geometric partitioning algorithm.
-  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
+  RCP<std::vector<Zoltan2::coordinateModelPartBox> > partBoxes;
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process

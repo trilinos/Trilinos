@@ -530,9 +530,9 @@ ImplicitBDFStepper<Scalar>::get_x_space() const
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::addPoints(
-  const Array<Scalar>& time_vec,
-  const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  const Array<Scalar>& /* time_vec */,
+  const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */,
+  const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -643,7 +643,7 @@ void ImplicitBDFStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
+void ImplicitBDFStepper<Scalar>::removeNodes(Array<Scalar>& /* time_vec */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
     "Error, removeNodes is not implemented for ImplicitBDFStepper.\n");

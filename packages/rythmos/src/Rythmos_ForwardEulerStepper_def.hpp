@@ -474,9 +474,9 @@ void ForwardEulerStepper<Scalar>::describe(
 
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::addPoints(
-    const Array<Scalar>& time_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    const Array<Scalar>& /* time_vec */
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
     )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ForwardEulerStepper.\n");
@@ -533,7 +533,7 @@ void ForwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 }
 
 template<class Scalar>
-void ForwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
+void ForwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& /* time_vec */) 
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ForwardEulerStepper.\n");
 }

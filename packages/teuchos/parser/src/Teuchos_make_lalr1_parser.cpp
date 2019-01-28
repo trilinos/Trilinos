@@ -436,7 +436,7 @@ static std::string escape_dot(std::string const& s) {
 void print_graphviz(
     std::string const& filepath,
     ParserInProgress const& pip,
-    bool verbose,
+    bool /* verbose */,
     std::ostream& os
     ) {
   const StatesInProgress& sips = pip.states;

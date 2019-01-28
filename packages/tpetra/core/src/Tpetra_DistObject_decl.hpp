@@ -776,16 +776,16 @@ namespace Tpetra {
     ///   permuted.  They are listed by their LID in the source
     ///   object.
     virtual void
-    copyAndPermute (const SrcDistObject& source,
-                    size_t numSameIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs)
+    copyAndPermute (const SrcDistObject& /* source */,
+                    size_t /* numSameIDs */,
+                    const Teuchos::ArrayView<const local_ordinal_type>& /* permuteToLIDs */,
+                    const Teuchos::ArrayView<const local_ordinal_type>& /* permuteFromLIDs */)
     {}
     virtual void
-    copyAndPermuteNew (const SrcDistObject& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+    copyAndPermuteNew (const SrcDistObject& /* source */,
+                       const size_t /* numSameIDs */,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& /* permuteToLIDs */,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& /* permuteFromLIDs */)
     {}
 
     /// \brief Perform any packing or preparation required for communication.
@@ -811,21 +811,21 @@ namespace Tpetra {
     ///
     /// \param distor [in] The Distributor object we are using.
     virtual void
-    packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
-                    Teuchos::Array<packet_type>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor &distor)
+    packAndPrepare (const SrcDistObject& /* source */,
+                    const Teuchos::ArrayView<const local_ordinal_type>& /* exportLIDs */,
+                    Teuchos::Array<packet_type>& /* exports */,
+                    const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                    size_t& /* constantNumPackets */,
+                    Distributor &/* distor */)
     {}
 
     virtual void
-    packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
-                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor)
+    packAndPrepareNew (const SrcDistObject& /* source */,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& /* exportLIDs */,
+                       Kokkos::DualView<packet_type*, buffer_device_type>& /* exports */,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                       size_t& /* constantNumPackets */,
+                       Distributor& /* distor */)
     {}
 
     /// \brief Perform any unpacking and combining after communication
@@ -852,12 +852,12 @@ namespace Tpetra {
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
-                      const Teuchos::ArrayView<const packet_type>& imports,
-                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor &distor,
-                      CombineMode CM)
+    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& /* importLIDs */,
+                      const Teuchos::ArrayView<const packet_type>& /* imports */,
+                      const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                      size_t /* constantNumPackets */,
+                      Distributor &/* distor */,
+                      CombineMode /* CM */)
     {}
 
     /// \brief Perform any unpacking and combining after communication
@@ -886,12 +886,12 @@ namespace Tpetra {
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                         const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
-                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
-                         const size_t constantNumPackets,
-                         Distributor& distor,
-                         const CombineMode CM)
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& /* importLIDs */,
+                         const Kokkos::DualView<const packet_type*, buffer_device_type>& /* imports */,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                         const size_t /* constantNumPackets */,
+                         Distributor& /* distor */,
+                         const CombineMode /* CM */)
     {}
     //@}
 

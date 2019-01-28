@@ -64,6 +64,14 @@ VariableTensorConductivity<EvalT,Traits>::VariableTensorConductivity(const std::
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
+void VariableTensorConductivity<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
+                                                                     PHX::FieldManager<Traits>& /* fm */)
+{
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
+}
+
+//**********************************************************************
+template <typename EvalT,typename Traits>
 void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   using panzer::index_t;
@@ -86,9 +94,9 @@ void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::E
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
 
-        const ScalarT& x = coords(cell,point,0);
-        const ScalarT& y = coords(cell,point,1);
-        const ScalarT& z = coords(cell,point,2);
+        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        const ScalarT& z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
 
         if ((xl0<=x) && (x<=xr0) &&
             (yl0<=y) && (y<=yr0) &&
@@ -143,8 +151,8 @@ void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::E
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
 
-        const ScalarT& x = coords(cell,point,0);
-        const ScalarT& y = coords(cell,point,1);
+        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
 
         if ((xl0<=x) && (x<=xr0) &&
             (yl0<=y) && (y<=yr0)) {
