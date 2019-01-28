@@ -188,7 +188,7 @@ namespace Galeri {
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
 
-      SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
+      SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero(), two = one+one;
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim_);        // cache
       for (size_t i = 0; i < elements_.size(); i++) {
         // Select nodes subvector
@@ -311,7 +311,7 @@ namespace Galeri {
                   if ((j == k) || (std::abs(j-k) <  4 && ((j+k) & 0x1)) || (std::abs(j-k) == 4)) {
                     // Nodes j and k are connected by an edge, or j == k
                     LO k0 = numDofPerNode*k, k1 = k0+1, k2 = k0+2;
-                    SC f = pow(2.0*Teuchos::ScalarTraits<SC>::one(), Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
+                    SC f = TST::pow(two, Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
 
                     KE(j0,k0) *= f; KE(j0,k1) *= f; KE(j0,k2) *= f;
                     KE(j1,k0) *= f; KE(j1,k1) *= f; KE(j1,k2) *= f;
@@ -546,20 +546,29 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDxi(const std::vector<Point>& refPoints, Point& gaussPoint, SC * dxi) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar eight = one+one+one+one+one+one+one+one;
+      const Scalar eighth = one / eight;
       for (size_t j = 0; j < refPoints.size(); j++)
-        dxi[j] = refPoints[j].x * (1.0 + refPoints[j].y*gaussPoint.y) * (1.0 + refPoints[j].z*gaussPoint.z) / 8.;
+        dxi[j] = refPoints[j].x * (one + refPoints[j].y*gaussPoint.y) * (one + refPoints[j].z*gaussPoint.z) * eighth;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC * deta) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar eight = one+one+one+one+one+one+one+one;
+      const Scalar eighth = one / eight;
       for (size_t j = 0; j < refPoints.size(); j++)
-        deta[j] = (1.0 + refPoints[j].x*gaussPoint.x) * refPoints[j].y * (1.0 + refPoints[j].z*gaussPoint.z) / 8.;
+        deta[j] = (one + refPoints[j].x*gaussPoint.x) * refPoints[j].y * (one + refPoints[j].z*gaussPoint.z) * eighth;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDzeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC * dzeta) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar eight = one+one+one+one+one+one+one+one;
+      const Scalar eighth = one / eight;
       for (size_t j = 0; j < refPoints.size(); j++)
-        dzeta[j] = (1.0 + refPoints[j].x*gaussPoint.x) * (1.0 + refPoints[j].y*gaussPoint.y) * refPoints[j].z / 8.;
+        dzeta[j] = (one + refPoints[j].x*gaussPoint.x) * (one + refPoints[j].y*gaussPoint.y) * refPoints[j].z * eighth;
     }
 
   } // namespace Xpetra

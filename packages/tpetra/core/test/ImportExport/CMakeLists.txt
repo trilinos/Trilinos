@@ -174,3 +174,22 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 5
   STANDARD_PASS_OUTPUT
   )
+
+# Always build the test, whether or not MPI is enabled,
+# but only run it when MPI is enabled, because it is only
+# meaningful in that case.
+TRIBITS_ADD_EXECUTABLE(
+  Issue_3968
+  SOURCES
+    Issue_3968
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  Issue_3968
+  NAME Issue_3968_mpi
+  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )

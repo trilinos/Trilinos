@@ -58,6 +58,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_FEMultiVector.hpp"
+#include "Tpetra_Assembly_Helpers.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 
@@ -563,9 +564,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<Kokkos::HostSpace> ();
-      auto X1_local = X1->template getLocalView<Kokkos::HostSpace> ();
-      auto X2_local = X2->template getLocalView<Kokkos::HostSpace> ();
+      auto X_local = X->getLocalViewHost ();
+      auto X1_local = X1->getLocalViewHost ();
+      auto X2_local = X2->getLocalViewHost ();
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -769,6 +770,46 @@ namespace {
   }
 
 
+// ===============================================================================
+
+ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, AssemblyHelpers, LO , GO , Scalar , Node )
+  {
+  using Tpetra::Import; 
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const RCP<const Comm<int> > comm = Tpetra::getDefaultComm();   
+    int rank = comm->getRank();
+    int size = comm->getSize();
+
+    // create maps
+    const size_t numLocal = 10;
+    const size_t numOverlap = numLocal + (rank!=0) + (rank!=size-1);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    
+    Array<GO> overlapList(numOverlap);
+    for(size_t i = 0; i< numLocal; i++) {
+      overlapList[i] = map->getGlobalElement(i);
+    }
+    size_t iii = numLocal;
+    if(rank!=0)      {overlapList[iii] = overlapList[0]-1; iii++;}
+    if(rank!=size-1) {overlapList[iii] = overlapList[numLocal-1]+1;}
+
+
+    RCP<const Map<LO,GO,Node> > overlapMap    = rcp(new Map<LO,GO,Node>(INVALID,overlapList(),0,comm));
+    RCP<const Import<LO,GO,Node> > importer   = rcp(new Import<LO,GO,Node>(map,overlapMap));
+    
+    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v1(map,importer,1); 
+    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v2(map,importer,1); 
+    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v3(map,importer,1); 
+
+
+    // Just check to make sure beginFill() / endFill() compile
+    Tpetra::beginFill(v1,v2,v3);
+
+    Tpetra::endFill(v1,v2,v3);
+
+
+
+  }
 
 
 // ===============================================================================
@@ -781,7 +822,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetView_Type3, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type1, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type2, LO, GO, SC, NO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type3, LO, GO, SC, NO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, OffsetViewZeroLength_Type3, LO, GO, SC, NO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, AssemblyHelpers, LO, GO, SC, NO )
 
  
 

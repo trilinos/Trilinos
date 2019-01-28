@@ -1403,7 +1403,7 @@ template<typename int_type>
 int MatrixMatrix::Tjacobi_A_B(double omega,
                              const Epetra_Vector & Dinv,
                              const Epetra_CrsMatrix & A,
-                             CrsMatrixStruct & Aview,
+                             CrsMatrixStruct & /* Aview */,
                              const Epetra_CrsMatrix & B,
                              CrsMatrixStruct& Bview,
                              Epetra_CrsMatrix& C,

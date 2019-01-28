@@ -15,6 +15,7 @@ namespace Details {
 
 namespace BehaviorDetails {
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
+bool verboseDisabled_ = false;
 }
 
 namespace { // (anonymous)
@@ -238,7 +239,7 @@ namespace { // (anonymous)
 #else
     return false;
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
-  }
+  }   
 
 } // namespace (anonymous)
 
@@ -259,6 +260,8 @@ bool Behavior::debug ()
 
 bool Behavior::verbose ()
 {
+  if (BehaviorDetails::verboseDisabled_) return false;
+
   constexpr char envVarName[] = "TPETRA_VERBOSE";
   constexpr bool defaultValue = verboseDefault ();
 
@@ -287,6 +290,21 @@ bool Behavior::assumeMpiIsCudaAware ()
                                                    defaultValue);
 }
 
+int Behavior::TAFC_OptimizationCoreCount () 
+{
+    // only call getenv once, save the value.
+    static int savedval=-1;
+    if(savedval!=-1) return savedval;
+    const char* varVal = std::getenv ("MM_TAFC_OptimizationCoreCount");
+    if (varVal == NULL) {
+        savedval = 3000; 
+        return savedval; 
+    }
+    savedval = std::stoi(std::string(varVal));
+    return savedval;
+}
+
+
 bool Behavior::debug (const char name[])
 {
   constexpr char envVarName[] = "TPETRA_DEBUG";
@@ -303,6 +321,8 @@ bool Behavior::debug (const char name[])
 
 bool Behavior::verbose (const char name[])
 {
+  if (BehaviorDetails::verboseDisabled_) return false;
+
   constexpr char envVarName[] = "TPETRA_VERBOSE";
   constexpr bool defaultValue = false;
 
@@ -313,6 +333,14 @@ bool Behavior::verbose (const char name[])
                                                         initialized_,
                                                         envVarName,
                                                         defaultValue);
+}
+
+void Behavior::enable_verbose_behavior () {
+  BehaviorDetails::verboseDisabled_ = false;
+}
+
+void Behavior::disable_verbose_behavior () {
+  BehaviorDetails::verboseDisabled_ = true;
 }
 
 } // namespace Details

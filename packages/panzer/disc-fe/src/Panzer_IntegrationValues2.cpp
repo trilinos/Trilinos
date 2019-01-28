@@ -260,7 +260,8 @@ getIntrepidCubature(const panzer::IntegrationRule & ir) const
 // ***********************************************************
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
+evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates,
+               const int in_num_cells)
 {
   typedef panzer::IntegrationDescriptor ID;
   const bool is_surface = int_rule->getType() == ID::SURFACE;
@@ -269,19 +270,20 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
   TEUCHOS_ASSERT(not (is_surface and is_cv));
 
   if(is_surface){
-    generateSurfaceCubatureValues(in_node_coordinates);
+    generateSurfaceCubatureValues(in_node_coordinates,in_num_cells);
   } else if (is_cv) {
-    getCubatureCV(in_node_coordinates);
-    evaluateValuesCV(in_node_coordinates);
+    getCubatureCV(in_node_coordinates, in_num_cells);
+    evaluateValuesCV(in_node_coordinates, in_num_cells);
   } else {
-    getCubature(in_node_coordinates);
-    evaluateRemainingValues(in_node_coordinates);
+    getCubature(in_node_coordinates, in_num_cells);
+    evaluateRemainingValues(in_node_coordinates, in_num_cells);
   }
 }
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
+getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
+            const int in_num_cells)
 {
 
   int num_space_dim = int_rule->topology->getDimension();
@@ -306,9 +308,12 @@ getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
   }
 
   // IP coordinates
-  cell_tools.mapToPhysicalFrame(ip_coordinates.get_view(),
+  const int num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : in_num_cells;
+  auto s_ip_coordinates = Kokkos::subview(ip_coordinates.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL());
+  auto s_in_node_coordinates = Kokkos::subview(in_node_coordinates.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL());
+  cell_tools.mapToPhysicalFrame(s_ip_coordinates,
                                 dyn_cub_points.get_view(),
-                                in_node_coordinates.get_view(),
+                                s_in_node_coordinates,
                                 *(int_rule->topology));
 }
 
@@ -565,7 +570,8 @@ uniqueCoordOrdering(Array_CellIPDim & coords,
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
+generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
+                              const int in_num_cells)
 {
 
   TEUCHOS_ASSERT(int_rule->getType() == IntegrationDescriptor::SURFACE);
@@ -575,9 +581,10 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   const shards::CellTopology & cell_topology = *(int_rule->topology);
   const panzer::IntegrationRule & ir = *int_rule;
 
+  const int num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : in_num_cells;
+
   // Copy over coordinates
   {
-    const int num_cells = in_node_coordinates.extent(0);
     const int num_nodes = in_node_coordinates.extent(1);
     const int num_dims = in_node_coordinates.extent(2);
 
@@ -593,7 +600,6 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // NOTE: We are assuming that each face can have a different number of points.
   // Not sure if this is necessary, but it requires a lot of additional allocations
 
-  const int num_cells = in_node_coordinates.extent(0);
   const int cell_dim = cell_topology.getDimension();
   const int subcell_dim = cell_topology.getDimension()-1;
   const int num_subcells = cell_topology.getSubcellCount(subcell_dim);
@@ -601,144 +607,147 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   Intrepid2::DefaultCubatureFactory cubature_factory;
 
   // We get to build up our cubature one face at a time
-  int point_offset=0;
-  for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index) {
+  {
+    int point_offset=0;
+    for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index) {
 
-    // Default for 1D
-    int num_points_on_face = 1;
+      // Default for 1D
+      int num_points_on_face = 1;
 
-    // Get the cubature for the side
-    Kokkos::DynRankView<double,PHX::Device> side_cub_weights;
-    Kokkos::DynRankView<double,PHX::Device> side_cub_points;
-    if(cell_dim==1){
-      side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("side_cub_weights",num_points_on_face);
-      side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_side_cub_points",num_points_on_face,cell_dim);
-      side_cub_weights(0)=1.;
-      side_cub_points(0,0) = (subcell_index==0)? -1. : 1.;
-    } else {
+      // Get the cubature for the side
+      Kokkos::DynRankView<double,PHX::Device> tmp_side_cub_weights;
+      Kokkos::DynRankView<double,PHX::Device> tmp_side_cub_points;
+      if(cell_dim==1){
+        tmp_side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("tmp_side_cub_weights",num_points_on_face);
+        tmp_side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_tmp_side_cub_points",num_points_on_face,cell_dim);
+        tmp_side_cub_weights(0)=1.;
+        tmp_side_cub_points(0,0) = (subcell_index==0)? -1. : 1.;
+      } else {
 
-      // Get the face topology from the cell topology
-      const shards::CellTopology face_topology(cell_topology.getCellTopologyData(subcell_dim,subcell_index));
+        // Get the face topology from the cell topology
+        const shards::CellTopology face_topology(cell_topology.getCellTopologyData(subcell_dim,subcell_index));
 
-      auto ic = cubature_factory.create<PHX::Device::execution_space,double,double>(face_topology,ir.getOrder());
-      num_points_on_face = ic->getNumPoints();
+        auto ic = cubature_factory.create<PHX::Device::execution_space,double,double>(face_topology,ir.getOrder());
+        num_points_on_face = ic->getNumPoints();
 
-      side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("side_cub_weights",num_points_on_face);
-      side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_side_cub_points",num_points_on_face,cell_dim);
+        tmp_side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("tmp_side_cub_weights",num_points_on_face);
+        tmp_side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_tmp_side_cub_points",num_points_on_face,cell_dim);
 
-      auto subcell_cub_points = Kokkos::DynRankView<double,PHX::Device>("side_cub_points",num_points_on_face,subcell_dim);
+        auto subcell_cub_points = Kokkos::DynRankView<double,PHX::Device>("subcell_cub_points",num_points_on_face,subcell_dim);
 
-      // Get the reference face points
-      ic->getCubature(subcell_cub_points, side_cub_weights);
+        // Get the reference face points
+        ic->getCubature(subcell_cub_points, tmp_side_cub_weights);
 
       // Convert from reference face points to reference cell points
-      cell_tools.mapToReferenceSubcell(side_cub_points,
-                                       subcell_cub_points,
-                                       subcell_dim,
-                                       subcell_index,
+        cell_tools.mapToReferenceSubcell(tmp_side_cub_points,
+                                         subcell_cub_points,
+                                         subcell_dim,
+                                         subcell_index,
                                        cell_topology);
-    }
-
-
-    for(int local_point=0;local_point<num_points_on_face;++local_point){
-      const int point = point_offset + local_point;
-      for(int dim=0;dim<cell_dim;++dim){
-        cub_points(point,dim) = side_cub_points(local_point,dim);
-      }
-    }
-
-
-    // Map from side points to physical points
-    auto side_ip_coordinates = Kokkos::DynRankView<Scalar,PHX::Device>("side_ip_coordinates",num_cells,num_points_on_face,cell_dim);
-    cell_tools.mapToPhysicalFrame(side_ip_coordinates,
-                                  side_cub_points,
-                                  node_coordinates.get_view(),
-                                  cell_topology);
-
-    // Create a jacobian and his friends for this side
-    auto side_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_jac",num_cells,num_points_on_face,cell_dim,cell_dim);
-    cell_tools.setJacobian(side_jacobian,
-                           side_cub_points,
-                           node_coordinates.get_view(),
-                           cell_topology);
-
-    auto side_inverse_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_inv_jac",num_cells,num_points_on_face,cell_dim,cell_dim);
-    cell_tools.setJacobianInv(side_inverse_jacobian, side_jacobian);
-
-    auto side_det_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_det_jac",num_cells,num_points_on_face);
-    cell_tools.setJacobianDet(side_det_jacobian, side_jacobian);
-
-    // Calculate measures (quadrature weights in physical space) for this side
-    auto side_weighted_measure = Kokkos::DynRankView<Scalar,PHX::Device>("side_weighted_measure",num_cells,num_points_on_face);
-    if(cell_dim == 1){
-      Kokkos::deep_copy(side_weighted_measure, side_cub_weights(0));
-    } else if(cell_dim == 2){
-      Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-              computeEdgeMeasure(side_weighted_measure, side_jacobian, side_cub_weights,
-                                 subcell_index,cell_topology,
-                                 scratch_for_compute_side_measure.get_view());
-    } else if(cell_dim == 3){
-      Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-              computeFaceMeasure(side_weighted_measure, side_jacobian, side_cub_weights,
-                                 subcell_index,cell_topology,
-                                 scratch_for_compute_side_measure.get_view());
-    }
-
-    // Calculate normals
-    auto side_normals = Kokkos::DynRankView<Scalar,PHX::Device>("side_normals",num_cells,num_points_on_face,cell_dim);
-    if(cell_dim == 1){
-
-      int other_subcell_index = (subcell_index==0) ? 1 : 0;
-
-      for(int cell=0;cell<num_cells;++cell){
-        Scalar norm = (in_node_coordinates(cell,subcell_index,0) - in_node_coordinates(cell,other_subcell_index,0));
-        side_normals(cell,0,0) = norm / fabs(norm);
       }
 
-    } else {
 
-      cell_tools.getPhysicalSideNormals(side_normals,side_jacobian,subcell_index,cell_topology);
+      for(int local_point=0;local_point<num_points_on_face;++local_point){
+        const int point = point_offset + local_point;
+        for(int dim=0;dim<cell_dim;++dim){
+          cub_points(point,dim) = tmp_side_cub_points(local_point,dim);
+        }
+      }
 
-      // Normalize each normal
-      for(int cell=0;cell<num_cells;++cell){
-        for(int point=0;point<num_points_on_face;++point){
-          Scalar n = 0.;
-          for(int dim=0;dim<cell_dim;++dim){
-            n += side_normals(cell,point,dim)*side_normals(cell,point,dim);
-          }
-          // If n is zero then this is - hopefully - a virtual cell
-          if(n > 0.){
-            n = std::sqrt(n);
+
+      // Map from side points to physical points
+      auto side_ip_coordinates = Kokkos::DynRankView<Scalar,PHX::Device>("side_ip_coordinates",num_cells,num_points_on_face,cell_dim);
+      auto s_node_coordinates = Kokkos::subview(node_coordinates.get_view(),std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL);
+      cell_tools.mapToPhysicalFrame(side_ip_coordinates,
+                                    tmp_side_cub_points,
+                                    s_node_coordinates,
+                                    cell_topology);
+
+      // Create a jacobian and his friends for this side
+      auto side_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_jac",num_cells,num_points_on_face,cell_dim,cell_dim);
+      cell_tools.setJacobian(side_jacobian,
+                             tmp_side_cub_points,
+                             s_node_coordinates,
+                             cell_topology);
+
+      auto side_inverse_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_inv_jac",num_cells,num_points_on_face,cell_dim,cell_dim);
+      cell_tools.setJacobianInv(side_inverse_jacobian, side_jacobian);
+
+      auto side_det_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_det_jac",num_cells,num_points_on_face);
+      cell_tools.setJacobianDet(side_det_jacobian, side_jacobian);
+
+      // Calculate measures (quadrature weights in physical space) for this side
+      auto side_weighted_measure = Kokkos::DynRankView<Scalar,PHX::Device>("side_weighted_measure",num_cells,num_points_on_face);
+      if(cell_dim == 1){
+        Kokkos::deep_copy(side_weighted_measure, tmp_side_cub_weights(0));
+      } else if(cell_dim == 2){
+        Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+          computeEdgeMeasure(side_weighted_measure, side_jacobian, tmp_side_cub_weights,
+                             subcell_index,cell_topology,
+                             scratch_for_compute_side_measure.get_view());
+      } else if(cell_dim == 3){
+        Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+          computeFaceMeasure(side_weighted_measure, side_jacobian, tmp_side_cub_weights,
+                             subcell_index,cell_topology,
+                             scratch_for_compute_side_measure.get_view());
+      }
+
+      // Calculate normals
+      auto side_normals = Kokkos::DynRankView<Scalar,PHX::Device>("side_normals",num_cells,num_points_on_face,cell_dim);
+      if(cell_dim == 1){
+
+        int other_subcell_index = (subcell_index==0) ? 1 : 0;
+
+        for(int cell=0;cell<num_cells;++cell){
+          Scalar norm = (in_node_coordinates(cell,subcell_index,0) - in_node_coordinates(cell,other_subcell_index,0));
+          side_normals(cell,0,0) = norm / fabs(norm);
+        }
+
+      } else {
+
+        cell_tools.getPhysicalSideNormals(side_normals,side_jacobian,subcell_index,cell_topology);
+
+        // Normalize each normal
+        for(int cell=0;cell<num_cells;++cell){
+          for(int point=0;point<num_points_on_face;++point){
+            Scalar n = 0.;
             for(int dim=0;dim<cell_dim;++dim){
-              side_normals(cell,point,dim) /= n;
+              n += side_normals(cell,point,dim)*side_normals(cell,point,dim);
+            }
+            // If n is zero then this is - hopefully - a virtual cell
+            if(n > 0.){
+              n = std::sqrt(n);
+              for(int dim=0;dim<cell_dim;++dim){
+                side_normals(cell,point,dim) /= n;
+              }
+            }
+          }
+        }
+
+      }
+
+
+      // Now that we have all these wonderful values, lets copy them to the actual arrays
+      for(int cell=0;cell<num_cells;++cell){
+        for(int side_point=0; side_point<num_points_on_face;++side_point){
+          const int cell_point = point_offset + side_point;
+
+          weighted_measure(cell,cell_point) = side_weighted_measure(cell,side_point);
+          jac_det(cell,cell_point) = side_det_jacobian(cell,side_point);
+          for(int dim=0;dim<cell_dim;++dim){
+            ref_ip_coordinates(cell,cell_point,dim) = cub_points(cell_point,dim);
+            ip_coordinates(cell,cell_point,dim)     = side_ip_coordinates(cell,side_point,dim);
+            surface_normals(cell,cell_point,dim)    = side_normals(cell,side_point,dim);
+
+            for(int dim2=0;dim2<cell_dim;++dim2){
+              jac(cell,cell_point,dim,dim2) = side_jacobian(cell,side_point,dim,dim2);
+              jac_inv(cell,cell_point,dim,dim2) = side_inverse_jacobian(cell,side_point,dim,dim2);
             }
           }
         }
       }
-
+      point_offset += num_points_on_face;
     }
-
-
-    // Now that we have all these wonderful values, lets copy them to the actual arrays
-    for(int cell=0;cell<num_cells;++cell){
-      for(int side_point=0; side_point<num_points_on_face;++side_point){
-        const int cell_point = point_offset + side_point;
-
-        weighted_measure(cell,cell_point) = side_weighted_measure(cell,side_point);
-        jac_det(cell,cell_point) = side_det_jacobian(cell,side_point);
-        for(int dim=0;dim<cell_dim;++dim){
-          ref_ip_coordinates(cell,cell_point,dim) = cub_points(cell_point,dim);
-          ip_coordinates(cell,cell_point,dim)     = side_ip_coordinates(cell,side_point,dim);
-          surface_normals(cell,cell_point,dim)    = side_normals(cell,side_point,dim);
-
-          for(int dim2=0;dim2<cell_dim;++dim2){
-            jac(cell,cell_point,dim,dim2) = side_jacobian(cell,side_point,dim,dim2);
-            jac_inv(cell,cell_point,dim,dim2) = side_inverse_jacobian(cell,side_point,dim,dim2);
-          }
-        }
-      }
-    }
-    point_offset += num_points_on_face;
   }
 
   // Now we need to sort the cubature points for each face so that they will line up between cells
@@ -794,7 +803,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // I'm not sure if these should exist for surface integrals, but here we go!
 
   // Shakib contravarient metric tensor
-  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+  for (int cell = 0; cell < num_cells; ++cell) {
     for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
 
       // zero out matrix
@@ -814,10 +823,12 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     }
   }
 
-  Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(contravarient.get_view(), covarient.get_view());
+  auto s_contravarient = Kokkos::subview(contravarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
+  auto s_covarient = Kokkos::subview(covarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
+  Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
 
   // norm of g_ij
-  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+  for (int cell = 0; cell < num_cells; ++cell) {
     for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
       norm_contravarient(cell,ip) = 0.0;
       for (size_type i = 0; i < contravarient.extent(2); ++i) {
@@ -834,7 +845,8 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
+evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
+                        const int in_num_cells)
 {
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
 
@@ -857,12 +869,13 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
         side_cub_points(ip,dim) = dyn_side_cub_points(ip,dim);
   }
 
+  const int num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : in_num_cells;
+
   {
-    size_type num_cells = in_node_coordinates.extent(0);
     size_type num_nodes = in_node_coordinates.extent(1);
     size_type num_dims = in_node_coordinates.extent(2);
 
-    for (size_type cell = 0; cell < num_cells;  ++cell) {
+    for (int cell = 0; cell < num_cells;  ++cell) {
       for (size_type node = 0; node < num_nodes; ++node) {
         for (size_type dim = 0; dim < num_dims; ++dim) {
           node_coordinates(cell,node,dim) =
@@ -872,35 +885,40 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
     }
   }
 
+  auto s_in_node_coordinates = Kokkos::subview(in_node_coordinates.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL());
+  auto s_jac = Kokkos::subview(jac.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
   cell_tools.setJacobian(jac.get_view(),
                          cub_points.get_view(),
                          node_coordinates.get_view(),
                          *(int_rule->topology));
 
-  cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
+  auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+  cell_tools.setJacobianInv(s_jac_inv, s_jac);
 
-  cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
+  auto s_jac_det = Kokkos::subview(jac_det.get_view(),std::make_pair(0,num_cells),Kokkos::ALL());
+  cell_tools.setJacobianDet(s_jac_det, s_jac);
 
+  auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),std::make_pair(0,num_cells),Kokkos::ALL());
   if (!int_rule->isSide()) {
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-    computeCellMeasure(weighted_measure.get_view(), jac_det.get_view(), cub_weights.get_view());
+    computeCellMeasure(s_weighted_measure, s_jac_det, cub_weights.get_view());
   }
   else if(int_rule->spatial_dimension==3) {
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-    computeFaceMeasure(weighted_measure.get_view(), jac.get_view(), cub_weights.get_view(),
+    computeFaceMeasure(s_weighted_measure, s_jac, cub_weights.get_view(),
                        int_rule->side, *int_rule->topology,
                        scratch_for_compute_side_measure.get_view());
   }
   else if(int_rule->spatial_dimension==2) {
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-    computeEdgeMeasure(weighted_measure.get_view(), jac.get_view(), cub_weights.get_view(),
+    computeEdgeMeasure(s_weighted_measure, s_jac, cub_weights.get_view(),
                        int_rule->side,*int_rule->topology,
                        scratch_for_compute_side_measure.get_view());
   }
   else TEUCHOS_ASSERT(false);
 
   // Shakib contravarient metric tensor
-  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+  for (int cell = 0; cell < num_cells; ++cell) {
     for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
 
       // zero out matrix
@@ -920,10 +938,12 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
     }
   }
 
-  Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(contravarient.get_view(), covarient.get_view());
+  auto s_covarient = Kokkos::subview(covarient.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+  auto s_contravarient = Kokkos::subview(contravarient.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+  Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
 
   // norm of g_ij
-  for (size_type cell = 0; cell < contravarient.extent(0); ++cell) {
+  for (int cell = 0; cell < num_cells; ++cell) {
     for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
       norm_contravarient(cell,ip) = 0.0;
       for (size_type i = 0; i < contravarient.extent(2); ++i) {
@@ -981,11 +1001,14 @@ permuteToOther(const PHX::MDField<Scalar,Cell,IP,Dim>& coords,
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
 evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
-               const PHX::MDField<Scalar,Cell,IP,Dim>& other_ip_coordinates)
-               {
+               const PHX::MDField<Scalar,Cell,IP,Dim>& other_ip_coordinates,
+               const int in_num_cells)
+{
+  const int num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : in_num_cells;
+
   if (int_rule->cv_type == "none") {
 
-    getCubature(in_node_coordinates);
+    getCubature(in_node_coordinates, in_num_cells);
 
     {
       // Determine the permutation.
@@ -993,42 +1016,44 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
       permuteToOther(ip_coordinates, other_ip_coordinates, permutation);
       // Apply the permutation to the cubature arrays.
       MDFieldArrayFactory af(prefix, alloc_arrays);
-      const size_type num_ip = dyn_cub_points.extent(0);
       {
-        const size_type num_dim = dyn_side_cub_points.extent(1);
-        DblArrayDynamic old_dyn_side_cub_points = af.template buildArray<double,IP,Dim>(
+        const size_type num_ip = dyn_cub_points.extent(0);
+        {
+          const size_type num_dim = dyn_side_cub_points.extent(1);
+          DblArrayDynamic old_dyn_side_cub_points = af.template buildArray<double,IP,Dim>(
             "old_dyn_side_cub_points", num_ip, num_dim);
-        old_dyn_side_cub_points.deep_copy(dyn_side_cub_points);
-        for (size_type ip = 0; ip < num_ip; ++ip)
-          if (ip != permutation[ip])
-            for (size_type dim = 0; dim < num_dim; ++dim)
-              dyn_side_cub_points(ip, dim) = old_dyn_side_cub_points(permutation[ip], dim);
-      }
-      {
-        const size_type num_dim = dyn_cub_points.extent(1);
-        DblArrayDynamic old_dyn_cub_points = af.template buildArray<double,IP,Dim>(
+          old_dyn_side_cub_points.deep_copy(dyn_side_cub_points);
+          for (size_type ip = 0; ip < num_ip; ++ip)
+            if (ip != permutation[ip])
+              for (size_type dim = 0; dim < num_dim; ++dim)
+                dyn_side_cub_points(ip, dim) = old_dyn_side_cub_points(permutation[ip], dim);
+        }
+        {
+          const size_type num_dim = dyn_cub_points.extent(1);
+          DblArrayDynamic old_dyn_cub_points = af.template buildArray<double,IP,Dim>(
             "old_dyn_cub_points", num_ip, num_dim);
-        old_dyn_cub_points.deep_copy(dyn_cub_points);
-        for (size_type ip = 0; ip < num_ip; ++ip)
-          if (ip != permutation[ip])
-            for (size_type dim = 0; dim < num_dim; ++dim)
-              dyn_cub_points(ip, dim) = old_dyn_cub_points(permutation[ip], dim);
-      }
-      {
-        DblArrayDynamic old_dyn_cub_weights = af.template buildArray<double,IP>(
+          old_dyn_cub_points.deep_copy(dyn_cub_points);
+          for (size_type ip = 0; ip < num_ip; ++ip)
+            if (ip != permutation[ip])
+              for (size_type dim = 0; dim < num_dim; ++dim)
+                dyn_cub_points(ip, dim) = old_dyn_cub_points(permutation[ip], dim);
+        }
+        {
+          DblArrayDynamic old_dyn_cub_weights = af.template buildArray<double,IP>(
             "old_dyn_cub_weights", num_ip);
-        old_dyn_cub_weights.deep_copy(dyn_cub_weights);
-        for (size_type ip = 0; ip < dyn_cub_weights.extent(0); ++ip)
-          if (ip != permutation[ip])
-            dyn_cub_weights(ip) = old_dyn_cub_weights(permutation[ip]);
+          old_dyn_cub_weights.deep_copy(dyn_cub_weights);
+          for (size_type ip = 0; ip < dyn_cub_weights.extent(0); ++ip)
+            if (ip != permutation[ip])
+              dyn_cub_weights(ip) = old_dyn_cub_weights(permutation[ip]);
+        }
       }
       {
-        const size_type num_cells = ip_coordinates.extent(0), num_ip = ip_coordinates.extent(1),
-            num_dim = ip_coordinates.extent(2);
+        const size_type num_ip = ip_coordinates.extent(1);
+        const size_type num_dim = ip_coordinates.extent(2);
         Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
-            "old_ip_coordinates", num_cells, num_ip, num_dim);
+            "old_ip_coordinates", ip_coordinates.extent(0), num_ip, num_dim);
         Kokkos::deep_copy(old_ip_coordinates.get_static_view(), ip_coordinates.get_static_view());
-        for (size_type cell = 0; cell < num_cells; ++cell)
+        for (int cell = 0; cell < num_cells; ++cell)
           for (size_type ip = 0; ip < num_ip; ++ip)
             if (ip != permutation[ip])
               for (size_type dim = 0; dim < num_dim; ++dim)
@@ -1037,12 +1062,12 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
       // All subsequent calculations inherit the permutation.
     }
 
-    evaluateRemainingValues(in_node_coordinates);
+    evaluateRemainingValues(in_node_coordinates, in_num_cells);
   }
 
   else {
 
-    getCubatureCV(in_node_coordinates);
+    getCubatureCV(in_node_coordinates, in_num_cells);
 
     // Determine the permutation.
     std::vector<size_type> permutation(other_ip_coordinates.extent(1));
@@ -1051,20 +1076,20 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
     // Apply the permutation to the cubature arrays.
     MDFieldArrayFactory af(prefix, alloc_arrays);
     {
-      const size_type num_cells = ip_coordinates.extent(0), num_ip = ip_coordinates.extent(1),
+      const size_type workset_size = ip_coordinates.extent(0), num_ip = ip_coordinates.extent(1),
           num_dim = ip_coordinates.extent(2);
       Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
-          "old_ip_coordinates", num_cells, num_ip, num_dim);
+          "old_ip_coordinates", workset_size, num_ip, num_dim);
       Kokkos::deep_copy(old_ip_coordinates.get_static_view(), ip_coordinates.get_static_view());
       Array_CellIPDim old_weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
-          "old_weighted_normals", num_cells, num_ip, num_dim);
+          "old_weighted_normals", workset_size, num_ip, num_dim);
       Array_CellIP old_weighted_measure = af.template buildStaticArray<Scalar,Cell,IP>(
-          "old_weighted_measure", num_cells, num_ip);
+          "old_weighted_measure", workset_size, num_ip);
       if (int_rule->cv_type == "side")
         Kokkos::deep_copy(old_weighted_normals.get_static_view(), weighted_normals.get_static_view());
       else
         Kokkos::deep_copy(old_weighted_measure.get_static_view(), weighted_measure.get_static_view());
-      for (size_type cell = 0; cell < num_cells; ++cell)
+      for (int cell = 0; cell < num_cells; ++cell)
       {
         for (size_type ip = 0; ip < num_ip; ++ip)
         {
@@ -1083,13 +1108,14 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
       }
     }
 
-    evaluateValuesCV(in_node_coordinates);
+    evaluateValuesCV(in_node_coordinates, in_num_cells);
   }
 }
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
+getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
+              const int in_num_cells)
 {
   int num_space_dim = int_rule->topology->getDimension();
   if (int_rule->isSide() && num_space_dim==1) {
@@ -1097,8 +1123,10 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
         << "non-natural integration rules.";
     return;
   }
+
+  size_type num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : (size_type) in_num_cells;
+  std::pair<int,int> cell_range(0,num_cells);
   {
-    size_type num_cells = in_node_coordinates.extent(0);
     size_type num_nodes = in_node_coordinates.extent(1);
     size_type num_dims = in_node_coordinates.extent(2);
 
@@ -1114,12 +1142,18 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
     }
   }
 
-  if (int_rule->cv_type == "side")
-    intrepid_cubature->getCubature(dyn_phys_cub_points.get_view(),dyn_phys_cub_norms.get_view(),dyn_node_coordinates.get_view());
-  else
-    intrepid_cubature->getCubature(dyn_phys_cub_points.get_view(),dyn_phys_cub_weights.get_view(),dyn_node_coordinates.get_view());
+  auto s_dyn_phys_cub_points = Kokkos::subdynrankview(dyn_phys_cub_points.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+  auto s_dyn_node_coordinates = Kokkos::subdynrankview(dyn_node_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+  if (int_rule->cv_type == "side") {
+    auto s_dyn_phys_cub_norms = Kokkos::subdynrankview(dyn_phys_cub_norms.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    intrepid_cubature->getCubature(s_dyn_phys_cub_points,s_dyn_phys_cub_norms,s_dyn_node_coordinates);
+  }
+  else {
+    auto s_dyn_phys_cub_weights = Kokkos::subdynrankview(dyn_phys_cub_weights.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    intrepid_cubature->getCubature(s_dyn_phys_cub_points,s_dyn_phys_cub_weights,s_dyn_node_coordinates);
+  }
 
-  size_type num_cells = dyn_phys_cub_points.extent(0);
+  // size_type num_cells = dyn_phys_cub_points.extent(0);
   size_type num_ip =dyn_phys_cub_points.extent(1);
   size_type num_dims = dyn_phys_cub_points.extent(2);
 
@@ -1139,25 +1173,37 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-evaluateValuesCV(const PHX::MDField<Scalar, Cell, NODE, Dim>& /* in_node_coordinates */)
+evaluateValuesCV(const PHX::MDField<Scalar, Cell, NODE, Dim>& in_node_coordinates,
+                 const int in_num_cells)
 {
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
 
-  cell_tools.mapToReferenceFrame(ref_ip_coordinates.get_view(),
-                                 ip_coordinates.get_view(),
-                                 node_coordinates.get_view(),
+  size_type num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : (size_type) in_num_cells;
+
+  auto s_ref_ip_coordinates = Kokkos::subview(ref_ip_coordinates.get_view(),std::make_pair(0,(int)num_cells),Kokkos::ALL(),Kokkos::ALL());
+  auto s_ip_coordinates = Kokkos::subview(ip_coordinates.get_view(),std::make_pair<int,int>(0,num_cells),Kokkos::ALL(),Kokkos::ALL());
+  auto s_node_coordinates = Kokkos::subview(node_coordinates.get_view(),std::make_pair<int,int>(0,num_cells),Kokkos::ALL(),Kokkos::ALL());
+
+  cell_tools.mapToReferenceFrame(s_ref_ip_coordinates,
+                                 s_ip_coordinates,
+                                 s_node_coordinates,
                                  *(int_rule->topology));
 
-  cell_tools.setJacobian(jac.get_view(),
-                         ref_ip_coordinates.get_view(),
-                         node_coordinates.get_view(),
+  auto s_jac = Kokkos::subview(jac.get_view(),std::make_pair<int,int>(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+
+  cell_tools.setJacobian(s_jac,
+                         s_ref_ip_coordinates,
+                         s_node_coordinates,
                          *(int_rule->topology));
 
-  cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
+  auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),std::make_pair<int,int>(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
 
-  cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
+  cell_tools.setJacobianInv(s_jac_inv, s_jac);
 
+  auto s_jac_det = Kokkos::subview(jac_det.get_view(),std::make_pair<int,int>(0,num_cells),Kokkos::ALL());
+
+  cell_tools.setJacobianDet(s_jac_det, s_jac);
 }
 
 #define INTEGRATION_VALUES2_INSTANTIATION(SCALAR) \

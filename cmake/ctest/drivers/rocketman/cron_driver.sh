@@ -46,6 +46,9 @@ module load sems-cmake/3.10.3
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
+module load sems-hdf5/1.8.12/parallel
+module load sems-netcdf/4.4.1/exo_parallel
+module load sems-boost/1.63.0/base
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -61,6 +64,9 @@ export OMP_NUM_THREADS=2
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
 
+module unload sems-boost/1.63.0/base
+module unload sems-netcdf/4.4.1/exo_parallel
+module unload sems-hdf5/1.8.12/parallel
 module unload sems-superlu/4.3/base
 module unload sems-openmpi/1.10.1
 module unload sems-gcc/5.3.0

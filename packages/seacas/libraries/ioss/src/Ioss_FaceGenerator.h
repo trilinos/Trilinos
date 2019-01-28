@@ -37,7 +37,16 @@
 #include <array>
 #include <cassert>
 #include <cstddef> // for size_t
+
+#define USE_ROBIN
+#if defined USE_STD
 #include <unordered_set>
+#elif defined USE_HOPSCOTCH
+#include <hash/hopscotch_set.h>
+#elif defined USE_ROBIN
+#include <hash/robin_set.h>
+#endif
+
 #include <utility>
 
 namespace Ioss {
@@ -90,7 +99,15 @@ namespace Ioss {
     }
   };
 
+#if defined USE_STD
   using FaceUnorderedSet = std::unordered_set<Face, FaceHash, FaceEqual>;
+#elif defined USE_HOPSCOTCH
+  using FaceUnorderedSet = tsl::hopscotch_set<Face, FaceHash, FaceEqual>;
+  // using FaceUnorderedSet = tsl::hopscotch_pg_set<Face, FaceHash, FaceEqual>;
+#elif defined USE_ROBIN
+  using FaceUnorderedSet = tsl::robin_set<Face, FaceHash, FaceEqual>;
+  // using FaceUnorderedSet = tsl::robin_pg_set<Face, FaceHash, FaceEqual>;
+#endif
   class FaceGenerator
   {
   public:

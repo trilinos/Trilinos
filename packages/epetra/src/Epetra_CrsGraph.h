@@ -1078,14 +1078,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 
   bool FindMyIndexLoc(int LocalRow, int Index, int Start, int& Loc) const;
   bool FindMyIndexLoc(int NumIndices, const int* Indices, int Index, int Start, int& Loc) const;
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
   int InsertIndices(int Row, int NumIndices, int* Indices);
-    int InsertIndicesIntoSorted(int Row, int NumIndices, int* Indices);
-#endif
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  int InsertIndicesIntoSorted(int Row, int NumIndices, int* Indices);
+
   int InsertIndices(int Row, int NumIndices, long long* Indices);
   int InsertIndicesIntoSorted(int Row, int NumIndices, long long* Indices);
-#endif
 
   int MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
   void SetIndicesAreLocal(bool Flag) {CrsGraphData_->IndicesAreLocal_ = Flag;}
@@ -1225,10 +1223,10 @@ private:
   int InsertGlobalIndices(int_type GlobalRow, int NumIndices, int_type* Indices);
 
   template<typename int_type>
-  int InsertIndices(int Row, int NumIndices, int_type* Indices);
+  int TInsertIndices(int Row, int NumIndices, int_type* Indices);
 
   template<typename int_type>
-  int InsertIndicesIntoSorted(int Row, int NumIndices, int_type* Indices);
+  int TInsertIndicesIntoSorted(int Row, int NumIndices, int_type* Indices);
 
   template<typename int_type>
   int RemoveGlobalIndices(int_type GlobalRow, int NumIndices, int_type* Indices);

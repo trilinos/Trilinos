@@ -63,6 +63,8 @@
 #  include <Thyra_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
 
+#include <Teuchos_TimeMonitor.hpp>
+
 namespace Belos {
 
   ////////////////////////////////////////////////////////////////////////////
@@ -273,6 +275,9 @@ namespace Belos {
          const ScalarType beta, TMVB& mv )
     {
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
+
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvTimesMatAddMv")));
+
       const int m = B.numRows();
       const int n = B.numCols();
       // Create a view of the B object!
@@ -296,6 +301,8 @@ namespace Belos {
       typedef Teuchos::ScalarTraits<ScalarType> ST;
       using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
 
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvAddMv")));
+
       Thyra::linear_combination<ScalarType>(
         tuple(alpha, beta)(), tuple(ptrInArg(A), ptrInArg(B))(), ST::zero(), inoutArg(mv));
     }
@@ -303,12 +310,18 @@ namespace Belos {
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
     static void MvScale ( TMVB& mv, const ScalarType alpha )
-      { Thyra::scale(alpha, Teuchos::inoutArg(mv)); }
+      {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvScale")));
+
+        Thyra::scale(alpha, Teuchos::inoutArg(mv));
+      }
 
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
     static void MvScale (TMVB& mv, const std::vector<ScalarType>& alpha)
     {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvScale")));
+
       for (unsigned int i=0; i<alpha.size(); i++) {
         Thyra::scale<ScalarType> (alpha[i], mv.col(i).ptr());
       }
@@ -320,6 +333,9 @@ namespace Belos {
       Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     {
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
+
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvTransMv")));
+
       // Create a multivector to hold the result (m by n)
       int m = A.domain()->dim();
       int n = mv.domain()->dim();
@@ -339,7 +355,11 @@ namespace Belos {
         \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>& b )
-      { Thyra::dots(mv, A, Teuchos::arrayViewFromVector(b)); }
+      {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvDot")));
+
+        Thyra::dots(mv, A, Teuchos::arrayViewFromVector(b));
+      }
 
     //@}
 
@@ -351,6 +371,8 @@ namespace Belos {
     */
     static void MvNorm( const TMVB& mv, std::vector<magType>& normvec,
       NormType type = TwoNorm ) {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::MvNorm")));
+
       if(type == TwoNorm)
         Thyra::norms_2(mv, Teuchos::arrayViewFromVector(normvec));
       else if(type == OneNorm)
@@ -452,6 +474,8 @@ namespace Belos {
     static void
     Assign (const TMVB& A, TMVB& mv)
     {
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Belos::MVT::Assign")));
+
       const int numColsA = A.domain()->dim();
       const int numColsMv = mv.domain()->dim();
       if (numColsA > numColsMv)

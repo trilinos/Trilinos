@@ -43,12 +43,13 @@
 #include <Ioss_PropertyManager.h> // for PropertyManager
 #include <Ioss_State.h>           // for State, State::STATE_INVALID
 #include <Ioss_SurfaceSplit.h>    // for SurfaceSplitType
-#include <cstddef>                // for size_t, nullptr
-#include <cstdint>                // for int64_t
-#include <map>                    // for map
-#include <string>                 // for string
-#include <utility>                // for pair
-#include <vector>                 // for vector
+#include <chrono>
+#include <cstddef> // for size_t, nullptr
+#include <cstdint> // for int64_t
+#include <map>     // for map
+#include <string>  // for string
+#include <utility> // for pair
+#include <vector>  // for vector
 namespace Ioss {
   class CommSet;
   class EdgeBlock;
@@ -271,16 +272,9 @@ namespace Ioss {
       return end__(state);
     }
 
-    bool begin_state(Region *region, int state, double time)
-    {
-      IOSS_FUNC_ENTER(m_);
-      return begin_state__(region, state, time);
-    }
-    bool end_state(Region *region, int state, double time)
-    {
-      IOSS_FUNC_ENTER(m_);
-      return end_state__(region, state, time);
-    }
+    bool begin_state(int state, double time);
+    bool end_state(int state, double time);
+
     // Metadata-related functions.
     void read_meta_data()
     {
@@ -471,7 +465,11 @@ namespace Ioss {
      *     use set_cycle_count(1)
      */
     void set_cycle_count(int count) const { cycleCount = count; }
+    int  get_cycle_count() const { return cycleCount; }
     void set_overlay_count(int count) const { overlayCount = count; }
+    int  get_overlay_count() const { return overlayCount; }
+    void set_file_per_state(bool yes_no) const { filePerState = yes_no; }
+    bool get_file_per_state() const { return filePerState; }
 
     void set_time_scale_factor(double factor) { timeScaleFactor = factor; }
 
@@ -574,6 +572,13 @@ namespace Ioss {
 
     mutable int overlayCount{0};
 
+    /*! EXPERIMENTAL If this is true, then each state (timestep)
+     *  output will be directed to a separate file.  Currently this is
+     *  only implemented for the exodus (parallel or serial, single
+     *  file or fpp) database type.
+     */
+    mutable bool filePerState{false};
+
     /*! Scale the time read/written from/to the file by the specified
       scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
       scaleFactor is 20, then the application will think that the
@@ -651,8 +656,8 @@ namespace Ioss {
     virtual void read_meta_data__() = 0;
     virtual void get_step_times__() {}
 
-    virtual bool begin_state__(Region *region, int state, double time);
-    virtual bool end_state__(Region *region, int state, double time);
+    virtual bool begin_state__(int state, double time);
+    virtual bool end_state__(int state, double time);
 
     void get_block_adjacencies__(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const;
@@ -758,6 +763,10 @@ namespace Ioss {
                                      // names on database.
     mutable bool blockAdjacenciesCalculated{false}; // True if the lazy creation of
     // block adjacencies has been calculated.
+
+    bool m_timeStateInOut{false};
+    std::chrono::time_point<std::chrono::high_resolution_clock>
+        m_stateStart; // Used for optional output step timing.
   };
 } // namespace Ioss
 #endif

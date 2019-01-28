@@ -27,12 +27,16 @@ public:
   GmresSingleReduce () :
     base_type::Gmres (),
     stepSize_ (1)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   GmresSingleReduce (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
     stepSize_ (1)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   virtual ~GmresSingleReduce ()
   {}
@@ -93,6 +97,7 @@ private:
     for (int i = 0; i <= n; ++i) {
       H(n+1, n) -= (H(i, n)*H(i, n));
     }
+
     // reorthogonalize if requested
     if (input.needToReortho) {
       // Q(:,0:j+1)'*Q(:,j+1)
@@ -141,75 +146,21 @@ private:
     int restart = input.resCycle;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-    const bool computeRitzValues = true;
+    const bool computeRitzValues = input.computeRitzValues;
 
     SolverOutput<SC> output {};
+    // initialize output parameters
+    output.numRests = 0;
+    output.numIters = 0;
+    output.converged = false;
 
-    mag_type b_norm; // initial residual norm
+    mag_type b_norm;  // initial residual norm
     mag_type b0_norm; // initial residual norm, not left-preconditioned
     mag_type r_norm;
     MV Q (B.getMap (), restart+1);
     vec_type P = * (Q.getVectorNonConst (0));
     vec_type R (B.getMap ());
     vec_type MP (B.getMap ());
-
-    // initial residual (making sure R = B - Ax)
-    if (input.precoSide == "right") {
-      M.apply (X, MP);
-      A.apply (MP, R);
-    }
-    else {
-      A.apply (X, R);
-    }
-    R.update (one, B, -one);
-    b0_norm = R.norm2 (); // residual norm
-    // initialize output parameters
-    output.numRests = 0;
-    output.numIters = 0;
-    output.converged = false;
-    output.absResid = b0_norm;
-    output.relResid = STM::one ();
-    mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
-    if (metric <= input.tol) {
-      if (outPtr != NULL) {
-        *outPtr << "Initial guess' residual norm " << b0_norm
-                << " meets tolerance " << input.tol << endl;
-      }
-      output.converged = true;
-      return output;
-    }
-    // compute the initial residual norm (preconditioned)
-    if (input.precoSide == "left") {
-      M.apply (R, P);
-      b_norm = P.norm2 (); // residual norm
-    }
-    else {
-      Tpetra::deep_copy (P, R);
-      b_norm = b0_norm;
-    }
-    r_norm = b_norm;
-
-    // compute Ritz values as Newton shifts
-    if (computeRitzValues) {
-      // Invoke ordinary GMRES for the first restart
-      SolverInput<SC> input_gmres = input;
-      input_gmres.maxNumIters = input.resCycle;
-      input_gmres.computeRitzValues = true;
-      output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
-					       input_gmres);
-      if (output.converged) {
-        return output; // standard GMRES converged
-      }
-      if (input.precoSide == "left") {
-        M.apply (R, P);
-        r_norm = P.norm2 (); // residual norm
-      }
-      else {
-        Tpetra::deep_copy (P, R);
-        r_norm = output.absResid;
-      }
-      output.numRests++;
-    }
 
     Teuchos::BLAS<LO ,SC> blas;
     dense_matrix_type H (restart+1, restart, true);
@@ -218,7 +169,58 @@ private:
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
 
+    // initial residual (making sure R = B - Ax)
+    A.apply (X, R);
+    R.update (one, B, -one);
+    b0_norm = R.norm2 (); // initial residual norm, no-preconditioned
+    if (input.precoSide == "left") {
+      M.apply (R, P);
+      r_norm = P.norm2 (); // initial residual norm, left-preconditioned
+    } else {
+      r_norm = b0_norm;
+    }
+    b_norm = r_norm;
+
+    mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
+    if (metric <= input.tol) {
+      if (outPtr != NULL) {
+        *outPtr << "Initial guess' residual norm " << b0_norm
+                << " meets tolerance " << input.tol << endl;
+      }
+      output.absResid = b0_norm;
+      output.relResid = STM::one ();
+      output.converged = true;
+      return output;
+    }
+
+    // compute Ritz values as Newton shifts
+    if (computeRitzValues) {
+      // Invoke ordinary GMRES for the first restart
+      SolverInput<SC> input_gmres = input;
+      input_gmres.maxNumIters = input.resCycle;
+      input_gmres.computeRitzValues = computeRitzValues;
+
+      Tpetra::deep_copy (R, B);
+      output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
+					       input_gmres);
+      if (output.converged) {
+        return output; // standard GMRES converged
+      }
+
+      if (input.precoSide == "left") {
+        M.apply (R, P);
+        r_norm = P.norm2 (); // residual norm
+      }
+      else {
+        r_norm = output.absResid;
+      }
+      output.numRests++;
+    }
+
     // initialize starting vector
+    if (input.precoSide != "left") {
+      Tpetra::deep_copy (P, R);
+    }
     P.scale (one / r_norm);
     y[0] = SC {r_norm};
     const int s = getStepSize ();

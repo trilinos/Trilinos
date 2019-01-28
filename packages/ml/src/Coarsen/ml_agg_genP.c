@@ -2531,6 +2531,9 @@ static void ML_Init_Aux(ML* ml, int level)
   LaplacianDiag = (double *) ML_allocate((A->getrow->Nrows+Nghost+1)*
                                          sizeof(double));
 
+  A->aux_data->filtered_nnz = 0;
+  A->aux_data->unfiltered_nnz = 0;
+
   filter = (int**) ML_allocate(sizeof(int*) * n);
 
   allocated = 128;
@@ -2629,6 +2632,9 @@ static void ML_Init_Aux(ML* ml, int level)
 
     for (j = 0 ; j < count ; ++j)
       filter[BlockRow][j + 1] = columns[j];
+
+    A->aux_data->filtered_nnz += count;
+    A->aux_data->unfiltered_nnz += entries;
 
   }
 
@@ -2781,6 +2787,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 {
    int level, next, flag, count=1;
    int i, j, k, bail_flag, N_input_vector;
+   int global_nnz_tallies[2], local_nnz_tallies[2];
    ML_Operator *Amat, *Pmat, *Ptent;
    ML_CommInfoOP *getrow_comm;
    int aux_flag;
@@ -2835,7 +2842,23 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
        }
 
        ML_Init_Aux(ml, level);
+
+       /* How aggressively did the aux drop? */
+       if (6 < ML_Get_PrintLevel()) {
+         global_nnz_tallies[0] = local_nnz_tallies[0] = Amat->aux_data->filtered_nnz;
+         global_nnz_tallies[1] = local_nnz_tallies[1] = Amat->aux_data->unfiltered_nnz;
+         int * gt = &global_nnz_tallies[0];
+         int * lt = &local_nnz_tallies[0];
+         ML_gsum_vec_int(&gt,&lt,2,ml->comm);
+         if (ml->comm->ML_mypid == 0 ) {
+           printf("ML_Gen_MultiLevelHierarchy (level %d) : Aux number of dropped entries: %d/%d (%5.2f%%)\n",
+                  level,global_nnz_tallies[0],global_nnz_tallies[1],
+                  (double)(100.0*global_nnz_tallies[0]) / global_nnz_tallies[1]);
+         }         
+       }
+       
      }
+
 
 #     ifdef ML_TIMING
       tprol = GetClock();

@@ -533,8 +533,13 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       RCP<const MV> Xcopy;
       // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
       {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
         auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
         auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
+#else
+        auto X_lcl_host = X.getLocalViewHost ();
+        auto Y_lcl_host = Y.getLocalViewHost ();
+#endif
         if (X_lcl_host.data () == Y_lcl_host.data ()) {
           Xcopy = rcp (new MV (X, Teuchos::Copy));
         } else {
@@ -998,9 +1003,15 @@ void Relaxation<MatrixType>::compute ()
     const size_t numMyRows = A_->getNodeNumRows ();
 
     // We're about to read and write diagonal entries on the host.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     Diagonal_->template sync<Kokkos::HostSpace> ();
     Diagonal_->template modify<Kokkos::HostSpace> ();
     auto diag_2d = Diagonal_->template getLocalView<Kokkos::HostSpace> ();
+#else
+    Diagonal_->sync_host ();
+    Diagonal_->modify_host ();
+    auto diag_2d = Diagonal_->getLocalViewHost ();
+#endif
     auto diag_1d = Kokkos::subview (diag_2d, Kokkos::ALL (), 0);
     // FIXME (mfh 12 Jan 2016) temp fix for Kokkos::complex vs. std::complex.
     scalar_type* const diag = reinterpret_cast<scalar_type*> (diag_1d.data ());
@@ -1874,8 +1885,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
       // Just use the cached column Map multivector for that.
       // force=true means fill with zeros, so no need to fill
       // remote entries (not in domain Map) with zeros.
-      //X_colMap = crsMat->getColumnMapMultiVector (X, true);
-      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+      X_colMap = cachedMV_;
       // X_domainMap is always a domain Map view of the column Map
       // multivector.  In this case, the domain and column Maps are
       // the same, so X_domainMap _is_ X_colMap.
@@ -1905,8 +1916,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
     }
   }
   else { // Column Map and domain Map are _not_ the same.
-    //X_colMap = crsMat->getColumnMapMultiVector (X);
-    X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+    updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+    X_colMap = cachedMV_;
 
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 

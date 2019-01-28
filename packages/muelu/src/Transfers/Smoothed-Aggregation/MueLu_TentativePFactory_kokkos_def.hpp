@@ -431,9 +431,9 @@ namespace MueLu {
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
     auto A             = Get< RCP<Matrix> >           (fineLevel, "A");
     auto aggregates    = Get< RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
@@ -514,7 +514,7 @@ namespace MueLu {
 
                                  auto aggregate = aggGraph.rowConst(i);
 
-                                 double sum = 0.0; // do not use Scalar here (Stokhos)
+                                 typename Teuchos::ScalarTraits<Scalar>::coordinateType sum = 0.0; // do not use Scalar here (Stokhos)
                                  for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
                                    sum += fineCoordsRandomView(aggregate(colID),j);
 

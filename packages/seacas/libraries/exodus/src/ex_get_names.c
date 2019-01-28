@@ -129,7 +129,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
   /* invalid variable type */
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

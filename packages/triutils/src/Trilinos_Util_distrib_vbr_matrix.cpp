@@ -51,7 +51,7 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *N_blk_global,
 	      int *n_nonzeros, int *n_blk_nonzeros, 
 	      int *N_update, int **update,
-	      double **val, int **indx, int **rpntr, int **cpntr,
+	      double **val, int **indx, int **rpntr, int ** /* cpntr */,
 	      int **bpntr, int **bindx,
 	      double **x, double **b, double **xexact)
 #undef DEBUG 

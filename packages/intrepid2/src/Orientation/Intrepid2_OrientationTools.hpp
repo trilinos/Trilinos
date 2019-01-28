@@ -179,6 +179,22 @@ namespace Intrepid2 {
                              const shards::CellTopology cellTopo,
                              const ordinal_type cellOrt = 0);
 
+      /** \brief  Computes modified parameterization maps of 1- and 2-subcells with orientation.
+
+          \param  outPoints       [out] - rank-2 (P,D2) array with points in 1D or 2D modified domain with orientation
+          \param  refPoints       [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
+          \param  cellTopoKey     [in]  - key of the cell topology of the parameterized domain (1- and 2-subcells)
+          \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
+      */
+      template<typename outPointViewType,
+               typename refPointViewType>
+      inline
+      static void
+      mapToModifiedReference(outPointViewType outPoints,
+                             const refPointViewType refPoints,
+                             const unsigned cellTopoKey,
+                             const ordinal_type cellOrt = 0);
+
 
       /** \brief  Computes Jacobian of orientation map for line segment.
 
@@ -222,6 +238,19 @@ namespace Intrepid2 {
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
                              const shards::CellTopology cellTopo,
+                             const ordinal_type cellOrt);
+
+      /** \brief  Computes jacobian of the parameterization maps of 1- and 2-subcells with orientation.
+
+          \param  jacobian        [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  cellTopoKey     [in]  - key of the cell topology of the parameterized domain (1- and 2-subcells)
+          \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
+      */
+      template<typename JacobianViewType>
+      inline
+      static void
+      getJacobianOfOrientationMap(JacobianViewType jacobian,
+                             const unsigned cellTopoKey,
                              const ordinal_type cellOrt);
 
       // -----------------------------------------------------------------------------
@@ -438,7 +467,30 @@ namespace Intrepid2 {
     modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
-                             const BasisPtrType basis);
+                             const BasisPtrType  basis);
+
+    template<typename ExecutionSpaceType, typename dofCoordsValueType,
+             typename dofCoeffsValueType, typename BasisType>
+    inline
+    static void
+    getSubCellBases(/**/
+      Teuchos::RCP<Basis<ExecutionSpaceType, dofCoeffsValueType,dofCoordsValueType> >* faceBases,
+      Teuchos::RCP<Basis<ExecutionSpaceType, dofCoeffsValueType,dofCoordsValueType> >& edgeBasis,
+      const BasisType&  basis,
+      EPointType pointType = POINTTYPE_EQUISPACED);
+
+    template<typename dofCoordsValueType, class ...dofCoordsProperties,
+             typename dofCoeffsValueType, class ...dofCoeffsProperties,
+             typename ortValueType,       class ...ortProperties,
+             typename BasisType>
+    inline
+    static void
+    getModifiedDofs(/**/  Kokkos::DynRankView<dofCoordsValueType,dofCoordsProperties...> orientedDofCoords,
+      Kokkos::DynRankView<dofCoeffsValueType,dofCoeffsProperties...> orientedDofCoeffs,
+      const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
+      const BasisType& basis,
+      EPointType pointType = POINTTYPE_EQUISPACED);
+
   };
   
   template<typename T> 
@@ -452,7 +504,6 @@ namespace Intrepid2 {
 #include "Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp"
 #include "Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp"
 #include "Intrepid2_OrientationToolsDefMatrixData.hpp"
-
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
 
 #endif

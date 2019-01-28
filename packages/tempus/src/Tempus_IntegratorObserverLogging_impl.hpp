@@ -16,13 +16,14 @@ namespace Tempus {
 
 template<class Scalar>
 IntegratorObserverLogging<Scalar>::IntegratorObserverLogging()
-  : nameObserveStartIntegrator_ ("observeStartIntegrator" ),
-    nameObserveStartTimeStep_   ("observeStartTimeStep"   ),
-    nameObserveNextTimeStep_    ("observeNextTimeStep"    ),
-    nameObserveBeforeTakeStep_  ("observeBeforeTakeStep"  ),
-    nameObserveAfterTakeStep_   ("observeAfterTakeStep"   ),
-    nameObserveAcceptedTimeStep_("observeAcceptedTimeStep"),
-    nameObserveEndIntegrator_   ("observeEndIntegrator"   )
+  : nameObserveStartIntegrator_   ("observeStartIntegrator"   ),
+    nameObserveStartTimeStep_     ("observeStartTimeStep"     ),
+    nameObserveNextTimeStep_      ("observeNextTimeStep"      ),
+    nameObserveBeforeTakeStep_    ("observeBeforeTakeStep"    ),
+    nameObserveAfterTakeStep_     ("observeAfterTakeStep"     ),
+    nameObserveAfterCheckTimeStep_("observeAfterCheckTimeStep"),
+    nameObserveEndTimeStep_       ("observeEndTimeStep"       ),
+    nameObserveEndIntegrator_     ("observeEndIntegrator"     )
 {
   counters_ = Teuchos::rcp(new std::map<std::string,int>);
   order_ = Teuchos::rcp(new std::list<std::string>);
@@ -59,8 +60,13 @@ observeAfterTakeStep(const Integrator<Scalar>& )
 
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::
-observeAcceptedTimeStep(const Integrator<Scalar>& )
-{ logCall(nameObserveAcceptedTimeStep_); }
+observeAfterCheckTimeStep(const Integrator<Scalar>& )
+{ logCall(nameObserveAfterCheckTimeStep_); }
+
+template<class Scalar>
+void IntegratorObserverLogging<Scalar>::
+observeEndTimeStep(const Integrator<Scalar>& )
+{ logCall(nameObserveEndTimeStep_); }
 
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::
@@ -70,13 +76,14 @@ observeEndIntegrator(const Integrator<Scalar>& )
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::resetLogCounters()
 {
-  (*counters_)[nameObserveStartIntegrator_ ] = 0;
-  (*counters_)[nameObserveStartTimeStep_   ] = 0;
-  (*counters_)[nameObserveNextTimeStep_    ] = 0;
-  (*counters_)[nameObserveBeforeTakeStep_  ] = 0;
-  (*counters_)[nameObserveAfterTakeStep_   ] = 0;
-  (*counters_)[nameObserveAcceptedTimeStep_] = 0;
-  (*counters_)[nameObserveEndIntegrator_   ] = 0;
+  (*counters_)[nameObserveStartIntegrator_   ] = 0;
+  (*counters_)[nameObserveStartTimeStep_     ] = 0;
+  (*counters_)[nameObserveNextTimeStep_      ] = 0;
+  (*counters_)[nameObserveBeforeTakeStep_    ] = 0;
+  (*counters_)[nameObserveAfterTakeStep_     ] = 0;
+  (*counters_)[nameObserveAfterCheckTimeStep_] = 0;
+  (*counters_)[nameObserveEndTimeStep_       ] = 0;
+  (*counters_)[nameObserveEndIntegrator_     ] = 0;
   order_->clear();
 }
 

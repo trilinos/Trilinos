@@ -97,6 +97,7 @@ IF (KokkosKernels_INST_EXECSPACE_OPENMP)
 ENDIF()
 
 IF (KokkosKernels_INST_EXECSPACE_CUDA)
+  APPEND_GLOB(SOURCES ${DIR}/tpls/*_Cuda_*.cpp)
   IF (KokkosKernels_INST_DOUBLE)
     APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_Cuda_*.cpp)
   ENDIF()

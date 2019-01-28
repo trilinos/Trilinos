@@ -103,9 +103,11 @@ Build (MueLu::AmalgamationFactory)
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -115,6 +117,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -227,9 +230,11 @@ Build (MueLu::AmalgamationFactory)
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -239,6 +244,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -246,7 +252,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -352,9 +357,11 @@ Build (MueLu::AmalgamationFactory)
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -364,6 +371,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -371,7 +379,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -477,9 +484,11 @@ Build (MueLu::AmalgamationFactory)
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -489,6 +498,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -496,7 +506,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})

@@ -15,9 +15,12 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include "MiniEM_GaussianPulse.hpp"
+#include "MiniEM_RandomForcing.hpp"
 #include "MiniEM_InversePermeability.hpp"
 #include "MiniEM_Permittivity.hpp"
 #include "MiniEM_Conductivity.hpp"
+#include "MiniEM_TensorConductivity.hpp"
+#include "MiniEM_VariableTensorConductivity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -62,12 +65,12 @@ buildClosureModels(const std::string& model_id,
     bool found = false;
     
     const std::string key = model_it->first;
-    ParameterList input;
     const Teuchos::ParameterEntry& entry = model_it->second;
     const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
 
     if (plist.isType<double>("Value")) {
       { // at IP
+        ParameterList input;
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", ir->dl_scalar);
@@ -78,6 +81,7 @@ buildClosureModels(const std::string& model_id,
       
       for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
 	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
+        ParameterList input;
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
@@ -95,6 +99,16 @@ buildClosureModels(const std::string& model_id,
         double dt = plist.get<double>("dt");
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new mini_em::GaussianPulse<EvalT,panzer::Traits>(key,*ir,fl,dt));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="RANDOM") {
+        unsigned int seed = plist.get<unsigned int>("seed");
+        double min = plist.get<double>("range min");
+        double max = plist.get<double>("range max");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::RandomForcing<EvalT,panzer::Traits>(key,*ir,fl,seed,min,max));
 	evaluators->push_back(e);
 
         found = true;
@@ -126,6 +140,42 @@ buildClosureModels(const std::string& model_id,
 
         found = true;
       }
+      if(type=="TENSOR CONDUCTIVITY") {
+        double sigma = plist.get<double>("sigma");
+        double betax = plist.get<double>("betax");
+        double betay = plist.get<double>("betay");
+        double betaz = plist.get<double>("betaz");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::TensorConductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,betax,betay,betaz,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="VARIABLE TENSOR CONDUCTIVITY") {
+        double sigma0 = plist.get<double>("sigma0");
+        double betax0 = plist.get<double>("betax0");
+        double betay0 = plist.get<double>("betay0");
+        double betaz0 = plist.get<double>("betaz0");
+        double sigma1 = plist.get<double>("sigma1");
+        double betax1 = plist.get<double>("betax1");
+        double betay1 = plist.get<double>("betay1");
+        double betaz1 = plist.get<double>("betaz1");
+        double sigma2 = plist.get<double>("sigma2");
+        double betax2 = plist.get<double>("betax2");
+        double betay2 = plist.get<double>("betay2");
+        double betaz2 = plist.get<double>("betaz2");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::VariableTensorConductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma0,sigma1,sigma2,
+                                                                            betax0,betay0,betaz0,
+                                                                            betax1,betay1,betaz1,
+                                                                            betax2,betay2,betaz2,
+                                                                            DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
       if(type=="ELECTROMAGNETIC ENERGY") {
         // compute (E, epsilon*E)
         {
@@ -134,7 +184,7 @@ buildClosureModels(const std::string& model_id,
           input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
           input.set("Vector A Name", "E_edge");
           input.set("Vector B Name", "E_edge");
-          input.set("Field Multiplier", "PERMITTIVITY");
+          input.set("Field Multiplier", "epsilon");
 
           RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
@@ -149,7 +199,7 @@ buildClosureModels(const std::string& model_id,
             input.set<Teuchos::RCP<const panzer::PointRule> >("Point Rule", ir);
             input.set("Vector A Name", "B_face");
             input.set("Vector B Name", "B_face");
-            input.set("Field Multiplier", "INVERSE_PERMEABILITY");
+            input.set("Field Multiplier", "1/mu");
 
             RCP< Evaluator<panzer::Traits> > e =
               rcp(new panzer::DotProduct<EvalT,panzer::Traits>(input));
@@ -162,7 +212,7 @@ buildClosureModels(const std::string& model_id,
             valuesNames->push_back("B_face");
             input.set("Values Names",valuesNames);
             input.set("Data Layout",ir->dl_scalar);
-            input.set("Field Multiplier", "INVERSE_PERMEABILITY");
+            input.set("Field Multiplier", "1/mu");
 
             RCP< Evaluator<panzer::Traits> > e =
               rcp(new panzer::Product<EvalT,panzer::Traits>(input));
@@ -188,6 +238,22 @@ buildClosureModels(const std::string& model_id,
 
           RCP< Evaluator<panzer::Traits> > e = 
 	    rcp(new panzer::Sum<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+        }
+
+        {
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>);
+          valuesNames->push_back("EM_ENERGY");
+          valuesNames->push_back("1/dt");
+          valuesNames->push_back("1/dt");
+
+          Teuchos::ParameterList input;
+          input.set("Product Name","EM_ENERGY/dt^2");
+          input.set("Values Names",valuesNames);
+          input.set("Data Layout",ir->dl_scalar);
+
+          RCP< Evaluator<panzer::Traits> > e =
+	    rcp(new panzer::Product<EvalT,panzer::Traits>(input));
 	  evaluators->push_back(e);
         }
  

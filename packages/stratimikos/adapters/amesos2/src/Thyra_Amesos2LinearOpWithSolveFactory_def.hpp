@@ -132,7 +132,7 @@ template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
   LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   THYRA_FUNC_TIME_MONITOR("Stratimikos: Amesos2LOWSF");
@@ -282,7 +282,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
 }
 
 template<typename Scalar>
-bool Amesos2LinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
+bool Amesos2LinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(const EPreconditionerInputType /* precOpType */) const
 {
   return false;
 }
@@ -290,7 +290,7 @@ bool Amesos2LinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(co
 template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const PreconditionerBase<Scalar> > &prec,
+  const RCP<const PreconditionerBase<Scalar> > &/* prec */,
   LinearOpWithSolveBase<Scalar> *Op,
   const ESupportSolveUse supportSolveUse
   ) const
@@ -308,7 +308,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
 template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+  const RCP<const LinearOpSourceBase<Scalar> > &/* approxFwdOpSrc */,
   LinearOpWithSolveBase<Scalar> *Op,
   const ESupportSolveUse supportSolveUse
   ) const
@@ -329,7 +329,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::uninitializeOp(
   RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
   RCP<const PreconditionerBase<Scalar> > *prec,
   RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
+  ESupportSolveUse * /* supportSolveUse */
   ) const
 {
 #ifdef TEUCHOS_DEBUG

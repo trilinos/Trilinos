@@ -652,8 +652,8 @@ int get_type(char string[], int nodes, int num_dim)
   case 'b':
   case 't':
   case 'r':
-    if (strncmp(string, "bar", 3) == 0 || strncmp(string, "beam", 3) == 0 ||
-        strncmp(string, "rod", 3) == 0 || strncmp(string, "truss", 3) == 0) {
+    if (strncmp(string, "bar", 3) == 0 || strncmp(string, "beam", 4) == 0 ||
+        strncmp(string, "rod", 3) == 0 || strncmp(string, "truss", 5) == 0) {
       switch (nodes) {
       case 2: answer = BAR2; break;
       case 3: answer = BAR3; break;

@@ -89,20 +89,12 @@ namespace Iofx {
     ~DatabaseIO() override{};
 
   private:
-    // Check to see if database state is ok...
-    // If 'write_message' true, then output a warning message indicating the problem.
-    // If 'error_message' non-null, then put the warning message into the string and return it.
-    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
-    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    bool ok__(bool write_message = false, std::string *error_msg = nullptr,
-              int *bad_count = nullptr) const override;
-
     void get_step_times__() override;
 
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
-                         bool abort_if_error) const;
+                         bool abort_if_error) const override;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
-                            bool overwrite, bool abort_if_error) const;
+                            bool overwrite, bool abort_if_error) const override;
     bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
                               bool abort_if_error) const;
 
@@ -172,11 +164,8 @@ namespace Iofx {
     int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
                                     const Ioss::Field &field, void *data, size_t data_size) const;
 
-  public:
-    // Temporarily made public for use during Salinas transition
-    // to using Ioss
     int get_file_pointer() const override; // Open file and set exodusFilePtr.
-  private:
+
     int64_t read_nodal_coordinates();
     void    read_elements(const Ioss::ElementBlock &block);
 

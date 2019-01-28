@@ -511,10 +511,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
       }
     }
   }
-  if (par_exoid != nullptr) {
-    free(par_exoid);
-    par_exoid = nullptr;
-  }
+  free(par_exoid);
+  par_exoid = nullptr;
 }
 
 template <typename T, typename INT>

@@ -50,6 +50,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_radixSort.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Export.hpp"
@@ -120,7 +121,7 @@ void Multiply(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup"))));
+  TimeMonitor MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Setup")));
 #endif
 
   const std::string prefix = "TpetraExt::MatrixMatrix::Multiply(): ";
@@ -216,7 +217,8 @@ void Multiply(
   RCP<const map_type> targetMap_B = Bprime->getRowMap();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X"))));
+  {
+  TimeMonitor MM2(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All I&X")));
 #endif
 
   // Now import any needed remote rows and populate the Aview struct
@@ -237,7 +239,9 @@ void Multiply(
     MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
+  }
+  TimeMonitor MM3(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply")));
+  {
 #endif
 
   // Call the appropriate method to perform the actual multiplication.
@@ -259,7 +263,8 @@ void Multiply(
     MMdetails::mult_A_B(Aview, Bview, crsmat, label,params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete"))));
+  }
+    TimeMonitor MM4(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All FillComplete")));
 #endif
     if (call_FillComplete_on_result) {
       // We'll call FillComplete on the C matrix before we exit, and give it a
@@ -301,7 +306,7 @@ void Jacobi(Scalar omega,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ")+ label + std::string(": ");
   using Teuchos::TimeMonitor;
-  RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm+std::string("Jacobi All Setup"))));
+  TimeMonitor MM(*TimeMonitor::getNewTimer(prefix_mmm+std::string("Jacobi All Setup")));
 #endif
 
   const std::string prefix = "TpetraExt::MatrixMatrix::Jacobi(): ";
@@ -357,13 +362,25 @@ void Jacobi(Scalar omega,
   RCP<const map_type> targetMap_B = Bprime->getRowMap();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All I&X"))));
+  TimeMonitor MM2(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All I&X")));
+  {
 #endif
 
   // Enable globalConstants by default
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()) {
+      importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+      int mm_optimization_core_count=0;
+      auto slist = params->sublist("matrixmatrix: kernel params",false);
+      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount ());
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+      bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      auto & ip1slist = importParams1->sublist("matrixmatrix: kernel params",false);
+      ip1slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      ip1slist.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+  }
 
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
@@ -378,11 +395,24 @@ void Jacobi(Scalar omega,
   // Enable globalConstants by default
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()) {
+      importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+
+      auto slist = params->sublist("matrixmatrix: kernel params",false);
+      int mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount () );
+      bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      auto & ip2slist = importParams2->sublist("matrixmatrix: kernel params",false);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+      ip2slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      ip2slist.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+  }
+
   MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All Multiply"))));
+  }
+  TimeMonitor MM3(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi All Multiply")));
 #endif
 
   // Now call the appropriate method to perform the actual multiplication.
@@ -709,12 +739,18 @@ add (const Scalar& alpha,
   auto acolmap = Aprime->getColMap()->getMyGlobalIndices();
   auto bcolmap = Bprime->getColMap()->getMyGlobalIndices();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("rowmap check/import"))));
 #endif
   if(!(Aprime->getRowMap()->isSameAs(*(Bprime->getRowMap()))))
   {
     //import Aprime into Bprime's row map so the local matrices have same # of rows
     auto import = rcp(new import_type(Aprime->getRowMap(), Bprime->getRowMap()));
+    // cbl do not set 
+    // parameterlist "isMatrixMatrix_TransferAndFillComplete" true here as
+    // this import _may_ take the form of a transfer. In practice it would be unlikely, 
+    // but the general case is not so forgiving.
+
     Aprime = importAndFillCompleteCrsMatrix<crs_matrix_type>(Aprime, *import, Bprime->getDomainMap(), Bprime->getRangeMap());
   }
   bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
@@ -728,7 +764,8 @@ add (const Scalar& alpha,
   {
     //can't do with current set of kernels, so fall back to original (slow) version
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("fallback to CrsMatrix::add"))));
+      MM = Teuchos::null;
+      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("fallback to CrsMatrix::add"))));
 #endif
     if (debug) {
       std::ostringstream os;
@@ -745,7 +782,8 @@ add (const Scalar& alpha,
   else if(!matchingColMaps)
   {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
+      MM = Teuchos::null;
+      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
 #endif
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto Acolmap = Aprime->getColMap()->getMyGlobalIndices();
@@ -768,6 +806,7 @@ add (const Scalar& alpha,
       std::cerr << os.str ();
     }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("building optimized column map"))));
 #endif
     CrowMap = Bprime->getRowMap();
@@ -790,7 +829,8 @@ add (const Scalar& alpha,
     {
       //use sorted kernel
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("sorted entries full kernel"))));
+        MM = Teuchos::null;
+        MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("sorted entries full kernel"))));
 #endif
       if (debug) {
         std::ostringstream os;
@@ -804,7 +844,8 @@ add (const Scalar& alpha,
     {
       //use unsorted kernel
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mm add unsorted entries full kernel"))));
+        MM = Teuchos::null;
+        MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mm add unsorted entries full kernel"))));
 #endif
       if (debug) {
         std::ostringstream os;
@@ -819,13 +860,15 @@ add (const Scalar& alpha,
     //note: Cexport created below (if it's needed)
   }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs constructor"))));
+  MM = Teuchos::null;
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs constructor"))));
 #endif
-      //      C = rcp(new crs_matrix_type(CrowMap, CcolMap, rowptrs, colinds, vals, params));
-      C.replaceColMap(CcolMap);
-      C.setAllValues(rowptrs,colinds,vals);
+  //      C = rcp(new crs_matrix_type(CrowMap, CcolMap, rowptrs, colinds, vals, params));
+  C.replaceColMap(CcolMap);
+  C.setAllValues(rowptrs,colinds,vals);
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
+  MM = Teuchos::null;
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
 #endif
   if(!CDomainMap->isSameAs(*CcolMap))
   {
@@ -1213,6 +1256,7 @@ addSorted(
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
   Ccolinds = col_inds_array("C colinds", addHandle->get_max_result_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
@@ -1232,7 +1276,7 @@ addUnsorted(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -1259,6 +1303,7 @@ addUnsorted(
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
   Ccolinds = col_inds_array("C colinds", addHandle->get_max_result_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: sorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
@@ -1303,7 +1348,7 @@ convertToGlobalAndAdd(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
   GO minGlobalCol,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
@@ -1331,6 +1376,7 @@ convertToGlobalAndAdd(
   handle.create_spadd_handle(false);
   auto addHandle = handle.get_spadd_handle();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted symbolic")));
 #endif
   auto nrows = Arowptrs.extent(0) - 1;
@@ -1341,6 +1387,7 @@ convertToGlobalAndAdd(
   Cvals = values_array("C values", addHandle->get_max_result_nnz());
   Ccolinds = global_col_inds_array("C colinds", addHandle->get_max_result_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
@@ -1444,6 +1491,7 @@ void mult_AT_B_newmatrix(
   /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
   /*************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T I&X"))));
 #endif
 
@@ -1454,11 +1502,34 @@ void mult_AT_B_newmatrix(
 
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()) {
+      importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+      auto slist = params->sublist("matrixmatrix: kernel params",false);
+      bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+      auto & sip1 = importParams1->sublist("matrixmatrix: kernel params",false);
+      sip1.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      sip1.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+  }
+
   MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label,importParams1);
 
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()){
+      importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+      auto slist = params->sublist("matrixmatrix: kernel params",false);
+      bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+      auto & sip2 = importParams2->sublist("matrixmatrix: kernel params",false);
+      sip2.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      sip2.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+  }
 
   if(B.getRowMap()->isSameAs(*Atrans->getColMap())){
     MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label,importParams2);
@@ -1468,6 +1539,7 @@ void mult_AT_B_newmatrix(
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T AB-core"))));
 #endif
 
@@ -1487,15 +1559,28 @@ void mult_AT_B_newmatrix(
   /* 4) exportAndFillComplete matrix                           */
   /*************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM-T exportAndFillComplete"))));
 #endif
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Crcp(&C,false);
+
   if (needs_final_export) {
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
-    if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
+    if(!params.is_null()) {
+        Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
+        Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
+        int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+        mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+        labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
 
+        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
+                      "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+        labelList.set("compute global constants",params->get("compute global constants",true));
+    }
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
   }
@@ -1514,8 +1599,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label,
-  const Teuchos::RCP<Teuchos::ParameterList>& params)
+  const std::string& /* label */,
+  const Teuchos::RCP<Teuchos::ParameterList>& /* params */)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -1910,10 +1995,6 @@ void mult_A_B_newmatrix(
       }
     });
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM=Teuchos::null;
-#endif
-
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_newmatrix_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -1942,7 +2023,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
 #endif
 
   using Teuchos::Array;
@@ -1993,9 +2073,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
+  RCP<TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
 #endif
-
 
   // Classic csr assembly (low memory edition)
   //
@@ -2108,8 +2187,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   Kokkos::resize(Cvals,CSR_ip);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix Final Sort"))));
-  MM2 = Teuchos::null;
+  {
+  auto MM3(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix Final Sort")));
 #endif
 
   // Final sort & set of CRS arrays
@@ -2119,7 +2198,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ESFC"))));
+  }
+  auto MM4(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ESFC")));
+  {
 #endif
 
   // Final FillComplete
@@ -2135,6 +2216,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
   RCP<const Export<LO,GO,NO> > dummyExport;
   C.expertStaticFillComplete(Bview. origMatrix->getDomainMap(), Aview. origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  }
+  MM2 = Teuchos::null;
+#endif
 
 }
 
@@ -2230,10 +2315,6 @@ void mult_A_B_reuse(
       }
     });
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null;
-#endif
-
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_reuse_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2252,14 +2333,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
                                                                                                const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#else
+  (void)label;
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2373,8 +2456,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2= Teuchos::null;
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse ESFC"))));
+  auto MM3 = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse ESFC"))));
 #endif
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
@@ -2569,8 +2651,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Nemwmatrix SerialCore"))));
-
+  auto MM(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Nemwmatrix SerialCore")));
 #endif
 
   using Teuchos::Array;
@@ -2744,44 +2825,46 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   Kokkos::resize(Ccolind,CSR_ip);
   Kokkos::resize(Cvals,CSR_ip);
 
-
-
+  {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix Final Sort"))));
+      auto MM2(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix Final Sort")));
 #endif
 
-  // Replace the column map
-  //
-  // mfh 27 Sep 2016: We do this because C was originally created
-  // without a column Map.  Now we have its column Map.
-  C.replaceColMap(Ccolmap);
+      // Replace the column map
+      //
+      // mfh 27 Sep 2016: We do this because C was originally created
+      // without a column Map.  Now we have its column Map.
+      C.replaceColMap(Ccolmap);
 
-  // Final sort & set of CRS arrays
-  //
-  // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
-  // matrix-matrix multiply routine sort the entries for us?
-  // Final sort & set of CRS arrays
-  if (params.is_null() || params->get("sort entries",true))
-    Import_Util::sortCrsEntries(Crowptr,Ccolind, Cvals);
-  C.setAllValues(Crowptr,Ccolind, Cvals);
-
+      // Final sort & set of CRS arrays
+      //
+      // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
+      // matrix-matrix multiply routine sort the entries for us?
+      // Final sort & set of CRS arrays
+      if (params.is_null() || params->get("sort entries",true))
+          Import_Util::sortCrsEntries(Crowptr,Ccolind, Cvals);
+      C.setAllValues(Crowptr,Ccolind, Cvals);
+  }
+  {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix ESFC"))));
+      auto MM3(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix ESFC")));
 #endif
 
-  // Final FillComplete
-  //
-  // mfh 27 Sep 2016: So-called "expert static fill complete" bypasses
-  // Import (from domain Map to column Map) construction (which costs
-  // lots of communication) by taking the previously constructed
-  // Import object.  We should be able to do this without interfering
-  // with the implementation of the local part of sparse matrix-matrix
-  // multply above
-  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-  labelList->set("Timer Label",label);
-  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
-  RCP<const Export<LO,GO,NO> > dummyExport;
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+      // Final FillComplete
+      //
+      // mfh 27 Sep 2016: So-called "expert static fill complete" bypasses
+      // Import (from domain Map to column Map) construction (which costs
+      // lots of communication) by taking the previously constructed
+      // Import object.  We should be able to do this without interfering
+      // with the implementation of the local part of sparse matrix-matrix
+      // multply above
+      RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+      labelList->set("Timer Label",label);
+      if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+      RCP<const Export<LO,GO,NO> > dummyExport;
+      C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+  
+  }
 }
 
 
@@ -2902,14 +2985,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
                                                                                                const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#else
+  (void)label;
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -3038,11 +3123,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2= Teuchos::null;
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
+  MM2 = Teuchos::null;
+  MM2 = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
 #endif
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM2 = Teuchos::null;
+  MM =  Teuchos::null;
+#endif
+
 }
 
 
@@ -3106,6 +3196,7 @@ void import_and_extract_views(
 
   } else {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap"))));
 #endif
 
@@ -3152,6 +3243,7 @@ void import_and_extract_views(
     }
 
     const int numProcs = rowMap->getComm()->getSize();
+
     if (numProcs < 2) {
       TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
             "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows.");
@@ -3164,6 +3256,7 @@ void import_and_extract_views(
     // value of numRemote is greater than 0.
     //
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Collective-0"))));
 #endif
 
@@ -3172,6 +3265,7 @@ void import_and_extract_views(
 
     if (globalMaxNumRemote > 0) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+      MM = Teuchos::null;
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-2"))));
 #endif
       // Create an importer with target-map remoteRowMap and source-map rowMap.
@@ -3189,15 +3283,31 @@ void import_and_extract_views(
 
   if (importer != null) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-3"))));
 #endif
 
     // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
+    auto & labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
+    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
+                  "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
+    labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
+                  "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
+
+    int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
     // Minor speedup tweak - avoid computing the global constants
-    if(!params.is_null())
-      labelList.set("compute global constants", params->get("compute global constants",false));
+    Teuchos::ParameterList params_sublist;
+    if(!params.is_null()) {
+        labelList.set("compute global constants", params->get("compute global constants",false));
+        params_sublist = params->sublist("matrixmatrix: kernel params",false);
+        mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+    }
+    labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+    
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
@@ -3216,11 +3326,15 @@ void import_and_extract_views(
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X Import-4"))));
 #endif
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later
     Aview.importColMap = Aview.importMatrix->getColMap();
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+   MM = Teuchos::null;
+#endif
   }
 }
 

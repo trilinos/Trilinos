@@ -438,8 +438,8 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::createOutArgsImpl() const
 
 template<class Scalar>
 void StateAndForwardSensitivityModelEvaluator<Scalar>::evalModelImpl(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &/* inArgs */,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &/* outArgs */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement evalModel(...) when needed!");

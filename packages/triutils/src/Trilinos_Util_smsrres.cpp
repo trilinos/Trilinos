@@ -41,7 +41,7 @@
 
 #include "Trilinos_Util.h"
 
-double Trilinos_Util_smsrres (int m, int n,
+double Trilinos_Util_smsrres (int m, int /* n */,
     double *val, int *indx,
     double *xlocal, double *x, double *b)
 {

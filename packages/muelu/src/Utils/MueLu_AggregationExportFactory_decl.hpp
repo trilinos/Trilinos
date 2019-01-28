@@ -166,12 +166,12 @@ namespace MueLu {
     static const int CONTRAST_3_ = -3;
 
     //Data that the different styles need to have available when building geometry
-    mutable Teuchos::ArrayRCP<const double> xCoords_; //fine local coordinates
-    mutable Teuchos::ArrayRCP<const double> yCoords_;
-    mutable Teuchos::ArrayRCP<const double> zCoords_;
-    mutable Teuchos::ArrayRCP<const double> cx_; //coarse local coordinates
-    mutable Teuchos::ArrayRCP<const double> cy_;
-    mutable Teuchos::ArrayRCP<const double> cz_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords_; //fine local coordinates
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx_; //coarse local coordinates
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz_;
     mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
     mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
     mutable std::vector<bool> isRoot_;

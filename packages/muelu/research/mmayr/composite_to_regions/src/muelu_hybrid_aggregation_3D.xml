@@ -1,0 +1,106 @@
+<ParameterList name="MueLu">
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
+      <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
+      <Parameter name="aggregation: drop tol"               type="double" value="0.01"/>
+    </ParameterList>
+
+    <ParameterList name="myAggregationFact">
+      <Parameter name="factory"                             type="string" value="HybridAggregationFactory"/>
+      <Parameter name="aggregation: number of spatial dimensions"           type="int"    value="3"/>
+      <Parameter name="aggregation: ordering"               type="string" value="natural"/>
+      <Parameter name="aggregation: max selected neighbors" type="int"    value="0"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="1"/>
+      <Parameter name="aggregation: max agg size"           type="int"    value="9"/>
+      <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
+      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
+      <Parameter name="aggregation: use interface aggregation" type="bool" value="false"/>
+      <Parameter name="aggregation: coupling"               type="string" value="uncoupled"/>
+    </ParameterList>
+
+    <ParameterList name="myCoarseMapFact">
+      <Parameter name="factory"                             type="string" value="CoarseMapFactory"/>
+      <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
+    </ParameterList>
+
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+      <Parameter name="CoarseMap"                           type="string" value="myCoarseMapFact"/>
+      <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
+    </ParameterList>
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myNullspaceFact">
+      <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
+      <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myCoordTransferFact">
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+      <Parameter name="hybrid aggregation"                  type="bool"   value="true"/>
+      <Parameter name="gCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+      <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+      <Parameter name="aggregationRegionTypeCoarse"         type="string" value="myAggregationFact"/>
+    </ParameterList>
+
+    <ParameterList name="myAggExportFact">
+      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
+      <Parameter name="aggregation: output filename"        type="string" value="aggs_level%LEVELID_proc%PROCID.out"/>
+      <Parameter name="aggregation: output file: agg style" type="string" value="Convex Hulls"/>
+      <Parameter name="aggregation: output file: fine graph edges"     type="bool" value="false"/>
+      <Parameter name="aggregation: output file: coarse graph edges"   type="bool" value="false"/>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/>
+        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- =======================  SMOOTHERS  ======================= -->
+    <ParameterList name="Jacobi">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"       type="int"    value="2"/>
+    <Parameter name="coarse: max size" type="int"    value="10"/>
+    <Parameter name="verbosity"        type="string" value="High"/>
+
+    <ParameterList name="All">
+      <Parameter name="Smoother"       type="string" value="Jacobi"/>
+      <Parameter name="Graph"          type="string" value="myCoalesceDropFact"/>
+      <Parameter name="Aggregates"     type="string" value="myAggregationFact"/>
+      <Parameter name="Nullspace"      type="string" value="myNullspaceFact"/>
+      <Parameter name="P"              type="string" value="myProlongatorFact"/>
+      <Parameter name="R"              type="string" value="myRestrictorFact"/>
+      <Parameter name="A"              type="string" value="myRAPFact"/>
+      <Parameter name="CoarseSolver"   type="string" value="Jacobi"/>
+      <Parameter name="Coordinates"    type="string" value="myCoordTransferFact"/>
+      <Parameter name="gNodesPerDim"   type="string"   value="myCoordTransferFact"/>
+      <Parameter name="lNodesPerDim"   type="string"   value="myCoordTransferFact"/>
+      <Parameter name="aggregationRegionType"   type="string"   value="myCoordTransferFact"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

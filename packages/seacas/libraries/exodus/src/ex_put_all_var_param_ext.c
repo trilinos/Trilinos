@@ -78,7 +78,7 @@ static int  ex_define_vars(int exoid, ex_entity_type obj_type, const char *entit
     if (!(VIDS = malloc(sizeof(int64_t) * DVAL))) {                                                \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to allocate memory for " TNAME " id array for file id %d", exoid);   \
-      ex_err(__func__, errmsg, EX_MEMFAIL);                                                        \
+      ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);                                              \
       goto error_ret;                                                                              \
     }                                                                                              \
     ex_get_ids(exoid, EIDS, VIDS);                                                                 \
@@ -100,16 +100,16 @@ static int  ex_define_vars(int exoid, ex_entity_type obj_type, const char *entit
 int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 {
   int    in_define = 0;
-  int    status;
-  int    temp;
+  int    status    = 0;
+  int    temp      = 0;
   int    time_dim = 0, num_nod_dim = 0, dimid = 0;
-  size_t num_elem_blk, num_edge_blk, num_face_blk;
-  size_t num_nset, num_eset, num_fset, num_sset, num_elset;
+  size_t num_elem_blk = 0, num_edge_blk = 0, num_face_blk = 0;
+  size_t num_nset = 0, num_eset = 0, num_fset = 0, num_sset = 0, num_elset = 0;
   int    numelblkdim = 0, numelvardim = 0, numedvardim = 0, numedblkdim = 0, numfavardim = 0,
       numfablkdim = 0, numnsetdim = 0, nsetvardim = 0, numesetdim = 0, esetvardim = 0,
       numfsetdim = 0, fsetvardim = 0, numssetdim = 0, ssetvardim = 0, numelsetdim = 0,
       elsetvardim = 0;
-  int i;
+  int i           = 0;
 
   int edblk_varid = 0, fablk_varid = 0, eblk_varid = 0, nset_varid = 0, eset_varid = 0,
       fset_varid = 0, sset_varid = 0, elset_varid = 0, varid = 0;
@@ -142,7 +142,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 
   if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
   }
 
@@ -153,7 +153,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   /* Check this now so we can use it later without checking for errors */
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &temp)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
   }
 
@@ -177,7 +177,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   /* put file into define mode  */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
   }
   in_define = 1;
@@ -194,7 +194,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
         NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define global variables in file id %d",
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
     ex_compress_variable(exoid, varid, 2);
@@ -218,7 +218,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
             NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define nodal variable %d in file id %d", i, exoid);
-          ex_err(__func__, errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
           goto error_ret; /* exit define mode and return */
         }
         ex_compress_variable(exoid, varid, 2);
@@ -292,7 +292,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   in_define = 0;
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
   }
 
@@ -353,7 +353,7 @@ error_ret:
     if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
     }
   }
   free(eblk_ids);
@@ -388,12 +388,12 @@ static int define_dimension(int exoid, const char *DIMENSION, int count, const c
                "ERROR: %s variable name parameters are already defined "
                "in file id %d",
                label, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
     }
     else {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to define number of %s variables in file id %d", label, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
     }
   }
   return (status);
@@ -417,12 +417,12 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
     if (status == NC_ENAMEINUSE) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable names are already defined in file id %d",
                label, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
     }
     else {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s variable names in file id %d",
                label, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
     }
   }
 #if NC_HAS_HDF5
@@ -441,7 +441,7 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
   if (!(stat_vals = malloc(var_count * sizeof(int)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate memory for %s status array for file id %d", label, exoid);
-    ex_err(__func__, errmsg, EX_MEMFAIL);
+    ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
     return (NULL);
   }
 
@@ -454,7 +454,7 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
       free(stat_vals);
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s status array from file id %d",
                label, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (NULL);
     }
   }
@@ -478,7 +478,7 @@ static int put_truth_table(int exoid, int varid, int *table, const char *label)
   if (iresult != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s variable truth table in file id %d",
              label, exoid);
-    ex_err(__func__, errmsg, iresult);
+    ex_err_fn(exoid, __func__, errmsg, iresult);
   }
   return iresult;
 }
@@ -496,14 +496,14 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
 
   if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     return -1;
   }
 
   if (var_tab == NULL) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable truth table is NULL in file id %d", label,
              exoid);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     return -1;
   }
 
@@ -530,7 +530,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: failed to locate number of entities in %s %" PRId64 " in file id %d",
                      label, id, exoid);
-            ex_err(__func__, errmsg, status);
+            ex_err_fn(exoid, __func__, errmsg, status);
             return (status);
           }
 
@@ -546,7 +546,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to define %s variable for %s %" PRId64 " in file id %d",
                        label, label, id, exoid);
-              ex_err(__func__, errmsg, status);
+              ex_err_fn(exoid, __func__, errmsg, status);
               return (status);
             }
           }
@@ -598,7 +598,7 @@ static int ex_define_vars(int exoid, ex_entity_type obj_type, const char *entity
     if ((status = nc_def_var(exoid, VTV, NC_INT, 2, dims, truth_table_var)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to define %s variable truth table in file id %d", entity_name, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return status;
     }
   }

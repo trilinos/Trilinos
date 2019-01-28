@@ -133,6 +133,7 @@ namespace MueLu {
         if (j < as<int>(neighOfINode.length)) {
           // Assign to an adjacent aggregate
           vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
+          numNonAggregatedNodes--;
           failedToAggregate = false;
         } 
       }
@@ -183,13 +184,13 @@ namespace MueLu {
 
           aggregates.SetIsRoot(i);
           vertex2AggId[i] = numLocalAggregates++;
+          numNonAggregatedNodes--;
         }
       }
 
       // One way or another, the node is aggregated (possibly into a singleton)
       aggStat   [i] = AGGREGATED;
       procWinner[i] = myRank;
-      numNonAggregatedNodes--;
 
     }
 

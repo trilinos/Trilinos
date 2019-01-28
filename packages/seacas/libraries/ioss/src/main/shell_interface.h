@@ -73,6 +73,8 @@ namespace IOShell {
     int                      data_storage_type{0};
     int                      compression_level{0};
     int                      serialize_io_size{0};
+    int                      flush_interval{0};
+
     //! If non-zero, then put `split_times` timesteps in each file. Then close file and start new
     //! file.
     // If `split_cyclic == 0`, then filenames will be

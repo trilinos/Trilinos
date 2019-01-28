@@ -136,7 +136,7 @@ static int warning_output = 0;
 int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
                 int run_version)
 {
-  int     exoid;
+  int     exoid = -1;
   int     status, stat_att, stat_dim;
   nc_type att_type = NC_NAT;
   size_t  att_len  = 0;
@@ -232,7 +232,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
 #endif
       }
       else if (type == 4) {
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
         fprintf(stderr,
                 "EXODUS: ERROR: Attempting to open the CDF5 "
                 "file:\n\t'%s'\n\t failed. The netcdf library supports "
@@ -271,6 +271,9 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
 #if NC_HAS_DISKLESS
     if (mode & EX_DISKLESS) {
       nc_mode |= NC_DISKLESS;
+#if defined NC_PERSIST
+      nc_mode |= NC_PERSIST;
+#endif
     }
 #endif
     if ((status = nc_open(path, nc_mode, &exoid)) != NC_NOERR) {
@@ -288,7 +291,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
     if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to set nofill mode in file id %d named %s",
                exoid, path);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -298,7 +301,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       if ((status = nc_redef(exoid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to place file id %d named %s into define mode", exoid, path);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -316,14 +319,14 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define string name dimension in file id %d named %s", exoid,
                    path);
-          ex_err(__func__, errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
       }
       if ((status = nc_enddef(exoid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to complete definition in file id %d named %s", exoid, path);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -336,7 +339,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   if ((status = nc_get_att_float(exoid, NC_GLOBAL, ATT_VERSION, version)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get database version for file id: %d",
              exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -344,7 +347,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   if (*version < 2.0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Unsupported file version %.2f in file id: %d",
              *version, exoid);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -354,7 +357,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
         NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file wordsize from file id: %d",
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -386,7 +389,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
              "nc_close() called instead of ex_close() on an open Exodus "
              "file?\n",
              exoid, path);
-    ex_err(__func__, errmsg, EX_BADFILEID);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
     nc_close(exoid);
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -395,7 +398,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to initialize conversion routines in file id %d named %s", exoid, path);
-    ex_err(__func__, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

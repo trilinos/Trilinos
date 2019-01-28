@@ -49,8 +49,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
      IPOUHarmonicCoarseOperator<SC,LO,GO,NO>:: IPOUHarmonicCoarseOperator(CrsMatrixPtr k,
                                                                           ParameterListPtr parameterList) :
-    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),
-    InterfaceCoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>()),
+    HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),    
     InterfacePartitionOfUnity_ (),
     LocalPartitionOfUnityBasis_ ()
     {
@@ -91,7 +90,7 @@ namespace FROSch {
     void IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                             const Teuchos::EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(0!=0,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -115,8 +114,7 @@ namespace FROSch {
         // LÄNGEN NOCHMAL GEGEN NumberOfBlocks_ checken!!!
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
         this->IDofs_.resize(this->IDofs_.size()+1);
-        this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
-        this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+        this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
         this->DofsMaps_.resize(this->DofsMaps_.size()+1);
         this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
         this->BlockCoarseDimension_.resize(this->BlockCoarseDimension_.size()+1);
@@ -139,8 +137,7 @@ namespace FROSch {
         for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
             this->GammaDofs_.resize(this->GammaDofs_.size()+1);
             this->IDofs_.resize(this->IDofs_.size()+1);
-            this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
-            this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
             this->DofsMaps_.resize(this->DofsMaps_.size()+1);
             this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
             this->BlockCoarseDimension_.resize(this->BlockCoarseDimension_.size()+1);
@@ -182,7 +179,7 @@ namespace FROSch {
                 coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true)); 
                 InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW")));
             } else {
-                FROSCH_ASSERT(0!=0,"InterfacePartitionOfUnity Type is unknown.");
+                FROSCH_ASSERT(false,"InterfacePartitionOfUnity Type is unknown.");
             }            
             InterfacePartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
             InterfacePartitionOfUnity_->sortInterface(this->K_,nodeList);
@@ -219,11 +216,9 @@ namespace FROSch {
             
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
             
-            InterfaceCoarseSpace_ = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
+            this->InterfaceCoarseSpaces_[blockId] = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
             if (this->Verbose_) std::cout<<"WARNING! Need to build block coarse sizes for use in MueLu nullspace."<< std::endl;
-
-            this->BlockCoarseMaps_[blockId] = InterfaceCoarseSpace_->getBasisMap();
-            this->MVPhiGamma_[blockId] = InterfaceCoarseSpace_->getLocalBasis(); //if (this->Verbose_) {Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);}
+            //if (this->Verbose_) {Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);}
         }
         
         return 0;

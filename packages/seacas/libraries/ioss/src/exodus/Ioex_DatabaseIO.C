@@ -146,7 +146,13 @@ namespace Ioex {
         Ioss::Utils::check_set_bool_property(properties, "MINIMIZE_OPEN_FILES", minimizeOpenFiles);
       }
 
-      Ioss::Utils::check_set_bool_property(properties, "FILE_PER_STATE", filePerState);
+      {
+        bool file_per_state = false;
+        Ioss::Utils::check_set_bool_property(properties, "FILE_PER_STATE", file_per_state);
+        if (file_per_state) {
+          set_file_per_state(true);
+        }
+      }
     }
 
     // See if there are any properties that need to (or can) be
@@ -271,6 +277,30 @@ namespace Ioex {
   }
 
   // common
+  int DatabaseIO::get_file_pointer() const
+  {
+    // Returns the file_pointer used to access the file on disk.
+    // Checks that the file is open and if not, opens it first.
+    if (exodusFilePtr < 0) {
+      bool write_message  = true;
+      bool abort_if_error = true;
+      if (is_input()) {
+        open_input_file(write_message, nullptr, nullptr, abort_if_error);
+      }
+      else {
+        bool overwrite = true;
+        handle_output_file(write_message, nullptr, nullptr, overwrite, abort_if_error);
+      }
+
+      if (!m_groupName.empty()) {
+        ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
+      }
+    }
+    assert(exodusFilePtr >= 0);
+    fileExists = true;
+    return exodusFilePtr;
+  }
+
   int DatabaseIO::free_file_pointer() const
   {
     if (exodusFilePtr != -1) {
@@ -293,6 +323,65 @@ namespace Ioex {
     exodusFilePtr = -1;
 
     return exodusFilePtr;
+  }
+
+  bool DatabaseIO::ok__(bool write_message, std::string *error_msg, int *bad_count) const
+  {
+    // For input, we try to open the existing file.
+
+    // For output, we do not want to overwrite or clobber the output
+    // file if it already exists since the app might be reading the restart
+    // data from this file and then later clobbering it and then writing
+    // restart data to the same file. So, for output, we first check
+    // whether the file exists and if it it and is writable, assume
+    // that we can later create a new or append to existing file.
+
+    // Returns the number of processors on which this file is *NOT* ok in 'bad_count' if not null.
+    // Will return 'true' only if file ok on all processors.
+
+    if (fileExists) {
+      // File has already been opened at least once...
+      return dbState != Ioss::STATE_INVALID;
+    }
+
+    bool abort_if_error = false;
+    bool is_ok;
+    if (is_input()) {
+      is_ok = open_input_file(write_message, error_msg, bad_count, abort_if_error);
+    }
+    else {
+      // See if file exists... Don't overwrite (yet) it it exists.
+      bool overwrite = false;
+      is_ok = handle_output_file(write_message, error_msg, bad_count, overwrite, abort_if_error);
+      // Close all open files...
+      if (exodusFilePtr >= 0) {
+        ex_close(exodusFilePtr);
+        exodusFilePtr = -1;
+      }
+    }
+    return is_ok;
+  }
+
+  void DatabaseIO::finalize_file_open() const
+  {
+    assert(exodusFilePtr >= 0);
+    // Check byte-size of integers stored on the database...
+    if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
+      if (myProcessor == 0) {
+        std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
+                     "integers.\n";
+      }
+      ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
+      set_int_byte_size_api(Ioss::USE_INT64_API);
+    }
+
+    // Check for maximum name length used on the input file.
+    int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    if (max_name_length > maximumNameLength) {
+      maximumNameLength = max_name_length;
+    }
+
+    ex_set_max_name_length(exodusFilePtr, maximumNameLength);
   }
 
   bool DatabaseIO::open_group__(const std::string &group_name)
@@ -359,66 +448,76 @@ namespace Ioex {
 
     size_t num_qa_records = qaRecords.size() / 4;
 
-    auto qa = new qa_element[num_qa_records + 1];
-    for (size_t i = 0; i < num_qa_records + 1; i++) {
-      for (int j = 0; j < 4; j++) {
-        qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
+    bool i_write = (usingParallelIO && myProcessor == 0) || !usingParallelIO;
+    if (i_write) {
+      auto qa = new qa_element[num_qa_records + 1];
+      for (size_t i = 0; i < num_qa_records + 1; i++) {
+        for (int j = 0; j < 4; j++) {
+          qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
+        }
+      }
+
+      {
+        int j = 0;
+        for (size_t i = 0; i < num_qa_records; i++) {
+          std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
+          qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
+          qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
+          qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
+        }
+      }
+
+      Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
+                                 qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
+
+      std::string codename = "unknown";
+      std::string version  = "unknown";
+
+      if (get_region()->property_exists("code_name")) {
+        codename = get_region()->get_property("code_name").get_string();
+      }
+      if (get_region()->property_exists("code_version")) {
+        version = get_region()->get_property("code_version").get_string();
+      }
+
+      char buffer[MAX_STR_LENGTH + 1];
+      std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
+      buffer[MAX_STR_LENGTH] = '\0';
+      std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
+
+      std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
+      buffer[MAX_STR_LENGTH] = '\0';
+      std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+
+      int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+
+      for (size_t i = 0; i < num_qa_records + 1; i++) {
+        for (int j = 0; j < 4; j++) {
+          delete[] qa[i].qa_record[0][j];
+        }
+      }
+      delete[] qa;
+    }
+    else {
+      int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, nullptr);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
     }
-
-    {
-      int j = 0;
-      for (size_t i = 0; i < num_qa_records; i++) {
-        std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
-        qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
-        qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
-        qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
-      }
-    }
-
-    Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
-                               qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
-
-    std::string codename = "unknown";
-    std::string version  = "unknown";
-
-    if (get_region()->property_exists("code_name")) {
-      codename = get_region()->get_property("code_name").get_string();
-    }
-    if (get_region()->property_exists("code_version")) {
-      version = get_region()->get_property("code_version").get_string();
-    }
-
-    char buffer[MAX_STR_LENGTH + 1];
-    std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
-    buffer[MAX_STR_LENGTH] = '\0';
-    std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
-
-    std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
-    buffer[MAX_STR_LENGTH] = '\0';
-    std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
-
-    int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1,
-                         myProcessor == 0 ? qa[0].qa_record : nullptr);
-    if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-    }
-
-    for (size_t i = 0; i < num_qa_records + 1; i++) {
-      for (int j = 0; j < 4; j++) {
-        delete[] qa[i].qa_record[0][j];
-      }
-    }
-    delete[] qa;
   }
 
   // common
   void DatabaseIO::put_info()
   {
+    bool i_write = (usingParallelIO && myProcessor == 0) || !usingParallelIO;
+
     // dump info records, include the product_registry
     // See if the input file was specified as a property on the database...
     std::string              filename;
@@ -436,32 +535,40 @@ namespace Ioex {
 
     size_t total_lines = in_lines + qa_lines + info_rec_size;
 
-    char **info = Ioss::Utils::get_name_array(
-        total_lines, max_line_length); // 'total_lines' pointers to char buffers
+    if (i_write) {
+      char **info = Ioss::Utils::get_name_array(
+          total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
-    int i = 0;
-    std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
+      int i = 0;
+      std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
 
-    std::strncpy(info[i++], Ioex::Version(), max_line_length);
+      std::strncpy(info[i++], Ioex::Version(), max_line_length);
 
-    // Copy input file lines into 'info' array...
-    for (size_t j = 0; j < input_lines.size(); j++, i++) {
-      std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
-      info[i][max_line_length] = '\0'; // Once more for good luck...
+      // Copy input file lines into 'info' array...
+      for (size_t j = 0; j < input_lines.size(); j++, i++) {
+        std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
+        info[i][max_line_length] = '\0'; // Once more for good luck...
+      }
+
+      // Copy "information_records" property data ...
+      for (size_t j = 0; j < informationRecords.size(); j++, i++) {
+        std::strncpy(info[i], informationRecords[j].c_str(), max_line_length);
+        info[i][max_line_length] = '\0'; // Once more for good luck...
+      }
+
+      int ierr = ex_put_info(get_file_pointer(), total_lines, info);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+
+      Ioss::Utils::delete_name_array(info, total_lines);
     }
-
-    // Copy "information_records" property data ...
-    for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-      std::strncpy(info[i], informationRecords[j].c_str(), max_line_length);
-      info[i][max_line_length] = '\0'; // Once more for good luck...
+    else {
+      int ierr = ex_put_info(get_file_pointer(), total_lines, nullptr);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
     }
-
-    int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : nullptr);
-    if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-    }
-
-    Ioss::Utils::delete_name_array(info, total_lines);
   }
 
   // common
@@ -959,7 +1066,16 @@ namespace Ioex {
     if (!db.pathname().empty()) {
       new_filename += db.pathname() + "/";
     }
-    new_filename += db.basename() + "-state-" + std::to_string(state) + "." + db.extension();
+
+    if (get_cycle_count() >= 1) {
+      static const std::string suffix{"ABCDEFGHIJKLMNOPQRSTUVWXYZ"};
+      int                      index = (state - 1) % get_cycle_count();
+      new_filename += db.basename() + "-state-" + suffix[index] + "." + db.extension();
+    }
+    else {
+      new_filename += db.basename() + "-state-" + std::to_string(state) + "." + db.extension();
+    }
+
     DBFilename = new_filename;
     fileExists = false;
 
@@ -975,23 +1091,38 @@ namespace Ioex {
     exo_params.num_sset  = m_variables[EX_SIDE_SET].size();
     exo_params.num_elset = m_variables[EX_ELEM_SET].size();
 
+    char the_title[max_line_length + 1];
+
+    // Title...
+    if (get_region()->property_exists("title")) {
+      std::string title_str = get_region()->get_property("title").get_string();
+      std::strncpy(the_title, title_str.c_str(), max_line_length);
+    }
+    else {
+      std::strncpy(the_title, "IOSS Default Title", max_line_length);
+    }
+    the_title[max_line_length] = '\0';
+
+    Ioex::Mesh mesh(spatialDimension, the_title, !usingParallelIO);
+    mesh.populate(get_region());
+
+    // Write the metadata to the exodus file...
     Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
-    int ierr = data.initialize_state_file(*get_region(), exo_params, originalDBFilename);
+    int             ierr = data.initialize_state_file(mesh, exo_params, originalDBFilename);
+
     if (ierr < 0) {
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
     }
-
-    cycleCount = 1;
   }
 
-  bool DatabaseIO::begin_state__(Ioss::Region * /* region */, int state, double time)
+  bool DatabaseIO::begin_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
     time /= timeScaleFactor;
 
     if (!is_input()) {
-      if (filePerState) {
+      if (get_file_per_state()) {
         // Close current file; create new file and output transient metadata...
         open_state_file(state);
         write_results_metadata(false);
@@ -1012,7 +1143,7 @@ namespace Ioex {
   }
 
   // common
-  bool DatabaseIO::end_state__(Ioss::Region * /*region*/, int state, double time)
+  bool DatabaseIO::end_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -1409,6 +1540,7 @@ namespace Ioex {
     size_t var_count = variables.size();
 
     if (var_count > 0) {
+      size_t name_length = 0;
       // Push into a char** array...
       std::vector<char *>      var_names(var_count);
       std::vector<std::string> variable_names(var_count);
@@ -1423,8 +1555,27 @@ namespace Ioex {
           variable_names[index - 1] = Ioss::Utils::lowercase(variable_names[index - 1]);
         }
         var_names[index - 1] = const_cast<char *>(variable_names[index - 1].c_str());
+        size_t name_len      = variable_names[index - 1].length();
+        name_length          = name_len > name_length ? name_len : name_length;
       }
 
+      // Should handle this automatically, but by the time we get to defining transient fields, we
+      // have already created the output database and populated the set/block names. At this point,
+      // it is too late to change the size of the names stored on the output database... (I think...
+      // try changing DIM_STR_NAME value and see if works...)
+      if (name_length > (size_t)maximumNameLength) {
+        if (myProcessor == 0) {
+          IOSS_WARNING << "WARNING: There are variables names whose length (" << name_length
+                       << ") exceeds the current "
+                          "maximum name length ("
+                       << maximumNameLength << ") set for this database (" << get_filename()
+                       << ").\n"
+                       << "         You should either reduce the length of the variable name, or "
+                          "set the 'MAXIMUM_NAME_LENGTH' property "
+                       << "to at least " << name_length
+                       << ".\n         Contact gdsjaar@sandia.gov for more information.\n\n";
+        }
+      }
       int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
@@ -1437,6 +1588,10 @@ namespace Ioex {
   // Given the global region step, return the step on the database...
   int DatabaseIO::get_database_step(int global_step) const
   {
+    if (get_file_per_state()) {
+      return 1;
+    }
+
     assert(overlayCount >= 0 && cycleCount >= 0);
     if (overlayCount == 0 && cycleCount == 0) {
       return global_step;
@@ -1952,7 +2107,7 @@ namespace {
       return;
     }
 
-    if (!all_attributes_indexed && !some_attributes_indexed) {
+    if (!some_attributes_indexed) {
       // Index was not set for any of the attributes; set them all...
       size_t offset = 1;
       for (const auto &field_name : results_fields) {

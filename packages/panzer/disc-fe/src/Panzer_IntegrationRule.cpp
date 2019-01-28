@@ -251,25 +251,24 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
 
   Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
 
-  int num_points(0);
+  int tmp_num_points = 0;
   if (cv_type == "volume") {
     ss << ",volume)";
     intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::execution_space,double,double>(topo));
-    num_points = intrepid_cubature->getNumPoints();
+    tmp_num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "side") {
     ss << ",side)";
     intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::execution_space,double,double>(topo));
-    num_points = intrepid_cubature->getNumPoints();
+    tmp_num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "boundary") {
     ss << ",boundary)";
-    intrepid_cubature  = Teuchos::rcp(new 
-                                      Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(topo,cell_data.side()));
-    num_points = intrepid_cubature->getNumPoints();
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(topo,cell_data.side()));
+    tmp_num_points = intrepid_cubature->getNumPoints();
   }
 
-  PointRule::setup(ss.str(),num_points,cell_data);
+  PointRule::setup(ss.str(),tmp_num_points,cell_data);
 }
 
 int panzer::IntegrationRule::order() const

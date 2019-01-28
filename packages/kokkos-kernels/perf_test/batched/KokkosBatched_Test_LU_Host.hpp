@@ -17,9 +17,10 @@
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Serial_Impl.hpp"
 
+#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
+
 namespace KokkosBatched {
   namespace Experimental {
-
     namespace PerfTest {
 
 #undef FLOP_MUL
@@ -174,109 +175,104 @@ namespace KokkosBatched {
         
           {
             double tavg = 0, tmin = tmax;
+            MKL_COMPACT_PACK format;
+            if (VectorLength == 8)              format = MKL_COMPACT_AVX512;
+            else if (VectorLength == 4)         format = MKL_COMPACT_AVX;
 
-            MKL_INT blksize[1] = { BlkSize };
-            MKL_INT lda[1] = { a.stride_1() };
-            MKL_INT size_per_grp[1] = { N*VectorLength };
-
-            compact_t A_p;
-            A_p.layout = CblasRowMajor; 
-            A_p.rows = blksize;
-            A_p.cols = blksize;
-            A_p.stride = lda;
-            A_p.group_count = 1;
-            A_p.size_per_group = size_per_grp;
-            A_p.format = VectorLength;
-            A_p.mat = (double*)a.data();
-
-            for (int iter=iter_begin;iter<iter_end;++iter) {
-              // flush
-              flush.run();
-
-              // initialize matrix
-              Kokkos::deep_copy(a, amat_simd);
-
-              HostSpaceType::fence();
-              timer.reset();
-
-              LAPACKE_dgetrf_compute_batch(&A_p);
-            
-              HostSpaceType::fence();
-              const double t = timer.seconds();
-              tmin = std::min(tmin, t);
-              tavg += (iter >= 0)*t;
+            if (format == MKL_COMPACT_AVX512 || format == MKL_COMPACT_AVX) {
+              int info;
+              for (int iter=iter_begin;iter<iter_end;++iter) {
+                // flush
+                flush.run();
+                
+                // initialize matrix
+                Kokkos::deep_copy(a, amat_simd);
+                
+                HostSpaceType::fence();
+                timer.reset();
+                
+                mkl_dgetrfnp_compact(MKL_ROW_MAJOR,
+                                     BlkSize, BlkSize,
+                                     (double*)a.data(), a.stride_1(),
+                                     (MKL_INT*)&info, format, (MKL_INT)N*VectorLength);
+                
+                HostSpaceType::fence();
+                const double t = timer.seconds();
+                tmin = std::min(tmin, t);
+                tavg += (iter >= 0)*t;
+              }
+              tavg /= iter_end;
+              
+              double diff = 0;
+              for (int i=0,iend=aref.extent(0);i<iend;++i)
+                for (int j=0,jend=aref.extent(1);j<jend;++j)
+                  for (int k=0,kend=aref.extent(2);k<kend;++k)
+                    diff += abs(aref(i,j,k) - a(i/VectorLength,j,k)[i%VectorLength]);
+              
+              std::cout << std::setw(10) << "MKL Cmpt"
+                        << " BlkSize = " << std::setw(3) << BlkSize
+                        << " time = " << std::scientific << tmin
+                        << " avg flop/s = " << (flop/tavg)
+                        << " max flop/s = " << (flop/tmin)
+                        << " diff to ref = " << diff
+                        << std::endl;
             }
-            tavg /= iter_end;
-
-            double diff = 0;
-            for (int i=0,iend=aref.extent(0);i<iend;++i)
-              for (int j=0,jend=aref.extent(1);j<jend;++j)
-                for (int k=0,kend=aref.extent(2);k<kend;++k)
-                  diff += abs(aref(i,j,k) - a(i/VectorLength,j,k)[i%VectorLength]);
-
-            std::cout << std::setw(10) << "MKL Cmpt"
-                      << " BlkSize = " << std::setw(3) << BlkSize
-                      << " time = " << std::scientific << tmin
-                      << " avg flop/s = " << (flop/tavg)
-                      << " max flop/s = " << (flop/tmin)
-                      << " diff to ref = " << diff
-                      << std::endl;
           }
         }
 #endif
 
 #endif
-        ///
-        /// Plain version (comparable to micro BLAS version)
-        ///
+        // ///
+        // /// Plain version (comparable to micro BLAS version)
+        // ///
 
-        {
-          Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType>
-            a("a", N*VectorLength, BlkSize, BlkSize);
+        // {
+        //   Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType>
+        //     a("a", N*VectorLength, BlkSize, BlkSize);
 
-          {
-            double tavg = 0, tmin = tmax;
-            for (int iter=iter_begin;iter<iter_end;++iter) {
-              // flush
-              flush.run();
+        //   {
+        //     double tavg = 0, tmin = tmax;
+        //     for (int iter=iter_begin;iter<iter_end;++iter) {
+        //       // flush
+        //       flush.run();
 
-              // initialize matrix
-              Kokkos::deep_copy(a, amat);
+        //       // initialize matrix
+        //       Kokkos::deep_copy(a, amat);
 
-              HostSpaceType::fence();
-              timer.reset();
+        //       HostSpaceType::fence();
+        //       timer.reset();
 
-              Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
-              Kokkos::parallel_for
-                (policy,
-                 KOKKOS_LAMBDA(const int k) {
-                  auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+        //       Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
+        //       Kokkos::parallel_for
+        //         (policy,
+        //          KOKKOS_LAMBDA(const int k) {
+        //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 
-                  SerialLU<AlgoTagType>::invoke(aa);
-                });
+        //           SerialLU<AlgoTagType>::invoke(aa);
+        //         });
 
-              HostSpaceType::fence();
-              const double t = timer.seconds();
-              tmin = std::min(tmin, t);
-              tavg += (iter >= 0)*t;
-            }
-            tavg /= iter_end;
+        //       HostSpaceType::fence();
+        //       const double t = timer.seconds();
+        //       tmin = std::min(tmin, t);
+        //       tavg += (iter >= 0)*t;
+        //     }
+        //     tavg /= iter_end;
 
-            double diff = 0;
-            for (int i=0,iend=aref.extent(0);i<iend;++i)
-              for (int j=0,jend=aref.extent(1);j<jend;++j)
-                for (int k=0,kend=aref.extent(2);k<kend;++k)
-                  diff += abs(aref(i,j,k) - a(i,j,k));
+        //     double diff = 0;
+        //     for (int i=0,iend=aref.extent(0);i<iend;++i)
+        //       for (int j=0,jend=aref.extent(1);j<jend;++j)
+        //         for (int k=0,kend=aref.extent(2);k<kend;++k)
+        //           diff += abs(aref(i,j,k) - a(i,j,k));
 
-            std::cout << std::setw(10) << "Plain"
-                      << " BlkSize = " << std::setw(3) << BlkSize
-                      << " time = " << std::scientific << tmin
-                      << " avg flop/s = " << (flop/tavg)
-                      << " max flop/s = " << (flop/tmin)
-                      << " diff to ref = " << diff
-                      << std::endl;
-          }
-        }
+        //     std::cout << std::setw(10) << "Plain"
+        //               << " BlkSize = " << std::setw(3) << BlkSize
+        //               << " time = " << std::scientific << tmin
+        //               << " avg flop/s = " << (flop/tavg)
+        //               << " max flop/s = " << (flop/tmin)
+        //               << " diff to ref = " << diff
+        //               << std::endl;
+        //   }
+        // }
 
         ///
         /// SIMD with appropriate data layout
@@ -329,8 +325,9 @@ namespace KokkosBatched {
           }
         }
       }
-    }
-  }
-}
+
+    } // namespace PerfTest
+  } // namespace Experimental
+} // namespace KokkosBatched
 
 

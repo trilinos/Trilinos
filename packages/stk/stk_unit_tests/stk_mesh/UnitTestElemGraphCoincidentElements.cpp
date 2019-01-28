@@ -469,7 +469,6 @@ protected:
     ~ShellMeshModification()
     {
         delete elemElemGraph;
-        delete updater;
     }
 
     void initialize(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -514,7 +513,7 @@ protected:
     void create_elem_elem_graph()
     {
         elemElemGraph = new ElemElemGraphTester(get_bulk());
-        updater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemElemGraph);
+        updater = std::make_shared<stk::mesh::ElemElemGraphUpdater>(get_bulk(), *elemElemGraph);
         get_bulk().register_observer(updater);
         coincident_graph = &elemElemGraph->my_get_coincident_graph();
     }
@@ -543,15 +542,6 @@ protected:
         verify_graph_has_num_elements_and_num_edges(numElementsThisProcessor, 0u);
         verify_num_parallel_edges(0u);
         verify_num_elements_and_num_edges_in_coincident_graph(numCoincidentElementsThisProcessor,2u);
-    }
-
-    void write_graph(std::string introduction)
-    {
-        std::ostringstream oss;
-        oss << "shells." << get_bulk().parallel_rank();
-        std::ofstream out(oss.str(),std::ios_base::app);
-        out << introduction;
-        elemElemGraph->write_graph(out);
     }
 
     void test_create_stacked_shells_then_delete_one(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -661,7 +651,7 @@ private:
     stk::mesh::Entity shell2;
     stk::mesh::Entity shell3;
     ElemElemGraphTester* elemElemGraph = nullptr;
-    stk::mesh::ElemElemGraphUpdater* updater = nullptr;
+    std::shared_ptr<stk::mesh::ElemElemGraphUpdater> updater;
     const stk::mesh::impl::SparseGraph* coincident_graph = nullptr;
 };
 } // namespace

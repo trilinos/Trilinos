@@ -260,7 +260,7 @@ namespace Teuchos {
       counter().start(reset);
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
       if (nonnull(stackedTimer_))
-        stackedTimer_->start(counter().name());
+        stackedTimer_->start(counter().name(),false);
 #endif
     }
   }
@@ -271,21 +271,24 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
       try {
         if (nonnull(stackedTimer_))
-          stackedTimer_->stop(counter().name());
+          stackedTimer_->stop(counter().name(),false);
       }
       catch (std::runtime_error&) {
         std::ostringstream warning;
         warning <<
           "\n*********************************************************************\n"
-          "WARNING: Overlapping timers detected!\n"
+            "WARNING: Overlapping timers detected! Near: " <<counter().name()<<"\n"
           "A TimeMonitor timer was stopped before a nested subtimer was\n"
           "stopped. This is not allowed by the StackedTimer. This corner case\n"
           "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
           "assigned to a new timer. To disable this warning, either fix the\n"
           "ordering of timer creation and destuction or disable the StackedTimer\n"
           "support in the TimeMonitor by setting the StackedTimer to null\n"
-          "with:\n"
-          "Teuchos::TimeMonitor::setStackedTimer(Teuchos::null)\n"
+          "Example:\n"
+          " RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(\"Junk\"))));\n"
+          "///code to time \n"
+          "MM = Teuchos::null;\n"
+          "MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(\"SecondJunk\"))));\n"
           "*********************************************************************\n";
         std::cout << warning.str() << std::endl;
         Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);

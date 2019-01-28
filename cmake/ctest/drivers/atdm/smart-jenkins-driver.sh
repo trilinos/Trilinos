@@ -20,6 +20,7 @@ if [ "${WORKSPACE}" == ""  ] ; then
   exit 1
 fi
 
+export ATDM_CONFIG_BUILD_NAME=$JOB_NAME
 source $WORKSPACE/Trilinos/cmake/std/atdm/utils/get_known_system_name.sh
 
 echo

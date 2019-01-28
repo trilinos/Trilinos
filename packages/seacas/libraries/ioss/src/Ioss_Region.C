@@ -135,9 +135,8 @@ namespace {
     }
   }
 
-  bool check_hashes(const std::array<size_t, Ioss::entityTypeCount> &min_hash,
-                    const std::array<size_t, Ioss::entityTypeCount> &max_hash,
-                    Ioss::EntityType                                 type)
+  bool check_hashes(const std::vector<size_t> &min_hash, const std::vector<size_t> &max_hash,
+                    Ioss::EntityType type)
   {
     auto index = numberOfBits(type) - 1;
     SMART_ASSERT(index < min_hash.size())(type)(index)(min_hash.size());
@@ -213,11 +212,11 @@ namespace {
     compute_hashes(region.get_commsets(), hashes, Ioss::COMMSET);
     compute_hashes(region.get_structured_blocks(), hashes, Ioss::STRUCTUREDBLOCK);
 
-    auto util     = region.get_database()->util();
-    auto min_hash = hashes;
-    auto max_hash = hashes;
-    util.global_array_minmax(min_hash.data(), min_hash.size(), Ioss::ParallelUtils::DO_MIN);
-    util.global_array_minmax(max_hash.data(), max_hash.size(), Ioss::ParallelUtils::DO_MAX);
+    auto                util = region.get_database()->util();
+    std::vector<size_t> min_hash(hashes.begin(), hashes.end());
+    std::vector<size_t> max_hash(hashes.begin(), hashes.end());
+    util.global_array_minmax(min_hash, Ioss::ParallelUtils::DO_MIN);
+    util.global_array_minmax(max_hash, Ioss::ParallelUtils::DO_MAX);
 
     bool differ = false;
     if (!check_hashes(min_hash, max_hash, Ioss::NODEBLOCK)) {
@@ -331,7 +330,7 @@ namespace Ioss {
 
   Region::~Region()
   {
-    // Do anything to the database to make it consistent prior to closing and desctructing...
+    // Do anything to the database to make it consistent prior to closing and destructing...
     get_database()->finalize_database();
 
     // Region owns all sub-grouping entities it contains...
@@ -905,7 +904,7 @@ namespace Ioss {
         currentState = state;
       }
       DatabaseIO *db = get_database();
-      db->begin_state(this, state, time);
+      db->begin_state(state, time);
     }
     return time;
   }
@@ -938,7 +937,7 @@ namespace Ioss {
         time = stateTimes[0];
       }
     }
-    db->end_state(this, state, time);
+    db->end_state(state, time);
     currentState = -1;
     return time;
   }
@@ -1543,8 +1542,7 @@ namespace Ioss {
    */
   GroupingEntity *Region::get_entity(const std::string &my_name) const
   {
-    GroupingEntity *entity = nullptr;
-    entity                 = get_node_block(my_name);
+    GroupingEntity *entity = get_node_block(my_name);
     if (entity != nullptr) {
       return entity;
     }

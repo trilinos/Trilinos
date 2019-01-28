@@ -64,7 +64,7 @@ MACRO(TRIBITS_SET_PACKAGE_TO_EX  PACKAGE_NAME)
   IF (PACKAGE_NAME_IDX EQUAL -1)
     MESSAGE(
       "\n***"
-      "\n*** WARNING: Package ${PACKAGE_NAME} not found in list of packages!"
+      "\n*** NOTE: Package ${PACKAGE_NAME} not found in list of packages!"
       "\n***\n"
       )
   ELSE()
@@ -110,7 +110,7 @@ MACRO( TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS  PACKAGE_NAME )
       IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
         MESSAGE(
           "\n***"
-          "\n*** WARNING: User has set ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON but the"
+          "\n*** NOTE: User has set ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON but the"
           "\n*** package ${PACKAGE_NAME} is not supported on this platform type '${HOSTTYPE}'!"
           "\n***\n"
           )

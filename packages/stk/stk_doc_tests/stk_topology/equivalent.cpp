@@ -50,9 +50,9 @@ TEST(stk_topology_understanding, equivalent_elements)
 
             stk::topology hex8 = stk::topology::HEX_8;
 
-            areElementsEquivalent = hex8.equivalent(hex1, hex2);
+            areElementsEquivalent = hex8.equivalent((unsigned*)hex1, (unsigned*)hex2);
             EXPECT_TRUE(areElementsEquivalent.first);
-            areElementsEquivalent = hex8.equivalent(hex1, hex3);
+            areElementsEquivalent = hex8.equivalent((unsigned*)hex1, (unsigned*)hex3);
             EXPECT_FALSE(areElementsEquivalent.first);
         }
     }
@@ -63,7 +63,7 @@ TEST(stk_topology_understanding, equivalent_elements)
 
         stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
 
-        areElementsEquivalent = triangular_shell.equivalent(triangle_1, triangle_2);
+        areElementsEquivalent = triangular_shell.equivalent((unsigned*)triangle_1, (unsigned*)triangle_2);
 
         EXPECT_TRUE(areElementsEquivalent.first);
 

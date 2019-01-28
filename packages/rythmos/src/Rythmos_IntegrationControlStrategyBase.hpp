@@ -113,10 +113,10 @@ public:
    * Default implementation is to ignore this.
    */
   virtual bool resetForFailedTimeStep(
-    const StepperBase<Scalar> &stepper,
-    const StepControlInfo<Scalar> &stepCtrlInfoLast,
-    const int timeStepIter,
-    const StepControlInfo<Scalar> &stepCtrlInfo
+    const StepperBase<Scalar> &/* stepper */,
+    const StepControlInfo<Scalar> &/* stepCtrlInfoLast */,
+    const int /* timeStepIter */,
+    const StepControlInfo<Scalar> &/* stepCtrlInfo */
     )
     { return false; }
 

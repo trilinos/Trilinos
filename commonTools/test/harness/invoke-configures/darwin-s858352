@@ -68,7 +68,6 @@ CXXFLAGS="-O0 -ansi" \
 --enable-teuchos-complex \
 --enable-teuchos-expat \
 --enable-teuchos-extended \
---enable-threadpool \
 --enable-thyra \
 --enable-tpetra \
 --enable-trilinoscouplings \

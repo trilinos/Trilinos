@@ -305,17 +305,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Build with OpenMP support." OFF)
 
   IF (CMAKE_GENERATOR STREQUAL "Ninja")
-    IF (NOT CMAKE_VERSION VERSION_LESS "3.7.0")
-      IF("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT}" STREQUAL "")
-        SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT ON)
-      ENDIF()
-      SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES
-        ${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT} CACHE BOOL
-        "Generate dummy makefiles to call ninja in every bulid subdirectory (requires CMake 3.7.0 or newer)." )
-    ELSE()
-      MESSAGE("-- NOTE: CMAKE_VERSION=${CMAKE_VERSION} < 3.7.0: Can not generate"
-        " dummy makefiles for Ninja generator!")
+    IF("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT}" STREQUAL "")
+      SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT ON)
     ENDIF()
+    SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES
+      ${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES_DEFAULT} CACHE BOOL
+      "Generate dummy makefiles to call ninja in every bulid subdirectory (requires CMake 3.7.0 or newer)." )
   ENDIF()
   IF ("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES}" STREQUAL "")
     SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES OFF)
@@ -1377,7 +1372,7 @@ MACRO(TRIBITS_READ_EXTRA_REPOSITORIES_LISTS)
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
             "\n***"
-            "\n*** WARNING!  Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
+            "\n*** NOTE: Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
             "\n***\n")
             # ToDo: TriBITS:73: Shorten above message to just one line
         ELSE()
@@ -1406,7 +1401,7 @@ MACRO(TRIBITS_READ_EXTRA_REPOSITORIES_LISTS)
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
             "\n***"
-            "\n*** WARNING!  Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
+            "\n*** NOTE: Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
             "\n***\n")
           # ToDo: TriBITS:73: Shorten above warning to just one line
         ELSE()

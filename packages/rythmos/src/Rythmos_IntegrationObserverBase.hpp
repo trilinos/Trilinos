@@ -241,14 +241,14 @@ bool isFinalTimeStep(
 
 template<class Scalar>
 void IntegrationObserverBase<Scalar>::
-observeStartTimeIntegration(const StepperBase<Scalar> &stepper)
+observeStartTimeIntegration(const StepperBase<Scalar> &/* stepper */)
 {
 
 }    
 
 template<class Scalar>
 void IntegrationObserverBase<Scalar>::
-observeEndTimeIntegration(const StepperBase<Scalar> &stepper)
+observeEndTimeIntegration(const StepperBase<Scalar> &/* stepper */)
 {
 
 }    
@@ -256,9 +256,9 @@ observeEndTimeIntegration(const StepperBase<Scalar> &stepper)
 template<class Scalar>
 void IntegrationObserverBase<Scalar>::
 observeStartTimeStep(
-    const StepperBase<Scalar> &stepper,
-    const StepControlInfo<Scalar> &stepCtrlInfo,
-    const int timeStepIter
+    const StepperBase<Scalar> &/* stepper */,
+    const StepControlInfo<Scalar> &/* stepCtrlInfo */,
+    const int /* timeStepIter */
     )
 {
 
@@ -267,9 +267,9 @@ observeStartTimeStep(
 template<class Scalar>
 void IntegrationObserverBase<Scalar>::
 observeFailedTimeStep(
-    const StepperBase<Scalar> &stepper,
-    const StepControlInfo<Scalar> &stepCtrlInfo,
-    const int timeStepIter
+    const StepperBase<Scalar> &/* stepper */,
+    const StepControlInfo<Scalar> &/* stepCtrlInfo */,
+    const int /* timeStepIter */
     )
 {
 

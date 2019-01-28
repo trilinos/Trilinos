@@ -67,7 +67,7 @@ namespace { // anonymous
       // the BlockMultiVector sync'd to host unnecessarily.
       // Otherwise, all the MultiVector and BlockMultiVector kernels
       // would run on host instead of device.  See Github Issue #428.
-      auto X_view_host = X.template getLocalView<Kokkos::HostSpace> ();
+      auto X_view_host = X.template getLocalView<typename MultiVectorType::dual_view_type::t_host::device_type> ();
       impl_scalar_type* X_raw = X_view_host.data ();
       return X_raw;
     }
@@ -431,7 +431,7 @@ getLocalBlock (const LO localRowIndex,
 
 // #ifdef HAVE_TPETRA_DEBUG
 //   TEUCHOS_TEST_FOR_EXCEPTION
-//     (mv_.template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+//     (mv_.need_sync_host (), std::runtime_error,
 //      "Tpetra::Experimental::BlockMultiVector::getLocalBlock: This method "
 //      "accesses host data, but the object is not in sync on host." );
 // #endif // HAVE_TPETRA_DEBUG
@@ -585,9 +585,9 @@ template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
                   const Teuchos::ArrayView<const impl_scalar_type>& imports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t constantNumPackets,
-                  Tpetra::Distributor& distor,
+                  const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                  size_t /* constantNumPackets */,
+                  Tpetra::Distributor& /* distor */,
                   Tpetra::CombineMode CM)
 {
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;

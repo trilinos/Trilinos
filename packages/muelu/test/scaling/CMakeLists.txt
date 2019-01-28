@@ -79,7 +79,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
-  SOURCE_FILES A.mm B.mm simple.xml
+  SOURCE_FILES A.mm B.mm coords.mm simple.xml
 )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp

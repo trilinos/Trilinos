@@ -112,7 +112,6 @@ namespace stk {
     int mpiResult = MPI_Allreduce(localSubDivCount, globalSubDivCount, numSubdivision, MPI_UNSIGNED_LONG, MPI_SUM, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return 2;
     }
     //
     //  Extract Ids, if one or more divisions are empty grab up all ids for that division until
@@ -157,7 +156,6 @@ namespace stk {
     }
     if(numNeededIds > totalIdsAvailable) {
       throw std::runtime_error("In ParallelFindFreeIdsInRange, cannot allocate sufficent ids, aborting");
-      return 6;
     }
 
 

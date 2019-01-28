@@ -90,6 +90,9 @@
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
 #endif
+#ifdef HAVE_MUELU_EPETRA
+#include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
+#endif
 #endif
 
 
@@ -143,6 +146,11 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
     Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
     Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
+#if defined(HAVE_MUELU_BELOS)
+    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
+    mlop = Teuchos::rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
+#endif
+
     mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
   }
 };
@@ -231,7 +239,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Convenient definitions
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero(), one = STS::one();
+  SC zero = STS::zero();//, one = STS::one();
   typedef typename STS::magnitudeType real_type;
   typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
@@ -288,10 +296,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
   out.setOutputToRootOnly(0);
- 
+
   ParameterList paramList;
   auto inst = xpetraParameters.GetInstantiation();
-  
+
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   } else {
@@ -302,7 +310,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   }
 
-  if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "cg") { 
+  if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "cg") {
     dsolveType = "gmres";
     out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES"<<std::endl;
   }
@@ -343,7 +351,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Matrix>      A;
   RCP<const Map>   map;
   RCP<RealValuedMultiVector> coordinates;
-  typedef typename RealValuedMultiVector::scalar_type Real;
   RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
   RCP<MultiVector> X, B;
 
@@ -351,7 +358,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
-  
+
   // Do equilibration if requested
 #ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
@@ -460,6 +467,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 	} else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
+          if(!coordinates.is_null()) {
+            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<real_type,LO,GO,NO>::MV2EpetraMV(coordinates);
+            if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
+            if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
+            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);
+          }
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
 #endif
         }

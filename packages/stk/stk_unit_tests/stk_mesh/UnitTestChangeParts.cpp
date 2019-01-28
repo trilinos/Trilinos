@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_THROW, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
+#include <stk_unit_test_utils/TextMesh.hpp>
 #include <string>                       // for string
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -75,6 +76,48 @@ TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
     removeParts.clear();
     removeParts.push_back(&metaData.globally_shared_part());
     EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+}
+
+TEST(UnitTestChangeParts, test_batch_part_change)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    const int p_size = stk::parallel_machine_size( pm );
+
+    if (p_size != 1) {
+      return;
+    }
+
+    const int spatialDim = 3;
+    stk::mesh::MetaData metaData(spatialDim);
+    stk::mesh::BulkData bulkData(metaData, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+    stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
+    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, bulkData);
+
+    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
+    EXPECT_TRUE(bulkData.is_valid(elem1));
+
+    stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
+    EXPECT_EQ(8u, nodes.size());
+
+    for(stk::mesh::Entity node : nodes) {
+        EXPECT_FALSE(bulkData.bucket(node).member(part));
+    }
+
+    stk::mesh::PartVector add_parts(1, &part);
+    bulkData.batch_change_entity_parts(nodes, add_parts, {});
+
+    for(stk::mesh::Entity node : nodes) {
+        EXPECT_TRUE(bulkData.bucket(node).member(part));
+    }
+
+    stk::mesh::PartVector remove_parts(1, &part);
+    bulkData.batch_change_entity_parts(nodes, {}, remove_parts);
+
+    for(stk::mesh::Entity node : nodes) {
+        EXPECT_FALSE(bulkData.bucket(node).member(part));
+    }
 }
 
 }

@@ -4,6 +4,8 @@ SET(${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE_DEFAULT  ON)
 
 SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT  ON)
 
+SET(${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT ON)
+
 IF ( WIN32 AND NOT CYGWIN )
   MESSAGE(STATUS "Warning: Setting ${PROJECT_NAME}_ENABLE_Fortran=OFF by default"
    " because this is Windows (not cygwin) and we assume to not have Fortran!")

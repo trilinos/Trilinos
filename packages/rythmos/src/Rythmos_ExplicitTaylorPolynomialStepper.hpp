@@ -739,9 +739,9 @@ void ExplicitTaylorPolynomialStepper<Scalar>::describe(
 
 template<class Scalar>
 void ExplicitTaylorPolynomialStepper<Scalar>::addPoints(
-  const Array<Scalar>& time_vec
-  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  const Array<Scalar>& /* time_vec */
+  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */
+  ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for the ExplicitTaylorPolynomialStepper.\n");
@@ -795,7 +795,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_vec) 
 
 
 template<class Scalar>
-void ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
+void ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(Array<Scalar>& /* time_vec */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for the ExplicitTaylorPolynomialStepper.\n");
 }

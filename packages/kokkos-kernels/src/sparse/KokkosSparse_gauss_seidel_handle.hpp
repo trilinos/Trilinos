@@ -327,8 +327,13 @@ namespace KokkosSparse{
         return;
       }
       else {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
         KokkosKernels::Impl::get_suggested_vector_team_size<size_type, ExecutionSpace>(
                                                                                        max_allowed_team_size, suggested_vector_size_, suggested_team_size_, nr, nnz);
+#else
+        KokkosKernels::Impl::get_suggested_vector_size<size_type, ExecutionSpace>(suggested_vector_size_, nr, nnz);
+        KokkosKernels::Impl::get_suggested_team_size<ExecutionSpace>(max_allowed_team_size, suggested_vector_size_, suggested_team_size_);
+#endif
         this->suggested_team_size = suggested_vector_size_;
         this->suggested_vector_size = suggested_vector_size_;
 

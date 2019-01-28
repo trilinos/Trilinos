@@ -246,7 +246,11 @@ struct BlockCrsMatrixMaker {
     const auto& g = a.getCrsGraph();
     const auto& rowptr = g.getLocalGraph().row_map;
     const auto& colidx = g.getLocalGraph().entries;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     const auto& values = a.template getValues<Kokkos::HostSpace>();
+#else
+    const auto& values = a.getValuesHost();
+#endif
     const auto row_map = g.getRowMap();
     const auto col_map = g.getColMap();
     const LO bs = a.getBlockSize(), bs2 = bs*bs;
@@ -258,7 +262,11 @@ struct BlockCrsMatrixMaker {
       new Tpetra_Map(Tpetra_BlockMultiVector::makePointMap(*col_map, bs)));
     Tpetra_MultiVector_Magnitude colsum_mv(cpm, 1);
     colsum_mv.putScalar(0);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto colsum = colsum_mv.template getLocalView<Kokkos::HostSpace>();
+#else
+    auto colsum = colsum_mv.getLocalViewHost();
+#endif
 
     // Get off-diag 1-norms.
     for (LO r = 0; r < nrows; ++r) {

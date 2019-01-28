@@ -14,6 +14,14 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 # template instantiation (ETI).
 TRIBITS_ADD_ETI_SUPPORT()
 
+# adding macro for deprecated code (templated L0 and G0, and dynamic allocation)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_DEPRECATED_CODE
+  TPETRA_ENABLE_DEPRECATED_CODE
+  "Whether Tpetra enables deprecated code at compile time. Default is ON (deprecated code enabled)."
+  ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 # FIXME (mfh 17 Dec 2014) We really just want a macro, not a CMake option.
 # This is mainly just for backwards compatibility.

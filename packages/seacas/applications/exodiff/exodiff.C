@@ -978,6 +978,9 @@ namespace {
         diff_flag = true;
       }
     }
+    else if (interface.map_flag == PARTIAL) {
+      DIFF_OUT("\nexodiff: Files are the same (partial match selected)\n", trmclr::green);
+    }
     else {
       DIFF_OUT("\nexodiff: Files are the same\n", trmclr::green);
     }

@@ -45,6 +45,7 @@
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
 //#define INTERFACE_OUTPUT
+//#define FROSCH_OFFSET_MAPS
 
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
@@ -81,6 +82,10 @@ namespace FROSch {
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         typedef const EntitySetPtr EntitySetConstPtr;
+        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
+        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
+        
+        typedef Teuchos::ArrayRCP<EntityFlag> EntityFlagVecPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
@@ -112,17 +117,34 @@ namespace FROSch {
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix);
         
-        int sortEntities();
+        int flagEntities(MultiVectorPtr nodeList = Teuchos::null);
         
-        int sortEntities(MultiVectorPtr nodeList);
+        int removeEmptyEntities();
         
-        int findAncestors();
+        int sortVerticesEdgesFaces(MultiVectorPtr nodeList = Teuchos::null);
+        
+        int buildEntityHierarchy();
+        
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        
+        //! This function extracts those entities which are to be used to build a connectivity graph on the subdomain
+        //! level. By default, we identify all entities with multiplicity 2. Afterwards, the corresponding entities can
+        //! be obtained using the function getConnectivityEntities().
+        //! If short or straight edges should be omitted, the function flagEntities() has to be called in advance.
+        int identifyConnectivityEntities(UNVecPtr multiplicities = Teuchos::null,
+                                         EntityFlagVecPtr flags = Teuchos::null);
         
         UN getDimension() const;
         
         UN getDofsPerNode() const;
         
         LO getNumMyNodes() const;
+        
+        //
+        // Remove the references below?
+        //
         
         EntitySetConstPtr & getVertices() const;
         
@@ -138,11 +160,13 @@ namespace FROSch {
         
         EntitySetConstPtr & getInterior() const;
         
-        EntitySetConstPtr & getAncestorVertices() const;
+        EntitySetConstPtr & getCoarseNodes() const;
         
-        EntitySetConstPtr & getAncestorEdges() const;
+        EntitySetPtrConstVecPtr & getEntitySetVector() const;
         
-        EntitySetConstPtr & getAncestorFaces() const;
+        //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
+        //! level. They have to identified first using the function identifyConnectivityEntities().
+        EntitySetConstPtr & getConnectivityEntities() const;
         
         ConstMapPtr getNodesMap() const;
         
@@ -173,9 +197,9 @@ namespace FROSch {
         EntitySetPtr Faces_;
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
-        EntitySetPtr AncestorVertices_;
-        EntitySetPtr AncestorEdges_;
-        EntitySetPtr AncestorFaces_;
+        EntitySetPtr CoarseNodes_;
+        EntitySetPtr ConnectivityEntities_;
+        EntitySetPtrVecPtr EntitySetVector_;
         
         MapPtr NodesMap_;
         MapPtr UniqueNodesMap_;

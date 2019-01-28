@@ -333,6 +333,8 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(bytes!=fromCountToDirectBytes(count));
+#else
+      (void)count;
 #endif
       const char *_buffer = convertToCharPtr(buffer);
       std::copy(_buffer,_buffer+bytes,charBuffer);

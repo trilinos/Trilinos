@@ -163,8 +163,9 @@ class AggregateGenerator {
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
       level.Set("A", A);
-      level.Set("gNodesPerDim", gNodesPerDir);
-      level.Set("lNodesPerDim", lNodesPerDir);
+      level.Set("numDimensions", numDimensions);
+      level.Set("gNodesPerDim",  gNodesPerDir);
+      level.Set("lNodesPerDim",  lNodesPerDir);
       level.Set("aggregation: mesh data", meshData);
 
       // Setup aggregation factory (use default factory for graph)
@@ -695,7 +696,7 @@ class AggregateGenerator {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    typedef typename Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> xdMV;
 
     // Get MPI parameters
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -720,7 +721,7 @@ class AggregateGenerator {
 
     if(myRank == 0) std::cout << "About to build the coordinates" << std::endl;
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<const Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData);
 
@@ -748,7 +749,7 @@ class AggregateGenerator {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    typedef typename Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> xdMV;
 
     // Get MPI parameter
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -771,7 +772,7 @@ class AggregateGenerator {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<const Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -826,7 +827,7 @@ class AggregateGenerator {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<const Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);

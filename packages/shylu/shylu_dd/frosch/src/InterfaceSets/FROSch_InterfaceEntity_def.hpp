@@ -63,26 +63,30 @@ namespace FROSch {
     InterfaceEntity<SC,LO,GO,NO>::InterfaceEntity(EntityType type,
                                                   UN dofsPerNode,
                                                   UN multiplicity,
-                                                  GO *subdomains) :
+                                                  GO *subdomains,
+                                                  EntityFlag flag) :
     Type_ (type),
+    Flag_ (flag),
     NodeVector_ (0),
     SubdomainsVector_ (multiplicity),
     Ancestors_ (),
+    Offspring_ (),
+    CoarseNodes_ (),
+    DistancesVector_ (0),
     DofsPerNode_ (dofsPerNode),
     Multiplicity_ (multiplicity),
     UniqueID_ (-1),
     LocalID_ (-1),
-    AncestorID_ (-1)
+    CoarseNodeID_ (-1)
     {
         for (UN i=0; i<multiplicity; i++) {
             SubdomainsVector_[i] = subdomains[i];
         }
         sortunique(SubdomainsVector_);
-        if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
-        } else if (Type_==FaceType) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
-        }
+
+        Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        Offspring_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        CoarseNodes_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -151,7 +155,7 @@ namespace FROSch {
             if ((0<=dofIDs[i])&&(dofIDs[i]<=DofsPerNode_)) {
                 NodeVector_[iD].DofsGlobal_[dofIDs[i]] = dofsGlobal[dofIDs[i]];
             } else {
-                FROSCH_ASSERT(0!=0,"dofIDs[i] is out of range.");
+                FROSCH_ASSERT(false,"dofIDs[i] is out of range.");
             }
         }
         
@@ -188,9 +192,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::setAncestorID(LO AncestorID)
+    int InterfaceEntity<SC,LO,GO,NO>::setCoarseNodeID(LO coarseNodeID)
     {
-        AncestorID_ = AncestorID;
+        CoarseNodeID_ = coarseNodeID;
         return 0;
     }
     
@@ -205,44 +209,154 @@ namespace FROSch {
     int InterfaceEntity<SC,LO,GO,NO>::resetEntityType(EntityType type)
     {
         Type_ = type;
-        if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
-        } else if (Type_==FaceType) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
-        }
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::findAncestors(EntitySetPtr entitySet)
+    int InterfaceEntity<SC,LO,GO,NO>::resetEntityFlag(EntityFlag flag)
     {
-        if (Type_ == VertexType) {
-            FROSCH_ASSERT(0!=0,"There are no Ancestors to vertices.")
-        } else if ((Type_ == ShortEdgeType) || (Type_ == StraightEdgeType) || (Type_ == EdgeType)) {
-            FROSCH_ASSERT(entitySet->getEntityType()==VertexType,"entitySet has the wrong type.")
-        } else if (Type_ == FaceType) {
-            FROSCH_ASSERT((entitySet->getEntityType()==ShortEdgeType)||(entitySet->getEntityType()==StraightEdgeType)||(entitySet->getEntityType()==EdgeType),"entitySet has the wrong type.")
-        } else if (Type_ == SurfaceType) {
-            FROSCH_ASSERT(0!=0,"SurfaceType not yet implemented...")
-        } else if (Type_ == VolumeType) {
-            FROSCH_ASSERT(0!=0,"VolumeType not yet implemented...")
-        }
-        
-        //
-        EntitySetPtr Ancestors(new EntitySet<SC,LO,GO,NO>(*entitySet));
+        Flag_ = flag;
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::findAncestorsInSet(EntitySetPtr entitySet)
+    {
+        EntitySetPtr ancestors(new EntitySet<SC,LO,GO,NO>(*entitySet));
         GOVec tmpVector;
         for (UN i=0; i<Multiplicity_; i++) {
-            UN length = Ancestors->getNumEntities();
+            UN length = ancestors->getNumEntities();
             for (UN j=0; j<length; j++) {
-                tmpVector = Ancestors->getEntity(length-1-j)->getSubdomainsVector();
-                if (!std::binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
-                    Ancestors->removeEntity(length-1-j);
+                tmpVector = ancestors->getEntity(length-1-j)->getSubdomainsVector();
+                if (ancestors->getEntity(length-1-j)->getMultiplicity()<=this->getMultiplicity() || !std::binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
+                    ancestors->removeEntity(length-1-j);
                 }
             }
         }
         
-        for (UN i=0; i<Ancestors->getNumEntities(); i++) {
-            Ancestors_->addEntity(Ancestors->getEntity(i));
+        for (UN i=0; i<ancestors->getNumEntities(); i++) {
+            Ancestors_->addEntity(ancestors->getEntity(i));
+        }
+        Ancestors_->sortUnique();
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::clearAncestors()
+    {
+        Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::addOffspring(InterfaceEntityPtr interfaceEntity)
+    {
+        Offspring_->addEntity(interfaceEntity);
+        Offspring_->sortUnique();
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::clearOffspring()
+    {
+        Offspring_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::findCoarseNodes()
+    {
+        if (CoarseNodes_->getNumEntities()) {
+            FROSCH_ASSERT(Ancestors_->getNumEntities()!=0,"Ancestors_->getNumEntities()==0");
+            return CoarseNodes_;
+        }
+        for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
+            EntitySetPtr tmpCoarseNodes = Ancestors_->getEntity(i)->findCoarseNodes();
+            if (tmpCoarseNodes.is_null()) {
+                FROSCH_ASSERT(Ancestors_->getEntity(i)->getAncestors()->getNumEntities()==0,"EntityVector_[i]->getAncestors()->getNumEntities()!=0");
+                CoarseNodes_->addEntity(Ancestors_->getEntity(i));
+            } else {
+                FROSCH_ASSERT(Ancestors_->getEntity(i)->getAncestors()->getNumEntities()!=0,"EntityVector_[i]->getAncestors()->getNumEntities()==0");
+                FROSCH_ASSERT(tmpCoarseNodes->getNumEntities()>0,"tmpCoarseNodes->getNumEntities()<=0");
+                CoarseNodes_->addEntitySet(tmpCoarseNodes);
+            }
+        }
+        CoarseNodes_->sortUnique();
+        if (CoarseNodes_->getNumEntities()) {
+            FROSCH_ASSERT(Ancestors_->getNumEntities()!=0,"Ancestors_->getNumEntities()==0");
+            return CoarseNodes_;
+        } else {
+            return Teuchos::null;
+        }
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::clearCoarseNodes()
+    {
+        CoarseNodes_.reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
+                                                                    MultiVectorPtr &nodeList,
+                                                                    DistanceFunction distanceFunction)
+    {
+        if (CoarseNodes_->getNumEntities()>0) {
+            DistancesVector_.resize(getNumNodes());
+            for (UN i=0; i<getNumNodes(); i++) {
+                DistancesVector_[i].resize(CoarseNodes_->getNumEntities()+1,std::numeric_limits<SC>::max());
+            }
+            
+            switch (distanceFunction) {
+                case ConstantDistanceFunction:
+                    for (UN i=0; i<NodeVector_.size(); i++) {
+                        for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                            DistancesVector_[i][j] = 1.0;
+                        }
+                    }
+                    break;
+                case InverseEuclideanDistanceFunction:
+                    FROSCH_ASSERT(!nodeList.is_null(),"The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
+                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
+                    for (UN i=0; i<CoarseNodes_->getNumEntities(); i++) {
+                        for (UN j=0; j<CoarseNodes_->getEntity(i)->getNumNodes(); j++) {
+                            // Coordinates of the nodes of the coarse node
+                            SCVecPtr CN(dimension);
+                            for (UN k=0; k<dimension; k++) {
+                                CN[k] = nodeList->getData(k)[CoarseNodes_->getEntity(i)->getLocalNodeID(j)];
+                            }
+                            for (UN k=0; k<NodeVector_.size(); k++) {
+                                // Coordinates of the nodes of the entity
+                                SCVecPtr E(dimension);
+                                SC distance = 0.0;
+                                // Compute quadratic distance
+                                for (UN l=0; l<dimension; l++) {
+                                    distance += (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]) * (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]);
+                                }
+                                // Compute inverse euclidean distance
+                                distance = std::sqrt(distance);
+                                DistancesVector_[k][i] = std::min(DistancesVector_[k][i],distance);
+                            }
+                        }
+                    }
+                    for (UN i=0; i<NodeVector_.size(); i++) {
+                        for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                            DistancesVector_[i][j] = 1.0/DistancesVector_[i][j];
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            
+            // In the last "row", we store the sum of the distances for all coarse nodes
+            for (UN i=0; i<NodeVector_.size(); i++) {
+                DistancesVector_[i][CoarseNodes_->getNumEntities()] = 0.0;
+                for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                    DistancesVector_[i][CoarseNodes_->getNumEntities()] += DistancesVector_[i][j];
+                }
+            }
         }
         return 0;
     }
@@ -289,6 +403,12 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
+    EntityFlag InterfaceEntity<SC,LO,GO,NO>::getEntityFlag() const
+    {
+        return Flag_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
     typename InterfaceEntity<SC,LO,GO,NO>::UN InterfaceEntity<SC,LO,GO,NO>::getDofsPerNode() const
     {
         return DofsPerNode_;
@@ -313,9 +433,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    LO InterfaceEntity<SC,LO,GO,NO>::getAncestorID() const
+    LO InterfaceEntity<SC,LO,GO,NO>::getCoarseNodeID() const
     {
-        return AncestorID_;
+        return CoarseNodeID_;
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -378,19 +498,40 @@ namespace FROSch {
         return Ancestors_;
     }
     
+    template <class SC,class LO,class GO,class NO>
+    const typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::getOffspring() const
+    {
+        return Offspring_;
+    }
     
     template <class SC,class LO,class GO,class NO>
-    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa, Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb)
+    const typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::getCoarseNodes() const
+    {
+        return CoarseNodes_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    SC InterfaceEntity<SC,LO,GO,NO>::getDistanceToCoarseNode(UN iDNode,
+                                                             UN iDCoarseNode) const
+    {
+        FROSCH_ASSERT(iDNode<getNumNodes(),"iDNode>=getNumNodes()");
+        FROSCH_ASSERT(iDCoarseNode<CoarseNodes_->getNumEntities()+1,"iDNode>=CoarseNodes_->getNumEntities()+1");
+        return DistancesVector_[iDNode][iDCoarseNode];
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                  Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb)
     {
         return iEa->getUniqueID()<iEb->getUniqueID();
     }
     
     template <class SC,class LO,class GO,class NO>
-    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa, Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb)
+    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb)
     {
         return iEa->getUniqueID()==iEb->getUniqueID();
     }
-    
 }
 
 #endif

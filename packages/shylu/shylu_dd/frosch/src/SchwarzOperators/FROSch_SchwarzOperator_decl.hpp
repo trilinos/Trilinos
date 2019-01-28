@@ -50,6 +50,8 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
+#include <ShyLU_DDFROSch_config.h>
+
 #include <FROSch_DDInterface_def.hpp>
 #include <FROSch_EntitySet_def.hpp>
 
@@ -103,8 +105,11 @@ namespace FROSch {
         typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
+        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
+        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
         
         typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
+        typedef Teuchos::ArrayRCP<CoarseSpacePtr>  CoarseSpacePtrVecPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         
@@ -119,6 +124,7 @@ namespace FROSch {
         typedef Teuchos::RCP<SubdomainSolver<SC,LO,GO,NO> > SubdomainSolverPtr;
         
         typedef unsigned UN;
+        typedef Teuchos::Array<UN> UNVec;
         typedef Teuchos::ArrayRCP<UN> UNVecPtr;
         
         typedef Teuchos::Array<LO> LOVec;

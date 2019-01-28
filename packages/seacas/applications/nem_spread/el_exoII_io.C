@@ -1209,7 +1209,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
   size_t ielem_count;
 #endif
   INT *  elem_blk             = nullptr, ipos;
-  int    error_flag           = 0;
   size_t num_elem_per_message = 0, num_attr_per_message = 0, num_attr_left_over = 0;
   size_t num_elem_messages = 0, num_attr_messages = 0, num_elem_left_over = 0;
 
@@ -1538,13 +1537,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
     }
   }
 #endif
-
-  if (error_flag != 0) {
-    fprintf(stderr, "read_elem_blk FAILURE: error flag was "
-                    "set in routine\n");
-    exit(1);
-  }
-
 } /* read_elem_blk */
 
 /*****************************************************************************/

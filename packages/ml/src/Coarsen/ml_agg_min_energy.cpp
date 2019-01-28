@@ -45,7 +45,7 @@ static void ML_multiply_self_all(ML_Operator* Op, double* Column2Norm)
   int nnz     = (data->rowptr)[n_rows];
   int *bindx  = data->columns;
   double *val = data->values;
-  double register dtemp;
+  double dtemp;
 
   for (int i = 0; i < nnz; i++) {
        dtemp = *val++;
