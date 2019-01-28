@@ -1098,8 +1098,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     rcp (new sparse_matrix_type (overlappedGraph.getConst ()));
   StiffMatrix->setAllToScalar (STS::zero ());
   RCP<vector_type> rhsVector = rcp (new vector_type (overlappedMapG));
-  RCP<vector_type> nodalSigma(new vector_type(globalMapG));
-  RCP<vector_type> nodalVolume(new vector_type(globalMapG));
+  RCP<vector_type> nodalSigma(new vector_type(overlappedMapG));
+  RCP<vector_type> nodalVolume(new vector_type(overlappedMapG));
 
   rhsVector->putScalar (STS::zero ());
   nodalSigma->putScalar (STS::zero ());
