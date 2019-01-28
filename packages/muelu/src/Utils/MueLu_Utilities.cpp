@@ -93,6 +93,7 @@ namespace MueLu {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
               || name == "Node Comm"
+              || name == "Material Coordinates"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif
