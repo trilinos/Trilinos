@@ -519,9 +519,8 @@ namespace FROSch {
                     faces: rotations            --- " << useFaceRotations << "\n\
                     --------------------------------------------\n";
                 }
-
-                DDInterface_->identifyConnectivityEntities();
-                EntitySetPtrConstVecPtr Connect = DDInterface_->getConnectivityEntities();
+                
+            
                 
                 GOVec2D shortSubs,straightSubs,edgesSubs,facesSubs,entriesGraph;
                 entriesGraph.resize(this->K_->getMap()->getComm()->getSize());
@@ -541,12 +540,31 @@ namespace FROSch {
                     straightSubs[i] = StraightEntityVec[i]->getSubdomainsVector();
                     //std::cout<<straightSubs[i];
                 }
-                
+              
                 Teuchos::Array<GO> entries;
                 std::map<GO,int> rep;
+                /*
+                GOVec2D conn;
+                DDInterface_->identifyConnectivityEntities();
+                EntitySetConstPtr Connect = DDInterface_->getConnectivityEntities();
+                Connect->buildEntityMap(DDInterface_->getNodesMap());
+                InterfaceEntityPtrVec ConnVec = Connect->getEntityVector();
+                GO ConnVecSize = ConnVec.size();
+                conn.resize(ConnVecSize);
+                if(ConnVecSize>0){
+                for(GO i = 0;i<ConnVecSize;i++){
+                    conn[i] = ConnVec[i]->getSubdomainsVector();
+                    for(int j = 0;j<conn[i].size();j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),Connect->getEntityMap()->getComm()->getRank()));
+                    }
+                    for (auto& x: rep) {
+                        entries.push_back(x.first);
+                    }
+                }
                 
                 
-                if(dimension == 2){
+                */
+                
+               if(dimension == 2){
                     InterfaceEntityPtrVec EdgeEntityVec = edges->getEntityVector();
                     GO SizeEdge = EdgeEntityVec.size();
                     if(SizeEdge>0){
