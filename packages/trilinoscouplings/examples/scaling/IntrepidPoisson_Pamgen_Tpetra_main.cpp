@@ -275,7 +275,6 @@ main (int argc, char *argv[])
       // Print Problem Statistics
       *out<<"*** Problem Statistics ***\n"<<problemStatistics<<std::endl;
 
-
       // Optionally dump the matrix and/or its row Map to files.
       {
         typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;

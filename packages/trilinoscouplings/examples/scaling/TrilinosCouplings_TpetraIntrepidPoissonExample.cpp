@@ -1503,10 +1503,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   gl_nodalVolume->doExport (*nodalVolume, *exporter, Tpetra::ADD);
 
   // Get the volume-weighted sigma
-  gl_nodalVolume->reciprocal(*gl_inverseNodalVolume);
-  
+  gl_inverseNodalVolume->reciprocal(*gl_nodalVolume);
   gl_nodalSigma->elementWiseMultiply(STS::one(), *gl_nodalSigma,*gl_inverseNodalVolume,STS::zero());
-
 
   //////////////////////////////////////////////////////////////////////////////
   // Adjust matrix for boundary conditions
