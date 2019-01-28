@@ -162,11 +162,11 @@ namespace FROSch {
         
         EntitySetConstPtr & getCoarseNodes() const;
         
-        EntitySetConstPtr & getEntitySetVector() const;
+        EntitySetPtrConstVecPtr & getEntitySetVector() const;
         
         //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
         //! level. They have to identified first using the function identifyConnectivityEntities().
-        EntitySetPtrConstVecPtr & getConnectivityEntities() const;
+        EntitySetConstPtr & getConnectivityEntities() const;
         
         ConstMapPtr getNodesMap() const;
         
