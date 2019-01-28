@@ -172,6 +172,10 @@ namespace MueLu {
     //! Method to merge rows of matrix for systems of PDEs.
     void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
+
+    // Code to merge distance laplacian / material distance codepaths
+    template<class CoordinatesType>
+    void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords) const;
   }; //class CoalesceDropFactory
 
 } //namespace MueLu
