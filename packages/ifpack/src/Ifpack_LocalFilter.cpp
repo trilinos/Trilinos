@@ -206,8 +206,8 @@ int Ifpack_LocalFilter::Apply(const Epetra_MultiVector& X,
 }
 
 //==============================================================================
-int Ifpack_LocalFilter::ApplyInverse(const Epetra_MultiVector& X,
-		 Epetra_MultiVector& Y) const
+int Ifpack_LocalFilter::ApplyInverse(const Epetra_MultiVector& /* X */,
+		 Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-1); // not implemented
 }

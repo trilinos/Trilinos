@@ -109,11 +109,11 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
 
-  int SetParameter(const std::string Name, const int Value)
+  int SetParameter(const std::string /* Name */, const int /* Value */)
   {
     IFPACK_CHK_ERR(-98);
   }
-  int SetParameter(const std::string Name, const double Value)
+  int SetParameter(const std::string /* Name */, const double /* Value */)
   {
     IFPACK_CHK_ERR(-98);
   }
