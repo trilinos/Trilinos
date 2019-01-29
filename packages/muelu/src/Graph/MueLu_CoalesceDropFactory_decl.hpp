@@ -175,7 +175,7 @@ namespace MueLu {
 
     // Code to merge distance laplacian / material distance codepaths
     template<class CoordinatesType>
-    void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords) const;
+    void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
   }; //class CoalesceDropFactory
 
 } //namespace MueLu

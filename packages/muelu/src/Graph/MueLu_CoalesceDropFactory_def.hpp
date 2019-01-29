@@ -791,7 +791,7 @@ namespace MueLu {
       } else if (algo == "material distance") {
         // The distance laplacian, but on a 1-D "material" vector
         RCP<Vector> MaterialCoords = Get< RCP<Vector > >(currentLevel, "Material Coordinates");
-        DistanceDropping(currentLevel,MaterialCoords);
+        DistanceDropping(currentLevel,MaterialCoords,numTotal,numDropped);
       }
 
       if ((GetVerbLevel() & Statistics1) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
@@ -1057,7 +1057,7 @@ namespace MueLu {
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template<class CoordinatesType>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords) const {
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
     typedef typename CoordinatesType::scalar_type scalar_type;
     typedef Teuchos::ScalarTraits<SC> STS;
 
@@ -1065,7 +1065,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
     const ParameterList  & pL = GetParameterList();
     std::string graphType = "unamalgamated"; //for description purposes only
-    GO numDropped = 0, numTotal = 0;
+    numDropped = 0; numTotal = 0;
 
     SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
     const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
@@ -1073,12 +1073,14 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
     LO blkSize   = A->GetFixedBlockSize();
     GO indexBase = A->getRowMap()->getIndexBase();                      
 
+
     // Detect and record rows that correspond to Dirichlet boundary conditions
     // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
     // TODO the array one bigger than the number of local rows, and the last entry can
     // TODO hold the actual number of boundary nodes.  Clever, huh?
     ArrayRCP<const bool > pointBoundaryNodes;
     pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);    
+
     if ( (blkSize == 1) && (threshold == STS::zero()) ) {
       // Trivial case: scalar problem, no dropping. Can return original graph
       RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
@@ -1191,7 +1193,9 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
               const LO col = indices[colID];
               
               if (row != col) {
-                localLaplDiagData[row] += STS::one() / MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
+                scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
+                if(dist != 0.0) 
+                  localLaplDiagData[row] += STS::one() / dist;                
               }
             }
           }
@@ -1268,16 +1272,25 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
                 continue;
               }
               
-              SC laplVal = STS::one() / MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
-              typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
-              typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
-              
-              if (aij > aiiajj) {
+              // If the locations are identical, don't drop
+              scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
+              if(dist == 0.0) {
                 columns[realnnz++] = col;
-                  rownnz++;
-              } else {
-                numDropped++;
+                rownnz++;
               }
+              else {
+                SC laplVal = STS::one() / dist;
+                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
+                typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
+                //                printf("CMS: aij^2 = %6.4e vs. aiiajj = %6.4e lapVal = %6.4e gr = %6.4e gc = %6.4e\n",aij,aiiajj,laplVal,ghostedLaplDiagData[row],ghostedLaplDiagData[col]);
+
+                if (aij > aiiajj) {
+                  columns[realnnz++] = col;
+                  rownnz++;
+                } else {
+                numDropped++;
+                }
+              }//end else
             }
             
           } else {
