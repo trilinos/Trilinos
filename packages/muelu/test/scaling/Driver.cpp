@@ -280,6 +280,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
   int  cacheSize = 0;                                clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+#ifdef HAVE_MPI
+  bool provideNodeComm = false;                      clp.setOption("nodecomm","nonodecomm",    &provideNodeComm,  "make the nodal communicator available");
+#endif
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -325,6 +328,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       if (paramList.isParameter(name))
         realParams.setEntry(name, paramList.getEntry(name));
     }
+  }
+
+  // Generate the node-level communicator, if we want one
+  Teuchos::RCP<Teuchos::Comm<int> > nodeComm;
+  int NodeId = comm->getRank();
+  if(provideNodeComm) {                        
+    nodeComm = GenerateNodeComm(comm,NodeId);
+    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",baseComm->getRank(),NodeId,nodeComm->getRank());
+
   }
 
   // Retrieve matrix parameters (they may have been changed on the command line)
