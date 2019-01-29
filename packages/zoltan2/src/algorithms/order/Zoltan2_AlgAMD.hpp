@@ -128,12 +128,12 @@ class AlgAMD : public Algorithm<Adapter>
     { }
 
     int globalOrder(
-      const RCP<GlobalOrderingSolution<typename Adapter::gno_t> > &solution) {
+      const RCP<GlobalOrderingSolution<typename Adapter::gno_t> > &/* solution */) {
         throw std::logic_error("AlgAMD does not yet support global ordering.");
     }
 
     int localOrder(
-      const RCP<LocalOrderingSolution<typename Adapter::lno_t> > &solution)
+      const RCP<LocalOrderingSolution<typename Adapter::lno_t> > &/* solution */)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(

@@ -2761,7 +2761,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_initial_coordinate_parts(
     mj_scalar_t &max_coordinate,
     mj_scalar_t &min_coordinate,
-    mj_part_t &concurrent_current_part_index,
+    mj_part_t &/* concurrent_current_part_index */,
     mj_lno_t coordinate_begin_index,
     mj_lno_t coordinate_end_index,
     mj_lno_t *mj_current_coordinate_permutations,
@@ -3107,7 +3107,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part_get_thread_pa
     mj_lno_t coordinate_end_index,
     mj_scalar_t *mj_current_dim_coords,
     mj_scalar_t *temp_current_cut_coords,
-    bool *current_cut_status,
+    bool * /* current_cut_status */,
     double *my_current_part_weights,
     mj_scalar_t *my_current_left_closest,
     mj_scalar_t *my_current_right_closest){
@@ -3478,7 +3478,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions(
     mj_part_t num_parts,
-    mj_scalar_t *mj_current_dim_coords,
+    mj_scalar_t * /* mj_current_dim_coords */,
     mj_scalar_t *current_concurrent_cut_coordinate,
     mj_lno_t coordinate_begin,
     mj_lno_t coordinate_end,
@@ -3708,7 +3708,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinates(
-                const size_t &num_total_part,
+                const size_t &/* num_total_part */,
                 const mj_part_t &num_cuts,
                 const mj_scalar_t &max_coordinate,
                 const mj_scalar_t &min_coordinate,
