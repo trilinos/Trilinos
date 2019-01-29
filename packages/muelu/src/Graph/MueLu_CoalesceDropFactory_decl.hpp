@@ -174,8 +174,10 @@ namespace MueLu {
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
 
     // Code to merge distance laplacian / material distance codepaths
-    template<class CoordinatesType>
-    void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+    // The "error on sames" flag will error out if the same "coordinate" is found on two nodes in the same row.
+    // You do not want to set this to true for the material distance.
+    template<typename CoordFactoryType, class CoordinatesType>
+    void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
   }; //class CoalesceDropFactory
 
 } //namespace MueLu
