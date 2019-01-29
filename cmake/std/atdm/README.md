@@ -260,39 +260,66 @@ using `INCLUDE()` to process the extra options contained within it.
 
 ## Installation and usage
 
-When including the `ATDMDevEnv.cmake` file (or `ATDMDevEnvSettings.cmake`) at
-configure time as described above, the cmake configure automatically sets up
-to install an environment script:
+When including the file `ATDMDevEnv.cmake` (or `ATDMDevEnvSettings.cmake`) in
+the CMake configuration as described above, the cmake configure automatically
+sets up to install a script:
 
 ```
-  <install-prefix>/<load-matching-env-sh>
+  <install-prefix>/load_matching_env.sh
 ```
 
-where `<install-prefix>` and `<load-matching-env-sh>` are set at
-configure-time using:
+which after installation can then be sourced by clients using:
+
+```
+$ source <install-prefix>/load_matching_env.sh
+``` 
+
+Sourcing this file loads the compilers, MPI, and TPLs and sets up the various
+`ATDM_CONG_` environment variables described above.  It also sets the
+environment variable:
+
+```
+$ export ATDM_TRILINOS_INSTALL_PREFIX=<install-prefix>
+```
+
+that clients can use to point back to the Trilinos installation directory.
+
+The install location `<install-prefix>` can be set using the CMake cache
+variable:
 
 ```
   -D CMAKE_INSTALL_PREFIX=<install-prefix> \
+```
+
+or by setting the environment variable:
+
+```
+$ export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=<install-prefix>
+```
+
+If the environment variable `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX` is set,
+then it will be used to set `CMAKE_INSTALL_PREFIX` internally and override any
+value that might be passed in or set otherwise.  (This is a `FORCE`D cache
+variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
+`CMakeCache.txt` file.)
+
+The name of the installed script `load_matching_env.sh` and the environment
+variable `ATDM_TRILINOS_INSTALL_PREFIX` that it exports can be changed at
+configure-time using the CMake cache variables:
+
+```
   -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
   -D ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME=<trilinos-install-prefix-var-name> \
 ```
 
-* If `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not specified then it is given the
-name `load_matching_env.sh` by default.
+where
 
-* If `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is not specified then it is
-given the name `ATDM_TRILINOS_INSTALL_PREFIX` by default.
+* If the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
+  specified, then it is given the name `load_matching_env.sh` by default.
 
-After installation with `make install`, a client can load the environment to
-use this ATDM configuration of Trilinos by running:
-
-```
-$ source <install-prefix>/<load-matching-env-sh>
-```
-
-Sourcing this file sets all of the various `ATDM_CONG_` environment variables
-described above and also sets the environment variable
-`<trilinos-install-prefix-var-name>` to `<install-prefix>`.
+* If the CMake cache variable `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is
+  not specified, then it is given the name `ATDM_TRILINOS_INSTALL_PREFIX` by
+  default.
 
 
 ## checkin-test-atdm.sh

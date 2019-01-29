@@ -250,7 +250,7 @@ bool CrsWrapper_GraphBuilder<int_type>::Filled()
 
 template<typename int_type>
 int
-CrsWrapper_GraphBuilder<int_type>::InsertGlobalValues(int_type GlobalRow, int NumEntries, double* Values, int_type* Indices)
+CrsWrapper_GraphBuilder<int_type>::InsertGlobalValues(int_type GlobalRow, int NumEntries, double* /* Values */, int_type* Indices)
 {
   typename std::map<int_type,std::set<int_type>*>::iterator
     iter = graph_.find(GlobalRow);
@@ -939,6 +939,8 @@ int LightweightCrsMatrix::MakeColMapAndReindex(std::vector<int> owningPIDs, std:
   if(label) tpref = std::string(label);
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS-3.1"))));
+#else
+  (void)label;
 #endif
 
   // Scan all column indices and sort into two groups:
@@ -1603,6 +1605,8 @@ void LightweightCrsMatrix::Construct(const Epetra_CrsMatrix & SourceMatrix, Impo
   if(label) tpref = std::string(label);
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(tpref + std::string("EpetraExt: LWCRS C-1"))));
+#else
+  (void)label;
 #endif
 
   // Fused constructor, import & FillComplete

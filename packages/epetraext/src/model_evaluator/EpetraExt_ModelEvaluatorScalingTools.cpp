@@ -106,8 +106,8 @@ void scaleModelVar(
   const EpetraExt::ModelEvaluator::InArgs &origVars,
   const EpetraExt::ModelEvaluator::InArgs &varScalings,
   EpetraExt::ModelEvaluator::InArgs *scaledVars,
-  Teuchos::FancyOStream *out,
-  Teuchos::EVerbosityLevel verbLevel
+  Teuchos::FancyOStream * /* out */,
+  Teuchos::EVerbosityLevel /* verbLevel */
   )
 {
 
@@ -170,12 +170,12 @@ void scaleModelBound(
   InArgsVectorGetterSetter vecGetterSetter, // Templated policy object!
   const EpetraExt::ModelEvaluator::InArgs &origLowerBounds,
   const EpetraExt::ModelEvaluator::InArgs &origUpperBounds,
-  const double infBnd,
+  const double /* infBnd */,
   const EpetraExt::ModelEvaluator::InArgs &varScalings,
   EpetraExt::ModelEvaluator::InArgs *scaledLowerBounds,
   EpetraExt::ModelEvaluator::InArgs *scaledUpperBounds,
-  Teuchos::FancyOStream *out,
-  Teuchos::EVerbosityLevel verbLevel
+  Teuchos::FancyOStream * /* out */,
+  Teuchos::EVerbosityLevel /* verbLevel */
   )
 {
 
@@ -287,8 +287,8 @@ void scaleModelFunc(
   const EpetraExt::ModelEvaluator::OutArgs &origFuncs,
   const EpetraExt::ModelEvaluator::OutArgs &funcScalings,
   EpetraExt::ModelEvaluator::OutArgs *scaledFuncs,
-  Teuchos::FancyOStream *out,
-  Teuchos::EVerbosityLevel verbLevel
+  Teuchos::FancyOStream * /* out */,
+  Teuchos::EVerbosityLevel /* verbLevel */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(0==scaledFuncs);
@@ -829,12 +829,12 @@ void EpetraExt::scaleModelVarsGivenInverseScaling(
 
 
 void EpetraExt::scaleModelVarBoundsGivenInverseScaling(
-  const Epetra_Vector &origLowerBounds,
-  const Epetra_Vector &origUpperBounds,
-  const double infBnd,
-  const Epetra_Vector &invVarScaling,
-  Epetra_Vector *scaledLowerBounds,
-  Epetra_Vector *scaledUpperBounds
+  const Epetra_Vector &/* origLowerBounds */,
+  const Epetra_Vector &/* origUpperBounds */,
+  const double /* infBnd */,
+  const Epetra_Vector &/* invVarScaling */,
+  Epetra_Vector * /* scaledLowerBounds */,
+  Epetra_Vector * /* scaledUpperBounds */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement!");

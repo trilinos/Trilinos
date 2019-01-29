@@ -87,18 +87,35 @@ namespace FROSch {
         
         int addEntity(InterfaceEntityPtr entity);
         
+        int addEntitySet(EntitySetPtr entitySet);
+        
         int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
         
-        int findAncestors(EntitySetPtr entitySet);
+        int findAncestorsInSet(EntitySetPtr entitySet);
         
-        int divideUnconnectedEntities(CrsMatrixPtr matrix, int pID);
+        int clearAncestors();
         
-        InterfaceEntityPtrVecPtr sortOutVertices();
+        int clearOffspring();
         
-        InterfaceEntityPtrVecPtr sortOutShortEdges();
+        EntitySetPtr findCoarseNodes();
         
-        InterfaceEntityPtrVecPtr sortOutStraightEdges(UN dimension,
-                                                      MultiVectorPtr &nodeList);
+        int clearCoarseNodes();
+        
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        
+        int divideUnconnectedEntities(CrsMatrixPtr matrix,
+                                      int pID);
+        
+        int flagNodes();
+        
+        int flagShortEntities();
+        
+        int flagStraightEntities(UN dimension,
+                                 MultiVectorPtr &nodeList);
+        
+        EntitySetPtr sortOutEntities(EntityFlag flag);
         
         int removeEntity(UN iD);
         
@@ -120,6 +137,8 @@ namespace FROSch {
         /////////////////
         
         int setUniqueIDToFirstGlobalNodeID();
+        
+        int setCoarseNodeID();
         
         int resetEntityType(EntityType type);
         

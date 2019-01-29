@@ -228,12 +228,11 @@ int run_pointAssign_tests(
     }
 
     {
-      const std::vector<Zoltan2::coordinateModelPartBox<zscalar_t,
-                                                   typename Adapter::part_t> >
+      const std::vector<Zoltan2::coordinateModelPartBox>
             pBoxes = problem->getSolution().getPartBoxesView();
       for (size_t i = 0; i < pBoxes.size(); i++) {
-        zscalar_t *lmin = pBoxes[i].getlmins();
-        zscalar_t *lmax = pBoxes[i].getlmaxs();;
+        typename Zoltan2::coordinateModelPartBox::coord_t *lmin = pBoxes[i].getlmins();
+        typename Zoltan2::coordinateModelPartBox::coord_t *lmax = pBoxes[i].getlmaxs();;
         std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId()
                   << " (" << lmin[0] << "," << lmin[1] << ","
                   << (coordDim > 2 ? lmin[2] : 0) << ") x "
@@ -314,8 +313,7 @@ int run_boxAssign_tests(
     sprintf(mechar, "%d", problem->getComm()->getRank());
     string me(mechar);
 
-    const std::vector<Zoltan2::coordinateModelPartBox<zscalar_t,
-                                                 typename Adapter::part_t> >
+    const std::vector<Zoltan2::coordinateModelPartBox>
           pBoxes = problem->getSolution().getPartBoxesView();
     size_t nBoxes = pBoxes.size();
 
