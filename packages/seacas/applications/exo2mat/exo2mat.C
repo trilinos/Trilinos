@@ -78,8 +78,8 @@ static bool   debug    = false;
 
 static const char *qainfo[] = {
     "exo2mat",
-    "2017/09/25",
-    "4.04",
+    "2018/12/05",
+    "4.05",
 };
 
 std::string time_stamp(const std::string &format)
@@ -751,14 +751,18 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
       std::vector<matvar_t *> cell_element(num_sets * 7);
 
-      size_t              num_sides = ex_inquire_int(exo_file, EX_INQ_SS_ELEM_LEN);
-      size_t              num_nodes = ex_inquire_int(exo_file, EX_INQ_SS_NODE_LEN);
-      size_t              num_df    = ex_inquire_int(exo_file, EX_INQ_SS_DF_LEN);
-      std::vector<int>    elem_list(num_sides);
-      std::vector<int>    side_list(num_sides);
-      std::vector<int>    num_nodes_per_side(num_sides);
-      std::vector<int>    side_nodes(num_nodes);
-      std::vector<double> ssdfac(num_df);
+      size_t           num_sides = ex_inquire_int(exo_file, EX_INQ_SS_ELEM_LEN);
+      size_t           num_nodes = ex_inquire_int(exo_file, EX_INQ_SS_NODE_LEN);
+      std::vector<int> elem_list(num_sides);
+      std::vector<int> side_list(num_sides);
+      std::vector<int> num_nodes_per_side(num_sides);
+      std::vector<int> side_nodes(num_nodes);
+
+      // size_t num_df    = ex_inquire_int(exo_file, EX_INQ_SS_DF_LEN);
+      // If `num_df == 0` or if it isn't equal to `num_nodes`, then
+      // all df will be set to 1.0, but in any case, the size of
+      // `ssdfac` should be num_nodes and not num_df.
+      std::vector<double> ssdfac(num_nodes);
 
       size_t side_off = 0;
       size_t node_off = 0;
@@ -788,12 +792,13 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         ex_get_set_param(exo_file, EX_SIDE_SET, ids[i], &n1, &n2);
         num_sideset_sides[i] = n1;
         num_sideset_dfac[i]  = n2;
-        ex_get_side_set_node_list_len(exo_file, ids[i], &num_sideset_nodes[i]);
-        if (n2 != num_sideset_nodes[i]) {
-          std::cerr
-              << "WARNING: Number of sideset nodes does not match number of distribution factors"
-              << " for sideset with id = " << ids[i] << ".\n";
+
+        bool has_ss_dfac = !(n2 == 0 || n1 == n2);
+        if (!has_ss_dfac) {
+          num_sideset_dfac[i] = num_sideset_nodes[i];
         }
+
+        ex_get_side_set_node_list_len(exo_file, ids[i], &num_sideset_nodes[i]);
 
         /* element and side list for side sets (dgriffi) */
         ex_get_set(exo_file, EX_SIDE_SET, ids[i], &elem_list[side_off], &side_list[side_off]);
@@ -808,13 +813,6 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims,
                                             &side_list[side_off], MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
-
-        bool has_ss_dfac = (n2 != 0);
-        if (n2 == 0 || n1 == n2) {
-          std::cerr << "WARNING: Sideset with id " << ids[i]
-                    << " does not contain distribution factors.\n";
-          num_sideset_dfac[i] = num_sideset_nodes[i];
-        }
 
         ex_get_side_set_node_list(exo_file, ids[i], &num_nodes_per_side[side_off],
                                   &side_nodes[node_off]);
@@ -871,8 +869,6 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
         bool has_ss_dfac = (n2 != 0);
         if (n2 == 0 || n1 == n2) {
-          std::cerr << "WARNING: Sideset with id " << ids[i]
-                    << " does not contain distribution factors.\n";
           ex_get_side_set_node_list_len(exo_file, ids[i], &n2);
         }
 
@@ -966,14 +962,14 @@ int main(int argc, char *argv[])
   bool use_cell_arrays = false;
 
   /* process arguments */
-  for (int j = 1; j < argc; j++) {
+  for (int j = 1; j < argc && argv[j][0] == '-'; j++) {
     if (strcmp(argv[j], "-t") == 0) { /* write text file (*.m) */
       del_arg(&argc, argv, j);
       textfile = 1;
       j--;
       continue;
     }
-    if (strcmp(argv[j], "-h") == 0) { /* write help info */
+    if (strcmp(argv[j], "-h") == 0 || strcmp(argv[j], "--help") == 0) { /* write help info */
       del_arg(&argc, argv, j);
       usage();
       exit(1);
@@ -1022,9 +1018,12 @@ int main(int argc, char *argv[])
         return 2;
       }
       j--;
-
       continue;
     }
+    // Unrecognized option...
+    std::cerr << "ERROR: Unrecognized option: '" << argv[j] << "'\n";
+    usage();
+    exit(1);
   }
 
   /* QA Info */

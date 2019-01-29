@@ -35,6 +35,9 @@ public:
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
                   const double & dt);
+
+    void postRegistrationSetup(typename Traits::SetupData d,
+                               PHX::FieldManager<Traits>& fm);
                                                                         
     void evaluateFields(typename Traits::EvalData d);               
 

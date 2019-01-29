@@ -313,7 +313,7 @@ C ... See if LOCAL or GLOBAL or nothing specified for id space...
            call ffchar(IFLD, INTYP, CFIELD, ' ', WORD)
            if (matstr(word, 'GLOBAL', 1)) then
              idsglobal = .true.
-           else if (matstr(word, 'GLOBAL', 1)) then
+           else if (matstr(word, 'LOCAL', 1)) then
              idsglobal = .false.
            end if
          else

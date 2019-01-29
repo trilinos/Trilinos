@@ -61,13 +61,13 @@ namespace stk {
 namespace io {
 
 size_t get_entities(OutputParams &params,
-                    stk::mesh::Part &part,
+                    const stk::mesh::Part &part,
                     stk::mesh::EntityRank type,
                     stk::mesh::EntityVector &entities,
                     bool include_shared);
 
 size_t get_entities_for_nodeblock(OutputParams &params,
-                    stk::mesh::Part &part,
+                    const stk::mesh::Part &part,
                     stk::mesh::EntityRank type,
                     stk::mesh::EntityVector &entities,
                     bool include_shared);
@@ -122,6 +122,10 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
 std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face);
 
 std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkData& bulkData, stk::mesh::Entity face);
+
+void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& supersetParts);
+
+stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params);
 
 }}
 

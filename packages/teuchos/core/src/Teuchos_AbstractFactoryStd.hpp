@@ -53,7 +53,7 @@ template<class T_impl>
 class PostModNothing {
 public:
 	/** \brief . */
-	void initialize(T_impl* p) const {} // required!
+	void initialize(T_impl* /* p */) const {} // required!
 };
 
 /** \brief Default allocation policy class for

@@ -127,9 +127,7 @@ namespace Iopg {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), spatialDimension(3),
-        nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-        commsetNodeCount(0), commsetElemCount(0)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -969,13 +967,6 @@ namespace Iopg {
 bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
 
 bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
-
-bool DatabaseIO::begin_state__(Ioss::Region *region, int /* state */, double time) { return true; }
-
-bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
-{
-  return true;
-}
 
 int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                        void *data, size_t data_size) const

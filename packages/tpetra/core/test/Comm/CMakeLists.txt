@@ -57,3 +57,13 @@ IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA)
     COMM mpi
     )
 ENDIF ()
+
+IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA AND Tpetra_ASSUME_CUDA_AWARE_MPI)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    cudaMpi_CanaryTest
+    SOURCES
+      cudaMpi_CanaryTest
+    NUM_MPI_PROCS 2
+    COMM mpi
+    )
+ENDIF ()

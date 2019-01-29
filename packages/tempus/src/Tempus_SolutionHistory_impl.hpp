@@ -236,7 +236,7 @@ void SolutionHistory<Scalar>::initWorkingState()
 
     // If workingState_ has a valid pointer, we are still working on it,
     // i.e., step failed and trying again, so do not initialize it.
-    if (getWorkingState() != Teuchos::null) return;
+    if (getWorkingState(false) != Teuchos::null) return;
 
     Teuchos::RCP<SolutionState<Scalar> > newState;
     if (getNumStates() < storageLimit_) {
@@ -453,7 +453,7 @@ void SolutionHistory<Scalar>::setParameterList(
     break;
   }
   case STORAGE_TYPE_UNLIMITED: {
-    storage_limit = std::numeric_limits<int>::max();
+    storage_limit = 1000000000;
     break;
   }
   }

@@ -13,10 +13,13 @@ namespace mini_em {
 //**********************************************************************
 template <typename EvalT,typename Traits>
 TensorConductivity<EvalT,Traits>::TensorConductivity(const std::string & name,
-                                         const panzer::IntegrationRule & ir,
-                                         const panzer::FieldLayoutLibrary & fl,
-                                         const double & sigma_,
-                                         const std::string& DoF_)
+                                                     const panzer::IntegrationRule & ir,
+                                                     const panzer::FieldLayoutLibrary & fl,
+                                                     const double & sigma_,
+                                                     const double & betax_,
+                                                     const double & betay_,
+                                                     const double & betaz_,
+                                                     const std::string& DoF_)
 {
   using Teuchos::RCP;
 
@@ -27,7 +30,10 @@ TensorConductivity<EvalT,Traits>::TensorConductivity(const std::string & name,
   conductivity = PHX::MDField<ScalarT,Cell,Point,Dim,Dim>(name, data_layout);
   this->addEvaluatedField(conductivity);
 
-  sigma = sigma_;
+  betax = betax_;
+  betay = betay_;
+  betaz = betaz_;
+  sigma = sigma_ / (1.0 + betax*betax + betay*betay + betaz*betaz);
 
   Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis(DoF_);
   const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
@@ -50,17 +56,17 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
         // const ScalarT& z = coords(cell,point,2);
-        conductivity(cell,point,0,0) = sigma;
-        conductivity(cell,point,0,1) = 0.;
-        conductivity(cell,point,0,2) = 0.;
+        conductivity(cell,point,0,0) = sigma * (1.0 + betax*betax);
+        conductivity(cell,point,0,1) = sigma * (      betax*betay - betaz);
+        conductivity(cell,point,0,2) = sigma * (      betax*betaz + betay);
 
-        conductivity(cell,point,1,0) = 0.;
-        conductivity(cell,point,1,1) = sigma;
-        conductivity(cell,point,1,2) = 0.;
+        conductivity(cell,point,1,0) = sigma * (      betay*betax + betaz);
+        conductivity(cell,point,1,1) = sigma * (1.0 + betay*betay);
+        conductivity(cell,point,1,2) = sigma * (      betay*betaz - betax);
 
-        conductivity(cell,point,2,0) = 0.;
-        conductivity(cell,point,2,1) = 0.;
-        conductivity(cell,point,2,2) = sigma;
+        conductivity(cell,point,2,0) = sigma * (      betaz*betax - betay);
+        conductivity(cell,point,2,1) = sigma * (      betaz*betay + betax);
+        conductivity(cell,point,2,2) = sigma * (1.0 + betaz*betaz);
       }
     }
   } else {

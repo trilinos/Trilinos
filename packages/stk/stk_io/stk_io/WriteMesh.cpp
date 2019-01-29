@@ -85,12 +85,17 @@ void write_mesh_with_fields(const std::string& filename, stk::mesh::BulkData &bu
     write_mesh_with_fields(filename, outStkIo, step, time, databasePurpose);
 }
 
+void set_64bit_properties(stk::io::StkMeshIoBroker &outStkIo)
+{
+    outStkIo.property_add(Ioss::Property("INTEGER_SIZE_API" , 8));
+    outStkIo.property_add(Ioss::Property("INTEGER_SIZE_DB" , 8));
+}
+
 void write_mesh_with_large_ids_and_fields(const std::string& filename, stk::mesh::BulkData &bulkData, int step, double time, stk::io::DatabasePurpose databasePurpose)
 {
     stk::io::StkMeshIoBroker outStkIo;
-    outStkIo.property_add(Ioss::Property("INTEGER_SIZE_API" , 8));
-    outStkIo.property_add(Ioss::Property("INTEGER_SIZE_DB" , 8));
     outStkIo.set_bulk_data(bulkData);
+    set_64bit_properties(outStkIo);
     write_mesh_with_fields(filename, outStkIo, step, time, databasePurpose);
 }
 

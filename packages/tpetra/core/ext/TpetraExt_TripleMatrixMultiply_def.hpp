@@ -298,7 +298,19 @@ namespace Tpetra {
         Teuchos::ParameterList labelList;
         labelList.set("Timer Label", label);
         RCP<crs_matrix_type> Acprime = rcpFromRef(Ac);
-        if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
+        if(!params.is_null()) {
+          Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
+          Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
+          int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+          mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+          int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+          if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+          labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
+
+          labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
+                                "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+          labelList.set("compute global constants",params->get("compute global constants",true));
+        }
         export_type exporter = export_type(*Pprime->getGraph()->getImporter());
         Actemp->exportAndFillComplete(Acprime,
                                       exporter,

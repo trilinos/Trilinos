@@ -84,7 +84,7 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                    Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
-                   Teuchos::RCP<Xpetra::MultiVector <double,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
+                   Teuchos::RCP<Xpetra::MultiVector <typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
                    Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;

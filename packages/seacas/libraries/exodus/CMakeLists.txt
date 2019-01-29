@@ -1,6 +1,6 @@
 TRIBITS_SUBPACKAGE(Exodus)
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+if (SEACASExodus_ENABLE_STATIC)
 INCLUDE(InstallSymLink)
 endif()
 
@@ -38,22 +38,22 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES} ${DEP_SOURCES}
 )
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
-   # Many users of the SEACAS installations still want a static exodus library...
-   if (BUILD_SHARED_LIBS)
-      ADD_LIBRARY(
-              exodus_static
-              STATIC
-              ${SOURCES} ${DEP_SOURCES}
-      )
-      set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
-      INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-   endif(BUILD_SHARED_LIBS)
+# Many users of the SEACAS installations still want a static exodus library...
+if (SEACASExodus_ENABLE_STATIC)
+   ADD_LIBRARY(
+           exodus_static
+           STATIC
+           ${SOURCES} ${DEP_SOURCES}
+   )
+   set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
+   INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
    # For backwards compatibility, the C exodus library was called libexoIIv2c.a
    # Create a symbolic link from libexodus.a to libexoIIv2c.a -- do only for static lib
    InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2c.a)
+endif()
 
+if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    # add a target to generate API documentation with Doxygen
    if(SEACASProj_ENABLE_DOXYGEN)
      find_package(Doxygen)

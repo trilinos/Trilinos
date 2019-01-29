@@ -93,7 +93,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     @param showMaxResNormOnly: for output only
 
   */
-  StatusTestGenResSubNorm( MagnitudeType Tolerance, size_t subIdx, int quorum = -1, bool showMaxResNormOnly = false ) {
+  StatusTestGenResSubNorm( MagnitudeType /* Tolerance */, size_t /* subIdx */, int /* quorum */ = -1, bool /* showMaxResNormOnly */ = false ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,
           "StatusTestGenResSubNorm::StatusTestGenResSubNorm(): StatusTestGenResSubNorm only available for blocked operators (e.g., Thyra).");
   }
@@ -112,7 +112,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     DefineScaleForm()).
     </ul>
   */
-  int defineResForm(  NormType TypeOfNorm) {
+  int defineResForm(  NormType /* TypeOfNorm */) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,
           "StatusTestGenResSubNorm::defineResForm(): StatusTestGenResSubNorm only available for blocked operators (e.g., Thyra).");
     TEUCHOS_UNREACHABLE_RETURN(0);
@@ -139,7 +139,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     </ul>
     </ol>
   */
-  int defineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, MagnitudeType ScaleValue = Teuchos::ScalarTraits<MagnitudeType>::one()) {
+  int defineScaleForm( ScaleType /* TypeOfScaling */, NormType /* TypeOfNorm */, MagnitudeType /* ScaleValue */ = Teuchos::ScalarTraits<MagnitudeType>::one()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,
           "StatusTestGenResSubNorm::defineScaleForm(): StatusTestGenResSubNorm only available for blocked operators (e.g., Thyra).");
     TEUCHOS_UNREACHABLE_RETURN(0);
@@ -149,7 +149,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   /*! We allow the tolerance to be reset for cases where, in the process of testing the residual,
     we find that the initial tolerance was too tight or too lax.
   */
-  int setTolerance(MagnitudeType tolerance) { return 0; }
+  int setTolerance(MagnitudeType /* tolerance */) { return 0; }
 
   //! Set the block index of which we want to check the norm of the sub-residuals
   /*! It does not really make sense to change/reset the index during the solution process
@@ -158,10 +158,10 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
   //! Sets the number of residuals that must pass the convergence test before Passed is returned.
   //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
-  int setQuorum(int quorum) { return 0; }
+  int setQuorum(int /* quorum */) { return 0; }
 
   //! Set whether the only maximum residual norm is displayed when the print() method is called
-  int setShowMaxResNormOnly(bool showMaxResNormOnly) { return 0; }
+  int setShowMaxResNormOnly(bool /* showMaxResNormOnly */) { return 0; }
 
   //@}
 
@@ -174,7 +174,7 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
     \return StatusType: Passed, Failed, or Undefined.
   */
-  StatusType checkStatus(Iteration<ScalarType,MV,OP>* iSolver) { return Undefined; }
+  StatusType checkStatus(Iteration<ScalarType,MV,OP>* /* iSolver */) { return Undefined; }
 
   //! Return the result of the most recent CheckStatus call.
   StatusType getStatus() const {return Undefined;}
@@ -192,10 +192,10 @@ class StatusTestGenResSubNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   //@{
 
   //! Output formatted description of stopping test to output stream.
-  void print(std::ostream& os, int indent = 0) const { }
+  void print(std::ostream& /* os */, int /* indent */ = 0) const { }
 
   //! Print message for each status specific to this stopping test.
-  void printStatus(std::ostream& os, StatusType type) const { }
+  void printStatus(std::ostream& /* os */, StatusType /* type */) const { }
   //@}
 
   //! @name Methods to access data members.

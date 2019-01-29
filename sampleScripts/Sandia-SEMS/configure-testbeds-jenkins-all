@@ -76,7 +76,7 @@ cmake \
 -D Kokkos_ENABLE_Pthread=${PTHREAD} \
 -D TPL_ENABLE_CUDA=${CUDA} \
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
--D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
+-D Trilinos_ENABLE_COMPLEX_DOUBLE=${COMPLEX} \
 \
 -D CMAKE_CXX_FLAGS="-g" \
 -D KOKKOS_ARCH="${JENKINS_ARCH}" \
@@ -203,7 +203,6 @@ cmake \
   -D Tpetra_INST_OPENMP:BOOL=${OPENMP} \
   -D Tpetra_INST_PTHREAD:BOOL=${PTHREAD} \
   -D Tpetra_INST_CUDA:BOOL=${CUDA} \
-  -D Tpetra_INST_COMPLEX_DOUBLE:BOOL=${COMPLEX} \
   -D Tpetra_ENABLE_TESTS:BOOL=${TESTS} \
   -D Tpetra_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_TrilinosCouplings=ON \

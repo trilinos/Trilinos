@@ -256,6 +256,29 @@ namespace {
 
     out << "Test getLocalRowView, getLocalRowCopy, and replaceLocalValues" << endl;
 
+    // We're modifying data on host.
+    blockMat.template sync<Kokkos::HostSpace> ();
+    blockMat.template modify<Kokkos::HostSpace> ();
+    {
+      if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
+        TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
+        TEST_ASSERT( blockMat.need_sync_device () );
+        TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
+        TEST_ASSERT( ! blockMat.need_sync_host () );
+      }
+      auto val = blockMat.template getValues<Kokkos::HostSpace> ();
+      // "Host" View may live in CudaUVMSpace, but its execution space
+      // had better be host.  We can tell that by getting the
+      // execution space's default memory space.
+      static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
+                     Kokkos::HostSpace>::value,
+                     "Host View is not actually a host View.");
+      auto val2 = blockMat.getValuesHost ();
+      static_assert (std::is_same<typename decltype (val2)::execution_space::memory_space,
+                     Kokkos::HostSpace>::value,
+                     "Host View is not actually a host View.");
+    }
+
     Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
 
     // Test that getLocalRowView returns the right column indices.
@@ -357,6 +380,26 @@ namespace {
         }
       } // for each entry in the row
     } // for each local row
+
+    // We're done modifying data on host.
+    blockMat.template sync<typename Node::device_type::memory_space> ();
+    {
+      TEST_ASSERT( ! blockMat.template need_sync<typename Node::device_type::memory_space> () );
+      TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
+      auto val = blockMat.template getValues<typename Node::device_type::memory_space> ();
+      // "Device" View may live in CudaUVMSpace.
+#if defined(KOKKOS_ENABLE_CUDA)
+      constexpr bool testing_cuda =
+        std::is_same<typename Node::device_type::execution_space, Kokkos::Cuda>::value;
+      static_assert (! testing_cuda ||
+                     std::is_same<typename decltype (val)::execution_space, Kokkos::Cuda>::value,
+                     "Device View is not actually a Device View.");
+      auto val2 = blockMat.getValuesDevice ();
+      static_assert (! testing_cuda ||
+                     std::is_same<typename decltype (val2)::execution_space, Kokkos::Cuda>::value,
+                     "Device View is not actually a Device View.");
+#endif // defined(KOKKOS_ENABLE_CUDA)
+    }
 
     out << "Test applyBlock for a single vector" << endl;
 

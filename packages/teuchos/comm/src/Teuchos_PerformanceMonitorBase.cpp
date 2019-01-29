@@ -306,9 +306,6 @@ namespace Teuchos {
     // \param mid [in] The value of "mid" in the implementation of \c
     //   mergeCounterNamesHelper().
     //
-    // \param localNames [in] List of counter names belonging to the
-    //   calling MPI process.
-    //
     // \param globalNames [in/out] Only accessed if myRank == left.
     //   If so, on input: the intermediate reduction result of the
     //   union resp. intersection (depending on \c setOp).  On output:
@@ -324,7 +321,6 @@ namespace Teuchos {
                            const int myRank,
                            const int left,
                            const int mid,
-                           const Array<std::string>& localNames,
                            Array<std::string>& globalNames,
                            const ECounterSetOp setOp)
     {
@@ -383,7 +379,7 @@ namespace Teuchos {
           }
         }
       else if (myRank == mid)
-        sendStrings (comm, localNames, left);
+        sendStrings (comm, globalNames, left);
       else
         TEUCHOS_TEST_FOR_EXCEPTION(myRank != left && myRank != mid,
                            std::logic_error,
@@ -462,7 +458,7 @@ namespace Teuchos {
           // Combine the results of the recursive step.
           if (myRank == left || myRank == mid)
             mergeCounterNamesPair (comm, myRank, left, mid,
-                                   localNames, globalNames, setOp);
+                                   globalNames, setOp);
         }
     }
 

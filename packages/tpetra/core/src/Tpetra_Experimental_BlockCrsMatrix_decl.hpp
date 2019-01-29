@@ -737,27 +737,38 @@ protected:
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
 
-  virtual void
-  copyAndPermute (const ::Tpetra::SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
+  //! Whether this class implements the old or new interface of DistObject.
+  virtual bool useNewInterface () { return true; }
+
+  /// \typedef buffer_device_type
+  /// \brief Kokkos::Device specialization for communication buffers.
+  ///
+  /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+  using buffer_device_type = typename DistObject<Scalar, LO, GO,
+                                                 Node>::buffer_device_type;
 
   virtual void
-  packAndPrepare (const ::Tpetra::SrcDistObject& source,
-                  const Teuchos::ArrayView<const LO>& exportLIDs,
-                  Teuchos::Array<packet_type>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  ::Tpetra::Distributor& distor);
+  copyAndPermuteNew (const SrcDistObject& sourceObj,
+                     const size_t numSameIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs);
 
   virtual void
-  unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-                    const Teuchos::ArrayView<const packet_type> &imports,
-                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
-                    ::Tpetra::Distributor& distor,
-                    ::Tpetra::CombineMode CM);
+  packAndPrepareNew (const SrcDistObject& sourceObj,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                     Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     size_t& constantNumPackets,
+                     Distributor& /* distor */);
+
+  virtual void
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                       const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
+                       const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID, 
+                       const size_t constantNumPackets,
+                       Distributor& /* distor */,
+                       const CombineMode combineMode);
+
   //@}
 
 private:
@@ -886,22 +897,24 @@ private:
   // //! Clear the local error state and stream.
   // void clearLocalErrorStateAndStream ();
 
+  template<class Device>
+  struct is_cuda {
+#if defined(KOKKOS_ENABLE_CUDA)
+    // CudaHostPinnedSpace::execution_space ==
+    // HostSpace::execution_space.  That's OK; it's host memory, that
+    // just happens to be Cuda accessible.  But what if somebody gives
+    // us Device<Cuda, CudaHostPinnedSpace>?  It looks like they mean
+    // to run on device then, so we should sync to device.
+    static constexpr bool value =
+      std::is_same<typename Device::execution_space, Kokkos::Cuda>::value;
+#else
+    static constexpr bool value = false;
+#endif // defined(KOKKOS_ENABLE_CUDA)
+  };
+
 public:
   //! \name Implementation of "dual view semantics"
   //@{
-
-  //! Mark the matrix's values as modified in the given memory space.
-  template<class MemorySpace>
-  void modify ()
-  {
-    // It's legit to use a memory space, execution space, or
-    // Kokkos::Device specialization as the template parameter of
-    // Kokkos::DualView::modify.  That method just extracts the
-    // memory_space typedef of its template parameter anyway.
-    // However, insisting on a memory space avoids unnecessary
-    // instantiations.
-    val_.template modify<typename MemorySpace::memory_space> ();
-  }
 
   //! Mark the matrix's valueas as modified in host space
   inline void modify_host()
@@ -915,17 +928,16 @@ public:
     val_.modify_device();
   }
 
-  //! Whether the matrix's values need sync'ing to the given memory space.
+  //! Mark the matrix's values as modified in the given memory space.
   template<class MemorySpace>
-  bool need_sync () const
+  void modify ()
   {
-    // It's legit to use a memory space, execution space, or
-    // Kokkos::Device specialization as the template parameter of
-    // Kokkos::DualView::need_sync.  That method just extracts the
-    // memory_space typedef of its template parameter anyway.
-    // However, insisting on a memory space avoids unnecessary
-    // instantiations.
-    return val_.template need_sync<typename MemorySpace::memory_space> ();
+    if (is_cuda<MemorySpace>::value) {
+      this->modify_device ();
+    }
+    else {
+      this->modify_host ();
+    }
   }
 
   //! Whether the matrix's values need sync'ing to host space
@@ -940,17 +952,16 @@ public:
     return val_.need_sync_device();
   }
 
-  //! Sync the matrix's values <i>to</i> the given memory space.
+  //! Whether the matrix's values need sync'ing to the given memory space.
   template<class MemorySpace>
-  void sync ()
+  bool need_sync () const
   {
-    // It's legit to use a memory space, execution space, or
-    // Kokkos::Device specialization as the template parameter of
-    // Kokkos::DualView::sync.  That method just extracts the
-    // memory_space typedef of its template parameter anyway.
-    // However, insisting on a memory space avoids unnecessary
-    // instantiations.
-    val_.template sync<typename MemorySpace::memory_space> ();
+    if (is_cuda<MemorySpace>::value) {
+      return this->need_sync_device ();
+    }
+    else {
+      return this->need_sync_host ();
+    }
   }
 
   //! Sync the matrix's values to host space
@@ -963,6 +974,28 @@ public:
   inline void sync_device()
   {
     val_.sync_device();
+  }
+
+  //! Sync the matrix's values <i>to</i> the given memory space.
+  template<class MemorySpace>
+  void sync ()
+  {
+    if (is_cuda<MemorySpace>::value) {
+      this->sync_device ();
+    }
+    else {
+      this->sync_host ();
+    }
+  }
+
+  // \brief Get the host view of the matrix's values
+  typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host getValuesHost () const {
+    return val_.view_host();
+  }
+
+  // \brief Get the device view of the matrix's values
+  typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev getValuesDevice () const {
+    return val_.view_device();
   }
 
   /// \brief Get the host or device View of the matrix's values (\c val_).
@@ -981,22 +1014,19 @@ public:
   /// needing to synchronize on the allocation.
   ///
   /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
-  /// Hence I made the non-templated functions const. 
-
+  /// Hence I made the non-templated functions [getValuesHost and getValuesDevice; see above] const.
   template<class MemorySpace>
-  auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ())
+  typename std::conditional<is_cuda<MemorySpace>::value,
+                            typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev,
+                            typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host>::type
+  getValues ()
   {
-    return val_.template view<typename MemorySpace::memory_space> ();
-  }
-
-  // \brief Get the host view of the matrix's values
-  inline typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host getValuesHost () const {
-    return val_.view_host();
-  }
-
-  // \brief Get the device view of the matrix's values
-  inline typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev getValuesDevice () const {
-    return val_.view_device();
+    // Unlike std::conditional, if_c has a select method.
+    return Kokkos::Impl::if_c<
+        is_cuda<MemorySpace>::value,
+        typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev,
+        typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host
+      >::select (this->getValuesDevice (), this->getValuesHost ());
   }
 
   //@}

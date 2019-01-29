@@ -74,7 +74,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
   GlobalEvaluationDataContainer gedc;
 
   if ( flags.getValue() & EvaluationFlags::Initialize ) {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")");
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_gather("+PHX::typeAsString<EvalT>()+")", eval_gather);
 
     in.fillGlobalEvaluationDataContainer(gedc);
     gedc.initialize(); // make sure all ghosted data is ready to go
@@ -89,7 +89,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
   // Volumetric fill
   // *********************
   if ( flags.getValue() & EvaluationFlags::VolumetricFill) {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")");
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_volume("+PHX::typeAsString<EvalT>()+")", eval_vol);
     this->evaluateVolume(in);
   }
 
@@ -102,24 +102,24 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 
   if ( flags.getValue() & EvaluationFlags::BoundaryFill) {
     {
-      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")");
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::typeAsString<EvalT>()+")",eval_neumannbcs);
       this->evaluateNeumannBCs(in);
     }
 
     {
-      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")",eval_interfacebcs);
       this->evaluateInterfaceBCs(in);
     }
 
     // Dirchlet conditions require a global matrix
     {
-      PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")",eval_dirichletbcs);
       this->evaluateDirichletBCs(in);
     }
   }
 
   if ( flags.getValue() & EvaluationFlags::Scatter) {
-    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")");
+    PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_scatter("+PHX::typeAsString<EvalT>()+")",eval_scatter);
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
     m_lin_obj_factory->beginFill(*in.container_);
@@ -356,13 +356,13 @@ evaluateBCs(const panzer::BCType bc_type,
       if (bc.bcType() == bc_type) {
         std::ostringstream timerName;
         timerName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier();
-        PANZER_FUNC_TIME_MONITOR(timerName.str());
+        PANZER_FUNC_TIME_MONITOR_DIFF(timerName.str(),eval_BCs);
 
         // Loop over local faces
         for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
           std::ostringstream timerSideName;
           timerSideName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier() << ", side=" << side->first;
-          PANZER_FUNC_TIME_MONITOR(timerSideName.str());
+          PANZER_FUNC_TIME_MONITOR_DIFF(timerSideName.str(),Side);
 
           // extract field manager for this side  
           unsigned local_side_index = side->first;

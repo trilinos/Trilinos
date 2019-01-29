@@ -339,7 +339,7 @@ namespace Belos {
   TFQMRIter<ScalarType,MV,OP>::TFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 					 const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 					 const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-					 Teuchos::ParameterList &params 
+					 Teuchos::ParameterList &/* params */ 
 					 ) : 
     lp_(problem), 
     om_(printer),

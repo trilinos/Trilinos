@@ -180,11 +180,13 @@ evaluateFields(
 
     // evaluate the point values (construct jacobians etc...)
     pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,
-                               basisValues.basis_coordinates_ref);
+                               basisValues.basis_coordinates_ref,
+                               workset.num_cells);
   }
   else {
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray);
+    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray,
+                               workset.num_cells);
   }
 }
 

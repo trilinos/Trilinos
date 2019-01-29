@@ -110,7 +110,7 @@ unpackRow(typename PackTraits<GO, DT>::output_array_type& gids_out,
           typename PackTraits<ST, DT>::output_array_type& vals_out,
           const Kokkos::View<const char*, BDT>& imports,
           const size_t offset,
-          const size_t num_bytes,
+          const size_t /* num_bytes */,
           const size_t num_ent,
           const size_t num_bytes_per_value)
 {
@@ -256,9 +256,9 @@ struct UnpackCrsMatrixAndCombineFunctor {
     num_bytes_per_value (num_bytes_per_value_in),
     atomic (atomic_in),
     tokens (XS()),
-    lids_scratch ("pids_scratch", tokens.size() * max_num_ent),
+    lids_scratch ("lids_scratch", tokens.size() * max_num_ent),
     gids_scratch ("gids_scratch", tokens.size() * max_num_ent),
-    pids_scratch ("lids_scratch", tokens.size() * max_num_ent),
+    pids_scratch ("pids_scratch", tokens.size() * max_num_ent),
     vals_scratch ("vals_scratch", tokens.size() * max_num_ent)
   {}
 
@@ -856,7 +856,7 @@ unpackAndCombineIntoCrsArrays2(
     const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& import_lids,
     const Kokkos::View<const char*, BufferDeviceType>& imports,
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
-    const LocalMatrix& local_matrix,
+    const LocalMatrix& /* local_matrix */,
     const LocalMap /*& local_col_map*/,
     const int my_pid,
     const size_t num_bytes_per_value)
@@ -1104,8 +1104,8 @@ unpackCrsMatrixAndCombine(
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
-    size_t constantNumPackets,
-    Distributor & distor,
+    size_t /* constantNumPackets */,
+    Distributor & /* distor */,
     CombineMode combineMode,
     const bool atomic)
 {
@@ -1153,8 +1153,8 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                               const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
                               const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
                               const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
-                              const size_t constantNumPackets,
-                              Distributor& distor,
+                              const size_t /* constantNumPackets */,
+                              Distributor& /* distor */,
                               const CombineMode combineMode,
                               const bool atomic)
 {
@@ -1266,9 +1266,9 @@ unpackAndCombineWithOwningPIDsCount (
     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
     const Teuchos::ArrayView<const char> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    size_t constantNumPackets,
-    Distributor &distor,
-    CombineMode combineMode,
+    size_t /* constantNumPackets */,
+    Distributor &/* distor */,
+    CombineMode /* combineMode */,
     size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
@@ -1337,9 +1337,9 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const size_t constantNumPackets,
-    Distributor& distor,
-    const CombineMode combineMode,
+    const size_t /* constantNumPackets */,
+    Distributor& /* distor */,
+    const CombineMode /* combineMode */,
     const size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,

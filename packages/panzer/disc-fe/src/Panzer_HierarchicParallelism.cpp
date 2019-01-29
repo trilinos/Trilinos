@@ -48,7 +48,9 @@ namespace panzer {
     use_auto_team_size_(true),
     team_size_(-1),
     vector_size_(1),
-    fad_vector_size_(1)
+    fad_vector_size_(1),
+    use_shared_memory_(true),
+    fad_use_shared_memory_(false)
   {
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -71,6 +73,13 @@ namespace panzer {
     team_size_ = in_team_size;
     vector_size_ = in_vector_size;
     fad_vector_size_ = in_fad_vector_size;
+  }
+
+  void HP::setUseSharedMemory(const bool& in_use_shared_memory,
+			      const bool& in_fad_use_shared_memory)
+  {
+    use_shared_memory_ = in_use_shared_memory;
+    fad_use_shared_memory_ = in_fad_use_shared_memory;
   }
 
 }

@@ -158,6 +158,44 @@ public:
   }
 };
 
+// Helper function needed for T=scalar_t specialization
+// Separate function needed // because, with T != scalar_t, 
+// "array = vec_" // would not compile; 
+// ArrayRCP does not overload "=" operator for different types.
+// Separate helper function needed (outside StridedData class)
+// because cannot specialize member function of templated class.
+template<typename scalar_t, typename T>
+static void getInputArrayHelper(
+  ArrayRCP<const T> &target,
+  const ArrayRCP<const scalar_t> &src)
+{
+  // Create a copy of desired type T
+  // From logic in getInputArray, we know stride == 1.
+  size_t n = src.size();
+  T *tmp = new T [n];
+
+  if (!tmp){
+    std::cerr << "Error: " << __FILE__ << ", " << __LINE__<< std::endl;
+    std::cerr << n << " objects" << std::endl;
+    throw std::bad_alloc();
+  }
+
+  for (size_t i=0; i < n; i++){
+    tmp[i] = static_cast<T>(src[i]);
+  }
+  target = arcp(tmp, 0, n);
+}
+
+// Specialization with T == scalar_t:  just copy ArrayRCP
+template<typename scalar_t>
+static void getInputArrayHelper(
+  ArrayRCP<const scalar_t> &target,
+  const ArrayRCP<const scalar_t> &src)
+{
+  target = src;
+}
+
+// Member function for getting unstrided view/copy of StridedData.
 template<typename lno_t, typename scalar_t>
   template<typename T>
      void StridedData<lno_t, scalar_t>::getInputArray(
@@ -166,10 +204,7 @@ template<typename lno_t, typename scalar_t>
   if (vec_.size() < 1){
     array = ArrayRCP<const T>();
   }
-  else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
-    array = vec_;
-  }
-  else {
+  else if (stride_ > 1) {
     // Create an unstrided copy
     size_t n = vec_.size() / stride_;
     T *tmp = new T [n];
@@ -185,7 +220,9 @@ template<typename lno_t, typename scalar_t>
     }
     array = arcp(tmp, 0, n);
   }
-  
+  else { // stride == 1
+    Zoltan2::getInputArrayHelper<scalar_t, T>(array, vec_);
+  }
   return;
 }
 

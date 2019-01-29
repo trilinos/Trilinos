@@ -1203,7 +1203,8 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 			ADVari::adc.rad_need_reinit &= ~2;
 			*ADVari::Last_ADvari = 0;
 			ADVari::Last_ADvari = &ADVari::First_ADvari;
-			if ((anext = ADVari::First_ADvari)) {
+                        anext = ADVari::First_ADvari;
+			if (anext) {
 				while((a = anext)) {
 					anext = a->Next;
 					if ((v = (IndepADvar<Double> *)a->padv)) {

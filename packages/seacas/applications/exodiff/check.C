@@ -118,23 +118,27 @@ void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, boo
   bool is_diff = false;
   // NOTE: Check_Global is called earlier. Don't repeat call here.
   if (!Check_Nodal(file1, file2, node_map, node_id_map, check_only)) {
+    ERROR(".. Differences found in mesh nodal coordinates.\n");
     is_diff = true;
   }
 
   if (!Check_Elmt_Block(file1, file2)) {
+    ERROR(".. Differences found in element block metadata or connectivity.\n");
     is_diff = true;
   }
 
   if (!Check_Nodeset(file1, file2, node_map, check_only)) {
+    ERROR(".. Differences found in node set metadata or node lists.\n");
     is_diff = true;
   }
 
   if (!Check_Sideset(file1, file2, elmt_map, check_only)) {
+    ERROR(".. Differences found in side set metadata or side lists.\n");
     is_diff = true;
   }
 
   if (is_diff) {
-    ERROR(".. Differences found in mesh metadata.  Aborting...\n");
+    ERROR(".. Differences found in mesh (non-transient) data.  Aborting...\n");
     exit(1);
   }
 }

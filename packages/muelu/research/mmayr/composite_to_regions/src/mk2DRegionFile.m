@@ -211,7 +211,7 @@ elseif(strcmp(filename, 'caseSeventeen') == true)  % caseSeventeen
   pxProcChange         = [31];
   pyProcChange         = [31];
   
-elseif(strcmp(filename, 'caseEightteen') == true)  % caseEightteen
+elseif(strcmp(filename, 'caseEighteen') == true)  % caseEightteen
 
 %px:0   0   0   0   1   1   1
 %px:            1                
@@ -270,7 +270,9 @@ elseif(strcmp(filename, 'caseTwenty') == true)  % caseTwenty
   ryInterfaceLocations = [9 18];   
   pxProcChange         = [10];
   pyProcChange         = [10];
-
+  
+else
+  error('Unknown case %s', filename);
 end
 
 nrx = length(rxInterfaceLocations);

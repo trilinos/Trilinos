@@ -312,8 +312,8 @@ template<typename Scalar>
 void
 Piro::InvertMassMatrixDecorator<Scalar>::reportFinalPoint(
 #endif
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint,
-    const bool wasSolved)
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& /* finalPoint */,
+    const bool /* wasSolved */)
 {
   // TODO
   TEUCHOS_TEST_FOR_EXCEPTION(true,

@@ -147,17 +147,11 @@ protected:
       const ArrayView<const typename Adapter::part_t> &_partArray,
       typename Adapter::part_t &_numGlobalParts,
       ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &_metricsBase,
-      ArrayRCP<typename Adapter::scalar_t> &_globalSums){
-
-
-    globalWeightedCutsMessagesHopsByPart <Adapter,MachineRep>(_env,
-            _problemComm, _graph, _partArray,
-            _numGlobalParts, _metricsBase,
-            _globalSums,
-            this->machine);
-
-  }
-
+      ArrayRCP<typename Adapter::scalar_t> &_globalSums) {
+        globalWeightedByPart <Adapter,MachineRep>(_env,
+          _problemComm, _graph, _partArray, _numGlobalParts, _metricsBase,
+          _globalSums, true, this->machine);
+      }
 };
 
 }   // namespace Zoltan2

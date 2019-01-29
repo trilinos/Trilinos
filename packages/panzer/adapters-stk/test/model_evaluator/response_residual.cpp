@@ -489,8 +489,8 @@ namespace panzer {
           TEST_ASSERT(false); // non of the required row types were found
 
           out << "Row didn't match expectation " << i << ": ";
-          for(std::size_t i=0;i<sorted_values.size();i++)
-            out << sorted_values[i] << " ";
+          for(std::size_t si=0;si<sorted_values.size();++si)
+            out << sorted_values[si] << " ";
           out << std::endl;
         }
         else {
@@ -638,8 +638,8 @@ namespace panzer {
           TEST_ASSERT(false); // non of the required row types were found
 
           out << "Row didn't match expectation " << i << ": ";
-          for(std::size_t i=0;i<sorted_values.size();i++)
-            out << sorted_values[i] << " ";
+          for(std::size_t j=0;j<sorted_values.size();++j)
+            out << sorted_values[j] << " ";
           out << std::endl;
         }
         else {
@@ -800,8 +800,8 @@ namespace panzer {
           TEST_ASSERT(false); // non of the required row types were found
 
           out << "Row didn't match expectation " << i << ": ";
-          for(std::size_t i=0;i<sorted_values.size();i++)
-            out << sorted_values[i] << " ";
+          for(std::size_t j=0;j<sorted_values.size();++j)
+            out << sorted_values[j] << " ";
           out << std::endl;
         }
         else {

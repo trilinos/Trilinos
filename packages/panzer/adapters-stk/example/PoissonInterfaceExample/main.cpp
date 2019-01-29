@@ -388,7 +388,8 @@ int main (int argc, char* argv[])
 
   Kokkos::initialize(argc,argv);
 
-  {
+  int status = 0;
+  try {
 
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
     RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -604,11 +605,11 @@ int main (int argc, char* argv[])
       if (has_interface_condition)
         checkInterfaceConnections(conn_manager, dofManager->getComm());
     }
-  
+
     // construct some linear algebra object, build object to pass to evaluators
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
       = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
-  
+
     std::vector<std::string> names;
     std::vector<std::vector<std::string> > eblocks;
     const int c_name_start = 3;
@@ -642,7 +643,7 @@ int main (int argc, char* argv[])
         errorResponseLibrary->addResponse(names[i] + " L2 Error", eblocks[i], builder);
       }
     }
-  
+
     // setup closure model
     /////////////////////////////////////////////////////////////
    
@@ -671,7 +672,7 @@ int main (int argc, char* argv[])
     }
   
     Teuchos::ParameterList user_data("User Data"); // user data can be empty here
-  
+
     // setup field manager builder
     /////////////////////////////////////////////////////////////
   
@@ -697,7 +698,7 @@ int main (int argc, char* argv[])
     user_data.set<int>("Workset Size", workset_size);
     if (po.check_error)
       errorResponseLibrary->buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data);
-  
+
     // assemble and solve
     /////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer::EpetraLinearObjContainer> ep_container;
@@ -714,19 +715,20 @@ int main (int argc, char* argv[])
       linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X |
                                                 panzer::LinearObjContainer::F |
                                                 panzer::LinearObjContainer::Mat,*ghost_container);
+
       linObjFactory->initializeContainer(panzer::LinearObjContainer::X |
                                          panzer::LinearObjContainer::F |
                                          panzer::LinearObjContainer::Mat,*container);
       ghost_container->initialize();
       container->initialize();
-  
+
       panzer::AssemblyEngineInArgs input(ghost_container,container);
       input.alpha = 0;
       input.beta = 1;
   
       // evaluate physics: This does both the Jacobian and residual at once
       ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
-  
+
       // solve linear system
       /////////////////////////////////////////////////////////////
       // convert generic linear object container to epetra container
@@ -745,7 +747,7 @@ int main (int argc, char* argv[])
   
       // solve the linear system
       solver.Iterate(1000,1e-5);
-  
+
       // we have now solved for the residual correction from
       // zero in the context of a Newton solve.
       //     J*e = -r = -(f - J*0) where f = J*u
@@ -755,13 +757,14 @@ int main (int argc, char* argv[])
     } else { // Some analysis and an outer iteration if necessary.
       Teuchos::RCP<Epetra_CrsMatrix> J_fd;
       assembleAndSolve(ae_tm, linObjFactory, ep_container, ghost_container, po);
+
       if (po.test_Jacobian) {
         const double nwre = testJacobian(ae_tm, linObjFactory, ep_container->get_x());
         out << "TEST JACOBIAN " << nwre << "\n";
         if (nwre < 0 || nwre > 1e-5) pass = false;
       }
     }
-    
+
     // output data (optional)
     /////////////////////////////////////////////////////////////
   
@@ -771,7 +774,7 @@ int main (int argc, char* argv[])
       EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container->get_x());
       EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->get_f());
     }
-  
+
     if (po.check_error) {
       std::vector<Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > > rfs(names.size());
       for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
@@ -815,13 +818,37 @@ int main (int argc, char* argv[])
       panzer_stk::write_solution_data(*dofManager,*mesh,*ep_ghost_container->get_x());
       mesh->writeToExodus("output.exo");
     }
-  
+
     // all done!
     /////////////////////////////////////////////////////////////
     out << (pass ? "PASS" : "FAIL") << " BASICS\n";
   }
+  catch (std::exception& e) {
+    std::cout << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
+    std::cout << e.what() << std::endl;
+    std::cout << "************ Caught Exception: End Error Report ************" << std::endl;
+    status = -1;
+  }
+  catch (std::string& msg) {
+    std::cout << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
+    std::cout << msg << std::endl;
+    std::cout << "************ Caught Exception: End Error Report ************" << std::endl;
+    status = -1;
+  }
+  catch (char* msg) {
+    std::cout << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
+    std::cout << *msg << std::endl;
+    std::cout << "************ Caught Exception: End Error Report ************" << std::endl;
+    status = -1;
+  }
+  catch (...) {
+    std::cout << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
+    std::cout << "Caught UNKOWN exception" << std::endl;
+    std::cout << "************ Caught Exception: End Error Report ************" << std::endl;
+    status = -1;
+  }
 
-  return 0;
+  return status;
 }
 
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::vector<panzer::BC>& bcs,

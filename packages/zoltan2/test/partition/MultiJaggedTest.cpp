@@ -228,12 +228,11 @@ int run_pointAssign_tests(
     }
 
     {
-      const std::vector<Zoltan2::coordinateModelPartBox<zscalar_t,
-                                                   typename Adapter::part_t> >
+      const std::vector<Zoltan2::coordinateModelPartBox>
             pBoxes = problem->getSolution().getPartBoxesView();
       for (size_t i = 0; i < pBoxes.size(); i++) {
-        zscalar_t *lmin = pBoxes[i].getlmins();
-        zscalar_t *lmax = pBoxes[i].getlmaxs();;
+        typename Zoltan2::coordinateModelPartBox::coord_t *lmin = pBoxes[i].getlmins();
+        typename Zoltan2::coordinateModelPartBox::coord_t *lmax = pBoxes[i].getlmaxs();;
         std::cout << me << " pBox " << i << " pid " << pBoxes[i].getpId()
                   << " (" << lmin[0] << "," << lmin[1] << ","
                   << (coordDim > 2 ? lmin[2] : 0) << ") x "
@@ -314,8 +313,7 @@ int run_boxAssign_tests(
     sprintf(mechar, "%d", problem->getComm()->getRank());
     string me(mechar);
 
-    const std::vector<Zoltan2::coordinateModelPartBox<zscalar_t,
-                                                 typename Adapter::part_t> >
+    const std::vector<Zoltan2::coordinateModelPartBox>
           pBoxes = problem->getSolution().getPartBoxesView();
     size_t nBoxes = pBoxes.size();
 
@@ -565,7 +563,8 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         int migration_doMigration_type,
         bool test_boxes,
         bool rectilinear,
-        int  mj_premigration_option   
+        int  mj_premigration_option,
+        int  mj_premigration_coordinate_cutoff   
 )
 {
     int ierr = 0;
@@ -654,6 +653,10 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
     params->set("mj_premigration_option", mj_premigration_option);
+    if (mj_premigration_coordinate_cutoff > 0){
+        params->set("mj_premigration_coordinate_count", 
+                     mj_premigration_coordinate_cutoff);
+    }
 
     if(pqParts != "")
         params->set("mj_parts", pqParts);
@@ -783,7 +786,8 @@ int testFromDataFile(
                     double (migration_imbalance_cut_off));
     }
     if (mj_premigration_coordinate_cutoff > 0){
-        params->set("mj_premigration_coordinate_count", mj_premigration_coordinate_cutoff);
+        params->set("mj_premigration_coordinate_count",
+                     mj_premigration_coordinate_cutoff);
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -1333,7 +1337,8 @@ int main(int narg, char *arg[])
                     migration_processor_assignment_type,
                     migration_doMigration_type,
                     test_boxes,
-                    rectilinear, mj_premigration_option, mj_premigration_coordinate_cutoff);
+                    rectilinear,
+                    mj_premigration_option, mj_premigration_coordinate_cutoff);
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
@@ -1360,7 +1365,8 @@ int main(int narg, char *arg[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option, mj_premigration_coordinate_cutoff);
+                    migration_doMigration_type, test_boxes, rectilinear, 
+                    mj_premigration_option, mj_premigration_coordinate_cutoff);
             break;
 #ifdef hopper_separate_test
         case 1:
@@ -1370,7 +1376,8 @@ int main(int narg, char *arg[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option);
+                    migration_doMigration_type, test_boxes, rectilinear,
+                    mj_premigration_option);
             break;
 #endif
         default:
@@ -1380,7 +1387,8 @@ int main(int narg, char *arg[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option);
+                    migration_doMigration_type, test_boxes, rectilinear, 
+                    mj_premigration_option, mj_premigration_coordinate_cutoff);
             break;
         }
 

@@ -370,25 +370,25 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {
 
-      const ordinal_type i_card = numFaces*numPtsPerFace+j;
+      const ordinal_type i_card = numFaces*numPtsPerFace+spaceDim*j;
 
       for (ordinal_type k=0;k<cardPn;k++) {
         for (ordinal_type l=0;l<spaceDim;l++) {
-          V2(i_card+l*numPtsPerCell,l*cardPn+k) = phisAtInternalPoints(k,j);
+          V2(i_card+l,l*cardPn+k) = phisAtInternalPoints(k,j);
         }
       }
 
       //save dof coordinates and coefficients
       for(ordinal_type d=0; d<spaceDim; ++d) {
         for(ordinal_type l=0; l<spaceDim; ++l) {
-          dofCoords(i_card+d*numPtsPerCell,l) = internalPoints(j,l);
-          dofCoeffs(i_card+d*numPtsPerCell,l) = (l==d);
+          dofCoords(i_card+d,l) = internalPoints(j,l);
+          dofCoeffs(i_card+d,l) = (l==d);
         }
 
-        tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
-        tags[i_card+d*numPtsPerCell][1] = 0; // elem id
-        tags[i_card+d*numPtsPerCell][2] = spaceDim*j+d; // local dof id
-        tags[i_card+d*numPtsPerCell][3] = spaceDim*numPtsPerCell; // total vert dof
+        tags[i_card+d][0] = spaceDim; // elem dof
+        tags[i_card+d][1] = 0; // elem id
+        tags[i_card+d][2] = spaceDim*j+d; // local dof id
+        tags[i_card+d][3] = spaceDim*numPtsPerCell; // total vert dof
       }
     }
   }

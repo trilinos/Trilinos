@@ -118,12 +118,11 @@ namespace SEAMS {
 
       new_string(lines, &ret_string);
 
-      if (count > 0) {
-        for (int i = 0; i < count; i++) {
-          delete[] info[i];
-        }
-        delete[] info;
+      for (int i = 0; i < count; i++) {
+        delete[] info[i];
       }
+      delete[] info;
+
       ex_close(exoid);
       return ret_string;
     }
@@ -171,12 +170,11 @@ namespace SEAMS {
 
       new_string(lines, &ret_string);
 
-      if (count > 0) {
-        for (int i = 0; i < count; i++) {
-          delete[] info[i];
-        }
-        delete[] info;
+      for (int i = 0; i < count; i++) {
+        delete[] info[i];
       }
+      delete[] info;
+
       ex_close(exoid);
       return ret_string;
     }

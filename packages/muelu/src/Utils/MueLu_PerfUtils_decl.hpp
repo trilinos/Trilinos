@@ -76,6 +76,8 @@ namespace MueLu {
   public:
     static std::string PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
+    static std::string PrintImporterInfo(RCP<const Import> importer, const std::string& msgTag);
+
     static std::string CommPattern(const Matrix& A, const std::string& msgTag, RCP<const Teuchos::ParameterList> params = Teuchos::null);
 
   private:

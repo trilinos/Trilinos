@@ -77,7 +77,9 @@ namespace SEAMS {
 
   Aprepro::~Aprepro()
   {
-    outputStream.top()->flush();
+    if (!outputStream.empty()) {
+      outputStream.top()->flush();
+    }
 
     if ((stringScanner != nullptr) && stringScanner != lexer) {
       delete stringScanner;
@@ -846,7 +848,7 @@ namespace SEAMS {
       history_data hist;
       hist.original     = original;
       hist.substitution = substitution;
-      hist.index        = outputStream.top()->tellp();
+      hist.index        = outputStream.empty() ? std::streampos(0) : outputStream.top()->tellp();
 
       history.push_back(hist);
     }

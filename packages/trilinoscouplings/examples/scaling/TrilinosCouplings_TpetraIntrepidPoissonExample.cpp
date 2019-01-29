@@ -186,6 +186,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
                             Teuchos::RCP<multivector_type> & coords,
+                            Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
@@ -200,7 +201,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, coords, comm, node, meshInput, inputList, problemStatistics,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -214,6 +215,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
                             Teuchos::RCP<multivector_type> & coords,
+                            Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
@@ -1085,6 +1087,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   // version of the exact solution vector.
   RCP<vector_type> gl_exactSolVector = rcp (new vector_type (globalMapG));
 
+  RCP<vector_type> gl_nodalSigma(new vector_type(globalMapG));
+  RCP<vector_type> gl_nodalVolume(new vector_type(globalMapG));
+  RCP<vector_type> gl_inverseNodalVolume(new vector_type(globalMapG));
+
   //
   // Overlapped distribution objects: their names don't start with gl_.
   //
@@ -1092,7 +1098,14 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     rcp (new sparse_matrix_type (overlappedGraph.getConst ()));
   StiffMatrix->setAllToScalar (STS::zero ());
   RCP<vector_type> rhsVector = rcp (new vector_type (overlappedMapG));
+  RCP<vector_type> nodalSigma(new vector_type(overlappedMapG));
+  RCP<vector_type> nodalVolume(new vector_type(overlappedMapG));
+
   rhsVector->putScalar (STS::zero ());
+  nodalSigma->putScalar (STS::zero ());
+  nodalVolume->putScalar (STS::zero ());
+
+
 
 
   /**********************************************************************************/
@@ -1229,6 +1242,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Weighted measure for material parameters
     FieldContainer<ST> weightedMeasureSigma      (worksetSize, numCubPoints);
 
+    // Containers for the volume-weighted nodal mass 
+    FieldContainer<ST> worksetHGBValuesWeightedSigma(worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> massMatrixG(worksetSize, numFieldsG, numFieldsG);
+    FieldContainer<double> sigmaMassMatrixG(worksetSize, numFieldsG, numFieldsG);
 
     {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF(
@@ -1307,7 +1324,23 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                                     worksetSourceTerm,
                                     worksetHGBValuesWeighted,
                                     COMP_BLAS);
+
+
+    /**********************************************************************************/
+    /*                         Compute Mass Matrix                                    */
+    /**********************************************************************************/
+    // Get the non-sigma mass matrix
+    IntrepidFSTools::integrate<ST>(massMatrixG, worksetHGBValues,worksetHGBValuesWeighted,COMP_BLAS);
+      
+    // Get the sigma mass matrix
+    IntrepidFSTools::multiplyMeasure<ST> (worksetHGBValuesWeightedSigma, // (u)*J*w
+                                          weightedMeasureSigma,
+                                          worksetHGBValues);
+    IntrepidFSTools::integrate<ST>(sigmaMassMatrixG, worksetHGBValues,worksetHGBValuesWeightedSigma,COMP_BLAS);
+
     } // Element discretization timer
+
+
 
     /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
@@ -1353,6 +1386,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             //   "Matrix/RHS fill:  2a-RHS sum into local values",
             //   elem_rhs);
             rhsVector->sumIntoLocalValue (localRow, sourceTermContribution);
+
+
           }
 
           // "CELL VARIABLE" loop for the workset cell: sum entire element
@@ -1369,6 +1404,20 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             StiffMatrix->sumIntoLocalValues (localRow, localColAV,
                                              operatorMatrixContributionAV);
           }
+
+          // Sigma vector goodness
+          ArrayView<ST> mass_m  =  arrayView<ST> (&massMatrixG(worksetCellOrdinal,cellRow,0),numFieldsG);
+          ArrayView<ST> sigma_m =  arrayView<ST> (&sigmaMassMatrixG(worksetCellOrdinal,cellRow,0),numFieldsG);
+          ST sigma_sum = Teuchos::ScalarTraits<ST>::zero();
+          ST volume_sum = Teuchos::ScalarTraits<ST>::zero();
+          for(size_t i=0; i<(size_t)mass_m.size(); i++) {
+            sigma_sum+= sigma_m[i];
+            volume_sum+= mass_m[i];           
+          }
+          nodalSigma->sumIntoLocalValue(localRow,sigma_sum);
+          nodalVolume->sumIntoLocalValue(localRow,volume_sum);
+                           
+
         }// *** cell row loop ***
       }// *** workset cell loop **
     } // *** stop timer ***
@@ -1446,6 +1495,16 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       "Matrix/RHS fill:  5-RHS export", rhs_export);
     gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
   }
+
+  gl_nodalSigma->putScalar (STS::zero ());
+  gl_nodalSigma->doExport (*nodalSigma, *exporter, Tpetra::ADD);
+
+  gl_nodalVolume->putScalar (STS::zero ());
+  gl_nodalVolume->doExport (*nodalVolume, *exporter, Tpetra::ADD);
+
+  // Get the volume-weighted sigma
+  gl_inverseNodalVolume->reciprocal(*gl_nodalVolume);
+  gl_nodalSigma->elementWiseMultiply(STS::one(), *gl_nodalSigma,*gl_inverseNodalVolume,STS::zero());
 
   //////////////////////////////////////////////////////////////////////////////
   // Adjust matrix for boundary conditions
@@ -1581,6 +1640,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   B = gl_rhsVector;
   X_exact = gl_exactSolVector;
   X = gl_approxSolVector;
+  node_sigma = gl_nodalSigma;
 }
 
 std::vector<Teuchos::ScalarTraits<ST>::magnitudeType>

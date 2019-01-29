@@ -281,15 +281,18 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # 8) **Build configured packages and the enabled package tests**.  Submit
 #    "Build" data to CDash (only if `CTEST_DO_BUILD`_ ``= TRUE``).
 #
-# 9) **Run enabled tests for the configured packages** (only if
-#    `CTEST_DO_TEST`_ = ``TRUE``).  (Also, this will generate coverage data if
-#    `CTEST_DO_COVERAGE_TESTING`_ ``= TRUE``).  Submit "Test" data to CDash.
+# 9) **Install the configured and build targets**.  Submit
+#    "Build" install data to CDash (only if `CTEST_DO_INSTALL`_ ``= TRUE``).
 #
-# 10) **Collect coverage results from tests already run** (only if
+# 10) **Run enabled tests for the configured packages** (only if
+#     `CTEST_DO_TEST`_ = ``TRUE``).  (Also, this will generate coverage data if
+#     `CTEST_DO_COVERAGE_TESTING`_ ``= TRUE``).  Submit "Test" data to CDash.
+#
+# 11) **Collect coverage results from tests already run** (only if
 #     `CTEST_DO_COVERAGE_TESTING`_ ``= TRUE``).  Submit "Coverage" data to
 #     CDash.
 #
-# 11) **Run dynamic analysis testing on defined test suite** (e.g. run
+# 12) **Run dynamic analysis testing on defined test suite** (e.g. run
 #     ``valgrind`` with each of the test commands (only if
 #     `CTEST_DO_MEMORY_TESTING`_ ``= TRUE``).  Submit "MemCheck" data to CDash.
 #
@@ -367,6 +370,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # * ``CTEST_DO_BUILD`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
 # * ``CTEST_DO_CONFIGURE`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
 # * ``CTEST_DO_COVERAGE_TESTING`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
+# * ``CTEST_DO_INSTALL`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
 # * ``CTEST_DO_MEMORY_TESTING`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
 # * ``CTEST_DO_NEW_START`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
 # * ``CTEST_DO_SUBMIT`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
@@ -553,9 +557,8 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     the specific set of packages to test.  If left at the default value of
 #     empty "", then `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ is set to ``ON``
 #     and that enables packages as described in `<Project>_ENABLE_ALL_PACKAGES
-#     enables all PT (and conditionally all ST) SE packages`_.  This variable
-#     can use ',' to separate package names instead of ';'.  The default value
-#     is empty "".
+#     enables all PT (cond. ST) SE packages`_.  This variable can use ',' to
+#     separate package names instead of ';'.  The default value is empty "".
 #
 #   .. _${PROJECT_NAME}_ADDITIONAL_PACKAGES:
 #
@@ -834,6 +837,20 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     be left off (in which case all of the available unloaded cores are used
 #     to build) and the option ``-k 999999`` can be used to build all targets
 #     when there are build failures.
+#
+#   .. _CTEST_DO_INSTALL:
+#
+#   ``CTEST_DO_INSTALL``
+#
+#     If ``TRUE``, then the 'install' target will be built to install what has
+#     been configured and built by the build step for the all-at-once mode
+#     (i.e. ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE``.  If ``FALSE``, no
+#     install is performed.  (NOTE: The cmake var ``CMAKE_INSTALL_PREFIX``
+#     must be set on the inner cmake configure for this to work correctly.
+#     Also, the install is currently not implemented for the
+#     package-by-package mode ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=FALSE``
+#     and this option will simply be ignored in that case.)  Default
+#     ``FALSE``.
 #
 #   .. _CTEST_DO_TEST:
 #
@@ -1470,6 +1487,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Call CTEST_BUILD(...) or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
 
+  # Call CTEST_BUILD( ... install ... ) or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_INSTALL FALSE )
+
   # Do the tests or not (Note: must be true for coverage testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 
@@ -2071,7 +2091,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   IF(${PROJECT_NAME}_FAILED_PACKAGES)
     MESSAGE(
-      "\nFinal set packages that had any failures: '${${PROJECT_NAME}_FAILED_PACKAGES}'")
+      "\nFinal set of packages that had any failures:"
+        " '${${PROJECT_NAME}_FAILED_PACKAGES}'")
   ENDIF()
 
   # Write a file listing the packages that failed.  This will be read in on the next CI

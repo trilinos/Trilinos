@@ -500,7 +500,10 @@ class ToleranceTester : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(ToleranceTester, smDefaults)
 {
-    stk::balance::run_stk_rebalance(".", "gapped_plates.g", stk::balance::SM_DEFAULTS, MPI_COMM_WORLD);
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1)
+    {
+        stk::balance::run_stk_rebalance(".", "gapped_plates.g", stk::balance::SM_DEFAULTS, MPI_COMM_WORLD);
+    }
 
     setup_mesh("gapped_plates.g", stk::mesh::BulkData::NO_AUTO_AURA);
     for(unsigned i=1; i<101; i++)

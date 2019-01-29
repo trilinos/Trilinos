@@ -144,6 +144,10 @@ int main(int argc,char * argv[])
      int x_elements=10,y_elements=10,z_elements=10,hgrad_basis_order=1,hdiv_basis_order=1;
      std::string celltype = "Hex"; // or "Tet"
      std::string output_filename="output_";
+     int workset_size = 20;
+     bool use_shared_mem_for_ad = true;
+     bool check_order_for_shared_mem = true;
+     bool stacked_timer_output = true;
 
      Teuchos::CommandLineProcessor clp;
      clp.throwExceptions(false);
@@ -158,11 +162,31 @@ int main(int argc,char * argv[])
      clp.setOption("hgrad-basis-order",&hgrad_basis_order);
      clp.setOption("hdiv-basis-order",&hdiv_basis_order);
      clp.setOption("output-filename",&output_filename);
+     clp.setOption("workset-size",&workset_size);
+     clp.setOption("use-shared-mem-for-ad","no-use-shared-mem-for-ad",&use_shared_mem_for_ad);
+     clp.setOption("check-order","no-check-order",&check_order_for_shared_mem);
+     clp.setOption("stacked-timer-output","time-monitor-output",&stacked_timer_output);
 
      // parse commandline argument
      Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
      if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return  0;
      if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+
+     // cuda optimizations
+     ////////////////////////////////////////////////////
+     // Always use shared memory optimization for residual
+     // evaluation. For AD with FADs, we run out of shared memory on
+     // this problem for basis order 3 or higher. Disable shared mem
+     // use in this case.
+     if (check_order_for_shared_mem) {
+       if (std::max(hdiv_basis_order,hgrad_basis_order) > 2)
+	 use_shared_mem_for_ad = false;
+     }
+     panzer::HP::inst().setUseSharedMemory(true,use_shared_mem_for_ad);
+     if (use_shared_mem_for_ad)
+       out << "Use Shared Memory for AD: ON" << std::endl;
+     else
+       out << "Use Shared Memory for AD: OFF" << std::endl;
 
      // variable declarations
      ////////////////////////////////////////////////////
@@ -177,9 +201,6 @@ int main(int argc,char * argv[])
      else if (celltype == "Tet") mesh_factory = Teuchos::rcp(new panzer_stk::CubeTetMeshFactory);
      else
        throw std::runtime_error("not supported celltype argument: try Hex or Tet");
-
-     // other declarations
-     const std::size_t workset_size = 20;
 
      // construction of uncommitted (no elements) mesh
      ////////////////////////////////////////////////////////
@@ -332,7 +353,7 @@ int main(int argc,char * argv[])
         = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
      {
-       const int integration_order = 10;
+       const int integration_order = 2 * std::max(hgrad_basis_order,hdiv_basis_order) + 1;
 
        std::vector<std::string> eBlocks;
        mesh->getElementBlockNames(eBlocks);
@@ -493,12 +514,18 @@ int main(int argc,char * argv[])
      }
 
      stackedTimer->stop("Mixed Poisson");
-     Teuchos::StackedTimer::OutputOptions options;
-     options.output_fraction = true;
-     options.output_minmax = true;
-     options.output_histogram = true;
-     options.num_histogram = 5;
-     stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
+     stackedTimer->stopBaseTimer();
+     if (stacked_timer_output) {
+       Teuchos::StackedTimer::OutputOptions options;
+       options.output_fraction = true;
+       options.output_minmax = true;
+       options.output_histogram = true;
+       options.num_histogram = 5;
+       stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
+     }
+     else {
+       Teuchos::TimeMonitor::summarize(out,false,true,false,Teuchos::Union);
+     }
 
      // all done!
      /////////////////////////////////////////////////////////////
@@ -605,7 +632,7 @@ void testInitialization(const int hgrad_basis_order,
                         std::vector<panzer::BC>& bcs)
 {
   {
-    const int integration_order = 10;
+    const int integration_order = 2 * std::max(hgrad_basis_order,hdiv_basis_order) + 1;
     Teuchos::ParameterList& p = ipb->sublist("MixedPoisson Physics");
     p.set("Type","MixedPoisson");
     p.set("Model ID","solid");

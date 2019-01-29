@@ -40,6 +40,10 @@
 #include <string>  // for string
 #include <vector>  // for vector
 
+#ifdef SEACAS_HAVE_MPI
+#include <Ioss_SerializeIO.h>
+#endif
+
 namespace Ioss {
 
   class ParallelUtils
@@ -64,10 +68,9 @@ namespace Ioss {
     /*!
      * See if any external properties specified via the
      * IOSS_PROPERTIES environment variable.  If any found, add to
-     * `properties`. If `do_print` then output to cerr which
-     * properties were set
+     * `properties`.
      */
-    void add_environment_properties(Ioss::PropertyManager &properties, bool do_print);
+    void add_environment_properties(Ioss::PropertyManager &properties);
 
     /*!
      * Returns 'true' if 'name' is defined in the environment.
@@ -125,10 +128,9 @@ namespace Ioss {
     void global_count(const Int64Vector &local_counts, Int64Vector &global_counts) const;
 
     template <typename T> T global_minmax(T local_minmax, MinMax which) const;
+
     template <typename T>
     void global_array_minmax(std::vector<T> &local_minmax, MinMax which) const;
-    template <typename T>
-    void global_array_minmax(T *local_minmax, size_t count, MinMax which) const;
 
     template <typename T> void gather(T my_value, std::vector<T> &result) const;
     template <typename T> void all_gather(T my_value, std::vector<T> &result) const;
@@ -265,5 +267,45 @@ namespace Ioss {
                          mpi_type(T(0)), comm);
   }
 #endif
+
+  template <typename T>
+  void ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
+  {
+#ifdef SEACAS_HAVE_MPI
+    if (parallel_size() > 1 && !local_minmax.empty()) {
+      if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
+        std::ostringstream errmsg;
+        errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();
+        IOSS_ERROR(errmsg);
+      }
+
+      std::vector<T> maxout(local_minmax.size());
+      MPI_Op         oper = MPI_MAX;
+      if (which == Ioss::ParallelUtils::DO_MAX) {
+        oper = MPI_MAX;
+      }
+      else if (which == Ioss::ParallelUtils::DO_MIN) {
+        oper = MPI_MIN;
+      }
+      else if (which == Ioss::ParallelUtils::DO_SUM) {
+        oper = MPI_SUM;
+      }
+
+      const int success =
+          MPI_Allreduce((void *)(local_minmax.data()), maxout.data(),
+                        static_cast<int>(local_minmax.size()), mpi_type(T()), oper, communicator_);
+      if (success != MPI_SUCCESS) {
+        std::ostringstream errmsg;
+        errmsg << "Ioss::ParallelUtils::global_array_minmax - MPI_Allreduce failed";
+        IOSS_ERROR(errmsg);
+      }
+      // Now copy back into passed in array...
+      for (size_t i = 0; i < local_minmax.size(); i++) {
+        local_minmax[i] = maxout[i];
+      }
+    }
+#endif
+  }
+
 } // namespace Ioss
 #endif

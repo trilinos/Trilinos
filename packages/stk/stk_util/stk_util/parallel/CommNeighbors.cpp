@@ -67,6 +67,12 @@ namespace stk {
 #if OMPI_MAJOR_VERSION == 2
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
+
+#endif
+
+//the MPI_Neighbor functions seem to be unacceptably slow with intel mpi
+#ifdef I_MPI_VERSION
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
 void CommNeighbors::rank_error( const char * method , int p ) const

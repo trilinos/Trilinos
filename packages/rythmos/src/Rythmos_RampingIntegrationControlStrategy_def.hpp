@@ -304,8 +304,8 @@ RampingIntegrationControlStrategy<Scalar>::resetIntegrationControlStrategy(
 template<class Scalar>
 StepControlInfo<Scalar>
 RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
-  const StepperBase<Scalar> &stepper,
-  const StepControlInfo<Scalar> &stepCtrlInfoLast,
+  const StepperBase<Scalar> &/* stepper */,
+  const StepControlInfo<Scalar> &/* stepCtrlInfoLast */,
   const int timeStepIter
   )
 {
@@ -343,10 +343,10 @@ RampingIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
 
 template<class Scalar>
 bool RampingIntegrationControlStrategy<Scalar>::resetForFailedTimeStep(
-  const StepperBase<Scalar> &stepper,
-  const StepControlInfo<Scalar> &stepCtrlInfoLast,
-  const int timeStepIter,
-  const StepControlInfo<Scalar> &stepCtrlInfo
+  const StepperBase<Scalar> &/* stepper */,
+  const StepControlInfo<Scalar> &/* stepCtrlInfoLast */,
+  const int /* timeStepIter */,
+  const StepControlInfo<Scalar> &/* stepCtrlInfo */
   )
 {
   if (current_dt_ == min_dt_) return false;

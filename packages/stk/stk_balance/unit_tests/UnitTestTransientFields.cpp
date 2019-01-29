@@ -309,5 +309,34 @@ TEST(TestTransientFieldBalance, verifyGlobalVariable)
     }
 }
 
+TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsOutputFile)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    std::string serialMeshName = "sixteen_hex_transient.e";
+    std::string parallelOutputMeshName = "sixteen_hex_transient.e";
+
+    stk::unit_test_util::generated_mesh_to_file_in_serial("1x4x4", serialMeshName);
+
+    stk::balance::BasicZoltan2Settings rcbOptions;
+    EXPECT_THROW(stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialMeshName, MPI_COMM_WORLD, rcbOptions), std::logic_error);
+    unlink_serial_file(serialMeshName);
+  }
+}
+
+TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsDotSlashOutputFile)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    std::string serialMeshName = "sixteen_hex_transient.e";
+    std::string parallelOutputMeshName = "./sixteen_hex_transient.e";
+
+    stk::unit_test_util::generated_mesh_to_file_in_serial("1x4x4", serialMeshName);
+
+    stk::balance::BasicZoltan2Settings rcbOptions;
+    EXPECT_THROW(stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialMeshName, MPI_COMM_WORLD, rcbOptions), std::logic_error);
+    unlink_serial_file(serialMeshName);
+  }
+}
 
 }

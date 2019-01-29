@@ -1012,7 +1012,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_Overlap, Scalar, L
   params.set ("inner preconditioner name", "RILUK");
   {
     Teuchos::ParameterList innerParams;
-    innerParams.set ("fact: ilut level-of-fill", 0.0);
+    innerParams.set ("fact: iluk level-of-fill", 0.0);
     innerParams.set ("fact: drop tolerance", 0.0);
     params.set ("inner preconditioner parameters", innerParams);
   }
@@ -1079,7 +1079,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar
   params.set ("inner preconditioner name", "RILUK");
   {
     Teuchos::ParameterList innerParams;
-    innerParams.set ("fact: ilut level-of-fill", 0.0);
+    innerParams.set ("fact: iluk level-of-fill", 0.0);
     innerParams.set ("fact: drop tolerance", 0.0);
     params.set ("inner preconditioner parameters", innerParams);
   }

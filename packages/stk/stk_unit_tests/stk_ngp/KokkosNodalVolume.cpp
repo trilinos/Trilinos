@@ -55,7 +55,7 @@
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/StkVector.hpp>
+#include <stk_util/util/StkNgpVector.hpp>
 #include "stk_mesh/base/FieldParallel.hpp"
 
 #include <limits>

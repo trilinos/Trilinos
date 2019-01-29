@@ -106,7 +106,7 @@ void SymbolSetReader::at_shift(any& result, int token, std::string& text) {
   if (token == TOK_NAME) result = text;
 }
 
-void SymbolSetReader::at_reduce(any& result, int prod, std::vector<any>& rhs) {
+void SymbolSetReader::at_reduce(any& /* result */, int prod, std::vector<any>& rhs) {
   if (prod == PROD_VAR) {
     std::string& name = any_ref_cast<std::string>(rhs.at(0));
     variable_names.insert(name);

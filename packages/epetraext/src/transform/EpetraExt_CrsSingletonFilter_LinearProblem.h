@@ -334,7 +334,7 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   
  private:
   //! Copy constructor (defined as private so it is unavailable to user).
-  LinearProblem_CrsSingletonFilter(const LinearProblem_CrsSingletonFilter & Problem){};
+  LinearProblem_CrsSingletonFilter(const LinearProblem_CrsSingletonFilter & /* Problem */){};
 
   template<typename int_type>
   int TConstructReducedProblem(Epetra_LinearProblem * Problem);

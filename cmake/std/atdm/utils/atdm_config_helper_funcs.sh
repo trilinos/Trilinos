@@ -48,4 +48,6 @@ function atdm_config_add_libs_to_var {
   #echo "${export_env_var_name} = '${!export_env_var_name}'"
   #echo
 
+  unset export_env_var_name
+
 }

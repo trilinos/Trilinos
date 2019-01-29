@@ -58,6 +58,12 @@ struct MirrorDRVType;
 
 }
 
+template <typename view_type>
+struct is_dynrankview_fad { static const bool value = false; };
+
+template <typename view_type>
+struct is_dynrankview_fad_contiguous { static const bool value = false; };
+
 }
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -926,12 +932,6 @@ public:
 }} //end Kokkos::Impl
 
 namespace Kokkos {
-
-template <typename view_type>
-struct is_dynrankview_fad { static const bool value = false; };
-
-template <typename view_type>
-struct is_dynrankview_fad_contiguous { static const bool value = false; };
 
 template <typename T, typename ... P>
 struct is_dynrankview_fad< DynRankView<T,P...> > {

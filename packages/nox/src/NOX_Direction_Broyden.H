@@ -186,7 +186,7 @@ public:
        If \f$ \lambda \neq 1 \f$, then
        reset \f$ s = \lambda s \f$ and \f$ \|s\|_2^2 = \lambda^2 \|s\|_2^2 \f$.
      */
-    void setStep(double step);
+    void setStep(double step_length);
 
     //! Get pointer to \f$s\f$
     Teuchos::RCP<const NOX::Abstract::Vector> sPtr() const;

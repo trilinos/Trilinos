@@ -46,7 +46,6 @@
 
 #include "netcdf.h"
 
-#define NC_HAVE_META_H
 #if defined(NC_HAVE_META_H)
 #include "netcdf_meta.h"
 #if NC_HAS_PARALLEL
@@ -629,6 +628,8 @@ EXODUS_EXPORT int ex_inquire(int exoid, int req_info, void_int * /*ret_int*/, fl
 EXODUS_EXPORT int64_t ex_inquire_int(int exoid, int req_info);
 EXODUS_EXPORT int     ex_int64_status(int exoid);
 EXODUS_EXPORT int     ex_set_int64_status(int exoid, int mode);
+
+EXODUS_EXPORT void ex_print_config(void);
 
 /** Note that the max name length setting is global at this time; not specific
  * to a particular database; however, the exoid option is passed to give

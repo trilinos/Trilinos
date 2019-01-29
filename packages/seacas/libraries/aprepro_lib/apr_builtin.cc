@@ -41,6 +41,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -72,27 +73,11 @@ namespace SEAMS {
 
 namespace {
   std::unordered_map<size_t, std::vector<std::string>> tokenized_strings;
-  unsigned int hash(const char *symbol)
-  {
-    // Hash function from Aho, Sethi, Ullman "Compilers: Principles,
-    // Techniques, and Tools.  Page 436
-    unsigned int hashval;
-    unsigned int g;
-    for (hashval = 0; *symbol != '\0'; symbol++) {
-      hashval = (hashval << 4) + *symbol;
-      g       = hashval & 0xf0000000;
-      if (g != 0) {
-	hashval = hashval ^ (g >> 24);
-	hashval = hashval ^ g;
-      }
-    }
-    return hashval;
-  }
 
   std::vector<std::string> &get_tokenized_strings(const char *string, const char *delm)
   {
     // key is address of string + hash of delimiter
-    size_t key = hash(string) + hash(delm);
+    size_t key = std::hash<std::string>{}(string) + std::hash<std::string>{}(delm);
     if (tokenized_strings.find(key) == tokenized_strings.end()) {
       std::string temp       = string;
       auto        tokens     = SEAMS::tokenize(temp, delm);
@@ -697,14 +682,8 @@ namespace SEAMS {
     }
     else {
       std::ostream *output = new std::ofstream(filename);
-      if (output != nullptr) {
-        aprepro->outputStream.push(output);
-
-        aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
-      }
-      else {
-        aprepro->error("Could not open output file '" + std::string(filename) + "'.\n", false);
-      }
+      aprepro->outputStream.push(output);
+      aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
     }
     return (nullptr);
   }
@@ -724,15 +703,9 @@ namespace SEAMS {
     }
     else {
       auto output = new std::ofstream(filename, std::ios_base::app); // Append
-      if (output != nullptr) {
-        aprepro->outputStream.push(output);
+      aprepro->outputStream.push(output);
 
-        aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
-      }
-      else {
-        aprepro->error(
-            "Could not open output file '" + std::string(filename) + "' for appending.\n", false);
-      }
+      aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
     }
     return (nullptr);
   }

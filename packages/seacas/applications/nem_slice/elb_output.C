@@ -247,6 +247,8 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     return 0;
   }
 
+  ex_put_eb_info_global(exoid, mesh->eb_ids.data(), mesh->eb_cnts.data());
+
   /* Set up dummy arrays for output */
   std::vector<INT> num_nmap_cnts(machine->num_procs);
   std::vector<INT> num_emap_cnts(machine->num_procs);
@@ -260,7 +262,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     }
   }
   else { /* Elemental load balance */
-    if (((problem->num_vertices) - (sphere->num)) > 0) {
+    if (problem->num_vertices > sphere->num) {
       /* need to check and make sure that there really are comm maps */
       for (int cnt = 0; cnt < machine->num_procs; cnt++) {
         if (!lb->bor_nodes[cnt].empty()) {

@@ -25,6 +25,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_UnitTests_Swap
+  SOURCES
+  CrsGraph_UnitTests_Swap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS "${ARGS} --show-test-details=ALL --output-show-proc-rank"
+  ${MAXNP}
+  COMM mpi
+  FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_ReindexColumns
   SOURCES
     CrsGraph_ReindexColumns
@@ -95,7 +107,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DetermineLocalTriangularStructure
-  SOURCES 
+  SOURCES
     DetermineLocalTriangularStructure
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -103,3 +115,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_UnpackIntoStaticGraph
+  SOURCES
+    CrsGraph_UnpackIntoStaticGraph
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_StaticImportExport
+  SOURCES
+    CrsGraph_StaticImportExport
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+

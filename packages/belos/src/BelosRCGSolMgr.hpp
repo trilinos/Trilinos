@@ -1888,7 +1888,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
 void RCGSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs(const Teuchos::SerialDenseMatrix<int,ScalarType>& F,
-                                                  const Teuchos::SerialDenseMatrix<int,ScalarType>& G,
+                                                  const Teuchos::SerialDenseMatrix<int,ScalarType>& /* G */,
                                                         Teuchos::SerialDenseMatrix<int,ScalarType>& Y) {
   // order of F,G
   int n = F.numCols();

@@ -113,7 +113,7 @@ namespace MueLu {
   void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Teuchos::ScalarTraits<SC>::coordinateType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     RCP<Matrix>    A      = Get<RCP<Matrix> >(level, "A");
@@ -179,7 +179,7 @@ namespace MueLu {
       typedef Zoltan2::XpetraMultiVectorAdapter<RealValuedMultiVector>  InputAdapterType;
       typedef Zoltan2::PartitioningProblem<InputAdapterType>   ProblemType;
 
-      Array<double> weightsPerRow(numElements);
+      Array<real_type> weightsPerRow(numElements);
       for (LO i = 0; i < numElements; i++) {
         weightsPerRow[i] = 0.0;
 
@@ -189,7 +189,7 @@ namespace MueLu {
       }
 
       std::vector<int>           strides;
-      std::vector<const double*> weights(1, weightsPerRow.getRawPtr());
+      std::vector<const real_type*> weights(1, weightsPerRow.getRawPtr());
 
       RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
       RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();

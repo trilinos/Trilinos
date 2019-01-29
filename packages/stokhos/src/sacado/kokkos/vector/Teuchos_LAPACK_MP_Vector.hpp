@@ -341,6 +341,11 @@ namespace Teuchos {
     void STEQR(const char COMPZ, const OrdinalType n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const
       { throw_error("STEQR"); }
     //@}
+    
+    //! Computes the eigenvalues and, optionally, eigenvectors of a symmetric positive-definite tridiagonal \c n by \c n matrix \c A using BDSQR, after factoring the matrix with PTTRF.
+    void PTEQR(const char COMPZ, const OrdinalType n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const
+      { throw_error("PTEQR"); }
+    //@}
 
     //! @name Non-Hermitian Eigenproblem Routines
     //@{

@@ -145,9 +145,7 @@ void time_out(FILE *outfile /* file to print output to */
 
     if (OUTPUT_TIME > 1) {
       if (inertial_time != 0) {
-        if (inertial_time != 0) {
-          fprintf(tempfile, "\nInertial time: %g sec.\n", inertial_time);
-        }
+        fprintf(tempfile, "\nInertial time: %g sec.\n", inertial_time);
         if (inertial_axis_time != 0) {
           fprintf(tempfile, "  inertial axis %g\n", inertial_axis_time);
         }
@@ -161,9 +159,7 @@ void time_out(FILE *outfile /* file to print output to */
       }
 
       if (kl_total_time != 0) {
-        if (kl_total_time != 0) {
-          fprintf(tempfile, "\nKL time: %g sec.\n", kl_total_time);
-        }
+        fprintf(tempfile, "\nKL time: %g sec.\n", kl_total_time);
         if (kl_init_time != 0) {
           fprintf(tempfile, "  initialization %g\n", kl_init_time);
         }
