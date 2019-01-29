@@ -85,8 +85,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: drop scheme");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
+      validParamList->getEntry("aggregation: drop scheme").setValidator(                                                                        
+         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian", "material distance"), "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
     validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
