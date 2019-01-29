@@ -806,6 +806,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
     const ParameterList  & pL = GetParameterList();
     std::string graphType = "unamalgamated"; //for description purposes only
     numDropped = 0; numTotal = 0;
+    size_t number_of_same_coords = 0;
 
     SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
     const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
@@ -1020,6 +1021,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
               // If the locations are identical, don't drop
               scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
               if(dist == 0.0) {
+                number_of_same_coords++;
                 columns[realnnz++] = col;
                 rownnz++;
               }
@@ -1027,8 +1029,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
                 SC laplVal = STS::one() / dist;
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
-                //                printf("CMS: aij^2 = %6.4e vs. aiiajj = %6.4e lapVal = %6.4e gr = %6.4e gc = %6.4e\n",aij,aiiajj,laplVal,ghostedLaplDiagData[row],ghostedLaplDiagData[col]);
-
                 if (aij > aiiajj) {
                   columns[realnnz++] = col;
                   rownnz++;
@@ -1086,6 +1086,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
       Set(currentLevel, "DofsPerNode", blkSize);
     }
  
+    // Error out if we're not allowing duplicated coordinates.
+    TEUCHOS_TEST_FOR_EXCEPTION(error_on_sames && number_of_same_coords != 0,Exceptions::Incompatible,
+                               "Coordinates have been duplicated for adjacent nodes "<< number_of_same_coords << " times.");
+
 }//end DistanceDropping
 
 
