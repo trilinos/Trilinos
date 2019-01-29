@@ -118,10 +118,10 @@ public:
                        const Teuchos::ArrayView<const Scalar> &values) = 0;
 };
 
-template <class Scalar = CrsMatrix<>::scalar_type,
-          class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
-          class GlobalOrdinal = typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class Node = ::Tpetra::Details::DefaultTypes::node_type>
 class CrsWrapper_CrsMatrix :
     public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 public:
@@ -146,13 +146,10 @@ private:
   crs_matrix_type& crsmat_;
 };
 
-
-template <class Scalar = CrsMatrix<>::scalar_type,
-          class LocalOrdinal = typename CrsMatrix<Scalar>::local_ordinal_type,
-          class GlobalOrdinal =
-            typename CrsMatrix<Scalar, LocalOrdinal>::global_ordinal_type,
-          class Node =
-            typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class Node = ::Tpetra::Details::DefaultTypes::node_type>
 class CrsWrapper_GraphBuilder :
     public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 public:
