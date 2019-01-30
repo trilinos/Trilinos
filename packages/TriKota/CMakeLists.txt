@@ -31,13 +31,6 @@ ENDIF()
 #
 # Currently Dakota does its own checking for libraries such as blas,
 # lapack, boost, mpi, etc... which ultimately we would want to pass in.
-# Also the following packages likely need to be disabled via 
-# -D HAVE_X=OFF, where X is:
-#   ACRO, HOPSPACK, AMPL
-# ACRO requires boost_signals library component.
-# HOPSPACK may not link correctly in static builds.
-# Turning AMPL on caused very strange runtime errors.
-# I don't know how to turn these off by default.
 
 # Check for Dakota source
 IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/CMakeLists.txt)
@@ -83,25 +76,37 @@ IF(TPL_LAPACK_LIBRARIES)
   SET(LAPACK_LIBS "${TPL_LAPACK_LIBRARIES}")
 ENDIF()
 
-# Turn off a bunch of Dakota non-TriBITS-complient tests when buliding
+# Turn off a bunch of Dakota non-TriBITS-compliant tests when building
 # Dakota under Trilinos/TriKota.  Until these tests can be prefixed with
-# TriKota_ and given the correct label there is no reason to enale them
+# TriKota_ and given the correct label there is no reason to enable them
 # because they will not be run in automated testing.  However, allow users
 # to enable them if they would really like.
 SET(DAKOTA_ENABLE_TESTS OFF CACHE BOOL "")
 SET(DAKOTA_ENABLE_TPL_TESTS OFF CACHE BOOL "")
+
+# The following packages likely need to be disabled via
+# -D HAVE_X=OFF, where X is:
+#   ACRO, HOPSPACK, AMPL
+# ACRO requires boost_signals library component.
+# HOPSPACK may not link correctly in static builds.
+# Turning AMPL on caused very strange runtime errors.
+# I don't know how to turn these off by default.
 SET(HAVE_ACRO OFF CACHE BOOL "")
 SET(HAVE_AMPL OFF CACHE BOOL "")
-SET(HAVE_X_GRAPHICS OFF CACHE BOOL "")
 SET(HAVE_HOPSPACK OFF CACHE BOOL "")
+SET(HAVE_ROL OFF CACHE BOOL
+    "TriKota/Dakota/ROL disabled due to circular dependence.")
+SET(HAVE_X_GRAPHICS OFF CACHE BOOL "")  # explicit default
 
 # Instruct DAKOTA to install its non-standard content to alternate locations
-SET(DAKOTA_EXAMPLES_INSTALL share/dakota/examples CACHE FILEPATH
+# (These are explicit defaults with Dakota 6.8 and newer)
+SET(DAKOTA_EXAMPLES_INSTALL share/dakota CACHE FILEPATH
     "Installation destination for DAKOTA examples/ dir")
-SET(DAKOTA_TEST_INSTALL share/dakota/test CACHE FILEPATH
+SET(DAKOTA_TEST_INSTALL share/dakota CACHE FILEPATH
     "Installation destination for DAKOTA test/ dir")
 SET(DAKOTA_TOPFILES_INSTALL share/dakota CACHE FILEPATH
     "Installation destination for DAKOTA top-level files")
+
 SET(DAKOTA_INSTALL_DYNAMIC_DEPS FALSE CACHE BOOL 
     "TriKota: not installing Dakota dynamic dependencies")
 
