@@ -419,7 +419,6 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
       mystr = inputList.get(mysigmaRTC.str(),mystr);
       if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
       if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
-      if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}
       if(!sigmaRTC[b].addVar("double","time")) {printf("ERROR: sigmaRTC.addVar(time) failed\n");exit(-1);}
       if(!sigmaRTC[b].addVar("double","sigma")) {printf("ERROR: sigmaRTC.addVar(sigma) failed\n");exit(-1);}
       if(!sigmaRTC[b].addBody(mystr)) {printf("ERROR: sigmaRTC[%d].addBody failed\n",b);exit(-1);}
