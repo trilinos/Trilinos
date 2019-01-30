@@ -335,8 +335,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int NodeId = comm->getRank();
   if(provideNodeComm) {                        
     nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
-    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
-
+    //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
   }
 
   // Retrieve matrix parameters (they may have been changed on the command line)
