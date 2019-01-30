@@ -974,9 +974,9 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DoubleDista
               if (row != col) {
                 scalar1_type dist1 = MueLu::Utilities<scalar1_type,LO,GO,NO>::Distance2(coordData1, row, col);
                 scalar2_type dist2 = MueLu::Utilities<scalar2_type,LO,GO,NO>::Distance2(coordData2, row, col);
-                if(dist1 != 0.0) 
+                if(dist1 != STS::zero()) 
                   localLaplDiagData1[row] += STS::one() / dist1; 
-                if(dist2 != 0.0) 
+                if(dist2 != STS::zero()) 
                   localLaplDiagData2[row] += STS::one() / dist2; 
               }
 
@@ -1068,18 +1068,17 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DoubleDista
               // We do a *union* of drops.  If either guy says drop, we drop
               scalar1_type dist1 = MueLu::Utilities<scalar1_type,LO,GO,NO>::Distance2(coordData1, row, col);
               scalar2_type dist2 = MueLu::Utilities<scalar2_type,LO,GO,NO>::Distance2(coordData2, row, col);
-              if(dist1==0.0) number_of_same_coords[0]++;
-              if(dist2==0.0) number_of_same_coords[1]++;
+              if(dist1==STS::zero()) number_of_same_coords[0]++;
+              if(dist2==STS::zero()) number_of_same_coords[1]++;
 
-              SC laplVal1 = dist1==0.0 ? 0.0 : (STS::one() / dist1);
-              SC laplVal2 = dist2==0.0 ? 0.0 : (STS::one() / dist2);
+              SC laplVal1 = dist1==STS::zero() ? STS::zero() : (STS::one() / dist1);
+              SC laplVal2 = dist2==STS::zero() ? STS::zero() : (STS::one() / dist2);
               typename STS::magnitudeType aiiajj1 = STS::magnitude(threshold1*threshold1 * ghostedLaplDiagData1[row]*ghostedLaplDiagData1[col]);
               typename STS::magnitudeType aij1    = STS::magnitude(laplVal1*laplVal1);
               typename STS::magnitudeType aiiajj2 = STS::magnitude(threshold2*threshold2 * ghostedLaplDiagData2[row]*ghostedLaplDiagData2[col]);
               typename STS::magnitudeType aij2    = STS::magnitude(laplVal2*laplVal2);
-              //              if ( (laplVal1 > 0.0 && aij1 > aiiajj1) && (laplVal2 > 0.0 && aij2 > aiiajj2)) {
-              if ( ((laplVal1 > 0.0 && aij1 > aiiajj1) || laplVal1 == 0.0) &&
-                   ((laplVal2 > 0.0 && aij2 > aiiajj2) || laplVal2 == 0.0) ) {
+              if ( ((laplVal1 > STS::zero() && aij1 > aiiajj1) || laplVal1 == STS::zero()) &&
+                   ((laplVal2 > STS::zero() && aij2 > aiiajj2) || laplVal2 == STS::zero()) ) {
                 columns[realnnz++] = col;
                 rownnz++;
               } else {
@@ -1292,7 +1291,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
               
               if (row != col) {
                 scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
-                if(dist != 0.0) 
+                if(dist != STS::zero()) 
                   localLaplDiagData[row] += STS::one() / dist;                
               }
             }
@@ -1372,7 +1371,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
               
               // If the locations are identical, don't drop
               scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
-              if(dist == 0.0) {
+              if(dist == STS::zero()) {
                 number_of_same_coords++;
                 columns[realnnz++] = col;
                 rownnz++;
