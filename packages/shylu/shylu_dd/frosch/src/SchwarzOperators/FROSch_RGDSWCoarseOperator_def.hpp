@@ -175,6 +175,7 @@ namespace FROSch {
                     --------------------------------------------\n";
                 }
                 
+                
                 this->BlockCoarseDimension_[blockId] = numCoarseNodesGlobal;
             }
         }

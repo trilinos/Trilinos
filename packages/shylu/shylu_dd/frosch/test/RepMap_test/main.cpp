@@ -627,6 +627,9 @@ int main(int argc, char *argv[])
         
         xSolution->putScalar(0.0);
         xRightHandSide->putScalar(1.0);
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"Two Level Preconditioner!\n";
+        
         
         RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(tmpA,sublist(parameterListF,"TwoLevelPreconditioner")));
         
