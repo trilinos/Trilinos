@@ -277,7 +277,7 @@ bool IsParamValidVariable(const std::string& name)
        // Sort!
        std::sort(addressList.begin(),addressList.end());
 
-       // Find the number of node-buddies I have
+       // Find which node I'm on (and stop when I've done that)
        int numNodes = 0;
        for(int i=0, prev=addressList[0]; i<numRanks && prev != myaddr; i++) {
          if(prev != addressList[i]) {
