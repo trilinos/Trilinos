@@ -223,6 +223,10 @@ namespace MueLu {
     void UpdateFactoryManager_Nullspace(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                         int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
 
+    void UpdateFactoryManager_MaterialCoordinates(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                          int levelID, std::vector<keep_pair>& keeps) const;
+ 
+
     // Algorithm-specific components for UpdateFactoryManager
     void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                           int levelID, std::vector<keep_pair>& keeps) const;
@@ -238,6 +242,7 @@ namespace MueLu {
                                      int levelID, std::vector<keep_pair>& keeps) const;
 
     bool useCoordinates_;
+    bool useMaterialCoordinates_;
     bool useKokkos_;
     //@}
 

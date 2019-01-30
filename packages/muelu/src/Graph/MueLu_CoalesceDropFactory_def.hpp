@@ -81,12 +81,13 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: drop tol");
+    SET_VALID_ENTRY("aggregation: secondary drop tol");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: drop scheme");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(                                                                        
-         rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian", "material distance"), "aggregation: drop scheme")));
+      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian", "material distance","distance and material"),                                                                                              
+                                                                                              "aggregation: drop scheme")));
     }
 #undef  SET_VALID_ENTRY
     validParamList->set< bool >                  ("lightweight wrap",           true, "Experimental option for lightweight graph access");
@@ -115,6 +116,10 @@ namespace MueLu {
         Input(currentLevel, "Coordinates");
       if (pL.get<std::string>("aggregation: drop scheme") == "material distance")
         Input(currentLevel, "Material Coordinates");
+      if (pL.get<std::string>("aggregation: drop scheme") == "distance and material") {
+        Input(currentLevel, "Coordinates");
+        Input(currentLevel, "Material Coordinates");
+      }
     }
   }
 
@@ -153,7 +158,7 @@ namespace MueLu {
       std::string algo = pL.get<std::string>("aggregation: drop scheme");
 
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "classical", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian" && algo != "material distance",
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian" && algo != "material distance" && algo != "distance and material",
                                  Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian|material distance )");
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
@@ -524,7 +529,7 @@ namespace MueLu {
         }
 
       } else if (algo == "distance laplacian") {
-        // The distance laplacian, but on a 1-D "material" vector
+        // The distance laplacian
         RCP<MultiVector> Coords = Get< RCP<MultiVector > >(currentLevel, "Coordinates");
         DistanceDropping<Xpetra::MultiVectorFactory<real_type,LO,GO,NO> >(currentLevel,Coords,true,numTotal,numDropped); 
 
@@ -532,7 +537,16 @@ namespace MueLu {
         // The distance laplacian, but on a 1-D "material" vector
         RCP<Vector> MaterialCoords = Get< RCP<Vector > >(currentLevel, "Material Coordinates");
         DistanceDropping<Xpetra::VectorFactory<SC,LO,GO,NO> >(currentLevel,MaterialCoords,false,numTotal,numDropped);
+
+      } else if (algo == "distance and material") {
+        // Both distance laplacian and material distance
+        RCP<MultiVector> Coords = Get< RCP<MultiVector > >(currentLevel, "Coordinates");
+        RCP<Vector> MaterialCoords = Get< RCP<Vector > >(currentLevel, "Material Coordinates");
+        bool errors[2] = {true,false};
+        DoubleDistanceDropping<Xpetra::MultiVectorFactory<real_type,LO,GO,NO>, RealValuedMultiVector, Xpetra::VectorFactory<SC,LO,GO,NO>, Vector>
+          (currentLevel,Coords,MaterialCoords,errors,numTotal,numDropped);
       }
+
 
       if ((GetVerbLevel() & Statistics1) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
           RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
@@ -793,6 +807,343 @@ namespace MueLu {
 
     return;
   }
+
+// ***********************************************************************
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <typename Coord1FactoryType, class Coordinates1Type,typename Coord2FactoryType, class Coordinates2Type>
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DoubleDistanceDropping(Level & currentLevel,RCP<Coordinates1Type> & Coords1, RCP<Coordinates2Type> & Coords2,bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
+
+    typedef typename Coordinates1Type::scalar_type scalar1_type;
+    typedef typename Coordinates2Type::scalar_type scalar2_type;
+    typedef Teuchos::ScalarTraits<SC> STS;
+
+    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
+    const ParameterList  & pL = GetParameterList();
+    std::string graphType = "unamalgamated"; //for description purposes only
+    numDropped = 0; numTotal = 0;
+    size_t number_of_same_coords[2] = {0,0};
+
+    SC threshold1 = as<SC>(pL.get<double>("aggregation: drop tol"));
+    SC threshold2 = as<SC>(pL.get<double>("aggregation: secondary drop tol"));
+    const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+
+    printf("CMS DEBUG: threshold1 = %6.4e threshold2 = %6.4e\n",(double)threshold1,(double)threshold2);
+    LO blkSize   = A->GetFixedBlockSize();
+    GO indexBase = A->getRowMap()->getIndexBase();                      
+
+
+    // Detect and record rows that correspond to Dirichlet boundary conditions
+    // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
+    // TODO the array one bigger than the number of local rows, and the last entry can
+    // TODO hold the actual number of boundary nodes.  Clever, huh?
+    ArrayRCP<const bool > pointBoundaryNodes;
+    pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);    
+
+    if ( (blkSize == 1) && (threshold1 == STS::zero() && threshold2 == STS::zero()) ) {
+      // Trivial case: scalar problem, no dropping. Can return original graph
+      RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+      graph->SetBoundaryNodeMap(pointBoundaryNodes);
+      graphType="unamalgamated";
+      numTotal = A->getNodeNumEntries();
+      
+      if (GetVerbLevel() & Statistics1) {
+        GO numLocalBoundaryNodes  = 0;
+        GO numGlobalBoundaryNodes = 0;
+        for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
+          if (pointBoundaryNodes[i])
+            numLocalBoundaryNodes++;
+        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      }
+      
+      Set(currentLevel, "DofsPerNode", blkSize);
+      Set(currentLevel, "Graph",       graph);
+          
+    } else {
+      // ap: We make quite a few assumptions here; general case may be a lot different,
+      // but much much harder to implement. We assume that:
+      //  1) all maps are standard maps, not strided maps
+      //  2) global indices of dofs in A are related to dofs in coordinates in a simple arithmetic
+      //     way: rows i*blkSize, i*blkSize+1, ..., i*blkSize + (blkSize-1) correspond to node i
+      //
+      // NOTE: Potentially, some of the code below could be simplified with UnAmalgamationInfo,
+      // but as I totally don't understand that code, here is my solution
+      
+      // [*1*]: see [*0*]
+      
+      // Check that the number of local coordinates is consistent with the #rows in A
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords1->getLocalLength(), Exceptions::Incompatible,
+                                 "Coordinate vector length (" << Coords1->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords2->getLocalLength(), Exceptions::Incompatible,
+                                 "Coordinate vector length (" << Coords2->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
+      
+      TEUCHOS_TEST_FOR_EXCEPTION(!Coords1->getMap()->isSameAs(*Coords2->getMap()), Exceptions::Incompatible,
+                                 "Double dropping requires matching maps on coordinates");
+
+      const RCP<const Map> colMap = A->getColMap();
+      RCP<const Map> uniqueMap, nonUniqueMap;
+      Array<LO>      colTranslation;
+      if (blkSize == 1) {
+        uniqueMap    = A->getRowMap();
+        nonUniqueMap = A->getColMap();
+        graphType="unamalgamated";
+        
+      } else {
+        uniqueMap    = Coords1->getMap();
+        TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
+                                   "Different index bases for matrix and coordinates");
+        
+        AmalgamationFactory::AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, colTranslation);
+        
+        graphType = "amalgamated";
+      }
+      LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+
+      RCP<Coordinates1Type> ghostedCoords1;
+      RCP<Coordinates2Type> ghostedCoords2;
+      RCP<Vector>                ghostedLaplDiag1, ghostedLaplDiag2;
+      Teuchos::ArrayRCP<SC>      ghostedLaplDiagData1, ghostedLaplDiagData2;
+      if (threshold1 != STS::zero() || threshold2 !=STS::zero()) {
+        // Get ghost coordinates
+        RCP<const Import> importer;
+        {
+          SubFactoryMonitor m1(*this, "Import construction", currentLevel);
+          if (blkSize == 1 && A->getCrsGraph()->getImporter() != Teuchos::null) {
+            GetOStream(Warnings1) << "Using existing importer from matrix graph" << std::endl;
+            importer = A->getCrsGraph()->getImporter();
+          } else {
+            GetOStream(Warnings0) << "Constructing new importer instance" << std::endl;
+            // FIXME: If we're amalgamating a map, we should be able to amalgamate an importer w/o communication
+            // This should be optimized out.
+            importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+          }
+        } //subtimer
+
+        // Build a ghosted vector or multivector, depending on the CoordinatesType
+        ghostedCoords1 = Coord1FactoryType::Build(nonUniqueMap, Coords1->getNumVectors());
+        ghostedCoords2 = Coord2FactoryType::Build(nonUniqueMap, Coords2->getNumVectors());
+
+        {
+          SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
+          ghostedCoords1->doImport(*Coords1, *importer, Xpetra::INSERT);
+          ghostedCoords2->doImport(*Coords2, *importer, Xpetra::INSERT);
+        } //subtimer
+        
+        // Construct Distance Laplacian diagonal
+        RCP<Vector>  localLaplDiag1     = VectorFactory::Build(uniqueMap);
+        RCP<Vector>  localLaplDiag2     = VectorFactory::Build(uniqueMap);
+        ArrayRCP<SC> localLaplDiagData1 = localLaplDiag1->getDataNonConst(0);
+        ArrayRCP<SC> localLaplDiagData2 = localLaplDiag2->getDataNonConst(0);
+        Array<LO> indicesExtra;
+        Teuchos::Array<Teuchos::ArrayRCP<const scalar1_type> > coordData1;
+        Teuchos::Array<Teuchos::ArrayRCP<const scalar2_type> > coordData2;
+        if (threshold1 != STS::zero() || threshold2 != STS::zero()) {
+          const size_t numVectors1 = ghostedCoords1->getNumVectors();
+          coordData1.reserve(numVectors1);
+          for (size_t j = 0; j < numVectors1; j++) {
+            coordData1.push_back(ghostedCoords1->getData(j));
+          }
+          const size_t numVectors2 = ghostedCoords2->getNumVectors();
+          coordData2.reserve(numVectors2);
+          for (size_t j = 0; j < numVectors2; j++) {
+            coordData2.push_back(ghostedCoords2->getData(j));
+          }
+
+        }
+        {
+          SubFactoryMonitor m1(*this, "Double dropping local diagonals", currentLevel);
+          for (LO row = 0; row < numRows; row++) {
+            ArrayView<const LO> indices;
+            
+            if (blkSize == 1) {
+              ArrayView<const SC> vals;
+              A->getLocalRowView(row, indices, vals);
+              
+            } else {
+              // Merge rows of A
+              indicesExtra.resize(0);
+              MergeRows(*A, row, indicesExtra, colTranslation);
+              indices = indicesExtra;
+            }
+            
+            LO nnz = indices.size();
+            for (LO colID = 0; colID < nnz; colID++) {
+              const LO col = indices[colID];
+              
+              if (row != col) {
+                scalar1_type dist1 = MueLu::Utilities<scalar1_type,LO,GO,NO>::Distance2(coordData1, row, col);
+                scalar2_type dist2 = MueLu::Utilities<scalar2_type,LO,GO,NO>::Distance2(coordData2, row, col);
+                if(dist1 != 0.0) 
+                  localLaplDiagData1[row] += STS::one() / dist1; 
+                if(dist2 != 0.0) 
+                  localLaplDiagData2[row] += STS::one() / dist2; 
+              }
+
+            }
+          }
+        } //subtimer
+        {
+          SubFactoryMonitor m1(*this, "Double dropping distributed diagonal", currentLevel);
+          ghostedLaplDiag1 = VectorFactory::Build(nonUniqueMap);
+          ghostedLaplDiag1->doImport(*localLaplDiag1, *importer, Xpetra::INSERT);
+          ghostedLaplDiagData1 = ghostedLaplDiag1->getDataNonConst(0);
+
+          ghostedLaplDiag2 = VectorFactory::Build(nonUniqueMap);
+          ghostedLaplDiag2->doImport(*localLaplDiag2, *importer, Xpetra::INSERT);
+          ghostedLaplDiagData2 = ghostedLaplDiag2->getDataNonConst(0);
+        } //subtimer
+        
+      } else {
+        GetOStream(Runtime0) << "Skipping double distance construction due to 0 threshold" << std::endl;
+      }
+          
+      // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian
+      
+      // allocate space for the local graph
+      ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
+      ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+      
+      const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
+      
+      LO realnnz = 0;
+      rows[0] = 0;
+      Array<LO> indicesExtra;
+      {
+        SubFactoryMonitor m1(*this, "Double dropping", currentLevel);
+        Teuchos::Array<Teuchos::ArrayRCP<const scalar1_type> > coordData1;
+        Teuchos::Array<Teuchos::ArrayRCP<const scalar2_type> > coordData2;
+        if (threshold1 != STS::zero() || threshold2 != STS::zero()) {
+          const size_t numVectors1 = ghostedCoords1->getNumVectors();
+          coordData1.reserve(numVectors1);
+          for (size_t j = 0; j < numVectors1; j++) {
+            coordData1.push_back(ghostedCoords1->getData(j));
+          }
+          const size_t numVectors2 = ghostedCoords2->getNumVectors();
+          coordData2.reserve(numVectors2);
+          for (size_t j = 0; j < numVectors2; j++) {
+            coordData2.push_back(ghostedCoords2->getData(j));
+          }
+
+        }
+        for (LO row = 0; row < numRows; row++) {
+          ArrayView<const LO> indices;
+          indicesExtra.resize(0);
+          
+          if (blkSize == 1) {
+            ArrayView<const SC>     vals;
+            A->getLocalRowView(row, indices, vals);
+            
+          } else {
+            // The amalgamated row is marked as Dirichlet iff all point rows are Dirichlet
+            bool isBoundary = false;
+            isBoundary = true;
+            for (LO j = 0; j < blkSize; j++) {
+              if (!pointBoundaryNodes[row*blkSize+j]) {
+                isBoundary = false;
+                break;
+              }
+            }
+            
+            // Merge rows of A
+            if (!isBoundary)
+              MergeRows(*A, row, indicesExtra, colTranslation);
+            else
+              indicesExtra.push_back(row);
+            indices = indicesExtra;
+          }
+          numTotal += indices.size();
+          
+          LO nnz = indices.size(), rownnz = 0;
+          if (threshold1 != STS::zero() || threshold1 != STS::zero()) {
+            for (LO colID = 0; colID < nnz; colID++) {
+              LO col = indices[colID];
+              
+              if (row == col) {
+                columns[realnnz++] = col;
+                rownnz++;
+                continue;
+              }
+              
+              // We do a *union* of drops.  If either guy says drop, we drop
+              scalar1_type dist1 = MueLu::Utilities<scalar1_type,LO,GO,NO>::Distance2(coordData1, row, col);
+              scalar2_type dist2 = MueLu::Utilities<scalar2_type,LO,GO,NO>::Distance2(coordData2, row, col);
+              if(dist1==0.0) number_of_same_coords[0]++;
+              if(dist2==0.0) number_of_same_coords[1]++;
+
+              SC laplVal1 = dist1==0.0 ? 0.0 : (STS::one() / dist1);
+              SC laplVal2 = dist2==0.0 ? 0.0 : (STS::one() / dist2);
+              typename STS::magnitudeType aiiajj1 = STS::magnitude(threshold1*threshold1 * ghostedLaplDiagData1[row]*ghostedLaplDiagData1[col]);
+              typename STS::magnitudeType aij1    = STS::magnitude(laplVal1*laplVal1);
+              typename STS::magnitudeType aiiajj2 = STS::magnitude(threshold2*threshold2 * ghostedLaplDiagData2[row]*ghostedLaplDiagData2[col]);
+              typename STS::magnitudeType aij2    = STS::magnitude(laplVal2*laplVal2);
+              if ( (laplVal1 > 0.0 && aij1 > aiiajj1) && (laplVal2 > 0.0 && aij2 > aiiajj2)) {
+                columns[realnnz++] = col;
+                rownnz++;
+              } else {
+                numDropped++;
+              }
+            }
+            
+          } else {
+            // Skip laplace calculation and threshold comparison for zero threshold
+            for (LO colID = 0; colID < nnz; colID++) {
+              LO col = indices[colID];
+              columns[realnnz++] = col;
+              rownnz++;
+            }
+          }
+          
+          if (rownnz == 1) {
+            // If the only element remaining after filtering is diagonal, mark node as boundary
+            // FIXME: this should really be replaced by the following
+            //    if (indices.size() == 1 && indices[0] == row)
+            //        boundaryNodes[row] = true;
+            // We do not do it this way now because there is no framework for distinguishing isolated
+            // and boundary nodes in the aggregation algorithms
+            amalgBoundaryNodes[row] = true;
+          }
+          rows[row+1] = realnnz;
+        } //for (LO row = 0; row < numRows; row++)
+      } //subtimer
+      columns.resize(realnnz);
+          
+      RCP<GraphBase> graph;
+      {
+        SubFactoryMonitor m1(*this, "Build amalgamated graph", currentLevel);
+        graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+        graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+      } //subtimer
+      
+      if (GetVerbLevel() & Statistics1) {
+        GO numLocalBoundaryNodes  = 0;
+        GO numGlobalBoundaryNodes = 0;
+        
+        for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
+          if (amalgBoundaryNodes[i])
+            numLocalBoundaryNodes++;
+        
+        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
+                                << " using threshold " << dirichletThreshold << std::endl;
+      }
+      
+      Set(currentLevel, "Graph",       graph);
+      Set(currentLevel, "DofsPerNode", blkSize);
+    }
+ 
+    // Error out if we're not allowing duplicated coordinates.
+    TEUCHOS_TEST_FOR_EXCEPTION(error_on_sames[0] && number_of_same_coords[0] != 0,Exceptions::Incompatible,
+                               "Coordinates have been duplicated for adjacent nodes "<< number_of_same_coords << " times.");
+    TEUCHOS_TEST_FOR_EXCEPTION(error_on_sames[1] && number_of_same_coords[1] != 0,Exceptions::Incompatible,
+                               "Coordinates have been duplicated for adjacent nodes "<< number_of_same_coords << " times.");
+
+}//end DistanceDropping
+
+
+
 
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1090,7 +1441,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
     TEUCHOS_TEST_FOR_EXCEPTION(error_on_sames && number_of_same_coords != 0,Exceptions::Incompatible,
                                "Coordinates have been duplicated for adjacent nodes "<< number_of_same_coords << " times.");
 
-}//end DistanceDropping
+}//end DoubleDistanceDropping
 
 
 

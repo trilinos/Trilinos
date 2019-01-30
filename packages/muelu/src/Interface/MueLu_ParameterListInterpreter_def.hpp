@@ -329,6 +329,26 @@ namespace MueLu {
       VerboseObject::SetDefaultVerbLevel(this->verbosity_);
     }
 
+    // Do we need to transfer material coordinates to the coarse level?
+    useMaterialCoordinates_ = false;
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "material distance") ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance and material")) {
+      useMaterialCoordinates_ = true;
+    } else {
+      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+        std::string levelStr = "level " + toString(levelID);
+        
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+          if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "material distance") ||
+              MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance and material")) {
+            useMaterialCoordinates_ = true;
+            break;
+          }
+        }
+      }
+    }
+
     // Detect if we need to transfer coordinates to coarse levels. We do that iff
     //  - we use "distance laplacian" dropping on some level, or
     //  - we use a repartitioner on some level that needs coordinates
@@ -338,6 +358,7 @@ namespace MueLu {
     // and not present in the list, but it is better than nothing.
     useCoordinates_ = false;
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance and material") ||
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick") ||
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
       useCoordinates_ = true;
@@ -355,6 +376,7 @@ namespace MueLu {
           const ParameterList& levelList = paramList.sublist(levelStr);
 
           if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance and material") ||
               MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: type",        std::string, "brick") ||
               MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: export visualization data", bool, true)) {
             useCoordinates_ = true;
@@ -931,6 +953,7 @@ namespace MueLu {
       dropParams.set("lightweight wrap", true);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: secondary drop tol",   double, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
       if (useKokkos_) {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
@@ -1138,7 +1161,7 @@ namespace MueLu {
   }
 
   // =====================================================================================================
-  // ======================================= Restriction =================================================
+  // ======================================= Coordinates =================================================
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1170,9 +1193,45 @@ namespace MueLu {
     }
   }
 
+
+  // =====================================================================================================
+  // ================================= Material Coordinates ==============================================
+  // =====================================================================================================
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  UpdateFactoryManager_MaterialCoordinates(ParameterList& paramList, const ParameterList& defaultList,
+                                   FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+  {
+    bool have_userCO = false;
+    if (paramList.isParameter("Material Coordinates") && !paramList.get<RCP<MultiVector> >("Material Coordinates").is_null())
+      have_userCO = true;
+
+    if (useMaterialCoordinates_) {
+      if (have_userCO) {
+        manager.SetFactory("Material Coordinates", NoFactory::getRCP());
+
+      } else {
+        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
+        coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+        coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+        manager.SetFactory("Material Coordinates", coords);
+
+        auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+        if (!RAP.is_null()) {
+          RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
+        } else {
+          auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+          RAPs->AddTransferFactory(manager.GetFactory("Material Coordinates"));
+        }
+      }
+    }
+  }
+
+
   // =====================================================================================================
   // ======================================= Restriction =================================================
   // =====================================================================================================
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_Restriction(ParameterList& paramList, const ParameterList& defaultList,

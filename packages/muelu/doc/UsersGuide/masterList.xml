@@ -379,6 +379,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: secondary drop tol</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>Secondary connectivity dropping threshold for a graph used in aggregation.</description>
+      <name-ML>aggregation: threshold</name-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>aggregation: min agg size</name>
       <type>int</type>
       <default>2</default>
