@@ -160,6 +160,7 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, factory);
       }
       if (varName == "Coordinates")                     return GetFactory("Ptent");
+      if (varName == "Material Coordinates")            return GetFactory("Ptent");
       if (varName == "Node Comm")                       return GetFactory("Ptent");
 
       if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
