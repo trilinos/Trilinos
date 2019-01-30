@@ -331,13 +331,9 @@ main (int argc, char *argv[])
 
           ParameterList & mueluParams = inputList.sublist("MueLu");
           std::string dropScheme = mueluParams.get("aggregation: drop scheme","distance laplacian");
-          bool use_sigma_aggregation = (dropScheme == "material distance");
 	  for(int i=0; i<numMueluRebuilds+1; i++) {
 	    if (inputList.isSublist("MueLu")) {
-              if(use_sigma_aggregation) { 
-                //                RCP<multivector_type> node_sigma_as_mv = Teuchos::rcp_dynamic_cast<multivector_type>(node_sigma);
-                mueluParams.sublist("user data").set("Material Coordinates",Xpetra::toXpetra(node_sigma));
-              }
+              mueluParams.sublist("user data").set("Material Coordinates",Xpetra::toXpetra(node_sigma));
               mueluParams.sublist("user data").set("Coordinates",coords);
 
               M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
