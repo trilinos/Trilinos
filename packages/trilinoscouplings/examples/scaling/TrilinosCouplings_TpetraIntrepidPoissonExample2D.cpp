@@ -157,7 +157,7 @@ evaluateMaterialTensor (ArrayOut& worksetMaterialValues,
 */
 template<class ArrayOut, class ArrayIn>
 void
-evaluateSourceTerm (ArrayOut& sourceTermValues,
+evaluateSourceTerm2D (ArrayOut& sourceTermValues,
                     const ArrayIn& evaluationPoints);
 
 /** \brief Compute the exact solution at array of points in physical space.
@@ -277,9 +277,7 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
   // Get dimensions
   int numNodesPerElem = cellType.getNodeCount();
   int numEdgesPerElem = cellType.getEdgeCount();
-  int numFacesPerElem = cellType.getSideCount();
   int numNodesPerEdge = 2; // for any rational universe
-  int numNodesPerFace = 4; // hardwired for quads
   int spaceDim = cellType.getDimension();
   int dim = 2;
 
@@ -289,15 +287,6 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
   for (int i=0; i<numEdgesPerElem; i++){
     refEdgeToNode(i,0)=cellType.getNodeMap(1, i, 0);
     refEdgeToNode(i,1)=cellType.getNodeMap(1, i, 1);
-  }
-
-  // Build reference element face to node map
-  FieldContainer<int> refFaceToNode(numFacesPerElem,numNodesPerFace);
-  for (int i=0; i<numFacesPerElem; i++){
-    refFaceToNode(i,0)=cellType.getNodeMap(2, i, 0);
-    refFaceToNode(i,1)=cellType.getNodeMap(2, i, 1);
-    refFaceToNode(i,2)=cellType.getNodeMap(2, i, 2);
-    refFaceToNode(i,3)=cellType.getNodeMap(2, i, 3);
   }
 
   /**********************************************************************************/
@@ -545,33 +534,27 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
   long long numSidesInSet;
   long long numDFinSet;
   im_ex_get_side_set_ids_l(id,sideSetIds);
-  for (int i=0; i < numSideSets; ++i) {
-    im_ex_get_side_set_param_l (id,sideSetIds[i], &numSidesInSet, &numDFinSet);
+  for (int i=0; i<numSideSets; i++) {
+    im_ex_get_side_set_param_l(id,sideSetIds[i],&numSidesInSet,&numDFinSet);
     if (numSidesInSet > 0){
       long long * sideSetElemList = new long long [numSidesInSet];
       long long * sideSetSideList = new long long [numSidesInSet];
-      im_ex_get_side_set_l (id, sideSetIds[i], sideSetElemList, sideSetSideList);
-      for (int j = 0; j < numSidesInSet; ++j) {
-        int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
-        int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
-        int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
-        int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
-
+      im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
+      for (int j=0; j<numSidesInSet; j++) {
+        
+        int sideNode0 = cellType.getNodeMap(1,sideSetSideList[j]-1,0);
+        int sideNode1 = cellType.getNodeMap(1,sideSetSideList[j]-1,1);
+        
         nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
         nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
-        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
-        nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
       }
       delete [] sideSetElemList;
       delete [] sideSetSideList;
     }
   }
-  delete [] sideSetIds;
-
-
-
+  delete [] sideSetIds; 
+  
   FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
-  FieldContainer<int> elemToFace(numElems,numFacesPerElem);
 
   // Calculate edge and face ids
   int elct = 0;
@@ -597,24 +580,6 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
           }
           else{
             elemToEdge(elct,i) = (*fit)->local_id;
-            delete teof;
-          }
-        }
-        for (int i=0; i < numFacesPerElem; i++){
-          topo_entity * teof = new topo_entity;
-          for(int j = 0; j < numNodesPerFace;j++){
-            teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds.getRawPtr());
-          }
-          teof->sort();
-          fit = face_set.find(teof);
-          if(fit == face_set.end()){
-            teof->local_id = face_vector.size();
-            face_set.insert(teof);
-            elemToFace(elct,i)= face_vector.size();
-            face_vector.push_back(teof);
-          }
-          else{
-            elemToFace(elct,i) = (*fit)->local_id;
             delete teof;
           }
         }
@@ -941,7 +906,7 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
       if (nodeIsOwned[inode]) {
         const ST x = nodeCoord(inode, 0);
         const ST y = nodeCoord(inode, 1);
-        const ST z = nodeCoord(inode, 2);
+        const ST z = Teuchos::ScalarTraits<ST>::zero();
 
         if (nodeOnBoundary (inode)) {
           BCNodes[indbc]=iOwned;
@@ -1002,7 +967,6 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
       for (int node = 0; node < numNodesPerElem; ++node) {
         cellWorkset(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
         cellWorkset(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
-        cellWorkset(cellCounter, node, 2) = nodeCoord( elemToNode(cell, node), 2);
       }
       ++cellCounter;
     }
@@ -1070,7 +1034,7 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
     evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
 
     // Evaluate the source term at cubature points.
-    evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
+    evaluateSourceTerm2D (worksetSourceTerm, worksetCubPoints);
 
     /**********************************************************************************/
     /*                         Compute Stiffness Matrix                               */
@@ -1380,26 +1344,6 @@ makeMatrixAndRightHandSide2D (Teuchos::RCP<sparse_matrix_type>& A,
   node_sigma = gl_nodalSigma;
 }
 
-std::vector<Teuchos::ScalarTraits<ST>::magnitudeType>
-exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
-                   const Teuchos::RCP<const vector_type>& B,
-                   const Teuchos::RCP<const vector_type>& X_exact)
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  typedef Teuchos::ScalarTraits<ST> STS;
-  typedef STS::magnitudeType MT;
-
-  RCP<vector_type> R = rcp (new vector_type (*B)); // R := B
-  // R := 1.0*R - 1.0*A*X_exact.
-  A->apply (*X_exact, *R, Teuchos::NO_TRANS, -STS::one(), STS::one());
-
-  std::vector<MT> results (3);
-  results[0] = R->norm2 ();
-  results[1] = B->norm2 ();
-  results[2] = A->getFrobeniusNorm ();
-  return results;
-}
 
 /**********************************************************************************/
 /************ USER DEFINED FUNCTIONS FOR EXACT SOLUTION ***************************/
@@ -1591,7 +1535,7 @@ evaluateMaterialTensor (ArrayOut&      matTensorValues,
     for (int pt = 0; pt < numPoints; ++pt) {
       scalar_type x = evaluationPoints(cell, pt, 0);
       scalar_type y = evaluationPoints(cell, pt, 1);
-      scalar_type z = evaluationPoints(cell, pt, 2);
+      scalar_type z = Teuchos::ScalarTraits<scalar_type>::zero();
 
       matTens (material, x, y, z);
 
@@ -1607,7 +1551,7 @@ evaluateMaterialTensor (ArrayOut&      matTensorValues,
 /************ Source Term (RHS) ****************/
 template<class ArrayOut, class ArrayIn>
 void
-evaluateSourceTerm (ArrayOut&      sourceTermValues,
+evaluateSourceTerm2D (ArrayOut&      sourceTermValues,
                     const ArrayIn& evaluationPoints)
 {
   typedef typename ArrayOut::scalar_type scalar_type;
@@ -1619,7 +1563,7 @@ evaluateSourceTerm (ArrayOut&      sourceTermValues,
     for (int pt = 0; pt < numPoints; ++pt) {
       Sacado::Fad::SFad<scalar_type,3> x = evaluationPoints(cell, pt, 0);
       Sacado::Fad::SFad<scalar_type,3> y = evaluationPoints(cell, pt, 1);
-      Sacado::Fad::SFad<scalar_type,3> z = evaluationPoints(cell, pt, 2);
+      Sacado::Fad::SFad<scalar_type,3> z = Teuchos::ScalarTraits<scalar_type>::zero();
 
       sourceTermValues(cell, pt) =
         sourceTerm<Sacado::Fad::SFad<scalar_type,3> > (x, y, z).val ();
@@ -1642,7 +1586,7 @@ evaluateExactSolution (ArrayOut&      exactSolutionValues,
     for (int pt = 0; pt < numPoints; ++pt) {
       const scalar_type x = evaluationPoints(cell, pt, 0);
       const scalar_type y = evaluationPoints(cell, pt, 1);
-      const scalar_type z = evaluationPoints(cell, pt, 2);
+      const scalar_type z = Teuchos::ScalarTraits<scalar_type>::zero();
       exactSolutionValues(cell, pt) = exactSolution<scalar_type> (x, y, z);
     }
   }
@@ -1666,7 +1610,7 @@ evaluateExactSolutionGrad (ArrayOut&      exactSolutionGradValues,
     for (int pt = 0; pt < numPoints; ++pt) {
       const scalar_type x = evaluationPoints(cell, pt, 0);
       const scalar_type y = evaluationPoints(cell, pt, 1);
-      const scalar_type z = evaluationPoints(cell, pt, 2);
+      const scalar_type z = Teuchos::ScalarTraits<scalar_type>::zero();
 
       exactSolutionGrad<scalar_type> (gradient, x, y, z);
 
