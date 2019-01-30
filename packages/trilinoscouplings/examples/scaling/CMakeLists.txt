@@ -26,7 +26,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
 
   TRIBITS_ADD_TEST(
    Example_Poisson_BlockMaterials
-   NAME "Poisson2D_BlockMaterials"
+   NAME "Poisson_BlockMaterials"
    COMM serial mpi
    NUM_MPI_PROCS 1
    )
