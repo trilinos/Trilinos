@@ -1,6 +1,6 @@
 /** \file  IntrepidPoisson_Pamgen_Tpetra_main.cpp
     \brief Example: Discretize Poisson's equation with Dirichlet
-           boundary conditions on a hexahedral mesh using nodal
+           boundary conditions on a hexahedral (or quad) mesh using nodal
            (Hgrad) elements.  The system is assembled into Tpetra data
            structures, and optionally solved.
 
@@ -64,6 +64,7 @@
 
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_TpetraIntrepidPoissonExample2D.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
@@ -83,8 +84,9 @@ main (int argc, char *argv[])
 {
   using namespace TrilinosCouplings; // Yes, this means I'm lazy.
 
-  using TpetraIntrepidPoissonExample::exactResidualNorm;
   using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
+  using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide2D;
+  using TpetraIntrepidPoissonExample::exactResidualNorm;
   using TpetraIntrepidPoissonExample::solveWithBelos;
   using TpetraIntrepidPoissonExample::solveWithBelosGPU;
   using IntrepidPoissonExample::makeMeshInput;
@@ -204,6 +206,9 @@ main (int argc, char *argv[])
                     "preconditioner.");
 
 
+    int dim = 3;
+    cmdp.setOption ("dim", &dim, "Spatial dimension of the problem (must be 2 or 3)");
+
      // If matrixFilename is nonempty, dump the matrix to that file
     // in MatrixMarket format.
     int numMueluRebuilds=0;
@@ -226,6 +231,12 @@ main (int argc, char *argv[])
       getFancyOStream (rcpFromRef ((myRank == 0 && verbose) ? std::cout : blackHole));
     RCP<FancyOStream> err =
       getFancyOStream (rcpFromRef ((myRank == 0 && debug) ? std::cerr : blackHole));
+
+
+    if(dim!=2 && dim!=3) {
+      *err << "Error: Spatial Dimension must be 2 or 3" << endl;
+      return EXIT_FAILURE;
+    }
 
 #ifdef HAVE_MPI
     *out << "PARALLEL executable" << endl;
@@ -268,8 +279,13 @@ main (int argc, char *argv[])
       RCP<multivector_type> coords;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
-                                    out, err, verbose, debug);
+        if(dim==2)
+          makeMatrixAndRightHandSide2D (A, B, X_exact, X, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
+                                        out, err, verbose, debug);
+        else
+          makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
+                                      out, err, verbose, debug);
+        
       }
 
       // Print Problem Statistics
