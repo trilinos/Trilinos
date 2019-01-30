@@ -317,6 +317,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
     SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample2D.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
