@@ -104,7 +104,7 @@ public:
                   const int& in_num_equations,
                   const Kokkos::View<const int**,PHX::Device>& in_gids);
   PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename Traits::EvalData d) override;
 };
 
 // **************************************************************
@@ -146,7 +146,7 @@ public:
                   const int& in_num_equations,
                   const Kokkos::View<const int**,PHX::Device>& in_gids);
   PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename Traits::EvalData d) override;
 };
 
 /*

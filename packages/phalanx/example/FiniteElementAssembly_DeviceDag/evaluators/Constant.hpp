@@ -42,7 +42,7 @@
 // @HEADER
 
 
-#ifndef PHX_EXAMPLE_EVALAUTOR_CONSTANT_HPP
+#ifndef PHX_EXAMPLE_EVALUATOR_CONSTANT_HPP
 #define PHX_EXAMPLE_EVALUATOR_CONSTANT_HPP
 
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"

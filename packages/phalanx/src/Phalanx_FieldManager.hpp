@@ -333,7 +333,7 @@ namespace PHX {
 
   private:
 
-    typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+    using SCTM = PHX::EvaluationContainer_TemplateManager<Traits>;
 
     std::size_t m_num_evaluation_types;
 
