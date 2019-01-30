@@ -11,6 +11,9 @@
 # Use the below option only when submitting to the dashboard
 #set (CTEST_USE_LAUNCHERS ON CACHE BOOL "Set by default for PR testing")
 
+# Disabling fortran for this build as that is a customer use case
+set (Trilinos_ENABLE_Fortran OFF CACHE BOOL "Set by default for SERIAL PR test")
+
 set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default for PR testing")
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
