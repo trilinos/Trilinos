@@ -331,11 +331,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   }
 
   // Generate the node-level communicator, if we want one
-  Teuchos::RCP<Teuchos::Comm<int> > nodeComm;
+  Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
   int NodeId = comm->getRank();
   if(provideNodeComm) {                        
-    nodeComm = GenerateNodeComm(comm,NodeId);
-    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",baseComm->getRank(),NodeId,nodeComm->getRank());
+    nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
+    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
 
   }
 

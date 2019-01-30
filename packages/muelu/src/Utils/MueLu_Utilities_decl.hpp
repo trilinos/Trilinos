@@ -991,6 +991,9 @@ namespace MueLu {
   TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra);
 #endif
 
+  // Generates a communicator whose only members are other ranks of the baseComm on my node
+  Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId);
+
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT
