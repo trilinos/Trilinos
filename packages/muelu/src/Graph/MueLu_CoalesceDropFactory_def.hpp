@@ -828,7 +828,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DoubleDista
     SC threshold2 = as<SC>(pL.get<double>("aggregation: secondary drop tol"));
     const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
-    printf("CMS DEBUG: threshold1 = %6.4e threshold2 = %6.4e\n",(double)threshold1,(double)threshold2);
     LO blkSize   = A->GetFixedBlockSize();
     GO indexBase = A->getRowMap()->getIndexBase();                      
 
@@ -905,7 +904,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DoubleDista
       RCP<Coordinates2Type> ghostedCoords2;
       RCP<Vector>                ghostedLaplDiag1, ghostedLaplDiag2;
       Teuchos::ArrayRCP<SC>      ghostedLaplDiagData1, ghostedLaplDiagData2;
-      if (threshold1 != STS::zero() || threshold2 !=STS::zero()) {
+      if (threshold1 != STS::zero() || threshold2 != STS::zero()) {
         // Get ghost coordinates
         RCP<const Import> importer;
         {
@@ -1078,7 +1077,9 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DoubleDista
               typename STS::magnitudeType aij1    = STS::magnitude(laplVal1*laplVal1);
               typename STS::magnitudeType aiiajj2 = STS::magnitude(threshold2*threshold2 * ghostedLaplDiagData2[row]*ghostedLaplDiagData2[col]);
               typename STS::magnitudeType aij2    = STS::magnitude(laplVal2*laplVal2);
-              if ( (laplVal1 > 0.0 && aij1 > aiiajj1) && (laplVal2 > 0.0 && aij2 > aiiajj2)) {
+              //              if ( (laplVal1 > 0.0 && aij1 > aiiajj1) && (laplVal2 > 0.0 && aij2 > aiiajj2)) {
+              if ( ((laplVal1 > 0.0 && aij1 > aiiajj1) || laplVal1 == 0.0) &&
+                   ((laplVal2 > 0.0 && aij2 > aiiajj2) || laplVal2 == 0.0) ) {
                 columns[realnnz++] = col;
                 rownnz++;
               } else {
