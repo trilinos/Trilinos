@@ -1143,77 +1143,13 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_Dr
           }
         } //subtimer
 
-
-
-# if 0
-      RCP<CoordinatesType> ghostedCoords;
-      RCP<Vector>                ghostedLaplDiag;
-      Teuchos::ArrayRCP<SC>      ghostedLaplDiagData;
-        // Build a ghosted vector or multivector, depending on the CoordinatesType
-        ghostedCoords = CoordFactoryType::Build(nonUniqueMap, Coords->getNumVectors());
-
-        {
-          SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
-          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
-        } //subtimer
-        
-        // Construct Distance Laplacian diagonal
-        RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
-        ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
-        Array<LO> indicesExtra;
-        Teuchos::Array<Teuchos::ArrayRCP<const scalar_type> > coordData;
-        if (threshold != STS::zero()) {
-          const size_t numVectors = ghostedCoords->getNumVectors();
-          coordData.reserve(numVectors);
-          for (size_t j = 0; j < numVectors; j++) {
-            Teuchos::ArrayRCP<const scalar_type> tmpData=ghostedCoords->getData(j);
-            coordData.push_back(tmpData);
-          }
-        }
-        {
-          SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
-          for (LO row = 0; row < numRows; row++) {
-            ArrayView<const LO> indices;
-            
-            if (blkSize == 1) {
-              ArrayView<const SC> vals;
-              A->getLocalRowView(row, indices, vals);
-              
-            } else {
-              // Merge rows of A
-              indicesExtra.resize(0);
-              MergeRows(*A, row, indicesExtra, colTranslation);
-              indices = indicesExtra;
-            }
-            
-            LO nnz = indices.size();
-            for (LO colID = 0; colID < nnz; colID++) {
-              const LO col = indices[colID];
-              
-              if (row != col) {
-                scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
-                if(dist != STS::zero()) 
-                  localLaplDiagData[row] += STS::one() / dist;                
-              }
-            }
-          }
-        } //subtimer
-        {
-          SubFactoryMonitor m1(*this, "Laplacian distributed diagonal", currentLevel);
-          ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
-          ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
-        } //subtimer
-
-#else
-      Distance_GenerateGhosts(currentLevel,*A,importer,threshold,colTranslation,Coords,ghostedCoords,ghostedLaplDiag);
-#endif
-
+        // Generated the ghosted version of the coordinates array
+        Distance_GenerateGhosts(currentLevel,*A,importer,threshold,colTranslation,Coords,ghostedCoords,ghostedLaplDiag);
         
       } else {
         GetOStream(Runtime0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
       }
           
-      // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian   
 
      // Make the drop function as a lambda
       typedef bool (*DropFunctionType) (Teuchos::Array<Teuchos::ArrayRCP<const typename RealValuedMultiVector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
@@ -1298,7 +1234,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_Dr
       typedef bool (*DropFunctionType) (Teuchos::Array<Teuchos::ArrayRCP<const typename Vector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
       DropFunctionType MaterialDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename Vector::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename Vector::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
 
-        return STS::magnitude( log10(coordData[0][row]) - log10(coordData[0][col])) > STS::magnitude(thresh);
+        return (thresh == STS::zero()) ? false : (STS::magnitude( log10(coordData[0][row]) - log10(coordData[0][col])) > STS::magnitude(thresh));
       };
 
       // NOTE: For material aggregation, the coords and diagonal are the same
@@ -1333,6 +1269,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PostAmalgam
     GO indexBase = A->getRowMap()->getIndexBase();   
     LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
+    // NOTE: ghostedLaplDiagData might be zero if we don't actually calculate the laplacian
     Teuchos::ArrayRCP<const SC> ghostedLaplDiagData;
     if(!ghostedLaplDiag.is_null())  ghostedLaplDiagData = ghostedLaplDiag->getData(0);
                 
@@ -1341,8 +1278,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PostAmalgam
     ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
     
     const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
-    
-    printf("pointBoundaryNodes.size() = %d numRows = %d blkSize = %d\n",(int)pointBoundaryNodes.size(),(int)numRows,(int)blkSize);
 
     LO realnnz = 0;
     rows[0] = 0;
