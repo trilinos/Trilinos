@@ -43,7 +43,7 @@
 #define _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
 
 #include <FROSch_HarmonicCoarseOperator_def.hpp>
-#include <FROSch_InterfaceEntity_def.hpp>
+
 
 namespace FROSch {
     
@@ -70,10 +70,11 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
         
-        typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
         typedef const EntitySetPtr EntitySetConstPtr;
         typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
         typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
@@ -87,8 +88,9 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D;
-
+       
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D
+        ;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
@@ -98,9 +100,9 @@ namespace FROSch {
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::Array<InterfaceEntityPtr> InterfaceEntityPtrVec;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
-        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsGraphPtr CrsGraphPtr;
 
+            
         
         GDSWCoarseOperator(CrsMatrixPtr k,
                            ParameterListPtr parameterList);

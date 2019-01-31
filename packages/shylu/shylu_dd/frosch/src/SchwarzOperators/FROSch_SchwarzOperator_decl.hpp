@@ -141,6 +141,7 @@ namespace FROSch {
         typedef Teuchos::ArrayView<const GO> ConstGOVecView;
         typedef Teuchos::Array<GOVec> GOVec2D;
         typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
+      
         
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
@@ -151,6 +152,7 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
         
         typedef Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > CrsGraphPtr;
+
         
         
         SchwarzOperator(CommPtr comm);

@@ -334,7 +334,7 @@ namespace FROSch {
         
         interface = DDInterface_->getInterface();
         interior = DDInterface_->getInterior();
-       
+        
         // Check for interface
         if (interface->getNumEntities()==0) {
             this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
@@ -349,7 +349,7 @@ namespace FROSch {
                     this->IDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
                 }
             }
-
+            
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
             
             if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
@@ -371,13 +371,13 @@ namespace FROSch {
                 if (useShortEdgeTranslations || useShortEdgeRotations) {
                     shortEdges = DDInterface_->getShortEdges();
                     shortEdges->buildEntityMap(nodesMap);
+                    
                     if (useShortEdgeTranslations) {
                         MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,shortEdges);
                         for (UN i=0; i<translations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdges->getEntityMap(),translations[i]);
                         }
                     }
-
                     if (useShortEdgeRotations) {
                         MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,shortEdges);
                         for (UN i=0; i<rotations.size(); i++) {
@@ -439,7 +439,7 @@ namespace FROSch {
                         }
                     }
                 }
-
+                
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
                 
                 // Count entities
@@ -485,14 +485,14 @@ namespace FROSch {
                     numEntitiesGlobal[4] = -1;
                 }
                 
-              
                 for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                     if (numEntitiesGlobal[i]<0) {
                         numEntitiesGlobal[i] = 0;
                     }
                 }
                 FROSCH_ASSERT(dimension==2 && numEntitiesGlobal[3]==0,"dimension==2 && global number of faces (edges)!=0");
-            if (this->Verbose_) {
+                
+                if (this->Verbose_) {
                     
                     std::cout << "\n\
                     --------------------------------------------\n\
@@ -500,12 +500,12 @@ namespace FROSch {
                     # shortEdges:     --- " << numEntitiesGlobal[1] << "\n\
                     # straightEdges:  --- " << numEntitiesGlobal[2] << "\n";
                     if (dimension==2) {
-                        std::cout << "\
-                        # edges:          --- " << numEntitiesGlobal[4] << "\n";
+                    std::cout << "\
+                    # edges:          --- " << numEntitiesGlobal[4] << "\n";
                     } else if (dimension==3) {
-                        std::cout << "\
-                        # edges:          --- " << numEntitiesGlobal[3] << "\n\
-                        # faces:          --- " << numEntitiesGlobal[4] << "\n";
+                    std::cout << "\
+                    # edges:          --- " << numEntitiesGlobal[3] << "\n\
+                    # faces:          --- " << numEntitiesGlobal[4] << "\n";
                     }
                     std::cout << "\
                     --------------------------------------------\n\
@@ -522,8 +522,7 @@ namespace FROSch {
                     faces: rotations            --- " << useFaceRotations << "\n\
                     --------------------------------------------\n";
                 }
-                
-                if (this->ParameterList_->get("Use RepMap",true)) {
+                if (this->ParameterList_->get("Use RepMap",false)) {
                     if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;
@@ -538,15 +537,15 @@ namespace FROSch {
                             for(GO i = 0;i<ConnVecSize;i++){
                                 conn[i] = ConnVec[i]->getSubdomainsVector();
                                 for(int j = 0;j<conn[i].size();j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),Connect->getEntityMap()->getComm()->getRank()));
-                                }
+                            }
                             for (auto& x: rep) {
                                 entries.push_back(x.first);
                             }
                         }
-                
-                
+                        
+                        
                         MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
-                
+                        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
                         std::vector<GO> col_vec(entries.size());
                         for(int i = 0;i<entries.size();i++)
                         {
@@ -554,13 +553,11 @@ namespace FROSch {
                         }
                         Teuchos::ArrayView<GO> cols(col_vec);
                         this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
-                        this->GraphEntriesList_->insertGlobalValues(edges->getEntityMap()->getComm()->getRank(),cols,entries());
+                        this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),cols,entries());
                         this->GraphEntriesList_->fillComplete();
-                    }
+                        
+                        }
                 }
-                //Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-                //this->GraphEntriesList_->describe(*fancy,Teuchos::VERB_EXTREME);
-                
                 
                 this->BlockCoarseDimension_[blockId] = 0;
                 for (UN i=0; i<numEntitiesGlobal.size(); i++) {
@@ -571,6 +568,5 @@ namespace FROSch {
         return 0;
     }    
 }
-
 
 #endif

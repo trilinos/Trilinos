@@ -44,8 +44,6 @@
 
 #include <FROSch_SchwarzOperator_def.hpp>
 
-
-
 // TODO: Member sortieren!?
 
 
@@ -94,7 +92,6 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstGOVecView ConstGOVecView;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView ConstSCVecView;
-       
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsGraphPtr CrsGraphPtr;
 
         
@@ -154,7 +151,6 @@ namespace FROSch {
         
         MapPtrVecPtr GatheringMaps_;
         MapPtr CoarseSolveMap_;
-        //Repeated Map for the next Level
         MapPtr CoarseSolveRepeatedMap_;
         GOVecPtr BlockCoarseDimension_;
         
@@ -163,6 +159,7 @@ namespace FROSch {
         ParameterListPtr DistributionList_;
         
         ExporterPtrVecPtr CoarseSolveExporters_;
+        
         //Graph to compute Reapeated Map
         CrsGraphPtr SubdomainConnectGraph_;
         //Element-Node-List to compute RepeatedMap

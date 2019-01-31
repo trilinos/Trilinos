@@ -1,5 +1,4 @@
 ADD_SUBDIRECTORIES(
-    RepMap_test
     Import_Tpetra
     InterfacePartitionOfUnity
     InterfaceSets

@@ -394,6 +394,8 @@ namespace FROSch {
             jj += j;
             kk += k;
         }
+        // Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
+        // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
         
         mVtmp->scale(-1.0);

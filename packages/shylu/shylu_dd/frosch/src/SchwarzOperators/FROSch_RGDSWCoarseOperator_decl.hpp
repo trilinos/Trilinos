@@ -70,9 +70,9 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrVecPtr EntitySetPtrVecPtr;
-        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntityPtr;
-        
+        typedef const EntitySetPtr EntitySetConstPtr;
+        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
+            
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
@@ -82,9 +82,15 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
-        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D;
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
         
+        typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
+        typedef Teuchos::Array<InterfaceEntityPtr> InterfaceEntityPtrVec;
+        typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsGraphPtr CrsGraphPtr;
+
         
         RGDSWCoarseOperator(CrsMatrixPtr k,
                             ParameterListPtr parameterList);
