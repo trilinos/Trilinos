@@ -220,7 +220,6 @@ void PHX::FieldManager<Traits>::
 aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
                                 const PHX::FieldTag& targetField)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it)
     it->aliasField(aliasedField,targetField);
@@ -242,8 +241,6 @@ inline
 void PHX::FieldManager<Traits>::
 requireFieldForAllEvaluationTypes(const PHX::FieldTag& t)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
-
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
     it->requireField(t);
@@ -266,8 +263,6 @@ inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForAllEvaluationTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
-
   typename SCTM::iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
     it->registerEvaluator(e);
@@ -311,7 +306,6 @@ inline
 void PHX::FieldManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d, const bool& buildDeviceDAG)
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
   for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
     it->postRegistrationSetup(d, *this, buildDeviceDAG);
@@ -438,7 +432,6 @@ writeGraphvizFile(const std::string base_filename,
 		  bool writeDependentFields,
 		  bool debugRegisteredEvaluators) const
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::const_iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it) {
     std::string name = base_filename + "_" + it->evaluationType() +
@@ -453,7 +446,6 @@ template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::print(std::ostream& os) const
 {
-  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::const_iterator it = m_eval_containers.begin();
   for (; it != m_eval_containers.end(); ++it)
     os << (*it);
