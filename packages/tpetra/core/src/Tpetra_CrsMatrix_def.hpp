@@ -73,6 +73,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
+#include "Teuchos_FancyOStream.hpp"
 #include <memory>
 #include <sstream>
 #include <typeinfo>
@@ -682,20 +683,51 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix)
+  swap(CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & crs_matrix)
   {
-    std::swap(matrix.importMV_, this->importMV_);                 // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.exportMV_, this->exportMV_);                 // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.staticGraph_, this->staticGraph_);           // Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.myGraph_, this->myGraph_);                   // Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.lclMatrix_, this->lclMatrix_);               // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
-    std::swap(matrix.k_values1D_, this->k_values1D_);             // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
-    std::swap(matrix.values2D_, this->values2D_);                 // Teuchos::ArrayRCP<Teuchos::Array<Kokkos::Details::ArithTraits<Scalar>::val_type>>
-    std::swap(matrix.storageStatus_, this->storageStatus_);       // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
-    std::swap(matrix.fillComplete_, this->fillComplete_);         // bool
-    std::swap(matrix.nonlocals_, this->nonlocals_);               // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
-    std::swap(matrix.frobNorm_, this->frobNorm_);                 // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
+    auto comm = getComm();
+    const int myrank = comm->getRank();
 
+    Teuchos::RCP<Teuchos::FancyOStream> pOut;
+    if(0==myrank)
+        pOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+    else
+        pOut = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+    Teuchos::FancyOStream& out = *pOut;
+
+    out << "-------------------------------------------------------------------------" << std::endl;    
+
+    this->staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
+    crs_matrix.staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
+
+    if(myrank==0)
+    {
+      std::cout << "p="<<myrank<<" | [swap PRE ]>>> staticGraph_ (ptrs) = " 
+                << this->staticGraph_.getRawPtr() << " : " << crs_matrix.staticGraph_.getRawPtr() 
+                << "  rangeMap: " << this->staticGraph_->getRangeMap().getRawPtr() << " : " << crs_matrix.staticGraph_->getRangeMap().getRawPtr()
+                << std::endl;
+    }
+    std::swap(crs_matrix.importMV_,      this->importMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.lclMatrix_,     this->lclMatrix_);       // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
+    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
+    std::swap(crs_matrix.values2D_,      this->values2D_);        // Teuchos::ArrayRCP<Teuchos::Array<Kokkos::Details::ArithTraits<Scalar>::val_type>>
+    std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
+    std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
+    std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
+    std::swap(crs_matrix.frobNorm_,      this->frobNorm_);        // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
+
+    if(myrank==0)
+    {
+      std::cout << "p="<<myrank<<" | [swap PRE ]>>> staticGraph_ (ptrs) = " 
+                << this->staticGraph_.getRawPtr() << " : " << crs_matrix.staticGraph_.getRawPtr() 
+                << "  rangeMap: " << this->staticGraph_->getRangeMap().getRawPtr() << " : " << crs_matrix.staticGraph_->getRangeMap().getRawPtr()
+                << std::endl;
+    }
+    this->staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
+    crs_matrix.staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
   }
 
 
@@ -8234,8 +8266,8 @@ namespace Tpetra {
     typedef node_type NT;
     typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
-    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
-    const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();
+    //const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();  // wcm: unused
+    //const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();  // wcm: unused
     using Teuchos::as;
 
     int MyPID = getComm ()->getRank ();
