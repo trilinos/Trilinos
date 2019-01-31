@@ -193,7 +193,7 @@ namespace MueLu {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           ArrayRCP<const bool > boundaryNodes;
           boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
-          ScalarNoDropping(currentLevel,*A, boundaryNodes, numTotal) const;
+          ScalarNoDropping(currentLevel,*A, boundaryNodes, numTotal);
         } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) ||
                     (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
@@ -1373,7 +1373,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PostAmalgam
     GO indexBase = A->getRowMap()->getIndexBase();                      
     LO numRows = Teuchos::as<LocalOrdinal>(A->getRowMap()->getNodeNumElements());
 
-    Teuchos::ArrayRCP<const SC> ghostedLaplDiagData = ghostedLaplDiag->getData(0);
+    Teuchos::ArrayRCP<const SC> ghostedLaplDiagData;
+    if(!ghostedLaplDiag.is_null())  ghostedLaplDiagData = ghostedLaplDiag->getData(0);
                 
     // allocate space for the local graph
     ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
@@ -1498,7 +1499,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PostAmalgam
 // ***********************************************************************  
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_GenerateGhosts(Level & currentLevel, RCP<const Import> importer, RCP<Vector> & Coords, RCP<Vector> & ghostedCoords) const {
-  // Build a ghosted vector or multivector, depending on the CoordinatesType
   ghostedCoords = VectorFactory::Build(importer->getTargetMap(), Coords->getNumVectors());
   
   {
@@ -1506,6 +1506,78 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_Ge
     ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);        
   } //subtimer
 }
+
+#if 0
+// ***********************************************************************  
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<RealValuedMultiVector> & Coords, RCP<RealValuedMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const {
+  RCP<const Map> uniqueMap    = importer->getSourceMap();
+  RCP<const Map> nonUniqueMap = importer->getTargetMap();
+
+  // Ghost coordinates
+  ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+  LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+  
+  {
+    SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
+    ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+  } //subtimer
+  
+  // Construct Distance Laplacian diagonal
+  RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
+  ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
+  Array<LO> indicesExtra;
+  Teuchos::Array<Teuchos::ArrayRCP<const scalar_type> > coordData;
+  if (threshold != STS::zero()) {
+    const size_t numVectors = ghostedCoords->getNumVectors();
+    coordData.reserve(numVectors);
+    for (size_t j = 0; j < numVectors; j++) {
+      Teuchos::ArrayRCP<const scalar_type> tmpData=ghostedCoords->getData(j);
+      coordData.push_back(tmpData);
+    }
+  }
+  {
+    SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
+    
+    for (LO row = 0; row < numRows; row++) {
+      ArrayView<const LO> indices;
+      
+      if (blkSize == 1) {
+        ArrayView<const SC> vals;
+        A.getLocalRowView(row, indices, vals);
+        
+      } else {
+        // Merge rows of A
+        indicesExtra.resize(0);
+        MergeRows(*A, row, indicesExtra, colTranslation);
+        indices = indicesExtra;
+      }
+      
+      LO nnz = indices.size();
+      for (LO colID = 0; colID < nnz; colID++) {
+        const LO col = indices[colID];
+        
+        if (row != col) {
+          scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
+          if(dist != STS::zero()) 
+            localLaplDiagData[row] += STS::one() / dist;                
+        }
+      }
+    }
+  } //subtimer
+  {
+    SubFactoryMonitor m1(*this, "Laplacian distributed diagonal", currentLevel);
+    ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
+    ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
+  } //subtimer
+}       
+
+
+
+
+
+
+#endif
 
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

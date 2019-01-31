@@ -137,7 +137,9 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-
+#if 0
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::magnitude_type,LO,GO,NO> RealValuedMultiVector;
+#endif
     //! @name Constructors/Destructors.
     //@{
 
@@ -179,7 +181,10 @@ namespace MueLu {
     template<typename CoordFactoryType, class CoordinatesType>
     void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
-
+    // Routines to support distance laplacian aggregation
+#if 0
+void Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<RealValuedMultiVector> & Coords, RCP<RealValuedMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const;
+#endif
 
     // Routines to support material aggregation
     void Material_DroppingAlgorithm(Level & currentLevel,RCP<Vector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
