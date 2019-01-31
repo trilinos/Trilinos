@@ -84,8 +84,6 @@
 #include "MueLu_Exceptions.hpp"
 
 
-
-
 namespace MueLu {
 
 // MPI helpers
@@ -974,7 +972,6 @@ namespace MueLu {
     }
 
   }; // class Utils
-
 
 
   ///////////////////////////////////////////

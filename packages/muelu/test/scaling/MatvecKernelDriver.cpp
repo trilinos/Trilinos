@@ -53,6 +53,7 @@
 
 // Teuchos
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -62,11 +63,12 @@
 // MueLu
 #include "MueLu.hpp"
 #include "MueLu_TestHelpers.hpp"
+#include <MatrixLoad.hpp>
 
 #if defined(HAVE_MUELU_TPETRA)
-#include "Xpetra_TpetraVector.hpp"
+#include "Xpetra_TpetraMultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
 #endif
 
 // =========================================================================
@@ -142,13 +144,13 @@ void MV_MKL(sparse_matrix_t & AMKL, double * x, double * y) {
 // =========================================================================
 #if defined(HAVE_MUELU_TPETRA)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
+void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   A.apply(x,y); 
 }
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
+void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   typedef typename Node::device_type device_type;
   auto AK = A.getLocalMatrix();
   auto X_lcl = x.template getLocalView<device_type> ();
@@ -188,12 +190,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Parameters initialization
     // =========================================================================
-    //    GO nx = 50, ny = 50, nz = 50;
-    // Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Laplace3D"); // manage parameters of the test case
+    GO nx = 100, ny = 100, nz = 50;
+    Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-    bool   printTimings = true;  clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
-    int    nrepeat      = 100;   clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
+    bool binaryFormat = false;  clp.setOption("binary", "ascii",  &binaryFormat,   "print timings to screen");
+    std::string matrixFile;     clp.setOption("matrixfile",       &matrixFile,     "matrix market file containing matrix");
+    std::string rowMapFile;     clp.setOption("rowmap",           &rowMapFile,     "map data file");
+    std::string colMapFile;     clp.setOption("colmap",           &colMapFile,     "colmap data file");
+    std::string domainMapFile;  clp.setOption("domainmap",        &domainMapFile,  "domainmap data file");
+    std::string rangeMapFile;   clp.setOption("rangemap",         &rangeMapFile,   "rangemap data file");
+
+    bool printTimings = true;   clp.setOption("timings", "notimings",  &printTimings, "print timings to screen");
+    int  nrepeat      = 100;    clp.setOption("nrepeat",               &nrepeat,      "repeat the experiment N times");
+
+    bool describeMatrix = true; clp.setOption("showmatrix", "noshowmatrix",  &describeMatrix, "describe matrix");
+    bool useStackedTimer = false; clp.setOption("stackedtimer", "nostackedtimer",  &useStackedTimer, "use stacked timer");
     // the kernels
     bool do_mkl      = true;
     bool do_tpetra   = true;
@@ -206,7 +218,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("tpetra",   "notpetra", &do_tpetra,     "Evaluate Tpetra");
     clp.setOption("kk",       "nokk",     &do_kk,         "Evaluate KokkosKernels");
 
-    std::string matrixFileNameA = "A.mm"; clp.setOption("matrixfile", &matrixFileNameA, "matrix market file containing matrix");
+    std::ostringstream galeriStream;
+    std::string rhsFile,coordFile,nullFile; //unused
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    RCP<RealValuedMultiVector> coordinates;
+    RCP<MultiVector> nullspace, x, b;
+    RCP<Matrix> A;
+    RCP<const Map> map;
    
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -214,6 +233,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
+
+    if (do_kk && comm->getSize() > 1)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"The Kokkos-Kernels matvec kernel cannot be run with more than one rank.");
+
+    // Load the matrix off disk (or generate it via Galeri)
+    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, nullFile, map, A, coordinates, nullspace, x, b, galeriParameters, xpetraParameters, galeriStream);
 
 #ifndef HAVE_MUELU_MKL
     if (do_mkl) {
@@ -251,7 +276,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         << "  GlobalOrdinal: " << sizeof(GO) << endl
         << "========================================================" << endl
         << "Matrix:        " << Teuchos::demangleName(typeid(Matrix).name()) << endl
-        << "Vector:        " << Teuchos::demangleName(typeid(Vector).name()) << endl
+        << "Vector:        " << Teuchos::demangleName(typeid(MultiVector).name()) << endl
         << "Hierarchy:     " << Teuchos::demangleName(typeid(Hierarchy).name()) << endl
         << "========================================================" << endl;
 
@@ -260,34 +285,42 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
        << "========================================================" << endl;
 #endif
 
-    // At the moment, this test only runs on one MPI rank
-    if(comm->getSize() != 1) exit(1);
-
     // =========================================================================
     // Problem construction
     // =========================================================================
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time")));
+    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+    RCP<TimeMonitor> globalTimeMonitor;
+    if (useStackedTimer)
+      stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_MatvecKernelDriver"));
+    else
+      globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time")));
 
     comm->barrier();
 
 
-    RCP<Matrix> A = Xpetra::IO<SC,LO,GO,Node>::Read(std::string(matrixFileNameA), lib, comm);
-    RCP<Vector> x = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(A->getRowMap());
-    RCP<Vector> y = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(A->getRowMap());
+    RCP<MultiVector> y = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(A->getRowMap());
     x->putScalar(Teuchos::ScalarTraits<Scalar>::one());
     y->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
 
 
 #ifdef HAVE_MUELU_TPETRA
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-    typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
     RCP<const crs_matrix_type> At;
-    RCP<const vector_type> xt; 
-    RCP<vector_type> yt;
+    vector_type xt;
+    vector_type yt;
 
     At = Utilities::Op2TpetraCrs(A);
+    const crs_matrix_type &Att = *At;
     xt = Xpetra::toTpetra(*x);
-    yt = Teuchos::rcp_const_cast<vector_type>(Xpetra::toTpetra(*y));
+    yt = Xpetra::toTpetra(*y);
+
+    size_t l_permutes = 0, g_permutes = 0;
+    if(!At->getGraph()->getImporter().is_null()) {
+      l_permutes = At->getGraph()->getImporter()->getNumPermuteIDs();
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,1,&l_permutes,&g_permutes);
+    }
+    if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);     
 
 #ifdef HAVE_MUELU_MKL
     sparse_matrix_t AMKL;
@@ -313,8 +346,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     if(Kokkos::Impl::is_same<Scalar,double>::value) {
       mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, At->getNodeNumRows(), At->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
-      auto X_lcl = xt->template getLocalView<device_type> ();
-      auto Y_lcl = yt->template getLocalView<device_type> ();
+      auto X_lcl = xt.template getLocalView<device_type> ();
+      auto Y_lcl = yt.template getLocalView<device_type> ();
       xdouble = (double*)X_lcl.data();
       ydouble = (double*)Y_lcl.data();
     }
@@ -328,14 +361,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     globalTimeMonitor = Teuchos::null;
     comm->barrier();
 
-    out << "Matrix Read complete." << endl
-        << "Matrix A:" << endl
-        << *A
-        << "========================================================" << endl;
+    out << "Matrix Read complete." << endl;
+    if (describeMatrix) {
+        out << "Matrix A:" << endl
+            << *A
+            << "========================================================" << endl;
+    }
 
     // random source
     std::random_device rd;
     std::mt19937 random_source (rd());
+
+    
 
     // no need for a barrier, because the randomization process uses a collective.
     if ( !my_experiments.empty() ) {
@@ -370,7 +407,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           {
 #ifdef HAVE_MUELU_TPETRA
             TimeMonitor t(*TimeMonitor::getNewTimer("MV KK: Total"));
-            MV_KK(*At,*xt,*yt);
+            MV_KK(Att,xt,yt);
 #endif
           }
           break;
@@ -379,7 +416,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           {
 #ifdef HAVE_MUELU_TPETRA
             TimeMonitor t(*TimeMonitor::getNewTimer("MV Tpetra: Total"));
-            MV_Tpetra(*At,*xt,*yt);
+            MV_Tpetra(*At,xt,yt);
 #endif
           }
           break;
@@ -392,7 +429,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     } // end repeat
     } // end ! my_experiments.empty()
 
-    if (printTimings) {
+    if (useStackedTimer) {
+      stacked_timer->stop("MueLu_MatvecKernelDriver");
+      Teuchos::StackedTimer::OutputOptions options;
+      options.output_fraction = options.output_histogram = options.output_minmax = true;
+      stacked_timer->report(out, comm, options);
+    } else {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
     }
 
