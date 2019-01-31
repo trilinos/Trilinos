@@ -108,20 +108,20 @@ namespace FROSch {
                                    MultiVectorPtr nodeList,
                                    EntitySetPtr interior);
         
-        MultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                 EntitySetPtr entitySet);
+        virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                         EntitySetPtr entitySet);
         
-        MultiVectorPtrVecPtr computeRotations(UN blockId,
-                                              UN dimension,
-                                              MultiVectorPtr nodeList,
-                                              EntitySetPtr entitySet);
+        virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
+                                                      UN dimension,
+                                                      MultiVectorPtr nodeList,
+                                                      EntitySetPtr entitySet);
 
-        MultiVectorPtr computeExtensions(ConstMapPtr localMap,
-                                         ConstMapPtr coarseMap,
-                                         GOVecView indicesGammaDofsAll,
-                                         GOVecView indicesIDofsAll,
-                                         CrsMatrixPtr kII,
-                                         CrsMatrixPtr kIGamma);
+        virtual MultiVectorPtr computeExtensions(ConstMapPtr localMap,
+                                                 ConstMapPtr coarseMap,
+                                                 GOVecView indicesGammaDofsAll,
+                                                 GOVecView indicesIDofsAll,
+                                                 CrsMatrixPtr kII,
+                                                 CrsMatrixPtr kIGamma);
 
         
         SubdomainSolverPtr ExtensionSolver_;

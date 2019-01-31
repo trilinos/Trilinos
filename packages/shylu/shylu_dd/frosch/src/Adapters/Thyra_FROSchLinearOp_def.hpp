@@ -187,7 +187,7 @@ namespace Thyra {
             
         } else {
             FROSCH_ASSERT(false,"There is a problem with the underlying lib in FROSchLinearOp.");
-            //åstd::cout<<"Only Implemented for Epetra and Tpetra\n";
+            //std::cout<<"Only Implemented for Epetra and Tpetra\n";
         }
         
         RCP<MultiVectorBase<SC> >thyraX =

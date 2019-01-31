@@ -46,9 +46,6 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
-struct CELL;
-struct BASIS;
-
 namespace PHX {
 
   // Implementation #1
