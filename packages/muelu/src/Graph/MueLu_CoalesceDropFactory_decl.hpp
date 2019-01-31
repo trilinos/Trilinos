@@ -179,9 +179,21 @@ namespace MueLu {
     template<typename CoordFactoryType, class CoordinatesType>
     void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
+    template<typename CoordFactoryType, class CoordinatesType>
+    void MaterialDistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
     // This is a "double dropping" version of the DistanceDropping
     template<typename Coord1FactoryType, class Coordinates1Type, typename Coord2FactoryType, class Coordinates2Type>
     void DoubleDistanceDropping(Level & currentLevel,RCP<Coordinates1Type> & Coords1, RCP<Coordinates2Type> & Coords2, bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
+
+    template<class DiagonalType, class CoordinatesType>
+    void PostAmalgamationDropping(Level & currentLevel,RCP<CoordinatesType> & ghostedCoords, RCP<DiagonalType> & ghostedDiagonal,
+                                  RCP<const Map> & uniqueMap, RCP<const Map> & nonuniqueMap, Teuchos::Array<LocalOrdinal> & colTranslation,
+                                  std::function<bool( Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> >&, Teuchos::ArrayRCP<const typename DiagonalType::scalar_type> &, LocalOrdinal,LocalOrdinal,Scalar)> DropFunction, 
+                                  bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
+
   }; //class CoalesceDropFactory
 
 } //namespace MueLu
