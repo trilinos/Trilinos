@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
       std::ostringstream msg("New <Y1,X1> not s.p.d.: couldn't computed Cholesky: info == ");
       msg << info << "\nyTx1: \n";
       yTx1.print(msg);
-      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error, msg.str());
 
       // X2 ortho to Y1
       MVT::MvRandom(*X2);
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
       msg.str("New <Y2,X2> not s.p.d.: couldn't computed Cholesky: info == ");
       msg << info << "\nyTx2: \n";
       yTx2.print(msg);
-      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error, msg.str());
     }
     MyOM->stream(Warnings) << endl;
 

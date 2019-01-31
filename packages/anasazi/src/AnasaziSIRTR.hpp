@@ -940,7 +940,7 @@ namespace Anasazi {
       std::ostringstream msg("Anasazi::SIRTR::iterate(): failure solving projected eigenproblem after retraction. ret == ");
       msg << ret << "AA: "; AA.print(msg);
       msg << std::endl << "BB: "; BB.print(msg); msg << std::endl;
-      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,std::logic_error, msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(ret != 0,std::logic_error, msg.str());
       TEUCHOS_TEST_FOR_EXCEPTION(rank != this->blockSize_,RTRRitzFailure,"Anasazi::SIRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 
       //
