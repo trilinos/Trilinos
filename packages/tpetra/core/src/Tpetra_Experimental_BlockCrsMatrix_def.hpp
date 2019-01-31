@@ -2179,6 +2179,7 @@ public:
     return ! (* (this->localError_));
   }
 
+#if defined(TPETRA_BLOCKCRS_USE_NEW_INTERFACE)
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -2249,6 +2250,15 @@ public:
         "Please report this bug to the Tpetra developers." << std::endl;
       return;
     }
+    else {
+      // Kyungjoo: where is val_ modified ? 
+      //    When we have dual view as a member variable, 
+      //    which function should make sure the val_ is upto date ? 
+      //    IMO, wherever it is used, the function should check its
+      //    availability.
+      const_cast<this_type*>(src)->sync_host();
+    }
+    this->sync_host();
 
     bool lclErr = false;
 #ifdef HAVE_TPETRA_DEBUG
@@ -2285,16 +2295,13 @@ public:
       std::cerr << os.str ();
     }
 
-    // work around for const object sync
-    if (permuteToLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> permuteToLIDsTemp = permuteToLIDs;
-      permuteToLIDsTemp.sync_host();
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::copyAndPermuteNew : "
+                               "permuteToLIDs is read-only and host buffer must be up-to-date.");
+    TEUCHOS_TEST_FOR_EXCEPTION(permuteFromLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::copyAndPermuteNew : "
+                               "permuteFromLIDs is read-only and host buffer must be up-to-date.");
     const auto permuteToLIDsHost = permuteToLIDs.view_host();
-    if (permuteFromLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> permuteFromLIDsTemp = permuteFromLIDs;
-      permuteFromLIDsTemp.sync_host();
-    }
     const auto permuteFromLIDsHost = permuteFromLIDs.view_host();
 
     if (canUseLocalColumnIndices) {
@@ -2598,6 +2605,401 @@ public:
       std::cerr << os.str ();
     }
   }
+#else
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  copyAndPermute (const ::Tpetra::SrcDistObject& source,
+                  size_t numSameIDs,
+                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
+                  const Teuchos::ArrayView<const LO>& permuteFromLIDs)
+  {
+    using std::endl;
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    const bool debug = false;
+
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      os << "Proc " << myRank << ": copyAndPermute: "
+         << "numSameIDs: " << numSameIDs
+         << ", permuteToLIDs.size(): " << permuteToLIDs.size ()
+         << ", permuteFromLIDs.size(): " << permuteFromLIDs.size ()
+         << endl;
+      std::cerr << os.str ();
+    }
+
+    // There's no communication in this method, so it's safe just to
+    // return on error.
+
+    if (* (this->localError_)) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "copyAndPermute: The target object of the Import or Export is "
+        "already in an error state." << endl;
+      return;
+    }
+    if (permuteToLIDs.size () != permuteFromLIDs.size ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "copyAndPermute: permuteToLIDs.size() = " << permuteToLIDs.size ()
+          << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << "."
+          << endl;
+      return;
+    }
+
+    const this_type* src = dynamic_cast<const this_type* > (&source);
+    if (src == NULL) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "copyAndPermute: The source object of the Import or Export is "
+        "either not a BlockCrsMatrix, or does not have the right template "
+        "parameters.  checkSizes() should have caught this.  "
+        "Please report this bug to the Tpetra developers." << endl;
+      return;
+    }
+    if (* (src->localError_)) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "copyAndPermute: The source object of the Import or Export is "
+        "already in an error state." << endl;
+      return;
+    }
+
+    bool lclErr = false;
+#ifdef HAVE_TPETRA_DEBUG
+    std::set<LO> invalidSrcCopyRows;
+    std::set<LO> invalidDstCopyRows;
+    std::set<LO> invalidDstCopyCols;
+    std::set<LO> invalidDstPermuteCols;
+    std::set<LO> invalidPermuteFromRows;
+#endif // HAVE_TPETRA_DEBUG
+
+    // Copy the initial sequence of rows that are the same.
+    //
+    // The two graphs might have different column Maps, so we need to
+    // do this using global column indices.  This is purely local, so
+    // we only need to check for local sameness of the two column
+    // Maps.
+
+#ifdef HAVE_TPETRA_DEBUG
+    const map_type& srcRowMap = * (src->graph_.getRowMap ());
+#endif // HAVE_TPETRA_DEBUG
+    const map_type& dstRowMap = * (this->graph_.getRowMap ());
+    const map_type& srcColMap = * (src->graph_.getColMap ());
+    const map_type& dstColMap = * (this->graph_.getColMap ());
+    const bool canUseLocalColumnIndices = srcColMap.locallySameAs (dstColMap);
+    const size_t numPermute = static_cast<size_t> (permuteFromLIDs.size ());
+
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      os << "Proc " << myRank << ": copyAndPermute: "
+         << "canUseLocalColumnIndices: "
+         << (canUseLocalColumnIndices ? "true" : "false")
+         << ", numPermute: " << numPermute
+         << endl;
+      std::cerr << os.str ();
+    }
+
+    if (canUseLocalColumnIndices) {
+      // Copy local rows that are the "same" in both source and target.
+      for (LO localRow = 0; localRow < static_cast<LO> (numSameIDs); ++localRow) {
+#ifdef HAVE_TPETRA_DEBUG
+        if (! srcRowMap.isNodeLocalElement (localRow)) {
+          lclErr = true;
+          invalidSrcCopyRows.insert (localRow);
+          continue; // skip invalid rows
+        }
+#endif // HAVE_TPETRA_DEBUG
+
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        // If this call fails, that means the mesh row local index is
+        // invalid.  That means the Import or Export is invalid somehow.
+        LO err = src->getLocalRowView (localRow, lclSrcCols, vals, numEntries);
+        if (err != 0) {
+          lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+          (void) invalidSrcCopyRows.insert (localRow);
+#endif // HAVE_TPETRA_DEBUG
+        }
+        else {
+          err = this->replaceLocalValues (localRow, lclSrcCols, vals, numEntries);
+          if (err != numEntries) {
+            lclErr = true;
+            if (! dstRowMap.isNodeLocalElement (localRow)) {
+#ifdef HAVE_TPETRA_DEBUG
+              invalidDstCopyRows.insert (localRow);
+#endif // HAVE_TPETRA_DEBUG
+            }
+            else {
+              // Once there's an error, there's no sense in saving
+              // time, so we check whether the column indices were
+              // invalid.  However, only remember which ones were
+              // invalid in a debug build, because that might take a
+              // lot of space.
+              for (LO k = 0; k < numEntries; ++k) {
+                if (! dstColMap.isNodeLocalElement (lclSrcCols[k])) {
+                  lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+                  (void) invalidDstCopyCols.insert (lclSrcCols[k]);
+#endif // HAVE_TPETRA_DEBUG
+                }
+              }
+            }
+          }
+        }
+      } // for each "same" local row
+
+      // Copy the "permute" local rows.
+      for (size_t k = 0; k < numPermute; ++k) {
+        const LO srcLclRow = static_cast<LO> (permuteFromLIDs[k]);
+        const LO dstLclRow = static_cast<LO> (permuteToLIDs[k]);
+
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        LO err = src->getLocalRowView (srcLclRow, lclSrcCols, vals, numEntries);
+        if (err != 0) {
+          lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+          invalidPermuteFromRows.insert (srcLclRow);
+#endif // HAVE_TPETRA_DEBUG
+        }
+        else {
+          err = this->replaceLocalValues (dstLclRow, lclSrcCols, vals, numEntries);
+          if (err != numEntries) {
+            lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+            for (LO c = 0; c < numEntries; ++c) {
+              if (! dstColMap.isNodeLocalElement (lclSrcCols[c])) {
+                invalidDstPermuteCols.insert (lclSrcCols[c]);
+              }
+            }
+#endif // HAVE_TPETRA_DEBUG
+          }
+        }
+      }
+    }
+    else { // must convert column indices to global
+      // Reserve space to store the destination matrix's local column indices.
+      const size_t maxNumEnt = src->graph_.getNodeMaxNumRowEntries ();
+      Teuchos::Array<LO> lclDstCols (maxNumEnt);
+
+      // Copy local rows that are the "same" in both source and target.
+      for (LO localRow = 0; localRow < static_cast<LO> (numSameIDs); ++localRow) {
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        // If this call fails, that means the mesh row local index is
+        // invalid.  That means the Import or Export is invalid somehow.
+        LO err = 0;
+        try {
+          err = src->getLocalRowView (localRow, lclSrcCols, vals, numEntries);
+        } catch (std::exception& e) {
+          if (debug) {
+            std::ostringstream os;
+            const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+            os << "Proc " << myRank << ": copyAndPermute: At \"same\" localRow "
+               << localRow << ", src->getLocalRowView() threw an exception: "
+               << e.what ();
+            std::cerr << os.str ();
+          }
+          throw e;
+        }
+
+        if (err != 0) {
+          lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+          invalidSrcCopyRows.insert (localRow);
+#endif // HAVE_TPETRA_DEBUG
+        }
+        else {
+          if (static_cast<size_t> (numEntries) > static_cast<size_t> (lclDstCols.size ())) {
+            lclErr = true;
+            if (debug) {
+              std::ostringstream os;
+              const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+              os << "Proc " << myRank << ": copyAndPermute: At \"same\" localRow "
+                 << localRow << ", numEntries = " << numEntries << " > maxNumEnt = "
+                 << maxNumEnt << endl;
+              std::cerr << os.str ();
+            }
+          }
+          else {
+            // Convert the source matrix's local column indices to the
+            // destination matrix's local column indices.
+            Teuchos::ArrayView<LO> lclDstColsView = lclDstCols.view (0, numEntries);
+            for (LO j = 0; j < numEntries; ++j) {
+              lclDstColsView[j] = dstColMap.getLocalElement (srcColMap.getGlobalElement (lclSrcCols[j]));
+              if (lclDstColsView[j] == Teuchos::OrdinalTraits<LO>::invalid ()) {
+                lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+                invalidDstCopyCols.insert (lclDstColsView[j]);
+#endif // HAVE_TPETRA_DEBUG
+              }
+            }
+            try {
+              err = this->replaceLocalValues (localRow, lclDstColsView.getRawPtr (), vals, numEntries);
+            } catch (std::exception& e) {
+              if (debug) {
+                std::ostringstream os;
+                const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+                os << "Proc " << myRank << ": copyAndPermute: At \"same\" localRow "
+                   << localRow << ", this->replaceLocalValues() threw an exception: "
+                   << e.what ();
+                std::cerr << os.str ();
+              }
+              throw e;
+            }
+            if (err != numEntries) {
+              lclErr = true;
+              if (debug) {
+                std::ostringstream os;
+                const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+                os << "Proc " << myRank << ": copyAndPermute: At \"same\" "
+                  "localRow " << localRow << ", this->replaceLocalValues "
+                  "returned " << err << " instead of numEntries = "
+                   << numEntries << endl;
+                std::cerr << os.str ();
+              }
+            }
+          }
+        }
+      }
+
+      // Copy the "permute" local rows.
+      for (size_t k = 0; k < numPermute; ++k) {
+        const LO srcLclRow = static_cast<LO> (permuteFromLIDs[k]);
+        const LO dstLclRow = static_cast<LO> (permuteToLIDs[k]);
+
+        const LO* lclSrcCols;
+        Scalar* vals;
+        LO numEntries;
+        LO err = 0;
+        try {
+          err = src->getLocalRowView (srcLclRow, lclSrcCols, vals, numEntries);
+        } catch (std::exception& e) {
+          if (debug) {
+            std::ostringstream os;
+            const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+            os << "Proc " << myRank << ": copyAndPermute: At \"permute\" "
+              "srcLclRow " << srcLclRow << " and dstLclRow " << dstLclRow
+               << ", src->getLocalRowView() threw an exception: " << e.what ();
+            std::cerr << os.str ();
+          }
+          throw e;
+        }
+
+        if (err != 0) {
+          lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+          invalidPermuteFromRows.insert (srcLclRow);
+#endif // HAVE_TPETRA_DEBUG
+        }
+        else {
+          if (static_cast<size_t> (numEntries) > static_cast<size_t> (lclDstCols.size ())) {
+            lclErr = true;
+          }
+          else {
+            // Convert the source matrix's local column indices to the
+            // destination matrix's local column indices.
+            Teuchos::ArrayView<LO> lclDstColsView = lclDstCols.view (0, numEntries);
+            for (LO j = 0; j < numEntries; ++j) {
+              lclDstColsView[j] = dstColMap.getLocalElement (srcColMap.getGlobalElement (lclSrcCols[j]));
+              if (lclDstColsView[j] == Teuchos::OrdinalTraits<LO>::invalid ()) {
+                lclErr = true;
+#ifdef HAVE_TPETRA_DEBUG
+                invalidDstPermuteCols.insert (lclDstColsView[j]);
+#endif // HAVE_TPETRA_DEBUG
+              }
+            }
+            err = this->replaceLocalValues (dstLclRow, lclDstColsView.getRawPtr (), vals, numEntries);
+            if (err != numEntries) {
+              lclErr = true;
+            }
+          }
+        }
+      }
+    }
+
+    if (lclErr) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+#ifdef HAVE_TPETRA_DEBUG
+      err << "copyAndPermute: The graph structure of the source of the "
+        "Import or Export must be a subset of the graph structure of the "
+        "target.  ";
+      err << "invalidSrcCopyRows = [";
+      for (typename std::set<LO>::const_iterator it = invalidSrcCopyRows.begin ();
+           it != invalidSrcCopyRows.end (); ++it) {
+        err << *it;
+        typename std::set<LO>::const_iterator itp1 = it;
+        itp1++;
+        if (itp1 != invalidSrcCopyRows.end ()) {
+          err << ",";
+        }
+      }
+      err << "], invalidDstCopyRows = [";
+      for (typename std::set<LO>::const_iterator it = invalidDstCopyRows.begin ();
+           it != invalidDstCopyRows.end (); ++it) {
+        err << *it;
+        typename std::set<LO>::const_iterator itp1 = it;
+        itp1++;
+        if (itp1 != invalidDstCopyRows.end ()) {
+          err << ",";
+        }
+      }
+      err << "], invalidDstCopyCols = [";
+      for (typename std::set<LO>::const_iterator it = invalidDstCopyCols.begin ();
+           it != invalidDstCopyCols.end (); ++it) {
+        err << *it;
+        typename std::set<LO>::const_iterator itp1 = it;
+        itp1++;
+        if (itp1 != invalidDstCopyCols.end ()) {
+          err << ",";
+        }
+      }
+      err << "], invalidDstPermuteCols = [";
+      for (typename std::set<LO>::const_iterator it = invalidDstPermuteCols.begin ();
+           it != invalidDstPermuteCols.end (); ++it) {
+        err << *it;
+        typename std::set<LO>::const_iterator itp1 = it;
+        itp1++;
+        if (itp1 != invalidDstPermuteCols.end ()) {
+          err << ",";
+        }
+      }
+      err << "], invalidPermuteFromRows = [";
+      for (typename std::set<LO>::const_iterator it = invalidPermuteFromRows.begin ();
+           it != invalidPermuteFromRows.end (); ++it) {
+        err << *it;
+        typename std::set<LO>::const_iterator itp1 = it;
+        itp1++;
+        if (itp1 != invalidPermuteFromRows.end ()) {
+          err << ",";
+        }
+      }
+      err << "]" << std::endl;
+#else
+      err << "copyAndPermute: The graph structure of the source of the "
+        "Import or Export must be a subset of the graph structure of the "
+        "target." << std::endl;
+#endif // HAVE_TPETRA_DEBUG
+    }
+
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      const bool lclSuccess = ! (* (this->localError_));
+      os << "*** Proc " << myRank << ": copyAndPermute "
+         << (lclSuccess ? "succeeded" : "FAILED");
+      if (lclSuccess) {
+        os << endl;
+      } else {
+        os << ": error messages: " << this->errorMessages (); // comes w/ endl
+      }
+      std::cerr << os.str ();
+    }
+  }
+#endif
 
   namespace { // (anonymous)
 
@@ -2838,13 +3240,14 @@ public:
     }
   } // namespace (anonymous)
 
+#if defined(TPETRA_BLOCKCRS_USE_NEW_INTERFACE)
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   packAndPrepareNew (const ::Tpetra::SrcDistObject& source,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     Kokkos::DualView<packet_type*, buffer_device_type>& exports, // output
+                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID, // output
                      size_t& constantNumPackets,
                      Distributor& /* distor */)
   {
@@ -2941,14 +3344,14 @@ public:
 
     // Graph information is on host; let's do this on host parallel reduce
     // Sync necessary data to host
-
-    if (exportLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> exportLIDsTemp = exportLIDs;
-      exportLIDsTemp.sync_host();
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(exportLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::packAndPrepareNew : "
+                               "exportLIDs is read-only and host buffer must be up-to-date.");
     auto exportLIDsHost = exportLIDs.view_host();
-    auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this
+    auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this.
+    const_cast<Kokkos::DualView<size_t*, buffer_device_type>&>(numPacketsPerLID).modify_host();
     {
+
       typedef Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec> reducer_type;
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
       Kokkos::parallel_reduce
@@ -2962,10 +3365,6 @@ public:
           numPacketsPerLIDHost(i) = numBytes;
           update += typename reducer_type::value_type(numEnt, numBytes, numEnt);
         }, rowReducerStruct);
-      {
-        Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
-        numPacketsPerLIDTemp.modify_host();
-      }
     }
 
     // Compute the number of bytes ("packets") per row to pack.  While
@@ -3018,6 +3417,8 @@ public:
       const map_type& srcColMap = * (srcGraph.getColMap ());
 
       // Pack the data for each row to send, into the 'exports' buffer.
+      // exports will be modified on host.
+      exports.modify_host();
       {
         typedef Kokkos::TeamPolicy<host_exec> policy_type;
         const auto policy =
@@ -3083,8 +3484,238 @@ public:
       std::cerr << os.str ();
     }
   }
+#else
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  packAndPrepare (const ::Tpetra::SrcDistObject& source,
+                  const Teuchos::ArrayView<const LO>& exportLIDs,
+                  Teuchos::Array<packet_type>& exports,
+                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                  size_t& constantNumPackets,
+                  ::Tpetra::Distributor& /* distor */)
+  {
+    using std::endl;
+    using ::Tpetra::Details::PackTraits;
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::subview;
+    using Kokkos::View;
+    typedef typename ::Tpetra::MultiVector<Scalar, LO, GO, Node>::impl_scalar_type ST;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+    const bool debug = false;
 
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      os << "Proc " << myRank << ": packAndPrepare: exportLIDs.size() = "
+         << exportLIDs.size () << ", numPacketsPerLID.size() = "
+         << numPacketsPerLID.size () << endl;
+      std::cerr << os.str ();
+    }
 
+    if (* (this->localError_)) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "packAndPrepare: The target object of the Import or Export is "
+        "already in an error state." << endl;
+      return;
+    }
+
+    const this_type* src = dynamic_cast<const this_type* > (&source);
+    // Should have checked for these cases in checkSizes().
+    if (src == NULL) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "packAndPrepare: The source (input) object of the Import or "
+        "Export is either not a BlockCrsMatrix, or does not have the right "
+        "template parameters.  checkSizes() should have caught this.  "
+        "Please report this bug to the Tpetra developers." << endl;
+      return;
+    }
+
+    const crs_graph_type& srcGraph = src->graph_;
+    const size_t blockSize = static_cast<size_t> (src->getBlockSize ());
+    const size_type numExportLIDs = exportLIDs.size ();
+
+    if (numExportLIDs != numPacketsPerLID.size ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << "packAndPrepare: exportLIDs.size() = " << numExportLIDs
+          << " != numPacketsPerLID.size() = " << numPacketsPerLID.size ()
+          << "." << endl;
+      return;
+    }
+
+    // Graphs and matrices are allowed to have a variable number of
+    // entries per row.  We could test whether all rows have the same
+    // number of entries, but DistObject can only use this
+    // optimization if all rows on _all_ processes have the same
+    // number of entries.  Rather than do the all-reduce necessary to
+    // test for this unlikely case, we tell DistObject (by setting
+    // constantNumPackets to zero) to assume that different rows may
+    // have different numbers of entries.
+    constantNumPackets = 0;
+
+    // Compute the number of bytes ("packets") per row to pack.  While
+    // we're at it, compute the total # of block entries to send, and
+    // the max # of block entries in any of the rows we're sending.
+    size_t totalNumBytes = 0;
+    size_t totalNumEntries = 0;
+    size_t maxRowLength = 0;
+    for (size_type i = 0; i < numExportLIDs; ++i) {
+      const LO lclRow = exportLIDs[i];
+      size_t numEnt = srcGraph.getNumEntriesInLocalRow (lclRow);
+      // If any given LIDs are invalid, the above might return either
+      // zero or the invalid size_t value.  If the former, we have no
+      // way to tell, but that's OK; it just means the calling process
+      // won't pack anything (it has nothing to pack anyway).  If the
+      // latter, we replace it with zero (that row is not owned by the
+      // calling process, so it has no entries to pack).
+      if (numEnt == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        numEnt = 0;
+      }
+      const size_t numScalarEnt = numEnt * blockSize * blockSize;
+
+      // The 'if' branch implicitly assumes that packRowCount() returns
+      // zero if numEnt == 0.
+      size_t numBytesPerValue = 0;
+      if (numEnt > 0) {
+        // Get a locally indexed view of the current row's data.  If
+        // the current row has > 0 entries, we need an entry in order
+        // to figure out the byte count of the packed row.  (We really
+        // only need it if ST's size is determined at run time.)
+        Scalar* valsRaw = NULL;
+        const LO* lidsRaw = NULL;
+        LO actualNumEnt = 0;
+        const LO errCode =
+          src->getLocalRowView (lclRow, lidsRaw, valsRaw, actualNumEnt);
+
+        if (numEnt != static_cast<size_t> (actualNumEnt)) {
+          std::ostream& err = this->markLocalErrorAndGetStream ();
+          err << "packAndPrepare: Local row " << i << " claims to have " <<
+            numEnt << "entry/ies, but the View returned by getLocalRowView() "
+            "has " << actualNumEnt << " entry/ies.  This should never happen.  "
+            "Please report this bug to the Tpetra developers." << endl;
+          return;
+        }
+        if (errCode == Teuchos::OrdinalTraits<LO>::invalid ()) {
+          std::ostream& err = this->markLocalErrorAndGetStream ();
+          err << "packAndPrepare: Local row " << i << " is not in the row Map "
+            "of the source object on the calling process." << endl;
+          return;
+        }
+
+        const ST* valsRawST =
+          const_cast<const ST*> (reinterpret_cast<ST*> (valsRaw));
+        View<const ST*, HES, MemoryUnmanaged> vals (valsRawST, numScalarEnt);
+
+        // NOTE (mfh 07 Feb 2015) Since we're using the host memory
+        // space here for now, this doesn't assume UVM.  That may change
+        // in the future, if we ever start packing on the device.
+        numBytesPerValue = PackTraits<ST, HES>::packValueCount (vals(0));
+      }
+
+      const size_t numBytes =
+        packRowCount<LO, GO, HES> (numEnt, numBytesPerValue, blockSize);
+      numPacketsPerLID[i] = numBytes;
+      totalNumBytes += numBytes;
+      totalNumEntries += numEnt;
+      maxRowLength = std::max (maxRowLength, numEnt);
+    }
+
+    if (debug) {
+      const int myRank = graph_.getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": packAndPrepare: totalNumBytes = "
+         << totalNumBytes << endl;
+      std::cerr << os.str ();
+    }
+
+    // We use a "struct of arrays" approach to packing each row's
+    // entries.  All the column indices (as global indices) go first,
+    // then all their owning process ranks, and then the values.
+    exports.resize (totalNumBytes);
+    if (totalNumEntries > 0) {
+      View<char*, HES, MemoryUnmanaged> exportsK (exports.getRawPtr (),
+                                                  totalNumBytes);
+
+      // Current position (in bytes) in the 'exports' output array.
+      size_t offset = 0;
+
+      // For each block row of the matrix owned by the calling
+      // process, pack that block row's column indices and values into
+      // the exports array.
+
+      // Source matrix's column Map.  We verified in checkSizes() that
+      // the column Map exists (is not null).
+      const map_type& srcColMap = * (srcGraph.getColMap ());
+
+      // Temporary buffer for global column indices.
+      View<GO*, HES> gblColInds;
+      {
+        GO gid = 0;
+        gblColInds = PackTraits<GO, HES>::allocateArray (gid, maxRowLength, "gids");
+      }
+
+      // Pack the data for each row to send, into the 'exports' buffer.
+      for (size_type i = 0; i < numExportLIDs; ++i) {
+        const LO lclRowInd = exportLIDs[i];
+        const LO* lclColIndsRaw;
+        Scalar* valsRaw;
+        LO numEntLO;
+        // It's OK to ignore the return value, since if the calling
+        // process doesn't own that local row, then the number of
+        // entries in that row on the calling process is zero.
+        (void) src->getLocalRowView (lclRowInd, lclColIndsRaw, valsRaw, numEntLO);
+        const size_t numEnt = static_cast<size_t> (numEntLO);
+        const size_t numScalarEnt = numEnt * blockSize * blockSize;
+        View<const LO*, HES, MemoryUnmanaged> lclColInds (lclColIndsRaw, numEnt);
+        const ST* valsRawST = const_cast<const ST*> (reinterpret_cast<ST*> (valsRaw));
+        View<const ST*, HES, MemoryUnmanaged> vals (valsRawST, numScalarEnt);
+
+        // NOTE (mfh 07 Feb 2015) Since we're using the host memory
+        // space here for now, this doesn't assume UVM.  That may
+        // change in the future, if we ever start packing on device.
+        const size_t numBytesPerValue = numEnt == 0 ?
+          static_cast<size_t> (0) :
+          PackTraits<ST, HES>::packValueCount (vals(0));
+
+        // Convert column indices from local to global.
+        for (size_t j = 0; j < numEnt; ++j) {
+          gblColInds(j) = srcColMap.getGlobalElement (lclColInds(j));
+        }
+
+        // Copy the row's data into the current spot in the exports array.
+        const size_t numBytes =
+          packRowForBlockCrs<ST, LO, GO, HES> (exportsK, offset, numEnt, gblColInds,
+                                               vals, numBytesPerValue, blockSize);
+        // Keep track of how many bytes we packed.
+        offset += numBytes;
+      } // for each LID (of a row) to send
+
+      if (offset != totalNumBytes) {
+        std::ostream& err = this->markLocalErrorAndGetStream ();
+        err << "packAndPreapre: At end of method, the final offset (in bytes) "
+            << offset << " does not equal the total number of bytes packed "
+            << totalNumBytes << ".  "
+            << "Please report this bug to the Tpetra developers." << endl;
+        return;
+      }
+    } // if totalNumEntries > 0
+
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      const bool lclSuccess = ! (* (this->localError_));
+      os << "*** Proc " << myRank << ": packAndPrepare "
+         << (lclSuccess ? "succeeded" : "FAILED")
+         << " (totalNumEntries = " << totalNumEntries << ") ***" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+#endif
+
+#if defined(TPETRA_BLOCKCRS_USE_NEW_INTERFACE)
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -3190,16 +3821,14 @@ public:
       std::cerr << os.str ();
     }
 
-    if (importLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> importLIDsTemp = importLIDs;
-      importLIDsTemp.sync_host();
-    }
-    const auto importLIDsHost = importLIDs.view_host();
+    TEUCHOS_TEST_FOR_EXCEPTION(importLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::unpackAndCombineNew : "
+                               "importLIDs is read-only and host buffer must be up-to-date.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numPacketsPerLID.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::unpackAndCombineNew : "
+                               "numPacketsPerLID is read-only and host buffer must be up-to-date.");
 
-    if (numPacketsPerLID.need_sync_host()) {
-      Kokkos::DualView<const size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
-      numPacketsPerLIDTemp.sync_host();
-    }
+    const auto importLIDsHost = importLIDs.view_host();
     const auto numPacketsPerLIDHost = numPacketsPerLID.view_host();
 
     Kokkos::View<size_t*,host_exec> offset("offset", numImportLIDs+1);
@@ -3340,7 +3969,250 @@ public:
       std::cerr << os.str ();
     }
   }
+#else
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
+                    const Teuchos::ArrayView<const packet_type>& imports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t /* constantNumPackets */, // not worthwhile to use this
+                    ::Tpetra::Distributor& /* distor */,
+                    ::Tpetra::CombineMode CM)
+  {
+    using std::endl;
+    using ::Tpetra::Details::PackTraits;
+    using Kokkos::MemoryUnmanaged;
+    using Kokkos::subview;
+    using Kokkos::View;
+    typedef typename ::Tpetra::MultiVector<Scalar, LO, GO, Node>::impl_scalar_type ST;
+    typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+    typedef std::pair<typename View<int*, HES>::size_type,
+      typename View<int*, HES>::size_type> pair_type;
+    typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
+    typedef View<LO*, HES, MemoryUnmanaged> lids_out_type;
+    typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
+    typedef typename PackTraits<GO, HES>::input_buffer_type input_buffer_type;
+    const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::unpackAndCombine: ";
+    const bool debug = true;
 
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      os << "Proc " << myRank << ": unpackAndCombine" << endl;
+      os << " imports size = " << imports.size() << endl;
+      if (imports.size() > 0) {
+        int *ptr = (int*)imports.getRawPtr() ;
+        os << "imports first one = " << *ptr << "\n";
+      }
+      std::cerr << os.str ();
+    }
+
+    // It should not cause deadlock to return on error in this method,
+    // since this method does not communicate.
+
+    if (* (this->localError_)) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "The target object of the Import or Export is "
+        "already in an error state." << endl;
+      return;
+    }
+    if (importLIDs.size () != numPacketsPerLID.size ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "importLIDs.size() = " << importLIDs.size () << " != "
+        "numPacketsPerLID.size() = " << numPacketsPerLID.size () << "." << endl;
+      return;
+    }
+    if (CM != ADD && CM != INSERT && CM != REPLACE && CM != ABSMAX && CM != ZERO) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "Invalid CombineMode value " << CM << ".  Valid "
+          << "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO."
+          << endl;
+      return;
+    }
+
+    // Target matrix's column Map.  Use to convert the global column
+    // indices in the receive buffer to local indices.  We verified in
+    // checkSizes() that the column Map exists (is not null).
+    const map_type& tgtColMap = * (this->graph_.getColMap ());
+
+    const size_type numImportLIDs = importLIDs.size ();
+    if (CM == ZERO || numImportLIDs == 0) {
+      if (debug) {
+        std::ostringstream os;
+        const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+        os << "Proc " << myRank << ": unpackAndCombine: Nothing to do" << endl;
+        std::cerr << os.str ();
+      }
+      return; // nothing to do; no need to combine entries
+    }
+
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      os << "Proc " << myRank << ": unpackAndCombine: Getting ready" << endl;
+      std::cerr << os.str ();
+    }
+
+    input_buffer_type importsK (imports.getRawPtr (), imports.size ());
+    const size_t blockSize = this->getBlockSize ();
+    const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
+    const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
+
+    // Determine the number of bytes in a Scalar instance.
+    size_t numBytesPerValue;
+
+    // mfh 19 Sep 2017: Only Stokhos has Scalar types with run-time
+    // size.  For all of those types, any one allocated instance has
+    // the same size as any other allocated instance.  Thus, it
+    // suffices to find some allocated instance as a representative
+    // value.
+    if (this->val_.h_view.extent (0) != 0) {
+      const ST& val = this->val_.h_view[0];
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
+    }
+    else {
+      // FIXME (mfh 19 Sep 2017): I don't have any values on my
+      // process, so I don't know how big the value should be, if it's
+      // run-time-sized.  The best I can do is use a default-allocated
+      // Scalar instance's size.  If we ever want to fix this, then
+      // each sending process should pack the run-time size.  This is
+      // only necessary if the size is not a compile-time constant.
+      Scalar val;
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
+    }
+
+    // Temporary space to cache incoming global column indices and
+    // values.  Column indices come in as global indices, in case the
+    // source object's column Map differs from the target object's
+    // (this's) column Map.
+    View<GO*, HES> gblColInds;
+    View<LO*, HES> lclColInds;
+    View<ST*, HES> vals;
+    {
+      GO gid = 0;
+      LO lid = 0;
+      // FIXME (mfh 17 Feb 2015) What do I do about Scalar types with
+      // run-time size?  We already assume that all entries in both
+      // the source and target matrices have the same size.  If the
+      // calling process owns at least one entry in either matrix, we
+      // can use that entry to set the size.  However, it is possible
+      // that the calling process owns no entries.  In that case,
+      // we're in trouble.  One way to fix this would be for each
+      // row's data to contain the run-time size.  This is only
+      // necessary if the size is not a compile-time constant.
+      Scalar val;
+      gblColInds = PackTraits<GO, HES>::allocateArray (gid, maxRowNumEnt, "gids");
+      lclColInds = PackTraits<LO, HES>::allocateArray (lid, maxRowNumEnt, "lids");
+      vals = PackTraits<ST, HES>::allocateArray (val, maxRowNumScalarEnt, "vals");
+    }
+
+    size_t offset = 0;
+    bool errorDuringUnpack = false;
+    for (size_type i = 0; i < numImportLIDs; ++i) {
+      const size_t numBytes = numPacketsPerLID[i];
+      if (numBytes == 0) {
+        continue; // empty buffer for that row means that the row is empty
+      }
+      const size_t numEnt =
+        unpackRowCount<ST, LO, GO, HES> (importsK, offset, numBytes,
+                                         numBytesPerValue);
+      if (numEnt > maxRowNumEnt) {
+        errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
+        std::ostream& err = this->markLocalErrorAndGetStream ();
+        err << prefix << "At i = " << i << ", numEnt = " << numEnt
+            << " > maxRowNumEnt = " << maxRowNumEnt << endl;
+#endif // HAVE_TPETRA_DEBUG
+        continue;
+      }
+
+      const size_t numScalarEnt = numEnt * blockSize * blockSize;
+      const LO lclRow = importLIDs[i];
+
+      gids_out_type gidsOut = subview (gblColInds, pair_type (0, numEnt));
+      vals_out_type valsOut = subview (vals, pair_type (0, numScalarEnt));
+
+      const size_t numBytesOut =
+        unpackRowForBlockCrs<ST, LO, GO, HES> (gidsOut, valsOut, importsK,
+                                               offset, numBytes, numEnt,
+                                               numBytesPerValue, blockSize);
+      if (numBytes != numBytesOut) {
+        errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
+        std::ostream& err = this->markLocalErrorAndGetStream ();
+        err << prefix << "At i = " << i << ", numBytes = " << numBytes
+            << " != numBytesOut = " << numBytesOut << ".";
+#endif // HAVE_TPETRA_DEBUG
+        continue;
+      }
+
+      // Convert incoming global indices to local indices.
+      lids_out_type lidsOut = subview (lclColInds, pair_type (0, numEnt));
+      for (size_t k = 0; k < numEnt; ++k) {
+        lidsOut(k) = tgtColMap.getLocalElement (gidsOut(k));
+        if (lidsOut(k) == Teuchos::OrdinalTraits<LO>::invalid ()) {
+          errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
+          std::ostream& err = this->markLocalErrorAndGetStream ();
+          err << prefix << "At i = " << i << ", GID " << gidsOut(k)
+              << " is not owned by the calling process.";
+#endif // HAVE_TPETRA_DEBUG
+          continue;
+        }
+      }
+
+      // Combine the incoming data with the matrix's current data.
+      LO numCombd = 0;
+      const LO* const lidsRaw = const_cast<const LO*> (lidsOut.data ());
+      const Scalar* const valsRaw =
+        reinterpret_cast<const Scalar*> (const_cast<const ST*> (valsOut.data ()));
+      if (CM == ADD) {
+        numCombd = this->sumIntoLocalValues (lclRow, lidsRaw, valsRaw, numEnt);
+      } else if (CM == INSERT || CM == REPLACE) {
+        numCombd = this->replaceLocalValues (lclRow, lidsRaw, valsRaw, numEnt);
+      } else if (CM == ABSMAX) {
+        numCombd = this->absMaxLocalValues (lclRow, lidsRaw, valsRaw, numEnt);
+      }
+
+      if (static_cast<LO> (numEnt) != numCombd) {
+        errorDuringUnpack = true;
+#ifdef HAVE_TPETRA_DEBUG
+        std::ostream& err = this->markLocalErrorAndGetStream ();
+        err << prefix << "At i = " << i << ", numEnt = " << numEnt
+            << " != numCombd = " << numCombd << ".";
+#endif // HAVE_TPETRA_DEBUG
+        continue;
+      }
+
+      // Don't update offset until current LID has succeeded.
+      offset += numBytes;
+    } // for each import LID i
+
+    if (errorDuringUnpack) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "Unpacking failed.";
+#ifndef HAVE_TPETRA_DEBUG
+      err << "  Please run again with a debug build to get more verbose "
+        "diagnostic output.";
+#endif // ! HAVE_TPETRA_DEBUG
+      err << endl;
+    }
+
+    if (debug) {
+      std::ostringstream os;
+      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
+      const bool lclSuccess = ! (* (this->localError_));
+      os << "*** Proc " << myRank << ": unpackAndCombine "
+         << (lclSuccess ? "succeeded" : "FAILED")
+         << " ***" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+
+#endif
 
   template<class Scalar, class LO, class GO, class Node>
   std::string

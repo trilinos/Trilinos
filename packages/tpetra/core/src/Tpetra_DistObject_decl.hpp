@@ -824,6 +824,9 @@ namespace Tpetra {
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& /* exportLIDs */,
                        Kokkos::DualView<packet_type*, buffer_device_type>& /* exports */,
                        const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                       /// Kyungjoo: numPacketsPerLID is better remove const. its content is modified and 
+                       ///     a modify flag should be raised. It is also possible to use 
+                       ///     const_cast in the function. IMO, remove const is a more clean way.
                        size_t& /* constantNumPackets */,
                        Distributor& /* distor */)
     {}
