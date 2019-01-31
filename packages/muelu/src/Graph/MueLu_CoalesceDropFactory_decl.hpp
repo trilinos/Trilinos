@@ -137,9 +137,8 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-#if 0
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::magnitude_type,LO,GO,NO> RealValuedMultiVector;
-#endif
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::magnitudeType,LO,GO,NO> RealValuedMultiVector;
+
     //! @name Constructors/Destructors.
     //@{
 
@@ -175,16 +174,11 @@ namespace MueLu {
     void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
 
-    // Code to merge distance laplacian / material distance codepaths
-    // The "error on sames" flag will error out if the same "coordinate" is found on two nodes in the same row.
-    // You do not want to set this to true for the material distance.
-    template<typename CoordFactoryType, class CoordinatesType>
-    void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
-
     // Routines to support distance laplacian aggregation
-#if 0
-void Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<RealValuedMultiVector> & Coords, RCP<RealValuedMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const;
-#endif
+    void Distance_DroppingAlgorithm(Level & currentLevel,RCP<RealValuedMultiVector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
+    void Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<RealValuedMultiVector> & Coords, RCP<RealValuedMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const;
+
 
     // Routines to support material aggregation
     void Material_DroppingAlgorithm(Level & currentLevel,RCP<Vector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
@@ -195,7 +189,7 @@ void Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const I
 
     // This is a "double dropping" version of the DistanceDropping
     template<typename Coord1FactoryType, class Coordinates1Type, typename Coord2FactoryType, class Coordinates2Type>
-    void DoubleDistanceDropping(Level & currentLevel,RCP<Coordinates1Type> & Coords1, RCP<Coordinates2Type> & Coords2, bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+    void Double_DroppingAlgorithm(Level & currentLevel,RCP<Coordinates1Type> & Coords1, RCP<Coordinates2Type> & Coords2, bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
 
     template<class DiagonalType, class CoordinatesType>
