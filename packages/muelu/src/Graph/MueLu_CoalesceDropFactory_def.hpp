@@ -191,27 +191,9 @@ namespace MueLu {
         // Therefore, it is sufficient to check only threshold
         if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
-          RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-          // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
           boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
-          graph->SetBoundaryNodeMap(boundaryNodes);
-          numTotal = A->getNodeNumEntries();
-
-          if (GetVerbLevel() & Statistics1) {
-            GO numLocalBoundaryNodes  = 0;
-            GO numGlobalBoundaryNodes = 0;
-            for (LO i = 0; i < boundaryNodes.size(); ++i)
-              if (boundaryNodes[i])
-                numLocalBoundaryNodes++;
-            RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-            MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
-          }
-
-          Set(currentLevel, "DofsPerNode", 1);
-          Set(currentLevel, "Graph", graph);
-
+          ScalarNoDropping(currentLevel,*A, boundaryNodes, numTotal) const;
         } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) ||
                     (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
@@ -536,7 +518,7 @@ namespace MueLu {
       } else if (algo == "material distance") {
         // The distance laplacian, but on a 1-D "material" vector
         RCP<Vector> MaterialCoords = Get< RCP<Vector > >(currentLevel, "Material Coordinates");
-        MaterialDistanceDropping<Xpetra::VectorFactory<SC,LO,GO,NO> >(currentLevel,MaterialCoords,false,numTotal,numDropped);
+        Material_DroppingAlgorithm(currentLevel,MaterialCoords,false,numTotal,numDropped);
 
       } else if (algo == "distance and material") {
         // Both distance laplacian and material distance
@@ -1174,26 +1156,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
 
     if ( (blkSize == 1) && (threshold == STS::zero()) ) {
       // Trivial case: scalar problem, no dropping. Can return original graph
-      RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-      graph->SetBoundaryNodeMap(pointBoundaryNodes);
-      graphType="unamalgamated";
-      numTotal = A->getNodeNumEntries();
-      
-      if (GetVerbLevel() & Statistics1) {
-        GO numLocalBoundaryNodes  = 0;
-        GO numGlobalBoundaryNodes = 0;
-        for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
-          if (pointBoundaryNodes[i])
-            numLocalBoundaryNodes++;
-        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
-      }
-      
-      Set(currentLevel, "DofsPerNode", blkSize);
-      Set(currentLevel, "Graph",       graph);
-          
-    } else {
+      ScalarNoDropping(currentLevel,*A,pointBoundaryNodes,numTotal);
+    }  {
       // ap: We make quite a few assumptions here; general case may be a lot different,
       // but much much harder to implement. We assume that:
       //  1) all maps are standard maps, not strided maps
@@ -1205,27 +1169,10 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
       
       // [*1*]: see [*0*]
       
-      // Check that the number of local coordinates is consistent with the #rows in A
-      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
-                                 "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
-      
       const RCP<const Map> colMap = A->getColMap();
       RCP<const Map> uniqueMap, nonUniqueMap;
       Array<LO>      colTranslation;
-      if (blkSize == 1) {
-        uniqueMap    = A->getRowMap();
-        nonUniqueMap = A->getColMap();
-        graphType="unamalgamated";
-        
-      } else {
-        uniqueMap    = Coords->getMap();
-        TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
-                                   "Different index bases for matrix and coordinates");
-        
-        AmalgamationFactory::AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, colTranslation);
-        
-        graphType = "amalgamated";
-      }
+      AmalgamateIfNeeded(*A,Coords,uniqueMap,nonUniqueMap,colTranslation,graphType);
       LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
       RCP<CoordinatesType> ghostedCoords;
@@ -1326,9 +1273,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DistanceDro
 
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <typename CoordFactoryType, class CoordinatesType>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MaterialDistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
-    typedef typename CoordinatesType::scalar_type scalar_type;
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_DroppingAlgorithm(Level & currentLevel,RCP<Vector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
+    typedef typename Vector::scalar_type scalar_type;
     typedef Teuchos::ScalarTraits<SC> STS;
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -1351,67 +1297,21 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MaterialDis
     ArrayRCP<const bool > pointBoundaryNodes;
     pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);    
 
-    if ( (blkSize == 1) && (threshold == STS::zero()) ) {
+    if ( (blkSize == 1) && (threshold == STS::zero()) ) {     
       // Trivial case: scalar problem, no dropping. Can return original graph
-      RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-      graph->SetBoundaryNodeMap(pointBoundaryNodes);
-      graphType="unamalgamated";
-      numTotal = A->getNodeNumEntries();
-      
-      if (GetVerbLevel() & Statistics1) {
-        GO numLocalBoundaryNodes  = 0;
-        GO numGlobalBoundaryNodes = 0;
-        for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
-          if (pointBoundaryNodes[i])
-            numLocalBoundaryNodes++;
-        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
-      }
-      
-      Set(currentLevel, "DofsPerNode", blkSize);
-      Set(currentLevel, "Graph",       graph);
-          
+      ScalarNoDropping(currentLevel,*A,pointBoundaryNodes,numTotal);
     } else {
-      // ap: We make quite a few assumptions here; general case may be a lot different,
-      // but much much harder to implement. We assume that:
-      //  1) all maps are standard maps, not strided maps
-      //  2) global indices of dofs in A are related to dofs in coordinates in a simple arithmetic
-      //     way: rows i*blkSize, i*blkSize+1, ..., i*blkSize + (blkSize-1) correspond to node i
-      //
-      // NOTE: Potentially, some of the code below could be simplified with UnAmalgamationInfo,
-      // but as I totally don't understand that code, here is my solution
-      
-      // [*1*]: see [*0*]
-      
-      // Check that the number of local coordinates is consistent with the #rows in A
-      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
-                                 "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
-      
+      // We either need to amalgamate, drop or both
       const RCP<const Map> colMap = A->getColMap();
       RCP<const Map> uniqueMap, nonUniqueMap;
       Array<LO>      colTranslation;
-      if (blkSize == 1) {
-        uniqueMap    = A->getRowMap();
-        nonUniqueMap = A->getColMap();
-        graphType="unamalgamated";
-        
-      } else {
-        uniqueMap    = Coords->getMap();
-        TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != indexBase, Exceptions::Incompatible,
-                                   "Different index bases for matrix and coordinates");
-        
-        AmalgamationFactory::AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, colTranslation);
-        
-        graphType = "amalgamated";
-      }
+      AmalgamateIfNeeded(*A,Coords,uniqueMap,nonUniqueMap,colTranslation,graphType);
+
       LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
-      RCP<CoordinatesType> ghostedCoords;
-      RCP<Vector>                ghostedLaplDiag;
-      Teuchos::ArrayRCP<SC>      ghostedLaplDiagData;
+      RCP<Vector> ghostedCoords;
       if (threshold != STS::zero()) {
-        // Get ghost coordinates
+        // FIXME:  We should be able to amalgamate A's importer rather than constructing one ex nihilo.
         RCP<const Import> importer;
         {
           SubFactoryMonitor m1(*this, "Import construction", currentLevel);
@@ -1426,25 +1326,17 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MaterialDis
           }
         } //subtimer
 
-        // Build a ghosted vector or multivector, depending on the CoordinatesType
-        ghostedCoords = CoordFactoryType::Build(nonUniqueMap, Coords->getNumVectors());
-
-        {
-          SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
-          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
-
-
-        } //subtimer
-
-        // The material dropping does not need a diagonal... just the coords
-        
+        // Generated the ghosted version of the coordinates array
+        // NOTE:  As material dropping is based on log absolute distance, it does not need a "diagonal"        
+        Material_GenerateGhosts(currentLevel,importer,Coords,ghostedCoords);
+       
       } else {
         GetOStream(Runtime0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
       }
 
       // Make the drop function as a lambda
-      typedef bool (*DropFunctionType) (Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> >&, Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
-      DropFunctionType MaterialDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
+      typedef bool (*DropFunctionType) (Teuchos::Array<Teuchos::ArrayRCP<const typename Vector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
+      DropFunctionType MaterialDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename Vector::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename Vector::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
 
         return STS::magnitude( log10(coordData[0][row]) - log10(coordData[0][col])) > STS::magnitude(thresh);
       };
@@ -1603,10 +1495,80 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PostAmalgam
                              "Coordinates have been duplicated for adjacent nodes "<< number_of_same_coords << " times.");
 }//end PostAmalgamationDropping  
   
+// ***********************************************************************  
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_GenerateGhosts(Level & currentLevel, RCP<const Import> importer, RCP<Vector> & Coords, RCP<Vector> & ghostedCoords) const {
+  // Build a ghosted vector or multivector, depending on the CoordinatesType
+  ghostedCoords = VectorFactory::Build(importer->getTargetMap(), Coords->getNumVectors());
   
+  {
+    SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
+    ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);        
+  } //subtimer
+}
 
+// ***********************************************************************
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ScalarNoDropping(Level & currentLevel, const Matrix& A, ArrayRCP<const bool > & pointBoundaryNodes, GlobalOrdinal & numTotal) const {
+  typedef Teuchos::ScalarTraits<SC> STS;
+  LO blkSize = A.GetFixedBlockSize();
+  if (blkSize == 1 ) {
+    // Trivial case: scalar problem, no dropping. Can return original graph
+    RCP<GraphBase> graph = rcp(new Graph(A.getCrsGraph(), "graph of A"));
+    graph->SetBoundaryNodeMap(pointBoundaryNodes);
+    //    graphType="unamalgamated";
+    numTotal = A.getNodeNumEntries();
+    
+    if (GetVerbLevel() & Statistics1) {
+      GO numLocalBoundaryNodes  = 0;
+      GO numGlobalBoundaryNodes = 0;
+      for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
+        if (pointBoundaryNodes[i])
+          numLocalBoundaryNodes++;
+        RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+    }
+    
+    Set(currentLevel, "DofsPerNode", blkSize);
+    Set(currentLevel, "Graph",       graph);    
+  } 
+}
 
-
+  // ***********************************************************************
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class CoordinatesType>
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateIfNeeded(const Matrix& A, const RCP<CoordinatesType> & Coords, RCP<const Map> & uniqueMap, RCP<const Map> & nonUniqueMap, Array<LO> & colTranslation, std::string & graphType) const {
+  // ap: We make quite a few assumptions here; general case may be a lot different,
+  // but much much harder to implement. We assume that:
+  //  1) all maps are standard maps, not strided maps
+  //  2) global indices of dofs in A are related to dofs in coordinates in a simple arithmetic
+  //     way: rows i*blkSize, i*blkSize+1, ..., i*blkSize + (blkSize-1) correspond to node i
+  //
+  // NOTE: Potentially, some of the code below could be simplified with UnAmalgamationInfo,
+  // but as I totally don't understand that code, here is my solution
+  
+  // Check that the number of local coordinates is consistent with the #rows in A
+  LO blkSize = A.GetFixedBlockSize();
+  TEUCHOS_TEST_FOR_EXCEPTION(A.getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
+                             "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A.getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
+  
+  const RCP<const Map> colMap = A.getColMap();
+  if (blkSize == 1) {
+    uniqueMap    = A.getRowMap();
+    nonUniqueMap = A.getColMap();
+    graphType="unamalgamated";
+    
+  } else {
+    uniqueMap    = Coords->getMap();
+    TEUCHOS_TEST_FOR_EXCEPTION(uniqueMap->getIndexBase() != A.getRowMap()->getIndexBase(), Exceptions::Incompatible,
+                               "Different index bases for matrix and coordinates");
+    
+    AmalgamationFactory::AmalgamateMap(*(A.getColMap()), A, nonUniqueMap, colTranslation);
+    
+    graphType = "amalgamated";
+  }
+}
 
 } //namespace MueLu
 
