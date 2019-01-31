@@ -328,15 +328,13 @@ namespace FROSch {
             DDInterface_->divideUnconnectedEntities(this->K_);
         }
         
-
         DDInterface_->sortVerticesEdgesFaces(nodeList);
         
         EntitySetPtr vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         
         interface = DDInterface_->getInterface();
         interior = DDInterface_->getInterior();
-
-        
+       
         // Check for interface
         if (interface->getNumEntities()==0) {
             this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
@@ -353,6 +351,7 @@ namespace FROSch {
             }
 
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            
             if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
                 
                 ////////////////////////////////
@@ -385,8 +384,6 @@ namespace FROSch {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdges->getEntityMap(),rotations[i]);
                         }
                     }
-                   
-
                 }
                 // StraightEdges
                 if (useStraightEdgeTranslations || useStraightEdgeRotations) {
@@ -406,7 +403,6 @@ namespace FROSch {
                         }
                     }
                 }
-
                 // Edges
                 if (useEdgeTranslations || useEdgeRotations) {
                     edges = DDInterface_->getEdges();
@@ -425,7 +421,6 @@ namespace FROSch {
                         }
                     }
                 }
-
                 // Faces
                 if (useFaceTranslations || useFaceRotations) {
                     faces = DDInterface_->getFaces();
@@ -445,7 +440,6 @@ namespace FROSch {
                     }
                 }
 
-                
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
                 
                 // Count entities
@@ -491,20 +485,29 @@ namespace FROSch {
                     numEntitiesGlobal[4] = -1;
                 }
                 
+              
                 for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                     if (numEntitiesGlobal[i]<0) {
                         numEntitiesGlobal[i] = 0;
                     }
                 }
-                
-                if (this->Verbose_) {
+                FROSCH_ASSERT(dimension==2 && numEntitiesGlobal[3]==0,"dimension==2 && global number of faces (edges)!=0");
+            if (this->Verbose_) {
+                    
                     std::cout << "\n\
                     --------------------------------------------\n\
-                    # vertices:                 --- " << numEntitiesGlobal[0] << "\n\
-                    # shortEdges:               --- " << numEntitiesGlobal[1] << "\n\
-                    # straightEdges:            --- " << numEntitiesGlobal[2] << "\n\
-                    # edges:                    --- " << numEntitiesGlobal[3] << "\n\
-                    # faces (edges in 2D):      --- " << numEntitiesGlobal[4] << "\n\
+                    # vertices:       --- " << numEntitiesGlobal[0] << "\n\
+                    # shortEdges:     --- " << numEntitiesGlobal[1] << "\n\
+                    # straightEdges:  --- " << numEntitiesGlobal[2] << "\n";
+                    if (dimension==2) {
+                        std::cout << "\
+                        # edges:          --- " << numEntitiesGlobal[4] << "\n";
+                    } else if (dimension==3) {
+                        std::cout << "\
+                        # edges:          --- " << numEntitiesGlobal[3] << "\n\
+                        # faces:          --- " << numEntitiesGlobal[4] << "\n";
+                    }
+                    std::cout << "\
                     --------------------------------------------\n\
                     Coarse space:\n\
                     --------------------------------------------\n\

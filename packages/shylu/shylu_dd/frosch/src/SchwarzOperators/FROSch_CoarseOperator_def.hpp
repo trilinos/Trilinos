@@ -116,7 +116,6 @@ namespace FROSch {
                                             SC alpha,
                                             SC beta) const
     {
-        if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1\n";
         static int i = 0;
         if (this->IsComputed_) {
             MultiVectorPtr xTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
@@ -125,36 +124,16 @@ namespace FROSch {
             if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
                 this->K_->apply(x,*xTmp,mode,1.0,0.0);
             }
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.1\n";
             
             MultiVectorPtr xCoarseSolve = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],x.getNumVectors());
             MultiVectorPtr yCoarseSolve = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[GatheringMaps_.size()-1],y.getNumVectors());
-            this->MpiComm_->barrier();
-
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.2\n";
             applyPhiT(*xTmp,*xCoarseSolve);
-            this->MpiComm_->barrier();
-
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.2.1\n";
-
             applyCoarseSolve(*xCoarseSolve,*yCoarseSolve,mode);
-            this->MpiComm_->barrier();
-
-            
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.2.2\n";
-
             applyPhi(*yCoarseSolve,*xTmp);
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.2.3\n";
-
             if (!usePreconditionerOnly && mode != Teuchos::NO_TRANS) {
                 this->K_->apply(*xTmp,*xTmp,mode,1.0,0.0);
             }
-            this->MpiComm_->barrier();
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.3\n";
             y.update(alpha,*xTmp,beta);
-            this->MpiComm_->barrier();
-            if(this->MpiComm_->getRank()== 0) std::cout<<"Apply1.4\n";
-            
         } else {
             if (i==1) {
                 if (this->Verbose_) std::cout << "WARNING: CoarseOperator has not been computed yet => It will just act as the identity...\n";
@@ -162,8 +141,6 @@ namespace FROSch {
             }
             y.update(1.0,x,0.0);
         }
-        if(this->MpiComm_->getRank()== 0) std::cout<<"Apply2\n";
-
     }
     
     template<class SC,class LO,class GO,class NO>
@@ -173,22 +150,13 @@ namespace FROSch {
         MultiVectorPtr xCoarse = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSpace_->getBasisMap(),x.getNumVectors());
         
         Phi_->apply(x,*xCoarse,Teuchos::TRANS);
-            MultiVectorPtr xCoarseSolveTmp;
-        this->MpiComm_->barrier();
-        this->MpiComm_->barrier();
-
-        if(this->MpiComm_->getRank()== 0) std::cout<<"PhiT1\n";
+        
+        MultiVectorPtr xCoarseSolveTmp;
         for (UN j=0; j<GatheringMaps_.size(); j++) {
             xCoarseSolveTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],x.getNumVectors());
             xCoarseSolveTmp->doExport(*xCoarse,*CoarseSolveExporters_[j],Xpetra::ADD);
             xCoarse = xCoarseSolveTmp;
         }
-        this->MpiComm_->barrier();
-        this->MpiComm_->barrier();
-
-        
-        if(this->MpiComm_->getRank()== 0) std::cout<<"PhiT2\n";
-
         y = *xCoarseSolveTmp;
     }
     
@@ -198,27 +166,13 @@ namespace FROSch {
                                                        Teuchos::ETransp mode) const
     {
         MultiVectorPtr yTmp;
-        this->MpiComm_->barrier();
-        this->MpiComm_->barrier();
-        
-        
-        if(this->MpiComm_->getRank()== 0) std::cout<<"CST1\n";
         if (OnCoarseSolveComm_) {
             x.replaceMap(CoarseSolveMap_);
             yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
             CoarseSolver_->apply(x,*yTmp,mode);
-            CoarseSolveComm_->barrier();
-            
-            if(CoarseSolveComm_->getRank() == 0)std::cout<<" CST1.1\N";
-            
         } else {
             yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,x.getNumVectors());
         }
-        this->MpiComm_->barrier();
-        this->MpiComm_->barrier();
-        
-        
-        if(this->MpiComm_->getRank()== 0) std::cout<<"CS2\n";
         yTmp->replaceMap(GatheringMaps_[GatheringMaps_.size()-1]);
         y = *yTmp;
     }
@@ -301,6 +255,7 @@ namespace FROSch {
                 }
                 
                 CoarseMatrix_->fillComplete(CoarseSolveMap_,CoarseSolveMap_);
+                
                 CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,sublist(this->ParameterList_,"CoarseSolver")));
                 CoarseSolver_->initialize();
                 CoarseSolver_->compute();
@@ -381,7 +336,6 @@ namespace FROSch {
     {
         NumProcsCoarseSolve_ = DistributionList_->get("NumProcs",0);
         double fac = DistributionList_->get("Factor",1.0);
-        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
         // Redistribute Matrix
         if (NumProcsCoarseSolve_==0) {
@@ -444,6 +398,7 @@ namespace FROSch {
                 }
             }
             GatheringMaps_[gatheringSteps-1] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,numMyRows,0,this->MpiComm_);
+            //cout << *GatheringMaps_->at(gatheringSteps-1);
             
             //------------------------------------------------------------------------------------------------------------------------
             // Use a separate Communicator for the coarse problem
@@ -454,7 +409,7 @@ namespace FROSch {
             }
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,tmpCoarseMap->getNodeElementList(),0,CoarseSolveComm_);
-    
+            
             //Build RepeatedMap CoarseLevel------------------------------------------------------------------------------------
             //Repeated Map on first level needs to be correct--Build ElementNodeList
             if (DistributionList_->get("Use RepMap",true)){
@@ -530,6 +485,7 @@ namespace FROSch {
               }
             }
 //-----------------------------------------------------------------------------------------------------------------
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
         } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
             
             Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -564,9 +520,9 @@ namespace FROSch {
             }
             
             
-            CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             GOVec elementList(tmpCoarseMap->getNodeElementList());
-            CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(tmpCoarseMap->lib(),-1,elementList,0,CoarseSolveComm_);
+            CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
+            CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
             //Build RepeatedMap CoarseLevel------------------------------------------------------------------------------------
             if (DistributionList_->get("Use RepMap",true)){
                 if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
@@ -640,8 +596,9 @@ namespace FROSch {
                 }
                }
             }
-        }
-        else {
+        
+#endif
+    } else {
             FROSCH_ASSERT(false,"Distribution type not defined...");
         }
         if (this->Verbose_) {
