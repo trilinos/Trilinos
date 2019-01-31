@@ -294,7 +294,7 @@ namespace panzer
       using ScalarT = typename EvalT::ScalarT;
 
       /// Type for shared memory
-      using scratch_view = Kokkos::View<ScalarT* ,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+      using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
       /**
        *  \brief An `enum` determining the behavior of this `Evaluator`.
