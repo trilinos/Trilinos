@@ -185,18 +185,26 @@ namespace MueLu {
 
     void Material_GenerateGhosts(Level & currentLevel, RCP<const Import> importer, RCP<Vector> & Coords, RCP<Vector> & ghostedCoords) const;
 
-
-
     // This is a "double dropping" version of the DistanceDropping
-    template<typename Coord1FactoryType, class Coordinates1Type, typename Coord2FactoryType, class Coordinates2Type>
-    void Double_DroppingAlgorithm(Level & currentLevel,RCP<Coordinates1Type> & Coords1, RCP<Coordinates2Type> & Coords2, bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+    template<class CoordinatesType1, class CoordinatesType2>
+    void Double_DroppingAlgorithm(Level & currentLevel,RCP<CoordinatesType1> & Coords1, RCP<CoordinatesType2> & Coords2, bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
-
+    // Generic routines for applying the actual dropping
     template<class DiagonalType, class CoordinatesType>
     void PostAmalgamationDropping(Level & currentLevel,RCP<CoordinatesType> & ghostedCoords, RCP<DiagonalType> & ghostedDiagonal,
                                   RCP<const Map> & uniqueMap, RCP<const Map> & nonuniqueMap, Teuchos::Array<LocalOrdinal> & colTranslation,
                                   std::function<bool( Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> >&, Teuchos::ArrayRCP<const typename DiagonalType::scalar_type> &, LocalOrdinal,LocalOrdinal,Scalar)> DropFunction, 
                                   bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
+
+    template<class DiagonalType1, class CoordinatesType1, class DiagonalType2, class CoordinatesType2>
+    void PostAmalgamationDoubleDropping(Level & currentLevel,
+                                        RCP<CoordinatesType1> & ghostedCoords1, RCP<DiagonalType1> & ghostedDiagonal1,
+                                        RCP<CoordinatesType2> & ghostedCoords2, RCP<DiagonalType2> & ghostedDiagonal2,
+                                  RCP<const Map> & uniqueMap, RCP<const Map> & nonuniqueMap, Teuchos::Array<LocalOrdinal> & colTranslation,
+                                  std::function<bool( Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType1::scalar_type> >&, Teuchos::ArrayRCP<const typename DiagonalType1::scalar_type> &, LocalOrdinal,LocalOrdinal,Scalar)> DropFunction1, 
+                                  std::function<bool( Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType2::scalar_type> >&, Teuchos::ArrayRCP<const typename DiagonalType2::scalar_type> &, LocalOrdinal,LocalOrdinal,Scalar)> DropFunction2, 
+                                  bool error_on_sames[2], GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
 
     // Code to handle the scalar, zero threshold case
