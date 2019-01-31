@@ -179,8 +179,14 @@ namespace MueLu {
     template<typename CoordFactoryType, class CoordinatesType>
     void DistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
-    template<typename CoordFactoryType, class CoordinatesType>
-    void MaterialDistanceDropping(Level & currentLevel,RCP<CoordinatesType> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
+
+    // Routines to support material aggregation
+    void Material_DroppingAlgorithm(Level & currentLevel,RCP<Vector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+
+    void Material_GenerateGhosts(Level & currentLevel, RCP<const Import> importer, RCP<Vector> & Coords, RCP<Vector> & ghostedCoords) const;
+
+
 
     // This is a "double dropping" version of the DistanceDropping
     template<typename Coord1FactoryType, class Coordinates1Type, typename Coord2FactoryType, class Coordinates2Type>
@@ -193,6 +199,13 @@ namespace MueLu {
                                   std::function<bool( Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinatesType::scalar_type> >&, Teuchos::ArrayRCP<const typename DiagonalType::scalar_type> &, LocalOrdinal,LocalOrdinal,Scalar)> DropFunction, 
                                   bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
+
+    // Code to handle the scalar, zero threshold case
+    void ScalarNoDropping(Level & currentLevel, const Matrix& A, ArrayRCP<const bool > & pointBoundaryNodes, GlobalOrdinal & numTotal) const;
+
+    // Code to do the standard amalgamation (or not)
+    template <class CoordinatesType>
+    void AmalgamateIfNeeded(const Matrix& A, const RCP<CoordinatesType> & Coords, RCP<const Map> & uniqueMap, RCP<const Map> & nonUniqueMap, Array<LO> & colTranslation, std::string & graphType) const;
 
   }; //class CoalesceDropFactory
 
