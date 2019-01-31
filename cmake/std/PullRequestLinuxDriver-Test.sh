@@ -334,6 +334,29 @@ echo -e "Enabled packages:"
 cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
+parallel_level=29
+# these are aimed at keeping approximantly 1.7G per core so we don't bottleneck
+## weight 29
+## ascic113-trilinos 32/64  3.6 -j29 2.2
+## ascic114-trilinos 32/64  3.6 -j29 2.2
+## ascic115-trilinos 32/64  3.6 -j29 2.2
+## ascic141-trilinos 72/64  1.7 -j18 2.2
+## ascic142-trilinos 72/64  1.7 -j18 2.2
+## ascic143-trilinos 72/64  1.7 -j18 2.2
+## ascic144-trilinos 72/64  1.7 -j18 2.2
+## ascic158-trilinos 88/128 2.4 -j19 2.2
+## ascic166-trilinos 80/128 3.6 -j29 3.7
+## tr-test           32/64  3.6 -j29 2.2
+if [ "tr-test-0.novalocal" == "${NODE_NAME}" || \
+     "tr-test-1.novalocal" == "${NODE_NAME}" || \
+     "ascic113-trilinos " == "${NODE_NAME}" || \
+     "ascic114-trilinos" == "${NODE_NAME}" || \
+     "ascic115-trilinos" == "${NODE_NAME}" || \
+     "ascic166-trilinos" == "${NODE_NAME}" ]; then
+    parallel_level=29
+elif [ "ascic158-trilinos" == "${NODE_NAME}" ];then
+    parallel_level=19
+fi
 
 #This should be runnable from anywhere, but all the tests so far have been from the
 #same dir the simple_testing.cmake file was in.
@@ -365,7 +388,7 @@ ctest -S simple_testing.cmake \
     -Dskip_update_step=ON \
     -Ddashboard_model=Experimental \
     -Ddashboard_track="${CDASH_TRACK:?}" \
-    -DPARALLEL_LEVEL=18 \
+    -DPARALLEL_LEVEL=${parallel_level} \
     -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
     -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
     -Dpackage_enables=../packageEnables.cmake \
