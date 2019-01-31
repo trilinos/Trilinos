@@ -736,14 +736,9 @@ protected:
   //@{
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
-  #define TPETRA_BLOCKCRS_USE_NEW_INTERFACE
   //! Whether this class implements the old or new interface of DistObject.
   virtual bool useNewInterface () { 
-#if defined(TPETRA_BLOCKCRS_USE_NEW_INTERFACE)
     return true; 
-#else
-    return false;
-#endif
   }
 
   /// \typedef buffer_device_type
@@ -753,7 +748,6 @@ protected:
   using buffer_device_type = typename DistObject<Scalar, LO, GO,
                                                  Node>::buffer_device_type;
 
-#if defined(TPETRA_BLOCKCRS_USE_NEW_INTERFACE)
   virtual void
   copyAndPermuteNew (const SrcDistObject& sourceObj,
                      const size_t numSameIDs,
@@ -775,29 +769,6 @@ protected:
                        const size_t constantNumPackets,
                        Distributor& /* distor */,
                        const CombineMode combineMode);
-#else
-  virtual void
-  copyAndPermute (const ::Tpetra::SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
-
-  virtual void
-  packAndPrepare (const ::Tpetra::SrcDistObject& source,
-                  const Teuchos::ArrayView<const LO>& exportLIDs,
-                  Teuchos::Array<packet_type>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  ::Tpetra::Distributor& distor);
-
-  virtual void
-  unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-                    const Teuchos::ArrayView<const packet_type> &imports,
-                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
-                    ::Tpetra::Distributor& distor,
-                    ::Tpetra::CombineMode CM);
-#endif
   //@}
 
 private:
