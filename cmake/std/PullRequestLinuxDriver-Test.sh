@@ -334,28 +334,18 @@ echo -e "Enabled packages:"
 cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
-parallel_level=29
-# these are aimed at keeping approximantly 1.7G per core so we don't bottleneck
-## weight 29
-## ascic113-trilinos 32/64  3.6 -j29 2.2
-## ascic114-trilinos 32/64  3.6 -j29 2.2
-## ascic115-trilinos 32/64  3.6 -j29 2.2
-## ascic141-trilinos 72/64  1.7 -j18 2.2
-## ascic142-trilinos 72/64  1.7 -j18 2.2
-## ascic143-trilinos 72/64  1.7 -j18 2.2
-## ascic144-trilinos 72/64  1.7 -j18 2.2
-## ascic158-trilinos 88/128 2.4 -j19 2.2
-## ascic166-trilinos 80/128 3.6 -j29 3.7
-## tr-test           32/64  3.6 -j29 2.2
-if [ "tr-test-0.novalocal" == "${NODE_NAME}" || \
-     "tr-test-1.novalocal" == "${NODE_NAME}" || \
-     "ascic113-trilinos " == "${NODE_NAME}" || \
-     "ascic114-trilinos" == "${NODE_NAME}" || \
-     "ascic115-trilinos" == "${NODE_NAME}" || \
-     "ascic166-trilinos" == "${NODE_NAME}" ]; then
-    parallel_level=29
-elif [ "ascic158-trilinos" == "${NODE_NAME}" ];then
-    parallel_level=19
+weight=29
+n_cpu=$(lscpu | grep "^CPU(s):" | cut -d" " -f17)
+n_K=$(cat /proc/meminfo | grep MemTotal | cut -d" " -f8)
+let n_G=$n_K/1024000
+# this is aimed at keeping approximately 1.7G per core so we don't bottleneck
+## weight 29 - the next bit works because the shell is only doing integer arithmetic
+let n_jobs=${n_cpu}/${weight}
+# using bc to get floating point input and integer output
+parallel_level=$(echo "$n_G/( 1.7*$n_jobs )" | bc )
+
+if [ ${parallel_level} -gt ${weight} ]; then
+    parallel_level=${weight}
 fi
 
 #This should be runnable from anywhere, but all the tests so far have been from the
