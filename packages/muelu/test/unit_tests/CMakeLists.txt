@@ -224,7 +224,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       )
 
     TRIBITS_ADD_TEST(
-      UnitTests
+      UnitTests_Blocked
       NAME "UnitTestsBlockedEpetra"
       ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
