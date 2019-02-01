@@ -315,6 +315,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     xt = Xpetra::toTpetra(*x);
     yt = Xpetra::toTpetra(*y);
 
+    size_t l_permutes = 0, g_permutes = 0;
+    if(!At->getGraph()->getImporter().is_null()) {
+      l_permutes = At->getGraph()->getImporter()->getNumPermuteIDs();
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM,1,&l_permutes,&g_permutes);
+    }
+    if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);     
+
 #ifdef HAVE_MUELU_MKL
     sparse_matrix_t AMKL;
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
