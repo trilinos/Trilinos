@@ -685,28 +685,6 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   swap(CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & crs_matrix)
   {
-    auto comm = getComm();
-    const int myrank = comm->getRank();
-
-    Teuchos::RCP<Teuchos::FancyOStream> pOut;
-    if(0==myrank)
-        pOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-    else
-        pOut = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
-    Teuchos::FancyOStream& out = *pOut;
-
-    out << "-------------------------------------------------------------------------" << std::endl;    
-
-    this->staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
-    crs_matrix.staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
-
-    if(myrank==0)
-    {
-      std::cout << "p="<<myrank<<" | [swap PRE ]>>> staticGraph_ (ptrs) = " 
-                << this->staticGraph_.getRawPtr() << " : " << crs_matrix.staticGraph_.getRawPtr() 
-                << "  rangeMap: " << this->staticGraph_->getRangeMap().getRawPtr() << " : " << crs_matrix.staticGraph_->getRangeMap().getRawPtr()
-                << std::endl;
-    }
     std::swap(crs_matrix.importMV_,      this->importMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
@@ -718,16 +696,6 @@ namespace Tpetra {
     std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
     std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
     std::swap(crs_matrix.frobNorm_,      this->frobNorm_);        // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
-
-    if(myrank==0)
-    {
-      std::cout << "p="<<myrank<<" | [swap PRE ]>>> staticGraph_ (ptrs) = " 
-                << this->staticGraph_.getRawPtr() << " : " << crs_matrix.staticGraph_.getRawPtr() 
-                << "  rangeMap: " << this->staticGraph_->getRangeMap().getRawPtr() << " : " << crs_matrix.staticGraph_->getRangeMap().getRawPtr()
-                << std::endl;
-    }
-    this->staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
-    crs_matrix.staticGraph_->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
   }
 
 
