@@ -280,7 +280,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   if(matrixType == "Elasticity2D") {
     numDofsPerNode = 2;
-  } else if(matrixType == "Elasticity2D") {
+  } else if(matrixType == "Elasticity3D") {
     numDofsPerNode = 3;
   }
 
@@ -475,27 +475,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       sendPIDs[countIDs] = myRank + procsPerDim[1] + 1;
       ++countIDs;
     } else if(backBC == 0) {
-      numSend = lNodesPerDim[0] + (leftBC - 1);
+      numSend = lNodesPerDim[0];
 
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of back edge
-      for(LO i = 0; i < lNodesPerDim[0] - (1 - leftBC); ++i) {
-        sendGIDs[countIDs] = i + (1 - leftBC) + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+      for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+        sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
         sendPIDs[countIDs] = myRank + procsPerDim[0];
         ++countIDs;
       }
     } else if(rightBC == 0) {
-      numSend = lNodesPerDim[1] + (frontBC - 1) + (1 - backBC);
+      numSend = lNodesPerDim[1];
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right edge
-      for(LO j = 0; j < lNodesPerDim[1] - (1 - frontBC); ++j) {
-        sendGIDs[countIDs] = (j + (1 - frontBC))*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + 1;
         ++countIDs;
       }
@@ -504,25 +504,115 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Received nodes
     if( (bottomBC == 0) && (frontBC == 0) && (leftBC == 0) ) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + (lNodesPerDim[0] - 1)*lNodesPerDim[2]        // front face
-        + (lNodesPerDim[1] - 1)*(lNodesPerDim[2] - 1); // left face
+        + (lNodesPerDim[0] + 1)*lNodesPerDim[2]        // front face
+        + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1); // left face
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+
+      // Two faces received
     } else if( (bottomBC == 0) && (frontBC == 0) ) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + (lNodesPerDim[0] - 1)*lNodesPerDim[2];       // front face;
+        + lNodesPerDim[0]*(lNodesPerDim[2] + 1);       // front face;
     } else if( (bottomBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
-        + (lNodesPerDim[1] - 1)*lNodesPerDim[2];       // front face;
+      numReceive = lNodesPerDim[1]*(lNodesPerDim[0] + lNodesPerDim[2] + 1);
+      receiveGIDs.resize(numReceive);
+      receivePIDs.resize(numReceive);
+
+      LO countIDs = 0;
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        receiveGIDs[countIDs] =  j*gNodesPerDim[0]
+          + startGID - gNodesPerDim[1]*gNodesPerDim[0] - 1;
+        receivePIDs[countIDs] =  myRank - procsPerDim[1]*procsPerDim[0] - 1;
+        ++countIDs;
+      }
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
+            + startGID - gNodesPerDim[1]*gNodesPerDim[0];
+          receivePIDs[countIDs] = myRank - procsPerDim[1]*procsPerDim[0];
+          ++countIDs;
+        }
+      }
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
+            + startGID - 1;
+          receivePIDs[countIDs] = myRank - 1;
+          ++countIDs;
+        }
+      }
     } else if( (frontBC == 0) && (leftBC == 0) ) {
-      numReceive = lNodesPerDim[0]*lNodesPerDim[2]     // bottom face
-        + (lNodesPerDim[1] - 1)*lNodesPerDim[2];       // front face;
+      numReceive = lNodesPerDim[2]*(lNodesPerDim[1] + lNodesPerDim[0] + 1);
+      receiveGIDs.resize(numReceive);
+      receivePIDs.resize(numReceive);
+
+      LO countIDs = 0;
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        receiveGIDs[countIDs] =  k*gNodesPerDim[1]*gNodesPerDim[0]
+          + startGID - gNodesPerDim[0] - 1;
+        receivePIDs[countIDs] =  myRank - procsPerDim[0] - 1;
+        ++countIDs;
+      }
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
+            + startGID - gNodesPerDim[0];
+          receivePIDs[countIDs] = myRank - procsPerDim[0];
+          ++countIDs;
+        }
+      }
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
+            + startGID - 1;
+          receivePIDs[countIDs] = myRank - 1;
+          ++countIDs;
+        }
+      }
+
+      // Single face received
     } else if(bottomBC == 0) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[1];
+      receiveGIDs.resize(numReceive);
+      receivePIDs.resize(numReceive);
+
+      LO countIDs = 0;
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          receiveGIDs[countIDs] = j*gNodesPerDim[0] + i
+            + startGID - gNodesPerDim[1]*gNodesPerDim[0];
+          receivePIDs[countIDs] = myRank - procsPerDim[1]*procsPerDim[0];
+          ++countIDs;
+        }
+      }
     } else if(frontBC == 0) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[2];
+      receiveGIDs.resize(numReceive);
+      receivePIDs.resize(numReceive);
+
+      LO countIDs = 0;
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
+            + startGID - gNodesPerDim[0];
+          receivePIDs[countIDs] = myRank - procsPerDim[0];
+          ++countIDs;
+        }
+      }
     } else if(leftBC == 0) {
       numReceive = lNodesPerDim[1]*lNodesPerDim[2];
+      receiveGIDs.resize(numReceive);
+      receivePIDs.resize(numReceive);
+
+      LO countIDs = 0;
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+          receiveGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
+            + j*gNodesPerDim[0] + startGID - 1;
+          receivePIDs[countIDs] = myRank - 1;
+          ++countIDs;
+        }
+      }
     }
 
     // Sent nodes
@@ -603,20 +693,76 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         *(lNodesPerDim[1] - (1 - leftBC));
 
     } else if( (backBC == 0) && (rightBC == 0) ) {
-      numSend = (lNodesPerDim[0] - (1 - leftBC) + lNodesPerDim[1] - (1 - frontBC) + 1)
-        *(lNodesPerDim[2] - (1 - bottomBC));
+      numSend = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
+      sendGIDs.resize(numSend);
+      sendPIDs.resize(numSend);
+
+      LO countIDs = 0;
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0]
+            + startGID + lNodesPerDim[0] - 1;
+          sendPIDs[countIDs] = myRank + 1;
+          ++countIDs;
+        }
+      }
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
+            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendPIDs[countIDs] = myRank + procsPerDim[0];
+          ++countIDs;
+        }
+      }
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
+            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
+          sendPIDs[countIDs] = myRank + procsPerDim[0] + 1;
+          ++countIDs;
+      }
 
     } else if(topBC == 0) {
-      numSend = (lNodesPerDim[0] - (1 - leftBC))
-        *(lNodesPerDim[1] - (1 - frontBC));
+      numSend = lNodesPerDim[0]*lNodesPerDim[1];
+      sendGIDs.resize(numSend);
+      sendPIDs.resize(numSend);
 
+      LO countIDs = 0;
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          sendGIDs[countIDs] = j*gNodesPerDim[0] + i
+            + startGID + (lNodesPerDim[2] - 1)*gNodesPerDim[0]*gNodesPerDim[0];
+          sendPIDs[countIDs] = myRank + procsPerDim[1]*procsPerDim[0];
+          ++countIDs;
+        }
+      }
     } else if(backBC == 0) {
-      numSend = (lNodesPerDim[0] - (1 - leftBC))
-        *(lNodesPerDim[2] - (1 - bottomBC));
+      numSend = lNodesPerDim[0]*lNodesPerDim[2];
+      sendGIDs.resize(numSend);
+      sendPIDs.resize(numSend);
 
+      LO countIDs = 0;
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0] + i
+            + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
+          sendPIDs[countIDs] = myRank + procsPerDim[0];
+          ++countIDs;
+        }
+      }
     } else if(rightBC == 0) {
-      numSend = (lNodesPerDim[1] - (1 - frontBC))
-        *(lNodesPerDim[2] - (1 - bottomBC));
+      numSend = lNodesPerDim[1]*lNodesPerDim[2];
+      sendGIDs.resize(numSend);
+      sendPIDs.resize(numSend);
+
+      LO countIDs = 0;
+      for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+        for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+          sendGIDs[countIDs] = k*gNodesPerDim[1]*gNodesPerDim[0]
+            + j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
+          sendPIDs[countIDs] = myRank + 1;
+          ++countIDs;
+        }
+      }
     }
   }
 
