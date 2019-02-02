@@ -16,6 +16,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Smoothers)
 SET(SOURCES "")
 SET(SOURCES_INTREPID2 "")
 SET(SOURCES_BLOCKED "")
+SET(SOURCES_CREATEPRECONDITIONER "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
@@ -142,7 +143,20 @@ ENDIF()
 
 IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos) OR
     (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2))
-  APPEND_SET(SOURCES Adapters/CreatePreconditioner.cpp)
+  SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests ON)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests OFF)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
+  APPEND_SET(SOURCES_CREATEPRECONDITIONER
+    MueLu_UnitTests.cpp
+    MueLu_TestHelpers.cpp
+  )
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
+  APPEND_SET(SOURCES_CREATEPRECONDITIONER Adapters/CreatePreconditioner.cpp)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsCreatePreconditioner_cp
     SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
@@ -150,14 +164,11 @@ IF ((${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PA
     )
 ENDIF()
 
-
-
 IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
 APPEND_SET(SOURCES_INTREPID2
   IntrepidPCoarsenFactory.cpp
 )
 ENDIF()
-
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   APPEND_SET(SOURCES Zoltan.cpp
@@ -194,6 +205,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     COMM serial mpi
     )
 
+  IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
+    TRIBITS_ADD_EXECUTABLE(
+      UnitTests_CreatePreconditioner
+      SOURCES ${SOURCES_CREATEPRECONDITIONER}
+      COMM serial mpi
+      )
+  ENDIF()
+
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     TRIBITS_ADD_TEST(
@@ -224,13 +243,33 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       )
 
     TRIBITS_ADD_TEST(
-      UnitTests
+      UnitTests_Blocked
       NAME "UnitTestsBlockedEpetra"
       ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
       COMM mpi
       )
+
+    IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
+      TRIBITS_ADD_TEST(
+        UnitTests_CreatePreconditioner
+        NAME "UnitTestsCreatePreconditionerEpetra"
+        ARGS "--linAlgebra=Epetra"
+        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+        NUM_MPI_PROCS 1
+        COMM serial mpi
+        )
+
+      TRIBITS_ADD_TEST(
+        UnitTests_CreatePreconditioner
+        NAME "UnitTestsCreatePreconditionerEpetra"
+        ARGS "--linAlgebra=Epetra"
+        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+    ENDIF()
 
   ENDIF()
 
@@ -289,6 +328,26 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       NUM_MPI_PROCS 4
       COMM mpi
       )
+
+    IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
+      TRIBITS_ADD_TEST(
+        UnitTests_CreatePreconditioner
+        NAME "UnitTestsCreatePreconditionerTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+        NUM_MPI_PROCS 1
+        COMM serial mpi
+        )
+
+      TRIBITS_ADD_TEST(
+        UnitTests_CreatePreconditioner
+        NAME "UnitTestsCreatePreconditionerTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+    ENDIF()
 
   ENDIF()
 

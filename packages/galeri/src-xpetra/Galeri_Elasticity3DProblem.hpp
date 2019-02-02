@@ -311,7 +311,7 @@ namespace Galeri {
                   if ((j == k) || (std::abs(j-k) <  4 && ((j+k) & 0x1)) || (std::abs(j-k) == 4)) {
                     // Nodes j and k are connected by an edge, or j == k
                     LO k0 = numDofPerNode*k, k1 = k0+1, k2 = k0+2;
-                    SC f = TST::pow(two, Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
+                    SC f = Teuchos::as<SC>(pow(2, Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]]))));
 
                     KE(j0,k0) *= f; KE(j0,k1) *= f; KE(j0,k2) *= f;
                     KE(j1,k0) *= f; KE(j1,k1) *= f; KE(j1,k2) *= f;
