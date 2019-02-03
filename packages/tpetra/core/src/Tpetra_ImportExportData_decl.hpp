@@ -186,8 +186,7 @@ namespace Tpetra {
     /// target Map, but not by the source Map.  The target object of
     /// the Import or Export will receive data for these LIDs from
     /// other processes.
-    Teuchos::Array<LocalOrdinal> remoteLIDs_;
-    //Kokkos::DualView<LocalOrdinal*, device_type> remoteLIDs_dv;    
+    Kokkos::DualView<LocalOrdinal*, device_type> remoteLIDs_;
 
     /// \brief "Outgoing" local indices.
     ///
@@ -195,8 +194,7 @@ namespace Tpetra {
     /// source Map, but not by the target Map.  The source object of
     /// the Import or Export will send data from these LIDs to other
     /// processes.
-    Teuchos::Array<LocalOrdinal> exportLIDs_;
-    //Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs_dv;    
+    Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs_;
 
     //! Ranks of the processes to which the source object sends data.
     Teuchos::Array<int> exportPIDs_;
