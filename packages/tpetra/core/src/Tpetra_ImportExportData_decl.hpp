@@ -87,6 +87,8 @@ namespace Tpetra {
     typedef Node node_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
+    ImportExportData () = delete;
+
     /// \brief Constructor
     ///
     /// \param source [in] Source Map of the Import or Export
@@ -138,8 +140,11 @@ namespace Tpetra {
     //! Target Map of the Import or Export
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
 
-    //! Output stream for debug output.
+    //! Output stream for verbose debugging output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+    //! Whether to print verbose debugging output.
+    bool verbose_ = false;
 
     using execution_space = typename Node::device_type::execution_space;
 

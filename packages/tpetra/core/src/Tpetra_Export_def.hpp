@@ -59,17 +59,6 @@ namespace {
     return Kokkos::view_alloc (label, Kokkos::WithoutInitializing);
   }
 
-  // Assume that dv is sync'd.
-  template<class ElementType, class DeviceType>
-  Teuchos::ArrayView<const ElementType>
-  makeConstArrayViewFromDualView (const Kokkos::DualView<ElementType*, DeviceType>& dv)
-  {
-    TEUCHOS_ASSERT( ! dv.need_sync_host () );
-    auto hostView = dv.view_host ();
-    const auto size = hostView.extent (0);
-    return Teuchos::ArrayView<const ElementType> (size == 0 ? nullptr : hostView.data (), size);
-  }
-
   template<class ElementType, class DeviceType>
   void
   makeDualViewFromOwningHostView (Kokkos::DualView<ElementType*, DeviceType>& dv,
@@ -93,81 +82,44 @@ namespace {
     dv = dual_view_type (devView, hostView);
   }
 
-  std::ostream&
-  validOutputStream (const Teuchos::RCP<std::ostream>& out)
-  {
-    if (out.is_null ()) {
-      return std::cerr;
-    }
-    else {
-      return *out;
-    }
-  }
-  
 } // namespace (anonymous)
 
 namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
-  {
-    // FIXME (mfh 03 Feb 2019) Phase out "Debug" in favor of TPETRA_VERBOSE.
-    bool verbose = ::Tpetra::Details::Behavior::verbose ("Tpetra::Export");
-    if (! plist.is_null ()) {
-      if (plist->isType<bool> ("Verbose")) {
-	verbose = plist->get<bool> ("Verbose");
-      }
-      else if (plist->isType<bool> ("Debug")) { // backwards compat
-	verbose = plist->get<bool> ("Debug");
-      }
-    }
-    this->verbose_ = verbose;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target) :
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+  Export (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target) :
+    base_type (source, target, Teuchos::null, Teuchos::null)
   {
     using Teuchos::rcp;
     using std::endl;
-    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
 
     this->setParameterList (Teuchos::null);
 
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor" << endl;
-      *out_ << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
-    ExportData_ = rcp (new data_type (source, target, out_));
     Teuchos::Array<GlobalOrdinal> exportGIDs;
     setupSamePermuteExport (exportGIDs);
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: "
          << "setupSamePermuteExport done" << endl;
-      *out_ << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
     if (source->isDistributed ()) {
       setupRemote (exportGIDs);
     }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
@@ -176,44 +128,36 @@ namespace Tpetra {
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-    out_ (out)
+    base_type (source, target, out, Teuchos::null)
   {
     using Teuchos::rcp;
     using std::endl;
-    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
 
     this->setParameterList (Teuchos::null);
 
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor" << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
-    ExportData_ = rcp (new data_type (source, target, out));
     Teuchos::Array<GlobalOrdinal> exportGIDs;
     setupSamePermuteExport (exportGIDs);
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: "
          << "setupSamePermuteExport done" << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
     if (source->isDistributed ()) {
       setupRemote (exportGIDs);
     }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: done" << endl;
-      validOutputStream (out_) << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
@@ -222,44 +166,36 @@ namespace Tpetra {
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    base_type (source, target, Teuchos::null, plist)
   {
     using Teuchos::rcp;
     using std::endl;
-    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
 
     this->setParameterList (plist);
 
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor" << endl;
-      *out_ << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
-    ExportData_ = rcp (new data_type (source, target, out_, plist));
     Teuchos::Array<GlobalOrdinal> exportGIDs;
     setupSamePermuteExport (exportGIDs);
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: "
          << "setupSamePermuteExport done" << endl;
-      *out_ << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
     if (source->isDistributed ()) {
       setupRemote (exportGIDs);
     }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
@@ -269,182 +205,61 @@ namespace Tpetra {
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
+    base_type (source, target, out, plist)
   {
     using Teuchos::rcp;
     using std::endl;
-    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
 
     this->setParameterList (plist);
 
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor" << endl;
-      *out_ << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
-    ExportData_ = rcp (new data_type (source, target, out, plist));
     Teuchos::Array<GlobalOrdinal> exportGIDs;
     setupSamePermuteExport (exportGIDs);
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: "
          << "setupSamePermuteExport done" << endl;
-      *out_ << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
     if (source->isDistributed ()) {
       setupRemote (exportGIDs);
     }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
       os << myRank << ": Export ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs)
-    : ExportData_ (rhs.ExportData_),
-      out_ (rhs.out_),
-      verbose_ (rhs.verbose_)
+  Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs) :
+    base_type (rhs)
   {
     using std::endl;
     
-    if (verbose_) {
+    if (this->verbose ()) {
       auto srcMap = rhs.getSourceMap ();
       auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank << ": Tpetra::Export(Export)" << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Import<LocalOrdinal,GlobalOrdinal,Node>& importer)
-    : out_ (importer.out_),
-      verbose_ (importer.verbose_)
-  {
-    using std::endl;
-    
-    if (verbose_) {
-      auto srcMap = importer.getSourceMap ();
-      auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
-      const int myRank = comm.is_null () ? -1 : comm->getRank ();
-      std::ostringstream os;
-      os << "Proc " << myRank << ": Tpetra::Export(Import)" << endl;
-      validOutputStream (out_) << os.str ();
-    }
-    if (! importer.ImportData_.is_null ()) {
-      ExportData_ = importer.ImportData_->reverseClone ();
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getNumSameIDs () const {
-    return ExportData_->numSameIDs_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getNumPermuteIDs () const {
-    return static_cast<size_t> (ExportData_->permuteFromLIDs_.extent (0));
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayView<const LocalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getPermuteFromLIDs () const {
-    return makeConstArrayViewFromDualView (ExportData_->permuteFromLIDs_);
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayView<const LocalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getPermuteToLIDs () const {
-    return makeConstArrayViewFromDualView (ExportData_->permuteToLIDs_);
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getNumRemoteIDs () const {
-    return static_cast<size_t> (ExportData_->remoteLIDs_.extent (0));
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayView<const LocalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getRemoteLIDs () const {
-    return makeConstArrayViewFromDualView (ExportData_->remoteLIDs_);
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getNumExportIDs () const {
-    return static_cast<size_t> (ExportData_->exportLIDs_.extent (0));
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayView<const LocalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  getExportLIDs () const {
-    return makeConstArrayViewFromDualView (ExportData_->exportLIDs_);
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayView<const int>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::getExportPIDs() const {
-    return ExportData_->exportPIDs_();
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const typename Export<LocalOrdinal,GlobalOrdinal,Node>::map_type>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::getSourceMap() const {
-    return ExportData_->source_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const typename Export<LocalOrdinal,GlobalOrdinal,Node>::map_type>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::getTargetMap() const {
-    return ExportData_->target_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Distributor &
-  Export<LocalOrdinal,GlobalOrdinal,Node>::getDistributor() const {
-    return ExportData_->distributor_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  Export<LocalOrdinal,GlobalOrdinal,Node>::isLocallyComplete () const {
-    return ExportData_->isLocallyComplete_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>&
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs) {
-    if (&rhs != this) {
-      ExportData_ = rhs.ExportData_;
-    }
-    return *this;
-  }
+  Export (const Import<LocalOrdinal,GlobalOrdinal,Node>& importer) :
+    base_type (importer, typename base_type::reverse_tag ())
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -484,7 +299,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "setupSamePermuteExport: ";
 
     std::unique_ptr<std::string> prefix;
-    if (verbose_) {
+    if (this->verbose ()) {
       auto srcMap = this->getSourceMap ();
       auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
@@ -495,11 +310,11 @@ namespace Tpetra {
 
       std::ostringstream os2;
       os2 << *prefix << "Start" << std::endl;
-      validOutputStream (out_) << os2.str ();
+      this->verboseOutputStream () << os2.str ();
     }
 
-    const map_type& source = * (getSourceMap ());
-    const map_type& target = * (getTargetMap ());
+    const map_type& source = * (this->getSourceMap ());
+    const map_type& target = * (this->getTargetMap ());
     ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
     ArrayView<const GO> targetGIDs = target.getNodeElementList ();
 
@@ -525,13 +340,13 @@ namespace Tpetra {
 	    rawSrcGids[numSameGids] == rawTgtGids[numSameGids];
 	  ++numSameGids)
       {} // third clause of 'for' does everything
-    ExportData_->numSameIDs_ = numSameGids;
+    this->TransferData_->numSameIDs_ = numSameGids;
 
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numIDs: " << numGids
 	 << ", numSameIDs: " << numSameGids << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
 
     // Compute permuteToLIDs_, permuteFromLIDs_, exportGIDs, and
@@ -563,20 +378,20 @@ namespace Tpetra {
 	++numExports;
       }
     }
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numPermutes: " << numPermutes
 	 << ", numExports: " << numExports << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
     TEUCHOS_ASSERT( numPermutes + numExports ==
 		    numSrcLids - numSameGids );
 
-    typename decltype (ExportData_->permuteToLIDs_)::t_host
+    typename decltype (this->TransferData_->permuteToLIDs_)::t_host
       permuteToLIDs (view_alloc_no_init ("permuteToLIDs"), numPermutes);
-    typename decltype (ExportData_->permuteToLIDs_)::t_host
+    typename decltype (this->TransferData_->permuteToLIDs_)::t_host
       permuteFromLIDs (view_alloc_no_init ("permuteFromLIDs"), numPermutes);
-    typename decltype (ExportData_->permuteToLIDs_)::t_host
+    typename decltype (this->TransferData_->permuteToLIDs_)::t_host
       exportLIDs (view_alloc_no_init ("exportLIDs"), numExports);
 
     // FIXME (mfh 03 Feb 2019) Replace with std::unique_ptr of array,
@@ -605,7 +420,7 @@ namespace Tpetra {
       TEUCHOS_ASSERT( size_t (numExports) == exportGIDs.size () );
     }
     
-    // Defer making ExportData_->exportLIDs_ until after
+    // Defer making this->TransferData_->exportLIDs_ until after
     // getRemoteIndexList, since we might need to shrink it then.
 
     // exportLIDs is the list of this process' LIDs that it has to
@@ -621,11 +436,11 @@ namespace Tpetra {
       // this process.  However, the source Map is not distributed
       // globally.  This implies that this Import is not locally
       // complete on this process.
-      ExportData_->isLocallyComplete_ = false;
-      if (verbose_) {
+      this->TransferData_->isLocallyComplete_ = false;
+      if (this->verbose ()) {
 	std::ostringstream os;
 	os << *prefix << "Export is not locally complete" << endl;
-	validOutputStream (out_) << os.str ();
+	this->verboseOutputStream () << os.str ();
       }
       // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
       // correct behavior, depending on the circumstances.
@@ -647,19 +462,19 @@ namespace Tpetra {
     // otherwise, the Export doesn't have to perform any
     // communication.
     if (source.isDistributed ()) {
-      if (verbose_) {
+      if (this->verbose ()) {
 	std::ostringstream os;
 	os << *prefix << "Source Map is distributed; "
 	  "call targetMap.getRemoteiNdexList" << endl;
-	validOutputStream (out_) << os.str ();
+	this->verboseOutputStream () << os.str ();
       }
-      ExportData_->exportPIDs_.resize(exportGIDs.size ());
+      this->TransferData_->exportPIDs_.resize(exportGIDs.size ());
       // This call will assign any GID in the target Map with no
       // corresponding process ID a fake process ID of -1.  We'll use
       // this below to remove exports for processses that don't exist.
       const LookupStatus lookup =
         target.getRemoteIndexList (exportGIDs(),
-                                   ExportData_->exportPIDs_ ());
+                                   this->TransferData_->exportPIDs_ ());
       // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
       // correct behavior, depending on the circumstances.
       TPETRA_ABUSE_WARNING( lookup == IDNotPresent, std::runtime_error,
@@ -673,19 +488,19 @@ namespace Tpetra {
         // There is at least one GID owned by the calling process in
         // the source Map, which is not owned by any process in the
         // target Map.
-        ExportData_->isLocallyComplete_ = false;
+        this->TransferData_->isLocallyComplete_ = false;
 
-	Teuchos::Array<int>& exportPIDs = ExportData_->exportPIDs_;
+	Teuchos::Array<int>& exportPIDs = this->TransferData_->exportPIDs_;
 
         const size_type totalNumExports = exportPIDs.size ();
         const size_type numInvalidExports =
           std::count_if (exportPIDs.begin (), exportPIDs.end (),
                          [] (const int procId) { return procId == -1; });
-	if (verbose_) {
+	if (this->verbose ()) {
 	  std::ostringstream os;
 	  os << *prefix << "totalNumExports: " << totalNumExports
 	     << ", numInvalidExports: " << numInvalidExports << endl;
-	  validOutputStream (out_) << os.str ();
+	  this->verboseOutputStream () << os.str ();
 	}
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (numInvalidExports == 0, std::logic_error,
@@ -706,7 +521,7 @@ namespace Tpetra {
         else {
           size_type numValidExports = 0;
           for (size_type e = 0; e < totalNumExports; ++e) {
-            if (ExportData_->exportPIDs_[e] != -1) {
+            if (this->TransferData_->exportPIDs_[e] != -1) {
               exportGIDs[numValidExports] = exportGIDs[e];
               exportLIDs[numValidExports] = exportLIDs[e];
               exportPIDs[numValidExports] = exportPIDs[e];
@@ -723,14 +538,14 @@ namespace Tpetra {
     // FIXME (mfh 03 Feb 2019) These three DualViews could share a
     // single device allocation, in order to avoid high cudaMalloc
     // cost and device memory fragmentation.
-    makeDualViewFromOwningHostView (ExportData_->permuteToLIDs_, permuteToLIDs);
-    makeDualViewFromOwningHostView (ExportData_->permuteFromLIDs_, permuteFromLIDs);
-    makeDualViewFromOwningHostView (ExportData_->exportLIDs_, exportLIDs);
+    makeDualViewFromOwningHostView (this->TransferData_->permuteToLIDs_, permuteToLIDs);
+    makeDualViewFromOwningHostView (this->TransferData_->permuteFromLIDs_, permuteFromLIDs);
+    makeDualViewFromOwningHostView (this->TransferData_->exportLIDs_, exportLIDs);
 
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "Done!" << std::endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
@@ -746,7 +561,7 @@ namespace Tpetra {
     using GO = GlobalOrdinal;
 
     std::unique_ptr<std::string> prefix;
-    if (verbose_) {
+    if (this->verbose ()) {
       auto srcMap = this->getSourceMap ();
       auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
@@ -757,35 +572,35 @@ namespace Tpetra {
 
       std::ostringstream os2;
       os2 << *prefix << "Start" << std::endl;
-      validOutputStream (out_) << os2.str ();
+      this->verboseOutputStream () << os2.str ();
     }
 
     TEUCHOS_ASSERT( ! this->getTargetMap ().is_null () );
-    const map_type& tgtMap = * (getTargetMap ());
+    const map_type& tgtMap = * (this->getTargetMap ());
 
     // Sort exportPIDs_ in ascending order, and apply the same
     // permutation to exportGIDs_ and exportLIDs_.  This ensures that
     // exportPIDs_[i], exportGIDs_[i], and exportLIDs_[i] all
     // refer to the same thing.
     {
-      TEUCHOS_ASSERT( size_t (ExportData_->exportLIDs_.extent (0)) ==
-		      size_t (ExportData_->exportPIDs_.size ()) );
-      ExportData_->exportLIDs_.modify_host ();
-      auto exportLIDs = ExportData_->exportLIDs_.view_host ();
-      sort3 (ExportData_->exportPIDs_.begin (),
-	     ExportData_->exportPIDs_.end (),
+      TEUCHOS_ASSERT( size_t (this->TransferData_->exportLIDs_.extent (0)) ==
+		      size_t (this->TransferData_->exportPIDs_.size ()) );
+      this->TransferData_->exportLIDs_.modify_host ();
+      auto exportLIDs = this->TransferData_->exportLIDs_.view_host ();
+      sort3 (this->TransferData_->exportPIDs_.begin (),
+	     this->TransferData_->exportPIDs_.end (),
 	     exportGIDs.getRawPtr (),
 	     exportLIDs.data ());
-      ExportData_->exportLIDs_.sync_host ();
+      this->TransferData_->exportLIDs_.sync_host ();
       // FIXME (mfh 03 Feb 2019) We actually end up sync'ing
       // exportLIDs_ to device twice, once in setupSamePermuteExport,
       // and once here.  We could avoid the first sync.
     }
 
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "Call createFromSends" << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
 
     // Construct the list of entries that calling image needs to send
@@ -794,15 +609,15 @@ namespace Tpetra {
     // mfh 05 Jan 2012: I understand the above comment as follows:
     // Construct the communication plan from the list of image IDs to
     // which we need to send.
-    Teuchos::Array<int>& exportPIDs = ExportData_->exportPIDs_;
-    Distributor& distributor = ExportData_->distributor_;
+    Teuchos::Array<int>& exportPIDs = this->TransferData_->exportPIDs_;
+    Distributor& distributor = this->TransferData_->distributor_;
     const size_t numRemoteIDs = distributor.createFromSends (exportPIDs ());
 
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numRemoteIDs: " << numRemoteIDs
 	 << "; call doPostsAndWaits" << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
 
     // Use the communication plan with ExportGIDs to find out who is
@@ -817,18 +632,18 @@ namespace Tpetra {
     // Remote (incoming) IDs come in as GIDs; convert to LIDs.  LIDs
     // tell this process where to store the incoming remote data.
     using host_remote_lids_type =
-      typename decltype (ExportData_->remoteLIDs_)::t_host;
+      typename decltype (this->TransferData_->remoteLIDs_)::t_host;
     host_remote_lids_type remoteLIDs
       (view_alloc_no_init ("remoteLIDs"), numRemoteIDs);
     for (LO j = 0; j < LO (numRemoteIDs); ++j) {
       remoteLIDs[j] = tgtMap.getLocalElement (remoteGIDs[j]);
     }
-    makeDualViewFromOwningHostView (ExportData_->remoteLIDs_, remoteLIDs);
+    makeDualViewFromOwningHostView (this->TransferData_->remoteLIDs_, remoteLIDs);
 
-    if (verbose_) {
+    if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "Done!" << endl;
-      validOutputStream (out_) << os.str ();
+      this->verboseOutputStream () << os.str ();
     }
   }
 
