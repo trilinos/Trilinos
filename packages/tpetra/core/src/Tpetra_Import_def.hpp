@@ -51,6 +51,7 @@
 #include <Tpetra_Export.hpp>
 #include <Tpetra_Details_Behavior.hpp>
 #include <Tpetra_Details_gathervPrint.hpp>
+#include <Tpetra_Details_Profiling.hpp>
 #include <Teuchos_as.hpp>
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 #include <Teuchos_TimeMonitor.hpp>
@@ -60,9 +61,6 @@
 
 
 namespace {
-  // Default value of Import's "Debug" parameter.
-  const bool tpetraImportDebugDefault = false;
-
   bool
   getBoolParameter (Teuchos::ParameterList* plist,
                     const char paramName[],
@@ -141,7 +139,58 @@ namespace {
 
     makeDualViewFromOwningHostView (dv, hostView);
   }
-  
+
+  template<class ElementType, class DeviceType>
+  void
+  makeDualViewFromVector (Kokkos::DualView<ElementType*, DeviceType>& dv,
+			  const std::vector<ElementType>& vec,
+			  const std::string& label)
+  {
+    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
+    using dev_view_type = typename dual_view_type::t_dev;
+    using host_view_type = typename dual_view_type::t_host;
+    using const_host_view_type = typename host_view_type::const_type;
+
+    const auto size = vec.size ();
+    const ElementType* ptr = (size == 0) ? nullptr : vec.data ();
+    const_host_view_type inView (ptr, size);
+    host_view_type hostView (view_alloc_no_init (label), size);
+    Kokkos::deep_copy (hostView, inView);
+
+    makeDualViewFromOwningHostView (dv, hostView);
+  }
+
+  template<class ElementType, class DeviceType>
+  void
+  printDualView (std::ostream& out,
+		 const Kokkos::DualView<ElementType*, DeviceType>& dv,
+		 const std::string& name)
+  {
+    out << name << ": ";
+    const size_t size = size_t (dv.extent (0));
+    const auto hostView = dv.view_host ();
+
+    out << "[";
+    for (size_t k = 0; k < size; ++k) {
+      out << hostView[k];
+      if (k + size_t (1) < size) {
+	out << ",";
+      }
+    }
+    out << "]";
+  }
+
+  std::ostream&
+  validOutputStream (const Teuchos::RCP<std::ostream>& out)
+  {
+    if (out.is_null ()) {
+      return std::cerr;
+    }
+    else {
+      return *out;
+    }
+  }
+
 } // namespace (anonymous)
 
 namespace Teuchos {
@@ -160,6 +209,22 @@ namespace Teuchos {
     os << "]";
     return os.str ();
   }
+
+  template<class ElementType, class DeviceType>
+  std::string toString (const Kokkos::View<const ElementType*, DeviceType>& x)
+  {
+    std::ostringstream os;
+    os << "[";
+    const std::size_t N = std::size_t (x.extent (0));
+    for (std::size_t k = 0; k < N; ++k) {
+      os << x[k];
+      if (k + std::size_t (1) < N) {
+        os << ",";
+      }
+    }
+    os << "]";
+    return os.str ();
+  }
 } // namespace Teuchos
 
 namespace Tpetra {
@@ -167,16 +232,20 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-    bool debug = tpetraImportDebugDefault;
+    using ::Tpetra::Details::Behavior;
+    
+    bool verbose = Behavior::verbose ("Tpetra::Import");
     if (! plist.is_null ()) {
-      try {
-        debug = plist->get<bool> ("Debug");
-      } catch (Teuchos::Exceptions::InvalidParameter&) {}
+      if (plist->isType<bool> ("Verbose")) {
+	verbose = plist->get<bool> ("Verbose");
+      }
+      else if (plist->isType<bool> ("Debug")) { // backwards compat
+	verbose = plist->get<bool> ("Debug");
+      }
     }
-    debug_ = debug;
-    ImportData_->distributor_.setParameterList (plist);
+    this->verbose_ = verbose;
   }
 
   // head:  init(source, target, true, remotePIDs, Teuchos::null);
@@ -190,82 +259,81 @@ namespace Tpetra {
         Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-      using Teuchos::Array;
-      using Teuchos::null;
-      using Teuchos::Ptr;
-      using Teuchos::rcp;
-      using std::endl;
-      typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+    using ::Tpetra::Details::ProfilingRegion;
+    using Teuchos::Array;
+    using Teuchos::null;
+    using Teuchos::Ptr;
+    using Teuchos::rcp;
+    using std::endl;
+    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
+    ProfilingRegion regionImportInit ("Tpetra::Import::init");
+    
+    this->setParameterList (plist);
 
-      this->debug_ = getBoolParameter (plist.getRawPtr (), "Debug",
-                                       tpetraImportDebugDefault);
-      if (! out_.is_null ()) {
-          out_->pushTab ();
-      }
-      if (debug_) {
-          std::ostringstream os;
-          const int myRank = source->getComm ()->getRank ();
-          os << myRank << ": Import ctor" << endl;
-          *out_ << os.str ();
-      }
+    std::unique_ptr<std::string> verbPrefix;
+    if (verbose_) {
+      std::ostringstream os;
+      const int myRank = source->getComm ()->getRank ();
+      os << "Proc " << myRank << ": Tpetra::Import::init: ";
+      verbPrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << endl;
+      validOutputStream (out_) << os.str ();
+    }
 
-      Array<GlobalOrdinal> remoteGIDs;
+    Array<GlobalOrdinal> remoteGIDs;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      using Teuchos::TimeMonitor;
-      std::string label;
-      if(!plist.is_null())
-          label = plist->get("Timer Label",label);
-      std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
+    using Teuchos::TimeMonitor;
+    std::string label;
+    if(!plist.is_null())
+      label = plist->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
 #endif
-      {
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-          auto MM(*TimeMonitor::getNewTimer(prefix));
+      auto MM(*TimeMonitor::getNewTimer(prefix));
 #endif
-          ImportData_ = rcp (new data_type (source, target, out_, plist));
-          setupSamePermuteRemote (remoteGIDs);
-          if (debug_) {
-              std::ostringstream os;
-              const int myRank = source->getComm ()->getRank ();
-              os << myRank << ": Import ctor: "
-                 << "setupSamePermuteRemote done" << endl;
-              *out_ << os.str ();
-          }
+      ImportData_ = rcp (new data_type (source, target, out_, plist));
+      if (verbose_) {
+	std::ostringstream os;
+	os << *verbPrefix << "Call setupSamePermuteRemote" << endl;
+	validOutputStream (out_) << os.str ();
       }
-      {
+      setupSamePermuteRemote (remoteGIDs);
+    }
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-          prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preSetupExport: ");
-          auto MM2(*TimeMonitor::getNewTimer(prefix));
+      prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preSetupExport: ");
+      auto MM2(*TimeMonitor::getNewTimer(prefix));
 #endif
+      if (source->isDistributed ()) {
+	if (verbose_) {
+	  std::ostringstream os;
+	  os << *verbPrefix << "Call setupExport" << endl;
+	  validOutputStream (out_) << os.str ();
+	}
+	setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
+      }
+      else if (verbose_) {
+	std::ostringstream os;
+	os << *verbPrefix << "Source Map not distributed; skip setupExport"
+	   << endl;
+	validOutputStream (out_) << os.str ();
+      }
+    }
 
-          if (source->isDistributed ()) {
-              setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
-          }
-      }
-      {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-          prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:postSetupExport: ");
-          auto MM3(*TimeMonitor::getNewTimer(prefix));
-#endif
-          if (debug_) {
-              std::ostringstream os;
-              const int myRank = source->getComm ()->getRank ();
-              os << myRank << ": Import ctor: done" << endl;
-              *out_ << os.str ();
-          }
-          if (! out_.is_null ()) {
-              out_->popTab ();
-          }
-      }
-
+    if (verbose_) {
+      std::ostringstream os;
+      os << *verbPrefix << "Done!" << endl;
+      validOutputStream (out_) << os.str ();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Teuchos::RCP<const map_type >& source,
+  Import (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target) :
-    out_(Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    debug_(tpetraImportDebugDefault)
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
   {
     Teuchos::Array<int> dummy;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -273,71 +341,67 @@ namespace Tpetra {
     mypars->set("Timer Label","Naive_tAFC");
     init(source, target, false, dummy, mypars);
 #else
-    init(source, target, false, dummy, Teuchos::null);
+    init (source, target, false, dummy, Teuchos::null);
 #endif
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target,
+  Import (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-    out_(out),
-    debug_(tpetraImportDebugDefault)
+    out_ (out)
   {
     Teuchos::Array<int> dummy;
-    init(source, target, false, dummy, Teuchos::null);
+    init (source, target, false, dummy, Teuchos::null);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target,
+  Import (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    out_(Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    debug_(tpetraImportDebugDefault)
+    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)))
   {
     Teuchos::Array<int> dummy;
-    init(source, target, false, dummy, plist);
+    init (source, target, false, dummy, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target,
+  Import (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    out_(out),
-    debug_(tpetraImportDebugDefault)
+    out_ (out)
   {
     Teuchos::Array<int> dummy;
-    init(source, target, false, dummy, plist);
+    init (source, target, false, dummy, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target,
-         Teuchos::Array<int> & remotePIDs,
-         const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    debug_(tpetraImportDebugDefault)
+  Import (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target,
+	  Teuchos::Array<int>& remotePIDs,
+	  const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-    init(source, target, true, remotePIDs, plist);
+    init (source, target, true, remotePIDs, plist);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Import<LocalOrdinal,GlobalOrdinal,Node>& rhs)
-    : ImportData_(rhs.ImportData_)
-    , out_(rhs.out_)
-    , debug_(rhs.debug_)
+  Import (const Import<LocalOrdinal,GlobalOrdinal,Node>& rhs)
+    : ImportData_ (rhs.ImportData_),
+      out_ (rhs.out_),
+      verbose_ (rhs.verbose_)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import(const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter)
-    : out_(exporter.out_)
-    , debug_(exporter.debug_)
+  Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter)
+    : out_ (exporter.out_),
+      verbose_ (exporter.verbose_)
   {
     if (! exporter.ExportData_.is_null ()) {
       ImportData_ = exporter.ExportData_->reverseClone ();
@@ -348,13 +412,13 @@ namespace Tpetra {
   // reverse communication
    template <class LocalOrdinal, class GlobalOrdinal, class Node>
    Import<LocalOrdinal,GlobalOrdinal,Node>::
-   Import(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-          const Teuchos::ArrayView<int> & userRemotePIDs,
-          const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
-          const Teuchos::ArrayView<const int>          & userExportPIDs,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist,
-          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+   Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
+	   const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+	   const Teuchos::ArrayView<int> & userRemotePIDs,
+	   const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+	   const Teuchos::ArrayView<const int>          & userExportPIDs,
+	   const Teuchos::RCP<Teuchos::ParameterList>& plist,
+	   const Teuchos::RCP<Teuchos::FancyOStream>& out) :
      out_ (out.is_null () ?
            Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
   {
@@ -365,19 +429,24 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::null;
     using Teuchos::rcp;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef Teuchos::Array<int>::size_type size_type;
-    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+    using std::endl;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using size_type = Teuchos::Array<int>::size_type;
+    using data_type = ImportExportData<LocalOrdinal, GlobalOrdinal, Node>;
 
-    // Read "Debug" parameter from the input ParameterList.
-    bool debug = tpetraImportDebugDefault;
-    if (! plist.is_null ()) {
-      try {
-        debug = plist->get<bool> ("Debug");
-      } catch (Teuchos::Exceptions::InvalidParameter&) {}
+    this->setParameterList (plist);
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      auto comm = source.is_null () ? Teuchos::null : source->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Tpetra::Import createExpert ctor: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "Start" << endl;
+      validOutputStream (out_) << os.str ();
     }
-    debug_ = debug;
+    
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
     const size_type numSrcGids = sourceGIDs.size ();
@@ -387,43 +456,69 @@ namespace Tpetra {
 
     ImportData_ = rcp (new data_type (source, target, out_, plist));
 
-    Array<GO>  tRemoteGIDs;
+    Array<GO> tRemoteGIDs;
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Call setupSamePermuteRemote" << endl;
+      validOutputStream (out_) << os.str ();
+    }
+    setupSamePermuteRemote (tRemoteGIDs);
 
-    setupSamePermuteRemote(tRemoteGIDs);
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Sort & filter IDs" << endl;
+      validOutputStream (out_) << os.str ();
+    }
 
-    Array<LO>& tRemoteLIDs = ImportData_->remoteLIDs_;
-    Teuchos::Array<int> tRemotePIDs(userRemotePIDs);
+    auto tRemoteLIDs = ImportData_->remoteLIDs_.view_host ();
+    ImportData_->remoteLIDs_.modify_host ();
+    Teuchos::Array<int> tRemotePIDs (userRemotePIDs);
 
-    TPETRA_ABUSE_WARNING(
-                         getNumRemoteIDs() > 0 && ! source->isDistributed(),
-                         std::runtime_error,
-                         "::constructExpert(): Target has remote LIDs but Source is not "
-                         "distributed globally." << std::endl
-                         << "Importing to a submap of the target map.");
+    if (verbose_ && getNumRemoteIDs () > 0 && ! source->isDistributed ()) {
+      std::ostringstream os;
+      os << *prefix << "Target Map has remote LIDs but source Map is not "
+	"distributed.  Importing to a submap of the target Map." << endl;
+      validOutputStream (out_) << os.str ();
+    }
+    // FIXME (mfh 03 Feb 2019) I don't see this as "abuse"; it's
+    // perfectly valid Petra Object Model behavior.
+    TPETRA_ABUSE_WARNING
+      (getNumRemoteIDs () > 0 && ! source->isDistributed (),
+       std::runtime_error,
+       "::constructExpert: Target Map has remote LIDs but source Map "
+       "is not distributed.  Importing to a submap of the target Map.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      ( !(tRemotePIDs.size() == tRemoteGIDs.size() &&
-          tRemoteGIDs.size() == tRemoteLIDs.size()),
-        std::runtime_error,
-        "Import::Import createExpert version: Size miss match on userRemotePIDs, remoteGIDs and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
+      (tRemotePIDs.size () != tRemoteGIDs.size () ||
+       size_t (tRemoteGIDs.size ()) != size_t (tRemoteLIDs.extent (0)),
+       std::runtime_error, "Import::Import createExpert version: "
+       "Size mismatch on userRemotePIDs, remoteGIDs, and remoteLIDs "
+       "Array's to sort3.");
 
     sort3 (tRemotePIDs.begin (),
            tRemotePIDs.end (),
            tRemoteGIDs.begin (),
-           tRemoteLIDs.begin ());
+           tRemoteLIDs.data ());
 
-  //Get rid of IDs that don't exist in SourceMap
-    int cnt = 0;
-    int indexIntoRemotePIDs = tRemotePIDs.size();
-    for(size_type i = 0; i < indexIntoRemotePIDs ; ++i )
-      if( tRemotePIDs[i] == -1 ) ++cnt;
-    if( cnt ) {
-      if( indexIntoRemotePIDs-cnt > 0 ) {
+    //Get rid of IDs that don't exist in SourceMap
+    size_type cnt = 0;
+    size_type indexIntoRemotePIDs = tRemotePIDs.size ();
+    for (size_type i = 0; i < indexIntoRemotePIDs; ++i) {
+      if (tRemotePIDs[i] == -1) {
+	++cnt;
+      }
+    }
+
+    if (cnt == 0) { // done modifying remoteLIDs_
+      ImportData_->remoteLIDs_.sync_device ();
+    }
+    else {
+      if (indexIntoRemotePIDs - cnt > 0) {
         Array<GO>  newRemoteGIDs(indexIntoRemotePIDs-cnt);
         Array<LO>  newRemoteLIDs(indexIntoRemotePIDs-cnt);
         Array<int> newRemotePIDs(indexIntoRemotePIDs-cnt);
         cnt = 0;
-        for( size_type j = 0; j < indexIntoRemotePIDs; ++j )
-          if( tRemotePIDs[j] != -1 ) {
+        for (size_type j = 0; j < indexIntoRemotePIDs; ++j)
+          if(tRemotePIDs[j] != -1) {
             newRemoteGIDs[cnt] = tRemoteGIDs[j];
             newRemotePIDs[cnt] = tRemotePIDs[j];
             newRemoteLIDs[cnt] = target->getLocalElement(tRemoteGIDs[j]);
@@ -432,33 +527,46 @@ namespace Tpetra {
         indexIntoRemotePIDs = cnt;
         tRemoteGIDs = newRemoteGIDs;
         tRemotePIDs = newRemotePIDs;
-        tRemoteLIDs = newRemoteLIDs;
+	makeDualViewFromArrayView (ImportData_->remoteLIDs_,
+				   newRemoteLIDs ().getConst (),
+				   "remoteLIDs");
       }
       else { //valid RemoteIDs empty
         indexIntoRemotePIDs = 0;
         tRemoteGIDs.clear();
         tRemotePIDs.clear();
+	ImportData_->remoteLIDs_ = decltype (ImportData_->remoteLIDs_) ();
       }
     }
 
-    ImportData_->exportPIDs_ = Teuchos::Array<int>(userExportPIDs);
-    ImportData_->exportLIDs_ = Teuchos::Array<int>(userExportLIDs);
+    ImportData_->exportPIDs_ = Teuchos::Array<int> (userExportPIDs);
+    makeDualViewFromArrayView (ImportData_->exportLIDs_,
+			       userExportLIDs, "exportLIDs");
 
     bool locallyComplete = true;
-    for(size_type i=0; i<userExportPIDs.size() && locallyComplete; i++)  {
+    for (size_type i = 0; i < userExportPIDs.size () && locallyComplete; ++i) {
       if (userExportPIDs[i] == -1) {
         locallyComplete = false;
       }
     }
-
     ImportData_->isLocallyComplete_ = locallyComplete;
+
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "locallyComplete: "
+	 << (locallyComplete ? "true" : "false")
+	 << "; call createFromSendsAndRecvs" << endl;
+      validOutputStream (out_) << os.str ();
+    }
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        std::string prefix = std::string("Tpetra ")+std::string(":iport_ctor:cFSAR ");
+      std::string mmm_prefix =
+	std::string("Tpetra ") + std::string(":iport_ctor:cFSAR ");
 
-        auto MM3(*Teuchos::TimeMonitor::getNewTimer(prefix));
+      auto MM3(*Teuchos::TimeMonitor::getNewTimer(mmm_prefix));
 #endif
-        ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,tRemotePIDs);
+      Distributor& distributor = ImportData_->distributor_;
+      distributor.createFromSendsAndRecvs (ImportData_->exportPIDs_, tRemotePIDs);
     }
   }
 
@@ -476,35 +584,24 @@ namespace Tpetra {
           Distributor& distributor,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-     out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out),
-    debug_ (tpetraImportDebugDefault)
+     out_ (out.is_null () ? Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : out)
   {
-    using Teuchos::null;
-    using Teuchos::Ptr;
-    using Teuchos::rcp;
     using std::cerr;
     using std::endl;
-    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+    using data_type = ImportExportData<LocalOrdinal, GlobalOrdinal, Node>;
 
-    // Read "Debug" parameter from the input ParameterList.
-    bool debug = tpetraImportDebugDefault;
-    if (! plist.is_null ()) {
-      try {
-        debug = plist->get<bool> ("Debug");
-      } catch (Teuchos::Exceptions::InvalidParameter&) {}
-    }
-    debug_ = debug;
+    this->setParameterList (plist);
 
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (debug_ && ! out_.is_null ()) {
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      auto comm = source.is_null () ? Teuchos::null : source->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import expert ctor" << endl;
-      *out_ << os.str ();
+      os << "Proc " << myRank << ": Tpetra::Import export ctor: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "Start" << endl;
+      validOutputStream (out_) << os.str ();
     }
-    ImportData_ = rcp (new data_type (source, target, out_, plist));
 
     bool locallyComplete = true;
     for (Teuchos::Array<int>::size_type i = 0; i < exportPIDs.size (); ++i) {
@@ -512,8 +609,17 @@ namespace Tpetra {
         locallyComplete = false;
       }
     }
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "numSameIDs: " << numSameIDs << ", locallyComplete: "
+	 << (locallyComplete ? "true" : "false") << endl;
+      validOutputStream (out_) << os.str ();
+    }
+
+    ImportData_ = Teuchos::rcp (new data_type (source, target, out_, plist));
     ImportData_->isLocallyComplete_ = locallyComplete;
     ImportData_->numSameIDs_ = numSameIDs;
+
     makeDualViewFromArrayView (ImportData_->permuteToLIDs_,
 			       permuteToLIDs ().getConst (),
 			       "permuteToLIDs");
@@ -524,10 +630,18 @@ namespace Tpetra {
 			       "permuteFromLIDs");
     TEUCHOS_ASSERT( size_t (ImportData_->permuteFromLIDs_.extent (0)) ==
 		    size_t (permuteFromLIDs.size ()) );
-    ImportData_->remoteLIDs_.swap (remoteLIDs);
-    ImportData_->distributor_.swap (distributor);
-    ImportData_->exportLIDs_.swap (exportLIDs);
+    makeDualViewFromArrayView (ImportData_->remoteLIDs_,
+			       remoteLIDs ().getConst (),
+			       "remoteLIDs");
+    TEUCHOS_ASSERT( size_t (ImportData_->remoteLIDs_.extent (0)) ==
+		    size_t (remoteLIDs.size ()) );
+    makeDualViewFromArrayView (ImportData_->exportLIDs_,
+			       exportLIDs ().getConst (),
+			       "exportLIDs");
+    TEUCHOS_ASSERT( size_t (ImportData_->exportLIDs_.extent (0)) ==
+		    size_t (exportLIDs.size ()) );
     ImportData_->exportPIDs_.swap (exportPIDs);
+    ImportData_->distributor_.swap (distributor);
   }
 
   namespace { // (anonymous)
@@ -732,9 +846,12 @@ namespace Tpetra {
         }
         if (verbose) {
           std::ostringstream os;
-          os << *verboseHeader << "- Remote GIDs: " << Teuchos::toString (result.remoteGIDs) << endl;
-          os << *verboseHeader << "- Remote PIDs: " << Teuchos::toString (result.remotePIDs) << endl;
-          os << *verboseHeader << "- Remote LIDs: " << Teuchos::toString (result.remoteLIDs) << endl;
+          os << *verboseHeader << "- Remote GIDs: "
+	     << Teuchos::toString (result.remoteGIDs) << endl;
+          os << *verboseHeader << "- Remote PIDs: "
+	     << Teuchos::toString (result.remotePIDs) << endl;
+          os << *verboseHeader << "- Remote LIDs: "
+	     << Teuchos::toString (result.remoteLIDs) << endl;
           *out << os.str ();
         }
       }
@@ -766,14 +883,15 @@ namespace Tpetra {
       if (sourceMap.isDistributed ()) {
         if (verbose) {
           std::ostringstream os;
-          os << *verboseHeader << "- Sort remotes by PID, as Import always does" << endl
+          os << *verboseHeader << "- Sort remotes by PID, as Import always does"
+	     << endl
              << *verboseHeader << "-- remotePIDs before: "
              << Teuchos::toString (result.remotePIDs) << endl
              << *verboseHeader << "-- remoteGIDs before: "
              << Teuchos::toString (result.remoteGIDs) << endl
              << *verboseHeader << "-- remoteLIDs before: "
              << Teuchos::toString (result.remoteLIDs) << endl;
-          std::cerr << os.str ();
+          *out << os.str ();
         }
         // Import always sorts these, regardless of what the user wanted.
         sort3 (result.remotePIDs.begin (),
@@ -809,7 +927,7 @@ namespace Tpetra {
       if (verbose) {
         std::ostringstream os;
         os << *verboseHeader << "- Done with sameSPR..." << endl;
-        std::cerr << os.str ();
+        *out << os.str ();
       }
       return result;
     }
@@ -824,42 +942,35 @@ namespace Tpetra {
           const bool mayReorderTargetMapIndicesLocally,
           const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<Teuchos::FancyOStream>& debugOutput) :
-    out_ (debugOutput),
-    debug_ (getBoolParameter (plist.getRawPtr (), "Debug", tpetraImportDebugDefault))
+    out_ (debugOutput)
   {
-    using Teuchos::FancyOStream;
+    using Teuchos::getFancyOStream;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::rcpFromRef;    
     using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Node NT;
 
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ("Tpetra::Import") ||
-      this->debug_;
-    const bool debug = ::Tpetra::Details::Behavior::debug ("Tpetra::Import") || this->debug_;
+    this->setParameterList (plist);
+    const bool debug = ::Tpetra::Details::Behavior::debug ("Tpetra::Import");
 
-    RCP<FancyOStream> outPtr = debugOutput.is_null () ?
-      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : debugOutput;
+    auto outPtr = debugOutput.is_null () ?
+      getFancyOStream (rcpFromRef (std::cerr)) : debugOutput;
     TEUCHOS_TEST_FOR_EXCEPTION
       (outPtr.is_null (), std::logic_error,
        "outPtr is null; this should never happen!");
-    FancyOStream& out = *outPtr;
-    Teuchos::OSTab tab1 (out);
 
     std::unique_ptr<std::string> verboseHeader;
-    if (verbose) {
+    if (verbose_) {
       std::ostringstream os;
       const int myRank = sourceMap->getComm ()->getRank ();
-      os << "Proc " << myRank << ": ";
+      os << "Proc " << myRank << ": Tpetra::Import ctor from remotes: ";
       verboseHeader = std::unique_ptr<std::string> (new std::string (os.str ()));
-    }
-    if (verbose) {
-      std::ostringstream os;
-      os << *verboseHeader << "Import ctor (source Map + target indices, "
-        "mayReorder=" << (mayReorderTargetMapIndicesLocally ? "true" : "false")
-         << ")" << endl;
-      out << os.str ();
+      os << "mayReorder=" << (mayReorderTargetMapIndicesLocally ? "true" : "false")
+         << endl;
+      validOutputStream (out_) << os.str ();
     }
 
     ImportLocalSetupResult<LO, GO, NT> localSetupResult =
@@ -870,7 +981,7 @@ namespace Tpetra {
                                                                  mayReorderTargetMapIndicesLocally,
                                                                  outPtr.getRawPtr (),
                                                                  verboseHeader.get (),
-                                                                 verbose,
+                                                                 verbose_,
                                                                  debug);
     this->ImportData_ = rcp (new ImportExportData<LO, GO, NT> (sourceMap,
                                                                localSetupResult.targetMap,
@@ -879,9 +990,9 @@ namespace Tpetra {
     this->ImportData_->numSameIDs_ = localSetupResult.numSameIDs;
     // Skip permutes; they are user error, because they duplicate
     // non-remote indices.
-    this->ImportData_->remoteLIDs_ =
-      Teuchos::Array<LO> (localSetupResult.remoteLIDs.begin (),
-                          localSetupResult.remoteLIDs.end ());
+    makeDualViewFromVector (ImportData_->remoteLIDs_, 
+			    localSetupResult.remoteLIDs,
+			    "remoteLIDs");
     // "Is locally complete" for an Import means that all target Map
     // indices on the calling process exist on at least one process
     // (not necessarily this one) in the source Map.  For this
@@ -893,10 +1004,10 @@ namespace Tpetra {
 
     Teuchos::Array<GO> exportGIDs;
     if (sourceMap->isDistributed ()) {
-      if (verbose) {
+      if (verbose_) {
         std::ostringstream os;
         os << *verboseHeader << "Make Distributor (createFromRecvs)" << endl;
-        std::cerr << os.str ();
+        validOutputStream (out_) << os.str ();
       }
       Teuchos::ArrayView<const GO> remoteGIDs (localSetupResult.remoteGIDs.data (),
                                                localSetupResult.remoteGIDs.size ());
@@ -918,40 +1029,41 @@ namespace Tpetra {
       // NOTE (mfh 03 Mar 2014) This is now a candidate for a
       // thread-parallel kernel, but only if using the new thread-safe
       // Map implementation.
-      if (verbose) {
+      if (verbose_) {
         std::ostringstream os;
         os << *verboseHeader << "Compute exportLIDs" << endl;
-        std::cerr << os.str ();
+        validOutputStream (out_) << os.str ();
       }
       typedef typename Teuchos::Array<GO>::size_type size_type;
       const size_type numExportIDs = exportGIDs.size ();
-      this->ImportData_->exportLIDs_.resize (numExportIDs);
-      Teuchos::ArrayView<LO> exportLIDs = this->ImportData_->exportLIDs_ ();
+
+      typename decltype (ImportData_->exportLIDs_)::t_host
+	exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
       for (size_type k = 0; k < numExportIDs; ++k) {
         exportLIDs[k] = sourceMap->getLocalElement (exportGIDs[k]);
       }
+      makeDualViewFromOwningHostView (ImportData_->exportLIDs_, exportLIDs);
     }
 
-    if (verbose) {
+    if (verbose_) {
       std::ostringstream os;
-      os << *verboseHeader << "ImportExportData::remoteLIDs_: "
-         << Teuchos::toString (this->ImportData_->remoteLIDs_) << endl;
-      std::cerr << os.str ();
+      os << *verboseHeader;
+      printDualView (os, this->ImportData_->remoteLIDs_,
+		     "ImportExportData::remoteLIDs_");
+      os << endl;
+      validOutputStream (out_) << os.str ();
     }
-    if (verbose) {
+    if (verbose_) {
       std::ostringstream os;
-      const int myRank = sourceMap->getComm ()->getRank ();
-      os << myRank << ": Import ctor: done" << endl;
-      out << os.str ();
+      os << *verboseHeader << "Done!" << endl;
+      validOutputStream (out_) << os.str ();
     }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::~Import()
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Import<LocalOrdinal,GlobalOrdinal,Node>::getNumSameIDs() const {
+  size_t
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getNumSameIDs () const {
     return ImportData_->numSameIDs_;
   }
 
@@ -977,25 +1089,30 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Import<LocalOrdinal,GlobalOrdinal,Node>::getNumRemoteIDs() const {
-    return ImportData_->remoteLIDs_.size();
+  size_t
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getNumRemoteIDs () const {
+    return static_cast<size_t> (ImportData_->remoteLIDs_.extent (0));
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const {
-    return ImportData_->remoteLIDs_();
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getRemoteLIDs () const {
+    return makeConstArrayViewFromDualView (ImportData_->remoteLIDs_);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Import<LocalOrdinal,GlobalOrdinal,Node>::getNumExportIDs() const {
-    return ImportData_->exportLIDs_.size();
+  size_t
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getNumExportIDs () const {
+    return static_cast<size_t> (ImportData_->exportLIDs_.extent (0));
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getExportLIDs() const {
-    return ImportData_->exportLIDs_();
+    return makeConstArrayViewFromDualView (ImportData_->exportLIDs_);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1112,7 +1229,7 @@ namespace Tpetra {
     // GID -> LID lookups for the source Map.
     const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
     const LO numTgtLids = as<LO> (numTgtGids);
-    LO numPermutes = 0;    
+    LO numPermutes = 0;
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = rawTgtGids[tgtLid];
       // getLocalElement() returns LINVALID if the GID isn't in the
@@ -1123,6 +1240,7 @@ namespace Tpetra {
         ++numPermutes;
       }
     }
+    const LO numRemotes = (numTgtLids - numSameGids) - numPermutes;
 
     using host_perm_type =
       typename decltype (ImportData_->permuteToLIDs_)::t_host;
@@ -1130,11 +1248,12 @@ namespace Tpetra {
       (view_alloc_no_init ("permuteToLIDs"), numPermutes);
     host_perm_type permuteFromLIDs
       (view_alloc_no_init ("permuteFromLIDs"), numPermutes);
-
-    Array<LO>& remoteLIDs = ImportData_->remoteLIDs_;
+    typename decltype (ImportData_->remoteLIDs_)::t_host remoteLIDs
+      (view_alloc_no_init ("permuteFromLIDs"), numRemotes);      
 
     {
-      LO numPermutes2 = 0;    
+      LO numPermutes2 = 0;
+      LO numRemotes2 = 0;
       for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
 	const GO curTargetGid = rawTgtGids[tgtLid];
 	const LO srcLid = source.getLocalElement (curTargetGid);
@@ -1145,17 +1264,19 @@ namespace Tpetra {
 	}
 	else {
 	  remoteGIDs.push_back (curTargetGid);
-	  remoteLIDs.push_back (tgtLid);
+	  remoteLIDs[numRemotes2] = tgtLid;
+	  ++numRemotes2;
 	}
       }
       TEUCHOS_ASSERT( numPermutes == numPermutes2 );
+      TEUCHOS_ASSERT( numRemotes == numRemotes2 );      
       TEUCHOS_ASSERT( size_t (numPermutes) + remoteGIDs.size () == size_t (numTgtLids - numSameGids) );
     }
 
     makeDualViewFromOwningHostView (ImportData_->permuteToLIDs_, permuteToLIDs);
     makeDualViewFromOwningHostView (ImportData_->permuteFromLIDs_, permuteFromLIDs);
-
-    if (remoteLIDs.size () != 0 && ! source.isDistributed ()) {
+    makeDualViewFromOwningHostView (ImportData_->remoteLIDs_, remoteLIDs);    
+    if (remoteLIDs.extent (0) != 0 && ! source.isDistributed ()) {
       // This Import has remote LIDs, meaning that the target Map has
       // entries on this process that are not in the source Map on
       // this process.  However, the source Map is not distributed
@@ -1174,226 +1295,240 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
-  setupExport(Teuchos::Array<GlobalOrdinal>& remoteGIDs,
-              bool useRemotePIDs,
-              Teuchos::Array<int>& userRemotePIDs,
-              const Teuchos::RCP<Teuchos::ParameterList>& plist )
+  setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+	       bool useRemotePIDs,
+	       Teuchos::Array<int>& userRemotePIDs,
+	       const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-      using Teuchos::arcp;
-      using Teuchos::Array;
-      using Teuchos::ArrayRCP;
-      using Teuchos::ArrayView;
-      using Teuchos::null;
-      using std::endl;
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef typename Array<int>::difference_type size_type;
-      const char tfecfFuncName[] = "setupExport: ";
+    using ::Tpetra::Details::Behavior;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using std::endl;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    typedef typename Array<int>::difference_type size_type;
+    const char tfecfFuncName[] = "setupExport: ";
+    const char suffix[ ] = "  Please report this bug to the Tpetra developers.";
 
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (getSourceMap ().is_null (), std::logic_error, "Source Map is null.  "
-           "Please report this bug to the Tpetra developers.");
-      const map_type& source = * (getSourceMap ());
+    std::unique_ptr<std::string> prefix;
+    if (verbose_) {
+      auto srcMap = this->getSourceMap ();
+      auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Tpetra::Import::setupExport: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "Start" << std::endl;
+      validOutputStream (out_) << os.str ();
+    }
+    
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->getSourceMap ().is_null (), std::logic_error,
+       "Source Map is null.  " << suffix);
+    const map_type& source = * (this->getSourceMap ());
 
-      // Sanity checks
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (! useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
-           "remotePIDs are non-empty but their use has not been requested.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
+       "remotePIDs are non-empty but their use has not been requested.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (userRemotePIDs.size () > 0 && remoteGIDs.size () != userRemotePIDs.size (),
+       std::invalid_argument, "remotePIDs must either be of size zero or match "
+       "the size of remoteGIDs.");
 
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (userRemotePIDs.size () > 0 && remoteGIDs.size () != userRemotePIDs.size (),
-           std::invalid_argument, "remotePIDs must either be of size zero or match "
-           "the size of remoteGIDs.");
+    // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
+    // the process ID of the process that owns that GID.
+    ArrayView<GO> remoteGIDsView = remoteGIDs ();
+    ArrayView<int> remoteProcIDsView;
 
-      // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
-      // the process ID of the process that owns that GID.
-      ArrayView<GO> remoteGIDsView = remoteGIDs ();
-      ArrayView<int> remoteProcIDsView;
+    // lookup == IDNotPresent means that the source Map wasn't able to
+    // figure out to which processes one or more of the GIDs in the
+    // given list of remote GIDs belong.
+    //
+    // The previous abuse warning said "The target Map has GIDs not
+    // found in the source Map."  This statement could be confusing,
+    // because it doesn't refer to ownership by the current process,
+    // but rather to ownership by _any_ process participating in the
+    // Map.  (It could not possibly refer to ownership by the current
+    // process, since remoteGIDs is exactly the list of GIDs owned by
+    // the target Map but not owned by the source Map.  It was
+    // constructed that way by setupSamePermuteRemote().)
+    //
+    // What this statement means is that the source and target Maps
+    // don't contain the same set of GIDs globally (over all
+    // processes).  That is, there is at least one GID owned by some
+    // process in the target Map, which is not owned by _any_ process
+    // in the source Map.
+    Array<int> newRemotePIDs;
+    LookupStatus lookup = AllIDsPresent;
 
-      // lookup == IDNotPresent means that the source Map wasn't able to
-      // figure out to which processes one or more of the GIDs in the
-      // given list of remote GIDs belong.
-      //
-      // The previous abuse warning said "The target Map has GIDs not
-      // found in the source Map."  This statement could be confusing,
-      // because it doesn't refer to ownership by the current process,
-      // but rather to ownership by _any_ process participating in the
-      // Map.  (It could not possibly refer to ownership by the current
-      // process, since remoteGIDs is exactly the list of GIDs owned by
-      // the target Map but not owned by the source Map.  It was
-      // constructed that way by setupSamePermuteRemote().)
-      //
-      // What this statement means is that the source and target Maps
-      // don't contain the same set of GIDs globally (over all
-      // processes).  That is, there is at least one GID owned by some
-      // process in the target Map, which is not owned by _any_ process
-      // in the source Map.
-      Array<int> newRemotePIDs;
-      LookupStatus lookup = AllIDsPresent;
-
-      if (! useRemotePIDs) {
-          newRemotePIDs.resize (remoteGIDsView.size ());
-          if (debug_ && ! out_.is_null ()) {
-              std::ostringstream os;
-              const int myRank = source.getComm ()->getRank ();
-              os << myRank << ": Import::setupExport: about to call "
-                  "getRemoteIndexList on source Map" << endl;
-              *out_ << os.str ();
-          }
-          lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs ());
+    if (! useRemotePIDs) {
+      newRemotePIDs.resize (remoteGIDsView.size ());
+      if (verbose_) {
+	std::ostringstream os;
+	os << *prefix << "Call sourceMap.getRemoteIndexList" << endl;
+	validOutputStream (out_) << os.str ();
       }
-      Array<int>& remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
+      lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs ());
+    }
+    Array<int>& remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
 
-      if (lookup == IDNotPresent) {
-          // There is at least one GID owned by the calling process in the
-          // target Map, which is not owned by any process in the source
-          // Map.
-          ImportData_->isLocallyComplete_ = false;
+    if (lookup == IDNotPresent) {
+      // There is at least one GID owned by the calling process in the
+      // target Map, which is not owned by any process in the source
+      // Map.
+      ImportData_->isLocallyComplete_ = false;
 
-          // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
-          // correct behavior, depending on the circumstances.
-          TPETRA_ABUSE_WARNING
-              (true, std::runtime_error, "::setupExport(): the source Map wasn't "
-               "able to figure out which process owns one or more of the GIDs in the "
-               "list of remote GIDs.  This probably means that there is at least one "
-               "GID owned by some process in the target Map which is not owned by any"
-               " process in the source Map.  (That is, the source and target Maps do "
-               "not contain the same set of GIDs globally.)");
+      // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
+      // correct behavior, depending on the circumstances.
+      TPETRA_ABUSE_WARNING
+	(true, std::runtime_error, "::setupExport(): the source Map wasn't "
+	 "able to figure out which process owns one or more of the GIDs in the "
+	 "list of remote GIDs.  This probably means that there is at least one "
+	 "GID owned by some process in the target Map which is not owned by any"
+	 " process in the source Map.  (That is, the source and target Maps do "
+	 "not contain the same set of GIDs globally.)");
 
-          // Ignore remote GIDs that aren't owned by any process in the
-          // source Map.  getRemoteIndexList() gives each of these a
-          // process ID of -1.
+      // Ignore remote GIDs that aren't owned by any process in the
+      // source Map.  getRemoteIndexList() gives each of these a
+      // process ID of -1.
 
-          const size_type numInvalidRemote =
-              std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
-                             std::bind1st (std::equal_to<int> (), -1));
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-              (numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
-               "on the source Map returned IDNotPresent, but none of the returned "
-               "\"remote\" process ranks are -1.  Please report this bug to the "
-               "Tpetra developers.");
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-          using Teuchos::TimeMonitor;
-          std::string label;
-          if(!plist.is_null())
-              label = plist->get("Timer Label",label);
-          std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:1 ");
-          auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
-#else
-          (void)plist;
-#endif
-
-
-          // If all of them are invalid, we can delete the whole array.
-          const size_type totalNumRemote = getNumRemoteIDs ();
-          if (numInvalidRemote == totalNumRemote) {
-              // all remotes are invalid; we have no remotes; we can delete the remotes
-              remoteProcIDs.clear ();
-              remoteGIDs.clear (); // This invalidates the view remoteGIDsView
-              ImportData_->remoteLIDs_.clear();
-          }
-          else {
-              // Some remotes are valid; we need to keep the valid ones.
-              // Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
-              size_type numValidRemote = 0;
-#ifdef HAVE_TPETRA_DEBUG
-              ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
-#else
-              GlobalOrdinal* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
-#endif // HAVE_TPETRA_DEBUG
-              for (size_type r = 0; r < totalNumRemote; ++r) {
-                  // Pack in all the valid remote PIDs and GIDs.
-                  if (remoteProcIDs[r] != -1) {
-                      remoteProcIDs[numValidRemote] = remoteProcIDs[r];
-                      remoteGIDsPtr[numValidRemote] = remoteGIDsPtr[r];
-                      ImportData_->remoteLIDs_[numValidRemote] = ImportData_->remoteLIDs_[r];
-                      ++numValidRemote;
-                  }
-              }
-              TEUCHOS_TEST_FOR_EXCEPTION(
-                  numValidRemote != totalNumRemote - numInvalidRemote, std::logic_error,
-                  "Tpetra::Import::setupExport(): After removing invalid remote GIDs and"
-                  " packing the valid remote GIDs, numValidRemote = " << numValidRemote
-                  << " != totalNumRemote - numInvalidRemote = "
-                  << totalNumRemote - numInvalidRemote
-                  << ".  Please report this bug to the Tpetra developers.");
-
-              remoteProcIDs.resize (numValidRemote);
-              remoteGIDs.resize (numValidRemote);
-              ImportData_->remoteLIDs_.resize (numValidRemote);
-          }
-          // Revalidate the view after clear or resize.
-          remoteGIDsView = remoteGIDs ();
-      }
-      // Sort remoteProcIDs in ascending order, and apply the resulting
-      // permutation to remoteGIDs and remoteLIDs_.  This ensures that
-      // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
-      // to the same thing.
-
-      sort3 (remoteProcIDs.begin (),
-             remoteProcIDs.end (),
-             remoteGIDsView.begin (),
-             ImportData_->remoteLIDs_.begin ());
-
-      // Call the Distributor's createFromRecvs() method to turn the
-      // remote GIDs and their owning processes into a send-and-receive
-      // communication plan.  remoteGIDs and remoteProcIDs_ are input;
-      // exportGIDs and exportProcIDs_ are output arrays which are
-      // allocated by createFromRecvs().
-      Array<GO> exportGIDs;
+      const size_type numInvalidRemote =
+	std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
+		       std::bind1st (std::equal_to<int> (), -1));
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	(numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
+	 "on the source Map returned IDNotPresent, but none of the returned "
+	 "\"remote\" process ranks are -1.  Please report this bug to the "
+	 "Tpetra developers.");
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       using Teuchos::TimeMonitor;
       std::string label;
       if(!plist.is_null())
-          label = plist->get("Timer Label",label);
-      std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
+	label = plist->get("Timer Label",label);
+      std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:1 ");
       auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#else
+      (void)plist;
 #endif
 
-      ImportData_->distributor_.createFromRecvs (remoteGIDsView ().getConst (),
-                                                 remoteProcIDs, exportGIDs,
-                                                 ImportData_->exportPIDs_);
-      // if (debug_ && ! out_.is_null ()) {
-      //   std::ostringstream os;
-      //   const int myRank = source.getComm ()->getRank ();
-      //   os << myRank << ": Import::setupExport: Getting LIDs" << endl;
-      //   *out_ << os.str ();
-      // }
+      // If all of them are invalid, we can delete the whole array.
+      const size_type totalNumRemote = getNumRemoteIDs ();
+      if (numInvalidRemote == totalNumRemote) {
+	// all remotes are invalid; we have no remotes; we can delete the remotes
+	remoteProcIDs.clear ();
+	remoteGIDs.clear (); // invalidates remoteGIDsView
+	ImportData_->remoteLIDs_ = decltype (ImportData_->remoteLIDs_) ();
+      }
+      else {
+	// Some remotes are valid; we need to keep the valid ones.
+	// Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
+	size_type numValidRemote = 0;
+#ifdef HAVE_TPETRA_DEBUG
+	ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
+#else
+	GO* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
+#endif // HAVE_TPETRA_DEBUG
 
-      // Find the LIDs corresponding to the (outgoing) GIDs in
-      // exportGIDs.  For sparse matrix-vector multiply, this tells the
-      // calling process how to index into the source vector to get the
-      // elements which it needs to send.
-      //
+	// Don't mark the DualView modified, since we'll reallocate it.
+	auto remoteLIDs = ImportData_->remoteLIDs_.view_host ();
+	
+	for (size_type r = 0; r < totalNumRemote; ++r) {
+	  // Pack in all the valid remote PIDs and GIDs.
+	  if (remoteProcIDs[r] != -1) {
+	    remoteProcIDs[numValidRemote] = remoteProcIDs[r];
+	    remoteGIDsPtr[numValidRemote] = remoteGIDsPtr[r];
+	    remoteLIDs[numValidRemote] = remoteLIDs[r];
+	    ++numValidRemote;
+	  }
+	}
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	  (numValidRemote != totalNumRemote - numInvalidRemote,
+	   std::logic_error, "After removing invalid remote GIDs and packing "
+	   "the valid remote GIDs, numValidRemote = " << numValidRemote
+	   << " != totalNumRemote - numInvalidRemote = "
+	   << totalNumRemote - numInvalidRemote
+	   << ".  Please report this bug to the Tpetra developers.");
+
+	remoteProcIDs.resize (numValidRemote);
+	remoteGIDs.resize (numValidRemote);
+
+	Kokkos::resize (remoteLIDs, numValidRemote);
+	ImportData_->remoteLIDs_ = decltype (ImportData_->remoteLIDs_) ();	
+	makeDualViewFromOwningHostView (ImportData_->remoteLIDs_, remoteLIDs);
+      }
+      // Revalidate the view after clear or resize.
+      remoteGIDsView = remoteGIDs ();
+    }
+
+    // Sort remoteProcIDs in ascending order, and apply the resulting
+    // permutation to remoteGIDs and remoteLIDs_.  This ensures that
+    // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
+    // to the same thing.
+    {    
+      ImportData_->remoteLIDs_.modify_host ();
+      auto remoteLIDs = ImportData_->remoteLIDs_.view_host ();
+      sort3 (remoteProcIDs.begin (),
+	     remoteProcIDs.end (),
+	     remoteGIDsView.getRawPtr (),
+	     remoteLIDs.data ());
+      ImportData_->remoteLIDs_.sync_device ();      
+    }    
+
+    // Call the Distributor's createFromRecvs() method to turn the
+    // remote GIDs and their owning processes into a send-and-receive
+    // communication plan.  remoteGIDs and remoteProcIDs_ are input;
+    // exportGIDs and exportProcIDs_ are output arrays which are
+    // allocated by createFromRecvs().
+    Array<GO> exportGIDs;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
-      MM.release();
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+    using Teuchos::TimeMonitor;
+    std::string label;
+    if(!plist.is_null())
+      label = plist->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
 #endif
 
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Call createFromRecvs" << endl;
+      validOutputStream (out_) << endl;
+    }
+    ImportData_->distributor_.createFromRecvs (remoteGIDsView ().getConst (),
+					       remoteProcIDs, exportGIDs,
+					       ImportData_->exportPIDs_);
 
-      // NOTE (mfh 03 Mar 2014) This is now a candidate for a
-      // thread-parallel kernel, but only if using the new thread-safe
-      // Map implementation.
-      const size_type numExportIDs = exportGIDs.size ();
-      if (numExportIDs > 0) {
-          ImportData_->exportLIDs_.resize (numExportIDs);
-          ArrayView<const GO> expGIDs = exportGIDs ();
-          ArrayView<LO> expLIDs = ImportData_->exportLIDs_ ();
-          for (size_type k = 0; k < numExportIDs; ++k) {
-              expLIDs[k] = source.getLocalElement (expGIDs[k]);
-          }
-      }
+    // Find the LIDs corresponding to the (outgoing) GIDs in
+    // exportGIDs.  For sparse matrix-vector multiply, this tells the
+    // calling process how to index into the source vector to get the
+    // elements which it needs to send.
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
+    MM.release();
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#endif
 
-      if (debug_ && ! out_.is_null ()) {
-          std::ostringstream os;
-          const int myRank = source.getComm ()->getRank ();
-          os << myRank << ": Import::setupExport: done" << endl;
-          *out_ << os.str ();
+    // NOTE (mfh 03 Mar 2014) This is now a candidate for a
+    // thread-parallel kernel, but only if using the new thread-safe
+    // Map implementation.
+    const size_type numExportIDs = exportGIDs.size ();
+    if (numExportIDs > 0) {
+      typename decltype (ImportData_->exportLIDs_)::t_host
+	exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
+      ArrayView<const GO> expGIDs = exportGIDs ();
+      for (size_type k = 0; k < numExportIDs; ++k) {
+	exportLIDs[k] = source.getLocalElement (expGIDs[k]);
       }
+      makeDualViewFromOwningHostView (ImportData_->exportLIDs_, exportLIDs);
+    }
+
+    if (verbose_) {
+      std::ostringstream os;
+      os << *prefix << "Done!" << endl;
+      validOutputStream (out_) << os.str ();
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

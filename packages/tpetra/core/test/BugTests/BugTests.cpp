@@ -41,16 +41,16 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Teuchos_UnitTestHarness.hpp>
-
-#include <Tpetra_Core.hpp>
-#include <Tpetra_MatrixIO.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_MatrixIO.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include <memory>
+#include <sstream>
 
 namespace {
 
@@ -177,6 +177,7 @@ namespace {
   {
     // test bug where map test checks that maps are the same object, instead of checking that maps are equivalent
 
+    using std::endl;    
     // mfh 06 Aug 2017: There was no obvious reason why this test
     // required LO=int and GO=int, nor did the original Bug 5129 bug
     // report depend on specific LO or GO types, so I relaxed this
@@ -190,11 +191,26 @@ namespace {
     // this still has to be bigger than LO
     typedef int GO;
 #endif // 1
-
-    // create a comm
+    
     RCP<const Comm<int> > comm = getDefaultComm();
+    const bool verbose = Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      std::ostringstream os;
+      os << "Proc " << comm->getRank () << ": Bug 5129 test: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << endl;
+      std::cerr << os.str ();
+    }
     const global_size_t numGlobal = comm->getSize()*10;
+
     // create two separate, but identical, maps
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Create Maps" << endl;
+      std::cerr << os.str ();
+    }
+    
     RCP<const Map<LO,GO> > mapImportIn  = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
     RCP<const Map<LO,GO> > mapImportOut = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
     RCP<const Map<LO,GO> > mapIn        = Tpetra::createUniformContigMap<LO,GO>(numGlobal, comm);
@@ -204,9 +220,27 @@ namespace {
     TEST_EQUALITY_CONST( mapImportIn   == mapIn,  false );
     TEST_EQUALITY_CONST( mapImportOut  == mapOut, false );
     // create import, vectors from these maps
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Create Import" << endl;
+      std::cerr << os.str ();
+    }
     RCP<const Import<LO,GO> > import = Tpetra::createImport(mapImportIn, mapImportOut);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Create Vectors" << endl;
+      std::cerr << os.str ();
+    }
     RCP<Vector<SC,LO,GO> > vecIn = Tpetra::createVector<SC>(mapIn);
     RCP<Vector<SC,LO,GO> > vecOut = Tpetra::createVector<SC>(mapOut);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call doImport" << endl;
+      std::cerr << os.str ();
+    }
     // do the import; under the bug, this should throw an exception
     TEST_NOTHROW( vecOut->doImport( *vecIn, *import, Tpetra::REPLACE ) )
     // All procs fail if any proc fails

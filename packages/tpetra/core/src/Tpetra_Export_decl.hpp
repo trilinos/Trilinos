@@ -207,7 +207,7 @@ namespace Tpetra {
     Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
     //! Destructor.
-    virtual ~Export ();
+    virtual ~Export () = default;
 
     /// \brief Set parameters.
     ///
@@ -336,7 +336,7 @@ namespace Tpetra {
     //! Output stream for debugging output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
     //! Whether to print copious debugging output on all processes.
-    bool debug_;
+    bool verbose_ = false;
 
     //! @name Initialization helper functions (called by the constructor)
     //@{
