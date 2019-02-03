@@ -255,8 +255,11 @@ namespace Tpetra {
     //! Copy constructor.
     Distributor (const Distributor& distributor);
 
-    //! Destructor (virtual for memory safety).
-    virtual ~Distributor ();
+    /// \brief Destructor (virtual for memory safety).
+    ///
+    /// \pre No outstanding communication requests.
+    ///   (We could check, but see GitHub Issue #1303.)
+    virtual ~Distributor () = default;
 
     /// \brief Swap the contents of rhs with those of *this.
     ///
@@ -819,7 +822,7 @@ namespace Tpetra {
     bool barrierBetween_;
 
     //! Whether to print copious debug output to stderr on all processes.
-    bool debug_;
+    bool verbose_;
     //@}
 
     /// \brief Whether I am supposed to send a message to myself.
@@ -984,28 +987,6 @@ namespace Tpetra {
     /// See useDistinctTags_.  This is called in doPosts() (both
     /// variants) and computeReceives().
     int getTag (const int pathTag) const;
-
-    /// \brief Initialize using the specified communicator and ParameterList.
-    ///
-    /// This method is only meant to be called by the constructor.
-    ///
-    /// \param comm [in] Communicator used by the Distributor.  MUST
-    ///   be nonnull.
-    /// \param out [in/out] Output stream (for debugging output).  If
-    ///   null, the default is \c std::cerr.
-    /// \param plist [in/out] List of parameters controlling how the
-    ///   Distributor performs communication, and specifying debug
-    ///   options.  If null, all parameters take their default values.
-    ///   Please see the class documentation for a list of all
-    ///   accepted parameters and their default values.
-    ///
-    /// This method doesn't actually set up the distribution pattern.
-    /// You need to call one of the "gather / scatter 'constructors'"
-    /// to do that.
-    void
-    init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-          const Teuchos::RCP<Teuchos::FancyOStream>& out,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Compute receive info from sends.
     ///
@@ -1646,13 +1627,14 @@ namespace Tpetra {
     const int pathTag = 1;
     const int tag = this->getTag (pathTag);
 
-    if (debug_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        requests_.size () != 0,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
-        << myProcID << ": requests_.size() = " << requests_.size () << " != 0.");
-    }
+#ifdef HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (requests_.size () != 0,
+       std::logic_error,
+       "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
+       << myProcID << ": requests_.size() = " << requests_.size ()
+       << " != 0.");
+#endif // HAVE_TEUCHOS_DEBUG    
     if (verbose) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": doPosts(4 args, Teuchos::ArrayRCP, "
@@ -2373,15 +2355,6 @@ namespace Tpetra {
               "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
-          // if (debug_) {
-          //   const size_t off = startsTo_[p] * numPackets;
-          //   const size_t len = lengthsTo_[p] * numPackets;
-          //   TEUCHOS_TEST_FOR_EXCEPTION
-          //     (static_cast<size_t> (off + len) >
-          //      static_cast<size_t> (exports.size ()), std::logic_error,
-          //      "doPosts: off=" << off << " + len=" << len << " > "
-          //      "exports.size()=" << exports.size () << ".");
-          // }
 
           exports_view_type tmpSend = subview_offset(
             exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
@@ -2661,12 +2634,12 @@ namespace Tpetra {
     const int pathTag = 1;
     const int tag = this->getTag (pathTag);
 
-    if (debug_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-        "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
-        << requests_.size () << " != 0.");
-    }
+#ifdef HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+       "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
+       << requests_.size () << " != 0.");
+#endif // HAVE_TEUCHOS_DEBUG
     if (verbose) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": doPosts(4 args, Kokkos, "
