@@ -82,6 +82,66 @@ namespace {
       return defaultValue;
     }
   }
+
+  auto view_alloc_no_init (const std::string& label) ->
+    decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing))
+  {
+    return Kokkos::view_alloc (label, Kokkos::WithoutInitializing);
+  }
+
+  // Assume that dv is sync'd.
+  template<class ElementType, class DeviceType>
+  Teuchos::ArrayView<const ElementType>
+  makeConstArrayViewFromDualView (const Kokkos::DualView<ElementType*, DeviceType>& dv)
+  {
+    TEUCHOS_ASSERT( ! dv.need_sync_host () );
+    auto hostView = dv.view_host ();
+    const auto size = hostView.extent (0);
+    return Teuchos::ArrayView<const ElementType> (size == 0 ? nullptr : hostView.data (), size);
+  }
+
+  template<class ElementType, class DeviceType>
+  void
+  makeDualViewFromOwningHostView (Kokkos::DualView<ElementType*, DeviceType>& dv, const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
+  {
+    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
+    using dev_view_type = typename dual_view_type::t_dev;
+    using host_view_type = typename dual_view_type::t_host;
+
+    const auto size = hostView.size ();
+    auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
+
+#if defined(KOKKOS_ENABLE_CUDA)
+    constexpr bool is_cuda = std::is_same<typename DeviceType::execution_space, Kokkos::Cuda>::value;
+#else
+    constexpr bool is_cuda = false;
+#endif
+    TEUCHOS_ASSERT( is_cuda || devView.data () == hostView.data () );
+    
+    Kokkos::deep_copy (devView, hostView);
+    dv = dual_view_type (devView, hostView);
+  }
+
+  template<class ElementType, class DeviceType>
+  void
+  makeDualViewFromArrayView (Kokkos::DualView<ElementType*, DeviceType>& dv,
+			     const Teuchos::ArrayView<const ElementType>& av,
+			     const std::string& label)
+  {
+    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
+    using dev_view_type = typename dual_view_type::t_dev;
+    using host_view_type = typename dual_view_type::t_host;
+    using const_host_view_type = typename host_view_type::const_type;
+
+    const auto size = av.size ();
+    const ElementType* ptr = (size == 0) ? nullptr : av.getRawPtr ();
+    const_host_view_type inView (ptr, size);
+    host_view_type hostView (view_alloc_no_init (label), size);
+    Kokkos::deep_copy (hostView, inView);
+
+    makeDualViewFromOwningHostView (dv, hostView);
+  }
+  
 } // namespace (anonymous)
 
 namespace Teuchos {
@@ -453,10 +513,17 @@ namespace Tpetra {
       }
     }
     ImportData_->isLocallyComplete_ = locallyComplete;
-
     ImportData_->numSameIDs_ = numSameIDs;
-    ImportData_->permuteToLIDs_.swap (permuteToLIDs);
-    ImportData_->permuteFromLIDs_.swap (permuteFromLIDs);
+    makeDualViewFromArrayView (ImportData_->permuteToLIDs_,
+			       permuteToLIDs ().getConst (),
+			       "permuteToLIDs");
+    TEUCHOS_ASSERT( size_t (ImportData_->permuteToLIDs_.extent (0)) ==
+		    size_t (permuteToLIDs.size ()) );
+    makeDualViewFromArrayView (ImportData_->permuteFromLIDs_,
+			       permuteFromLIDs ().getConst (),
+			       "permuteFromLIDs");
+    TEUCHOS_ASSERT( size_t (ImportData_->permuteFromLIDs_.extent (0)) ==
+		    size_t (permuteFromLIDs.size ()) );
     ImportData_->remoteLIDs_.swap (remoteLIDs);
     ImportData_->distributor_.swap (distributor);
     ImportData_->exportLIDs_.swap (exportLIDs);
@@ -889,20 +956,24 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Import<LocalOrdinal,GlobalOrdinal,Node>::getNumPermuteIDs() const {
-    return ImportData_->permuteFromLIDs_.size();
+  size_t
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getNumPermuteIDs () const {
+    return static_cast<size_t> (ImportData_->permuteFromLIDs_.extent (0));
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::getPermuteFromLIDs() const {
-    return ImportData_->permuteFromLIDs_();
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getPermuteFromLIDs () const {
+    return makeConstArrayViewFromDualView (ImportData_->permuteFromLIDs_);    
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
-  Import<LocalOrdinal,GlobalOrdinal,Node>::getPermuteToLIDs() const {
-    return ImportData_->permuteToLIDs_();
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  getPermuteToLIDs () const {
+    return makeConstArrayViewFromDualView (ImportData_->permuteToLIDs_);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1037,26 +1108,52 @@ namespace Tpetra {
     // rearrange (permute) them in general.  IDs to receive are in the
     // target Map, but not the source Map.
 
-    Array<LO>& permuteToLIDs = ImportData_->permuteToLIDs_;
-    Array<LO>& permuteFromLIDs = ImportData_->permuteFromLIDs_;
-    Array<LO>& remoteLIDs = ImportData_->remoteLIDs_;
-    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
-    const LO numTgtLids = as<LO> (numTgtGids);
     // Iterate over the target Map's LIDs, since we only need to do
     // GID -> LID lookups for the source Map.
+    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
+    const LO numTgtLids = as<LO> (numTgtGids);
+    LO numPermutes = 0;    
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = rawTgtGids[tgtLid];
-      // getLocalElement() returns LINVALID if the GID isn't in the source Map.
-      // This saves us a lookup (which isNodeGlobalElement() would do).
+      // getLocalElement() returns LINVALID if the GID isn't in the
+      // source Map.  This saves us a lookup (which
+      // isNodeGlobalElement() would do).
       const LO srcLid = source.getLocalElement (curTargetGid);
       if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
-        permuteToLIDs.push_back (tgtLid);
-        permuteFromLIDs.push_back (srcLid);
-      } else {
-        remoteGIDs.push_back (curTargetGid);
-        remoteLIDs.push_back (tgtLid);
+        ++numPermutes;
       }
     }
+
+    using host_perm_type =
+      typename decltype (ImportData_->permuteToLIDs_)::t_host;
+    host_perm_type permuteToLIDs
+      (view_alloc_no_init ("permuteToLIDs"), numPermutes);
+    host_perm_type permuteFromLIDs
+      (view_alloc_no_init ("permuteFromLIDs"), numPermutes);
+
+    Array<LO>& remoteLIDs = ImportData_->remoteLIDs_;
+
+    {
+      LO numPermutes2 = 0;    
+      for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
+	const GO curTargetGid = rawTgtGids[tgtLid];
+	const LO srcLid = source.getLocalElement (curTargetGid);
+	if (srcLid != LINVALID) {
+	  permuteToLIDs[numPermutes2] = tgtLid;
+	  permuteFromLIDs[numPermutes2] = srcLid;
+	  ++numPermutes2;
+	}
+	else {
+	  remoteGIDs.push_back (curTargetGid);
+	  remoteLIDs.push_back (tgtLid);
+	}
+      }
+      TEUCHOS_ASSERT( numPermutes == numPermutes2 );
+      TEUCHOS_ASSERT( size_t (numPermutes) + remoteGIDs.size () == size_t (numTgtLids - numSameGids) );
+    }
+
+    makeDualViewFromOwningHostView (ImportData_->permuteToLIDs_, permuteToLIDs);
+    makeDualViewFromOwningHostView (ImportData_->permuteFromLIDs_, permuteFromLIDs);
 
     if (remoteLIDs.size () != 0 && ! source.isDistributed ()) {
       // This Import has remote LIDs, meaning that the target Map has
