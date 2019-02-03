@@ -146,11 +146,6 @@ namespace Tpetra {
     return tData;
   }
 
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData()
-  {}
-
 } // namespace Tpetra
 
 // Explicit instantiation macro.
