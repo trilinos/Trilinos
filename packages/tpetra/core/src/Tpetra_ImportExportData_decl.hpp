@@ -165,8 +165,7 @@ namespace Tpetra {
     /// For each remaining GIDs g in the target Map, if the source Map
     /// also owns g, then permuteToLIDs_ gets the corresponding LID in
     /// the target Map.
-    Teuchos::Array<LocalOrdinal> permuteToLIDs_;
-    Kokkos::DualView<LocalOrdinal*, device_type> permuteToLIDs_dv;
+    Kokkos::DualView<LocalOrdinal*, device_type> permuteToLIDs_;
 
     /// \brief Index of source Map LIDs from which to permute.
     ///
@@ -179,8 +178,7 @@ namespace Tpetra {
     /// For each remaining GID g in the target Map, if the source Map
     /// also owns g, then permuteFromLIDs_ gets the corresponding LID
     /// in the source Map.
-    Teuchos::Array<LocalOrdinal> permuteFromLIDs_;
-    Kokkos::DualView<LocalOrdinal*, device_type> permuteFromLIDs_dv;
+    Kokkos::DualView<LocalOrdinal*, device_type> permuteFromLIDs_;
 
     /// \brief "Incoming" indices.
     ///
@@ -189,7 +187,7 @@ namespace Tpetra {
     /// the Import or Export will receive data for these LIDs from
     /// other processes.
     Teuchos::Array<LocalOrdinal> remoteLIDs_;
-    Kokkos::DualView<LocalOrdinal*, device_type> remoteLIDs_dv;    
+    //Kokkos::DualView<LocalOrdinal*, device_type> remoteLIDs_dv;    
 
     /// \brief "Outgoing" local indices.
     ///
@@ -198,7 +196,7 @@ namespace Tpetra {
     /// the Import or Export will send data from these LIDs to other
     /// processes.
     Teuchos::Array<LocalOrdinal> exportLIDs_;
-    Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs_dv;    
+    //Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs_dv;    
 
     //! Ranks of the processes to which the source object sends data.
     Teuchos::Array<int> exportPIDs_;
