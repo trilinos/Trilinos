@@ -62,7 +62,7 @@ class EvaluateDOFDiv_withSens {
   const bool use_shared_memory;
 
 public:
-  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
   EvaluateDOFDiv_withSens(PHX::MDField<ScalarT,Cell,IP> & in_dof_div,
                           PHX::MDField<const ScalarT,Cell,Point> & in_dof_value,

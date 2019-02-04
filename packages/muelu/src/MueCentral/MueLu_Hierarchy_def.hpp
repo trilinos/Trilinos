@@ -854,8 +854,6 @@ namespace MueLu {
     using namespace Teuchos;
     RCP<Time> CompCoarse  = Teuchos::TimeMonitor::getNewCounter(prefix + "Coarse: Computational Time");
 
-    const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-
     if (A.is_null()) {
       // This processor does not have any data for this process on coarser
       // levels. This can only happen when there are multiple processors and
