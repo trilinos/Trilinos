@@ -137,7 +137,7 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::magnitudeType,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> RealValuedMultiVector;
 
     //! @name Constructors/Destructors.
     //@{
