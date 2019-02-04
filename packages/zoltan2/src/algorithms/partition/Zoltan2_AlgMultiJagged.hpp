@@ -4291,8 +4291,9 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
         double scalar_required_proc = num_procs *
                 (double (global_num_points_in_parts[i]) / double (this->num_global_coords));
 
-        //round it to closest integer.
+        //round it to closest integer; make sure have at least one proc.
         mj_part_t required_proc = static_cast<mj_part_t> (0.5 + scalar_required_proc);
+        if (required_proc == 0) required_proc = 1;
 
         //if assigning the required num procs, creates problems for the rest of the parts.
         //then only assign {num_free_procs - (minimum_num_procs_required_for_rest_of_parts)} procs to this part.
@@ -5207,8 +5208,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::fill_permutation_array(
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_perform_migration(
-    mj_part_t input_num_parts, //current umb parts
-    mj_part_t &output_num_parts, //output umb parts.
+    mj_part_t input_num_parts, //current number of parts
+    mj_part_t &output_num_parts, //output number of parts.
     std::vector<mj_part_t> *next_future_num_parts_in_parts,
     mj_part_t &output_part_begin_index,
     size_t migration_reduce_all_population,
@@ -6754,14 +6755,14 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks,
   std::vector<mj_part_t> group_begins(used_num_ranks + 1, 0);
 
   mj_part_t i_am_sending_to = 0;
-  bool am_i_a_reciever = false;
+  bool am_i_a_receiver = false;
 
   for(int i = 0; i < used_num_ranks; ++i){
     group_begins[i+ 1]  = group_begins[i] + groupsize;
     if (worldSize % used_num_ranks > i) group_begins[i+ 1] += 1;
     if (i == used_num_ranks) group_begins[i+ 1] = worldSize;
     if (myRank >= group_begins[i] && myRank < group_begins[i + 1]) i_am_sending_to = group_begins[i];
-    if (myRank == group_begins[i])  am_i_a_reciever= true;
+    if (myRank == group_begins[i])  am_i_a_receiver= true;
   }
   
   ArrayView<const mj_part_t> idView(&(group_begins[0]), used_num_ranks );
@@ -6831,7 +6832,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks,
 	  num_incoming_gnos * sizeof(int));
   }
   mj_env_->timerStop(MACRO_TIMERS, "MultiJagged - PreMigration DistributorMigration");
-  return am_i_a_reciever;
+  return am_i_a_receiver;
 }
 
 
