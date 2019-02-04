@@ -90,12 +90,10 @@ namespace Tpetra {
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const map_type>& source,
           const Teuchos::RCP<const map_type>& target) :
-    base_type (source, target, Teuchos::null, Teuchos::null)
+    base_type (source, target, Teuchos::null, Teuchos::null, "Export")
   {
     using Teuchos::rcp;
     using std::endl;
-
-    this->setParameterList (Teuchos::null);
 
     if (this->verbose ()) {
       std::ostringstream os;
@@ -128,12 +126,10 @@ namespace Tpetra {
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-    base_type (source, target, out, Teuchos::null)
+    base_type (source, target, out, Teuchos::null, "Export")
   {
     using Teuchos::rcp;
     using std::endl;
-
-    this->setParameterList (Teuchos::null);
 
     if (this->verbose ()) {
       std::ostringstream os;
@@ -166,12 +162,10 @@ namespace Tpetra {
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, Teuchos::null, plist)
+    base_type (source, target, Teuchos::null, plist, "Export")
   {
     using Teuchos::rcp;
     using std::endl;
-
-    this->setParameterList (plist);
 
     if (this->verbose ()) {
       std::ostringstream os;
@@ -205,12 +199,10 @@ namespace Tpetra {
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, out, plist)
+    base_type (source, target, out, plist, "Export")
   {
     using Teuchos::rcp;
     using std::endl;
-
-    this->setParameterList (plist);
 
     if (this->verbose ()) {
       std::ostringstream os;
