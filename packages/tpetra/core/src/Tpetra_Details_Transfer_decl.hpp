@@ -93,7 +93,19 @@ private:
   using device_view_type = typename Kokkos::DualView<const ElementType*, device_type>::t_dev;
   
 public:
-  //! Four-argument constructor (most often used).
+  Transfer () = delete;
+  
+  /// \brief Four-argument constructor (most often used).
+  ///
+  /// \pre </tt> ! source.is_null() </tt>
+  ///
+  /// \param source [in] Source Map of the Export or Import.
+  /// \param target [in] Target Map of the Export or Import.
+  ///   May be null only if Export or Import is using one of
+  ///   the special source-Map-only constructors.
+  /// \param out [in] Stream for verbose debugging output.
+  ///   If null, Transfer will wrap and use std::cerr.
+  /// \param plist [in] Parameters; may be null.
   Transfer (const Teuchos::RCP<const map_type>& source,
 	    const Teuchos::RCP<const map_type>& target,
 	    const Teuchos::RCP<Teuchos::FancyOStream>& out,
