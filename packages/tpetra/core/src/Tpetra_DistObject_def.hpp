@@ -1472,14 +1472,14 @@ namespace Tpetra {
         needCommunication = false;
       }
 
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "needCommunication="
-           << (needCommunication ? "true" : "false") << endl;
-        std::cerr << os.str ();
+      if (! needCommunication) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Comm not needed; skipping" << endl;
+          std::cerr << os.str ();
+        }
       }
-
-      if (needCommunication) {
+      else {
         ProfilingRegion region_dpw
           ("Tpetra::DistObject::doTransferNew::doPostsAndWaits");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -1488,443 +1488,264 @@ namespace Tpetra {
         Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-        if (revOp == DoReverse) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "7.0. "
+             << (revOp == DoReverse ? "Reverse" : "Forward")
+             << " mode" << endl;
+          std::cerr << os.str ();
+        }
+
+        if (constantNumPackets == 0) { // variable num packets per LID
           if (verbose) {
             std::ostringstream os;
-            os << *prefix << "7.0. Reverse mode" << endl;
+            os << *prefix << "7.1. Variable # packets / LID: first comm "
+               << "(commOnHost = " << (commOnHost ? "true" : "false") << ")"
+               << endl;
             std::cerr << os.str ();
           }
+          size_t totalImportPackets = 0;
+          if (commOnHost) {
+            if (this->numExportPacketsPerLID_.need_sync_host ()) {
+              this->numExportPacketsPerLID_.sync_host ();
+            }
+            if (this->numImportPacketsPerLID_.need_sync_host ()) {
+              this->numImportPacketsPerLID_.sync_host ();
+            }
+            this->numImportPacketsPerLID_.modify_host (); // out arg
+            auto numExp_h =
+              create_const_view (this->numExportPacketsPerLID_.view_host ());
+            auto numImp_h = this->numImportPacketsPerLID_.view_host ();
 
-          if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            // MPI communication happens here.
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "7.1. Variable # packets / LID: first comm "
-                 << "(commOnHost = " << (commOnHost ? "true" : "false") << ")"
+              os << *prefix << "Call do"
+                 << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
                  << endl;
               std::cerr << os.str ();
             }
-            size_t totalImportPackets = 0;
-            if (commOnHost) {
-              if (this->numExportPacketsPerLID_.need_sync_host ()) {
-                this->numExportPacketsPerLID_.sync_host ();
-              }
-              if (this->numImportPacketsPerLID_.need_sync_host ()) {
-                this->numImportPacketsPerLID_.sync_host ();
-              }
-              this->numImportPacketsPerLID_.modify_host (); // out arg
-              auto numExp_h =
-                create_const_view (this->numExportPacketsPerLID_.view_host ());
-              auto numImp_h = this->numImportPacketsPerLID_.view_host ();
-
-              // MPI communication happens here.
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Call do"
-                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
-                   << endl;
-                std::cerr << os.str ();
-              }
+            if (revOp == DoReverse) {
               distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
-              DES::fence (); // just in case UVM doesn't behave right
-
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Count totalImportPackets" << std::endl;
-                std::cerr << os.str ();
-              }
-              using the_dev_type = typename decltype (numImp_h)::device_type;
-              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
             }
             else {
-              if (this->numExportPacketsPerLID_.need_sync_device ()) {
-                this->numExportPacketsPerLID_.sync_device ();
-              }
-              if (this->numImportPacketsPerLID_.need_sync_device ()) {
-                this->numImportPacketsPerLID_.sync_device ();
-              }
-              this->numImportPacketsPerLID_.modify_device (); // out arg
-              auto numExp_d = create_const_view
-                (this->numExportPacketsPerLID_.view_device ());
-              auto numImp_d = this->numImportPacketsPerLID_.view_device ();
-
-              // MPI communication happens here.
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Call do"
-                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
-                   << endl;
-                std::cerr << os.str ();
-              }
-              distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
-              DES::fence (); // just in case UVM doesn't behave right
-
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Count totalImportPackets" << std::endl;
-                std::cerr << os.str ();
-              }
-              using the_dev_type = typename decltype (numImp_d)::device_type;
-              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
-            }
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "totalImportPackets=" << totalImportPackets << endl;
-              std::cerr << os.str ();
-            }
-            this->reallocImportsIfNeeded (totalImportPackets, verbose,
-                                          prefix.get ());
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "7.3. Second comm" << std::endl;
-              std::cerr << os.str ();
-            }
-
-            // mfh 04 Feb 2019: Distributor expects the "num packets
-            // per LID" arrays on host, so that it can issue MPI sends
-            // and receives correctly.
-            if (this->numExportPacketsPerLID_.need_sync_host ()) {
-              this->numExportPacketsPerLID_.sync_host ();
-            }
-            if (this->numImportPacketsPerLID_.need_sync_host ()) {
-              this->numImportPacketsPerLID_.sync_host ();
-            }
-
-            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
-            // doReversePostsAndWaits currently want
-            // numExportPacketsPerLID and numImportPacketsPerLID as
-            // Teuchos::ArrayView, rather than as Kokkos::View.
-            //
-            // NOTE (mfh 04 Feb 2019) This does NOT copy from host to
-            // device.  The above syncs might.
-            auto numExportPacketsPerLID_av =
-              getArrayViewFromDualView (this->numExportPacketsPerLID_);
-            auto numImportPacketsPerLID_av =
-              getArrayViewFromDualView (this->numImportPacketsPerLID_);
-
-            // imports_ is for output only, so we don't need to sync
-            // it before marking it as modified.  However, in order to
-            // prevent spurious debug-mode errors (e.g., "modified on
-            // both device and host"), we first need to clear its
-            // "modified" flags.
-            this->imports_.clear_sync_state ();
-
-            if (commOnHost) {
-              this->imports_.modify_host ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Call doReversePostsAndWaits" << endl;
-                std::cerr << os.str ();
-              }
-              distor.doReversePostsAndWaits
-                (create_const_view (this->exports_.view_host ()),
-                 numExportPacketsPerLID_av,
-                 this->imports_.view_host (),
-                 numImportPacketsPerLID_av);
-            }
-            else { // pack on device
-              this->imports_.modify_device ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Call doReversePostsAndWaits" << endl;
-                std::cerr << os.str ();
-              }
-              distor.doReversePostsAndWaits
-                (create_const_view (this->exports_.view_device ()),
-                 numExportPacketsPerLID_av,
-                 this->imports_.view_device (),
-                 numImportPacketsPerLID_av);
-            }
-          }
-          else { // constant number of packets per LID
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "7.1. Const # packets per LID: " << endl
-                 << *prefix << "  "
-                 << dualViewStatusToString (this->exports_, "exports_")
-                 << endl
-                 << *prefix << "  "
-                 << dualViewStatusToString (this->exports_, "imports_")
-                 << endl;
-              std::cerr << os.str ();
-            }
-            // imports_ is for output only, so we don't need to sync
-            // it before marking it as modified.  However, in order to
-            // prevent spurious debug-mode errors (e.g., "modified on
-            // both device and host"), we first need to clear its
-            // "modified" flags.
-            this->imports_.clear_sync_state ();
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "7.2. Comm on "
-                 << (commOnHost ? "host" : "device")
-                 << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-                 << "PostsAndWaits" << endl;
-              std::cerr << os.str ();
-            }
-            if (commOnHost) {
-              this->imports_.modify_host ();
-              distor.doReversePostsAndWaits
-                (create_const_view (this->exports_.view_host ()),
-                 constantNumPackets,
-                 this->imports_.view_host ());
-            }
-            else { // pack on device
-              this->imports_.modify_device ();
-              distor.doReversePostsAndWaits
-                (create_const_view (this->exports_.view_device ()),
-                 constantNumPackets,
-                 this->imports_.view_device ());
-            }
-          }
-        }
-        else { // revOp == DoForward
-          if (verbose) {
-            std::ostringstream os;
-            os << *prefix << "7.0. Forward mode" << std::endl;
-            std::cerr << os.str ();
-          }
-
-          if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "7.1. Variable # packets / LID: first comm"
-                 << "(commOnHost = " << (commOnHost ? "true" : "false") << ")"
-                 << std::endl;
-              std::cerr << os.str ();
-            }
-            size_t totalImportPackets = 0;
-            if (commOnHost) {
-              if (this->numExportPacketsPerLID_.need_sync_host ()) {
-                this->numExportPacketsPerLID_.sync_host ();
-              }
-              if (this->numImportPacketsPerLID_.need_sync_host ()) {
-                this->numImportPacketsPerLID_.sync_host ();
-              }
-              this->numImportPacketsPerLID_.modify_host (); // out arg
-              auto numExp_h =
-                create_const_view (this->numExportPacketsPerLID_.view_host ());
-              auto numImp_h = this->numImportPacketsPerLID_.view_host ();
-
-              // MPI communication happens here.
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Call do"
-                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
-                   << endl;
-                std::cerr << os.str ();
-              }
               distor.doPostsAndWaits (numExp_h, 1, numImp_h);
-              DES::fence (); // just in case UVM doesn't behave right
-
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Count totalImportPackets" << endl;
-                std::cerr << os.str ();
-              }
-              using the_dev_type = typename decltype (numImp_h)::device_type;
-              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
             }
-            else {
-              if (this->numExportPacketsPerLID_.need_sync_device ()) {
-                this->numExportPacketsPerLID_.sync_device ();
-              }
-              if (this->numImportPacketsPerLID_.need_sync_device ()) {
-                this->numImportPacketsPerLID_.sync_device ();
-              }
-              this->numImportPacketsPerLID_.modify_device (); // out arg
-              auto numExp_d = create_const_view
-                (this->numExportPacketsPerLID_.view_device ());
-              auto numImp_d = this->numImportPacketsPerLID_.view_device ();
-
-              // MPI communication happens here.
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Call do"
-                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
-                   << endl;
-                std::cerr << os.str ();
-              }
-              distor.doPostsAndWaits (numExp_d, 1, numImp_d);
-              DES::fence (); // just in case UVM doesn't behave right
-
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Count totalImportPackets" << endl;
-                std::cerr << os.str ();
-              }
-              using the_dev_type = typename decltype (numImp_d)::device_type;
-              totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
-            }
+            DES::fence (); // just in case UVM doesn't behave right
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "totalImportPackets=" << totalImportPackets << endl;
+              os << *prefix << "Count totalImportPackets" << std::endl;
               std::cerr << os.str ();
             }
-            this->reallocImportsIfNeeded (totalImportPackets, verbose,
-                                          prefix.get ());
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "7.3. Second comm" << endl;
-              std::cerr << os.str ();
-            }
-
-            // mfh 04 Feb 2019: Distributor expects the "num packets
-            // per LID" arrays on host, so that it can issue MPI sends
-            // and receives correctly.
-            if (this->numExportPacketsPerLID_.need_sync_host ()) {
-              this->numExportPacketsPerLID_.sync_host ();
-            }
-            if (this->numImportPacketsPerLID_.need_sync_host ()) {
-              this->numImportPacketsPerLID_.sync_host ();
-            }
-
-            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
-            // doReversePostsAndWaits currently want
-            // numExportPacketsPerLID and numImportPacketsPerLID as
-            // Teuchos::ArrayView, rather than as Kokkos::View.
-            //
-            // NOTE (mfh 04 Feb 2019) This does NOT copy from host to
-            // device.  The above syncs might.
-            auto numExportPacketsPerLID_av =
-              getArrayViewFromDualView (this->numExportPacketsPerLID_);
-            auto numImportPacketsPerLID_av =
-              getArrayViewFromDualView (this->numImportPacketsPerLID_);
-
-            // imports_ is for output only, so we don't need to sync
-            // it before marking it as modified.  However, in order to
-            // prevent spurious debug-mode errors (e.g., "modified on
-            // both device and host"), we first need to clear its
-            // "modified" flags.
-            this->imports_.clear_sync_state ();
-
-            if (verbose) {
-              std::ostringstream os;
-              os << *prefix << "Comm on "
-                 << (commOnHost ? "host" : "device")
-                 << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-                 << "PostsAndWaits" << endl;
-              std::cerr << os.str ();
-            }
-            if (commOnHost) {
-              this->imports_.modify_host ();
-              distor.doPostsAndWaits
-                (create_const_view (this->exports_.view_host ()),
-                 numExportPacketsPerLID_av,
-                 this->imports_.view_host (),
-                 numImportPacketsPerLID_av);
-            }
-            else { // pack on device
-              this->imports_.modify_device ();
-              distor.doPostsAndWaits
-                (create_const_view (this->exports_.view_device ()),
-                 numExportPacketsPerLID_av,
-                 this->imports_.view_device (),
-                 numImportPacketsPerLID_av);
-            }
+            using the_dev_type = typename decltype (numImp_h)::device_type;
+            totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
           }
-          else { // constant number of packets per LID
+          else { // ! commOnHost
+            if (this->numExportPacketsPerLID_.need_sync_device ()) {
+              this->numExportPacketsPerLID_.sync_device ();
+            }
+            if (this->numImportPacketsPerLID_.need_sync_device ()) {
+              this->numImportPacketsPerLID_.sync_device ();
+            }
+            this->numImportPacketsPerLID_.modify_device (); // out arg
+            auto numExp_d = create_const_view
+              (this->numExportPacketsPerLID_.view_device ());
+            auto numImp_d = this->numImportPacketsPerLID_.view_device ();
+
+            // MPI communication happens here.
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "7.1. Const # packets per LID: "
-                 << *prefix << "  "
-                 << dualViewStatusToString (this->exports_, "exports_")
-                 << endl
-                 << *prefix << "  "
-                 << dualViewStatusToString (this->exports_, "imports_")
+              os << *prefix << "Call do"
+                 << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
                  << endl;
               std::cerr << os.str ();
             }
-            // imports_ is for output only, so we don't need to sync
-            // it before marking it as modified.  However, in order to
-            // prevent spurious debug-mode errors (e.g., "modified on
-            // both device and host"), we first need to clear its
-            // "modified" flags.
-            this->imports_.clear_sync_state ();
+            if (revOp == DoReverse) {
+              distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
+            }
+            else {
+              distor.doPostsAndWaits (numExp_d, 1, numImp_d);
+            }
+            DES::fence (); // just in case UVM doesn't behave right
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "7.2. Comm on "
-                 << (commOnHost ? "host" : "device")
-                 << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-                 << "PostsAndWaits" << endl;
+              os << *prefix << "Count totalImportPackets" << std::endl;
               std::cerr << os.str ();
             }
-            if (commOnHost) {
-              this->imports_.modify_host ();
-              distor.doPostsAndWaits
-                (create_const_view (this->exports_.view_host ()),
-                 constantNumPackets,
-                 this->imports_.view_host ());
-            }
-            else { // pack on device
-              this->imports_.modify_device ();
-              distor.doPostsAndWaits
-                (create_const_view (this->exports_.view_device ()),
-                 constantNumPackets,
-                 this->imports_.view_device ());
-            }
+            using the_dev_type = typename decltype (numImp_d)::device_type;
+            totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
           }
-        }
 
-        {
           if (verbose) {
             std::ostringstream os;
-            os << *prefix << "8. unpackAndCombineNew" << endl;
+            os << *prefix << "totalImportPackets=" << totalImportPackets << endl;
             std::cerr << os.str ();
           }
-          ProfilingRegion region_uc
-            ("Tpetra::DistObject::doTransferNew::unpackAndCombineNew");
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-          // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
-          // favor of Kokkos profiling.
-          Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
+          this->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                        prefix.get ());
+          if (verbose) {
+            std::ostringstream os;
+            os << *prefix << "7.3. Second comm" << std::endl;
+            std::cerr << os.str ();
+          }
 
-          // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
-          // input DualViews, but they DO need to be most recently
-          // updated in the same memory space.
+          // mfh 04 Feb 2019: Distributor expects the "num packets per
+          // LID" arrays on host, so that it can issue MPI sends and
+          // receives correctly.
+          if (this->numExportPacketsPerLID_.need_sync_host ()) {
+            this->numExportPacketsPerLID_.sync_host ();
+          }
+          if (this->numImportPacketsPerLID_.need_sync_host ()) {
+            this->numImportPacketsPerLID_.sync_host ();
+          }
+
+          // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
+          // doReversePostsAndWaits currently want
+          // numExportPacketsPerLID and numImportPacketsPerLID as
+          // Teuchos::ArrayView, rather than as Kokkos::View.
           //
-          // FIXME (mfh 26 Apr 2016) Check that all input DualViews
-          // were most recently updated in the same memory space, and
-          // sync them to the same place (based on commOnHost) if not.
+          // NOTE (mfh 04 Feb 2019) This does NOT copy from host to
+          // device.  The above syncs might.
+          auto numExportPacketsPerLID_av =
+            getArrayViewFromDualView (this->numExportPacketsPerLID_);
+          auto numImportPacketsPerLID_av =
+            getArrayViewFromDualView (this->numImportPacketsPerLID_);
 
-          // Kyungjoo: remoteLIDs is read only and it should be synced
-          //   before doTransfer is called (see line 581).
-          //   We still need to sync inputs.
-          //   The commOnHost is a very tricky thing. This variable
-          //   can control where communication happens and where data
-          //   is updated. However, when we pass dual views to a function,
-          //   we do not have a control where data is available.
-          //   As this comm routines are used via virtual interface,
-          //   some code use device routines and some codes might use host
-          //   code. Outputs are selected from the calling function and
-          //   the caller function can decide whether it wants to sync or not.
-          //   Input dual view should be synced before it calls the function
-          //   so that the calling function has freedom to choose between
-          //   host and device algorithms.
+          // imports_ is for output only, so we don't need to sync it
+          // before marking it as modified.  However, in order to
+          // prevent spurious debug-mode errors (e.g., "modified on
+          // both device and host"), we first need to clear its
+          // "modified" flags.
+          this->imports_.clear_sync_state ();
+
+          if (verbose) {
+            std::ostringstream os;
+            os << *prefix << "Comm on "
+               << (commOnHost ? "host" : "device")
+               << "; call do" << (revOp == DoReverse ? "Reverse" : "")
+               << "PostsAndWaits" << endl;
+            std::cerr << os.str ();
+          }
 
           if (commOnHost) {
-            // assume imports_ and numImportsPacketsPerLID_ are modified from host
-            // make them available for device
-            this->imports_.template sync<CDMS>();
-            this->numImportPacketsPerLID_.template sync<CDMS>();
+            this->imports_.modify_host ();
+            if (revOp == DoReverse) {
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_host (),
+                 numImportPacketsPerLID_av);
+            }
+            else {
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_host (),
+                 numImportPacketsPerLID_av);
+            }
           }
-          else {
-            // assume imports_ and numImportsPacketsPerLID_ are modified from device
-            // make them available for host
-            this->imports_.sync_host();
-            this->numImportPacketsPerLID_.sync_host();
+          else { // pack on device
+            this->imports_.modify_device ();
+            if (revOp == DoReverse) {
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_device (),
+                 numImportPacketsPerLID_av);
+            }
+            else {
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_device (),
+                 numImportPacketsPerLID_av);
+            }
           }
-          this->unpackAndCombineNew (remoteLIDs,  // input
-                                     this->imports_, // input
-                                     this->numImportPacketsPerLID_, // input
-                                     constantNumPackets, // input
-                                     distor, // input
-                                     CM); // input
         }
+        else { // constant number of packets per LID
+          if (verbose) {
+            std::ostringstream os;
+            os << *prefix << "7.1. Const # packets per LID: " << endl
+               << *prefix << "  "
+               << dualViewStatusToString (this->exports_, "exports_")
+               << endl
+               << *prefix << "  "
+               << dualViewStatusToString (this->exports_, "imports_")
+               << endl;
+            std::cerr << os.str ();
+          }
+          // imports_ is for output only, so we don't need to sync it
+          // before marking it as modified.  However, in order to
+          // prevent spurious debug-mode errors (e.g., "modified on
+          // both device and host"), we first need to clear its
+          // "modified" flags.
+          this->imports_.clear_sync_state ();
+
+          if (verbose) {
+            std::ostringstream os;
+            os << *prefix << "7.2. Comm on "
+               << (commOnHost ? "host" : "device")
+               << "; call do" << (revOp == DoReverse ? "Reverse" : "")
+               << "PostsAndWaits" << endl;
+            std::cerr << os.str ();
+          }
+          if (commOnHost) {
+            this->imports_.modify_host ();
+            if (revOp == DoReverse) {
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 constantNumPackets,
+                 this->imports_.view_host ());
+            }
+            else {
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 constantNumPackets,
+                 this->imports_.view_host ());
+            }
+          }
+          else { // pack on device
+            this->imports_.modify_device ();
+            if (revOp == DoReverse) {
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 constantNumPackets,
+                 this->imports_.view_device ());
+            }
+            else {
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 constantNumPackets,
+                 this->imports_.view_device ());
+            }
+          } // commOnHost
+        } // constant or variable num packets per LID
+
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "8. unpackAndCombineNew" << endl;
+          std::cerr << os.str ();
+        }
+        ProfilingRegion region_uc
+          ("Tpetra::DistObject::doTransferNew::unpackAndCombineNew");
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+        // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
+        // favor of Kokkos profiling.
+        Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+        // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
+        // input DualViews, but they DO need to be most recently
+        // updated in the same memory space.
+        //
+        // FIXME (mfh 26 Apr 2016) Check that all input DualViews
+        // were most recently updated in the same memory space, and
+        // sync them to the same place (based on commOnHost) if not.
+        this->unpackAndCombineNew (remoteLIDs, this->imports_,
+                                   this->numImportPacketsPerLID_,
+                                   constantNumPackets, distor, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
 
