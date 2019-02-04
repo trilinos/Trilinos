@@ -330,11 +330,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   }
 
+#ifdef HAVE_MPI
   // Generate the node-level communicator, if we want one
   Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
   int NodeId = comm->getRank();
-#ifdef HAVE_MPI
-  if(provideNodeComm) {                        
+  if(provideNodeComm) {
     nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
     //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
   }

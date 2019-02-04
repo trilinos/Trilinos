@@ -1247,6 +1247,7 @@ int main(int argc, char *argv[]) {
         int minGID, maxGID;
         for (int i = 0; i < (int) myRegions.size(); i++) {
           retval = fscanf(fp,"%d%d",&minGID,&maxGID);
+          if(retval == 0) {std::cout << "Something probably went wrong while reading minGID and maxGID from file!" << std::endl;}
           minGIDComp[i] = minGID;
           maxGIDComp[i] = maxGID;
         }
@@ -3148,7 +3149,7 @@ int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
    int  ownedX = appData[inpData_ownedX];
    int  ownedY = appData[inpData_ownedY];
    int  Rx     = appData[inpData_regionX];
-   int  Ry     = appData[inpData_regionY];
+   // int  Ry     = appData[inpData_regionY];
    int  Cx     = appData[inpData_cornerX];
    int  Cy     = appData[inpData_cornerY];
 
