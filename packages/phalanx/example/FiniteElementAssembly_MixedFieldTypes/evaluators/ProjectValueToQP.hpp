@@ -42,7 +42,7 @@
 // @HEADER
 
 #ifndef PHX_PROJECT_VALUE_TO_QP_HPP
-#define PHX_PROEJCT_VALUE_TO_QP_HPP
+#define PHX_PROJECT_VALUE_TO_QP_HPP
 
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"

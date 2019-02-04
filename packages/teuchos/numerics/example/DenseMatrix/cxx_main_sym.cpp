@@ -145,8 +145,8 @@ int main(int argc, char* argv[])
   Teuchos::symMatTripleProduct<int,double>( Teuchos::TRANS, alpha, A2, W, C2 );
 
   // A matrix can be sent to the output stream:
-  std::cout<< My_Matrix << std::endl;
-  std::cout<< X << std::endl;
+  std::cout<< std::endl; My_Matrix.print(std::cout); std::cout << std::endl;
+  std::cout; X.print(std::cout); std::cout << std::endl;
 
   return 0;
 }

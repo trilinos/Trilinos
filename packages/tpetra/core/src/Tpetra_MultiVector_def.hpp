@@ -303,34 +303,43 @@ namespace Tpetra {
     // KokkosBlas::dot for complex, but this at least makes Tpetra's
     // tests pass for complex.
     template<class XVector,class YVector>
-    typename ::Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+    typename std::enable_if<
+      Kokkos::ArithTraits<typename XVector::non_const_value_type>::is_complex ||
+        Kokkos::ArithTraits<typename YVector::non_const_value_type>::is_complex,
+      typename ::Kokkos::Details::InnerProductSpaceTraits<
+        typename XVector::non_const_value_type>::dot_type>::type
     localDotWorkAround (const XVector& x, const YVector& y)
     {
       using x_value_type = typename XVector::non_const_value_type;
       using y_value_type = typename YVector::non_const_value_type;
 
-      if (Kokkos::ArithTraits<x_value_type>::is_complex ||
-          Kokkos::ArithTraits<y_value_type>::is_complex) {
-        using IPT = ::Kokkos::Details::InnerProductSpaceTraits<x_value_type>;
-        using dot_type = typename IPT::dot_type;
-        using execution_space = typename XVector::execution_space;
-        using range_type = Kokkos::RangePolicy<execution_space, int>;
-        // Use double precision internally; this should improve
-        // accuracy for complex<float> and thus help more tests pass.
-        using impl_dot_type = typename Teuchos::ScalarTraits<dot_type>::doublePrecision;
+      using IPT = ::Kokkos::Details::InnerProductSpaceTraits<x_value_type>;
+      using dot_type = typename IPT::dot_type;
+      using execution_space = typename XVector::execution_space;
+      using range_type = Kokkos::RangePolicy<execution_space, int>;
+      // Use double precision internally; this should improve
+      // accuracy for complex<float> and thus help more tests pass.
+      using impl_dot_type = typename Teuchos::ScalarTraits<dot_type>::doublePrecision;
 
-        impl_dot_type result;
-        Kokkos::parallel_reduce
-          ("Tpetra::MultiVector oneColDotWorkAround",
-           range_type (0, x.extent (0)),
-           KOKKOS_LAMBDA (const int lclRow, impl_dot_type& dst) {
-            dst += IPT::dot (x(lclRow), y(lclRow));
-          }, result);
-        return static_cast<dot_type> (result);
-      }
-      else {
-        return KokkosBlas::dot (x, y);
-      }
+      impl_dot_type result;
+      Kokkos::parallel_reduce
+        ("Tpetra::MultiVector oneColDotWorkAround",
+         range_type (0, x.extent (0)),
+         KOKKOS_LAMBDA (const int lclRow, impl_dot_type& dst) {
+          dst += IPT::dot (x(lclRow), y(lclRow));
+        }, result);
+      return static_cast<dot_type> (result);
+    }
+
+    template<class XVector,class YVector>
+    typename std::enable_if<
+      !Kokkos::ArithTraits<typename XVector::non_const_value_type>::is_complex &&
+        !Kokkos::ArithTraits<typename YVector::non_const_value_type>::is_complex,
+      typename ::Kokkos::Details::InnerProductSpaceTraits<
+        typename XVector::non_const_value_type>::dot_type>::type
+    localDotWorkAround (const XVector& x, const YVector& y)
+    {
+      return KokkosBlas::dot (x, y);
     }
   } // namespace Details
 
