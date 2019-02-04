@@ -129,8 +129,6 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename STS::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     if (predrop_ != Teuchos::null)
       GetOStream(Parameters0) << predrop_->description();
@@ -966,7 +964,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_Dr
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_DroppingAlgorithm(Level & currentLevel,RCP<Vector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
-    typedef typename Vector::scalar_type scalar_type;
     typedef Teuchos::ScalarTraits<SC> STS;
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -1379,7 +1376,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_Ge
   RCP<const Map> nonUniqueMap = importer->getTargetMap();
 
   // Ghost coordinates
-  ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, Coords->getNumVectors());
+  ghostedCoords = Xpetra::MultiVectorFactory<scalar_type,LocalOrdinal,GlobalOrdinal,Node>::Build(nonUniqueMap, Coords->getNumVectors());
   LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
   LO blkSize = A.GetFixedBlockSize();
   {
@@ -1440,7 +1437,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_Ge
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ScalarNoDropping(Level & currentLevel, const Matrix& A, ArrayRCP<const bool > & pointBoundaryNodes, GlobalOrdinal & numTotal) const {
-  typedef Teuchos::ScalarTraits<SC> STS;
   LO blkSize = A.GetFixedBlockSize();
   if (blkSize == 1 ) {
     // Trivial case: scalar problem, no dropping. Can return original graph
