@@ -192,41 +192,70 @@ namespace {
     Teuchos::RCP<const map_type> newsource = newimport.getSourceMap ();
     Teuchos::RCP<const map_type> newtarget = newimport.getTargetMap ();
 
-
-    Teuchos::Array<LO> newexportLIDs = newimport.getExportLIDs();
-
     const int rank = newsource->getComm()->getRank();
-    if(newexportLIDs.size()!=exportLIDs.size())
-      {
 
-        out <<"Rank "<<rank<<" newexportLIDs.size does not match exportLIDs.size()"<<endl;
-        out <<"Rank "<<rank<<" oldExportLIDs "<<exportLIDs<<endl;
-        out <<"Rank "<<rank<<" newExportLIDs "<<newexportLIDs<<endl;
-        success = false;
+    Teuchos::Array<LO> newexportLIDs = newimport.getExportLIDs();    
+    if (newexportLIDs.size () != exportLIDs.size ()) {
+      out << "Rank " << rank << " newexportLIDs.size() != exportLIDs.size()" << endl
+	  << "Rank " << rank << " oldExportLIDs " << exportLIDs << endl
+	  << "Rank " << rank << " newExportLIDs " << newexportLIDs << endl;
+      success = false;
+    }
+    else {
+      auto newExportLIDs_hv = newimport.getExportLIDs_dv ().view_host ();
+      if (size_t (newExportLIDs_hv.extent (0)) != size_t (newexportLIDs.size ())) {
+	success = false;
       }
-    else
-      for(size_type i=0;i<exportLIDs.size();++i)
-        if(exportLIDs[i]!=newexportLIDs[i]) {
-          out <<"Rank "<<rank<<" exportLIDs["<<i<<"] ="<<exportLIDs[i]<<" != newexportLIDs[i] = "<<newexportLIDs[i]<<endl;
-          success = false;
-          break;
-        }
+      else {
+	for (size_type i = 0; i < exportLIDs.size (); ++i) {
+	  if (exportLIDs[i] != newexportLIDs[i]) {
+	    out << "Rank " << rank << " exportLIDs[" << i <<"] =" << exportLIDs[i]
+		<< " != newexportLIDs[i] = " << newexportLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	  if (newExportLIDs_hv[i] != newexportLIDs[i]) {
+	    out << "Rank " << rank << " newExportLIDs_hv[" << i << "] = "
+		<< newExportLIDs_hv[i] << " != newexportLIDs[i] = "
+		<< newexportLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	}
+      }
+    }
 
     Teuchos::Array<LO> newremoteLIDs = newimport.getRemoteLIDs();
-    if(newremoteLIDs.size()!=saveremoteLIDs.size())
-      {
-        out <<"Rank "<<rank<<" newremoteLIDs.size does not match remoteLIDs.size()"<<endl;
-        out <<"Rank "<<rank<<" oldRemoteLIDs "<<saveremoteLIDs<<endl;
-        out <<"Rank "<<rank<<" newRemoteLIDs "<<newremoteLIDs<<endl;
-        success = false;
+    if (newremoteLIDs.size () != saveremoteLIDs.size ()) {
+      out << "Rank " << rank << " newremoteLIDs.size() != remoteLIDs.size()" << endl
+	  << "Rank " << rank << " oldRemoteLIDs " << saveremoteLIDs << endl
+	  << "Rank " << rank << " newRemoteLIDs " << newremoteLIDs << endl;
+      success = false;
+    }
+    else {
+      auto newRemoteLIDs_hv = newimport.getRemoteLIDs_dv ().view_host ();
+      if (size_t (newRemoteLIDs_hv.extent (0)) != size_t (newremoteLIDs.size ())) {
+	success = false;
       }
-    else
-      for(size_type i=0;i<saveremoteLIDs.size();++i)
-        if(saveremoteLIDs[i]!=newremoteLIDs[i]) {
-          out <<"Rank "<<rank<<" remoteLIDs["<<i<<"] ="<<remoteLIDs[i]<<" != newremoteLIDs[i] = "<<newremoteLIDs[i]<<endl;
-          success = false;
-          break;
-        }
+      else {
+	for (size_type i = 0; i < saveremoteLIDs.size (); ++i) {
+	  if (saveremoteLIDs[i] != newremoteLIDs[i]) {
+	    out << "Rank " << rank << " saveremoteLIDs["<<i<<"] = "
+		<< saveremoteLIDs[i] << " != newremoteLIDs[i] = "
+		<< newremoteLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	  if (newRemoteLIDs_hv[i] != newremoteLIDs[i]) {
+	    out << "Rank " << rank << " newRemoteLIDs_hv["<<i<<"] = "
+		<< newRemoteLIDs_hv[i] << " != newremoteLIDs[i] = "
+		<< newremoteLIDs[i] << endl;
+	    success = false;
+	    break;
+	  }
+	}
+      }
+    }
 
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );

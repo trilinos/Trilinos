@@ -130,12 +130,30 @@ getNumPermuteIDs () const {
 }
 
 template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getPermuteFromLIDs_dv () const {
+  const auto& dv = TransferData_->permuteFromLIDs_;
+  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  return dv;
+}
+  
+template <class LO, class GO, class NT>  
 Teuchos::ArrayView<const LO>
 Transfer<LO, GO, NT>::
 getPermuteFromLIDs () const {
   return makeConstArrayViewFromDualView (TransferData_->permuteFromLIDs_);    
 }
 
+template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getPermuteToLIDs_dv () const {
+  const auto& dv = TransferData_->permuteToLIDs_;
+  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  return dv;
+}
+  
 template <class LO, class GO, class NT>  
 Teuchos::ArrayView<const LO>
 Transfer<LO, GO, NT>::
@@ -151,6 +169,15 @@ getNumRemoteIDs () const {
 }
 
 template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getRemoteLIDs_dv () const {
+  const auto& dv = TransferData_->remoteLIDs_;
+  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  return dv;
+}
+  
+template <class LO, class GO, class NT>  
 Teuchos::ArrayView<const LO>
 Transfer<LO, GO, NT>::
 getRemoteLIDs () const {
@@ -164,6 +191,15 @@ getNumExportIDs () const {
   return static_cast<size_t> (TransferData_->exportLIDs_.extent (0));
 }
 
+template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getExportLIDs_dv () const {
+  const auto& dv = TransferData_->exportLIDs_;
+  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  return dv;
+}
+  
 template <class LO, class GO, class NT>
 Teuchos::ArrayView<const LO>
 Transfer<LO, GO, NT>::
