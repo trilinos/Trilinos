@@ -5366,9 +5366,9 @@ namespace Tpetra {
           RCP<ParameterList> importSublist = sublist (params, "Import", true);
           if (useRemotePIDs) {
             RCP<import_type> newImp =
-              rcp (new import_type (domainMap_, colMap_, remotePIDs));
-            newImp->setParameterList (importSublist); // nonconst method
-            importer_ = newImp; // assign nonconst to const
+              rcp (new import_type (domainMap_, colMap_, remotePIDs,
+				    importSublist));
+            importer_ = newImp;
           }
           else {
             importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));

@@ -73,10 +73,12 @@ Transfer<LO, GO, NT>::
 Transfer (const Teuchos::RCP<const map_type>& source,
 	  const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+	  const std::string& className) :
   TransferData_ (new ImportExportData<LO, GO, NT> (source, target, out, plist))
 {
   TEUCHOS_ASSERT( ! TransferData_->out_.is_null () );
+  this->setParameterList (plist, className);
 }
 
 template <class LO, class GO, class NT>
@@ -91,14 +93,18 @@ Transfer (const Transfer<LO, GO, NT>& rhs, reverse_tag)
 template <class LO, class GO, class NT>
 void
 Transfer<LO, GO, NT>::
-setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		  const std::string& className)
 {
   using ::Tpetra::Details::Behavior;
 
-  // FIXME (mfh 03 Feb 2019) Phase out "Debug" in favor of TPETRA_VERBOSE.
-  const bool verboseEnv = Behavior::verbose ("Tpetra::Import");
+  const bool verboseEnv = Behavior::verbose (className.c_str ()) ||
+    Behavior::verbose ((std::string ("Tpetra::") + className).c_str ());
+  
   bool verboseParam = false;
   if (! plist.is_null ()) {
+    // FIXME (mfh 03 Feb 2019) Phase out these parameters in favor of
+    // TPETRA_VERBOSE.
     if (plist->isType<bool> ("Verbose")) {
       verboseParam = plist->get<bool> ("Verbose");
     }

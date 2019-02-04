@@ -227,8 +227,6 @@ namespace Tpetra {
     using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
     ProfilingRegion regionImportInit ("Tpetra::Import::init");
 
-    this->setParameterList (plist);
-
     std::unique_ptr<std::string> verbPrefix;
     if (this->verbose ()) {
       std::ostringstream os;
@@ -291,7 +289,7 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target) :
-    base_type (source, target, Teuchos::null, Teuchos::null)
+    base_type (source, target, Teuchos::null, Teuchos::null, "Import")
   {
     Teuchos::Array<int> dummy;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -308,7 +306,7 @@ namespace Tpetra {
   Import (const Teuchos::RCP<const map_type>& source,
           const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-    base_type (source, target, out, Teuchos::null)
+    base_type (source, target, out, Teuchos::null, "Import")
   {
     Teuchos::Array<int> dummy;
     init (source, target, false, dummy, Teuchos::null);
@@ -319,7 +317,7 @@ namespace Tpetra {
   Import (const Teuchos::RCP<const map_type>& source,
           const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, Teuchos::null, plist)
+    base_type (source, target, Teuchos::null, plist, "Import")
   {
     Teuchos::Array<int> dummy;
     init (source, target, false, dummy, plist);
@@ -331,7 +329,7 @@ namespace Tpetra {
           const Teuchos::RCP<const map_type>& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, out, plist)
+    base_type (source, target, out, plist, "Import")
   {
     Teuchos::Array<int> dummy;
     init (source, target, false, dummy, plist);
@@ -343,7 +341,7 @@ namespace Tpetra {
           const Teuchos::RCP<const map_type>& target,
 	  Teuchos::Array<int>& remotePIDs,
 	  const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, Teuchos::null, plist)
+    base_type (source, target, Teuchos::null, plist, "Import")
   {
     init (source, target, true, remotePIDs, plist);
   }
@@ -372,7 +370,7 @@ namespace Tpetra {
 	   const Teuchos::ArrayView<const int>          & userExportPIDs,
 	   const Teuchos::RCP<Teuchos::ParameterList>& plist,
 	   const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-     base_type (source, target, out, plist)
+     base_type (source, target, out, plist, "Import")
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -386,7 +384,6 @@ namespace Tpetra {
     using GO = GlobalOrdinal;
     using size_type = Teuchos::Array<int>::size_type;
 
-    this->setParameterList (plist);
     std::unique_ptr<std::string> prefix;
     if (this->verbose ()) {
       auto comm = source.is_null () ? Teuchos::null : source->getComm ();
@@ -532,11 +529,9 @@ namespace Tpetra {
           Distributor& distributor,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, out, plist)
+    base_type (source, target, out, plist, "Import")
   {
     using std::endl;
-
-    this->setParameterList (plist);
 
     std::unique_ptr<std::string> prefix;
     if (this->verbose ()) {
@@ -890,8 +885,9 @@ namespace Tpetra {
     // Special case: target Map is null on base_type construction.
     // It's worthwhile for invariants like out_ not being null.
     // We'll set TransferData_ again below.
-    base_type (sourceMap, Teuchos::null, debugOutput, plist)
+    base_type (sourceMap, Teuchos::null, debugOutput, plist, "Import")
   {
+    using ::Tpetra::Details::Behavior;
     using Teuchos::ArrayView;    
     using Teuchos::getFancyOStream;
     using Teuchos::RCP;
@@ -902,8 +898,8 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Node NT;
 
-    this->setParameterList (plist);
-    const bool debug = ::Tpetra::Details::Behavior::debug ("Tpetra::Import");
+    const bool debug = Behavior::debug ("Import") ||
+      Behavior::debug ("Tpetra::Import");
 
     std::unique_ptr<std::string> verbPfx;
     if (this->verbose ()) {
@@ -1157,7 +1153,6 @@ namespace Tpetra {
 	       Teuchos::Array<int>& userRemotePIDs,
 	       const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-    using ::Tpetra::Details::Behavior;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
@@ -1499,7 +1494,7 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const
   {
-    typedef Tpetra::global_size_t GST;
+    using ::Tpetra::Details::Behavior;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::as;
@@ -1509,10 +1504,11 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef Import<LO, GO, Node> import_type;
-    typedef typename Array<GO>::size_type size_type;
+    using GST = Tpetra::global_size_t;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using import_type = Import<LO, GO, Node>;
+    using size_type = typename Array<GO>::size_type;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
@@ -1525,13 +1521,14 @@ namespace Tpetra {
     RCP<const map_type> tgtMap2 = rhs.getTargetMap ();
     RCP<const Comm<int> > comm = srcMap->getComm ();
 
-    const bool debug = ::Tpetra::Details::Behavior::debug("Tpetra::Import::setUnion");
+    const bool debug = Behavior::debug ("Import::setUnion") ||
+      Behavior::debug ("Tpetra::Import::setUnion");
 
     if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
-          "Tpetra::Import::setUnion: The source Map of the input Import must be the "
-          "same as (in the sense of Map::isSameAs) the source Map of this Import.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
+	 "Tpetra::Import::setUnion: The source Map of the input Import must be the "
+	 "same as (in the sense of Map::isSameAs) the source Map of this Import.");
       const Comm<int>& comm1 = * (tgtMap1->getComm ());
       const Comm<int>& comm2 = * (tgtMap2->getComm ());
       TEUCHOS_TEST_FOR_EXCEPTION

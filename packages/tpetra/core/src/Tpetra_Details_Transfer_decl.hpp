@@ -93,6 +93,8 @@ private:
   using device_view_type = typename Kokkos::DualView<const ElementType*, device_type>::t_dev;
   
 public:
+  // Don't be tempted to comment this out if code doesn't build.
+  // The point is to ensure correct initialization of TransferData_.
   Transfer () = delete;
   
   /// \brief Four-argument constructor (most often used).
@@ -103,13 +105,18 @@ public:
   /// \param target [in] Target Map of the Export or Import.
   ///   May be null only if Export or Import is using one of
   ///   the special source-Map-only constructors.
-  /// \param out [in] Stream for verbose debugging output.
+  /// \param out [in/out] Stream for verbose debugging output.
   ///   If null, Transfer will wrap and use std::cerr.
-  /// \param plist [in] Parameters; may be null.
+  /// \param plist [in/out] Parameters; may be null.
+  ///
+  /// \param className [in] Either "Export" or "Import".  Used to
+  ///   control verbose debugging output (sometimes you might want it
+  ///   only for one or the other class).
   Transfer (const Teuchos::RCP<const map_type>& source,
 	    const Teuchos::RCP<const map_type>& target,
 	    const Teuchos::RCP<Teuchos::FancyOStream>& out,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist);
+	    const Teuchos::RCP<Teuchos::ParameterList>& plist,
+	    const std::string& className);
 
   Transfer (const Transfer<LO, GO, NT>& rhs) = default;
 
@@ -124,12 +131,6 @@ public:
   
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~Transfer () = default;
-
-  /// \brief Set parameters.
-  ///
-  /// Please see the Export or Import class documentation for a list
-  /// of all accepted parameters and their default values.
-  void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   /// \brief Number of initial identical IDs.
   ///
@@ -250,7 +251,18 @@ protected:
                 const Teuchos::EVerbosityLevel verbLevel =
                   Teuchos::Describable::verbLevel_default) const;
 
-private:  
+private:
+  /// \brief Set parameters.
+  ///
+  /// Please see the Export or Import class documentation for a list
+  /// of all accepted parameters and their default values.
+  ///
+  /// \param plist [in/out] Parameters; may be null.
+  /// \param className [in] "Export" or "Import".
+  void
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		    const std::string& className);
+
   /// \brief Print "global" (not necessarily just on Process 0)
   ///   information for describe().
   ///
