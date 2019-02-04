@@ -522,8 +522,9 @@ namespace FROSch {
                     faces: rotations            --- " << useFaceRotations << "\n\
                     --------------------------------------------\n";
                 }
-                if (this->ParameterList_->get("Use RepMap",false)) {
+                if (this->ParameterList_->get("Use RepMap",true)) {
                     if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
+                        if(this->MpiComm_->getRank() == 0) std::cout<<"Test G1\n";
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;
                         GOVec2D conn;

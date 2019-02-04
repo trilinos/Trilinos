@@ -200,7 +200,8 @@ namespace FROSch {
         Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::sublist(parameterList,"Zoltan2 Parameter");
         
         Teuchos::RCP<inputAdapter> adaptedMatrix = Teuchos::rcp(new inputAdapter(Xgraph,0,0));
-        
+        size_t MaxRow = B->getGlobalMaxNumRowEntries();
+        Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(B->getRowMap()->lib(),MaxRow,MaxRow,0,TeuchosComm);
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
        /* if(MyPID == 0)std::cout<<"--------Node ElementList------------\n";
@@ -209,7 +210,8 @@ namespace FROSch {
         if(MyPID == 0)std::cout<<"-------------------------------------\n";*/
        
         problem->solve();
-    
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"Re 0\n";
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
         adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());
         
@@ -221,10 +223,11 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
         //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
         
-        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),10));
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),ColMap,MaxRow));
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
-
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"Re 1\n";
         //--------------------Get Repeated Nodes Map------------------------
         //All Elemnts and neighboring on Proc
         Teuchos::ArrayView<const GO>  eList =EleRepMap->getNodeElementList();

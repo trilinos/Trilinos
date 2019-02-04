@@ -89,7 +89,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
        
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D;
         ;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;

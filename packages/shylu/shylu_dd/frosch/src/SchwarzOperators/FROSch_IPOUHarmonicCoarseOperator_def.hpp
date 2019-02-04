@@ -51,7 +51,8 @@ namespace FROSch {
                                                                           ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList),    
     InterfacePartitionOfUnity_ (),
-    LocalPartitionOfUnityBasis_ ()
+    LocalPartitionOfUnityBasis_ (),
+    DDInterface_ ()
     {
         
     }
@@ -188,6 +189,15 @@ namespace FROSch {
             InterfaceEntityPtr interface = InterfacePartitionOfUnity_->getDDInterface()->getInterface()->getEntity(0);
             InterfaceEntityPtr interior = InterfacePartitionOfUnity_->getDDInterface()->getInterior()->getEntity(0);
             
+            DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap));
+            DDInterface_->resetGlobalDofs(dofsMaps);
+            //DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
+            if (this->ParameterList_->get("Test Unconnected Interface",true)) {
+                DDInterface_->divideUnconnectedEntities(this->K_);
+            }
+            
+            DDInterface_->sortVerticesEdgesFaces(nodeList);
+            
             // Construct Interface and Interior index sets
             this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getNumNodes());
             this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getNumNodes());
@@ -216,6 +226,43 @@ namespace FROSch {
             
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
             
+            if (this->ParameterList_->get("Use RepMap",true)) {
+                if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
+                    if(this->MpiComm_->getRank() == 0) std::cout<<"Test G1\n";
+                    Teuchos::Array<GO> entries;
+                    std::map<GO,int> rep;
+                    GOVec2D conn;
+                    this->DDInterface_->identifyConnectivityEntities();
+                    EntitySetConstPtr Connect = this->DDInterface_->getConnectivityEntities();
+                    Connect->buildEntityMap(DDInterface_->getNodesMap());
+                    InterfaceEntityPtrVec ConnVec = Connect->getEntityVector();
+                    GO ConnVecSize = ConnVec.size();
+                    conn.resize(ConnVecSize);
+                    if(ConnVecSize>0){
+                        for(GO i = 0;i<ConnVecSize;i++){
+                            conn[i] = ConnVec[i]->getSubdomainsVector();
+                            for(int j = 0;j<conn[i].size();j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),Connect->getEntityMap()->getComm()->getRank()));
+                        }
+                        for (auto& x: rep) {
+                            entries.push_back(x.first);
+                        }
+                    }
+                    
+                    
+                    MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
+                    Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+                    std::vector<GO> col_vec(entries.size());
+                    for(int i = 0;i<entries.size();i++)
+                    {
+                        col_vec.at(i) =i;
+                    }
+                    Teuchos::ArrayView<GO> cols(col_vec);
+                    this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
+                    this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),cols,entries());
+                    this->GraphEntriesList_->fillComplete();
+                    
+                }
+            }
             this->InterfaceCoarseSpaces_[blockId] = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
             if (this->Verbose_) std::cout<<"WARNING! Need to build block coarse sizes for use in MueLu nullspace."<< std::endl;
             //if (this->Verbose_) {Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);}
