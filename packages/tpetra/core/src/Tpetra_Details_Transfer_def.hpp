@@ -134,7 +134,14 @@ Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
 Transfer<LO, GO, NT>::
 getPermuteFromLIDs_dv () const {
   const auto& dv = TransferData_->permuteFromLIDs_;
-  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteFromLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteFromLIDs_dv: "
+     "DualView needs sync to host" );
   return dv;
 }
   
@@ -150,7 +157,14 @@ Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
 Transfer<LO, GO, NT>::
 getPermuteToLIDs_dv () const {
   const auto& dv = TransferData_->permuteToLIDs_;
-  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteToLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteToLIDs_dv: "
+     "DualView needs sync to host" );
   return dv;
 }
   
@@ -173,7 +187,14 @@ Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
 Transfer<LO, GO, NT>::
 getRemoteLIDs_dv () const {
   const auto& dv = TransferData_->remoteLIDs_;
-  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getRemoteLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getRemoteLIDs_dv: "
+     "DualView needs sync to host" );
   return dv;
 }
   
@@ -196,7 +217,14 @@ Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
 Transfer<LO, GO, NT>::
 getExportLIDs_dv () const {
   const auto& dv = TransferData_->exportLIDs_;
-  TEUCHOS_ASSERT( ! dv.need_sync_device () && ! dv.need_sync_host () );
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getExportLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getExportLIDs_dv: "
+     "DualView needs sync to host" );
   return dv;
 }
   

@@ -88,113 +88,6 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const map_type>& source,
-          const Teuchos::RCP<const map_type>& target) :
-    base_type (source, target, Teuchos::null, Teuchos::null, "Export")
-  {
-    using Teuchos::rcp;
-    using std::endl;
-
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-    Teuchos::Array<GlobalOrdinal> exportGIDs;
-    setupSamePermuteExport (exportGIDs);
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: "
-         << "setupSamePermuteExport done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-    if (source->isDistributed ()) {
-      setupRemote (exportGIDs);
-    }
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target,
-          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-    base_type (source, target, out, Teuchos::null, "Export")
-  {
-    using Teuchos::rcp;
-    using std::endl;
-
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-    Teuchos::Array<GlobalOrdinal> exportGIDs;
-    setupSamePermuteExport (exportGIDs);
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: "
-         << "setupSamePermuteExport done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-    if (source->isDistributed ()) {
-      setupRemote (exportGIDs);
-    }
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const map_type >& source,
-          const Teuchos::RCP<const map_type >& target,
-          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    base_type (source, target, Teuchos::null, plist, "Export")
-  {
-    using Teuchos::rcp;
-    using std::endl;
-
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-    Teuchos::Array<GlobalOrdinal> exportGIDs;
-    setupSamePermuteExport (exportGIDs);
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: "
-         << "setupSamePermuteExport done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-    if (source->isDistributed ()) {
-      setupRemote (exportGIDs);
-    }
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const map_type >& source,
           const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::FancyOStream>& out,
@@ -212,16 +105,19 @@ namespace Tpetra {
     }
     Teuchos::Array<GlobalOrdinal> exportGIDs;
     setupSamePermuteExport (exportGIDs);
-    if (this->verbose ()) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Export ctor: "
-         << "setupSamePermuteExport done" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
     if (source->isDistributed ()) {
       setupRemote (exportGIDs);
     }
+
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_device () );
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_device () );
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_device () );
+    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
+    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
+
     if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();
@@ -232,20 +128,32 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
+  Export (const Teuchos::RCP<const map_type>& source,
+          const Teuchos::RCP<const map_type>& target) :
+    Export (source, target, Teuchos::null, Teuchos::null)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  Export (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+    Export (source, target, out, Teuchos::null)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  Export (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    Export (source, target, Teuchos::null, plist)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs) :
     base_type (rhs)
-  {
-    using std::endl;
-    
-    if (this->verbose ()) {
-      auto srcMap = rhs.getSourceMap ();
-      auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
-      const int myRank = comm.is_null () ? -1 : comm->getRank ();
-      std::ostringstream os;
-      os << "Proc " << myRank << ": Tpetra::Export(Export)" << endl;
-      this->verboseOutputStream () << os.str ();
-    }
-  }
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
@@ -583,7 +491,7 @@ namespace Tpetra {
 	     this->TransferData_->exportPIDs_.end (),
 	     exportGIDs.getRawPtr (),
 	     exportLIDs.data ());
-      this->TransferData_->exportLIDs_.sync_host ();
+      this->TransferData_->exportLIDs_.sync_device ();
       // FIXME (mfh 03 Feb 2019) We actually end up sync'ing
       // exportLIDs_ to device twice, once in setupSamePermuteExport,
       // and once here.  We could avoid the first sync.
