@@ -85,12 +85,6 @@ private:
   using memory_space = typename NT::device_type::memory_space;
 #endif // KOKKOS_ENABLE_CUDA
   using device_type = Kokkos::Device<execution_space, memory_space>;
-
-  template<class ElementType>
-  using host_view_type = typename Kokkos::DualView<const ElementType*, device_type>::t_host;
-
-  template<class ElementType>
-  using device_view_type = typename Kokkos::DualView<const ElementType*, device_type>::t_dev;
   
 public:
   // Don't be tempted to comment this out if code doesn't build.
@@ -146,8 +140,16 @@ public:
   /// communication).
   size_t getNumPermuteIDs () const;
 
+  /// \brief List of local IDs in the source Map that are permuted, as
+  ///   a const DualView (that is sync'd to both host and device).
+  Kokkos::DualView<const LO*, device_type> getPermuteFromLIDs_dv () const;
+
   //! List of local IDs in the source Map that are permuted.
   Teuchos::ArrayView<const LO> getPermuteFromLIDs () const;
+
+  /// \brief List of local IDs in the target Map that are permuted, as
+  ///   a const DualView (that is sync'd to both host and device).
+  Kokkos::DualView<const LO*, device_type> getPermuteToLIDs_dv () const;
 
   //! List of local IDs in the target Map that are permuted.
   Teuchos::ArrayView<const LO> getPermuteToLIDs () const;
@@ -155,11 +157,21 @@ public:
   //! Number of entries not on the calling process.
   size_t getNumRemoteIDs () const;
 
+  /// \brief List of entries in the target Map to receive from other
+  ///   processes, as a const DualView (that is sync'd to both host
+  ///   and device).
+  Kokkos::DualView<const LO*, device_type> getRemoteLIDs_dv () const;
+
   //! List of entries in the target Map to receive from other processes.
   Teuchos::ArrayView<const LO> getRemoteLIDs () const;
 
   //! Number of entries that must be sent by the calling process to other processes.
   size_t getNumExportIDs () const;
+
+  /// \brief List of entries in the source Map that will be sent to
+  ///   other processes, as a const DualView (that is sync'd to both
+  ///   host and device).
+  Kokkos::DualView<const LO*, device_type> getExportLIDs_dv () const;
 
   //! List of entries in the source Map that will be sent to other processes.
   Teuchos::ArrayView<const LO> getExportLIDs () const;
