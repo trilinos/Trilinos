@@ -53,6 +53,7 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include <memory>
 #include <sstream>
 
@@ -437,10 +438,11 @@ namespace Tpetra {
               const ReverseOption revOp,
               const CombineMode CM)
   {
-    using Tpetra::Details::getDualViewCopyFromArrayView;
+    using ::Tpetra::Details::getDualViewCopyFromArrayView;
+    using ::Tpetra::Details::ProfilingRegion;
     using std::endl;
-    typedef LocalOrdinal LO;
-    typedef device_type DT;
+
+    ProfilingRegion region_doTransfer ("Tpetra::DistObject::doTransfer");
 
     // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
     // checks.  These may communicate more.
@@ -518,15 +520,6 @@ namespace Tpetra {
     }
 
     const size_t numSameIDs = transfer.getNumSameIDs ();
-    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
-    const view_type permuteToLIDs_ = (revOp == DoForward) ?
-      transfer.getPermuteToLIDs () : transfer.getPermuteFromLIDs ();
-    const view_type permuteFromLIDs_ = (revOp == DoForward) ?
-      transfer.getPermuteFromLIDs () : transfer.getPermuteToLIDs ();
-    const view_type exportLIDs_ = (revOp == DoForward) ?
-      transfer.getExportLIDs () : transfer.getRemoteLIDs ();
-    const view_type remoteLIDs_ = (revOp == DoForward) ?
-      transfer.getRemoteLIDs () : transfer.getExportLIDs ();
     Distributor& distor = transfer.getDistributor ();
 
     if (this->useNewInterface ()) {
@@ -539,55 +532,20 @@ namespace Tpetra {
           "commOnHost=" << (commOnHost ? "true" : "false") << endl;
         std::cerr << os.str ();
       }
-
-      // Convert arguments to Kokkos::DualView.  This currently
-      // involves deep copy, either to host or to device (depending on
-      // commOnHost).  At some point, we need to change the interface
-      // of doTransfer so it takes DualView (or just View) rather than
-      // Teuchos::ArrayView, so that we won't need this deep copy.
-      //
-      // We don't need to sync the arguments.  commOnHost determines
-      // where the most recent version lives.
-      Kokkos::DualView<LO*, DT> permuteToLIDs =
-        getDualViewCopyFromArrayView<LO, DT> (permuteToLIDs_,
-                                              "permuteToLIDs",
-                                              commOnHost);
-      Kokkos::DualView<LO*, DT> permuteFromLIDs =
-        getDualViewCopyFromArrayView<LO, DT> (permuteFromLIDs_,
-                                              "permuteFromLIDs",
-                                              commOnHost);
-      // No need to sync this.  packAndPrepareNew will use it to
-      // determine where to pack (in host or device memory).
-      Kokkos::DualView<LO*, DT> remoteLIDs =
-        getDualViewCopyFromArrayView<LO, DT> (remoteLIDs_,
-                                              "remoteLIDs",
-                                              commOnHost);
-      Kokkos::DualView<LO*, DT> exportLIDs =
-        getDualViewCopyFromArrayView<LO, DT> (exportLIDs_,
-                                              "exportLIDs",
-                                              commOnHost);
-      // Kyungjoo: when we pass dual views as function arguments, 
-      //    the function is responsible to raise a modify flag 
-      //    if it modifies either device buffer or host buffer.
-      //    If host view or device view is extracted and interfaced,
-      //    the call function is responsible to raise a modify flag
-      //    if either device or host buffer is modified.
-      //
-      //    permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs, 
-      //    Question: The above views have data type 
-      //       <const local_ordinal_type*>. This implies that this 
-      //       function consider them as inputs and they are not modified. 
-      //       Then, these should be synced bbefore they are used.
-      //    My suggestion is 
-      // if (!commOnHost) {
-      //   permuteToLIDs.template sync<CDMS>();
-      //   permuteFromLIDs.template sync<CDMS>();
-      //   remoteLIDs.template sync<CDMS>(); 
-      //   exportLIDs.template sync<CDMS>();
-      // }
-      doTransferNew (src, CM, numSameIDs, 
-                     permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs, 
-                     distor, revOp, commOnHost);
+      auto permToLIDs = (revOp == DoForward) ?
+        transfer.getPermuteToLIDs_dv () :
+        transfer.getPermuteFromLIDs_dv ();
+      auto permFromLIDs = (revOp == DoForward) ?
+        transfer.getPermuteFromLIDs_dv () :
+        transfer.getPermuteToLIDs_dv ();
+      auto remoteLIDs = (revOp == DoForward) ?
+        transfer.getRemoteLIDs_dv () :
+        transfer.getExportLIDs_dv ();
+      auto exportLIDs = (revOp == DoForward) ?
+        transfer.getExportLIDs_dv () :
+        transfer.getRemoteLIDs_dv ();
+      doTransferNew (src, CM, numSameIDs, permToLIDs, permFromLIDs,
+                     remoteLIDs, exportLIDs, distor, revOp, commOnHost);
     }
     else {
       if (verbose) {
@@ -595,8 +553,16 @@ namespace Tpetra {
         os << *prefix << "doTransfer: Use old interface" << endl;
         std::cerr << os.str ();
       }
-      doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
-                     remoteLIDs_, exportLIDs_, distor, revOp);
+      const auto permToLIDs = (revOp == DoForward) ?
+        transfer.getPermuteToLIDs () : transfer.getPermuteFromLIDs ();
+      const auto permFromLIDs = (revOp == DoForward) ?
+        transfer.getPermuteFromLIDs () : transfer.getPermuteToLIDs ();
+      const auto exportLIDs = (revOp == DoForward) ?
+        transfer.getExportLIDs () : transfer.getRemoteLIDs ();
+      const auto remoteLIDs = (revOp == DoForward) ?
+        transfer.getRemoteLIDs () : transfer.getExportLIDs ();
+      doTransferOld (src, CM, numSameIDs, permToLIDs, permFromLIDs,
+                     remoteLIDs, exportLIDs, distor, revOp);
     }
 
     if (verbose) {
@@ -609,12 +575,13 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  reallocImportsIfNeeded (const size_t newSize, const bool verbose)
+  reallocImportsIfNeeded (const size_t newSize,
+                          const bool verbose,
+                          const std::string* prefix)
   {
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "(Proc " << myRank << ") Reallocate (if needed) imports_ from "
+      os << *prefix << "Realloc (if needed) imports_ from "
          << imports_.extent (0) << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
@@ -622,10 +589,8 @@ namespace Tpetra {
     const bool reallocated =
       reallocDualViewIfNeeded (this->imports_, newSize, "imports");
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "(Proc " << myRank << ") Finished reallocating imports_"
-         << std::endl;
+      os << *prefix << "Finished realloc'ing imports_" << std::endl;
       std::cerr << os.str ();
     }
     return reallocated;
@@ -725,14 +690,19 @@ namespace Tpetra {
               Distributor &distor,
               ReverseOption revOp)
   {
-    using Tpetra::Details::getArrayViewFromDualView;
-    using Tpetra::Details::reallocDualViewIfNeeded;
+    using ::Tpetra::Details::getArrayViewFromDualView;
+    using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
     using std::endl;
     const char prefixRaw[] = "Tpetra::DistObject::doTransfer: ";
 
+    ProfilingRegion region_doTransferOld ("Tpetra::DistObject::doTransferOld");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    // FIXME (mfh 04 Feb 2019) Remove Teuchos::TimeMonitor and use
+    // Kokkos profiling instead.
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -794,7 +764,7 @@ namespace Tpetra {
     if (srcDistObj != NULL) {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Calling srcDistObject->createViews()" << endl;
+        os << *prefix << "Call srcDistObject->createViews()" << endl;
         std::cerr << os.str ();
       }
       srcDistObj->createViews ();
@@ -822,7 +792,7 @@ namespace Tpetra {
     // transfers the necessary data.
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Calling createViewsNonConst" << endl;
+      os << *prefix << "Call createViewsNonConst" << endl;
       std::cerr << os.str ();
     }
     this->createViewsNonConst (rwo);
@@ -833,7 +803,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Calling copyAndPermute" << endl;
+        os << *prefix << "Call copyAndPermute" << endl;
         std::cerr << os.str ();
       }
       // There is at least one GID to copy or permute.
@@ -898,7 +868,7 @@ namespace Tpetra {
         Teuchos::Array<packet_type> exportsOld;
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Calling packAndPrepare" << endl;
+          os << *prefix << "Call packAndPrepare" << endl;
           std::cerr << os.str ();
         }
         packAndPrepare (src, exportLIDs, exportsOld, numExportPacketsPerLID,
@@ -921,7 +891,7 @@ namespace Tpetra {
     if (srcDistObj != nullptr) {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Calling srcDistObj->releaseViews()" << endl;
+        os << *prefix << "Call srcDistObj->releaseViews()" << endl;
         std::cerr << os.str ();
       }
       srcDistObj->releaseViews ();
@@ -1003,7 +973,7 @@ namespace Tpetra {
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "Calling doReversePostsAndWaits (3-arg)" << endl;
+              os << *prefix << "Call doReversePostsAndWaits (3-arg)" << endl;
               std::cerr << os.str ();
             }
             distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
@@ -1048,7 +1018,7 @@ namespace Tpetra {
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "Calling doReversePostsAndWaits (4-arg)"
+              os << *prefix << "Call doReversePostsAndWaits (4-arg)"
                  << endl;
               std::cerr << os.str ();
             }
@@ -1071,7 +1041,7 @@ namespace Tpetra {
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "Calling doReversePostsAndWaits (3-arg)"
+              os << *prefix << "Call doReversePostsAndWaits (3-arg)"
                  << endl;
               std::cerr << os.str ();
             }
@@ -1104,7 +1074,7 @@ namespace Tpetra {
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "Calling doPostsAndWaits (3-arg)" << endl;
+              os << *prefix << "Call doPostsAndWaits (3-arg)" << endl;
               std::cerr << os.str ();
             }
             distor.doPostsAndWaits (numExportPacketsPerLID, 1,
@@ -1149,7 +1119,7 @@ namespace Tpetra {
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "Calling doPostsAndWaits (4-arg)" << endl;
+              os << *prefix << "Call doPostsAndWaits (4-arg)" << endl;
               std::cerr << os.str ();
             }
             distor.doPostsAndWaits (hostExports,
@@ -1171,7 +1141,7 @@ namespace Tpetra {
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "Calling doPostsAndWaits (3-arg)" << endl;
+              os << *prefix << "Call doPostsAndWaits (3-arg)" << endl;
               std::cerr << os.str ();
             }
             distor.doPostsAndWaits (hostExports,
@@ -1208,7 +1178,7 @@ namespace Tpetra {
 
           if (verbose) {
             std::ostringstream os;
-            os << *prefix << "Calling unpackAndCombine" << endl;
+            os << *prefix << "Call unpackAndCombine" << endl;
             std::cerr << os.str ();
           }
           unpackAndCombine (remoteLIDs, hostImports, numImportPacketsPerLID,
@@ -1219,7 +1189,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Calling releaseViews()" << endl;
+      os << *prefix << "Call releaseViews()" << endl;
       std::cerr << os.str ();
     }
     this->releaseViews ();
@@ -1281,27 +1251,23 @@ namespace Tpetra {
   {
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::getArrayViewFromDualView;
+    using ::Tpetra::Details::ProfilingRegion;
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
     using std::endl;
-    typedef LocalOrdinal LO;
-    typedef device_type DT;
+    using LO = LocalOrdinal;
+    using DT = device_type;
+    using DES = typename DT::execution_space;
 
-    using DES = typename Kokkos::DualView<LO*, DT>::t_dev::execution_space;
+    ProfilingRegion region_dTN ("Tpetra::DistObject::doTransferNew");
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in favor
+    // of Kokkos profiling.
+    Teuchos::TimeMonitor doXferMon (*doXferTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    // DistObject's communication buffers (exports_,
-    // numExportPacketsPerLID_, imports_, and numImportPacketsPerLID_)
-    // may have different memory spaces than device_type would
-    // indicate.  See GitHub issue #1088.  CDMS is short for
-    // "communication device memory space."
-    using CDMS = typename Kokkos::DualView<size_t*,
-      buffer_device_type>::t_dev::memory_space;
-
-    // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
-    // copious debug output to std::cerr on every MPI process.  This
-    // is unwise for runs with large numbers of MPI processes.
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     // Prefix for verbose output.  Use a pointer, so we don't pay for
     // string construction unless needed.  We set this below.
@@ -1311,13 +1277,13 @@ namespace Tpetra {
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? 0 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": ";
+      os << "Proc " << myRank << ": Tpetra::CrsMatrix::doTransferNew: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
     }
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::doTransferNew: Input arguments:" << endl
+      os << *prefix << "Input arguments:" << endl
          << *prefix << "  combineMode: " << combineModeToString (CM) << endl
          << *prefix << "  numSameIDs: " << numSameIDs << endl
          << *prefix << "  "
@@ -1333,11 +1299,8 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-    Teuchos::TimeMonitor doXferMon (*doXferTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-
     {
+      ProfilingRegion region_cs ("Tpetra::DistObject::doTransferNew::checkSizes");
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "1. checkSizes" << endl;
@@ -1357,30 +1320,35 @@ namespace Tpetra {
     // that if CM == INSERT || CM == REPLACE, the target object could
     // be write only.  We don't optimize for that here.
 
-    if (numSameIDs + permuteToLIDs.extent (0) != 0) {
-      // There is at least one GID to copy or permute.
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "2. copyAndPermuteNew" << endl;
-        std::cerr << os.str ();
-      }
-      {
+    {
+      ProfilingRegion region_cp
+        ("Tpetra::DistObject::doTransferNew::copyAndPermuteNew");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
+      // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in favor
+      // of Kokkos profiling.
+      Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+      if (numSameIDs + permuteToLIDs.extent (0) != 0) {
+        // There is at least one GID to copy or permute.
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "2. copyAndPermuteNew" << endl;
+          std::cerr << os.str ();
+        }
         this->copyAndPermuteNew (src, numSameIDs, permuteToLIDs,
                                  permuteFromLIDs);
-      }
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "After copyAndPermuteNew:" << endl
-           << *prefix << "  "
-           << dualViewStatusToString (permuteToLIDs, "permuteToLIDs")
-           << endl
-           << *prefix << "  "
-           << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs")
-           << endl;
-        std::cerr << os.str ();
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "After copyAndPermuteNew:" << endl
+             << *prefix << "  "
+             << dualViewStatusToString (permuteToLIDs, "permuteToLIDs")
+             << endl
+             << *prefix << "  "
+             << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs")
+             << endl;
+          std::cerr << os.str ();
+        }
       }
     }
 
@@ -1425,34 +1393,42 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
       {
+        ProfilingRegion region_pp
+          ("Tpetra::DistObject::doTransferNew::packAndPrepareNew");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
+        // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
+        // favor of Kokkos profiling.
         Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
         // Ask the source to pack data.  Also ask it whether there are
         // a constant number of packets per element
         // (constantNumPackets is an output argument).  If there are,
         // constantNumPackets will come back nonzero.  Otherwise, the
         // source will fill the numExportPacketsPerLID_ array.
-        // Kyungjoo: if follows the suggestion lin 581, exportLIDs 
-        //     is read-only and available for both host and device.
-        //     exports and numExportPackesPerLID are dualviews and
-        //     if they are modified in this function, they should
-        //     set appropriate modify flags
-        this->packAndPrepareNew (src,                           // input
-                                 exportLIDs,                    // input
-                                 this->exports_,                // ouput
-                                 this->numExportPacketsPerLID_, // output
-                                 constantNumPackets, // output
-                                 distor); // input
+
         // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
         // Alternately, make packAndPrepareNew take a "commOnHost"
         // argument to tell it where to leave the data?
+        //
+        // NOTE (mfh 04 Feb 2019) Subclasses of DistObject should have
+        // the freedom to pack and unpack either on host or device.
+        // We should prefer sync'ing only on demand.  Thus, we can
+        // answer the above question: packAndPrepareNew should not
+        // take a commOnHost argument, and doTransferNew should sync
+        // where needed, if needed.
+        this->packAndPrepareNew (src, exportLIDs, this->exports_,
+                                 this->numExportPacketsPerLID_,
+                                 constantNumPackets, distor);
         if (commOnHost) {
-          this->exports_.sync_host ();
+          if (this->exports_.need_sync_host ()) {
+            this->exports_.sync_host ();
+          }
         }
         else { // ! commOnHost
-          typedef typename buffer_device_type::memory_space buffer_dev_memory_space;
-          this->exports_.template sync<buffer_dev_memory_space> ();
+          if (this->exports_.need_sync_device ()) {
+            this->exports_.sync_device ();
+          }
         }
       }
       if (verbose) {
@@ -1472,12 +1448,7 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        if (verbose) {
-          std::ostringstream os;
-          os << *prefix << "6. Realloc imports_: rbufLen=" << rbufLen << std::endl;
-          std::cerr << os.str ();
-        }
-        reallocImportsIfNeeded (rbufLen, verbose);
+        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -1508,24 +1479,22 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      // FIXME (mfh 17 Feb 2014) Distributor doesn't actually inspect
-      // the contents of the "exports" or "imports" arrays, other than
-      // to do a deep copy in the (should be technically unnecessary,
-      // but isn't for some odd reason) "self-message" case.
-      // Distributor thus doesn't need host views; it could do just
-      // fine with device views, assuming that MPI knows how to read
-      // device memory (which doesn't even require UVM).
-
       if (needCommunication) {
+        ProfilingRegion region_dpw
+          ("Tpetra::DistObject::doTransferNew::doPostsAndWaits");
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+        // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
+        // favor of Kokkos profiling.
+        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
         if (revOp == DoReverse) {
           if (verbose) {
             std::ostringstream os;
             os << *prefix << "7.0. Reverse mode" << endl;
             std::cerr << os.str ();
           }
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
             if (verbose) {
               std::ostringstream os;
@@ -1536,80 +1505,98 @@ namespace Tpetra {
             }
             size_t totalImportPackets = 0;
             if (commOnHost) {
-              this->numExportPacketsPerLID_.sync_host ();
-              this->numImportPacketsPerLID_.sync_host ();
-              this->numImportPacketsPerLID_.modify_host (); // output argument
-              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.view_host ());
+              if (this->numExportPacketsPerLID_.need_sync_host ()) {
+                this->numExportPacketsPerLID_.sync_host ();
+              }
+              if (this->numImportPacketsPerLID_.need_sync_host ()) {
+                this->numImportPacketsPerLID_.sync_host ();
+              }
+              this->numImportPacketsPerLID_.modify_host (); // out arg
+              auto numExp_h =
+                create_const_view (this->numExportPacketsPerLID_.view_host ());
               auto numImp_h = this->numImportPacketsPerLID_.view_host ();
 
               // MPI communication happens here.
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Calling doReversePostsAndWaits" << std::endl;
+                os << *prefix << "Call do"
+                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+                   << endl;
                 std::cerr << os.str ();
               }
               distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
-
               DES::fence (); // just in case UVM doesn't behave right
-              typedef typename decltype (numImp_h)::device_type the_dev_type;
 
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Counting totalImportPackets" << std::endl;
+                os << *prefix << "Count totalImportPackets" << std::endl;
                 std::cerr << os.str ();
               }
+              using the_dev_type = typename decltype (numImp_h)::device_type;
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
             }
             else {
-              this->numExportPacketsPerLID_.template sync<CDMS> ();
-              this->numImportPacketsPerLID_.template sync<CDMS> ();
-              this->numImportPacketsPerLID_.template modify<CDMS> (); // output argument
-              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<CDMS> ());
-              auto numImp_d = this->numImportPacketsPerLID_.template view<CDMS> ();
+              if (this->numExportPacketsPerLID_.need_sync_device ()) {
+                this->numExportPacketsPerLID_.sync_device ();
+              }
+              if (this->numImportPacketsPerLID_.need_sync_device ()) {
+                this->numImportPacketsPerLID_.sync_device ();
+              }
+              this->numImportPacketsPerLID_.modify_device (); // out arg
+              auto numExp_d = create_const_view
+                (this->numExportPacketsPerLID_.view_device ());
+              auto numImp_d = this->numImportPacketsPerLID_.view_device ();
 
               // MPI communication happens here.
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Calling doReversePostsAndWaits" << std::endl;
+                os << *prefix << "Call do"
+                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+                   << endl;
                 std::cerr << os.str ();
               }
               distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
-
               DES::fence (); // just in case UVM doesn't behave right
-              typedef typename decltype (numImp_d)::device_type the_dev_type;
 
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Counting totalImportPackets" << std::endl;
+                os << *prefix << "Count totalImportPackets" << std::endl;
                 std::cerr << os.str ();
               }
+              using the_dev_type = typename decltype (numImp_d)::device_type;
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
             }
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "totalImportPackets=" << totalImportPackets
-                 << "; calling reallocImportsIfNeeded" << endl;
+              os << *prefix << "totalImportPackets=" << totalImportPackets << endl;
               std::cerr << os.str ();
             }
-            this->reallocImportsIfNeeded (totalImportPackets, verbose);
+            this->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                          prefix.get ());
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.3. Second comm" << std::endl;
               std::cerr << os.str ();
             }
 
-            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) Since we need to
-            // launch MPI communication on host, we will need
-            // numExportPacketsPerLID and numImportPacketsPerLID on
-            // host.
-            this->numExportPacketsPerLID_.sync_host ();
-            this->numImportPacketsPerLID_.sync_host ();
+            // mfh 04 Feb 2019: Distributor expects the "num packets
+            // per LID" arrays on host, so that it can issue MPI sends
+            // and receives correctly.
+            if (this->numExportPacketsPerLID_.need_sync_host ()) {
+              this->numExportPacketsPerLID_.sync_host ();
+            }
+            if (this->numImportPacketsPerLID_.need_sync_host ()) {
+              this->numImportPacketsPerLID_.sync_host ();
+            }
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
             // doReversePostsAndWaits currently want
             // numExportPacketsPerLID and numImportPacketsPerLID as
             // Teuchos::ArrayView, rather than as Kokkos::View.
+            //
+            // NOTE (mfh 04 Feb 2019) This does NOT copy from host to
+            // device.  The above syncs might.
             auto numExportPacketsPerLID_av =
               getArrayViewFromDualView (this->numExportPacketsPerLID_);
             auto numImportPacketsPerLID_av =
@@ -1620,34 +1607,36 @@ namespace Tpetra {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.clear_sync_state();
+            this->imports_.clear_sync_state ();
 
             if (commOnHost) {
               this->imports_.modify_host ();
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Calling doReversePostsAndWaits" << endl;
+                os << *prefix << "Call doReversePostsAndWaits" << endl;
                 std::cerr << os.str ();
               }
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.view_host ()),
-                                             numExportPacketsPerLID_av,
-                                             this->imports_.view_host (),
-                                             numImportPacketsPerLID_av);
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_host (),
+                 numImportPacketsPerLID_av);
             }
-            else {
-              this->imports_.template modify<CDMS> ();
+            else { // pack on device
+              this->imports_.modify_device ();
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Calling doReversePostsAndWaits" << endl;
+                os << *prefix << "Call doReversePostsAndWaits" << endl;
                 std::cerr << os.str ();
               }
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
-                                             numExportPacketsPerLID_av,
-                                             this->imports_.template view<CDMS> (),
-                                             numImportPacketsPerLID_av);
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_device (),
+                 numImportPacketsPerLID_av);
             }
           }
-          else {
+          else { // constant number of packets per LID
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.1. Const # packets per LID: " << endl
@@ -1659,35 +1648,34 @@ namespace Tpetra {
                  << endl;
               std::cerr << os.str ();
             }
-
             // imports_ is for output only, so we don't need to sync
             // it before marking it as modified.  However, in order to
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.clear_sync_state();
+            this->imports_.clear_sync_state ();
 
+            if (verbose) {
+              std::ostringstream os;
+              os << *prefix << "7.2. Comm on "
+                 << (commOnHost ? "host" : "device")
+                 << "; call do" << (revOp == DoReverse ? "Reverse" : "")
+                 << "PostsAndWaits" << endl;
+              std::cerr << os.str ();
+            }
             if (commOnHost) {
               this->imports_.modify_host ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Calling doReversePostsAndWaits" << endl;
-                std::cerr << os.str ();
-              }
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.view_host ()),
-                                             constantNumPackets,
-                                             this->imports_.view_host ());
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 constantNumPackets,
+                 this->imports_.view_host ());
             }
             else { // pack on device
-              this->imports_.template modify<CDMS> ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Calling doReversePostsAndWaits" << endl;
-                std::cerr << os.str ();
-              }
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
-                                             constantNumPackets,
-                                             this->imports_.template view<CDMS> ());
+              this->imports_.modify_device ();
+              distor.doReversePostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 constantNumPackets,
+                 this->imports_.view_device ());
             }
           }
         }
@@ -1697,23 +1685,24 @@ namespace Tpetra {
             os << *prefix << "7.0. Forward mode" << std::endl;
             std::cerr << os.str ();
           }
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
 
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.1. Variable # packets / LID: first comm"
+                 << "(commOnHost = " << (commOnHost ? "true" : "false") << ")"
                  << std::endl;
               std::cerr << os.str ();
             }
-
             size_t totalImportPackets = 0;
             if (commOnHost) {
-              this->numExportPacketsPerLID_.sync_host ();
-              this->numImportPacketsPerLID_.sync_host ();
-              this->numImportPacketsPerLID_.modify_host (); // output argument
+              if (this->numExportPacketsPerLID_.need_sync_host ()) {
+                this->numExportPacketsPerLID_.sync_host ();
+              }
+              if (this->numImportPacketsPerLID_.need_sync_host ()) {
+                this->numImportPacketsPerLID_.sync_host ();
+              }
+              this->numImportPacketsPerLID_.modify_host (); // out arg
               auto numExp_h =
                 create_const_view (this->numExportPacketsPerLID_.view_host ());
               auto numImp_h = this->numImportPacketsPerLID_.view_host ();
@@ -1721,70 +1710,84 @@ namespace Tpetra {
               // MPI communication happens here.
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Calling doPostsAndWaits" << endl;
+                os << *prefix << "Call do"
+                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+                   << endl;
                 std::cerr << os.str ();
               }
               distor.doPostsAndWaits (numExp_h, 1, numImp_h);
-
               DES::fence (); // just in case UVM doesn't behave right
-              typedef typename decltype (numImp_h)::device_type the_dev_type;
+
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Counting totalImportPackets" << endl;
+                os << *prefix << "Count totalImportPackets" << endl;
                 std::cerr << os.str ();
               }
+              using the_dev_type = typename decltype (numImp_h)::device_type;
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
             }
             else {
-              this->numExportPacketsPerLID_.template sync<CDMS> ();
-              this->numImportPacketsPerLID_.template sync<CDMS> ();
-              this->numImportPacketsPerLID_.template modify<CDMS> (); // output argument
-              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<CDMS> ());
-              auto numImp_d = this->numImportPacketsPerLID_.template view<CDMS> ();
+              if (this->numExportPacketsPerLID_.need_sync_device ()) {
+                this->numExportPacketsPerLID_.sync_device ();
+              }
+              if (this->numImportPacketsPerLID_.need_sync_device ()) {
+                this->numImportPacketsPerLID_.sync_device ();
+              }
+              this->numImportPacketsPerLID_.modify_device (); // out arg
+              auto numExp_d = create_const_view
+                (this->numExportPacketsPerLID_.view_device ());
+              auto numImp_d = this->numImportPacketsPerLID_.view_device ();
 
               // MPI communication happens here.
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Calling doPostsAndWaits" << endl;
+                os << *prefix << "Call do"
+                   << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+                   << endl;
                 std::cerr << os.str ();
               }
               distor.doPostsAndWaits (numExp_d, 1, numImp_d);
-
               DES::fence (); // just in case UVM doesn't behave right
-              typedef typename decltype (numImp_d)::device_type the_dev_type;
+
               if (verbose) {
                 std::ostringstream os;
-                os << *prefix << "Counting totalImportPackets" << endl;
+                os << *prefix << "Count totalImportPackets" << endl;
                 std::cerr << os.str ();
               }
+              using the_dev_type = typename decltype (numImp_d)::device_type;
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
             }
 
             if (verbose) {
               std::ostringstream os;
-              os << *prefix << "totalImportPackets=" << totalImportPackets
-                 << "; calling reallocImportsIfNeeded" << endl;
+              os << *prefix << "totalImportPackets=" << totalImportPackets << endl;
               std::cerr << os.str ();
             }
-            this->reallocImportsIfNeeded (totalImportPackets, verbose);
-
+            this->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                          prefix.get ());
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.3. Second comm" << endl;
               std::cerr << os.str ();
             }
 
-            // NOTE (mfh 25 Apr 2016, 01 Aug 2017) Since we need to
-            // launch MPI communication on host, we will need
-            // numExportPacketsPerLID and numImportPacketsPerLID on
-            // host.
-            this->numExportPacketsPerLID_.sync_host ();
-            this->numImportPacketsPerLID_.sync_host ();
+            // mfh 04 Feb 2019: Distributor expects the "num packets
+            // per LID" arrays on host, so that it can issue MPI sends
+            // and receives correctly.
+            if (this->numExportPacketsPerLID_.need_sync_host ()) {
+              this->numExportPacketsPerLID_.sync_host ();
+            }
+            if (this->numImportPacketsPerLID_.need_sync_host ()) {
+              this->numImportPacketsPerLID_.sync_host ();
+            }
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
             // doReversePostsAndWaits currently want
             // numExportPacketsPerLID and numImportPacketsPerLID as
             // Teuchos::ArrayView, rather than as Kokkos::View.
+            //
+            // NOTE (mfh 04 Feb 2019) This does NOT copy from host to
+            // device.  The above syncs might.
             auto numExportPacketsPerLID_av =
               getArrayViewFromDualView (this->numExportPacketsPerLID_);
             auto numImportPacketsPerLID_av =
@@ -1795,39 +1798,42 @@ namespace Tpetra {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.clear_sync_state();
+            this->imports_.clear_sync_state ();
 
+            if (verbose) {
+              std::ostringstream os;
+              os << *prefix << "Comm on "
+                 << (commOnHost ? "host" : "device")
+                 << "; call do" << (revOp == DoReverse ? "Reverse" : "")
+                 << "PostsAndWaits" << endl;
+              std::cerr << os.str ();
+            }
             if (commOnHost) {
               this->imports_.modify_host ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Calling doPostsAndWaits" << std::endl;
-                std::cerr << os.str ();
-              }
-              distor.doPostsAndWaits (create_const_view (this->exports_.view_host ()),
-                                      numExportPacketsPerLID_av,
-                                      this->imports_.view_host (),
-                                      numImportPacketsPerLID_av);
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_host (),
+                 numImportPacketsPerLID_av);
             }
             else { // pack on device
-              this->imports_.template modify<CDMS> ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Calling doPostsAndWaits" << std::endl;
-                std::cerr << os.str ();
-              }
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
-                                      numExportPacketsPerLID_av,
-                                      this->imports_.template view<CDMS> (),
-                                      numImportPacketsPerLID_av);
+              this->imports_.modify_device ();
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 numExportPacketsPerLID_av,
+                 this->imports_.view_device (),
+                 numImportPacketsPerLID_av);
             }
           }
           else { // constant number of packets per LID
             if (verbose) {
               std::ostringstream os;
               os << *prefix << "7.1. Const # packets per LID: "
-                 << "exports_.extent(0)=" << exports_.extent (0)
-                 << ", imports_.extent(0) = " << imports_.extent (0)
+                 << *prefix << "  "
+                 << dualViewStatusToString (this->exports_, "exports_")
+                 << endl
+                 << *prefix << "  "
+                 << dualViewStatusToString (this->exports_, "imports_")
                  << endl;
               std::cerr << os.str ();
             }
@@ -1836,39 +1842,29 @@ namespace Tpetra {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.clear_sync_state();
+            this->imports_.clear_sync_state ();
 
+            if (verbose) {
+              std::ostringstream os;
+              os << *prefix << "7.2. Comm on "
+                 << (commOnHost ? "host" : "device")
+                 << "; call do" << (revOp == DoReverse ? "Reverse" : "")
+                 << "PostsAndWaits" << endl;
+              std::cerr << os.str ();
+            }
             if (commOnHost) {
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "7.2. Comm buffers on host" << endl;
-                std::cerr << os.str ();
-              }
               this->imports_.modify_host ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Calling doPostsAndWaits" << std::endl;
-                std::cerr << os.str ();
-              }
-              distor.doPostsAndWaits (create_const_view (this->exports_.view_host ()),
-                                      constantNumPackets,
-                                      this->imports_.view_host ());
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_host ()),
+                 constantNumPackets,
+                 this->imports_.view_host ());
             }
             else { // pack on device
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "7.2. Comm buffers on device" << endl;
-                std::cerr << os.str ();
-              }
-              this->imports_.template modify<CDMS> ();
-              if (verbose) {
-                std::ostringstream os;
-                os << *prefix << "Calling doPostsAndWaits" << std::endl;
-                std::cerr << os.str ();
-              }
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
-                                      constantNumPackets,
-                                      this->imports_.template view<CDMS> ());
+              this->imports_.modify_device ();
+              distor.doPostsAndWaits
+                (create_const_view (this->exports_.view_device ()),
+                 constantNumPackets,
+                 this->imports_.view_device ());
             }
           }
         }
@@ -1879,9 +1875,14 @@ namespace Tpetra {
             os << *prefix << "8. unpackAndCombineNew" << endl;
             std::cerr << os.str ();
           }
+          ProfilingRegion region_uc
+            ("Tpetra::DistObject::doTransferNew::unpackAndCombineNew");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
+          // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
+          // favor of Kokkos profiling.
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
           // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
           // input DualViews, but they DO need to be most recently
           // updated in the same memory space.
@@ -1889,39 +1890,39 @@ namespace Tpetra {
           // FIXME (mfh 26 Apr 2016) Check that all input DualViews
           // were most recently updated in the same memory space, and
           // sync them to the same place (based on commOnHost) if not.
-          
-          // Kyungjoo: remoteLIDs is read only and it should be synced 
+
+          // Kyungjoo: remoteLIDs is read only and it should be synced
           //   before doTransfer is called (see line 581).
           //   We still need to sync inputs.
-          //   The commOnHost is a very tricky thing. This variable 
+          //   The commOnHost is a very tricky thing. This variable
           //   can control where communication happens and where data
           //   is updated. However, when we pass dual views to a function,
-          //   we do not have a control where data is available. 
-          //   As this comm routines are used via virtual interface, 
+          //   we do not have a control where data is available.
+          //   As this comm routines are used via virtual interface,
           //   some code use device routines and some codes might use host
-          //   code. Outputs are selected from the calling function and 
+          //   code. Outputs are selected from the calling function and
           //   the caller function can decide whether it wants to sync or not.
           //   Input dual view should be synced before it calls the function
-          //   so that the calling function has freedom to choose between 
+          //   so that the calling function has freedom to choose between
           //   host and device algorithms.
-          
+
           if (commOnHost) {
-            // assume imports_ and numImportsPacketsPerLID_ are modified from host 
+            // assume imports_ and numImportsPacketsPerLID_ are modified from host
             // make them available for device
             this->imports_.template sync<CDMS>();
             this->numImportPacketsPerLID_.template sync<CDMS>();
-          } 
+          }
           else {
-            // assume imports_ and numImportsPacketsPerLID_ are modified from device 
+            // assume imports_ and numImportsPacketsPerLID_ are modified from device
             // make them available for host
             this->imports_.sync_host();
-            this->numImportPacketsPerLID_.sync_host();                      
-          }          
+            this->numImportPacketsPerLID_.sync_host();
+          }
           this->unpackAndCombineNew (remoteLIDs,  // input
                                      this->imports_, // input
-                                     this->numImportPacketsPerLID_, // input 
+                                     this->numImportPacketsPerLID_, // input
                                      constantNumPackets, // input
-                                     distor, // input 
+                                     distor, // input
                                      CM); // input
         }
       } // if (needCommunication)
@@ -1937,7 +1938,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  print (std::ostream &os) const
+  print (std::ostream& os) const
   {
     using Teuchos::FancyOStream;
     using Teuchos::getFancyOStream;

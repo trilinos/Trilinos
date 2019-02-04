@@ -957,7 +957,11 @@ namespace Tpetra {
     /// reason that imports_ is declared protected.
     ///
     /// \param newSize [in] New size of imports_.
-    /// \param debug [in] Whether to print (copious) debug output to stderr.
+    /// \param verbose [in] Whether to print verbose debugging output
+    ///   to stderr on every (MPI) process in the communicator.
+    /// \param prefix [in] If <tt>verbose</tt> is <tt>true</tt>, then
+    ///   this is a nonnull prefix to print at the beginning of each
+    ///   line of verbose debugging output.  Otherwise, not used.
     ///
     /// \return Whether we actually reallocated.
     ///
@@ -966,7 +970,9 @@ namespace Tpetra {
     /// by nonconst reference.  Thus, that method can resize the
     /// DualView without needing to call other DistObject methods.
     bool
-    reallocImportsIfNeeded (const size_t newSize, const bool debug = false);
+    reallocImportsIfNeeded (const size_t newSize,
+			    const bool verbose = false,
+			    const std::string* prefix = nullptr);
 
     /// \brief Number of packets to receive for each receive operation.
     ///
