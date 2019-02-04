@@ -127,30 +127,6 @@ namespace Ifpack2 {
       return ss.str();
     }
 
-    template<typename IntType>
-    IntType get_environment_variable_int(const char *desc, const IntType default_value) {
-      IntType r_val = default_value;
-      const char* const_char_ptr = std::getenv(desc);
-      if (const_char_ptr != NULL) 
-        r_val = atoi(const_char_ptr);
-      return r_val;
-    }
-
-    template<typename IntType>
-    IntType teampolicy_league_size(const IntType default_value) {
-      return get_environment_variable_int("IFPACK2_TEAMPOLICY_LEAGE_SIZE", default_value);
-    }
-    template<typename IntType>
-    IntType teampolicy_team_size(const IntType default_value) {
-      return get_environment_variable_int("IFPACK2_TEAMPOLICY_TEAM_SIZE", default_value);
-    }
-    template<typename IntType>
-    IntType teampolicy_vector_length(const IntType default_value) {
-      return get_environment_variable_int("IFPACK2_TEAMPOLICY_VECTOR_LENGTH", default_value);
-    }
-
-    
-
     ///
     /// custom multiple varilable reduce and scan
     ///
@@ -1080,30 +1056,22 @@ namespace Ifpack2 {
 	// reference should not be used but some compilers interpret vector_length as 
 	// a reference
 	const local_ordinal_type vector_length_value = vector_length;
-        const local_ordinal_type number_work_items = packptr.extent(0)-1;
-        const local_ordinal_type league_size = teampolicy_league_size(number_work_items);
-        const local_ordinal_type chunk_size = ceil(double(number_work_items)/double(league_size)); 
-        const team_policy_type policy(league_size, Kokkos::AUTO(), vector_length); 
+        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_length); 
         Kokkos::parallel_for
           ("setTridiagsToIdentity::TeamPolicy", 
            policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
-            const local_ordinal_type league_rank = member.league_rank();
-            const local_ordinal_type kbeg = league_rank*chunk_size;
-            const local_ordinal_type ktmp = kbeg + chunk_size;
-            const local_ordinal_type kend = ktmp > number_work_items ? number_work_items : ktmp;
-            for (local_ordinal_type k=kbeg;k<kend;++k) {
-              const local_ordinal_type ibeg = pack_td_ptr(packptr(k));
-              const local_ordinal_type iend = pack_td_ptr(packptr(k+1));
-              const local_ordinal_type diff = iend - ibeg;
-              const local_ordinal_type icount = diff/3 + (diff%3 > 0);
-              Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
-                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_length_value),[&](const int &v) {
-                      const local_ordinal_type i = ibeg + ii*3;
-                      for (local_ordinal_type j=0;j<blocksize;++j) 
-                        values(i,j,j,v) = 1;
-                    });
-                });
-            }
+            const local_ordinal_type k = member.league_rank();
+            const local_ordinal_type ibeg = pack_td_ptr(packptr(k));
+            const local_ordinal_type iend = pack_td_ptr(packptr(k+1));
+            const local_ordinal_type diff = iend - ibeg;
+            const local_ordinal_type icount = diff/3 + (diff%3 > 0);
+	    Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
+		Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_length_value),[&](const int &v) {
+                    const local_ordinal_type i = ibeg + ii*3;
+                    for (local_ordinal_type j=0;j<blocksize;++j) 
+                      values(i,j,j,v) = 1;
+                  });
+              });
           });
 #endif
       } else {
@@ -1340,7 +1308,7 @@ namespace Ifpack2 {
           
           // Allocate values.
           { 
-            //const local_ordinal_type npacks = packptr.extent(0) - 1;
+            const local_ordinal_type npacks = packptr.extent(0) - 1;
             const auto pack_td_ptr_last = Kokkos::subview(btdm.pack_td_ptr, nparts);
             const auto num_packed_blocks = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pack_td_ptr_last);
             btdm.values = vector_type_3d_view("btdm.values", num_packed_blocks(), blocksize, blocksize);
