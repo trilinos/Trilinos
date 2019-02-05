@@ -53,6 +53,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialSymDenseMatrix.hpp"
 
+#include <utility>
+
 /*!     \class Teuchos::SerialDenseMatrix
         \brief This class creates and provides basic support for dense rectangular matrix of templated type.
 */
@@ -636,20 +638,11 @@ SerialDenseMatrix<OrdinalType, ScalarType>::swap(
   //        static int tracebackMode (no swap for statics)
   //        std::string label_ (has been reported as a cause of memory overhead)
 
-  // cache B values
-  ScalarType* B_ptr  = B.values_;
-  OrdinalType B_rows = B.numRows_, B_cols = B.numCols_, B_str = B.stride_;
-  bool B_vc = B.valuesCopied_;
-
-  // assign values from this to B
-  B.values_  = values_;
-  B.numRows_ = numRows_; B.numCols_ = numCols_; B.stride_ = stride_;
-  B.valuesCopied_ = valuesCopied_;
-
-  // assign cached B values to this
-  values_  = B_ptr;
-  numRows_ = B_rows;  numCols_ = B_cols;  stride_ = B_str;
-  valuesCopied_ = B_vc;
+  std::swap(values_ ,      B.values_);
+  std::swap(numRows_,      B.numRows_);
+  std::swap(numCols_,      B.numCols_);
+  std::swap(stride_,       B.stride_);
+  std::swap(valuesCopied_, B.valuesCopied_);
 }
 
 template<typename OrdinalType, typename ScalarType>

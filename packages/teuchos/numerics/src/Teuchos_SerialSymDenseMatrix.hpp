@@ -52,6 +52,7 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
+#include <utility>
 #include <vector>
 
 /*! \class Teuchos::SerialSymDenseMatrix
@@ -641,23 +642,12 @@ template<typename OrdinalType, typename ScalarType> void
 SerialSymDenseMatrix<OrdinalType, ScalarType>::swap(
   SerialSymDenseMatrix<OrdinalType, ScalarType> &B)
 {
-  // cache B values
-  ScalarType* B_ptr  = B.values_;
-  OrdinalType B_rc   = B.numRowCols_,   B_str   = B.stride_;
-  bool        B_vc   = B.valuesCopied_, B_upper = B.upper_;
-  char        B_uplo = B.UPLO_;
-
-  // assign values from this to B
-  B.values_       = values_;
-  B.numRowCols_   = numRowCols_;   B.stride_ = stride_;
-  B.valuesCopied_ = valuesCopied_; B.upper_  = upper_;
-  B.UPLO_         = UPLO_;
-
-  // assign cached B values to this
-  values_       = B_ptr;
-  numRowCols_   = B_rc;  stride_ = B_str;
-  valuesCopied_ = B_vc;  upper_  = B_upper;
-  UPLO_         = B_uplo;
+  std::swap(values_ ,      B.values_);
+  std::swap(numRowCols_,   B.numRowCols_);
+  std::swap(stride_,       B.stride_);
+  std::swap(valuesCopied_, B.valuesCopied_);
+  std::swap(upper_,        B.upper_);
+  std::swap(UPLO_,         B.UPLO_);
 }
 
 template<typename OrdinalType, typename ScalarType>
