@@ -77,20 +77,20 @@ private:
 
   // See #1088 for why this is not just device_type::memory_space.
 #ifdef KOKKOS_ENABLE_CUDA
-  using memory_space = typename std::conditional<
-    std::is_same<execution_space, Kokkos::Cuda>::value,
-    Kokkos::CudaSpace,
-    typename device_type::memory_space>::type;
+  static constexpr bool is_cuda =
+    std::is_same<execution_space, Kokkos::Cuda>::value;
+  using memory_space = typename std::conditional<is_cuda, Kokkos::CudaSpace,
+    typename NT::device_type::memory_space>::type;
 #else
   using memory_space = typename NT::device_type::memory_space;
 #endif // KOKKOS_ENABLE_CUDA
   using device_type = Kokkos::Device<execution_space, memory_space>;
-  
+
 public:
   // Don't be tempted to comment this out if code doesn't build.
   // The point is to ensure correct initialization of TransferData_.
   Transfer () = delete;
-  
+
   /// \brief Four-argument constructor (most often used).
   ///
   /// \pre </tt> ! source.is_null() </tt>
@@ -107,10 +107,10 @@ public:
   ///   control verbose debugging output (sometimes you might want it
   ///   only for one or the other class).
   Transfer (const Teuchos::RCP<const map_type>& source,
-	    const Teuchos::RCP<const map_type>& target,
-	    const Teuchos::RCP<Teuchos::FancyOStream>& out,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist,
-	    const std::string& className);
+            const Teuchos::RCP<const map_type>& target,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist,
+            const std::string& className);
 
   Transfer (const Transfer<LO, GO, NT>& rhs) = default;
 
@@ -122,7 +122,7 @@ public:
   Transfer (const Transfer<LO, GO, NT>& rhs, reverse_tag tag);
 
   Transfer<LO, GO, NT>& operator= (const Transfer<LO, GO, NT>&) = default;
-  
+
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~Transfer () = default;
 
@@ -184,7 +184,7 @@ public:
 
   //! The source Map used to construct this Export or Import.
   Teuchos::RCP<const map_type> getSourceMap () const;
-  
+
   //! The target Map used to construct this Export or Import.
   Teuchos::RCP<const map_type> getTargetMap () const;
 
@@ -243,7 +243,7 @@ protected:
 
   //! Whether to print verbose debugging output.
   bool verbose () const;
-  
+
   /// \brief Implementation of describe() for subclasses
   ///   (Tpetra::Import and Tpetra::Export).
   ///
@@ -273,7 +273,7 @@ private:
   /// \param className [in] "Export" or "Import".
   void
   setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist,
-		    const std::string& className);
+                    const std::string& className);
 
   /// \brief Print "global" (not necessarily just on Process 0)
   ///   information for describe().
