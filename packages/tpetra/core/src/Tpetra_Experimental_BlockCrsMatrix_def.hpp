@@ -2184,17 +2184,18 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   copyAndPermuteNew (const ::Tpetra::SrcDistObject& source,
                      const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteFromLIDs)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::ProfilingRegion;
-
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    using std::endl;
+    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::copyAndPermuteNew");
-
     const bool debug = Behavior::debug();
     const bool verbose = Behavior::verbose();
 
@@ -2203,7 +2204,7 @@ public:
     {
       std::ostringstream os;
       const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": BlockCrsMatrix::copyAndPermuteNew : " << std::endl;
+      os << "Proc " << myRank << ": BlockCrsMatrix::copyAndPermuteNew : " << endl;
       prefix = os.str();
     }
 
@@ -2212,7 +2213,7 @@ public:
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix
           << "The target object of the Import or Export is already in an error state."
-          << std::endl;
+          << endl;
       return;
     }
 
@@ -2221,9 +2222,9 @@ public:
     //
     if (verbose) {
       std::ostringstream os;
-      os << prefix << std::endl
-         << prefix << "  " << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << std::endl
-         << prefix << "  " << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << std::endl;
+      os << prefix << endl
+         << prefix << "  " << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << prefix << "  " << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
       std::cerr << os.str ();
     }
 
@@ -2235,7 +2236,14 @@ public:
       err << prefix
           << "permuteToLIDs.extent(0) = " << permuteToLIDs.extent (0)
           << " != permuteFromLIDs.extent(0) = " << permuteFromLIDs.extent(0)
-          << "." << std::endl;
+          << "." << endl;
+      return;
+    }
+    if (permuteToLIDs.need_sync_host () || permuteFromLIDs.need_sync_host ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix
+          << "Both permuteToLIDs and permuteFromLIDs must be sync'd to host."
+          << endl;
       return;
     }
 
@@ -2246,13 +2254,13 @@ public:
           << "The source (input) object of the Import or "
         "Export is either not a BlockCrsMatrix, or does not have the right "
         "template parameters.  checkSizes() should have caught this.  "
-        "Please report this bug to the Tpetra developers." << std::endl;
+        "Please report this bug to the Tpetra developers." << endl;
       return;
     }
     else {
-      // Kyungjoo: where is val_ modified ? 
-      //    When we have dual view as a member variable, 
-      //    which function should make sure the val_ is upto date ? 
+      // Kyungjoo: where is val_ modified ?
+      //    When we have dual view as a member variable,
+      //    which function should make sure the val_ is upto date ?
       //    IMO, wherever it is used, the function should check its
       //    availability.
       const_cast<this_type*>(src)->sync_host();
@@ -2290,16 +2298,10 @@ public:
          << "canUseLocalColumnIndices: "
          << (canUseLocalColumnIndices ? "true" : "false")
          << ", numPermute: " << numPermute
-         << std::endl;
+         << endl;
       std::cerr << os.str ();
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.need_sync_host(),
-                               std::runtime_error, "Tpetra::Experimental::copyAndPermuteNew : "
-                               "permuteToLIDs is read-only and host buffer must be up-to-date.");
-    TEUCHOS_TEST_FOR_EXCEPTION(permuteFromLIDs.need_sync_host(),
-                               std::runtime_error, "Tpetra::Experimental::copyAndPermuteNew : "
-                               "permuteFromLIDs is read-only and host buffer must be up-to-date.");
     const auto permuteToLIDsHost = permuteToLIDs.view_host();
     const auto permuteFromLIDsHost = permuteFromLIDs.view_host();
 
@@ -2425,7 +2427,7 @@ public:
               const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
               os << "Proc " << myRank << ": copyAndPermute: At \"same\" localRow "
                  << localRow << ", numEntries = " << numEntries << " > maxNumEnt = "
-                 << maxNumEnt << std::endl;
+                 << maxNumEnt << endl;
               std::cerr << os.str ();
             }
           }
@@ -2463,7 +2465,7 @@ public:
                 os << "Proc " << myRank << ": copyAndPermute: At \"same\" "
                   "localRow " << localRow << ", this->replaceLocalValues "
                   "returned " << err << " instead of numEntries = "
-                   << numEntries << std::endl;
+                   << numEntries << endl;
                 std::cerr << os.str ();
               }
             }
@@ -2582,11 +2584,11 @@ public:
           err << ",";
         }
       }
-      err << "]" << std::endl;
+      err << "]" << endl;
 #else
       err << "copyAndPermute: The graph structure of the source of the "
         "Import or Export must be a subset of the graph structure of the "
-        "target." << std::endl;
+        "target." << endl;
 #endif // HAVE_TPETRA_DEBUG
     }
 
@@ -2597,7 +2599,7 @@ public:
       os << "*** Proc " << myRank << ": copyAndPermute "
          << (lclSuccess ? "succeeded" : "FAILED");
       if (lclSuccess) {
-        os << std::endl;
+        os << endl;
       } else {
         os << ": error messages: " << this->errorMessages (); // comes w/ endl
       }
@@ -2848,9 +2850,12 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   packAndPrepareNew (const ::Tpetra::SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*, buffer_device_type>& exports, // output
-                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID, // output
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& exportLIDs,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type>& exports, // output
+                     const Kokkos::DualView<size_t*,
+                       buffer_device_type>& numPacketsPerLID, // output
                      size_t& constantNumPackets,
                      Distributor& /* distor */)
   {
@@ -2909,6 +2914,11 @@ public:
           << "." << std::endl;
       return;
     }
+    if (exportLIDs.need_sync_host ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "exportLIDs be sync'd to host." << std::endl;
+      return;
+    }
 
     const this_type* src = dynamic_cast<const this_type* > (&source);
     if (src == NULL) {
@@ -2946,16 +2956,11 @@ public:
     Impl::BlockCrsRowStruct<size_t> rowReducerStruct;
 
     // Graph information is on host; let's do this on host parallel reduce
-    // Sync necessary data to host
-    TEUCHOS_TEST_FOR_EXCEPTION(exportLIDs.need_sync_host(),
-                               std::runtime_error, "Tpetra::Experimental::packAndPrepareNew : "
-                               "exportLIDs is read-only and host buffer must be up-to-date.");
     auto exportLIDsHost = exportLIDs.view_host();
     auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this.
     const_cast<Kokkos::DualView<size_t*, buffer_device_type>&>(numPacketsPerLID).modify_host();
     {
-
-      typedef Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec> reducer_type;
+      using reducer_type = Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec>;
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
       Kokkos::parallel_reduce
         (policy,
@@ -2964,7 +2969,8 @@ public:
           size_t numEnt = srcGraph.getNumEntriesInLocalRow (lclRow);
           numEnt = (numEnt == Teuchos::OrdinalTraits<size_t>::invalid () ? 0 : numEnt);
 
-          const size_t numBytes = packRowCount<LO, GO, host_exec> (numEnt, numBytesPerValue, blockSize);
+          const size_t numBytes =
+            packRowCount<LO, GO, host_exec> (numEnt, numBytesPerValue, blockSize);
           numPacketsPerLIDHost(i) = numBytes;
           update += typename reducer_type::value_type(numEnt, numBytes, numEnt);
         }, rowReducerStruct);
@@ -3091,9 +3097,12 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                       const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& importLIDs,
+                       const Kokkos::DualView<const packet_type*,
+                         buffer_device_type>& imports,
+                       const Kokkos::DualView<const size_t*,
+                         buffer_device_type>& numPacketsPerLID,
                        const size_t /* constantNumPackets */,
                        Distributor& /* distor */,
                        const CombineMode combineMode)
@@ -3102,11 +3111,9 @@ public:
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::PackTraits;
-
-    typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space host_exec;
+    using host_exec = typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombineNew");
-
     const bool debug = Behavior::debug();
     const bool verbose = Behavior::verbose();
 
