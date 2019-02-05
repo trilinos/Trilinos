@@ -15,7 +15,7 @@ Some of the parameters that affect the preconditioner can in principle be
 different from level to level. By default, parameters affect all levels in
 a multigrid hierarchy.
 
-The settings on a particular levels can be changed by using level sublists.
+The settings on a particular level can be changed by using level sublists.
 A level sublist is a \parameterlist{} sublist with the name ``level XX'', where XX is the level number. The
 parameter names in the sublist do not require any modifications. For example,
 the following fragment of code
@@ -24,11 +24,12 @@ the following fragment of code
     <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
   </ParameterList>
 \end{lstlisting}
-changes the smoother for level 2 to be a polynomial smoother.
+changes the smoother for level 2 to be a Chebyshev-type polynomial smoother.
 
 \section{Parameter validation}
 By default, \muelu{} validates the input parameter list. A parameter that is
-misspelled, is unknown, or has an incorrect value type will cause an exception to be
+misspelled is unknown. A parameter with an incorrect value type is also treated as invalid.
+Both cases will cause an exception to be
 thrown and execution to halt.
 
 \begin{mycomment}
@@ -124,7 +125,8 @@ post-smoothing, and SuperLU for coarse system solver.
       \texttt{smoother: type}           & \\
       \midrule
       \verb|RELAXATION|                 & Point relaxation smoothers, including
-                                          Jacobi, Gauss-Seidel, symmetric Gauss-Seidel, etc. The exact
+                                          Jacobi, Gauss-Seidel, symmetric Gauss-Seidel,
+                                          multithreaded (coloring-based) Gauss-Seidel, etc. The exact
                                           smoother is chosen by specifying \texttt{relaxation: type} parameter in
                                           the \texttt{smoother: params} sublist. \\
       \verb|CHEBYSHEV|                  & Chebyshev polynomial smoother. \\
@@ -162,24 +164,34 @@ In certain cases, the user may want to do no smoothing on a particular level, or
   \item To skip the coarse grid solve, use the option \verb!coarse: type! with value \verb!none!.
 \end{itemize}
 
+When a problem can be solved using structured aggregation algorithms it is also possible to use the structured line detection factory,
+ this will allow \muelu{} to pass additional information to \ifpack2{} enabling it to perform line smoothing.
+An example of line smoothing is provided in \texttt{packages/trilinoscouplings/examples/scaling/muelu\_Ifpack2\_line\_detection.xml}.
+
 \input{options_smoothing_and_coarse}
 
 % ==================== AGGREGATION ====================
 \section{Aggregation options}
 \label{sec:options_aggregation}
 
-\begin{table}[h!]
+\begin{table}[H]
   \begin{center}
     \begin{tabular}{p{5.0cm} p{10cm}}
       \toprule
-      \verb!uncoupled! & Attempts to construct aggregates of optimal size ($3^d$
-                         nodes in $d$ dimensions). Each process works independently, and
-                         aggregates cannot span multiple processes.\\
-      \verb!coupled!   & Attempts to construct aggregates of optimal size ($3^d$
-                         nodes in $d$ dimensions). Aggregates are allowed to
-                         cross processor boundaries. \textbf{Use carefully}. If
-                         unsure, use \verb!uncoupled! instead.\\
-      \verb!brick!     & Attempts to construct rectangular aggregates \\
+      \verb!structured!   & Attempts to construct hexahedral aggregates on a structured
+                            mesh using a default coarsening rate of $3$ in each spatial
+                            dimension.\\
+      \verb!hybrid!       & This option takes in a user parameter that varies on each
+                            rank and that specifies whether the local aggregation
+                            scheme should be \verb!structured! or \verb!unstructured!.\\
+      \verb!uncoupled!    & Attempts to construct aggregates of optimal size ($3^d$
+                            nodes in $d$ dimensions). Each process works independently, and
+                            aggregates cannot span multiple processes.\\
+      \verb!coupled!      & Attempts to construct aggregates of optimal size ($3^d$
+                            nodes in $d$ dimensions). Aggregates are allowed to
+                            cross processor boundaries. \textbf{Use carefully}. If
+                            unsure, use \verb!uncoupled! instead.\\
+      \verb!brick!        & Attempts to construct rectangular aggregates \\
       %\verb!METIS!     & Use graph partitioning algorithm to create aggregates,
       %                   working process-wise. Number of nodes in each aggregate
       %                   is specified with option \texttt{aggregation: max agg
@@ -207,14 +219,17 @@ In certain cases, the user may want to do no smoothing on a particular level, or
 \section{Multigrid algorithm options}
 \label{sec:options_mg}
 
-\begin{table}[h!]
+\begin{table}[H]
   \begin{center}
     \begin{tabular}{p{3.5cm} p{11cm}}
       \toprule
-      \verb!sa!         & Classic smoothed aggregation~\cite{VMB1996} \\
-      \verb!unsmoothed! & Aggregation-based, same as \verb!sa! but without damped Jacobi prolongator improvement step \\
-      \verb!pg!         & Prolongator smoothing using $A$, restriction smoothing using $A^T$, local damping factors~\cite{ST2008} \\
-      \verb!emin!       & Constrained minimization of energy in basis functions of grid transfer operator~\cite{WTWG2014,OST2011} \\
+      \verb!sa!          & Classic smoothed aggregation~\cite{VMB1996} \\
+      \verb!unsmoothed!  & Aggregation-based, same as \verb!sa! but without damped Jacobi prolongator improvement step \\
+      \verb!pg!          & Prolongator smoothing using $A$, restriction smoothing using $A^T$, local damping factors~\cite{ST2008} \\
+      \verb!emin!        & Constrained minimization of energy in basis functions of grid transfer operator~\cite{WTWG2014,OST2011} \\
+      \verb!interp!      & Interpolation based grid transfer operator, using piece-wise constant or linear interpolation from coarse nodes to fine nodes. This requires the use of structured aggregation.\\
+      \verb!semicoarsen! & Semicoarsening grid transfer operator used to reduce a n-dimensional problem into a (n-1)-dimensional problem by coarsening fully in one of the spacial dimensions~\cite{TPSTP2015}.\\
+      \verb!pcoarsen!    & \\
       \bottomrule
     \end{tabular}
     \caption{Available multigrid algorithms for generating grid transfer matrices. }
@@ -232,18 +247,18 @@ Reuse options are a way for a user to speed up the setup stage of multigrid.
 The main requirement to use reuse is that the matrix' graph structure does not
 change. Only matrix values are allowed to change.
 
-The reuse options control the degree to which multigrid hierarchy is preserved
+The reuse options control the degree to which the multigrid hierarchy is preserved
 for a subsequent setup call.
 
 In addition, please note that not all combinations of multigrid algorithms and
 reuse options are valid, or even make sense. For instance, the "emin" reuse
-option should only be use with "emin" multigrid algorithm.
+option should only be used with the "emin" multigrid algorithm.
 
 Table~\ref{t:reuse_types} contains the information about different reuse
 options. The options are ordered in increasing number of reuse components, from
 the no reuse to the full reuse ("full").
 
-\begin{table}[h!]
+\begin{table}[H]
   \begin{center}
     \begin{tabular}{p{3.0cm} p{12cm}}
       \toprule
@@ -263,7 +278,7 @@ the no reuse to the full reuse ("full").
       \verb!full!   & Reuse everything \\
       \bottomrule
     \end{tabular}
-    \caption{Available coarsening schemes. }
+    \caption{Available reuse options.}
 \label{t:reuse_types}
   \end{center}
 \end{table}
@@ -274,3 +289,14 @@ the no reuse to the full reuse ("full").
 \section{Miscellaneous options}
 
 \input{options_misc}
+
+
+% ==================== MAXWELL ====================
+\section{Maxwell solver options}
+
+\input{options_maxwell}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "mueluguide"
+%%% End:

@@ -3,7 +3,7 @@
           
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
           
-\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library.}
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library. In particular, this allows to choose a partitioning algorithm from \zoltan{} or \zoltan2{} or from external packages such as \parmetis{}.}
           
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
           
