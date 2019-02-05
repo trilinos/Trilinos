@@ -29,7 +29,6 @@
             
             <ParameterList name="GDSWOperator">
                 <ParameterList name="Blocks">
-                     <Parameter name="Use RepMap"                  type="bool"     value="true"/>
                     <ParameterList name="1">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
                         <Parameter name="Rotations"                             type="bool"     value="true"/>
@@ -53,7 +52,6 @@
                 </ParameterList>
                 
                 <ParameterList name="Distribution">
-                    <Parameter name="Use RepMap"                  type="bool"     value="true"/>
                     <Parameter name="Type"                                      type="string"   value="linear"/>
                     <Parameter name="GatheringSteps"                            type="int"      value="1"/>
                     <Parameter name="NumProcs"                                  type="int"      value="1"/>
