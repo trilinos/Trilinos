@@ -137,8 +137,8 @@ namespace Galeri {
         std::vector<GO> myGlobalElements(numMyElements);
 
         size_t count = 0;
-        for (GO i = startx; i < endx; i++)
-          for (GO j = starty; j < endy; j++)
+        for (GO j = starty; j < endy; j++)
+          for (GO i = startx; i < endx; i++)
             myGlobalElements[count++] = j*nx + i;
 
         const Teuchos::ArrayView<const GO> elementList(myGlobalElements);
@@ -184,9 +184,9 @@ namespace Galeri {
         std::vector<GO> myGlobalElements(numMyElements);
 
         size_t count = 0;
-        for (GO i = startx; i < endx; i++)
+        for (GO k = startz; k < endz; k++)
           for (GO j = starty; j < endy; j++)
-            for (GO k = startz; k < endz; k++)
+            for (GO i = startx; i < endx; i++)
               myGlobalElements[count++] = k*(nx*ny) + j*nx + i;
 
         const Teuchos::ArrayView<const GO> elementList(myGlobalElements);

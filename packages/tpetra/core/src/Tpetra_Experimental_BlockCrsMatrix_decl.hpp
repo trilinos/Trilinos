@@ -736,9 +736,10 @@ protected:
   //@{
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
-
   //! Whether this class implements the old or new interface of DistObject.
-  virtual bool useNewInterface () { return true; }
+  virtual bool useNewInterface () { 
+    return true; 
+  }
 
   /// \typedef buffer_device_type
   /// \brief Kokkos::Device specialization for communication buffers.
@@ -768,7 +769,6 @@ protected:
                        const size_t constantNumPackets,
                        Distributor& /* distor */,
                        const CombineMode combineMode);
-
   //@}
 
 private:

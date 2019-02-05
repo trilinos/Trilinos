@@ -63,8 +63,8 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("gmg: interpolation order");
-    SET_VALID_ENTRY("gmg: build coarse coordinates");
+    SET_VALID_ENTRY("interp: build coarse coordinates");
+    SET_VALID_ENTRY("interp: interpolation order");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in GeometricInterpolationPFactory
@@ -101,8 +101,8 @@ namespace MueLu {
     Input(fineLevel, "lCoarseNodesPerDim");
     Input(fineLevel, "numDimensions");
 
-    if( pL.get<bool>("gmg: build coarse coordinates") ||
-        (pL.get<int>("gmg: interpolation order") == 1) ) {
+    if( pL.get<bool>("interp: build coarse coordinates") ||
+        (pL.get<int>("interp: interpolation order") == 1) ) {
       Input(fineLevel, "Coordinates");
       Input(fineLevel, "coarseCoordinatesFineMap");
       Input(fineLevel, "coarseCoordinatesMap");
@@ -134,14 +134,14 @@ namespace MueLu {
 
     // Get inputs from the parameter list
     const ParameterList& pL = GetParameterList();
-    const bool buildCoarseCoordinates = pL.get<bool>("gmg: build coarse coordinates");
+    const bool buildCoarseCoordinates = pL.get<bool>("interp: build coarse coordinates");
 
     // Declared main input/outputs to be retrieved and placed on the fine resp. coarse level
     RCP<Matrix> A = Get<RCP<Matrix> >(fineLevel, "A");
     RCP<const CrsGraph> prolongatorGraph = Get<RCP<CrsGraph> >(fineLevel, "prolongatorGraph");
     RCP<realvaluedmultivector_type> fineCoordinates, coarseCoordinates;
     RCP<Matrix> P;
-    const int interpolationOrder = pL.get<int>("gmg: interpolation order");
+    const int interpolationOrder = pL.get<int>("interp: interpolation order");
     const int numDimensions = Get<int>(fineLevel, "numDimensions");
 
     // Check if we need to build coarse coordinates as they are used if we construct
