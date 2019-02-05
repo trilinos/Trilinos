@@ -112,17 +112,6 @@ namespace Tpetra {
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs) :
-    map_ (rhs.map_)
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  ~DistObject ()
-  {}
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   description () const
