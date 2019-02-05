@@ -704,7 +704,7 @@ namespace Tpetra {
     ///   IT.  It may disappear or change at any time.
     using buffer_device_type =
       Kokkos::Device<typename device_type::execution_space,
-		     buffer_memory_space>;
+                     buffer_memory_space>;
   protected:
     /// \brief Implementation of doTransfer for when useNewInterface()
     ///   is true.
@@ -717,13 +717,13 @@ namespace Tpetra {
                    const CombineMode CM,
                    const size_t numSameIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& permuteToLIDs,
+                     buffer_device_type>& permuteToLIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& permuteFromLIDs,
+                     buffer_device_type>& permuteFromLIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& remoteLIDs,
+                     buffer_device_type>& remoteLIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& exportLIDs,
+                     buffer_device_type>& exportLIDs,
                    Distributor& distor,
                    const ReverseOption revOp,
                    const bool commOnHost);
@@ -788,8 +788,8 @@ namespace Tpetra {
     virtual void
     copyAndPermuteNew (const SrcDistObject& /* source */,
                        const size_t /* numSameIDs */,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& /* permuteToLIDs */,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& /* permuteFromLIDs */)
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* permuteToLIDs */,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* permuteFromLIDs */)
     {}
 
     /// \brief Perform any packing or preparation required for communication.
@@ -830,7 +830,7 @@ namespace Tpetra {
     /// decide where to pack and sync the output \c exports.
     virtual void
     packAndPrepareNew (const SrcDistObject& /* source */,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& /* exportLIDs */,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* exportLIDs */,
                        Kokkos::DualView<packet_type*, buffer_device_type>& /* exports */,
                        const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
                        /// Kyungjoo: numPacketsPerLID is better remove const. its content is modified and 
@@ -902,7 +902,7 @@ namespace Tpetra {
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& /* importLIDs */,
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* importLIDs */,
                          const Kokkos::DualView<const packet_type*, buffer_device_type>& /* imports */,
                          const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
                          const size_t /* constantNumPackets */,
@@ -984,8 +984,8 @@ namespace Tpetra {
     /// DualView without needing to call other DistObject methods.
     bool
     reallocImportsIfNeeded (const size_t newSize,
-			    const bool verbose = false,
-			    const std::string* prefix = nullptr);
+                            const bool verbose = false,
+                            const std::string* prefix = nullptr);
 
     /// \brief Number of packets to receive for each receive operation.
     ///

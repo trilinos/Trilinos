@@ -863,11 +863,10 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteNew (const SrcDistObject& sourceObj,
                      const size_t numSameIDs,
-                     const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
+                     const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& permuteFromLIDs)
   {
     using ::Tpetra::Details::Behavior;
-    using ::Tpetra::Details::castAwayConstDualView;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
     using std::endl;
@@ -917,15 +916,15 @@ namespace Tpetra {
 
     if (copyOnHost) {
       if (this->need_sync_host ()) {
-	this->sync_host ();
+        this->sync_host ();
       }
       this->modify_host ();
     }
     else {
-      if (this->template need_sync_device ()) {
-	this->template sync_device ();
+      if (this->need_sync_device ()) {
+        this->sync_device ();
       }
-      this->template modify_device ();
+      this->modify_device ();
     }
 
     if (verbose) {
@@ -1022,7 +1021,7 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "nonConstStride="
-	 << (nonConstStride ? "true" : "false") << endl;
+         << (nonConstStride ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
 
@@ -1096,9 +1095,9 @@ namespace Tpetra {
 
       TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
       auto permuteToLIDs_h = create_const_view (permuteToLIDs.view_host ());
-      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );      
+      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
       auto permuteFromLIDs_h =
-	create_const_view (permuteFromLIDs.view_host ());
+        create_const_view (permuteFromLIDs.view_host ());
 
       if (verbose) {
         std::ostringstream os;
@@ -1134,9 +1133,9 @@ namespace Tpetra {
 
       TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_device () );
       auto permuteToLIDs_d = create_const_view (permuteToLIDs.view_device ());
-      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_device () );      
+      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_device () );
       auto permuteFromLIDs_d =
-	create_const_view (permuteFromLIDs.view_device ());
+        create_const_view (permuteFromLIDs.view_device ());
 
       if (verbose) {
         std::ostringstream os;
@@ -1171,7 +1170,7 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packAndPrepareNew (const SrcDistObject& sourceObj,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
                      const Kokkos::DualView<size_t*, buffer_device_type>& /* numExportPacketsPerLID */,
                      size_t& constantNumPackets,
@@ -1274,7 +1273,7 @@ namespace Tpetra {
       os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
-    
+
     // Mark 'exports' here, since we might have resized it above.
     // Resizing currently requires calling the constructor, which
     // clears out the 'modified' flags.
@@ -1371,34 +1370,34 @@ namespace Tpetra {
         if (printDebugOutput) {
           std::ostringstream os;
           os << *prefix << "Pack numCols=" << numCols << " nonconst stride"
-	     << endl;
+             << endl;
           std::cerr << os.str ();
         }
-	// FIXME (mfh 04 Feb 2019) Creating a Kokkos::View for
-	// whichVectors_ can be expensive, but pack and unpack for
-	// nonconstant-stride MultiVectors is slower anyway.
-	using IST = impl_scalar_type;
-	using DV = Kokkos::DualView<IST*, device_type>;
-	using HES = typename DV::t_host::execution_space;
-	using DES = typename DV::t_dev::execution_space;
-	Teuchos::ArrayView<const size_t> whichVecs = sourceMV.whichVectors_ ();
+        // FIXME (mfh 04 Feb 2019) Creating a Kokkos::View for
+        // whichVectors_ can be expensive, but pack and unpack for
+        // nonconstant-stride MultiVectors is slower anyway.
+        using IST = impl_scalar_type;
+        using DV = Kokkos::DualView<IST*, device_type>;
+        using HES = typename DV::t_host::execution_space;
+        using DES = typename DV::t_dev::execution_space;
+        Teuchos::ArrayView<const size_t> whichVecs = sourceMV.whichVectors_ ();
         if (packOnHost) {
           pack_array_multi_column_variable_stride
-	    (exports.view_host (),
-	     create_const_view (src_host),
-	     exportLIDs.view_host (),
-	     getKokkosViewDeepCopy<HES> (whichVecs),
-	     numCols,
-	     debugCheckIndices);
+            (exports.view_host (),
+             create_const_view (src_host),
+             exportLIDs.view_host (),
+             getKokkosViewDeepCopy<HES> (whichVecs),
+             numCols,
+             debugCheckIndices);
         }
         else { // pack on device
           pack_array_multi_column_variable_stride
-	    (exports.view_device (),
-	     create_const_view (src_dev),
-	     exportLIDs.view_device (),
-	     getKokkosViewDeepCopy<DES> (whichVecs),
-	     numCols,
-	     debugCheckIndices);
+            (exports.view_device (),
+             create_const_view (src_dev),
+             exportLIDs.view_device (),
+             getKokkosViewDeepCopy<DES> (whichVecs),
+             numCols,
+             debugCheckIndices);
         }
       }
     }
@@ -1414,7 +1413,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
                        const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
                        const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
                        const size_t constantNumPackets,
@@ -1423,7 +1422,6 @@ namespace Tpetra {
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
-    using ::Tpetra::Details::castAwayConstDualView;
     using KokkosRefactor::Details::unpack_array_multi_column;
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -1455,8 +1453,8 @@ namespace Tpetra {
     // If we have no imports, there is nothing to do
     if (importLIDs.extent (0) == 0) {
       if (printDebugOutput) {
-	std::ostringstream os;
-	os << *prefix << "No imports. Done!" << endl;
+        std::ostringstream os;
+        os << *prefix << "No imports. Done!" << endl;
       }
       return;
     }
@@ -1490,7 +1488,7 @@ namespace Tpetra {
     if (printDebugOutput) {
       std::ostringstream os;
       os << *prefix << "unpackOnHost=" << (unpackOnHost ? "true" : "false")
-	 << endl;
+         << endl;
       std::cerr << os.str ();
     }
 
@@ -1500,13 +1498,13 @@ namespace Tpetra {
     // memory space.
     if (unpackOnHost) {
       if (this->need_sync_host ()) {
-	this->sync_host ();
+        this->sync_host ();
       }
       this->modify_host ();
     }
     else {
       if (this->need_sync_device ()) {
-	this->sync_device ();
+        this->sync_device ();
       }
       this->modify_device ();
     }
@@ -1554,11 +1552,11 @@ namespace Tpetra {
       // inlining, it would be nice to condense this code by using a
       // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
-	if (printDebugOutput) {
-	  std::ostringstream os;
-	  os << *prefix << "Unpack: INSERT / REPLACE" << endl;
-	  std::cerr << os.str ();
-	}
+        if (printDebugOutput) {
+          std::ostringstream os;
+          os << *prefix << "Unpack: INSERT / REPLACE" << endl;
+          std::cerr << os.str ();
+        }
         KokkosRefactor::Details::InsertOp<execution_space> op;
         if (isConstantStride ()) {
           if (unpackOnHost) {
@@ -1593,11 +1591,11 @@ namespace Tpetra {
         }
       }
       else if (CM == ADD) {
-	if (printDebugOutput) {
-	  std::ostringstream os;
-	  os << *prefix << "Unpack: ADD" << endl;
-	  std::cerr << os.str ();
-	}
+        if (printDebugOutput) {
+          std::ostringstream os;
+          os << *prefix << "Unpack: ADD" << endl;
+          std::cerr << os.str ();
+        }
         KokkosRefactor::Details::AddOp<execution_space> op;
         if (isConstantStride ()) {
           if (unpackOnHost) {
@@ -1631,11 +1629,11 @@ namespace Tpetra {
         }
       }
       else if (CM == ABSMAX) {
-	if (printDebugOutput) {
-	  std::ostringstream os;
-	  os << *prefix << "Unpack: ABSMAX" << endl;
-	  std::cerr << os.str ();
-	}
+        if (printDebugOutput) {
+          std::ostringstream os;
+          os << *prefix << "Unpack: ABSMAX" << endl;
+          std::cerr << os.str ();
+        }
         KokkosRefactor::Details::AbsMaxOp<execution_space> op;
         if (isConstantStride ()) {
           if (unpackOnHost) {
@@ -1671,9 +1669,9 @@ namespace Tpetra {
     }
     else {
       if (printDebugOutput) {
-	std::ostringstream os;
-	os << *prefix << "Nothing to unpack" << endl;
-	std::cerr << os.str ();
+        std::ostringstream os;
+        os << *prefix << "Nothing to unpack" << endl;
+        std::cerr << os.str ();
       }
     }
 

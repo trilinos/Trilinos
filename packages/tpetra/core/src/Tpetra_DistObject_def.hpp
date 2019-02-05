@@ -262,18 +262,17 @@ namespace Tpetra {
       }
       prefix = [myRank] () {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
+        os << "Proc " << myRank << ": Tpetra::DistObject::doTransfer: ";
         return std::unique_ptr<std::string> (new std::string (os.str ()));
       } ();
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
     this->doTransfer (source, importer, modeString, DoForward, CM);
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
-         << endl;
+      os << *prefix << "Done!" << endl;
       std::cerr << os.str ();
     }
   }
@@ -1227,13 +1226,13 @@ namespace Tpetra {
                  const CombineMode CM,
                  const size_t numSameIDs,
                  const Kokkos::DualView<const local_ordinal_type*,
-                   device_type>& permuteToLIDs,
+                   buffer_device_type>& permuteToLIDs,
                  const Kokkos::DualView<const local_ordinal_type*,
-                   device_type>& permuteFromLIDs,
+                   buffer_device_type>& permuteFromLIDs,
                  const Kokkos::DualView<const local_ordinal_type*,
-                   device_type>& remoteLIDs,
+                   buffer_device_type>& remoteLIDs,
                  const Kokkos::DualView<const local_ordinal_type*,
-                   device_type>& exportLIDs,
+                   buffer_device_type>& exportLIDs,
                  Distributor& distor,
                  const ReverseOption revOp,
                  const bool commOnHost)

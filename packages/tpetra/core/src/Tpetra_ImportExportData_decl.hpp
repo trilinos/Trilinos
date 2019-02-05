@@ -153,7 +153,7 @@ namespace Tpetra {
     using memory_space = typename std::conditional<
       std::is_same<execution_space, Kokkos::Cuda>::value,
       Kokkos::CudaSpace,
-      typename device_type::memory_space>::type;
+      typename Node::device_type::memory_space>::type;
 #else
     using memory_space = typename Node::device_type::memory_space;
 #endif // KOKKOS_ENABLE_CUDA

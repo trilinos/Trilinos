@@ -6535,10 +6535,9 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteNew (const SrcDistObject& srcObj,
                      const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
-    using Tpetra::Details::castAwayConstDualView;
     using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
@@ -6547,7 +6546,6 @@ namespace Tpetra {
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
-
 
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -6604,7 +6602,7 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packAndPrepareNew (const SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<char*, buffer_device_type>& exports,
                      const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                      size_t& constantNumPackets,
@@ -6636,11 +6634,11 @@ namespace Tpetra {
     if (verbose) {
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::packAndPrepareNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::packAndPrepareNew: " << endl
+      os << *prefix << "Start" << endl
          << *prefix << "  "
          << dualViewStatusToString (exportLIDs, "exportLIDs")
          << endl
@@ -6676,10 +6674,10 @@ namespace Tpetra {
     std::ostringstream msg; // for collecting error messages
     int lclBad = 0; // to be set below
 
-    typedef CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+    using crs_matrix_type = CrsMatrix<Scalar, LO, GO, Node>;
     const crs_matrix_type* srcCrsMat =
       dynamic_cast<const crs_matrix_type*> (&source);
-    if (srcCrsMat != NULL) {
+    if (srcCrsMat != nullptr) {
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Source matrix same (CrsMatrix) type as target; "
@@ -6698,8 +6696,8 @@ namespace Tpetra {
     else {
       using Kokkos::HostSpace;
       using Kokkos::subview;
-      typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
-      typedef Kokkos::pair<size_t, size_t> range_type;
+      using exports_type = Kokkos::DualView<char*, buffer_device_type>;
+      using range_type = Kokkos::pair<size_t, size_t>;
 
       if (verbose) {
         std::ostringstream os;
@@ -6708,7 +6706,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+      using row_matrix_type = RowMatrix<Scalar, LO, GO, Node>;
       const row_matrix_type* srcRowMat =
         dynamic_cast<const row_matrix_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6997,7 +6995,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
                         size_t& totalNumEntries,
-                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const
+                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs) const
   {
     using Tpetra::Details::dualViewStatusToString;
     using std::endl;
@@ -7023,12 +7021,12 @@ namespace Tpetra {
       // Restrict pfxStrm to inner scope to reduce high-water memory usage.
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::allocatePackSpaceNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
 
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: Before:"
+      os << *prefix << "Before:"
          << endl
          << *prefix << "  "
          << dualViewStatusToString (exports, "exports")
@@ -7043,14 +7041,7 @@ namespace Tpetra {
     // that the LIDs are distinct and valid on the calling process.
     const LO numExportLIDs = static_cast<LO> (exportLIDs.extent (0));
 
-    // We need to access exportLIDs on host, but Kokkos forbids
-    // sync'ing of a DualView of const.  We won't modify the entries,
-    // so it's fair to leave it const, except for sync'ing it.
-    {
-      Kokkos::DualView<local_ordinal_type*, device_type> exportLIDs_nc =
-        Tpetra::Details::castAwayConstDualView (exportLIDs);
-      exportLIDs_nc.sync_host ();
-    }
+    TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
     auto exportLIDs_h = exportLIDs.view_host ();
 
     // Count the total number of matrix entries to send.
@@ -7078,7 +7069,7 @@ namespace Tpetra {
       static_cast<size_t> (numExportLIDs) * sizeof (LO) +
       totalNumEntries * (sizeof (IST) + sizeof (GO));
     if (static_cast<size_t> (exports.extent (0)) < allocSize) {
-      typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
+      using exports_type = Kokkos::DualView<char*, buffer_device_type>;
 
       const std::string oldLabel = exports.d_view.label ();
       const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
@@ -7087,7 +7078,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: After:"
+      os << *prefix << "After:"
          << endl
          << *prefix << "  "
          << dualViewStatusToString (exports, "exports")
@@ -7102,7 +7093,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+  packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
            Kokkos::DualView<char*, buffer_device_type>& exports,
            const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
            size_t& constantNumPackets,
@@ -7123,7 +7114,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+  packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                     Kokkos::DualView<char*, buffer_device_type>& exports,
                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                     size_t& constantNumPackets,
@@ -7415,7 +7406,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
                        const Kokkos::DualView<const char*, buffer_device_type>& imports,
                        const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                        const size_t constantNumPackets,
@@ -7448,11 +7439,11 @@ namespace Tpetra {
       }
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "Proc " << myRank << ": ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::unpackAndCombineNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNew: " << endl
+      os << *prefix << "Start:" << endl
          << *prefix << "  "
          << dualViewStatusToString (importLIDs, "importLIDs")
          << endl
@@ -7527,7 +7518,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "unpackAndCombineNew: Done!" << endl
+      os << *prefix << "Done!" << endl
          << *prefix << "  "
          << dualViewStatusToString (importLIDs, "importLIDs")
          << endl
@@ -7544,9 +7535,12 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                           const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                           const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+  unpackAndCombineNewImpl (const Kokkos::DualView<const local_ordinal_type*,
+                             buffer_device_type>& importLIDs,
+                           const Kokkos::DualView<const char*,
+                             buffer_device_type>& imports,
+                           const Kokkos::DualView<const size_t*,
+                             buffer_device_type>& numPacketsPerLID,
                            const size_t constantNumPackets,
                            Distributor & distor,
                            const CombineMode combineMode,
@@ -7571,9 +7565,12 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                                    const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                                    const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+  unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
+                                      buffer_device_type>& importLIDs,
+                                    const Kokkos::DualView<const char*,
+                                      buffer_device_type>& imports,
+                                    const Kokkos::DualView<const size_t*,
+                                      buffer_device_type>& numPacketsPerLID,
                                     const size_t /* constantNumPackets */,
                                     Distributor& /* distor */,
                                     const CombineMode combineMode)
