@@ -239,8 +239,8 @@ namespace MueLu {
 #ifdef HAVE_MPI
     RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(origComm);
     MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
-#endif
     int root = 0;
+#endif
 
     std::string outstr;
     ParameterList absList;

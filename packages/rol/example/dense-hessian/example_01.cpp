@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
     // Compute dense Hessian.
     Teuchos::SerialDenseMatrix<int, RealT> H = ROL::computeDenseHessian(obj, x);
     Teuchos::SerialDenseMatrix<int, RealT> H_scaled = ROL::computeScaledDenseHessian(obj, x);
-    *outStream << H;
-    *outStream << H_scaled;
+    H.print(*outStream);
+    H_scaled.print(*outStream);
 
     // Compute Hessian error.
     Teuchos::SerialDenseMatrix<int, RealT> H_true(2, 2);

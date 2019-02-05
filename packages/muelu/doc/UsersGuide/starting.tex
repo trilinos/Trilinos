@@ -3,17 +3,16 @@ summary of \muelu's design.  \S\ref{sec:configuration and build} lists \muelu's 
 \trilinos libraries and provides a sample cmake configuration line.  Finally, code examples using the XML
 interface are given in \S\ref{sec:examples in code}.
 
-\label{sec:overview}
 \section{Overview of \muelu}
+\label{sec:overview}
 %algorithm types
 %problems types
 \muelu{} is an extensible algebraic multigrid (AMG) library that is part of the
-\trilinos{} project. \muelu{} works with \epetra (32-bit version
-\footnote{Support for the Epetra 64-bit version is planned.}) and
+\trilinos{} project. \muelu{} works with \epetra (32-bit version) and
 \tpetra matrix types. The library is written in C++ and allows for different
 ordinal (index) and scalar types.  \muelu{} is designed to be efficient on many
 different computer architectures, from workstations to supercomputers, relying
-on ``MPI+X" principle, where ``X" can be threading or CUDA.
+on ``MPI+X" principle, where ``X" can be threading, CUDA, or any other back-end provided by the \kokkos package.
 
 \muelu{} provides a number of different multigrid algorithms:
 \be
@@ -56,7 +55,7 @@ The most important features of \muelu{} can be summarized as:
   \item \textbf{Broad range of supported platforms}
 
     \muelu{} runs on wide variety of architectures, from desktop workstations to
-    parallel Linux clusters and supercomputers (~\cite{lin2014}).
+    parallel Linux clusters and supercomputers (\cite{lin2014}).
 
   \item \textbf{Open source}
 
@@ -173,8 +172,10 @@ Here we provide a sample configure script that will enable \muelu{} and all of i
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
       -D Trilinos_ENABLE_MueLu:BOOL=ON \
-      -D MueLu_ENABLE_TESTS:STRING=ON \
-      -D MueLu_ENABLE_EXAMPLES:STRING=ON \
+      -D   MueLu_ENABLE_TESTS:STRING=ON \
+      -D   MueLu_ENABLE_EXAMPLES:STRING=ON \
+      -D   MueLu_ENABLE_Kokkos_Refactor:STRING=ON \
+      -D   MueLu_ENABLE_Kokkos_Refactor_Use_By_Default:STRING=ON \
       -D TPL_ENABLE_BLAS:BOOL=ON \
       -D TPL_ENABLE_MPI:BOOL=ON \
   ${TRILINOS_HOME}
@@ -182,7 +183,7 @@ Here we provide a sample configure script that will enable \muelu{} and all of i
 
 \noindent
 More configure examples can be found in \texttt{Trilinos/sampleScripts}.
-For more information on configuring, see the \trilinos Cmake Quickstart guide \cite{TrilinosCmakeQuickStart}.
+For more information on configuring, see the \trilinos CMake Quickstart guide \cite{TrilinosCmakeQuickStart}.
 
 \section{Examples in code}
 \label{sec:examples in code}
@@ -299,6 +300,7 @@ Next, we set up a \belos{} solver using some basic parameters
 \begin{lstlisting}[language=C++]
     Teuchos::ParameterList belosList;
     belosList.set( "Block Size", 1 );
+    belosList.set( "Use Single Reduction", true );
     belosList.set( "Maximum Iterations", 100 );
     belosList.set( "Convergence Tolerance", 1e-10 );
     belosList.set( "Output Frequency", 1 );
@@ -358,6 +360,97 @@ Finally, the linear system is solved.
     aztecSolver.Iterate(maxIts, tol);
 \end{lstlisting}
 
+
+\subsection{\muelu's structured algorithms}
+
+Some users might use structured meshes to discretize their problems. In such cases it can be advantageous to use the structured grid algorithms provided in \muelu. To use these algorithms the user has to provide extra information to \muelu such as the number of spatial dimensions in the problem and the number of nodes in each direction on the local rank. As demonstrated in the code bellow \muelu expect these additional inputs to be stored in a sublist called ``user data".
+\begin{lstlisting}[language=C++]
+  const std::string userName = "user data";
+  Teuchos::ParameterList& userParamList = paramList.sublist(userName);
+  userParamList.set<int>("int numDimensions", numDimensions);
+  userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+  userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+  H = MueLu::CreateXpetraPreconditioner(A, paramList, paramList);
+\end{lstlisting}
+Full examples demonstrating the structured capabilities of \muelu can be found in the \trilinos source directories
+\begin{itemize}
+  \setlength{\itemsep}{-10pt}
+\item \texttt{packages/muelu/test/structured},
+\item \texttt{packages/trilinoscouplings/examples/scaling}.
+\end{itemize}
+
+
+\subsection{\muelu's Maxwell solver}
+
+\muelu can be used to solve Maxwell's equations in eddy current formulation which can be written as
+\begin{equation}
+  \nabla\times \left(\alpha \nabla  \times \vec{E}\right) + \beta \vec{E} = \vec{f}, \label{eq:maxwell}
+\end{equation}
+where \(\vec{E}\) is the unknown electric field, \(\alpha\) and \(\beta\) are material parameters,
+and \(\vec{f}\) is the known right-hand side.
+In order to deal with the large nullspace of the curl-curl operator a specialized multigrid approach
+is required.
+For a detailed description of the solver see ~\cite{RefMaxwell2008}.
+
+A preconditioner for equation~\ref{eq:maxwell} can be constructed as follows:
+\begin{lstlisting}[language=C++]
+  RCP<Matrix> SM_Matrix = ... ;    \\ Edge-mass + curl-curl
+  RCP<Matrix> D0_Matrix = ... ;    \\ Discrete gradient matrix
+  RCP<Matrix> M0inv_Matrix = ... ; \\ Approximate inverse of node-mass matrix with weight 1/alpha
+  RCP<Matrix> M1_Matrix = ... ;    \\ Edge-mass matrix with constant weight 1
+  RCP<MultiVector> coords = ...;   \\ Nodal coordinates
+  Teuchos::ParameterList params = ...; \\ Parameters
+
+  RCP<MueLu::RefMaxwell> preconditioner
+  = rcp( new MueLu::RefMaxwell(SM_Matrix, D0_Matrix, M0inv_Matrix,
+         M1_Matrix, Teuchos::null, coords, params) );
+\end{lstlisting}
+An example set of parameters is given below:
+\begin{lstlisting}[language=XML]
+  <ParameterList name="MueLu">
+
+  <Parameter name="refmaxwell: mode"  type="string" value="additive"/>
+
+  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="refmaxwell: 11list">
+    <Parameter name="number of equations"   type="int"    value="3"/>
+    <Parameter name="aggregation: type"     type="string" value="uncoupled"/>
+    <Parameter name="coarse: max size"      type="int"    value="2500"/>
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="refmaxwell: 22list">
+    <Parameter name="aggregation: type"     type="string" value="uncoupled"/>
+    <Parameter name="coarse: max size"      type="int"    value="2500"/>
+    <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+      <Parameter name="relaxation: sweeps" type="int" value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>
+\end{lstlisting}
+Further examples of how to use \muelu to solve Maxwell's equations can be found in the \trilinos source directories
+\begin{itemize}
+  \setlength{\itemsep}{-10pt}
+\item \texttt{packages/muelu/test/maxwell},
+\item \texttt{packages/panzer/mini-em/example/BlockPrec} and
+\item \texttt{packages/trilinoscouplings/examples/scaling}.
+\end{itemize}
+
+
+
+
 \subsection{Further remarks}
 
 This section is only meant to give a brief introduction on how to use \muelu{}
@@ -366,5 +459,12 @@ are other, more complicated, ways to use \muelu{} as a preconditioner for \belos
 and \aztecoo through the \xpetra interface. Of course, \muelu{} can also work as
 standalone multigrid solver. For more information on these topics, the reader
 may refer to the examples and tests in the \muelu{} source directory
-(\texttt{Trilinos/packages/muelu}), as well as to the \muelu{} tutorial~\cite{MueLuTutorial}.
+(\texttt{packages/muelu/example} and \texttt{packages/muelu/test}) and in the trilinosCouplings source directory
+(\texttt{packages/trilinosCouplings}), as well as to the \muelu{}
+tutorial~\cite{MueLuTutorial}.
 For in-depth details of \muelu applied to multiphysics problems, please see~\cite{Wiesner2014}.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "mueluguide"
+%%% End:
