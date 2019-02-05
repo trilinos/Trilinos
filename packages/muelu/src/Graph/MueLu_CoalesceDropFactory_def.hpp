@@ -510,7 +510,7 @@ namespace MueLu {
 
       } else if (algo == "distance laplacian") {
         // The distance laplacian
-        RCP<MultiVector> Coords = Get< RCP<MultiVector > >(currentLevel, "Coordinates");
+        RCP<CoordinateMultiVector> Coords = Get< RCP<CoordinateMultiVector > >(currentLevel, "Coordinates");
         Distance_DroppingAlgorithm(currentLevel,Coords,true,numTotal,numDropped); 
 
       } else if (algo == "material distance") {
@@ -520,7 +520,7 @@ namespace MueLu {
 
       } else if (algo == "distance and material") {
         // Both distance laplacian and material distance
-        RCP<MultiVector> Coords = Get< RCP<MultiVector > >(currentLevel, "Coordinates");
+        RCP<CoordinateMultiVector> Coords = Get< RCP<CoordinateMultiVector > >(currentLevel, "Coordinates");
         RCP<Vector> MaterialCoords = Get< RCP<Vector > >(currentLevel, "Material Coordinates");
         bool errors[2] = {true,false};
         Double_DroppingAlgorithm(currentLevel,Coords,MaterialCoords,errors,numTotal,numDropped);
@@ -858,9 +858,9 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Double_Drop
 
 
       // Distance Laplacian Drop Function
-      typedef bool (*DropFunctionType1) (Teuchos::Array<Teuchos::ArrayRCP<const typename RealValuedMultiVector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
-      DropFunctionType1 DistanceDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename RealValuedMultiVector::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename Vector::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
-        typename RealValuedMultiVector::scalar_type dist = MueLu::Utilities<typename RealValuedMultiVector::scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
+      typedef bool (*DropFunctionType1) (Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinateMultiVector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
+      DropFunctionType1 DistanceDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinateMultiVector::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename Vector::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
+        typename CoordinateMultiVector::scalar_type dist = MueLu::Utilities<typename CoordinateMultiVector::scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
         SC laplVal = STS::one() / dist;
         typename STS::magnitudeType aiiajj = STS::magnitude(thresh*thresh* diagData[row]*diagData[col]);
         typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
@@ -884,8 +884,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Double_Drop
 
 // ***********************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_DroppingAlgorithm(Level & currentLevel,RCP<RealValuedMultiVector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
-    typedef typename RealValuedMultiVector::scalar_type scalar_type;
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_DroppingAlgorithm(Level & currentLevel,RCP<CoordinateMultiVector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const {
+    typedef typename CoordinateMultiVector::scalar_type scalar_type;
     typedef Teuchos::ScalarTraits<SC> STS;
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -918,7 +918,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_Dr
       LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
 
-      RCP<RealValuedMultiVector> ghostedCoords;
+      RCP<CoordinateMultiVector> ghostedCoords;
       RCP<Vector>                ghostedLaplDiag;
 
       if (threshold != STS::zero()) {
@@ -946,9 +946,9 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_Dr
           
 
      // Make the drop function as a lambda
-      typedef bool (*DropFunctionType) (Teuchos::Array<Teuchos::ArrayRCP<const typename RealValuedMultiVector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
-      DropFunctionType DistanceDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename RealValuedMultiVector::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename Vector::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
-        typename RealValuedMultiVector::scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
+      typedef bool (*DropFunctionType) (Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinateMultiVector::scalar_type> >&, Teuchos::ArrayRCP<const typename Vector::scalar_type> &,LocalOrdinal,LocalOrdinal,Scalar);
+      DropFunctionType DistanceDF = [](Teuchos::Array<Teuchos::ArrayRCP<const typename CoordinateMultiVector::scalar_type> >& coordData, Teuchos::ArrayRCP<const typename Vector::scalar_type> &diagData,LocalOrdinal row, LocalOrdinal col, Scalar thresh) {
+        typename CoordinateMultiVector::scalar_type dist = MueLu::Utilities<scalar_type,LO,GO,NO>::Distance2(coordData, row, col);
         SC laplVal = STS::one() / dist;
         typename STS::magnitudeType aiiajj = STS::magnitude(thresh*thresh* diagData[row]*diagData[col]);
         typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
@@ -1368,8 +1368,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Material_Ge
 
 // ***********************************************************************  
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<RealValuedMultiVector> & Coords, RCP<RealValuedMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const {
-  typedef typename RealValuedMultiVector::scalar_type scalar_type;
+void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<CoordinateMultiVector> & Coords, RCP<CoordinateMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const {
+  typedef typename CoordinateMultiVector::scalar_type scalar_type;
   typedef Teuchos::ScalarTraits<SC> STS;
 
   RCP<const Map> uniqueMap    = importer->getSourceMap();

@@ -137,7 +137,7 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> CoordinateMultiVector;
 
     //! @name Constructors/Destructors.
     //@{
@@ -175,9 +175,9 @@ namespace MueLu {
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
 
     // Routines to support distance laplacian aggregation
-    void Distance_DroppingAlgorithm(Level & currentLevel,RCP<RealValuedMultiVector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
+    void Distance_DroppingAlgorithm(Level & currentLevel,RCP<CoordinateMultiVector> & Coords, bool error_on_sames, GlobalOrdinal & numTotal, GlobalOrdinal & numDropped) const;
 
-    void Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<RealValuedMultiVector> & Coords, RCP<RealValuedMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const;
+    void Distance_GenerateGhosts(Level & currentLevel, const Matrix & A, RCP<const Import> importer, Scalar threshold, Array<LO> & colTranslation, RCP<CoordinateMultiVector> & Coords, RCP<CoordinateMultiVector> & ghostedCoords, RCP<Vector> & ghostedLaplDiag) const;
 
 
     // Routines to support material aggregation
