@@ -180,14 +180,10 @@ namespace Tpetra {
   {
     TEUCHOS_ASSERT( ! out_.is_null () );
     
-    std::cerr << ">>> Distributor ctor post init" << std::endl;
-    
     this->setParameterList (plist); // sets verbose_ via Behavior
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
-
-    std::cerr << ">>> Distributor ctor DONE" << std::endl;
   }
   
   Distributor::
@@ -763,7 +759,8 @@ namespace Tpetra {
   }
 
   void
-  Distributor::computeReceives ()
+  Distributor::
+  computeReceives ()
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -788,12 +785,13 @@ namespace Tpetra {
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = 2;
     const int tag = this->getTag (pathTag);
-    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
+    std::unique_ptr<std::string> prefix;
     if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: "
-        "{selfMessage_: " << (selfMessage_ ? "true" : "false")
+      os << "Proc " << myRank << ": computeReceives: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "{selfMessage_: " << (selfMessage_ ? "true" : "false")
          << ", tag: " << tag << "}" << endl;
       *out_ << os.str ();
     }
@@ -826,7 +824,7 @@ namespace Tpetra {
 
       if (verbose_) {
         std::ostringstream os;
-        os << myRank << ": computeReceives: Calling reduce and scatter" << endl;
+        os << *prefix << "Reduce & scatter" << endl;
         *out_ << os.str ();
       }
 
@@ -936,8 +934,8 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: Posting "
-         << actualNumReceives << " irecvs" << endl;
+      os << *prefix << "Post " << actualNumReceives << " irecv"
+	 << (actualNumReceives != size_t (1) ? "s" : "") << endl;
       *out_ << os.str ();
     }
 
@@ -949,19 +947,19 @@ namespace Tpetra {
       // do that!).
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
-      requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc, tag, *comm_);
+      requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc,
+					   tag, *comm_);
       if (verbose_) {
         std::ostringstream os;
-        os << myRank << ": computeReceives: "
-          "Posted any-proc irecv w/ specified tag " << tag << endl;
+        os << *prefix << "Posted any-proc irecv w/ tag " << tag << endl;
         *out_ << os.str ();
       }
     }
 
     if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: "
-        "posting " << numSends_ << " sends" << endl;
+      os << *prefix << "Post " << numSends_ << " send"
+	 << (numSends_ != size_t (1) ? "s" : "") << endl;
       *out_ << os.str ();
     }
     // Post the sends: Tell each process to which we are sending how
@@ -981,8 +979,7 @@ namespace Tpetra {
         send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *comm_);
         if (verbose_) {
           std::ostringstream os;
-          os << myRank << ": computeReceives: "
-            "Posted send to Proc " << procsTo_[i] << " w/ specified tag "
+          os << *prefix << "Posted send to Proc " << procsTo_[i] << " w/ tag "
              << tag << endl;
           *out_ << os.str ();
         }
@@ -1023,7 +1020,8 @@ namespace Tpetra {
     sort2 (procsFrom_.begin(), procsFrom_.end(), lengthsFrom_.begin());
 
     // Compute indicesFrom_
-    totalReceiveLength_ = std::accumulate (lengthsFrom_.begin(), lengthsFrom_.end(), 0);
+    totalReceiveLength_ =
+      std::accumulate (lengthsFrom_.begin (), lengthsFrom_.end (), 0);
     indicesFrom_.clear ();
     indicesFrom_.reserve (totalReceiveLength_);
     for (size_t i = 0; i < totalReceiveLength_; ++i) {
@@ -1043,13 +1041,14 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << myRank << ": computeReceives: done" << endl;
+      os << *prefix << "Done!" << endl;
       *out_ << os.str ();
     }
   }
 
   size_t
-  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportProcIDs)
+  Distributor::
+  createFromSends (const Teuchos::ArrayView<const int>& exportProcIDs)
   {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
@@ -1060,10 +1059,13 @@ namespace Tpetra {
     const size_t numExports = exportProcIDs.size();
     const int myProcID = comm_->getRank();
     const int numProcs = comm_->getSize();
-    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+
+    std::unique_ptr<std::string> prefix;
     if (verbose_) {
       std::ostringstream os;
-      os << myProcID << ": createFromSends" << endl;
+      os << "Proc " << myProcID << ": createFromSends: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << endl;
       *out_ << os.str ();
     }
 
@@ -1146,7 +1148,8 @@ namespace Tpetra {
 
         // null entries break continuity.
         // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
-        if (needSendBuff==0 && starts[exportID] > 1 && exportID != exportProcIDs[i-1]) {
+        if (needSendBuff == 0 && starts[exportID] > 1 &&
+	    exportID != exportProcIDs[i-1]) {
           needSendBuff = 1;
         }
         ++numActive;
@@ -1162,7 +1165,7 @@ namespace Tpetra {
       int gbl_badID;
       reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
       TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::createFromSends(): Process  " << gbl_badID
+        Teuchos::typeName(*this) << "::createFromSends: Proc " << gbl_badID
         << ", perhaps among other processes, got a bad send process ID.");
     }
 #else
@@ -1367,7 +1370,7 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << myProcID << ": createFromSends: done" << endl;
+      os << *prefix << "Done!" << endl;
       *out_ << os.str ();
     }
 
