@@ -96,8 +96,6 @@ namespace Zoltan2 {
 
 template <typename User>
   class VectorAdapter : public BaseAdapter<User> {
-private:
-
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -143,6 +141,23 @@ public:
   virtual void getEntriesView(const scalar_t *&elements, int &stride,
                               int idx = 0) const = 0;
 
+  /*! \brief Write files that can be used as input to Zoltan or Zoltan2 driver
+   *  Creates chaco-formatted input files for coordinates and weights that
+   *  can be used as input for Zoltan or Zoltan2 drivers.
+   *  This routine is SERIAL and can be quite slow.
+   *  It is meant as a debugging tool only, to allow Zoltan developers to 
+   *  replicate performance that applications are seeing using the applicatios'
+   *  input.
+   */
+  void generateFiles(const char *filename, const Teuchos::Comm<int> *comm) {
+
+    // Generate the graph file with weights using the base adapter method
+    this->generateWeightsFileOnly(fileprefix, comm);
+
+    //  Generate the coords file with local method
+    this->generateCoordsFileOnly(fileprefix, comm);
+  }
+
   ////////////////////////////////////////////////////////////////
   // Handy pseudonyms, since vectors are often used as coordinates
   // User should not implement these methods.
@@ -155,7 +170,70 @@ public:
   {
     getEntriesView(elements, stride, idx);
   }
+
+private:
+
+  void generateCoordsFileOnly(
+    const char* fileprefix, 
+    const Teuchos::Comm<int> *comm);
+
 };
+
+template <typename User>
+void VectorAdapter<User>::generateCoordsFileOnly(
+  const char *fileprefix, 
+  const Teuchos::Comm<int> *comm
+)
+{
+  // Writes a chaco-formatted coordinates file
+  // This function is SERIAL and can be quite slow.  Use it for debugging only.
+
+  int np = comm->getSize();
+  int me = comm->getRank();
+
+  // append suffix to filename
+  
+  const std::string filenamestr = fileprefix + ".coords";
+  const char *filename = filenamestr.c_str();
+
+  for (int p = 0; p < np; p++) {
+
+    // Is it this processor's turn to write to files?
+    if (me == p) {
+
+      ofstream fp;
+      if (me == 0) {
+        // open file for writing
+        fp.open(filename, std::ios::out);
+      }
+      else {
+        // open file for appending
+        fp.open(filename, std::ios::app);
+      }
+    
+      // Get the vector entries
+      size_t len = this->getLocalNumIDs();
+      int nvec = this->getNumEntriesPerID();
+      scalar_t *values = new scalar_t *[nvec];
+      int *strides = new int *[nvec];
+      for (int n = 0; n < nvec; n++)
+        getEntriesView(values[n], strides[n], n);
+
+      // write vector entries to coordinates file
+
+      for (size_t i = 0; i < len; i++) {
+        for (n = 0; n < nvec; n++)
+          fp << values[n][i*strides[n]] << " ";
+        fp << "\n";
+      }
+
+      // close the file
+      fp.close();
+
+    }
+    comm.barrier();
+  }
+}
 
 
 }  //namespace Zoltan2

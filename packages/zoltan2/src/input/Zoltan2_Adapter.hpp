@@ -202,6 +202,11 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+private:
+
+  void generateWeightFileOnly(const char* fileprefix, 
+                              const char* Teuchos::Comm<int> *comm) {};
+
 };
   
 }  //namespace Zoltan2

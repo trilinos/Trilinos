@@ -54,6 +54,7 @@
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
+#include "VerifyVectorGenerateFiles.hpp"
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
@@ -150,6 +151,121 @@ int verifyInputAdapter(
   return gfail;
 }
 
+template <typename User>
+int verifyGenerateFiles(
+  Zoltan2::VectorAdapter<User> &ia, 
+  const char *fileprefixInput
+)
+{
+  RCP<const Comm<int> > comm = vector.getMap()->getComm();
+  int fail = 0, gfail=0;
+
+  const char *fileprefixGen = "unitTestOutput";
+  ia.generateFiles(fileprefixGen, *comm);
+
+  // Only rank zero needs to check the resulting files
+  if (comm->getRank() == me) {
+
+    size_t nIDsGen, nIDsInput;
+    size_t nEdge, nEdgeInput;
+    char codeGen[4], codeInput[4];
+
+    ifstream fpGen, fpInput;
+    const std::string graphFilenameGen = fileprefixGen + ".graph";
+    const std::string graphFilenameInput = fileprefixInput + ".graph";
+
+    // Read header info from generated file
+    fpGen.open(graphFilenameGen.c_str(), std::ios::in);
+    std::string lineGen;
+    std::getline(fpGen, lineGen);
+    std::istringstream issGen(lineGen);
+    issGen >> nIDsGen >> nedgeGen >> codeGen;
+
+    // Read header info from input file
+    fpInput.open(graphFilenameInput.c_str(), std::ios::in);
+    std::string lineInput;
+    std::getline(fpInput, lineInput);
+    while (lineInput[0]=='#') std::getline(fpInput, lineInput); // skip comments
+    std::istringstream issInput(lineGen);
+    issInput >> nIDsInput >> nedgeInput >> codeInput;
+
+    // input file and generated file should have same number of IDs
+    if (nIDsGen != nIDsInput) {
+      std::cout << "GenerateFiles:  nIDsGen " << nIDsGen
+                << " != nIDsInput " << nIDsInput << std::endl;
+      fail = 222;
+    }
+
+    // Vector adapters don't have edges
+    if (!fail && nedgeGen != 0) {
+      std::cout << "GenerateFiles:  nedgeGen " << nedge << " != 0" << std::endl;
+      fail = 222;
+    }
+
+    // Check the weights, if any
+    if (!fail && !strcmp(codeGen, "010")) {
+      // TODO
+      // If input file has weights, compare weights
+      // Otherwise, just make sure there are enough weights in file
+    }
+
+    fpGen.close();
+    fpInput.close();
+    
+    // check coordinate files
+    if (!fail) {
+      const std::string coordsFilenameGen = fileprefixGen + ".coords";
+      const std::string coordsFilenameInput = fileprefixInput + ".coords";
+
+      fpGen.open(coordsFilenameGen.c_str(), std::ios::in);
+      fpInput.open(coordsFilenameInput.c_str(), std::ios::in);
+
+      size_t cnt = 0;
+      for (; std::getline(fpGen,lineGen) && std::getline(fpInput,lineInput);) { 
+
+        cnt++;
+
+        // Check each token
+        issGen.str(lineGen);
+        issInput.str(lineInput);
+
+        while (issGen && issInput) {
+          double xGen, xInput;
+          issGen >> xGen;
+          issInput >> xInput;
+
+          if (xGen != xInput) {
+            std::cout << "Coordinates " << xGen << " != " << xInput 
+                      << std::endl;
+            fail = 333;
+          }
+        }
+
+        // Check same number of tokens:  are there any left in either line?
+        if (issGen || issInput) {
+          std::cout << "Dimension of generated file != dimension of input file"
+                    << std::endl;
+          fail = 334;
+        }
+      }
+
+      // Did we have the correct number of coordinates?
+      if (!fail && cnt != nIDsGen) {
+        std::cout << "Number of coordinates read " << cnt 
+                  << " != number of IDs " << nIDsGen << std::endl;
+        fail = 444;
+      }
+
+      fpGen.close();
+      fpInput.close();
+    }
+  }
+
+  gfail = globalFail(comm, fail);
+  return gfail;
+}
+
+
 int main(int narg, char *arg[])
 {
   Tpetra::ScopeGuard tscope(&narg, &arg);
@@ -221,6 +337,7 @@ int main(int narg, char *arg[])
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter ", 1);
   
     fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, 0, NULL, NULL);
+    fail = verifyGenerateFiles<tvector_t>(*tVInput);
   
     gfail = globalFail(comm, fail);
   
