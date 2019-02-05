@@ -56,7 +56,7 @@
                     <Parameter name="Use RepMap"                  type="bool"     value="true"/>
                     <Parameter name="Type"                                      type="string"   value="linear"/>
                     <Parameter name="GatheringSteps"                            type="int"      value="1"/>
-                    <Parameter name="NumProcs"                                  type="int"      value="1"/>
+                    <Parameter name="NumProcs"                                  type="int"      value="2"/>
                     <Parameter name="Factor"                                    type="double"   value="1.0"/>
                 </ParameterList>
                 

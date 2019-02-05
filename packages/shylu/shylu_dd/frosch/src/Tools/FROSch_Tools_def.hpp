@@ -204,14 +204,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(B->getRowMap()->lib(),MaxRow,MaxRow,0,TeuchosComm);
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
-       /* if(MyPID == 0)std::cout<<"--------Node ElementList------------\n";
-        B->describe(*fancy,Teuchos::VERB_EXTREME);
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"-------------------------------------\n";*/
-       
         problem->solve();
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"Re 0\n";
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
         adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());
         
@@ -226,8 +219,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),ColMap,MaxRow));
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"Re 1\n";
+       
         //--------------------Get Repeated Nodes Map------------------------
         //All Elemnts and neighboring on Proc
         Teuchos::ArrayView<const GO>  eList =EleRepMap->getNodeElementList();
