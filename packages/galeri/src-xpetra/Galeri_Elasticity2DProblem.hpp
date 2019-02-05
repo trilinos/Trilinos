@@ -177,7 +177,7 @@ namespace Galeri {
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 9*numDofPerNode);
 
-      SC one = TST::one(), zero = TST::zero(), two = one+one;
+      SC one = TST::one(), zero = TST::zero();
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, Teuchos::as<LO>(nDim_));        // cache
       for (size_t i = 0; i < elements_.size(); i++) {
         // Select nodes subvector
