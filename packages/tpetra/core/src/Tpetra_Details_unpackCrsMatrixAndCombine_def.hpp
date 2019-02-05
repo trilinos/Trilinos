@@ -1175,21 +1175,18 @@ unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   {
     auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);
-    numPacketsPerLID_nc.template sync<BMS> ();
+    numPacketsPerLID_nc.sync_device ();
   }
-  auto num_packets_per_lid_d = numPacketsPerLID.template view<BMS> ();
+  auto num_packets_per_lid_d = numPacketsPerLID.view_device ();
 
-  {
-    auto importLIDs_nc = castAwayConstDualView (importLIDs);
-    importLIDs_nc.template sync<MS> ();
-  }
-  auto import_lids_d = importLIDs.template view<MS> ();
+  TEUCHOS_ASSERT( ! importLIDs.need_sync_device () );
+  auto import_lids_d = importLIDs.view_device ();
 
   {
     auto imports_nc = castAwayConstDualView (imports);
-    imports_nc.template sync<BMS> ();
+    imports_nc.sync_device ();
   }
-  auto imports_d = imports.template view<BMS> ();
+  auto imports_d = imports.view_device ();
 
   auto local_matrix = sourceMatrix.getLocalMatrix ();
   auto local_col_map = sourceMatrix.getColMap ()->getLocalMap ();
