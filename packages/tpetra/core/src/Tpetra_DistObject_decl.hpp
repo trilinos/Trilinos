@@ -781,6 +781,11 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const local_ordinal_type>& /* permuteToLIDs */,
                     const Teuchos::ArrayView<const local_ordinal_type>& /* permuteFromLIDs */)
     {}
+
+    /// \brief Kokkos ("new") version of copyAndPermute.
+    ///
+    /// Implementations may assume that permuteToLIDs and permuteFrom
+    /// LIDs are sync'd on both host and device.
     virtual void
     copyAndPermuteNew (const SrcDistObject& /* source */,
                        const size_t /* numSameIDs */,
@@ -819,6 +824,11 @@ namespace Tpetra {
                     Distributor &/* distor */)
     {}
 
+    /// \brief Kokkos ("new") version of packAndPrepare.
+    ///
+    /// Implementations may assume that exportLIDs are sync'd on both
+    /// host and device.  The target object <tt>*this</tt> gets to
+    /// decide where to pack and sync the output \c exports.
     virtual void
     packAndPrepareNew (const SrcDistObject& /* source */,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& /* exportLIDs */,
@@ -833,7 +843,7 @@ namespace Tpetra {
     ///   hold data).
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
-    ///   destination object) we received from other images.
+    ///   destination object) we received from other processes.
     ///
     /// \param imports [in] Buffer containing data we received.
     ///
@@ -867,9 +877,13 @@ namespace Tpetra {
     /// should unpack on host or unpack on device.
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
-    ///   destination object) we received from other images.
+    ///   destination object) we received from other processes.  This
+    ///   is always sync'd to both host and device on input.
     ///
     /// \param imports [in] Buffer containing data we received.
+    ///   DistObject may sync this wherever it likes; subclasses must
+    ///   deal with that, though the subclass may ultimately store its
+    ///   data wherever it likes.
     ///
     /// \param numPacketsPerLID [in] If constantNumPackets is zero,
     ///   then numPacketsPerLID[i] contains the number of packets

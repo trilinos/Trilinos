@@ -870,28 +870,31 @@ namespace Tpetra {
     using ::Tpetra::Details::castAwayConstDualView;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
+    using std::endl;
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using DMS = typename device_type::memory_space;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
-    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
+    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermuteNew");
 
-    // mfh 03 Aug 2017, 27 Sep 2017: Set the TPETRA_VERBOSE
-    // environment variable to "1" (or "TRUE") for copious debug
-    // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbers of MPI processes.
-    const bool debug = Behavior::verbose ();
-    int myRank = 0;
-    if (debug && ! this->getMap ().is_null () &&
-        ! this->getMap ()->getComm ().is_null ()) {
-      myRank = this->getMap ()->getComm ()->getRank ();
+    const bool verbose = Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      auto map = this->getMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": MV::copyAndPermuteNew: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "Start" << endl;
+      std::cerr << os.str ();
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (permuteToLIDs.extent (0) != permuteFromLIDs.extent (0),
-       std::runtime_error, "permuteToLIDs.extent(0) = "
+       std::logic_error, "permuteToLIDs.extent(0) = "
        << permuteToLIDs.extent (0) << " != permuteFromLIDs.extent(0) = "
        << permuteFromLIDs.extent (0) << ".");
 
@@ -899,33 +902,35 @@ namespace Tpetra {
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
     const size_t numCols = this->getNumVectors ();
 
-    // The input sourceObj controls whether we copy on host or device.
-    // This is because this method is not allowed to modify sourceObj,
-    // so it may not sync sourceObj; it must use the most recently
-    // updated version (host or device) of sourceObj's data.
-    //
-    // If we need sync to device, then host has the most recent version.
-    const bool copyOnHost = sourceMV.template need_sync<DMS> ();
-    if (debug) {
+    // sourceMV doesn't belong to us, so we can't sync it.  Do the
+    // copying where it's currently sync'd.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
+       std::logic_error, "Input MultiVector needs sync to both host "
+       "and device.");
+    const bool copyOnHost = sourceMV.need_sync_device ();
+    if (verbose) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-        "copyOnHost=" << (copyOnHost ? "true" : "false") << std::endl;
+      os << *prefix << "copyOnHost=" << (copyOnHost ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
 
     if (copyOnHost) {
-      if(this->need_sync_host ()) this->sync_host ();
+      if (this->need_sync_host ()) {
+	this->sync_host ();
+      }
       this->modify_host ();
     }
     else {
-      if(this->template need_sync<DMS> ()) this->template sync<DMS> ();
-      this->template modify<DMS> ();
+      if (this->template need_sync_device ()) {
+	this->template sync_device ();
+      }
+      this->template modify_device ();
     }
 
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-        "Copy source to target" << std::endl;
+      os << *prefix << "Copy" << endl;
       std::cerr << os.str ();
     }
 
@@ -948,11 +953,14 @@ namespace Tpetra {
     // deep_copy between strided subviews with more than one column
     // doesn't currently work.
 
+    // FIXME (mfh 04 Feb 2019) Need to optimize for the case where
+    // both source and target are constant stride and have multiple
+    // columns.
     if (numSameIDs > 0) {
       const std::pair<size_t, size_t> rows (0, numSameIDs);
       if (copyOnHost) {
-        auto tgt_h = getDualView().view_host();
-        auto src_h = create_const_view (sourceMV.getDualView().view_host());
+        auto tgt_h = this->getLocalViewHost ();
+        auto src_h = create_const_view (sourceMV.getLocalViewHost ());
 
         for (size_t j = 0; j < numCols; ++j) {
           const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
@@ -965,8 +973,8 @@ namespace Tpetra {
         }
       }
       else { // copy on device
-        auto tgt_d = this->template getLocalView<DMS> ();
-        auto src_d = create_const_view (sourceMV.template getLocalView<DMS> ());
+        auto tgt_d = this->getLocalViewDevice ();
+        auto src_d = create_const_view (sourceMV.getLocalViewDevice ());
 
         for (size_t j = 0; j < numCols; ++j) {
           const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
@@ -992,40 +1000,29 @@ namespace Tpetra {
     // If there are no permutations, we are done
     if (permuteFromLIDs.extent (0) == 0 ||
         permuteToLIDs.extent (0) == 0) {
-      if (debug) {
+      if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-          "No permutations; done." << std::endl;
+        os << *prefix << "No permutations. Done!" << endl;
         std::cerr << os.str ();
       }
       return;
     }
 
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-        "Permute source to target" << std::endl;
+      os << *prefix << "Permute" << endl;
       std::cerr << os.str ();
     }
-
-    // mfh 29 Aug 2017: Kokkos::DualView annoyingly forbids (at run
-    // time, no less!) sync'ing a DualView<const T, D>.  We work
-    // around this by managing the copying and flags ourselves --
-    // essentially reimplementing sync and modify.
-    Kokkos::DualView<LocalOrdinal*, device_type> permuteToLIDs_nc =
-      castAwayConstDualView (permuteToLIDs);
-    Kokkos::DualView<LocalOrdinal*, device_type> permuteFromLIDs_nc =
-      castAwayConstDualView (permuteFromLIDs);
 
     // We could in theory optimize for the case where exactly one of
     // them is constant stride, but we don't currently do that.
     const bool nonConstStride =
       ! this->isConstantStride () || ! sourceMV.isConstantStride ();
 
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-        "nonConstStride=" << (nonConstStride ? "true" : "false") << std::endl;
+      os << *prefix << "nonConstStride="
+	 << (nonConstStride ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
 
@@ -1043,7 +1040,7 @@ namespace Tpetra {
           tmpTgt.h_view(j) = j;
         }
         if (! copyOnHost) {
-          tmpTgt.template sync<DMS> ();
+          tmpTgt.sync_device ();
         }
         tgtWhichVecs = tmpTgt;
       }
@@ -1068,7 +1065,7 @@ namespace Tpetra {
           tmpSrc.h_view(j) = j;
         }
         if (! copyOnHost) {
-          tmpSrc.template sync<DMS> ();
+          tmpSrc.sync_device ();
         }
         srcWhichVecs = tmpSrc;
       }
@@ -1089,25 +1086,23 @@ namespace Tpetra {
     }
 
     if (copyOnHost) { // permute on host too
-      if (debug) {
+      if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-          "Set up permutation arrays on host" << std::endl;
+        os << *prefix << "Get permute LIDs on host" << std::endl;
         std::cerr << os.str ();
       }
-      auto tgt_h = getDualView().view_host();
-      auto src_h = create_const_view (sourceMV.getDualView().view_host());
-      permuteToLIDs_nc.sync_host ();
-      auto permuteToLIDs_h =
-        create_const_view (permuteToLIDs_nc.view_host ());
-      permuteFromLIDs_nc.sync_host ();
-      auto permuteFromLIDs_h =
-        create_const_view (permuteFromLIDs_nc.view_host ());
+      auto tgt_h = this->getLocalViewHost ();
+      auto src_h = create_const_view (sourceMV.getLocalViewHost ());
 
-      if (debug) {
+      TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
+      auto permuteToLIDs_h = create_const_view (permuteToLIDs.view_host ());
+      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );      
+      auto permuteFromLIDs_h =
+	create_const_view (permuteFromLIDs.view_host ());
+
+      if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-          "Call permute kernel on host" << std::endl;
+        os << *prefix << "Permute on host" << endl;
         std::cerr << os.str ();
       }
       if (nonConstStride) {
@@ -1129,34 +1124,30 @@ namespace Tpetra {
       }
     }
     else { // permute on device
-      if (debug) {
+      if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-          "Set up permutation arrays on device" << std::endl;
+        os << *prefix << "Get permute LIDs on device" << endl;
         std::cerr << os.str ();
       }
-      auto tgt_d = this->template getLocalView<DMS> ();
-      auto src_d = create_const_view (sourceMV.template getLocalView<DMS> ());
-      permuteToLIDs_nc.template sync<DMS> ();
-      auto permuteToLIDs_d =
-        create_const_view (permuteToLIDs_nc.template view<DMS> ());
-      permuteFromLIDs_nc.template sync<DMS> ();
-      auto permuteFromLIDs_d =
-        create_const_view (permuteFromLIDs_nc.template view<DMS> ());
+      auto tgt_d = this->getLocalViewDevice ();
+      auto src_d = create_const_view (sourceMV.getLocalViewDevice ());
 
-      if (debug) {
+      TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_device () );
+      auto permuteToLIDs_d = create_const_view (permuteToLIDs.view_device ());
+      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_device () );      
+      auto permuteFromLIDs_d =
+	create_const_view (permuteFromLIDs.view_device ());
+
+      if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
-          "Call permute kernel on device" << std::endl;
+        os << *prefix << "Permute on device" << endl;
         std::cerr << os.str ();
       }
       if (nonConstStride) {
         // No need to sync first, because copyOnHost argument to
         // getDualViewCopyFromArrayView puts them in the right place.
-        auto tgtWhichVecs_d =
-          create_const_view (tgtWhichVecs.template view<DMS> ());
-        auto srcWhichVecs_d =
-          create_const_view (srcWhichVecs.template view<DMS> ());
+        auto tgtWhichVecs_d = create_const_view (tgtWhichVecs.view_device ());
+        auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
         permute_array_multi_column_variable_stride (tgt_d, src_d,
                                                     permuteToLIDs_d,
                                                     permuteFromLIDs_d,
@@ -1169,9 +1160,9 @@ namespace Tpetra {
       }
     }
 
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: Done" << std::endl;
+      os << *prefix << "Done!" << endl;
       std::cerr << os.str ();
     }
   }
@@ -1188,17 +1179,13 @@ namespace Tpetra {
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::getKokkosViewDeepCopy;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef impl_scalar_type IST;
-    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
-      dev_memory_space;
-    typedef typename Kokkos::DualView<IST*, device_type>::t_host::execution_space
-      host_execution_space;
-    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::execution_space
-      dev_execution_space;
-    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
+    using std::endl;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    const char tfecfFuncName[] = "packAndPrepareNew: ";
+    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepareNew");
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1213,69 +1200,20 @@ namespace Tpetra {
     // runs with large numbers of MPI processes.
     const bool printDebugOutput = Behavior::verbose ();
 
-    int myRank = 0;
-    if (printDebugOutput && ! this->getMap ().is_null () &&
-        ! this->getMap ()->getComm ().is_null ()) {
-      myRank = this->getMap ()->getComm ()->getRank ();
-    }
-
+    std::unique_ptr<std::string> prefix;
     if (printDebugOutput) {
+      auto map = this->getMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepareNew" << std::endl;
+      os << "Proc " << myRank << ": MV::packAndPrepareNew: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "Start" << endl;
       std::cerr << os.str ();
     }
+
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
-
-    // mfh 12 Apr 2016: packAndPrepareNew decides where to pack based
-    // on the memory space in which exportLIDs was last modified.
-    // (DistObject::doTransferNew decides this currently.)
-    //
-    // We unfortunately can't change the source object sourceMV.
-    // Thus, we can't sync it to the memory space where we want to
-    // pack communication buffers.  As a result, for example, if
-    // exportLIDs wants us to pack on host, but sourceMV was last
-    // modified on device, we have to allocate a temporary host
-    // version and copy back to host before we can pack.  Similarly,
-    // if exportLIDs wants us to pack on device, but sourceMV was last
-    // modified on host, we have to allocate a temporary device
-    // version and copy back to device before we can pack.
-    const bool packOnHost =
-      exportLIDs.need_sync_device();
-    auto src_dev = sourceMV.template getLocalView<dev_memory_space> ();
-    auto src_host = sourceMV.getDualView().view_host();
-    if (packOnHost) {
-      if (sourceMV.need_sync_host()) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-            "Pack on host, need sync to host" << std::endl;
-          std::cerr << os.str ();
-        }
-        // sourceMV was most recently updated on device; copy to host.
-        // Allocate a new host mirror.  We'll use it for packing below.
-        src_host = decltype (src_host) ("MV::DualView::h_view",
-                                        src_dev.extent (0),
-                                        src_dev.extent (1));
-        Kokkos::deep_copy (src_host, src_dev);
-      }
-    }
-    else { // pack on device
-      if (sourceMV.template need_sync<device_type> ()) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-            "Pack on device, need sync to device" << std::endl;
-          std::cerr << os.str ();
-        }
-        // sourceMV was most recently updated on host; copy to device.
-        // Allocate a new "device mirror."  We'll use it for packing below.
-        src_dev = decltype (src_dev) ("MV::DualView::d_view",
-                                      src_host.extent (0),
-                                      src_host.extent (1));
-        Kokkos::deep_copy (src_dev, src_host);
-      }
-    }
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -1289,8 +1227,7 @@ namespace Tpetra {
     if (exportLIDs.extent (0) == 0) {
       if (printDebugOutput) {
         std::ostringstream os;
-        os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-          "No exports on this proc, DONE" << std::endl;
+        os << *prefix << "No exports on this proc, DONE" << std::endl;
         std::cerr << os.str ();
       }
       return;
@@ -1315,19 +1252,29 @@ namespace Tpetra {
     const size_t newExportsSize = numCols * numExportLIDs;
     if (printDebugOutput) {
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepareNew: realloc: "
-         << "numExportLIDs = " << numExportLIDs
-         << ", exports.extent(0) = " << exports.extent (0)
-         << ", newExportsSize = " << newExportsSize << std::endl;
+      os << *prefix << "realloc: "
+         << "numExportLIDs: " << numExportLIDs
+         << ", exports.extent(0): " << exports.extent (0)
+         << ", newExportsSize: " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
-    ::Tpetra::Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
+    reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
-    // 'exports' may have different memory spaces than device_type
-    // would indicate.  See GitHub issue #1088.  Abbreviation:
-    // "exports device memory spaces."
-    typedef typename std::decay<decltype (exports) >::type::t_dev::memory_space EDMS;
-
+    // mfh 04 Feb 2019: sourceMV doesn't belong to us, so we can't
+    // sync it.  Pack it where it's currently sync'd.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (sourceMV.need_sync_device () && sourceMV.need_sync_host (),
+       std::logic_error, "Input MultiVector needs sync to both host "
+       "and device.");
+    const bool packOnHost = sourceMV.need_sync_device ();
+    auto src_dev = sourceMV.getLocalViewHost ();
+    auto src_host = sourceMV.getLocalViewDevice ();
+    if (printDebugOutput) {
+      std::ostringstream os;
+      os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
+      std::cerr << os.str ();
+    }
+    
     // Mark 'exports' here, since we might have resized it above.
     // Resizing currently requires calling the constructor, which
     // clears out the 'modified' flags.
@@ -1335,7 +1282,7 @@ namespace Tpetra {
       exports.modify_host ();
     }
     else {
-      exports.template modify<EDMS> ();
+      exports.modify_device ();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -1355,8 +1302,7 @@ namespace Tpetra {
         using KokkosRefactor::Details::pack_array_single_column;
         if (printDebugOutput) {
           std::ostringstream os;
-          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-            "pack numCols=1 const stride" << std::endl;
+          os << *prefix << "Pack numCols=1 const stride" << endl;
           std::cerr << os.str ();
         }
         if (packOnHost) {
@@ -1367,9 +1313,9 @@ namespace Tpetra {
                                     debugCheckIndices);
         }
         else { // pack on device
-          pack_array_single_column (exports.template view<EDMS> (),
+          pack_array_single_column (exports.view_device (),
                                     create_const_view (src_dev),
-                                    exportLIDs.template view<dev_memory_space> (),
+                                    exportLIDs.view_device (),
                                     0,
                                     debugCheckIndices);
         }
@@ -1378,8 +1324,7 @@ namespace Tpetra {
         using KokkosRefactor::Details::pack_array_single_column;
         if (printDebugOutput) {
           std::ostringstream os;
-          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-            "pack numCols=1 nonconst stride" << std::endl;
+          os << *prefix << "Pack numCols=1 nonconst stride" << endl;
           std::cerr << os.str ();
         }
         if (packOnHost) {
@@ -1390,9 +1335,9 @@ namespace Tpetra {
                                     debugCheckIndices);
         }
         else { // pack on device
-          pack_array_single_column (exports.template view<EDMS> (),
+          pack_array_single_column (exports.view_device (),
                                     create_const_view (src_dev),
-                                    exportLIDs.template view<dev_memory_space> (),
+                                    exportLIDs.view_device (),
                                     sourceMV.whichVectors_[0],
                                     debugCheckIndices);
         }
@@ -1403,8 +1348,7 @@ namespace Tpetra {
         using KokkosRefactor::Details::pack_array_multi_column;
         if (printDebugOutput) {
           std::ostringstream os;
-          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-            "pack numCols>1 const stride" << std::endl;
+          os << *prefix << "Pack numCols=" << numCols << " const stride" << endl;
           std::cerr << os.str ();
         }
         if (packOnHost) {
@@ -1415,9 +1359,9 @@ namespace Tpetra {
                                    debugCheckIndices);
         }
         else { // pack on device
-          pack_array_multi_column (exports.template view<EDMS> (),
+          pack_array_multi_column (exports.view_device (),
                                    create_const_view (src_dev),
-                                   exportLIDs.template view<dev_memory_space> (),
+                                   exportLIDs.view_device (),
                                    numCols,
                                    debugCheckIndices);
         }
@@ -1426,32 +1370,42 @@ namespace Tpetra {
         using KokkosRefactor::Details::pack_array_multi_column_variable_stride;
         if (printDebugOutput) {
           std::ostringstream os;
-          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
-            "pack numCols>1 nonconst stride" << std::endl;
+          os << *prefix << "Pack numCols=" << numCols << " nonconst stride"
+	     << endl;
           std::cerr << os.str ();
         }
+	// FIXME (mfh 04 Feb 2019) Creating a Kokkos::View for
+	// whichVectors_ can be expensive, but pack and unpack for
+	// nonconstant-stride MultiVectors is slower anyway.
+	using IST = impl_scalar_type;
+	using DV = Kokkos::DualView<IST*, device_type>;
+	using HES = typename DV::t_host::execution_space;
+	using DES = typename DV::t_dev::execution_space;
+	Teuchos::ArrayView<const size_t> whichVecs = sourceMV.whichVectors_ ();
         if (packOnHost) {
-          pack_array_multi_column_variable_stride (exports.view_host (),
-                                                   create_const_view (src_host),
-                                                   exportLIDs.view_host (),
-                                                   getKokkosViewDeepCopy<host_execution_space> (sourceMV.whichVectors_ ()),
-                                                   numCols,
-                                                   debugCheckIndices);
+          pack_array_multi_column_variable_stride
+	    (exports.view_host (),
+	     create_const_view (src_host),
+	     exportLIDs.view_host (),
+	     getKokkosViewDeepCopy<HES> (whichVecs),
+	     numCols,
+	     debugCheckIndices);
         }
         else { // pack on device
-          pack_array_multi_column_variable_stride (exports.template view<EDMS> (),
-                                                   create_const_view (src_dev),
-                                                   exportLIDs.template view<dev_memory_space> (),
-                                                   getKokkosViewDeepCopy<dev_execution_space> (sourceMV.whichVectors_ ()),
-                                                   numCols,
-                                                   debugCheckIndices);
+          pack_array_multi_column_variable_stride
+	    (exports.view_device (),
+	     create_const_view (src_dev),
+	     exportLIDs.view_device (),
+	     getKokkosViewDeepCopy<DES> (whichVecs),
+	     numCols,
+	     debugCheckIndices);
         }
       }
     }
 
     if (printDebugOutput) {
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepareNew: DONE" << std::endl;
+      os << *prefix << "Done!" << endl;
       std::cerr << os.str ();
     }
   }
@@ -1473,11 +1427,9 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column;
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
-    typedef impl_scalar_type IST;
-    typedef typename Kokkos::DualView<IST*,
-      device_type>::t_dev::memory_space DMS;
+    using std::endl;
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
-    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
+    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombineNew");
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1487,19 +1439,25 @@ namespace Tpetra {
     // "1" (or "TRUE").
     const bool debugCheckIndices = Behavior::debug ();
 
-    // mfh 03 Aug 2017, 27 Sep 2017: Set the TPETRA_VERBOSE
-    // environment variable to "1" (or "TRUE") for copious debug
-    // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbers of MPI processes.
     const bool printDebugOutput = Behavior::verbose ();
-    int myRank = 0;
-    if (printDebugOutput && ! this->getMap ().is_null () &&
-        ! this->getMap ()->getComm ().is_null ()) {
-      myRank = this->getMap ()->getComm ()->getRank ();
+    std::unique_ptr<std::string> prefix;
+    if (printDebugOutput) {
+      auto map = this->getMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": MV::packAndPrepareNew: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << "Start" << endl;
+      std::cerr << os.str ();
     }
 
     // If we have no imports, there is nothing to do
     if (importLIDs.extent (0) == 0) {
+      if (printDebugOutput) {
+	std::ostringstream os;
+	os << *prefix << "No imports. Done!" << endl;
+      }
       return;
     }
 
@@ -1524,56 +1482,15 @@ namespace Tpetra {
          std::runtime_error, "constantNumPackets must equal numVecs.");
     }
 
-    // mfh 12 Apr 2016: Decide where to unpack based on the memory
-    // space in which the imports buffer was last modified.
-    // DistObject::doTransferNew gets to decide this.  We currently
-    // require importLIDs to match (its most recent version must be in
-    // the same memory space as imports' most recent version).
-    const bool unpackOnHost =
-      imports.need_sync_device();
+    // mfh 12 Apr 2016, 04 Feb 2019: Decide where to unpack based on
+    // the memory space in which the imports buffer was last modified.
+    // DistObject::doTransferNew gets to decide this.
+    const bool unpackOnHost = imports.need_sync_device ();
 
     if (printDebugOutput) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::unpackAndCombine: unpackOnHost: "
-         << (unpackOnHost ? "true" : "false") << std::endl;
-      std::cerr << os.str ();
-    }
-
-    // Kokkos::DualView<const T*, ...> forbids sync, so "cast away
-    // const."  It still makes sense for the importLIDs to be const,
-    // because this method does not _modify_ them.  We just need them
-    // to be in the right place.
-    auto theImportLIDs = castAwayConstDualView (importLIDs);
-    if (unpackOnHost && importLIDs.need_sync_host ()) {
-      if (printDebugOutput) {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::unpackAndCombine: sync importLIDs "
-          "to host" << std::endl;
-        std::cerr << os.str ();
-      }
-      // 'imports' was last modified on host, but importLIDs was last
-      // modified on device.  Sync importLIDs to host and do the work
-      // there, since imports usually at least as much data (and often
-      // has more) than importLIDs.
-      theImportLIDs.sync_host ();
-    }
-    else if (! unpackOnHost && importLIDs.need_sync_device ()) {
-      if (printDebugOutput) {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") MV::unpackAndCombine: sync importLIDs "
-          "to device" << std::endl;
-        std::cerr << os.str ();
-      }
-      // 'imports' was last modified on device, but importLIDs was
-      // last modified on host.  Sync importLIDs to device and do the
-      // work there, since imports usually at least as much data (and
-      // often has more) than importLIDs.
-      theImportLIDs.template sync<DMS> ();
-    }
-    else if (printDebugOutput) {
-      std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::unpackAndCombine: no need to sync "
-        "importLIDs" << std::endl;
+      os << *prefix << "unpackOnHost=" << (unpackOnHost ? "true" : "false")
+	 << endl;
       std::cerr << os.str ();
     }
 
@@ -1582,20 +1499,22 @@ namespace Tpetra {
     // because copyAndPermute may have modified *this in the other
     // memory space.
     if (unpackOnHost) {
-      if(this->need_sync_host ()) this->sync_host ();
+      if (this->need_sync_host ()) {
+	this->sync_host ();
+      }
       this->modify_host ();
     }
-    else { // unpack on device
-      if(this->template need_sync<DMS> ()) this->template sync<DMS> ();
-      this->template modify<DMS> ();
+    else {
+      if (this->need_sync_device ()) {
+	this->sync_device ();
+      }
+      this->modify_device ();
     }
-    auto X_d = this->template getLocalView<DMS> ();
-    auto X_h = getDualView().view_host();
-    // 'imports' may have a different device memory space (see #1088).
-    auto imports_d =
-      imports.template view<typename buffer_device_type::memory_space> ();
+    auto X_d = this->getLocalViewDevice ();
+    auto X_h = this->getLocalViewHost ();
+    auto imports_d = imports.view_device ();
     auto imports_h = imports.view_host ();
-    auto importLIDs_d = importLIDs.template view<DMS> ();
+    auto importLIDs_d = importLIDs.view_device ();
     auto importLIDs_h = importLIDs.view_host ();
 
     Kokkos::DualView<size_t*, device_type> whichVecs;
@@ -1609,11 +1528,11 @@ namespace Tpetra {
         Kokkos::deep_copy (whichVecs.view_host (), whichVecsIn);
       }
       else {
-        whichVecs.template modify<DMS> ();
-        Kokkos::deep_copy (whichVecs.template view<DMS> (), whichVecsIn);
+        whichVecs.modify_device ();
+        Kokkos::deep_copy (whichVecs.view_device (), whichVecsIn);
       }
     }
-    auto whichVecs_d = whichVecs.template view<DMS> ();
+    auto whichVecs_d = whichVecs.view_device ();
     auto whichVecs_h = whichVecs.view_host ();
 
     /* The layout in the export for MultiVectors is as follows:
@@ -1624,17 +1543,10 @@ namespace Tpetra {
       the data for a Packet (all data associated with an LID) is
       required to be contiguous. */
 
-    if (printDebugOutput) {
-      std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::unpackAndCombine: unpacking"
-         << std::endl;
-      std::cerr << os.str ();
-    }
-
     if (numVecs > 0 && importLIDs.extent (0) > 0) {
-      typedef typename Kokkos::DualView<IST*,
+      typedef typename Kokkos::DualView<double*,
         device_type>::t_dev::execution_space dev_exec_space;
-      typedef typename Kokkos::DualView<IST*,
+      typedef typename Kokkos::DualView<double*,
         device_type>::t_host::execution_space host_exec_space;
 
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
@@ -1642,16 +1554,14 @@ namespace Tpetra {
       // inlining, it would be nice to condense this code by using a
       // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
+	if (printDebugOutput) {
+	  std::ostringstream os;
+	  os << *prefix << "Unpack: INSERT / REPLACE" << endl;
+	  std::cerr << os.str ();
+	}
         KokkosRefactor::Details::InsertOp<execution_space> op;
-
         if (isConstantStride ()) {
           if (unpackOnHost) {
-            // FIXME (mfh 29 Aug 2017) Problem: X_h's execution space
-            // controls where unpacking takes place, but the
-            // HostMirror of a CudaUVMSpace View has execution_space
-            // Cuda!  This is bad if imports_h is actually a host
-            // View.  This means that we need to control the execution
-            // space in which unpack_array_multi_column works.
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h, op,
                                        numVecs, debugCheckIndices);
@@ -1665,13 +1575,6 @@ namespace Tpetra {
         }
         else { // not constant stride
           if (unpackOnHost) {
-            // FIXME (mfh 29 Aug 2017) Problem: X_h's execution space
-            // controls where unpacking takes place, but the
-            // HostMirror of a CudaUVMSpace View has execution_space
-            // Cuda!  This is bad if imports_h is actually a host
-            // View.  This means that we need to control the execution
-            // space in which
-            // unpack_array_multi_column_variable_stride works.
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1690,8 +1593,12 @@ namespace Tpetra {
         }
       }
       else if (CM == ADD) {
+	if (printDebugOutput) {
+	  std::ostringstream os;
+	  os << *prefix << "Unpack: ADD" << endl;
+	  std::cerr << os.str ();
+	}
         KokkosRefactor::Details::AddOp<execution_space> op;
-
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1724,8 +1631,12 @@ namespace Tpetra {
         }
       }
       else if (CM == ABSMAX) {
+	if (printDebugOutput) {
+	  std::ostringstream os;
+	  os << *prefix << "Unpack: ABSMAX" << endl;
+	  std::cerr << os.str ();
+	}
         KokkosRefactor::Details::AbsMaxOp<execution_space> op;
-
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1758,11 +1669,17 @@ namespace Tpetra {
         }
       }
     }
+    else {
+      if (printDebugOutput) {
+	std::ostringstream os;
+	os << *prefix << "Nothing to unpack" << endl;
+	std::cerr << os.str ();
+      }
+    }
 
     if (printDebugOutput) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") MV::unpackAndCombine: Done!"
-         << std::endl;
+      os << *prefix << "Done!" << endl;
       std::cerr << os.str ();
     }
   }
