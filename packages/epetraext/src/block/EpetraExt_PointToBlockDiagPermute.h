@@ -97,7 +97,7 @@ public:
   ///
   /// This class does NOT know how to apply its transpose, so this
   /// method always returns an error code.
-  virtual int SetUseTranspose (bool useTranspose) {return -1;}
+  virtual int SetUseTranspose (bool /* useTranspose */) {return -1;}
 
   //! Extracts the block-diagonal, builds maps, etc.
   virtual int Compute();

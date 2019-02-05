@@ -159,7 +159,7 @@ int EpetraExt_PointToBlockDiagPermute::Compute(){
 
 //=========================================================================  
 // Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
-int EpetraExt_PointToBlockDiagPermute::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
+int EpetraExt_PointToBlockDiagPermute::Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const{
   return -1;
 
 }
@@ -218,7 +218,7 @@ int EpetraExt_PointToBlockDiagPermute::ApplyInverse(const Epetra_MultiVector& X,
 
 //=========================================================================  
 // Print method
-void EpetraExt_PointToBlockDiagPermute::Print(std::ostream& os) const{
+void EpetraExt_PointToBlockDiagPermute::Print(std::ostream& /* os */) const{
   if(Importer_) std::cout<<*Importer_<<std::endl;
   if(Exporter_) std::cout<<*Exporter_<<std::endl;
   if(BDMat_) std::cout<<*BDMat_<<std::endl;
@@ -648,68 +648,68 @@ void EpetraExt_PointToBlockDiagPermute::UpdateExportVector(int NumVectors) const
 
 
 //=========================================================================  
-int EpetraExt_PointToBlockDiagPermute::Import(const Epetra_SrcDistObject& A, const Epetra_Import& Importer, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex *Indexor){
+int EpetraExt_PointToBlockDiagPermute::Import(const Epetra_SrcDistObject& /* A */, const Epetra_Import& /* Importer */, Epetra_CombineMode /* CombineMode */, const Epetra_OffsetIndex * /* Indexor */){
  return -1;
 }
 
 //=========================================================================  
-int EpetraExt_PointToBlockDiagPermute::Import(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex *Indexor){
+int EpetraExt_PointToBlockDiagPermute::Import(const Epetra_SrcDistObject& /* A */, const Epetra_Export& /* Exporter */, Epetra_CombineMode /* CombineMode */, const Epetra_OffsetIndex * /* Indexor */){
  return -1;
 }
 
 //=========================================================================  
-int EpetraExt_PointToBlockDiagPermute::Export(const Epetra_SrcDistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex *Indexor){
+int EpetraExt_PointToBlockDiagPermute::Export(const Epetra_SrcDistObject& /* A */, const Epetra_Import & /* Importer */, Epetra_CombineMode /* CombineMode */, const Epetra_OffsetIndex * /* Indexor */){
  return -1;
 }
 
 //=========================================================================  
-int EpetraExt_PointToBlockDiagPermute::Export(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex *Indexor){
+int EpetraExt_PointToBlockDiagPermute::Export(const Epetra_SrcDistObject& /* A */, const Epetra_Export& /* Exporter */, Epetra_CombineMode /* CombineMode */, const Epetra_OffsetIndex * /* Indexor */){
  return -1;
 }
 
 //=========================================================================  
 // Allows the source and target (\e this) objects to be compared for compatibility, return nonzero if not.
-int EpetraExt_PointToBlockDiagPermute::CheckSizes(const Epetra_SrcDistObject& Source){
+int EpetraExt_PointToBlockDiagPermute::CheckSizes(const Epetra_SrcDistObject& /* Source */){
   return -1;
 }
 
 //=========================================================================  
 // Perform ID copies and permutations that are on processor.
-int EpetraExt_PointToBlockDiagPermute::CopyAndPermute(const Epetra_SrcDistObject& Source,
-                   int NumSameIDs, 
-                   int NumPermuteIDs,
-                   int * PermuteToLIDs,
-                   int * PermuteFromLIDs,
-                   const Epetra_OffsetIndex * Indexor,
-                   Epetra_CombineMode CombineMode){
+int EpetraExt_PointToBlockDiagPermute::CopyAndPermute(const Epetra_SrcDistObject& /* Source */,
+                   int /* NumSameIDs */, 
+                   int /* NumPermuteIDs */,
+                   int * /* PermuteToLIDs */,
+                   int * /* PermuteFromLIDs */,
+                   const Epetra_OffsetIndex * /* Indexor */,
+                   Epetra_CombineMode /* CombineMode */){
   return -1;
 }
 
 //=========================================================================  
 // Perform any packing or preparation required for call to DoTransfer().
-int EpetraExt_PointToBlockDiagPermute::PackAndPrepare(const Epetra_SrcDistObject& Source,
-                   int NumExportIDs,
-                   int* ExportLIDs,
-                   int& LenExports,
-                   char*& Exports,
-                   int& SizeOfPacket,
-                   int* Sizes,
-                   bool & VarSizes,
-                   Epetra_Distributor& Distor){
+int EpetraExt_PointToBlockDiagPermute::PackAndPrepare(const Epetra_SrcDistObject& /* Source */,
+                   int /* NumExportIDs */,
+                   int* /* ExportLIDs */,
+                   int& /* LenExports */,
+                   char*& /* Exports */,
+                   int& /* SizeOfPacket */,
+                   int* /* Sizes */,
+                   bool & /* VarSizes */,
+                   Epetra_Distributor& /* Distor */){
   return -1;
 }
 
 //=========================================================================  
 // Perform any unpacking and combining after call to DoTransfer().
-int EpetraExt_PointToBlockDiagPermute::UnpackAndCombine(const Epetra_SrcDistObject& Source, 
-                     int NumImportIDs,
-                     int* ImportLIDs, 
-                     int LenImports,
-                     char* Imports,
-                     int& SizeOfPacket, 
-                     Epetra_Distributor& Distor,
-                     Epetra_CombineMode CombineMode,
-                     const Epetra_OffsetIndex * Indexor){
+int EpetraExt_PointToBlockDiagPermute::UnpackAndCombine(const Epetra_SrcDistObject& /* Source */, 
+                     int /* NumImportIDs */,
+                     int* /* ImportLIDs */, 
+                     int /* LenImports */,
+                     char* /* Imports */,
+                     int& /* SizeOfPacket */, 
+                     Epetra_Distributor& /* Distor */,
+                     Epetra_CombineMode /* CombineMode */,
+                     const Epetra_OffsetIndex * /* Indexor */){
   return -1;
 }
 

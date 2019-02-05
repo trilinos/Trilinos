@@ -51,6 +51,14 @@
 #include "EpetraExt_Transpose_RowMatrix.h"
 #endif
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#endif
+
+
+
 namespace MueLu {
 
   /* Removes the following non-serializable data (A,P,R,Nullspace,Coordinates)
@@ -247,5 +255,44 @@ bool IsParamValidVariable(const std::string& name)
       return false;
     }
   }
+
+
+   // Generates a communicator whose only members are other ranks of the baseComm on my node
+    Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId) {
+#ifdef HAVE_MPI
+       int numRanks = baseComm->getSize();       
+       if(numRanks == 1) {NodeId = baseComm->getRank(); return baseComm;}
+
+       // Get an integer from the hostname
+       char hostname[MPI_MAX_PROCESSOR_NAME];
+       int len;
+       MPI_Get_processor_name(hostname,&len);
+       struct hostent * host = gethostbyname(hostname);
+       int myaddr = (int) htonl(inet_network(inet_ntoa(*(struct in_addr *)host->h_addr)));
+       
+       // All-to-all exchange of address integers
+       std::vector<int> addressList(numRanks);
+       Teuchos::gatherAll(*baseComm,1,&myaddr,numRanks,&addressList[0]);
+
+       // Sort!
+       std::sort(addressList.begin(),addressList.end());
+
+       // Find which node I'm on (and stop when I've done that)
+       int numNodes = 0;
+       for(int i=0, prev=addressList[0]; i<numRanks && prev != myaddr; i++) {
+         if(prev != addressList[i]) {
+           prev = addressList[i];
+           numNodes++;
+         }
+       }
+       NodeId = numNodes;
+       // Generate nodal communicator
+       return baseComm->split(NodeId,baseComm->getRank());   
+#else
+       NodeId = baseComm->getRank();
+       return baseComm;
+#endif
+    }
+
 
 } // namespace MueLu

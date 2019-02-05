@@ -48,6 +48,8 @@
           
 \cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.}
           
+\cbb{aggregation: mode}{string}{"uncoupled"}{Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.}
+          
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
           
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
@@ -84,6 +86,16 @@
           
 \cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
           
+\cbb{aggregation: mesh layout}{string}{Global Lexicographic}{Type of ordering for structured mesh aggregation. Possible values: "Global Lexicographic" and "Local Lexicographic".}
+          
+\cbb{aggregation: output type}{string}{Aggregates}{Type of object holding the aggregation data. Possible values: "Aggregates" or "CrsGraph".}
+          
+\cbb{aggregation: coarsening rate}{string}{{3}}{Coarsening rate per spatial dimensions, the string must be interpretable as an array by Teuchos.}
+          
+\cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
+          
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+          
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
       names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
@@ -100,11 +112,21 @@
           
 \cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
           
+\cbb{use kokkos refactor}{bool}{false}{Switch on the new \kokkos based version for on-node parallelism.}
+          
+\cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
+          
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
+          
+\cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
           
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
+          
+\cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
+          
+\cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
           
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
           
@@ -124,13 +146,17 @@
           
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
           
-\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library.}
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library. In particular, this allows to choose a partitioning algorithm from \zoltan{} or \zoltan2{} or from external packages such as \parmetis{}.}
           
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
           
-\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.}
+\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs. The value is not used if "repartition: min rows per thread" is positive.}
           
 \cbb{repartition: target rows per proc}{int}{0}{Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"}
+          
+\cbb{repartition: min rows per thread}{int}{0}{Minimum number of rows per thread. If the actual number if smaller, then rebalancing occurs. If the value is set to 0, no repartitioning based on thread count will occur.}
+          
+\cbb{repartition: target rows per thread}{int}{0}{Target number of rows per thread after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per thread".}
           
 \cbb{repartition: max imbalance}{double}{1.2}{Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.}
           

@@ -14,6 +14,8 @@ Some general advice:
 \begin{itemize}
   \item
     Choose appropriate iterative linear solver (e.g., GMRES for non-symmetric problems).
+    If available, set options to perform as few all-reduces as possible.
+    (E.g. \texttt{Use Single Reduction} in \belos.)
 
   \item
     Start with the recommended settings for particular problem types. See
@@ -34,8 +36,20 @@ Some general advice:
     also perform well.
 
   \item
+    Try \texttt{unsmoothed} operators instead of smoothed aggregation (\texttt{sa}).
+    Scalability in terms of iterations performed will suffer from this,
+    but solution times might go down since the operators are less dense,
+    and less communication is performed.
+
+  \item
     Enable implicit restrictor construction (\texttt{transpose:} \texttt{use implicit}) for symmetric
     problems.
+
+  \item
+    Enable triple matrix products instead of two matrix-matrix products for
+    the construction of coarse operators (\texttt{rap: triple product}).
+    This is beneficial as long as the involved operators are not too dense.
+    For \texttt{unsmoothed} hierarchies, it is always faster.
 
   \item
     Find good level smoothers (see~\S\ref{sec:options_smoothing}). If a problem
@@ -56,6 +70,11 @@ Some general advice:
   \item
     Replace a direct solver with an iterative method (\texttt{coarse: type}) if
     your coarse level solution becomes too expensive (see~\S\ref{sec:options_smoothing}).
+
+  \item
+    If on-node parallelism is required, make sure to enable the \kokkos code path (\texttt{use kokkos refactor}).
+    If Gauss-Seidel smoothing is used, switch to multi-threaded Gauss-Seidel (see~\S\ref{sec:options_smoothing}).
+
 \end{itemize}
 
 Some advice for parallel runs include:
@@ -69,7 +88,7 @@ Some advice for parallel runs include:
     polynomial smoothing, if possible.
 
   \item
-    Use \texttt{uncoupled} aggregation instead of \texttt{coupled}, as later
+    Use \texttt{uncoupled} aggregation instead of \texttt{coupled}, as the latter
     requires significantly more communication.
 
   \item
@@ -78,6 +97,14 @@ Some advice for parallel runs include:
     coarsest level for the direct solver (this avoids additional communication).
 
   \item
+    If the \texttt{multijagged} algorithm from \zoltan2 is used, try setting the premigration option.
+
+  \item
     Enable implicit rebalancing of prolongators and restrictors
     (\texttt{repartition: rebalance P and R}).
 \end{enumerate}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "mueluguide"
+%%% End:

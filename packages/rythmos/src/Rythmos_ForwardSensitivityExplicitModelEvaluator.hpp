@@ -328,8 +328,8 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
 
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
-  const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
-  const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& /* stateModel */,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> >& /* p_space */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement initializeStructureInitCondOnly()!" );
@@ -378,7 +378,7 @@ ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_sens_space() const
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
     Ptr<StepperBase<Scalar> > stateStepper,
-    bool forceUpToDateW
+    bool /* forceUpToDateW */
     )
 {
   TEUCHOS_ASSERT( Teuchos::nonnull(stateStepper) );
@@ -593,7 +593,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::wrapNominalValuesAndBound
 
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::computeDerivativeMatrices(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &point
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &/* point */
   ) const
 {
   TEUCHOS_ASSERT( !is_null(stateModel_) );

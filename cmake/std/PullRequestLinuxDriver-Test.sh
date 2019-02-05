@@ -334,6 +334,19 @@ echo -e "Enabled packages:"
 cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
+weight=29
+n_cpu=$(lscpu | grep "^CPU(s):" | cut -d" " -f17)
+n_K=$(cat /proc/meminfo | grep MemTotal | cut -d" " -f8)
+let n_G=$n_K/1024000
+# this is aimed at keeping approximately 1.7G per core so we don't bottleneck
+## weight 29 - the next bit works because the shell is only doing integer arithmetic
+let n_jobs=${n_cpu}/${weight}
+# using bc to get floating point input and integer output
+parallel_level=$(echo "$n_G/( 1.7*$n_jobs )" | bc )
+
+if [ ${parallel_level} -gt ${weight} ]; then
+    parallel_level=${weight}
+fi
 
 #This should be runnable from anywhere, but all the tests so far have been from the
 #same dir the simple_testing.cmake file was in.
@@ -365,7 +378,7 @@ ctest -S simple_testing.cmake \
     -Dskip_update_step=ON \
     -Ddashboard_model=Experimental \
     -Ddashboard_track="${CDASH_TRACK:?}" \
-    -DPARALLEL_LEVEL=18 \
+    -DPARALLEL_LEVEL=${parallel_level} \
     -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
     -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
     -Dpackage_enables=../packageEnables.cmake \
