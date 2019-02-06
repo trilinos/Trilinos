@@ -162,7 +162,7 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "X, Y, and Z must have the same rank.");
     static_assert (ZMV::rank == 2, "KokkosBlas::Impl::Update<rank 2>::update: "
                    "XMV, YMV, and ZMV must have rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::update[ETI]":"KokkosBlas::update[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -221,6 +221,7 @@ struct Update<XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
         MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
       }
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -256,7 +257,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "X, Y, and Z must have the same rank.");
     static_assert (ZV::rank == 1, "KokkosBlas::Impl::Update<rank 1>::update: "
                    "XV, YV, and ZV must have rank 1.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::update[ETI]":"KokkosBlas::update[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::update<> ETI specialization for < %s , %s , %s >\n",typeid(XV).name(),typeid(YV).name(),typeid(ZV).name());
@@ -297,6 +298,7 @@ struct Update<XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       typedef typename XV::size_type index_type;
       V_Update_Generic<XV, YV, ZV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif //!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY

@@ -52,8 +52,17 @@ namespace Test {
 
     inline
     void run() {
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialTrsv");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name = name_region + name_value_type;
+      Kokkos::Profiling::pushRegion( name.c_str() );
       Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _b.extent(0));
-      Kokkos::parallel_for(policy, *this);
+      Kokkos::parallel_for(name.c_str(), policy, *this);
+      Kokkos::Profiling::popRegion();
     }
   };
 

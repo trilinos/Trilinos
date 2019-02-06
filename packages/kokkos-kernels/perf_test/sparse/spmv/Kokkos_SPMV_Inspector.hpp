@@ -164,7 +164,7 @@ void kk_inspector_matvec(AType A, XType x, YType y, int rows_per_thread, int tea
   else
     policy = Kokkos::TeamPolicy<Kokkos::Schedule<Schedule> >(worksets,Kokkos::AUTO,vector_length);
 
-  Kokkos::parallel_for(policy,func);
+  Kokkos::parallel_for("KokkosSparse::PerfTest::SpMV_Inspector", policy,func);
 }
 
 

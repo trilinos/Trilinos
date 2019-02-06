@@ -65,7 +65,7 @@ namespace Test {
       expected_result += ScalarB(a*h_x(i) + b*h_y(i)) * ScalarB(a*h_x(i) + b*h_y(i));
 
     //KokkosBlas::axpby(a,x,b,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAxpby", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::axpby(teamMember, a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -76,7 +76,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
     
     //KokkosBlas::axpby(a,c_x,b,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAxpby", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::axpby(teamMember, a, Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -145,7 +145,7 @@ namespace Test {
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
     //KokkosBlas::axpby(a,x,b,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAxpby", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::axpby(teamMember, a, Kokkos::subview(x,Kokkos::ALL(),teamId), b, Kokkos::subview(y,Kokkos::ALL(),teamId));
     } );
@@ -159,7 +159,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
     
     //KokkosBlas::axpby(a,c_x,b,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAxpby", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::axpby(teamMember, a, Kokkos::subview(c_x,Kokkos::ALL(),teamId), b, Kokkos::subview(y,Kokkos::ALL(),teamId));
     } );

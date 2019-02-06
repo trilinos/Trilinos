@@ -230,7 +230,7 @@ V_Nrm1_Invoke (const RV& r, const XV& X)
 
   typedef V_Nrm1_Functor<RV, XV, SizeType> functor_type;
   functor_type op (X);
-  Kokkos::parallel_reduce (policy, op, r);
+  Kokkos::parallel_reduce ("KokkosBlas1::Nrm1::S0", policy, op, r);
 }
 
 
@@ -256,7 +256,7 @@ MV_Nrm1_Invoke (const RV& r, const XMV& X)
   else {
     typedef MV_Nrm1_Right_FunctorVector<RV, XMV, SizeType> functor_type;
     functor_type op (X);
-    Kokkos::parallel_reduce (policy, op, r);
+    Kokkos::parallel_reduce ("KokkosBlas1::Nrm1::S1", policy, op, r);
   }
 }
 
