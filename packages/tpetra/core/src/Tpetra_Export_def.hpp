@@ -62,7 +62,7 @@ namespace {
   template<class ElementType, class DeviceType>
   void
   makeDualViewFromOwningHostView (Kokkos::DualView<ElementType*, DeviceType>& dv,
-				  const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
+                                  const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
   {
     using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
     using dev_view_type = typename dual_view_type::t_dev;
@@ -77,7 +77,7 @@ namespace {
     constexpr bool is_cuda = false;
 #endif
     TEUCHOS_ASSERT( is_cuda || devView.data () == hostView.data () );
-    
+
     Kokkos::deep_copy (devView, hostView);
     dv = dual_view_type (devView, hostView);
   }
@@ -110,11 +110,11 @@ namespace Tpetra {
     }
 
     TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
 
@@ -203,7 +203,7 @@ namespace Tpetra {
       auto srcMap = this->getSourceMap ();
       auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
-      
+
       std::ostringstream os;
       os << "Proc " << myRank << ": Tpetra::Export::setupSamePermuteExport: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
@@ -237,15 +237,15 @@ namespace Tpetra {
     // a fast contiguous copy for the initial "same IDs."
     size_type numSameGids = 0;
     for ( ; numSameGids < numGids &&
-	    rawSrcGids[numSameGids] == rawTgtGids[numSameGids];
-	  ++numSameGids)
+            rawSrcGids[numSameGids] == rawTgtGids[numSameGids];
+          ++numSameGids)
       {} // third clause of 'for' does everything
     this->TransferData_->numSameIDs_ = numSameGids;
 
     if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numIDs: " << numGids
-	 << ", numSameIDs: " << numSameGids << endl;
+         << ", numSameIDs: " << numSameGids << endl;
       this->verboseOutputStream () << os.str ();
     }
 
@@ -272,20 +272,20 @@ namespace Tpetra {
       // isNodeGlobalElement() would do).
       const LO tgtLid = target.getLocalElement (curSrcGid);
       if (tgtLid != LINVALID) { // if target.isNodeGlobalElement (curSrcGid)
-	++numPermutes;
+        ++numPermutes;
       }
       else {
-	++numExports;
+        ++numExports;
       }
     }
     if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numPermutes: " << numPermutes
-	 << ", numExports: " << numExports << endl;
+         << ", numExports: " << numExports << endl;
       this->verboseOutputStream () << os.str ();
     }
     TEUCHOS_ASSERT( numPermutes + numExports ==
-		    numSrcLids - numSameGids );
+                    numSrcLids - numSameGids );
 
     typename decltype (this->TransferData_->permuteToLIDs_)::t_host
       permuteToLIDs (view_alloc_no_init ("permuteToLIDs"), numPermutes);
@@ -302,24 +302,24 @@ namespace Tpetra {
       LO numPermutes2 = 0;
       LO numExports2 = 0;
       for (LO srcLid = numSameGids; srcLid < numSrcLids; ++srcLid) {
-	const GO curSrcGid = rawSrcGids[srcLid];
-	const LO tgtLid = target.getLocalElement (curSrcGid);
-	if (tgtLid != LINVALID) {
-	  permuteToLIDs[numPermutes2] = tgtLid;
-	  permuteFromLIDs[numPermutes2] = srcLid;
-	  ++numPermutes2;
-	}
-	else {
-	  exportGIDs[numExports2] = curSrcGid;
-	  exportLIDs[numExports2] = srcLid;
-	  ++numExports2;
-	}
+        const GO curSrcGid = rawSrcGids[srcLid];
+        const LO tgtLid = target.getLocalElement (curSrcGid);
+        if (tgtLid != LINVALID) {
+          permuteToLIDs[numPermutes2] = tgtLid;
+          permuteFromLIDs[numPermutes2] = srcLid;
+          ++numPermutes2;
+        }
+        else {
+          exportGIDs[numExports2] = curSrcGid;
+          exportLIDs[numExports2] = srcLid;
+          ++numExports2;
+        }
       }
       TEUCHOS_ASSERT( numPermutes == numPermutes2 );
-      TEUCHOS_ASSERT( numExports == numExports2 );      
-      TEUCHOS_ASSERT( size_t (numExports) == exportGIDs.size () );
+      TEUCHOS_ASSERT( numExports == numExports2 );
+      TEUCHOS_ASSERT( size_t (numExports) == size_t (exportGIDs.size ()) );
     }
-    
+
     // Defer making this->TransferData_->exportLIDs_ until after
     // getRemoteIndexList, since we might need to shrink it then.
 
@@ -338,9 +338,9 @@ namespace Tpetra {
       // complete on this process.
       this->TransferData_->isLocallyComplete_ = false;
       if (this->verbose ()) {
-	std::ostringstream os;
-	os << *prefix << "Export is not locally complete" << endl;
-	this->verboseOutputStream () << os.str ();
+        std::ostringstream os;
+        os << *prefix << "Export is not locally complete" << endl;
+        this->verboseOutputStream () << os.str ();
       }
       // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
       // correct behavior, depending on the circumstances.
@@ -363,10 +363,10 @@ namespace Tpetra {
     // communication.
     if (source.isDistributed ()) {
       if (this->verbose ()) {
-	std::ostringstream os;
-	os << *prefix << "Source Map is distributed; "
-	  "call targetMap.getRemoteiNdexList" << endl;
-	this->verboseOutputStream () << os.str ();
+        std::ostringstream os;
+        os << *prefix << "Source Map is distributed; "
+          "call targetMap.getRemoteiNdexList" << endl;
+        this->verboseOutputStream () << os.str ();
       }
       this->TransferData_->exportPIDs_.resize(exportGIDs.size ());
       // This call will assign any GID in the target Map with no
@@ -390,32 +390,32 @@ namespace Tpetra {
         // target Map.
         this->TransferData_->isLocallyComplete_ = false;
 
-	Teuchos::Array<int>& exportPIDs = this->TransferData_->exportPIDs_;
+        Teuchos::Array<int>& exportPIDs = this->TransferData_->exportPIDs_;
 
         const size_type totalNumExports = exportPIDs.size ();
         const size_type numInvalidExports =
           std::count_if (exportPIDs.begin (), exportPIDs.end (),
                          [] (const int procId) { return procId == -1; });
-	if (this->verbose ()) {
-	  std::ostringstream os;
-	  os << *prefix << "totalNumExports: " << totalNumExports
-	     << ", numInvalidExports: " << numInvalidExports << endl;
-	  this->verboseOutputStream () << os.str ();
-	}
+        if (this->verbose ()) {
+          std::ostringstream os;
+          os << *prefix << "totalNumExports: " << totalNumExports
+             << ", numInvalidExports: " << numInvalidExports << endl;
+          this->verboseOutputStream () << os.str ();
+        }
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (numInvalidExports == 0, std::logic_error,
-	   "targetMap.getRemoteIndexList returned IDNotPresent, but no export "
-	   "PIDs are -1.  Please report this bug to the Tpetra developers.");
+           "targetMap.getRemoteIndexList returned IDNotPresent, but no export "
+           "PIDs are -1.  Please report this bug to the Tpetra developers.");
 
-	// We know that at least one export ID is invalid, that is,
-	// not in any process on the target Map.  If all export IDs
-	// are invalid, we can delete all exports.  Otherwise, keep
-	// the valid exports and discard the rest.  This is legit
-	// Petra Object Model behavior, but it's a less common case.
+        // We know that at least one export ID is invalid, that is,
+        // not in any process on the target Map.  If all export IDs
+        // are invalid, we can delete all exports.  Otherwise, keep
+        // the valid exports and discard the rest.  This is legit
+        // Petra Object Model behavior, but it's a less common case.
 
         if (numInvalidExports == totalNumExports) {
           exportGIDs.resize (0);
-	  exportLIDs = decltype (exportLIDs) ();
+          exportLIDs = decltype (exportLIDs) ();
           exportPIDs.resize (0);
         }
         else {
@@ -429,7 +429,7 @@ namespace Tpetra {
             }
           }
           exportGIDs.resize (numValidExports);
-	  Kokkos::resize (exportLIDs, numValidExports);
+          Kokkos::resize (exportLIDs, numValidExports);
           exportPIDs.resize (numValidExports);
         }
       }
@@ -465,7 +465,7 @@ namespace Tpetra {
       auto srcMap = this->getSourceMap ();
       auto comm = srcMap.is_null () ? Teuchos::null : srcMap->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
-      
+
       std::ostringstream os;
       os << "Proc " << myRank << ": Tpetra::Export::setupRemote: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
@@ -484,13 +484,13 @@ namespace Tpetra {
     // refer to the same thing.
     {
       TEUCHOS_ASSERT( size_t (this->TransferData_->exportLIDs_.extent (0)) ==
-		      size_t (this->TransferData_->exportPIDs_.size ()) );
+                      size_t (this->TransferData_->exportPIDs_.size ()) );
       this->TransferData_->exportLIDs_.modify_host ();
       auto exportLIDs = this->TransferData_->exportLIDs_.view_host ();
       sort3 (this->TransferData_->exportPIDs_.begin (),
-	     this->TransferData_->exportPIDs_.end (),
-	     exportGIDs.getRawPtr (),
-	     exportLIDs.data ());
+             this->TransferData_->exportPIDs_.end (),
+             exportGIDs.getRawPtr (),
+             exportLIDs.data ());
       this->TransferData_->exportLIDs_.sync_device ();
       // FIXME (mfh 03 Feb 2019) We actually end up sync'ing
       // exportLIDs_ to device twice, once in setupSamePermuteExport,
@@ -516,7 +516,7 @@ namespace Tpetra {
     if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numRemoteIDs: " << numRemoteIDs
-	 << "; call doPostsAndWaits" << endl;
+         << "; call doPostsAndWaits" << endl;
       this->verboseOutputStream () << os.str ();
     }
 

@@ -67,6 +67,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include <memory>
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
@@ -311,7 +312,6 @@ namespace Tpetra {
     localDotWorkAround (const XVector& x, const YVector& y)
     {
       using x_value_type = typename XVector::non_const_value_type;
-      using y_value_type = typename YVector::non_const_value_type;
 
       using IPT = ::Kokkos::Details::InnerProductSpaceTraits<x_value_type>;
       using dot_type = typename IPT::dot_type;

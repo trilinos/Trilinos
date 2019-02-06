@@ -65,6 +65,8 @@
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
+#include <memory>
+#include <sstream>
 #include <type_traits>
 
 namespace Tpetra {
@@ -1236,7 +1238,7 @@ namespace Tpetra {
     if (verbose_) {
       std::ostringstream os;
       os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-	 << ": Post receives" << endl;
+         << ": Post receives" << endl;
       *out_ << os.str ();
     }
 
@@ -1296,7 +1298,7 @@ namespace Tpetra {
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-	   << ": Barrier" << endl;
+           << ": Barrier" << endl;
         *out_ << os.str ();
       }
       // If we are using ready sends (MPI_Rsend) below, we need to do
@@ -1331,7 +1333,7 @@ namespace Tpetra {
     if (verbose_) {
       std::ostringstream os;
       os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-	 << ": Post sends" << endl;
+         << ": Post sends" << endl;
       *out_ << os.str ();
     }
 
@@ -1348,7 +1350,7 @@ namespace Tpetra {
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << ": Post send: {target: "
-	       << procsTo_[p] << ", tag: " << tag << "}" << endl;
+               << procsTo_[p] << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
 
@@ -1416,7 +1418,7 @@ namespace Tpetra {
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
         "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
         "The \"send buffer\" code path doesn't currently work with "
-	"nonblocking sends.");
+        "nonblocking sends.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + procIndex;
@@ -1601,7 +1603,7 @@ namespace Tpetra {
        "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
        << myProcID << ": requests_.size() = " << requests_.size ()
        << " != 0.");
-#endif // HAVE_TEUCHOS_DEBUG    
+#endif // HAVE_TEUCHOS_DEBUG
     if (verbose_) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": doPosts(4 args, Teuchos::ArrayRCP, "
