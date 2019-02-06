@@ -61,7 +61,10 @@ namespace FROSch {
     BlockCoarseDimension_(),
     CoarseSolver_ (),
     DistributionList_ (sublist(parameterList,"Distribution")),
-    CoarseSolveExporters_ (0)
+    CoarseSolveExporters_ (0),
+    SubdomainConnectGraph_(),
+    GraphEntriesList_(),
+    kRowMap_()
     {
         
     }
@@ -207,7 +210,7 @@ namespace FROSch {
     {
         // Build CoarseMatrix_
         CrsMatrixPtr k0 = buildCoarseMatrix();
-
+        kRowMap_ = k0->getMap();
         // Build Map for the coarse solver
         buildCoarseSolveMap(k0);
         
@@ -401,6 +404,85 @@ namespace FROSch {
             }
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,tmpCoarseMap->getNodeElementList(),0,CoarseSolveComm_);
+            
+            //Build RepeatedMap CoarseLevel------------------------------------------------------------------------------------
+            //Repeated Map on first level needs to be correct--Build ElementNodeList
+            if (DistributionList_->get("Use RepMap",false)){
+                if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
+                    int nSubs = this->MpiComm_->getSize();
+                    GOVec elementList(tmpCoarseMap->getNodeElementList());
+                    
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),nSubs, CoarseSolveComm_);
+                    
+                    Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
+                    Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > GraphEntries =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,10));
+                    GraphEntries->doImport(*GraphEntriesList_,*scatter,Xpetra::INSERT);
+                    
+                    Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
+                    
+                    //elements needs to be transfered to the coarse communicator
+                    Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> >  Elem = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphEntriesList_->getMap(),10);
+                    Teuchos::ArrayView<const GO> myGlobals = GraphEntriesList_->getMap()->getNodeElementList();
+                    
+                    std::vector<GO> col_vec(elements_.size());
+                    for(int i = 0;i<elements_.size();i++)
+                    {
+                        col_vec.at(i) =i;
+                    }
+                    Teuchos::ArrayView<GO> cols(col_vec);
+                    for (size_t i = 0; i < GraphEntriesList_->getMap()->getNodeNumElements(); ++i){
+                        Elem->insertGlobalValues(myGlobals[i],cols, elements_);
+                        
+                    }
+                    size_t numEntry = elements_.size();
+                    Elem->fillComplete();
+                    size_t MaxRow = Elem->getGlobalMaxNumRowEntries();
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSolveMap_->lib(),MaxRow,MaxRow,0,CoarseSolveComm_);
+                    Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter2 = Xpetra::ImportFactory<LO,GO,NO>::Build(Elem->getRowMap(),GraphMap);
+                    Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElemS =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,ColMap,MaxRow));
+                    
+                    ElemS->doImport(*Elem,*scatter2,Xpetra::INSERT);
+                    ElemS->fillComplete();
+                    
+                    
+                    if(OnCoarseSolveComm_){
+                        const size_t numMyElements = GraphMap->getNodeNumElements();
+                        Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
+                        
+                        size_t NumEnt;
+                        Teuchos::ArrayView<const GO > idEl;
+                        Teuchos::ArrayView<const GO > va;
+                        ElementNodeList_ = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap,ColMap,MaxRow));
+                        for (size_t i = 0; i < numMyElements; ++i){
+                            int en = ElemS->getNumEntriesInLocalRow(i);
+                            Teuchos::Array<GO> cols2(en);
+                            for(int h = 0;h<en;h++){
+                                cols2[h] = h;
+                            }
+                            ElemS->getLocalRowView(i,idEl,va);
+                            ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols2,va);
+                        }
+                        
+                        ElementNodeList_->fillComplete();
+                        //---------------------------------------------------------
+                        GO numGlobal = GraphEntries->getGlobalNumRows();
+                        SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap,7);
+                        
+                        
+                        Teuchos::ArrayView<const LO> in;
+                        Teuchos::ArrayView<const GO> vals_graph;
+                        for (size_t k = 0;k<numMyElements;k++){
+                            GO kg = GraphMap->getGlobalElement(k);
+                            GraphEntries->getGlobalRowView(kg,in,vals_graph);
+                            Teuchos::Array<GO> vals(vals_graph);
+                            SubdomainConnectGraph_->insertGlobalIndices(kg,vals());
+                        }
+                        
+                        SubdomainConnectGraph_->fillComplete();
+                        CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
+                    }
+                }
+            }
             
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
         } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
