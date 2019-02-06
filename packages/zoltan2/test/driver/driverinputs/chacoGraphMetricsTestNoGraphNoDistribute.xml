@@ -37,11 +37,12 @@
  ////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////-->
 
-<ParameterList name="chacoEdgeWeight">
+<ParameterList name="chacoNoGraph">
   
   <ParameterList name="InputParameters">
+    <Parameter name="distribute input" type="bool" value="false"/>
     <Parameter name="input path" type="string" value="./"/>
-    <Parameter name="input file" type="string" value="ewgt"/>
+    <Parameter name="input file" type="string" value="nograph"/>
     <Parameter name="file type" type="string" value="Chaco"/>
   </ParameterList>
   
@@ -86,6 +87,5 @@
         <Parameter name="upper" type="double" value="1.5"/>
       </ParameterList>
      </ParameterList>
-
   </ParameterList>
 </ParameterList>
