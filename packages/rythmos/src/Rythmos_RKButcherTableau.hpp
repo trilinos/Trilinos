@@ -200,9 +200,9 @@ class RKButcherTableauDefaultBase :
         out << this->description() << std::endl;
         out << this->getMyDescription() << std::endl;
         out << "number of Stages = " << this->numStages() << std::endl;
-        out << "A = "; this->A().print(out); out << std::endl;
-        out << "b = "; this->b().print(out); out << std::endl;
-        out << "c = "; this->c().print(out); out << std::endl;
+        out << "A = " << this->A() << std::endl;
+        out << "b = " << this->b() << std::endl;
+        out << "c = " << this->c() << std::endl;
         out << "order = " << this->order() << std::endl;
       }
     }
