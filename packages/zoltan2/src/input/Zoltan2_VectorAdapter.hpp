@@ -149,10 +149,14 @@ public:
    *  replicate performance that applications are seeing using the applicatios'
    *  input.
    */
-  void generateFiles(const char *filename, const Teuchos::Comm<int> *comm) {
+  void generateFiles(
+    const char *fileprefix, 
+    const Teuchos::Comm<int> &comm
+  ) const 
+  {
 
     // Generate the graph file with weights using the base adapter method
-    this->generateWeightsFileOnly(fileprefix, comm);
+    this->generateWeightFileOnly(fileprefix, comm);
 
     //  Generate the coords file with local method
     this->generateCoordsFileOnly(fileprefix, comm);
@@ -175,25 +179,26 @@ private:
 
   void generateCoordsFileOnly(
     const char* fileprefix, 
-    const Teuchos::Comm<int> *comm);
+    const Teuchos::Comm<int> &comm) const;
 
 };
 
 template <typename User>
 void VectorAdapter<User>::generateCoordsFileOnly(
   const char *fileprefix, 
-  const Teuchos::Comm<int> *comm
-)
+  const Teuchos::Comm<int> &comm
+) const
 {
   // Writes a chaco-formatted coordinates file
   // This function is SERIAL and can be quite slow.  Use it for debugging only.
 
-  int np = comm->getSize();
-  int me = comm->getRank();
+  int np = comm.getSize();
+  int me = comm.getRank();
 
   // append suffix to filename
   
-  const std::string filenamestr = fileprefix + ".coords";
+  std::string filenamestr = fileprefix;
+  filenamestr = filenamestr + ".coords";
   const char *filename = filenamestr.c_str();
 
   for (int p = 0; p < np; p++) {
@@ -201,7 +206,7 @@ void VectorAdapter<User>::generateCoordsFileOnly(
     // Is it this processor's turn to write to files?
     if (me == p) {
 
-      ofstream fp;
+      std::ofstream fp;
       if (me == 0) {
         // open file for writing
         fp.open(filename, std::ios::out);
@@ -214,22 +219,23 @@ void VectorAdapter<User>::generateCoordsFileOnly(
       // Get the vector entries
       size_t len = this->getLocalNumIDs();
       int nvec = this->getNumEntriesPerID();
-      scalar_t *values = new scalar_t *[nvec];
-      int *strides = new int *[nvec];
+      const scalar_t **values = new const scalar_t *[nvec];
+      int *strides = new int[nvec];
       for (int n = 0; n < nvec; n++)
         getEntriesView(values[n], strides[n], n);
 
       // write vector entries to coordinates file
 
       for (size_t i = 0; i < len; i++) {
-        for (n = 0; n < nvec; n++)
+        for (int n = 0; n < nvec; n++)
           fp << values[n][i*strides[n]] << " ";
         fp << "\n";
       }
 
-      // close the file
+      // clean up and close the file
+      delete [] strides;
+      delete [] values;
       fp.close();
-
     }
     comm.barrier();
   }

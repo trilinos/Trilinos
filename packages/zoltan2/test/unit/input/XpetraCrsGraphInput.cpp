@@ -113,7 +113,7 @@ int verifyInputAdapter(
       ia.getLocalNumEdges() != graph.getNodeNumEntries())
       fail = 6;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   const zgno_t *vtxIds=NULL, *edgeIds=NULL;
   const offset_t *offsets=NULL;
@@ -128,7 +128,7 @@ int verifyInputAdapter(
     if (nvtx != graph.getNodeNumRows())
       fail = 8;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printGraph<offset_t>(comm, nvtx, vtxIds, offsets, edgeIds);
@@ -209,7 +209,7 @@ int main(int narg, char *arg[])
 
     fail = verifyInputAdapter<tgraph_t>(*tGInput, *tG);
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (!gfail){
       tgraph_t *mMigrate = NULL;
@@ -221,7 +221,7 @@ int main(int narg, char *arg[])
         fail = 11;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         RCP<const tgraph_t> cnewG = rcp_const_cast<const tgraph_t>(newG);
@@ -242,11 +242,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<tgraph_t>(*newInput, *newG);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -272,7 +272,7 @@ int main(int narg, char *arg[])
 
     fail = verifyInputAdapter<xgraph_t>(*xGInput, *tG);
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (!gfail){
       xgraph_t *mMigrate =NULL;
@@ -283,7 +283,7 @@ int main(int narg, char *arg[])
         fail = 11;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         RCP<const xgraph_t> cnewG(mMigrate);
@@ -305,11 +305,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<xgraph_t>(*newInput, *newG);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -351,7 +351,7 @@ int main(int narg, char *arg[])
     if (goodAdapter) {
       fail = verifyInputAdapter<egraph_t>(*eGInput, *tG);
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         egraph_t *mMigrate =NULL;
@@ -362,7 +362,7 @@ int main(int narg, char *arg[])
           fail = 11;
         }
 
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
 
         if (!gfail){
           RCP<const egraph_t> cnewG(mMigrate, true);
@@ -384,11 +384,11 @@ int main(int narg, char *arg[])
           }
           fail = verifyInputAdapter<egraph_t>(*newInput, *newG);
           if (fail) fail += 100;
-          gfail = globalFail(comm, fail);
+          gfail = globalFail(*comm, fail);
         }
       }
       if (gfail){
-        printFailureCode(comm, fail);
+        printFailureCode(*comm, fail);
       }
     }
   }

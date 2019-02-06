@@ -115,7 +115,7 @@ int verifyInputAdapter(
       fail = 6;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   const zgno_t *rowIds=NULL, *colIds=NULL;
   const offset_t *offsets=NULL;
@@ -130,7 +130,7 @@ int verifyInputAdapter(
     if (nrows != M.getNodeNumRows())
       fail = 8;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printMatrix<offset_t>(comm, nrows, rowIds, offsets, colIds);
@@ -213,7 +213,7 @@ int main(int narg, char *arg[])
   
     fail = verifyInputAdapter<ztrowmatrix_t>(*trMInput, *trM);
   
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   
     if (!gfail){
       ztrowmatrix_t *mMigrate = NULL;
@@ -226,7 +226,7 @@ int main(int narg, char *arg[])
         std::cout << "Error caught:  " << e.what() << std::endl;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         RCP<const ztrowmatrix_t> cnewM = 
@@ -248,11 +248,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<ztrowmatrix_t>(*newInput, *newM);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 

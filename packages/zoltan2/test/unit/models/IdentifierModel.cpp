@@ -117,10 +117,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     fail = 1;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
   
   // Test the IdentifierModel interface
 
@@ -138,10 +138,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     fail = 3;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
   
   ArrayView<const zgno_t> gids;
   ArrayView<input_t> wgts;
@@ -171,10 +171,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     }
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
 
   delete model;
   delete uinput;

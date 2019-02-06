@@ -110,7 +110,7 @@ int verifyInputAdapter(
       fail = 6;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   const zgno_t *rowIds=NULL, *colIds=NULL;
   const offset_t *offsets=NULL;
@@ -125,7 +125,7 @@ int verifyInputAdapter(
     if (nrows != M.getNodeNumRows())
       fail = 8;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printMatrix<offset_t>(comm, nrows, rowIds, offsets, colIds);
@@ -206,7 +206,7 @@ int main(int narg, char *arg[])
   
     fail = verifyInputAdapter<tmatrix_t>(*tMInput, *tM);
   
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   
     if (!gfail){
       tmatrix_t *mMigrate = NULL;
@@ -219,7 +219,7 @@ int main(int narg, char *arg[])
         std::cout << "Error caught:  " << e.what() << std::endl;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         RCP<const tmatrix_t> cnewM = rcp_const_cast<const tmatrix_t>(newM);
@@ -240,11 +240,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<tmatrix_t>(*newInput, *newM);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -270,7 +270,7 @@ int main(int narg, char *arg[])
   
     fail = verifyInputAdapter<xmatrix_t>(*xMInput, *tM);
   
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   
     if (!gfail){
       xmatrix_t *mMigrate =NULL;
@@ -282,7 +282,7 @@ int main(int narg, char *arg[])
         fail = 11;
       }
   
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         RCP<const xmatrix_t> cnewM(mMigrate);
@@ -304,11 +304,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<xmatrix_t>(*newInput, *newM);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -350,7 +350,7 @@ int main(int narg, char *arg[])
     if (goodAdapter) {
       fail = verifyInputAdapter<ematrix_t>(*eMInput, *tM);
   
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         ematrix_t *mMigrate =NULL;
@@ -362,7 +362,7 @@ int main(int narg, char *arg[])
           fail = 11;
         }
   
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
   
         if (!gfail){
           RCP<const ematrix_t> cnewM(mMigrate, true);
@@ -384,11 +384,11 @@ int main(int narg, char *arg[])
           }
           fail = verifyInputAdapter<ematrix_t>(*newInput, *newM);
           if (fail) fail += 100;
-          gfail = globalFail(comm, fail);
+          gfail = globalFail(*comm, fail);
         }
       }
       if (gfail){
-        printFailureCode(comm, fail);
+        printFailureCode(*comm, fail);
       }
     }
   }
