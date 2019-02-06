@@ -286,7 +286,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy, functor_type(a));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::LUCuda::RangeTag", policy, functor_type(a));
 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -345,7 +345,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy, functor_type(a));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::LUCuda::TeamTagV1", policy, functor_type(a));
 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -414,7 +414,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for(policy, functor_type(a));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::LUCuda::TeamTagV2", policy, functor_type(a));
 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -486,7 +486,7 @@ namespace KokkosBatched {
                 DeviceSpaceType::fence();
                 timer.reset();
 
-                Kokkos::parallel_for(policy.set_scratch_size(lvl, Kokkos::PerTeam(per_team_scratch)),
+                Kokkos::parallel_for("KokkosBatched::PerfTest::LUCuda::TeamTagV3", policy.set_scratch_size(lvl, Kokkos::PerTeam(per_team_scratch)),
                                      functor_type(a));
 
                 DeviceSpaceType::fence();

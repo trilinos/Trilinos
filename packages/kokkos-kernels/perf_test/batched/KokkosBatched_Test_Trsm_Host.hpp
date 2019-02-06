@@ -153,8 +153,7 @@ namespace KokkosBatched {
               timer.reset();
 
               Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
-              Kokkos::parallel_for
-                (policy,
+              Kokkos::parallel_for("KokkosBatched::PerfTest::TrsmHost::MKLOpenMP", policy,
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
@@ -600,8 +599,8 @@ namespace KokkosBatched {
               timer.reset();
 
               Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N);
-              Kokkos::parallel_for
-                (policy,
+              Kokkos::parallel_for("KokkosBatched::PerfTest::TrsmHost::SIMDSerialOpenMP", 
+                 policy,
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());

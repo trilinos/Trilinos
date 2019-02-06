@@ -82,25 +82,33 @@ int test_asum() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, asum_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::asum_float");
     test_asum<float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, asum_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::asum_double");
     test_asum<double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, asum_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::asum_complex_double");
     test_asum<Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, asum_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::asum_int");
     test_asum<int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 

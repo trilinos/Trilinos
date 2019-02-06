@@ -188,23 +188,23 @@ V_Scal_Generic (const RV& r, const AV& av, const XV& x,
 
   if (a == 0) {
     V_Scal_Functor<RV, AV, XV, 0, SizeType> op (r, x, av, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::S0", policy, op);
     return;
   }
   if (a == -1) {
     V_Scal_Functor<RV, AV, XV, -1, SizeType> op (r, x, av, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::S1", policy, op);
     return;
   }
   if (a == 1) {
     V_Scal_Functor<RV, AV, XV, 1, SizeType> op (r, x, av, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::S2", policy, op);
     return;
   }
 
   // a arbitrary (not -1, 0, or 1)
   V_Scal_Functor<RV, AV, XV, 2, SizeType> op (r, x, av, startingColumn);
-  Kokkos::parallel_for (policy, op);
+  Kokkos::parallel_for ("KokkosBlas::Scal::S3", policy, op);
 }
 
 

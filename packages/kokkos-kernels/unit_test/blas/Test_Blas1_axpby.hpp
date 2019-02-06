@@ -218,45 +218,64 @@ int test_axpby_mv() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, axpby_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_float");
     test_axpby<float,float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, axpby_mv_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_float");
     test_axpby_mv<float,float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, axpby_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_double");
     test_axpby<double,double,TestExecSpace> ();
 }
 TEST_F( TestCategory, axpby_mv_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_double");
     test_axpby_mv<double,double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, axpby_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_complex_double");
     test_axpby<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, axpby_mv_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_complex_double");
     test_axpby_mv<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, axpby_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_int");
     test_axpby<int,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, axpby_mv_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_int");
     test_axpby_mv<int,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F( TestCategory, axpby_double_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_double_int");
     test_axpby<double,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, axpby_double_mv_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_double_int");
     test_axpby_mv<double,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif

@@ -180,8 +180,8 @@ namespace KokkosBatched {
           const int iend = p, jend = n;
 
           const ValueType *__restrict__ a01 = A+p*as1;
-          /**/  ValueType *__restrict__ b1t = B+p*bs0;
-            
+                ValueType *__restrict__ b1t = B+p*bs0;
+
           if (!use_unit_diag) {
             const ValueType alpha11 = A[p*as0+p*as1];
                 
@@ -191,13 +191,16 @@ namespace KokkosBatched {
             for (int j=0;j<n;++j)
               b1t[j*bs1] = b1t[j*bs1] / alpha11;
           }
-          for (int i=0;i<iend;++i)
+          
+          if (p>0){//Note: A workaround to produce correct results for complex<double> with Intel-18.2.199
+            for (int i=0;i<iend;++i)
                 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-            for (int j=0;j<jend;++j)
-              B0[i*bs0+j*bs1] -= a01[i*as0] * b1t[j*bs1];
+              for (int j=0;j<jend;++j)
+                B0[i*bs0+j*bs1] -= a01[i*as0] * b1t[j*bs1];
+          }
         }
       }
       return 0;

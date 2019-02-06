@@ -177,7 +177,7 @@ namespace { // (anonymous)
     functor_type functor (A, replace, sorted, atomic);
     ordinal_type numModified = 0;
     policy_type range (0, A.numRows ());
-    Kokkos::parallel_reduce (std::string ("ModifyEntries"), range, functor, numModified);
+    Kokkos::parallel_reduce ("KokkosSparse::Test::ModifyEntries", range, functor, numModified);
 
     const ordinal_type numEntShouldModify =
       static_cast<ordinal_type> (numEntToModify) <= A.numCols () ?
