@@ -477,7 +477,7 @@ namespace Sacado {
               SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) += x.fastAccessDx(i);
             else
-              for (int i=0; i<sz; ++i)
+              SACADO_FAD_DERIV_LOOP(i,sz)
                 this->fastAccessDx(i) += x.dx(i);
           }
           else {

@@ -91,7 +91,6 @@ set (TpetraCore_Core_ScopeGuard_where_tpetra_initializes_kokkos_MPI_1_DISABLE ON
 set (TpetraCore_Core_ScopeGuard_where_tpetra_initializes_mpi_and_user_initializes_kokkos_MPI_2_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TpetraCore_Core_ScopeGuard_where_user_initializes_kokkos_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TpetraCore_Core_ScopeGuard_where_user_initializes_mpi_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
-set (TpetraCore_BlockCrsMatrix_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TrilinosCouplings_Example_Maxwell_MueLu_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TrilinosCouplings_Example_Maxwell_MueLu_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 

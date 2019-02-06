@@ -85,7 +85,6 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: mode");
     SET_VALID_ENTRY("aggregation: output type");
     SET_VALID_ENTRY("aggregation: coarsening rate");
-    SET_VALID_ENTRY("aggregation: number of spatial dimensions");
     SET_VALID_ENTRY("aggregation: coarsening order");
 #undef  SET_VALID_ENTRY
     validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
@@ -100,7 +99,7 @@ namespace MueLu {
                                                  "Generating factory for variable \'DofsPerNode\', usually the same as the \'Graph\' factory");
 
     return validParamList;
-  } // GetValidParameterList
+  } // GetValidParameterList()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -146,7 +145,7 @@ namespace MueLu {
       Input(currentLevel, "numDimensions");
       Input(currentLevel, "lNodesPerDim");
     }
-  } // DeclareInput
+  } // DeclareInput()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -338,9 +337,8 @@ namespace MueLu {
     Set(currentLevel, "coarseCoordinatesFineMap", coarseCoordinatesFineMap);
     Set(currentLevel, "coarseCoordinatesMap", coarseCoordinatesMap);
     Set(currentLevel, "interpolationOrder", interpolationOrder);
-    // Set(currentLevel, "coarseNumDimensions", numDimensions);
 
-  } // Build
+  } // Build()
 } //namespace MueLu
 
 

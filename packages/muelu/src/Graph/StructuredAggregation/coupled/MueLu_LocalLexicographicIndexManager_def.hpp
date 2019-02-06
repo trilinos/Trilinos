@@ -114,7 +114,9 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map>fineMap,
-                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs, Array<GO>& ghostedNodeCoarseGIDs) const {
+                      Array<LO>& ghostedNodeCoarseLIDs,
+                      Array<int>& ghostedNodeCoarsePIDs,
+                      Array<GO>& ghostedNodeCoarseGIDs) const {
 
     // First we allocated memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());

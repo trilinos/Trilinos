@@ -145,6 +145,10 @@ namespace MueLuTests {
 
     public:
 
+      typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+      typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+      typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+
       // Create a map containing a specified number of local elements per process.
       static const RCP<const Map> BuildMap(LO numElementsPerProc) {
         RCP<const Teuchos::Comm<int> > comm   = TestHelpers_kokkos::Parameters::getDefaultComm();
@@ -326,6 +330,214 @@ namespace MueLuTests {
         mtx->fillComplete();
 
         return mtx;
+      }
+
+      static RCP<RealValuedMultiVector>
+      BuildGeoCoordinates(const int numDimensions, const Array<GO> gNodesPerDir,
+                          Array<LO>& lNodesPerDir, Array<GO>& meshData,
+                          const std::string meshLayout = "Global Lexicographic") {
+
+        // Get MPI infos
+        Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
+        RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+        LO numRanks = comm->getSize();
+        LO myRank   = comm->getRank();
+
+        meshData.resize(10*numRanks);
+
+        ////////////////////////////////////
+        //                                //
+        //   Step 1: Compute map layout   //
+        //                                //
+        ////////////////////////////////////
+        if(numRanks == 1) {
+          if(meshLayout == "Local Lexicographic") {
+            meshData[0] = 0; // Local Proc
+            meshData[1] = 0; // Local Proc?
+            meshData[2] = 0; // Parent Proc
+          }
+          for(int dim = 0; dim < 3; ++dim) {
+            lNodesPerDir[dim] = gNodesPerDir[dim];
+            if(meshLayout == "Local Lexicographic") {
+              meshData[3 + 2*dim]    = 0;                        // Lowest  index in direction dim
+              meshData[3 + 2*dim +1] = gNodesPerDir[dim] - 1;    // Highest index in direction dim
+            }
+          }
+          if(meshLayout == "Local Lexicographic") {
+            meshData[9] = 0;
+          }
+        } else if(numRanks == 4) {
+          if(meshLayout == "Local Lexicographic") {
+            // First fill the rank related info in meshData
+            for(int rank = 0; rank < numRanks; ++rank) {
+              meshData[10*rank + 0] = rank; // Local Proc
+              meshData[10*rank + 1] = rank; // Local Proc?
+              meshData[10*rank + 2] = 0;        // Parent Proc
+            }
+          }
+
+          if(numDimensions == 1) {
+            LO numNodesPerRank = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / numRanks);
+            if(myRank == numRanks - 1) {
+              lNodesPerDir[0] = gNodesPerDir[0] - myRank*numNodesPerRank;
+            } else {
+              lNodesPerDir[0] = numNodesPerRank;
+            }
+            lNodesPerDir[1] = gNodesPerDir[1];
+
+            if(meshLayout == "Local Lexicographic") {
+              for(int rank = 0; rank < numRanks; ++rank) {
+                meshData[10*rank + 3] = rank*numNodesPerRank;
+                meshData[10*rank + 4] =
+                  (rank == numRanks - 1) ? (gNodesPerDir[0] - 1) : ((rank + 1)*numNodesPerRank - 1);
+                meshData[10*rank + 5] = 0;
+                meshData[10*rank + 6] = 0;
+              }
+            }
+          } else {
+            if(myRank == 0 || myRank == 2) {
+              lNodesPerDir[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
+            } else {
+              lNodesPerDir[0] = std::floor(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
+            }
+            if(myRank == 0 || myRank == 1) {
+              lNodesPerDir[1] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
+            } else {
+              lNodesPerDir[1] = std::floor(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
+            }
+            if(meshLayout == "Local Lexicographic") {
+              for(int j = 0; j < 2; ++j) {
+                for(int i = 0; i < 2; ++i) {
+                  int rank = 2*j + i;
+                  if(i == 0) {
+                    meshData[10*rank + 3] = 0;
+                    meshData[10*rank + 4] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2) - 1;
+                  } else if(i == 1) {
+                    meshData[10*rank + 3] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
+                    meshData[10*rank + 4] = gNodesPerDir[0] - 1;
+                  }
+                  if(j == 0) {
+                    meshData[10*rank + 5] = 0;
+                    meshData[10*rank + 6] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2) - 1;
+                  } else if(j == 1) {
+                    meshData[10*rank + 5] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
+                    meshData[10*rank + 6] = gNodesPerDir[1] - 1;
+                  }
+                }
+              }
+            }
+          }
+          lNodesPerDir[2] = gNodesPerDir[2];
+          if(meshLayout == "Local Lexicographic") {
+            for(int rank = 0; rank < numRanks; ++rank) {
+              meshData[10*rank + 7] = 0;
+              meshData[10*rank + 8] = gNodesPerDir[2] - 1;
+            }
+            meshData[9] = 0;
+            for(int rank = 1; rank < numRanks; ++rank) {
+              meshData[10*rank + 9] = meshData[10*(rank - 1) + 9]
+                + (meshData[10*(rank - 1) + 4] - meshData[10*(rank - 1) + 3] + 1)
+                *(meshData[10*(rank - 1) + 6] - meshData[10*(rank - 1) + 5] + 1)
+                *(meshData[10*(rank - 1) + 8] - meshData[10*(rank - 1) + 7] + 1);
+            }
+          }
+        }
+
+        GO gNumNodes = 1;
+        LO lNumNodes = 1;
+        for(int dim = 0; dim < 3; ++dim) {
+          gNumNodes = gNumNodes*gNodesPerDir[dim];
+          lNumNodes = lNumNodes*lNodesPerDir[dim];
+        }
+
+        GO myGIDOffset = 0;
+        Array<GO> myLowestTuple(3);
+        if(numDimensions == 1) {
+          myGIDOffset = myRank*std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / numRanks);
+          myLowestTuple[0] = myGIDOffset;
+        } else {
+          if(myRank == 1) {
+            myLowestTuple[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
+            if(meshLayout == "Global Lexicographic") {
+              myGIDOffset = myLowestTuple[0];
+            } else if(meshLayout == "Local Lexicographic") {
+              myGIDOffset = myLowestTuple[0]*std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)
+                *gNodesPerDir[2];
+            }
+          } else if(myRank == 2) {
+            myLowestTuple[1] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
+            if(meshLayout == "Global Lexicographic") {
+              myGIDOffset = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)*gNodesPerDir[0];
+            } else if(meshLayout == "Local Lexicographic") {
+              myGIDOffset = myLowestTuple[1]*gNodesPerDir[0]*gNodesPerDir[2];
+            }
+          } else if(myRank == 3) {
+            myLowestTuple[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
+            myLowestTuple[1] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2);
+            if(meshLayout == "Global Lexicographic") {
+              myGIDOffset = myLowestTuple[1]*gNodesPerDir[0] + myLowestTuple[0];
+            } else if(meshLayout == "Local Lexicographic") {
+              myGIDOffset = (myLowestTuple[0]*(gNodesPerDir[1] - myLowestTuple[1])
+                             + myLowestTuple[1]*gNodesPerDir[0])*gNodesPerDir[2];
+            }
+          }
+        }
+
+        ////////////////////////////////////
+        //                                //
+        //    Step 2: Compute map GIDs    //
+        //                                //
+        ////////////////////////////////////
+        Array<GO> myGIDs(lNumNodes);
+        if(meshLayout == "Global Lexicographic") {
+          for(LO k = 0; k < lNodesPerDir[2]; ++k) {
+            for(LO j = 0; j < lNodesPerDir[1]; ++j) {
+              for(LO i = 0; i < lNodesPerDir[0]; ++i) {
+                myGIDs[k*lNodesPerDir[1]*lNodesPerDir[0] + j*lNodesPerDir[0] + i] =
+                  myGIDOffset + k*gNodesPerDir[1]*gNodesPerDir[0] + j*gNodesPerDir[0] + i;
+              }
+            }
+          }
+        } else if(meshLayout == "Local Lexicographic") {
+          for(LO nodeIdx = 0; nodeIdx < lNumNodes; ++nodeIdx) {
+            myGIDs[nodeIdx] = myGIDOffset + nodeIdx;
+          }
+        }
+
+        RCP<const Map> coordMap = MapFactory::Build(lib, gNumNodes, myGIDs(), 0, comm);
+
+
+        ///////////////////////////////////////
+        //                                   //
+        //    Step 3: Compute coordinates    //
+        //                                   //
+        ///////////////////////////////////////
+        RCP<RealValuedMultiVector> Coordinates = RealValuedMultiVectorFactory::Build(coordMap,
+                                                                                     numDimensions);
+        Array<ArrayRCP<real_type> > myCoords(numDimensions);
+        for(int dim = 0; dim < numDimensions; ++dim) {
+          myCoords[dim] = Coordinates->getDataNonConst(dim);
+        }
+
+        LO nodeIdx = 0;
+        Array<LO> ijk(3);
+        for(ijk[2] = 0; ijk[2] < lNodesPerDir[2]; ++ijk[2]) {
+          for(ijk[1] = 0; ijk[1] < lNodesPerDir[1]; ++ijk[1]) {
+            for(ijk[0] = 0; ijk[0] < lNodesPerDir[0]; ++ijk[0]) {
+              nodeIdx = ijk[2]*lNodesPerDir[1]*lNodesPerDir[0] + ijk[1]*lNodesPerDir[0] + ijk[0];
+              for(int dim = 0; dim < numDimensions; ++dim) {
+                 if(gNodesPerDir[dim] == 1) {
+                  myCoords[dim][nodeIdx] = 0.0;
+                } else {
+                  myCoords[dim][nodeIdx] =
+                    Teuchos::as<real_type>(myLowestTuple[dim] + ijk[dim]) / (gNodesPerDir[dim] - 1);
+                }
+              }
+            }
+          }
+        }
+
+        return Coordinates;
       }
 
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
