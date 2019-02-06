@@ -1,5 +1,5 @@
 
-Assign elements to processors evenly  #elem/#proc -- 
+Assign elements to processors evenly  #elem/#proc --
 
 
 
@@ -35,16 +35,16 @@ for each (proc) {
 
 ... Better to iterate by block:
 
-foreach (element block) 
+foreach (element block)
    -- get connectivity
-   find st_proc 
+   find st_proc
    find end_proc
 
 
 proc for an element (0-based):
 
 
-proc = elem / elem-per-proc + 
+proc = elem / elem-per-proc +
 
 
 elem-per-proc = #elem / #proc

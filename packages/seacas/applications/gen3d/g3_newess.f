@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -71,7 +71,7 @@ C   --   IXNES3 - OUT - the index of the first node for each 3D set
 C   --   LTEESS - IN - the elements for all 2D sets
 C   --   LTEES3 - OUT - the elements for all 3D sets
 C   --   LTSESS - IN - the element sides for all 2D sets
-C   --   LTSES3 - OUT - the element sides for all 3D sets      
+C   --   LTSES3 - OUT - the element sides for all 3D sets
 C   --   LTNESS - IN - the nodes for all 2D sets
 C   --   LTNES3 - OUT - the nodes for all 3D sets
 C   --   FACESS - IN - the distribution factors for all 2D sets
@@ -340,7 +340,7 @@ C     The connectivity is initialized to -1 in rdelb.
                ISSBCK(IEL) = JEL + nrel(iel)*INCEL(IEL)-1
 C ... The center element on the back side needs special treatment when
 C     the sideset faces are written out (in wress).  Flag it with
-C     a negative element number (and remember to change back in wress)          
+C     a negative element number (and remember to change back in wress)
                if (iscent .and. nrel(iel) .eq. 2)
      *           issbck(iel) = -issbck(iel)
              end if
@@ -358,9 +358,9 @@ C ... Triangle to Wedge
              NESUR = NESUR + 1
              JEL = IXEL(IEL)
 C ... Need to tell wress that this is a wedge and not a hex.
-C     Use the same negative element kluge since the faces 
+C     Use the same negative element kluge since the faces
 C     work out the same... Flag it with
-C     a negative element number (and remember to change back in wress)          
+C     a negative element number (and remember to change back in wress)
              IF (NFRO .GT. 0) ISSFRO(IEL) = -JEL
              IF (NBCK .GT. 0) then
                ISSBCK(IEL) = -(JEL + nrel(iel)*INCEL(IEL)-1)
@@ -379,6 +379,6 @@ C     a negative element number (and remember to change back in wress)
  150     CONTINUE
          NSSUR = N
        END IF
-       
+
       RETURN
       END

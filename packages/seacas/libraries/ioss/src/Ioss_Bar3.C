@@ -54,8 +54,8 @@ namespace {
   struct Constants
   {
     static const int nnode     = 3;
-    static const int nedge     = 1;
-    static const int nedgenode = 3;
+    static const int nedge     = 2;
+    static const int nedgenode = 1;
     static const int nface     = 0;
     static const int nfacenode = 0;
     static const int nfaceedge = 0;
@@ -68,13 +68,12 @@ void Ioss::Bar3::factory()
   Ioss::St_Bar3::factory();
 }
 
-Ioss::Bar3::Bar3() : Ioss::ElementTopology(Ioss::Bar3::name, "Beam_3")
+Ioss::Bar3::Bar3() : Ioss::ElementTopology(Ioss::Bar3::name, "Bar_3")
 {
   Ioss::ElementTopology::alias(Ioss::Bar3::name, "Rod_3_3D");
   Ioss::ElementTopology::alias(Ioss::Bar3::name, "rod3");
   Ioss::ElementTopology::alias(Ioss::Bar3::name, "rod3d3");
   Ioss::ElementTopology::alias(Ioss::Bar3::name, "truss3");
-  Ioss::ElementTopology::alias(Ioss::Bar3::name, "beam3");
   Ioss::ElementTopology::alias(Ioss::Bar3::name, "Rod_3_2D");
   Ioss::ElementTopology::alias(Ioss::Bar3::name, "rod2d3");
 }
@@ -106,12 +105,10 @@ int Ioss::Bar3::number_edges_face(int face) const
   return Constants::nfaceedge;
 }
 
-Ioss::IntVector Ioss::Bar3::edge_connectivity(int /* edge_number */) const
+Ioss::IntVector Ioss::Bar3::edge_connectivity(int edge_number) const
 {
   Ioss::IntVector connectivity(Constants::nedgenode);
-  connectivity[0] = 0;
-  connectivity[1] = 1;
-  connectivity[2] = 2;
+  connectivity[0] = edge_number - 1;
   return connectivity;
 }
 
@@ -137,5 +134,5 @@ Ioss::ElementTopology *Ioss::Bar3::face_type(int /* face_number */) const
 
 Ioss::ElementTopology *Ioss::Bar3::edge_type(int /* edge_number */) const
 {
-  return Ioss::ElementTopology::factory("edge3");
+  return Ioss::ElementTopology::factory("node");
 }

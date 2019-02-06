@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -47,7 +47,7 @@ C     --Output:
 C     --   o A listing of the input database information and any errors
 C     --     found on the standard output device.
 C     --   o The 3D GENESIS Shell database on unit 10.
-      
+
 C     --Developed at Sandia National Laboratories.
 C     --
 C     --Current author and code sponsor: Gregory D. Sjaardema
@@ -62,10 +62,10 @@ C     --External software used:
 C     --   SUPES package (dynamic memory, free-field reader, FORTRAN extensions)
 C     --   SUPLIB package (EXODUS file manipulation and other routines)
 C     --
-      
+
 C     --Documentation:
 C     --   --NONE--
-      
+
       include 'exodusII.inc'
       INCLUDE 'gs_progqa.blk'
       INCLUDE 'gs_dbase.blk'
@@ -77,39 +77,39 @@ C     --   --NONE--
       INCLUDE 'gs_xyzrot.blk'
       INCLUDE 'gs_xyzmir.blk'
       INCLUDE 'argparse.inc'
-      
+
       CHARACTER*2048 FILIN, FILOUT, SCRATCH
-      
+
       CHARACTER*(MXSTLN) NAMECO(6)
       CHARACTER*(MXSTLN) NAMELB(2048)
 C     --NAMECO - the coordinate names
 C     --NAMELB - the element block names
-      
+
       CHARACTER CDUM
-      
+
       DIMENSION A(1)
       INTEGER IA(1)
       EQUIVALENCE (A(1), IA(1))
       CHARACTER*1 C(1)
 C     --A - the dynamic numeric memory base array
-      
+
       INTEGER IDNSET(0:10,2)
       INTEGER IDESET(0:10,2)
-      
+
       INCLUDE 'gs_qainfo.blk'
-      
+
       CALL STRTUP (QAINFO)
-      
+
       CALL BANNER (0, QAINFO,
      &     'A GENESIS DATABASE 2D TO 3D SHELL CONVERSION PROGRAM',
      &     ' ', ' ')
       call cpyrgt (0, '1991')
-      
+
       CALL MDINIT (A)
       CALL MCINIT (C)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C .. Get filename from command line.  If not specified, emit error message
       NARG = argument_count()
       if (narg .lt. 2) then
@@ -125,10 +125,10 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 C     --Open the input database and read the initial variables
-      
+
       NDBIN  = 9
       NDBOUT = 10
-      
+
       CMPSIZ = 0
       IOWS   = 0
 
@@ -140,7 +140,7 @@ C     --Open the input database and read the initial variables
         CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
         GOTO 60
       END IF
-      
+
       call exgini(ndbin, title, ndim, numnp, numel, nelblk,
      *     numnps, numess, ierr)
       if (nelblk .gt. 2048) then
@@ -163,31 +163,31 @@ C     --Open the input database and read the initial variables
          lessel = 0
          lessdf = 0
       end if
-      
+
       CALL DBPINI ('NTIS', NDBIN, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &     NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL,
      &     LESSDF, IDUM, IDUM, IDUM)
-      
+
       IF (NDIM .NE. 2) THEN
          CALL PRTERR ('FATAL', 'Number of dimensions must be 2')
          GOTO 60
       END IF
-      
+
 C     --Reserve memory for the 2D information
-      
+
       CALL MDRSRV ('XN', KXN, NUMNP)
       CALL MDRSRV ('YN', KYN, NUMNP)
       KZN = 1
-      
+
       CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)
-      
+
       CALL MDRSRV ('IDELB', KIDELB, NELBLK)
       CALL MDRSRV ('NUMELB', KNELB, NELBLK)
       CALL MDRSRV ('NUMLNK', KNLNK, NELBLK)
       CALL MDRSRV ('NUMATR', KNATR, NELBLK)
       CALL MDRSRV ('LINK', KLINK, 0)
       CALL MDRSRV ('ATRIB', KATRIB, 0)
-      
+
       CALL MDRSRV ('IDNPS',  KIDNS, NUMNPS)
       CALL MDRSRV ('NNNPS',  KNNNS, NUMNPS)
       CALL MDRSRV ('NDNPS',  KNDNPS, NUMNPS)
@@ -208,15 +208,15 @@ C     --Reserve memory for the 2D information
       CALL MDRSRV ('LTNESS', KLTNSS, LESSNL)
       CALL MDRSRV ('LTSESS', KLTSSS, LESSEL)
       CALL MDRSRV ('FACESS', KFACSS, LESSNL)
-      
+
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C     --Read 2D information from the database and close file
-      
+
       call exgcor (ndbin, a(kxn), a(kyn), a(kzn), ierr)
       call exgmap (ndbin, ia(kmapel), ierr)
-      
+
       CALL INISTR (NDIM, ' ', NAMECO)
       call exgcon (ndbin, nameco, ierr)
 
@@ -236,7 +236,7 @@ C ... At the current time, only handle all 4-node or 8-node hexes per model.
           STOP
         END IF
  5    CONTINUE
-      
+
       if (numnps .gt. 0) then
          call exgcns(ndbin, a(kidns), a(knnns), a(kndnps), a(kixnns),
      *        a(kixdns), a(kltnns), a(kfacns), ierr)
@@ -265,7 +265,7 @@ C     ... Wrapper to get info record the right length
       IF ((NQAREC .GT. 0) .OR. (NINFO .GT. 0)) THEN
          CALL DBPQA ('*', NQAREC,  c(kqarec), NINFO, c(kinfo))
       END IF
-      
+
 C     -- This assumes only max of 7 attributes per element block
       CALL MDRSRV ('ATRIBNW', KATRIBN, 0)
       CALL MDRSRV ('ELATTR', KELATT, NELBLK*7)
@@ -273,21 +273,21 @@ C     -- This assumes only max of 7 attributes per element block
       IF (NERR .GT. 0) GOTO 40
 
 C     --Read in runtime parameters
-      
+
       CALL COMAND (IA(KIDNS), IA(KIDSS), IDNSET, IDESET,
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), NAMELB, A(KELATT),
      &     A(KXN), A(KYN), A, *60)
-      
+
 C     --Get the new numbers for the elements and nodes
-      
+
       LNPSNO = LNPSNL
-      
+
 C     --Get the node sets
 
       CONTINUE
-      
+
 C     --Get the side sets, and the front and back side sets
-      
+
       NSSET = IDESET(0,1)+IDESET(0,2)
       IF (NSSET .GT. 0) THEN
          CALL MDRSRV ('ISSFRO', KISFRO, NUMEL)
@@ -300,21 +300,21 @@ C     --Get the side sets, and the front and back side sets
          KNSFRO = 1
          KNSBCK = 1
       END IF
-      
-      LESSEO = INTADD (NUMESS, IA(KNESS)) 
-      LESSNO = INTADD (NUMESS, IA(KNDSS)) 
-      
+
+      LESSEO = INTADD (NUMESS, IA(KNESS))
+      LESSNO = INTADD (NUMESS, IA(KNDSS))
+
       CALL NEWESS
-     &     (IDESET(0,1), IDESET(0,2), NSSUR, NLNK, 
+     &     (IDESET(0,1), IDESET(0,2), NSSUR, NLNK,
      &     IA(KLINK), IA(KISFRO), IA(KISBCK), IA(KNSFRO), IA(KNSBCK))
-      
+
       IF (NSSET .GT. 0) THEN
          CALL MDLONG ('NSSFRO', KNSFRO, NSSUR)
          CALL MDLONG ('NSSBCK', KNSBCK, NSSUR)
       END IF
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C     --Open the output database
       FILOUT = ' '
       CALL get_argument(2,FILOUT, LFIL)
@@ -326,36 +326,36 @@ C     --Open the output database
          call exerr('grepos', 'Error from excre', ierr)
          go to 50
       endif
-      
+
 C     --Write the initial variables
-      
+
       CALL NEWINI (IDNSET(0,1)+IDNSET(0,2), IDESET(0,1)+IDESET(0,2),
      &     NSSUR, IA(KNATR))
       call expini (ndbout, title, ndim3, numnp3, numel3, nelbl3,
      &     nnps3, ness3, ierr)
-      
+
       CALL DBPINI ('NTIS', NDBOUT, TITLE, NDIM3, NUMNP3, NUMEL3, NELBL3,
      &  NNPS3, LNPSN3, LNPSN3, NESS3, LESSE3, LESSN3, LESSN3,
      &  IDUM, IDUM, IDUM)
-      
+
 C     --Write the coordinates
-      
+
       CALL MDRSRV ('XN3', KXN3, NUMNP3)
       CALL MDRSRV ('YN3', KYN3, NUMNP3)
       CALL MDRSRV ('ZN3', KZN3, NUMNP3)
-      
+
 C     -- Since we only read quads, NUMATR should be 0.  For a shell, we
 C     have 1 atribute (thickness)
-      
+
       CALL MDLONG ('ATRIB', KATRIB, NUMEL3)
-      
+
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
       CALL NEWXYZ (A(KXN), A(KYN), A(KXN3), A(KYN3), A(KZN3),
      $     A(KATRIB), A )
       call expcor (ndbout, a(kxn3), a(kyn3), a(kzn3), ierr)
-      
+
       NAMECO(1) = 'X'
       NAMECO(2) = 'Y'
       NAMECO(3) = 'Z'
@@ -368,18 +368,18 @@ C     have 1 atribute (thickness)
       CALL MDDEL ('ZN3')
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C     --Write the element order map - NOTE: New map is same as old map
       call expmap (ndbout, ia(kmapel), ierr)
       CALL MDDEL ('MAPEL')
-      
+
 C     --Fixup connectivity if mirrored
       IF (XMIRR * YMIRR * ZMIRR .LT. 0.0) THEN
          CALL DBMIRR (1, NELBLK, IA(KIDELB), IA(KNELB),
      $        IA(KNLNK), IA(KLINK))
       END IF
 C     --Write the element block
-      
+
       ILOFF = 0
       IAOFF = 0
       DO 30 I = 1, NELBLK
@@ -400,31 +400,31 @@ C ... Calculate these here since values may change if BEAM...
      *    NAMELB(I), A(KATRIB), A(KELATT+(II*7)))
         ILOFF = ILOFF + ILINC
         IAOFF = IAOFF + IAINC
-      
+
  30   CONTINUE
-      
+
       CALL MDDEL ('LINK')
       CALL MDDEL ('ATRIB')
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C     --Write the node sets
-      
+
       CALL WRNPS (A, IA, IDNSET(0,1), IDNSET(0,2), IA(KIDNS),
      &  IA(KNNNS), IA(KIXNNS), IA(KLTNNS), A(KFACNS), *40)
-      
+
 C     --Fixup sides sets if mirrored
 c$$$      IF (XMIRR * YMIRR * ZMIRR .LT. 0.0) THEN
-c$$$         CALL MIRSS (IDESET(0,1), IDESET(0,2), NLNK, 
+c$$$         CALL MIRSS (IDESET(0,1), IDESET(0,2), NLNK,
 c$$$     &        NSSUR, IA(KNSFRO), IA(KNSBCK), IA(KLTSSS))
 c$$$      END IF
 C     --Write the side sets
-      
+
       CALL WRESS (A, IA, IDESET(0,1), IDESET(0,2),
      &     IA(KISFRO), IA(KISBCK), NSSUR, IA(KNSFRO), IA(KNSBCK),
      &     IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS), IA(KIXDSS),
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS), *40)
-      
+
       IF (NSSET .GT. 0) THEN
          CALL MDDEL ('ISSFRO')
          CALL MDDEL ('ISSBCK')
@@ -433,25 +433,25 @@ C     --Write the side sets
       END IF
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C   --Write the QA records
       CALL DBOQA (NDBOUT, QAINFO, NQAREC, c(kqarec),
      &     NINFO, c(kinfo), ' GenShell: ', FILIN)
-         
+
       GOTO 50
-      
+
  40   CONTINUE
       CALL MEMERR
       GOTO 50
-      
+
  50   CONTINUE
       call exclos(ndbin,  ierr)
       call exclos(ndbout, ierr)
-      
+
  60   CONTINUE
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
-      
+
       END
 
       subroutine exgqaw(ndb, qarec, ierr)

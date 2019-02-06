@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef SIERRA_Iopg_DatabaseIO_h
-#define SIERRA_Iopg_DatabaseIO_h
+#ifndef IOSS_Iopg_DatabaseIO_h
+#define IOSS_Iopg_DatabaseIO_h
 
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
@@ -236,4 +236,4 @@ namespace Iopg {
     int             commsetElemCount{0};
   };
 } // namespace Iopg
-#endif // SIERRA_Iopg_DatabaseIO_h
+#endif // IOSS_Iopg_DatabaseIO_h

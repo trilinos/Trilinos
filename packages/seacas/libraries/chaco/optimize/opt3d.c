@@ -88,7 +88,6 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   int        total;            /* total number of iterations */
   int        ntries, maxtries; /* number of local minimizations */
   int        i, j;             /* loop counter */
-  int        kk;
   double     func3d(), constraint();
   double     drandom();
   void       grad3d(), hess3d(), gradcon(), hesscon(), kramer3(), ch_eigenvec3();
@@ -228,11 +227,6 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
         /* If in final pass, tighten convergence criterion. */
         if (funcc < max_constraint) {
           step_min = final_step_min;
-        }
-
-        kk = 0;
-        if (kk) {
-          ch_evals3(hessc, &eval, &res, &res);
         }
 
         for (i = 0; i < 3; i++) {

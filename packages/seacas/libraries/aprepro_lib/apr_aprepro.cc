@@ -373,9 +373,6 @@ namespace SEAMS {
     }
 
     auto ptr = new symrec(sym_name, parser_type, is_internal);
-    if (ptr == nullptr) {
-      return nullptr;
-    }
 
     unsigned hashval   = hash_symbol(ptr->name.c_str());
     ptr->next          = sym_table[hashval];
@@ -691,7 +688,7 @@ namespace SEAMS {
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
           if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
-            if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
+            if (doInternal == ptr->isInternal) {
               if (ptr->type == Parser::token::VAR) {
                 (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                               << "\t= " << std::setprecision(10) << ptr->value.var << "}" << '\n';

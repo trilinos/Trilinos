@@ -47,7 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_file_item, EX_FATAL, etc
-#include "netcdf.h"       // for nc_inq_format, nc_type, etc
 #include <stdio.h>
 #include <stdlib.h> // for NULL, free, malloc
 
@@ -87,7 +86,7 @@ void ex_check_valid_file_id(int exoid, const char *func)
   if (exoid <= 0) {
     error = 1;
   }
-#if !defined EXODUS_IN_SIERRA
+#if !defined BUILT_IN_SIERRA
   else {
     struct ex_file_item *file = ex_find_file_item(exoid);
 

@@ -55,7 +55,6 @@ write
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for ex_check_valid_file_id, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t, NULL
 #include <stdint.h>       // for int64_t

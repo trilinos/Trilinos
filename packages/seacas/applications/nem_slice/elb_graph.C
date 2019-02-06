@@ -275,9 +275,14 @@ namespace {
       /* for face adjacencies, need to allocate some memory */
       if (problem->face_adj) {
         /* allocate space to hold info about surrounding elements */
-        pt_list   = (INT *)malloc(sizeof(INT) * graph->max_nsur);
+        pt_list = (INT *)malloc(sizeof(INT) * graph->max_nsur);
+        if (!(pt_list)) {
+          Gen_Error(0, "fatal: insufficient memory");
+          return 0;
+        }
         hold_elem = (INT *)malloc(sizeof(INT) * graph->max_nsur);
-        if (!(pt_list) || !(hold_elem)) {
+        if (!(hold_elem)) {
+          free(pt_list);
           Gen_Error(0, "fatal: insufficient memory");
           return 0;
         }
@@ -318,7 +323,7 @@ namespace {
           nsides = get_elem_info(NSIDES, etype);
         }
 
-        if (etype != SPHERE || (etype == SPHERE && problem->no_sph == 1)) {
+        if (etype != SPHERE || problem->no_sph == 1) {
           graph->start[cnt] = graph->nadj;
           assert(graph->nadj == graph->adj.size());
 

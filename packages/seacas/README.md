@@ -22,7 +22,7 @@ build SEACAS
 #### Zoltan
 Zoltan is a package in Trilinos and it must be enabled for a SEACAS build.
 
-#### HDF5 
+#### HDF5
 
 If you are using the netcdf-4 capability in the netcdf library or are
 using the MatIO library for conversion of exodus to/from matlab
@@ -41,7 +41,7 @@ support, you do not have to build hdf5.
     ```
     ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec
     ```
-     * Parallel: 
+     * Parallel:
     ```
     CC=mpicc ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec --enable-parallel
     ```
@@ -59,7 +59,7 @@ support, you do not have to build hdf5.
   CC=mpicc ./configure --disable-fortran --prefix ${WHERE_TO_INSTALL}
   ```
   * `make && make install`
-  
+
 #### NetCDF
 The most recent released version is recommended. For use with Exodus, some local modifications to the netcdf.h include file are required.  See [NetCDF-Mapping.md](NetCDF-Mapping.md) for an explanation of why these modifications are required (or highly recommended)
 
@@ -125,7 +125,7 @@ The MatIO library is used in the `exo2mat` and `mat2exo` programs which convert 
     export LDFLAGS="-L${WHERE_TO_INSTALL}/lib"
     ./configure --with-hdf5=${WHERE_TO_INSTALL} --enable-mat73 --enable-shared --prefix=${WHERE_TO_INSTALL}
     ```
-    
+
  * `make && make install`
 
 #### DataWarehouse
@@ -158,8 +158,8 @@ The relavant defines for SEACAS are listed below:
 
 ```
  -D Trilinos_ENABLE_SEACAS:BOOL=ON
- -D TPL_ENABLE_Netcdf:BOOL=ON 
- -D Netcdf_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib 
+ -D TPL_ENABLE_Netcdf:BOOL=ON
+ -D Netcdf_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib
  -D TPL_Netcdf_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
  -D TPL_Netcdf_Enables_Netcdf4:BOOL=ON  (if built with hdf5 libraries which give netcdf-4 capability)
  -D TPL_Netcdf_Enables_PNetcdf:BOOL=ON  (if built with parallel-netcdf which gives parallel I/O capability)
@@ -168,7 +168,7 @@ The relavant defines for SEACAS are listed below:
  -D TPL_Matio_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
  -D TPL_X11_INCLUDE_DIRS:PATH=/usr/X11R6/include  (SVDI, blot, fastq require X11 includes and libs)
  -D SEACAS_ENABLE_TESTS=ON
- -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${WHERE_TO_INSTALL}/lib -lpnetcdf -lhdf5_hl -lhdf5 -lz" 
+ -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${WHERE_TO_INSTALL}/lib -lpnetcdf -lhdf5_hl -lhdf5 -lz"
 ```
 
 If you are using a NetCDF version prior to 4.3 and NetCDF was compiled
@@ -184,4 +184,4 @@ There are a few unit tests for exodus, and aprepro that can be run via `make tes
 ## Contact information
 
  Greg Sjaardema  (<gsjaardema@gmail.com>, <gdsjaar@sandia.gov>)
-      
+

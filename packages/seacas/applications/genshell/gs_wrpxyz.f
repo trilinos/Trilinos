@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,7 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       SUBROUTINE WRPXYZ (XN, YN, XN3, YN3, ZN3, ATRIB)
 C=======================================================================
- 
+
 C   $Id: wrpxyz.f,v 1.5 1993/05/27 22:17:06 gdsjaar Exp $
 C   $Log: wrpxyz.f,v $
 C   Revision 1.5  1993/05/27 22:17:06  gdsjaar
@@ -55,7 +55,7 @@ c
 c Revision 1.1  90/08/20  12:23:31  gdsjaar
 c Initial revision
 c
- 
+
 C   --*** WRPXYZ *** (GEN3D) Calculate 3D coordinates
 C   --   Written by Amy Gilkey - revised 05/09/88
 C   --   Modified by Greg Sjaardema - 02/06/89
@@ -73,15 +73,15 @@ C   --   Uses NDIM, NUMNP of /DBNUMS/
 C   --   Uses NDIM3, NUMNP3 of /DBNUM3/
 C   --   Uses DOTRAN, NNREPL, DIM3, NRTRAN, D3TRAN, ZGRAD,
 C   --      CENTER, NUMCOL, NUMROW of /PARAMS/
- 
+
       INCLUDE 'gs_dbnums.blk'
       INCLUDE 'gs_dbnum3.blk'
       INCLUDE 'gs_params.blk'
- 
+
       REAL XN(NUMNP), YN(NUMNP),
      &   XN3(NUMNP3), YN3(NUMNP3), ZN3(NUMNP3)
       REAL ATRIB(NUMEL)
- 
+
       IF (IWARP .EQ. 1) THEN
 C
 C ... Warp type 1: Point Centered
@@ -91,7 +91,7 @@ C
             YN3(INP) = YN(INP)
             ZN3(INP) = DWARP - SQRT(DWARP**2 - XN(INP)**2 - YN(INP)**2)
   100    CONTINUE
- 
+
          CONTINUE
       ELSE IF (IWARP .EQ. -1) THEN
 C
@@ -103,7 +103,7 @@ C
             YN3(INP) = SIN(THET) * DWARP
             ZN3(INP) = DWARP - COS(THET) * DWARP
   110    CONTINUE
- 
+
       ELSE IF (IWARP .EQ. -2) THEN
 C
 C ... Warp type -2: Y Axis Centered
@@ -114,7 +114,7 @@ C
             YN3(INP) = YN(INP)
             ZN3(INP) = DWARP - COS(THET) * DWARP
   120    CONTINUE
- 
+
       ELSE IF (IWARP .EQ. -3) THEN
 C
 C ... Warp type -3: X Axis Centered, Project straight up
@@ -124,7 +124,7 @@ C
             YN3(INP) = YN(INP)
             ZN3(INP) = DWARP - sqrt( dwarp**2 - yn(inp)**2 )
   130    CONTINUE
- 
+
       ELSE IF (IWARP .EQ. -4) THEN
 C
 C ... Warp type -4: Y Axis Centered, Project straight up
@@ -134,7 +134,7 @@ C
             YN3(INP) = YN(INP)
             ZN3(INP) = DWARP - sqrt( dwarp**2 - xn(inp)**2 )
   140    CONTINUE
- 
+
       ELSE IF (IWARP .EQ. 2) THEN
 C
 C ... Warp type 2: Point-Centered Ellipse
@@ -148,12 +148,12 @@ C
             XN3(INP) = XN(INP)
   150    CONTINUE
       END IF
- 
+
 C ... Now do the attributes for all of the elements
- 
+
       DO 160 IEL = 1, NUMEL
          ATRIB(IEL) = DIM3
   160 CONTINUE
- 
+
       RETURN
       END

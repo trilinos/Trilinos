@@ -81,7 +81,8 @@ def getExodusVersion():
     Parse the exodusII.h header file and return the version number or 0 if not
     found.
     """
-    for line in open("@ACCESSDIR@/include/exodusII.h"):
+    ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
+    for line in open(ACCESS + "/include/exodusII.h"):
         fields = line.split()
         if (len(fields) == 3 and
                 fields[0] == '#define' and
@@ -89,11 +90,11 @@ def getExodusVersion():
             return int(fields[2])
     return 0
 
-
+ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
 if os.uname()[0] == 'Darwin':
-    EXODUS_SO = "@ACCESSDIR@/lib/libexodus.dylib"
+    EXODUS_SO = ACCESS + "/lib/libexodus.dylib"
 else:
-    EXODUS_SO = "@ACCESSDIR@/lib/libexodus.so"
+    EXODUS_SO = ACCESS + "/lib/libexodus.so"
 EXODUS_LIB = cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default

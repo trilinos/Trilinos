@@ -2063,9 +2063,6 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
       break;
     }
 
-    x = *(float *)params[1];
-    y = *(float *)params[2];
-
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->text_color);
 
@@ -3382,10 +3379,8 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
   int   maxindex;            /* max color index to set */
   int   indx_ptr;            /* for keeping track of color indices */
   int   index1, index2;      /* defines a range of indices to set */
-  int   first;               /* marks first time through loop */
   int   one = 1;
 
-  first = TRUE;
   /* starting color index and number of colors */
   starti   = *(int *)params[1];
   num_cols = *(int *)params[2];
@@ -3406,15 +3401,12 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
   /* convert rgb to lie between 0. and 1. */
   /* ...only do this once */
 
-  if (first) {
-    int *iparam = (int *)params[3];
-    k           = 0;
-    for (j = starti; j < starti + num_cols; j++) {
-      color_array[j][0] = (float)iparam[k++] / 255.;
-      color_array[j][1] = (float)iparam[k++] / 255.;
-      color_array[j][2] = (float)iparam[k++] / 255.;
-    }
-    first = FALSE;
+  int *iparam = (int *)params[3];
+  k           = 0;
+  for (j = starti; j < starti + num_cols; j++) {
+    color_array[j][0] = (float)iparam[k++] / 255.;
+    color_array[j][1] = (float)iparam[k++] / 255.;
+    color_array[j][2] = (float)iparam[k++] / 255.;
   }
 
   /* loop through surfaces */

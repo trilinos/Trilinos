@@ -1,23 +1,23 @@
 C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.  
-C    
+C          with the distribution.
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
       subroutine symmlq( n, b, r1, r2, v, w, x, y, work,
      $                   checka, goodb, precon, shift,
@@ -44,7 +44,7 @@ C
      $                   b(n), r1(n), r2(n), v(n), w(n), x(n), y(n)
       double precision   vwsqrt(n), work(n)
       double precision	 A, orthlist
-      integer 		 itnmin 
+      integer 		 itnmin
       double precision   macheps, normxlim
 *     ------------------------------------------------------------------
 *
@@ -212,7 +212,7 @@ C
 *                        In general, (A - shift*I)x = b
 *                        has the solution         x = (1/alpha1) y
 *                        where My = b.
-*                        
+*
 *               0        b = 0, so the exact solution is x = 0.
 *                        No iterations were performed.
 *
@@ -254,7 +254,7 @@ C
 *                        If istop .ge. 5, the final x may not be an
 *                        acceptable solution.
 *
-*		9	 The norm of the iterate is > than normxlim. 
+*		9	 The norm of the iterate is > than normxlim.
 *			 Termination enforced on presumption that inverse
 *			 iteration is being performed -rwl.
 *
@@ -275,7 +275,7 @@ C
 *                        This is sqrt( x'Mx ).  If precon is false,
 *                        ynorm is an estimate of norm(x).
 *
-*     A	      input      A pointer variable to the matrix data. Passed 
+*     A	      input      A pointer variable to the matrix data. Passed
 *	                 in to use in revised call to aprod and msolve
 *			 added 14 Dec 92 by rwl.
 *
@@ -387,7 +387,7 @@ C
 *                  aprod and msolve. These are now just Fortran wrappers
 *                  for C codes consistent with the matrix data passed
 *                  via the pointers "A", "vwsqrt", "work" and "orthlist"
-*    10 Feb 1993:  Modified by Robert Leland to return calculate machine 
+*    10 Feb 1993:  Modified by Robert Leland to return calculate machine
 *		   precision and terminate if the norm of the iterate gets
 *		   above the limit normxlim. Relevant for inverse iteration.
 *		   Also incorporated itnmin to enforce minimum number itns.
@@ -400,7 +400,7 @@ C
 *		   report its performance based only on the return value
 *	   	   of various parameters. That means we can modifiy the
 *		   Fortran source, run f2c and recompile without losing or
-*		   re-writing any functionality. 
+*		   re-writing any functionality.
 *
 *     Michael A. Saunders                    na.saunders@na-net.ornl.gov
 *     Department of Operations Research    mike@sol-michael.stanford.edu
@@ -422,7 +422,7 @@ C
       double precision   alfa, b1, beta, beta1, bstep, cs,
      $                   cgnorm, dbar, delta, denom, diag,
      $                   eps, epsa, epsln, epsr, epsx,
-     $                   gamma, gbar, gmax, gmin, 
+     $                   gamma, gbar, gmax, gmin,
      $                   lqnorm, oldb, qrnorm, rhs1, rhs2,
      $                   s, sn, snprod, t, tnorm,
      $                   x1cg, x1lq, ynorm2, zbar, z

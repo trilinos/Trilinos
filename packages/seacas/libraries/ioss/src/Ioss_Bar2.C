@@ -54,8 +54,8 @@ namespace {
   struct Constants
   {
     static const int nnode     = 2;
-    static const int nedge     = 1;
-    static const int nedgenode = 2;
+    static const int nedge     = 2;
+    static const int nedgenode = 1;
     static const int nface     = 0;
     static const int nfacenode = 0;
     static const int nfaceedge = 0;
@@ -68,24 +68,19 @@ void Ioss::Bar2::factory()
   Ioss::St_Bar2::factory();
 }
 
-Ioss::Bar2::Bar2() : Ioss::ElementTopology(Ioss::Bar2::name, "Beam_2")
+Ioss::Bar2::Bar2() : Ioss::ElementTopology(Ioss::Bar2::name, "Bar_2")
 {
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "Rod_2_3D");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod2");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod");
-  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam2");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "bar");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "truss");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "truss2");
-  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod3d2");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "Rod_2_2D");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "rod2d2");
-  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam-r");
-  Ioss::ElementTopology::alias(Ioss::Bar2::name, "beam-r2");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "line");
   Ioss::ElementTopology::alias(Ioss::Bar2::name, "line2");
-  Ioss::ElementTopology::alias(Ioss::Bar2::name, "BEAM_2");
 }
 
 Ioss::Bar2::~Bar2() = default;
@@ -115,11 +110,10 @@ int Ioss::Bar2::number_edges_face(int face) const
   return Constants::nfaceedge;
 }
 
-Ioss::IntVector Ioss::Bar2::edge_connectivity(int /* edge_number */) const
+Ioss::IntVector Ioss::Bar2::edge_connectivity(int edge_number) const
 {
   Ioss::IntVector connectivity(Constants::nedgenode);
-  connectivity[0] = 0;
-  connectivity[1] = 1;
+  connectivity[0] = edge_number - 1;
   return connectivity;
 }
 
@@ -145,5 +139,5 @@ Ioss::ElementTopology *Ioss::Bar2::face_type(int /* face_number */) const
 
 Ioss::ElementTopology *Ioss::Bar2::edge_type(int /* edge_number */) const
 {
-  return Ioss::ElementTopology::factory("edge2");
+  return Ioss::ElementTopology::factory("node");
 }

@@ -1,23 +1,23 @@
 C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C     -*- Mode: fortran -*-
 C=======================================================================
@@ -40,7 +40,7 @@ C     $Id: matxyz.f,v 1.2 2002/06/24 16:09:29 gdsjaar Exp $
      &     NUMNP1, XN1, YN1, ZN1, NUMNP2, XN2, YN2, ZN2,
      &     IX1, IX2, IXNP2, NMATCH, TOLER, CLOSE, IEXPCT)
 C=======================================================================
-      
+
 C     --*** MATXYZ *** (GJOIN) Find matching nodes
 C     --   Written by Amy Gilkey - revised 03/04/88
 C     --
@@ -79,22 +79,22 @@ C     --      if actual matches not equal.
       INTEGER IX1(*), IX2(*)
       INTEGER IXNP2(*)
       LOGICAL CLOSE
-      
+
       PARAMETER (MXNAM = 1)
       DIMENSION KV(MXNAM), RV(MXNAM), IVAL(MXNAM)
       CHARACTER*8  CV(MXNAM)
-      
+
       CHARACTER*80 STRING
       LOGICAL INIT
       LOGICAL BYSET
       LOGICAL OK
-      
+
       BYSET = (MATNS1 .GT. 0) .AND. (MATNS2 .GT. 0)
       INIT = (NMATCH .LE. 0)
       NSVMAT = NMATCH
-      
+
 C     --Index nodes to match in the nodal point sets
-      
+
       IF (BYSET) THEN
          IN1 = 0
          IX0 = IXNNPS(MATNS1) - 1
@@ -102,7 +102,7 @@ C     --Index nodes to match in the nodal point sets
             IN1 = IN1 + 1
             IX1(IN1) = LTNNPS(IX0+N)
  100     CONTINUE
-         
+
          IN2 = 0
          IX0 = IXNNPS(MATNS2) - 1
          DO 110 N = 1, NNNPS(MATNS2)
@@ -110,12 +110,12 @@ C     --Index nodes to match in the nodal point sets
             IX2(IN2) = LTNNPS(IX0+N)
  110     CONTINUE
       END IF
-      
+
       time0 = 0.0
       time1 = 0.0
       time2 = 0.0
 C     --Find the limits of the overlapping area of the two databases
-      
+
       IF (BYSET) THEN
          CALL MINMXS (IN1, IX1, XN1, X1MIN, X1MAX)
          CALL MINMXS (IN2, IX2, XN2, X2MIN, X2MAX)
@@ -146,7 +146,7 @@ C     --Find the limits of the overlapping area of the two databases
          ZMIN = 0.0
          ZMAX = 0.0
       END IF
-      
+
       DELTAX = XMAX - XMIN
       DELTAY = YMAX - YMIN
       DELTAZ = ZMAX - ZMIN
@@ -156,14 +156,14 @@ C     --Find the limits of the overlapping area of the two databases
          CALL PRTERR ('ERROR', 'Nodes do not overlap')
          GOTO 180
       END IF
-      
+
       IF (TOLER .GE. 0.0) THEN
          EPS = TOLER
       ELSE
          WRITE (*, 10040) EPS
 10040    FORMAT (/' Default tolerance = ',1PE10.3)
          CALL FREFLD (0, 0,
-     *        'Enter new value for tolerance (<ret> for default): ', 
+     *        'Enter new value for tolerance (<ret> for default): ',
      *        MXNAM, IOS, NF, KV, CV, IVAL, RV)
          IF (IOS .NE. 0) RV(1) = 0.0
          IF (RV(1) .NE. 0.0) EPS = RV(1)
@@ -182,16 +182,16 @@ C     --Find the limits of the overlapping area of the two databases
          CALL PRTERR ('ERROR', 'Nodes do not overlap')
          GOTO 180
       END IF
-      
+
       XMIN = XMIN - EPS
       XMAX = XMAX + EPS
       YMIN = YMIN - EPS
       YMAX = YMAX + EPS
       ZMIN = ZMIN - EPS
       ZMAX = ZMAX + EPS
-      
+
 C     --Index the nodes within the overlap area
-      
+
       Z3D = 0.0
       IF (.NOT. BYSET) THEN
          IN1 = 0
@@ -203,12 +203,12 @@ C     --Index the nodes within the overlap area
                   IF ((Z3D .GE. ZMIN) .AND. (Z3D .LE. ZMAX)) THEN
                      IN1 = IN1 + 1
                      IX1(IN1) = INP
-                     
+
                   END IF
                END IF
             END IF
  120     CONTINUE
-         
+
          IN2 = 0
          IF (NDIM .LT. 3) Z3D = 0.0
          DO 130 INP = 1, NUMNP2
@@ -225,7 +225,7 @@ C     --Index the nodes within the overlap area
       ELSE
 
 C     ... Equivalencing being done by nodesets.
-C     ... Index nodes in nodeset that are within overlap area. 
+C     ... Index nodes in nodeset that are within overlap area.
          IN1 = 0
          IX0 = IXNNPS(MATNS1) - 1
          DO 135 N = 1, NNNPS(MATNS1)
@@ -283,7 +283,7 @@ C     --Blank out the IXNP2 array
 C     -- Find all matching nodes by comparing coordinates of nodes in overlap
 C     area
       DELMAX = MAX(DELTAX, DELTAY, DELTAZ)
-      
+
       call excpus(time0)
       imat = 0
       if (DELMAX .EQ. DELTAX) THEN
@@ -303,7 +303,7 @@ C     area
         call prterr('CMDSPEC', 'Entering Sorting Phase, Sort on Z')
       end if
       call prterr('CMDSPEC', 'Entering Comparison Phase')
-      
+
       CALL EXCPUS(time1)
       DISMIN =  1.0E38
       DISMAX = -1.0E38
@@ -311,7 +311,7 @@ C     area
       nout   = 0
       WRITE (*,'(A)') ' '
       WRITE (*,'(A)') ' '
-      
+
       Z3D = 0.0
       Z = 0.0
       IN1SV = IN1
@@ -348,15 +348,15 @@ C     area
                  i2beg = i2
                  goto 160
                end if
-               
-C     ... Since we are sorted on coordinat X|Y|Z, 
+
+C     ... Since we are sorted on coordinat X|Y|Z,
 C     if set 2 X|Y|Z greater than set 1 X|Y|Z+eps, go to next X1|Y1|Z1 coord.
                if ((imat .eq. 1 .and. xn2(inp2)-eps .gt. x) .or.
      *           (imat .eq. 2 .and. yn2(inp2)-eps .gt. y) .or.
      *           (imat .eq. 3 .and. z3d      -eps .gt. z)) goto 165
-               
+
                DIS = MAX (ABS (XN2(INP2) - X), ABS(YN2(INP2) - Y),
-     *              ABS (Z3D - Z) ) 
+     *              ABS (Z3D - Z) )
                IF ( (DIS .LE. EPS .AND. .NOT. CLOSE) .OR.
      $              DIS .EQ. 0.0) THEN
                   DISMAX = MAX(DISMAX, DIS)
@@ -390,7 +390,7 @@ C     if set 2 X|Y|Z greater than set 1 X|Y|Z+eps, go to next X1|Y1|Z1 coord.
                END IF
             END IF
  170     CONTINUE
-         
+
       else
 
          DO 270 I2 = 1, IN2SV
@@ -421,14 +421,14 @@ C     if set 2 X|Y|Z greater than set 1 X|Y|Z+eps, go to next X1|Y1|Z1 coord.
                  goto 260
                end if
 
-C     ... Since we are sorted on coordinat X|Y|Z, 
+C     ... Since we are sorted on coordinat X|Y|Z,
 C     if set 1 X|Y|Z greater than set 2 X|Y|Z+eps, go to next X2|Y2|Z2 coord.
                if ((imat .eq. 1 .and. xn1(inp1)-eps .gt. x) .or.
      *           (imat .eq. 2 .and. yn1(inp1)-eps .gt. y) .or.
      *           (imat .eq. 3 .and. z3d      -eps .gt. z)) goto 265
 
                DIS = MAX (ABS (XN1(INP1) - X), ABS(YN1(INP1) - Y),
-     *              ABS (Z3D - Z) ) 
+     *              ABS (Z3D - Z) )
                IF ( (DIS .LE. EPS .AND. .NOT. CLOSE) .OR.
      $              DIS .EQ. 0.0) THEN
                   DISMAX = MAX(DISMAX, DIS)
@@ -472,7 +472,7 @@ C     if set 1 X|Y|Z greater than set 2 X|Y|Z+eps, go to next X2|Y2|Z2 coord.
      &           'All nodes in nodal point set cannot be matched')
          END IF
       END IF
-      
+
       WRITE (*, 10050) NCOMP
       WRITE (*, 10021) EPS
       IF (DISMAX .GT. -1.0E37) THEN

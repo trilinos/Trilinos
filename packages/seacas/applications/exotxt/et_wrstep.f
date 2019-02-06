@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
       SUBROUTINE WRSTEP (NTXT, ISTEP, NELBLK, TIME,
@@ -103,7 +103,7 @@ C      --Write element variables
             DO 120 IELB = 1, NELBLK
                NELPB = NUMELB(IELB)
                WRITE (NTXT, '(A, I3)') '! Element Block ', IELB
-               WRITE (NTXT, '(A, I9)') 
+               WRITE (NTXT, '(A, I9)')
      &               '! Number of elements ', NELPB
                DO 110 N = 1, NELPB
 C              This is a really ugly index.I cannot seem to simplify
@@ -112,7 +112,7 @@ C              The element variables are read in DBISTE with the
 C              EXGEV call. IELO is the total number of elements in the
 C              previous element block. N if the index for the number
 C              of elements in the current element block.
-                     WRITE (NTXT, 10010) 
+                     WRITE (NTXT, 10010)
      &               (VAREL(IEL0+N+((I-1)*NELPB)), I=1,NVAREL)
   110          CONTINUE
                IEL0 = IEL0 + NELPB*NVAREL

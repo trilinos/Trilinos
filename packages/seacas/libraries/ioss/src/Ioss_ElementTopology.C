@@ -246,7 +246,11 @@ int Ioss::ElementTopology::number_boundaries() const
       return number_faces() + number_edges();
     }
     if (parametric_dimension() == 1) {
+#if defined(BUILT_IN_SIERRA)
       return number_edges();
+#else
+      return 2; // For bar/beam/... boundary is nodes; for ShellLine it is edges
+#endif
     }
   }
   else {

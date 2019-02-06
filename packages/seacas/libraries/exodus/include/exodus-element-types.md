@@ -61,9 +61,9 @@ library, the IOSS library, nem_slice, and nem_spread.
  |       | 9   |  X   |       |           |    |
  |       | 16  |  X   |    X  |    X      |  X |
  |       | 20  |  X   |    X  |    X      |  X |
- |       | 27  |  X   |    X  |    X      |  X |   
+ |       | 27  |  X   |    X  |    X      |  X |
 
-Only the base topology name is required for the element type. For example, all 
+Only the base topology name is required for the element type. For example, all
 elements of a `hex` toplogy can be referred to by the name `hex` no
 matter how many nodes there are.  However, it is also correct to
 append the node count to the topology type for the element name.  For
@@ -84,7 +84,7 @@ If none of the above functions are required, then an element unknown
 to the exodus library can can be written to and read from an exodus
 file with no loss of information.
 
-    
+
 \section ordering Exodus Node Ordering Convention
 
 Node ordering follows the conventions illustrated in the figures
@@ -95,7 +95,7 @@ https://web.mscsoftware.com/training_videos/patran/reverb3/index.html#page/Finit
 
 
 -------------------------
-\section circle Circle and Sphere 
+\section circle Circle and Sphere
 For elements of type circle or sphere, the topology is one node at the center of the circle or sphere element.
 A circle or sphere element has no sides.
 
@@ -103,14 +103,16 @@ A circle or sphere element has no sides.
 ![Sphere](../topology/sphere.png)
 
 -------------------------
-\section bar Bar, Truss, Beam 
-The element name for this element type can be "bar", "beam", "truss"
+\section bar Bar, Truss, Beam
+The element name for this element type can be "bar", "beam", "truss".
+For the "beam", the boundaries are the "top" and "bottom" edges; for
+the "bar" or "truss", the boundaries are the end nodes.
 
 ![Bar2](../topology/bar2.png)
 ![Bar3](../topology/bar3.png)
 
 -------------------------
-\section tri Triangular 
+\section tri Triangular
 These are usable in 2D or 3D meshes.  In a 3D mesh, they would represent triangular shells.  The element name is "triangle" or "tri" in either case.
 
 ![Tri3](../topology/tri3.png)
@@ -137,7 +139,7 @@ The side numbering for a tri element is shown below.  For a triangular shell, th
 ![Tri-Number](../topology/triangle-face-numbering.png)
 
 -------------------------
-\section quad Quadrilateral 
+\section quad Quadrilateral
 These are usable in 2D or 3D meshes.  In a 3D mesh, they represent a quadrilateral shell element and the element name is "shell"; in a 2D mesh, the element name is "quad".
 
 ![Quad4](../topology/quad4.png)
@@ -170,7 +172,7 @@ The side numbering for a 2D quadrilateral element and a 3D quadrilateral shell e
 
 
 -------------------------
-\section tet Tetrahedral 
+\section tet Tetrahedral
 ![Tet4](../topology/tet04.png)
 ![Tet5](../topology/tet05.png)
 ![Tet10](../topology/tet10.png)
@@ -190,7 +192,7 @@ TETRA         | 1     | 1, 2, 4    |
 ![Tet-Number](../topology/tet-face-numbering.png)
 
 -------------------------
-\section pyr Pyramidal 
+\section pyr Pyramidal
 ![Pyramid](../topology/pyramid.png)
 
 The `pyramid18` adds mid-face nodes to the triangular faces and the `pyramid19` adds a mid-volume node.
@@ -209,7 +211,7 @@ PYRAMID| 1 | 1, 2, 5 |
 
 
 -------------------------
-\section wedge Wedge 
+\section wedge Wedge
 ![Wedge6](../topology/wedge06.png)
 ![Wedge12](../topology/wedge12.png)
 ![Wedge15](../topology/wedge15.png)
@@ -236,7 +238,7 @@ WEDGE         | 1     | 1, 2, 5, 4 | 3           |
 ![Wedge-Number](../topology/wedge-face-numbering.png)
 
 -------------------------
-\section hex Hexahedral 
+\section hex Hexahedral
 ![Hex8](../topology/hex08.png)
 ![Hex9](../topology/hex09.png)
 ![Hex16](../topology/hex16.png)

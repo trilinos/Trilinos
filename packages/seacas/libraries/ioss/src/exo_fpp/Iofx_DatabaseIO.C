@@ -2625,6 +2625,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Fiel
           }
           Ioex::filter_node_list(static_cast<double *>(data), dbvals,
                                  activeNodeSetNodesIndex[ns->name()]);
+          set_param[0].distribution_factor_list = nullptr;
         }
       }
       else {
@@ -2887,6 +2888,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
           if (ierr < 0) {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
+          set_param[0].distribution_factor_list = nullptr;
 
           if (field.get_type() == Ioss::Field::INTEGER) {
             // Need to convert 'double' to 'int' for Sierra use...

@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -114,13 +114,13 @@ C
       IF (.NOT. HAVDEN) CALL GETDEN (MAT, DENS, NELBLK, LABEL)
 C
       IF (EXODUS .AND. ISDIS) THEN
-         CALL GETDSP (A(IR), DISP, NDIM, NUMNP, TIME, ITMSEL, 
+         CALL GETDSP (A(IR), DISP, NDIM, NUMNP, TIME, ITMSEL,
      *      'R', ISTAT)
          IF (ISTAT .NE. 0) GO TO 40
 
    30    CONTINUE
          IF (ISABRT()) RETURN
-         CALL GETDSP (A(IR), DISP, NDIM, NUMNP, TIME, ITMSEL, 
+         CALL GETDSP (A(IR), DISP, NDIM, NUMNP, TIME, ITMSEL,
      *      'A', ISTAT)
          IF (ISTAT .NE. 0) GO TO 40
          IF (NDIM .EQ. 2) THEN
@@ -136,7 +136,7 @@ C
          END IF
 C
          CALL OUTPUT (A(IS), A(ID), A(IV), A(IC), A(IZ), MAT,
-     *      NDIM,NELBLK, VOL, A(IVM), A(IEM), 
+     *      NDIM,NELBLK, VOL, A(IVM), A(IEM),
      *      NQUAD, LABEL, AXI, TREAD)
 C
          GO TO 30
@@ -147,14 +147,14 @@ C
      *         A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI2,
      *         A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
      *         A(IVM),A(IEM),NELBLK,AXI,NUMNP)
-         ELSE 
+         ELSE
             CALL CGCAL3 (A(IR),A(IX),MAT,A(IS),VOL,A(ID),
      *         A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
      *         A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
      *         A(IVM),A(IEM),NELBLK,NUMNP)
          END IF
          CALL OUTPUT (A(IS), A(ID), A(IV), A(IC), A(IZ), MAT,
-     *      NDIM,NELBLK, VOL, A(IVM), A(IEM), NQUAD, LABEL, 
+     *      NDIM,NELBLK, VOL, A(IVM), A(IEM), NQUAD, LABEL,
      *      AXI, TREAD)
 C
       END IF

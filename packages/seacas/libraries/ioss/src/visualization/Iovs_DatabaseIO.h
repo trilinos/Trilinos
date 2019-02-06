@@ -40,8 +40,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Iovs_DatabaseIO_h
-#define SIERRA_Iovs_DatabaseIO_h
+#ifndef IOSS_Iovs_DatabaseIO_h
+#define IOSS_Iovs_DatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>

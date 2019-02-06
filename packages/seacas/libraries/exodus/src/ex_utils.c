@@ -1534,6 +1534,20 @@ void ex_compress_variable(int exoid, int varid, int type)
 #endif
 }
 
+int ex_leavedef(int exoid, const char *call_rout)
+{
+  char errmsg[MAX_ERR_LENGTH];
+  int  status;
+
+  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+    ex_err_fn(exoid, call_rout, errmsg, status);
+
+    return (EX_FATAL);
+  }
+  return (EX_NOERR);
+}
+
 static int warning_output = 0;
 
 int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
@@ -1961,10 +1975,15 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_para
     }
   }
 
+#if 0
+  /* Testing to see if can eliminate some nc_enddef movement of vars/recs */
+  if ((status = nc__enddef(exoid, 10000, 4, 10000, 4)) != NC_NOERR) {
+#else
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
-  }
-  return EX_NOERR;
+#endif
+  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+  ex_err_fn(exoid, __func__, errmsg, status);
+  return (EX_FATAL);
+}
+return EX_NOERR;
 }

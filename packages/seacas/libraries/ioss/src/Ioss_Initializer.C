@@ -47,6 +47,10 @@ Ioss::Initializer::Initializer()
 
   Ioss::Bar2::factory();
   Ioss::Bar3::factory();
+#if !defined(BUILT_IN_SIERRA)
+  Ioss::Beam2::factory();
+  Ioss::Beam3::factory();
+#endif
   Ioss::ShellLine2D2::factory();
   Ioss::ShellLine2D3::factory();
 

@@ -128,7 +128,9 @@ namespace {
     std::array<int, 3>               offset{{0, 0, 0}};
     std::bitset<6>                   face_adj;
 
+#ifdef SEACAS_HAVE_MPI
     bool split() const { return face_adj.any(); }
+#endif
   };
 
   std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel)

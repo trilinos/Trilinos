@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -81,7 +81,7 @@ C   --Write 3D
 
 C ... If topology is anything other than QUAD or TRI (HEX or WEDGE)
 C     it is ignored in this routine.
-      
+
 c ... NOTE: COMTOP is in the 2D topology, NAMELB is in the 3D topology
 
       IF (ANYESS) THEN
@@ -89,8 +89,8 @@ c ... NOTE: COMTOP is in the 2D topology, NAMELB is in the 3D topology
 C ... Sidesets are possibly mixed topology (HEX and WEDGE)
 C     Need to iterate the sideset element/side and determine
 C     which block the element/side belongs to and then
-C     adjust accordingly.  
-C     This could probably be optimized...          
+C     adjust accordingly.
+C     This could probably be optimized...
 
 C ... First, set up the index structure to map an element id to the block it is in.
           idxelb(0) = 0
@@ -119,12 +119,12 @@ C ... Now iterate the sideset element/faces
             end if
           end do
         else
-C     ... comtop was not equal to "MULTIPLE_TOPOLOGIES", so 
-C         at this point, the underlying element topology for all elements 
-C         is the same....      
+C     ... comtop was not equal to "MULTIPLE_TOPOLOGIES", so
+C         at this point, the underlying element topology for all elements
+C         is the same....
 
-          if (comtop(:4) .eq. 'QUAD') then 
-C ...       Quad -> hex            
+          if (comtop(:4) .eq. 'QUAD') then
+C ...       Quad -> hex
             DO NL = 1, LESSEO
 C ...         non-front and non-back sidesets
 C ...         Front and back don't get mirrored...(?)
