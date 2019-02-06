@@ -293,8 +293,16 @@ namespace panzer
     const int numBases = basis_.extent(1);
     const int fadSize = Kokkos::dimension_scalar(field_.get_view());
 
-    scratch_view tmp(team.team_shmem(),1,fadSize);
-    scratch_view tmp_field(team.team_shmem(),numBases,fadSize);
+    scratch_view tmp;
+    scratch_view tmp_field;
+    if (Sacado::IsADType<ScalarT>::value) {
+      tmp = scratch_view(team.team_shmem(),1,fadSize);
+      tmp_field = scratch_view(team.team_shmem(),numBases,fadSize);
+    }
+    else {
+      tmp = scratch_view(team.team_shmem(),1);
+      tmp_field = scratch_view(team.team_shmem(),numBases);
+    }
 
     // Initialize the evaluated field.
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
