@@ -833,8 +833,8 @@ namespace Tpetra {
                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* exportLIDs */,
                        Kokkos::DualView<packet_type*, buffer_device_type>& /* exports */,
                        const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
-                       /// Kyungjoo: numPacketsPerLID is better remove const. its content is modified and 
-                       ///     a modify flag should be raised. It is also possible to use 
+                       /// Kyungjoo: numPacketsPerLID is better remove const. its content is modified and
+                       ///     a modify flag should be raised. It is also possible to use
                        ///     const_cast in the function. IMO, remove const is a more clean way.
                        size_t& /* constantNumPackets */,
                        Distributor& /* distor */)
@@ -984,8 +984,8 @@ namespace Tpetra {
     /// DualView without needing to call other DistObject methods.
     bool
     reallocImportsIfNeeded (const size_t newSize,
-                            const bool verbose = false,
-                            const std::string* prefix = nullptr);
+                            const bool verbose,
+                            const std::string* prefix);
 
     /// \brief Number of packets to receive for each receive operation.
     ///

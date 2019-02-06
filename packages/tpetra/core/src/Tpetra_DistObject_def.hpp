@@ -54,6 +54,7 @@
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include <typeinfo>
 #include <memory>
 #include <sstream>
 
@@ -431,6 +432,19 @@ namespace Tpetra {
     using std::endl;
 
     ProfilingRegion region_doTransfer ("Tpetra::DistObject::doTransfer");
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      auto map = this->getMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Tpetra::DistObject::doTransfer: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << *prefix << "Source type: " << typeid (src).name ()
+         << ", Target type: " << typeid (*this).name () << endl;
+      std::cerr << os.str ();
+    }
 
     // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
     // checks.  These may communicate more.
@@ -481,30 +495,6 @@ namespace Tpetra {
              "as the input Export/Import object's target Map.");
         }
       }
-    }
-
-    // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
-    // copious debug output to std::cerr on every MPI process.  This
-    // is unwise for runs with large numbers of MPI processes.
-    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
-    std::unique_ptr<std::string> prefix;
-    if (verbose) {
-      int myRank = 0;
-      auto map = this->getMap ();
-      if (! map.is_null ()) {
-        auto comm = map->getComm ();
-        if (! comm.is_null ()) {
-          myRank = comm->getRank ();
-        }
-      }
-      prefix = [myRank] () {
-        std::ostringstream os;
-        os << "(Proc " << myRank << ") ";
-        return std::unique_ptr<std::string> (new std::string (os.str ()));
-      } ();
-      std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::doTransfer:" << endl;
-      std::cerr << os.str ();
     }
 
     const size_t numSameIDs = transfer.getNumSameIDs ();
@@ -669,20 +659,20 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransferOld (const SrcDistObject& src,
-              CombineMode CM,
-              size_t numSameIDs,
-              const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-              const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-              const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs,
-              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-              Distributor &distor,
-              ReverseOption revOp)
+                 CombineMode CM,
+                 size_t numSameIDs,
+                 const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                 const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+                 const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs,
+                 const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                 Distributor &distor,
+                 ReverseOption revOp)
   {
     using ::Tpetra::Details::getArrayViewFromDualView;
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::reallocDualViewIfNeeded;
     using std::endl;
-    const char prefixRaw[] = "Tpetra::DistObject::doTransfer: ";
+    const char prefixRaw[] = "Tpetra::DistObject::doTransferOld: ";
 
     ProfilingRegion region_doTransferOld ("Tpetra::DistObject::doTransferOld");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -694,7 +684,9 @@ namespace Tpetra {
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      const int myRank = (! this->getMap ().is_null () && ! this->getMap ()->getComm ().is_null ()) ? this->getMap ()->getComm ()->getRank () : 0;
+      auto map = this->getMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank << ": " << prefixRaw;
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
@@ -907,7 +899,7 @@ namespace Tpetra {
             "rbufLen=" << rbufLen << ", verbose=true)" << endl;
           std::cerr << os.str ();
         }
-        reallocImportsIfNeeded (rbufLen, verbose);
+        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -991,7 +983,7 @@ namespace Tpetra {
                  << "; calling reallocImportsIfNeeded" << endl;
               std::cerr << os.str ();
             }
-            reallocImportsIfNeeded (totalImportPackets, verbose);
+            reallocImportsIfNeeded (totalImportPackets, verbose, prefix.get ());
 
             // We don't need to sync imports_, because it is only for
             // output here.  Similarly, we don't need to mark exports_
@@ -1092,7 +1084,7 @@ namespace Tpetra {
                  << "; calling reallocImportsIfNeeded" << endl;
               std::cerr << os.str ();
             }
-            reallocImportsIfNeeded (totalImportPackets, verbose);
+            reallocImportsIfNeeded (totalImportPackets, verbose, prefix.get ());
 
             // We don't need to sync imports_, because it is only for
             // output here.  Similarly, we don't need to mark exports_

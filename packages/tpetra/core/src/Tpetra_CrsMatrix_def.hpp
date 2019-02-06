@@ -8572,7 +8572,7 @@ namespace Tpetra {
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
       const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
-      destMat->reallocImportsIfNeeded (rbufLen);
+      destMat->reallocImportsIfNeeded (rbufLen, false, nullptr);
     }
 
     // Pack & Prepare w/ owning PIDs
@@ -8735,7 +8735,8 @@ namespace Tpetra {
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
-          destMat->reallocImportsIfNeeded (totalImportPackets);
+          destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                           verbosePrefix.get ());
           destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
@@ -8832,7 +8833,8 @@ namespace Tpetra {
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
-          destMat->reallocImportsIfNeeded (totalImportPackets);
+          destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                           verbosePrefix.get ());
           destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
