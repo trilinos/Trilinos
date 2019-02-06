@@ -189,6 +189,85 @@ namespace FROSch {
         sortunique(repeatedIndices);
         return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm){
+        
+        int MyPID=TeuchosComm->getRank();
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+        //Zoltan2 Problem
+        typedef Zoltan2::XpetraCrsGraphAdapter<Xpetra::CrsGraph<LO,GO,NO> > inputAdapter;
+        Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::sublist(parameterList,"Zoltan2 Parameter");
+        
+        Teuchos::RCP<inputAdapter> adaptedMatrix = Teuchos::rcp(new inputAdapter(Xgraph,0,0));
+        size_t MaxRow = B->getGlobalMaxNumRowEntries();
+        Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(B->getRowMap()->lib(),MaxRow,MaxRow,0,TeuchosComm);
+        Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
+        Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
+        problem->solve();
+        Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
+        adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());
+        
+        
+        //Repeated Element List
+        Teuchos::RCP<const Xpetra::Map<GO,LO,NO> > EleRepMap = ReGraph->getColMap();
+        
+        //------------------------------Build NodeRepMap-----------------------------
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
+        //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
+        
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),ColMap,MaxRow));
+        BB->doImport(*B,*scatter,Xpetra::INSERT);
+        BB->fillComplete();
+        
+        //--------------------Get Repeated Nodes Map------------------------
+        //All Elemnts and neighboring on Proc
+        Teuchos::ArrayView<const GO>  eList =EleRepMap->getNodeElementList();
+        
+        std::map<GO,int> rep;
+        
+        Teuchos::ArrayView<const GO> arr;
+        Teuchos::ArrayView<const LO> cc;
+        Teuchos::ArrayView<const GO> arr2;
+        Teuchos::ArrayView<const LO> cc2;
+        std::vector<GO> vec = createVector(eList);
+        
+        for(size_t i = 0 ; i<Xgraph->getRowMap()->getNodeNumElements();i++){
+            std::vector<GO> el1;
+            std::vector<GO> el2;
+            
+            BB->getLocalRowView(i,cc,arr);
+            el1 = Teuchos::createVector(arr);
+            
+            for(int h = 0;h<el1.size();h++) rep.insert(std::pair<GO,int>(el1.at(h),MyPID));
+            
+            for(int k = Xgraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
+                BB->getLocalRowView(k,cc2,arr2);
+                el2 = Teuchos::createVector(arr2);
+                
+                sort(el1.begin(),el1.end());
+                sort(el2.begin(),el2.end());
+                std::vector<int>::iterator it;
+                
+                std::vector<GO> common (3);
+                it = std::set_intersection(el1.begin(),el1.end(),el2.begin(),el2.end(), common.begin());
+                common.resize(it-common.begin());
+                for(int l = 0;l<common.size();l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
+            }
+        }
+        
+        Teuchos::Array<GO> repeatedIndices;
+        for (auto& x: rep) {
+            repeatedIndices.push_back(x.first);
+        }
+        
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),-1,repeatedIndices(),0,ReGraph->getColMap()->getComm());
+        
+        
+        RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        
+        return RepeatedMap;
+        
+    }
     
     /*
     template <class SC,class LO,class GO,class NO>
