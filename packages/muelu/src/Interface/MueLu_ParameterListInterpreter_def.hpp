@@ -1293,6 +1293,7 @@ namespace MueLu {
       // RepartitionHeuristic
       auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
       ParameterList repartheurParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node repartition level",int,repartheurParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",          int, repartheurParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",    int, repartheurParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per proc", int, repartheurParams);
@@ -1300,6 +1301,9 @@ namespace MueLu {
       repartheurFactory->SetParameterList(repartheurParams);
       repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
       manager.SetFactory("number of partitions", repartheurFactory);
+
+      if(partName == "node")
+        repartheurFactory->SetFactory("NodeComm",         manager.GetFactory("NodeComm"));
 
       // Partitioner
       RCP<Factory> partitioner;
@@ -1319,6 +1323,17 @@ namespace MueLu {
         partitioner->SetParameterList(partParams);
 #else
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
+#endif
+      }
+      else if (partName == "node") {
+#ifdef HAVE_MPI
+        partitioner = rcp(new NodePartitionInterface());
+        ParameterList partParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node id"               ,int,repartheurParams);
+        partitioner->SetParameterList(partParams);
+        partitioner->SetFactory("NodeComm",         manager.GetFactory("NodeComm"));
+#else
+        throw Exceptions::RuntimeError("MPI is not available");
 #endif
       }
       partitioner->SetFactory("A",                    manager.GetFactory("A"));
