@@ -383,6 +383,21 @@ int main(int argc, char* argv[])
     if (verbose) std::cout<< "unsuccessful" <<std::endl;
     numberFailedTests++;
   }
+  //  Create a swap testing matrix
+  DMatrix CCCswap( 2, 3 );
+  CCCswap.random();
+  DMatrix copyCCC(Teuchos::Copy, CCC);
+  DMatrix copyCCCswap(Teuchos::Copy, CCCswap);
+  if (verbose) std::cout <<  "swap() -- swap the values and attributes of two matrices -- ";
+  CCCswap.swap(CCC);
+  bool op_result = ( (CCCswap == copyCCC) && (CCC == copyCCCswap) );
+  if (verbose)
+    std::cout << (op_result ? "successful" : "failed" )<<std::endl;
+  if( !op_result )
+    numberFailedTests++;
+  // Swap back using other matrix and allow downstream testing to proceed as if without swapping
+  CCC.swap(CCCswap);
+
   //  Create a view into a submatrix of CCC
   DMatrix CCCview( Teuchos::View, CCC, 3, 3 );
   DMatrix CCCtest1( 2, 3 );
@@ -441,7 +456,7 @@ int main(int argc, char* argv[])
   //
   //  Check overloaded operators.
   //
-  bool op_result;
+  op_result;
   MultTestHugeATimesHugeB.reshape(10, 10);
   op_result = (MultTestHugeATimesHugeB == MultTestHugeATimesHugeBExpResult);
   if (verbose) {
