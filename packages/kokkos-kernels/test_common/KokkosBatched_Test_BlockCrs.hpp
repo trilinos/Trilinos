@@ -116,8 +116,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION 
       void operator()(const TeamTag &, const MemberType &member) const {
         const int ijbeg = member.league_rank()*VectorLength;
-        Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, VectorLength),
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
            [&](const int &idx) {
             const int ij = ijbeg + idx;
             if (ij < _ntridiag) {
@@ -211,8 +210,7 @@ namespace KokkosBatched {
         ScratchViewType<packed_view_type> sA(member.team_scratch(_shmemlvl), VectorLength, _blocksize, _blocksize);
 
         const int ijbeg = member.league_rank()*VectorLength;
-        Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, VectorLength),
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
            [&](const int &idx) {
             const int ij = ijbeg + idx;
             if (ij < _ntridiag) {
@@ -294,7 +292,7 @@ namespace KokkosBatched {
           case 0: {
             std::cout << "KokkosBatched::RangeTag::" << Gemm_AlgoTagType::name() << "\n";
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for("KokkosBatched::Test::BlockCrs::FactorizeBlockTridiagMatrices::Op0", policy, *this);
             break;
           }
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
@@ -322,7 +320,7 @@ namespace KokkosBatched {
             }
 
             const policy_type policy(_ntridiag, team_size, VectorLength);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for("KokkosBatched::Test::BlockCrs::FactorizeBlockTridiagMatrices::Op1", policy, *this);
             break;
           }
           case 2: {
@@ -354,7 +352,7 @@ namespace KokkosBatched {
               }
               
               policy_type policy = policy_type(_ntridiag, team_size, VectorLength).set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch));
-              Kokkos::parallel_for(policy, *this);
+              Kokkos::parallel_for("KokkosBatched::Test::BlockCrs::FactorizeBlockTridiagMatrices::Op2", policy, *this);
             } 
             break;
           }
@@ -604,8 +602,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION 
       void operator()(const TeamTag &, const MemberType &member) const {
         const int ijbeg = member.league_rank()*VectorLength;
-        Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, VectorLength),
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
            [&](const int &idx) {
             const int ij = ijbeg + idx;
             if (ij < _ntridiag) {
@@ -704,8 +701,7 @@ namespace KokkosBatched {
         ScratchViewType<packed_view_type> s(member.team_scratch(_shmemlvl), VectorLength, _m, _blocksize);
 
         const int ijbeg = member.league_rank()*VectorLength;
-        Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, VectorLength),
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
            [&](const int &idx) {
             const int ij = ijbeg + idx;
             if (ij < _ntridiag) {
@@ -825,7 +821,7 @@ namespace KokkosBatched {
           switch (op) {
           case 0: {
             const Kokkos::RangePolicy<exec_space,RangeTag> policy(0, _ntridiag);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for("KokkosBatched::Test::BlockCrs::SolveBlockTridiagMatrices::Op0", policy, *this);
             break;
           }
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
@@ -850,7 +846,7 @@ namespace KokkosBatched {
             }
             
             const policy_type policy(_ntridiag, team_size, VectorLength);
-            Kokkos::parallel_for(policy, *this);
+            Kokkos::parallel_for("KokkosBatched::Test::BlockCrs::SolveBlockTridiagMatrices::Op1", policy, *this);
             break;
           }
           case 2: {
@@ -879,7 +875,7 @@ namespace KokkosBatched {
               }
               
               policy_type policy = policy_type(_ntridiag, team_size, VectorLength).set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch));;
-              Kokkos::parallel_for(policy, *this);
+              Kokkos::parallel_for("KokkosBatched::Test::BlockCrs::SolveBlockTridiagMatrices::Op2", policy, *this);
             }
             break;
           }

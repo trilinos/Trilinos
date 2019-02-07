@@ -89,7 +89,6 @@ SmootherPrototype
 SolverBase
 SteepestDescentSolver
 StructuredAggregationFactory
-#StructuredAggregationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 StructuredLineDetectionFactory
 SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO

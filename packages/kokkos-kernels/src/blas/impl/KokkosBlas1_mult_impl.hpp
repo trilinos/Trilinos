@@ -215,24 +215,24 @@ V_Mult_Generic (typename CV::const_value_type& c,
     if (ab == ATA::zero ()) {
       typedef V_MultFunctor<CV, AV, BV, 0, 0, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S0", policy, op);
     }
     else {
       typedef V_MultFunctor<CV, AV, BV, 2, 0, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S1", policy, op);
     }
   }
   else { // c != 0
     if (ab == ATA::zero ()) {
       typedef V_MultFunctor<CV, AV, BV, 0, 2, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S2", policy, op);
     }
     else {
       typedef V_MultFunctor<CV, AV, BV, 2, 2, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S3", policy, op);
     }
   }
 }
@@ -277,24 +277,24 @@ MV_Mult_Generic (typename CMV::const_value_type& c,
     if (ab == ATA::zero ()) {
       typedef MV_MultFunctor<CMV, AV, BMV, 0, 0, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S4", policy, op);
     }
     else {
       typedef MV_MultFunctor<CMV, AV, BMV, 2, 0, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S5", policy, op);
     }
   }
   else { // c != 0
     if (ab == ATA::zero ()) {
       typedef MV_MultFunctor<CMV, AV, BMV, 0, 2, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S6", policy, op);
     }
     else {
       typedef MV_MultFunctor<CMV, AV, BMV, 2, 2, SizeType> functor_type;
       functor_type op (c, C, ab, A, B);
-      Kokkos::parallel_for (policy, op);
+      Kokkos::parallel_for ("KokkosBlas::Mult::S7", policy, op);
     }
   }
 }

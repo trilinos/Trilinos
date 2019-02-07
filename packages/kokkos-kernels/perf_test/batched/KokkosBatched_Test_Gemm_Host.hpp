@@ -87,8 +87,8 @@ namespace KokkosBatched {
           amat_simd("amat_simd", N, BlkSize, BlkSize),
           bmat_simd("bmat_simd", N, BlkSize, BlkSize);
 
-        Kokkos::parallel_for
-          (Kokkos::RangePolicy<HostSpaceType>(0, N*VectorLength),
+        Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::Pack",
+           Kokkos::RangePolicy<HostSpaceType>(0, N*VectorLength),
            KOKKOS_LAMBDA(const int k) {
             const int k0 = k/VectorLength, k1 = k%VectorLength;
             for (int i=0;i<BlkSize;++i)
@@ -128,8 +128,8 @@ namespace KokkosBatched {
               HostSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for
-                (policy, 
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::CblasOpenMP",
+                 policy, 
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
@@ -385,8 +385,8 @@ namespace KokkosBatched {
               HostSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for
-                (policy, 
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::libxswmmOpenMP",
+                 policy, 
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
@@ -515,8 +515,8 @@ namespace KokkosBatched {
               HostSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for
-                (policy, 
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmHost::SIMDSerialOpenMP",
+                 policy, 
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());

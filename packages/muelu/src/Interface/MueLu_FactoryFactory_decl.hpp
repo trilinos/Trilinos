@@ -149,6 +149,7 @@
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
@@ -274,6 +275,7 @@ namespace MueLu {
       if (factoryName == "CoordinatesTransferFactory_kokkos")  return Build2<CoordinatesTransferFactory_kokkos>  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")            return Build2<NullspaceFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory_kokkos")                  return Build2<SaPFactory_kokkos>                  (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "StructuredAggregationFactory_kokkos")return Build2<StructuredAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")           return Build2<TentativePFactory_kokkos>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos") return Build2<UncoupledAggregationFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
 #endif

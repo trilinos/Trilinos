@@ -44,7 +44,6 @@
 // @HEADER
 
 #include "Zoltan2_Directory_Impl.hpp"
-#include "Kokkos_Core.hpp"
 
 // This type will be used by some of these tests
 class gid_struct {
@@ -58,28 +57,8 @@ class gid_struct {
     val[2] = v2;
     val[3] = v3;
   }
-  bool operator==(const gid_struct &p) const
-  {
-    return(
-      val[0] == p.val[0] &&
-      val[1] == p.val[1] &&
-      val[2] == p.val[2] &&
-      val[3] == p.val[3]);
-  }
   int val[4]; // can be any length but this can't have mem alloc (like std::vector)
 };
-
-namespace std {
-  template <>
-  struct hash<gid_struct>
-  {
-    std::size_t operator() (const gid_struct &node) const
-    {
-      return node.val[0] ^ node.val[1] ^ node.val[2] ^ node.val[3];
-    }
-  };
-}
-
 
 // same as gid but for better coverage of testing, make it different
 class lid_struct {

@@ -53,7 +53,7 @@ namespace Test {
     Kokkos::View<typename AT::mag_type*,Device> d_r("Nrm2::Result",K);
 
     //KokkosBlas::nrm2(r,a);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamNrm2", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        d_r(teamId) = KokkosBlas::Experimental::nrm2(teamMember, Kokkos::subview(a,Kokkos::ALL(),teamId));
     } );
@@ -64,7 +64,7 @@ namespace Test {
     }
 
     //KokkosBlas::nrm2(r,c_a);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamNrm2", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        d_r(teamId) = KokkosBlas::Experimental::nrm2(teamMember, Kokkos::subview(c_a,Kokkos::ALL(),teamId));
     } );

@@ -1122,7 +1122,7 @@ void
       c_row_view_t rowmapC_,
       c_lno_nnz_view_t entriesC_,
       c_scalar_nnz_view_t valuesC_,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space){
+      KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space){
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tHASH MODE" << std::endl;
@@ -1183,7 +1183,7 @@ void
 
   //choose parameters
   if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm){
-	  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+	  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 		  //then chose the best method and parameters.
 		  size_type average_row_nnz = overall_nnz / this->a_row_cnt;
 		  size_t average_row_flops = original_overall_flops / this->a_row_cnt;
@@ -1299,7 +1299,7 @@ void
 					  rowmapC_,
 					  entriesC_,
 					  valuesC_,
-					  my_exec_space);
+					  lcl_my_exec_space);
 			  return;
 		  }
 	  }
@@ -1313,7 +1313,7 @@ void
 
 
   //required memory for L2
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 
 	  if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
 		  tmp_max_nnz = 1;
@@ -1356,7 +1356,7 @@ void
   int num_chunks = concurrency / suggested_vector_size;
 
 #if defined( KOKKOS_ENABLE_CUDA )
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 
     size_t free_byte ;
     size_t total_byte ;
@@ -1390,7 +1390,7 @@ void
   KokkosKernels::Impl::PoolType my_pool_type =
       KokkosKernels::Impl::OneThread2OneChunk;
 
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1428,7 +1428,7 @@ void
       min_hash_size, max_nnz,
       suggested_team_size,
 
-      my_exec_space,
+      lcl_my_exec_space,
       team_row_chunk_size,
 	  first_level_cut_off, flops_per_row,
 	  KOKKOSKERNELS_VERBOSE);
@@ -1439,7 +1439,7 @@ void
   }
   timer1.reset();
 
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 	  if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
 		  Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY_SPREADTEAM", gpu_team_policy4_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
 		    MyExecSpace::fence();
@@ -1498,7 +1498,7 @@ void
       c_row_view_t rowmapC_,
       c_lno_nnz_view_t entriesC_,
       c_scalar_nnz_view_t valuesC_,
-      KokkosKernels::Impl::ExecSpaceType my_exec_space){
+      KokkosKernels::Impl::ExecSpaceType my_exec_space_){
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tHASH MODE" << std::endl;
   }
@@ -1534,7 +1534,7 @@ void
 
   KokkosKernels::Impl::PoolType my_pool_type =
       KokkosKernels::Impl::OneThread2OneChunk;
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1573,7 +1573,7 @@ void
       min_hash_size, max_nnz,
       suggested_team_size,
 
-      my_exec_space,
+      my_exec_space_,
 	  team_row_chunk_size,
 	  first_level_cut_off,
        this->handle->get_spgemm_handle()->row_flops, KOKKOSKERNELS_VERBOSE);
@@ -1584,7 +1584,7 @@ void
   }
   timer1.reset();
 
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
     Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY2",  gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     MyExecSpace::fence();
   }

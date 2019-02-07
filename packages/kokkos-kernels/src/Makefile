@@ -93,3 +93,7 @@ build: kokkoskernels-build-lib
 
 install: kokkoskernels-install
  
+clean: kokkoskernels-clean kokkos-clean
+	rm -f *.o
+#	rm -f *.o $(KOKKOSKERNELS_INTERNAL_LIBRARY) KokkosKernels_config.h KokkosKernels_config.tmp KokkosCore_config.h KokkosCore_config.tmp 
+
