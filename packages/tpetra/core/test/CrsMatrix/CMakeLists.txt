@@ -48,6 +48,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_UnitTests_Swap
+  SOURCES
+    CrsMatrix_UnitTests_Swap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalAfterResume
   SOURCES
     CrsMatrix_NonlocalAfterResume

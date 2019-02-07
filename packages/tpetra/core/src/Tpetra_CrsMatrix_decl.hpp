@@ -1022,11 +1022,13 @@ namespace Tpetra {
     virtual ~CrsMatrix ();
 
 
+  //protected:      // SCAFFOLDING - We need to make this protected
     /// \brief Swaps the data from *this with the data and maps from crsMatrix
     ///
     /// \param matrix [in/out] a crsMatrix
     void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
 
+  public:
 
     //@}
     //! @name Methods for inserting, modifying, or removing entries
