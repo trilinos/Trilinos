@@ -131,11 +131,9 @@ namespace MueLu {
     RCP<Matrix> finalP;
 
     // Reuse pattern if available
-    RCP<ParameterList> APparams;
+    RCP<ParameterList> APparams = rcp(new ParameterList);;
     if(pL.isSublist("matrixmatrix: kernel params"))
-      APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else
-      APparams= rcp(new ParameterList);
+      APparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
