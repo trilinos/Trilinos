@@ -63,7 +63,6 @@
 
 namespace MueLu {
 
-
   /*!
     @class NodePartitionInterface
     @brief Partitioning within a node only

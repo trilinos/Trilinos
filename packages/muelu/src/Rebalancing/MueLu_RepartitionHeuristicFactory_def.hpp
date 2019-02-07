@@ -94,15 +94,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
-    
+    const Teuchos::ParameterList & pL = GetParameterList();    
     if(pL.isParameter("repartition: node repartition level")) {
       const int nodeRepartLevel = pL.get<int>("repartition: node repartition level");
       if(currentLevel.GetLevelID() == nodeRepartLevel) {
         Input(currentLevel,"Node Comm");
       }
     }
-
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -169,7 +167,7 @@ namespace MueLu {
     if (currentLevel.GetLevelID() == nodeRepartLevel) {
       RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<Teuchos::Comm<int> > >(currentLevel, "Node Comm");
       TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
-      GetOStream(Statistics1) << "Repartitioning?  YES: Within node only\n"<<std:endl;
+      GetOStream(Statistics1) << "Repartitioning?  YES: Within node only"<<std::endl;
       int nodeRank = NodeComm->getRank();
 
       // Do a reduction to get the total number of nodes
@@ -178,7 +176,7 @@ namespace MueLu {
       Teuchos::reduceAll(*NodeComm, Teuchos::REDUCE_SUM, isZero, Teuchos::outArg(numNodes));
       Set(currentLevel, "number of partitions", numNodes);
       return;
-    }   
+    }  
 
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning     
     if (currentLevel.GetLevelID() < startLevel) {

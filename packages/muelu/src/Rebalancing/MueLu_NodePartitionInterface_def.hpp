@@ -116,10 +116,14 @@ namespace MueLu {
     }
 #endif
 
-    // The "Partition" is a vector of length # of my rows with the partition number to which the unknown is assigned
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
-    decomposition->putScalar(Teuchos::as<GO>(nodeId));
+    // Get the rank (in current comm) of rank 0 in my NodeComm
+    int nodeZeroRank =A->getMap()->getComm()->getRank();
+    Teuchos::broadcast<int,int>(*NodeComm,0,inOutArg(nodeZeroRank));
 
+    // A "Partition" from a *Interface is supposed to be is a vector of length # of my rows with the partition number to which the unknown is assigned
+    // BUT, since we're bypassing remap for NodePartition, we'll return a *rank* of the guy who gets each unknown (which is what remap outputs).
+    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap, false);
+    decomposition->putScalar(Teuchos::as<GO>(nodeZeroRank));
 
     Set(level, "Partition", decomposition);
 
