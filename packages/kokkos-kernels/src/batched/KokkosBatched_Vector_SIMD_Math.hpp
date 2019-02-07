@@ -15,7 +15,7 @@ namespace KokkosBatched {
     /// simd 
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T,l)
     sqrt(const Vector<SIMD<T>,l> &a) {
@@ -34,7 +34,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T,l)
     cbrt(const Vector<SIMD<T>,l> &a) {
@@ -53,7 +53,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T,l)
     log(const Vector<SIMD<T>,l> &a) {
@@ -72,7 +72,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T,l)
     log10(const Vector<SIMD<T>,l> &a) {
@@ -91,7 +91,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T,l)
     exp(const Vector<SIMD<T>,l> &a) {
@@ -110,7 +110,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T0,l)
     pow(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
@@ -129,7 +129,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T0,l)
     pow(const T0 &a, const Vector<SIMD<T1>,l> &b) {
@@ -137,7 +137,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T0,l)
     pow(const Vector<SIMD<T0>,l> &a, const T1 &b) {
@@ -145,7 +145,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     sin(const Vector<SIMD<T>,l> &a) {
@@ -164,7 +164,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     cos(const Vector<SIMD<T>,l> &a) {
@@ -183,7 +183,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     tan(const Vector<SIMD<T>,l> &a) {
@@ -202,7 +202,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     sinh(const Vector<SIMD<T>,l> &a) {
@@ -221,7 +221,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     cosh(const Vector<SIMD<T>,l> &a) {
@@ -240,7 +240,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     tanh(const Vector<SIMD<T>,l> &a) {
@@ -259,7 +259,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     asin(const Vector<SIMD<T>,l> &a) {
@@ -278,7 +278,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     acos(const Vector<SIMD<T>,l> &a) {
@@ -297,7 +297,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan(const Vector<SIMD<T>,l> &a) {
@@ -316,7 +316,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan2(const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
@@ -335,7 +335,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan2(const T &a, const Vector<SIMD<T>,l> &b) {
@@ -343,7 +343,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T,l)
     atan2(const Vector<SIMD<T>,l> &a, const T &b) {
