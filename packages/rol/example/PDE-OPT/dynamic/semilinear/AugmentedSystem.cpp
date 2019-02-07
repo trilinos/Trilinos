@@ -133,12 +133,12 @@ public:
 
 inline void pauseToAttach(MPI_Comm mpicomm)
 {
-  Teuchos::RCP<Teuchos::Comm<int> > comm = 
+  Teuchos::RCP<Teuchos::Comm<int> > comm =
     Teuchos::createMpiComm<int>(Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setShowProcRank(true);
   out.setOutputToRootOnly(-1);
-  
+
   comm->barrier();
 
   // try to get them to print out all at once
@@ -182,8 +182,8 @@ int main(int argc, char *argv[]) {
     int coarseSweeps  = parlist->get("MGRIT Coarse Sweeps", 1);
     RealT coarseOmega = parlist->get("MGRIT Coarse Relaxation",1.0);
     int numLevels     = parlist->get("MGRIT Levels",3);
-    double absTol     = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
-    double relTol     = parlist->get("MGRIT Krylov Absolute Tolerance",1e-4);
+    double relTol     = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
+    double absTol     = parlist->get("MGRIT Krylov Absolute Tolerance",1e-4);
     int spaceProc     = parlist->get("MGRIT Spatial Procs",1);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
@@ -239,12 +239,11 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD PINT CONSTRAINT *********************************/
     /*************************************************************************/
-    auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(control->numOwnedSteps());
-    for( uint k=0; k<timeStamp->size(); ++k ) {
-      timeStamp->at(k).t.resize(2);
-      timeStamp->at(k).t.at(0) = k*dt;
-      timeStamp->at(k).t.at(1) = (k+1)*dt;
-    }
+
+    /*************************************************************************/
+    /************************* BUILD TIME STAMP ******************************/
+    /*************************************************************************/
+    auto timeStamp = ROL::TimeStamp<RealT>::make_uniform(0,T,{0.0,1.0},control->numOwnedSteps());
 
     if(myRank==0) {
       (*outStream) << "Sweeps = " << sweeps       << std::endl;
@@ -270,10 +269,10 @@ int main(int argc, char *argv[]) {
     double tol = 1e-12;
     auto kkt_x_in  = kkt_vector->clone();
     auto kkt_b     = kkt_vector->clone();
-  
+
     ROL::RandomizeVector(*kkt_x_in);
     kkt_b->zero();
- 
+
     if(myRank==0) {
       (*outStream) << "Applying augmented KKT system" << std::endl;
     }
@@ -286,17 +285,17 @@ int main(int argc, char *argv[]) {
     }
 
     auto timer = Teuchos::TimeMonitor::getStackedTimer();
-  
+
     {
       RealT res0 = kkt_b->norm();
       kkt_b->scale(1.0/res0);
       res0 = kkt_b->norm();
-  
+
       assert(std::fabs(res0-1.0) <= 1.0e-14);
-  
+
       auto kkt_x_out = kkt_vector->clone();
       kkt_x_out->zero();
-  
+
       KKTOperator kktOperator;
       kktOperator.pint_con = pint_con;
       kktOperator.state = state;
@@ -305,7 +304,7 @@ int main(int argc, char *argv[]) {
       kktOperator.myRank = myRank;
 
       RCP<ROL::LinearOperator<RealT>> precOperator;
-    
+
       // build the preconditioner 
       if(useWathenPrec) {
         RCP<WathenKKTOperator> wathenOperator(new WathenKKTOperator);
@@ -327,25 +326,26 @@ int main(int argc, char *argv[]) {
 
         precOperator = mgOperator;
       }
-  
+
       Teuchos::ParameterList parlist;
       ROL::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
       krylovList.set("Absolute Tolerance",absTol);
       krylovList.set("Relative Tolerance",relTol);
 
-      if(myRank==0) 
+      if(myRank==0)
         (*outStream) << "RELATIVE TOLERANCE = " << relTol << std::endl;
-  
-      ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
-  
+
+      //ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
+      ROL::MINRES<RealT> krylov(1e0, 1e-6, 200); // TODO: Do Belos
+
       int flag = 0, iter = 0;
-  
+
       MPI_Barrier(MPI_COMM_WORLD);
       double t0 = MPI_Wtime();
-  
+
       if(myRank==0) {
-        (*outStream) << "Solving KKT system: "; 
-        if(useWathenPrec) 
+        (*outStream) << "Solving KKT system: ";
+        if(useWathenPrec)
           (*outStream) << "using Wathen preconditioner" << std::endl;
         else
           (*outStream) << "using MGRIT preconditioner" << std::endl;
@@ -357,19 +357,65 @@ int main(int argc, char *argv[]) {
 
       if(myRank==0)
         (*outStream) << "Solving KKT system - complete" << std::endl;
-  
+
       MPI_Barrier(MPI_COMM_WORLD);
       double tf = MPI_Wtime();
-  
+
       std::stringstream ss;
       timer->report(ss);
-  
+
+      // Don't trust residual computation, so repeat.
+      auto myb = kkt_b->clone();
+      myb->set(*kkt_b);
+      auto norm_myb = myb->norm();
+      auto tmp = kkt_b->clone();
+      RealT dummytol = 1e-8;
+      kktOperator.apply(*tmp, *kkt_x_out, dummytol);
+      tmp->axpy(-1, *myb);
+      auto norm_myAxmb = tmp->norm();
+      auto norm_mysoln = kkt_x_out->norm();
+
       if(myRank==0) {
         (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
-  
         (*outStream) << std::endl;
+        (*outStream) << "||x||=" << norm_mysoln << "  ||b||=" << norm_myb << "  ||Ax-b||=" << norm_myAxmb << std::endl;
         (*outStream) << ss.str();
       }
+
+    /*************************************************************************/
+    /***************** BUILD SERIAL-IN-TIME CONSTRAINT ***********************/
+    /*************************************************************************/
+    auto serial_con = ROL::make_SerialConstraint(dyn_con, *u0, timeStamp);
+
+    /*************************************************************************/
+    /******************* BUILD SERIAL-IN-TIME VECTORS ************************/
+    /*************************************************************************/
+    auto U  = ROL::PartitionedVector<RealT>::create(*uo, nt);
+    auto Z  = ROL::PartitionedVector<RealT>::create(*zk, nt);
+    auto C  = ROL::PartitionedVector<RealT>::create(*ck, nt);
+
+    auto UZ    = ROL::make_Vector_SimOpt(U, Z);
+    auto X     = UZ->clone();
+    auto V_x   = X->clone();
+    auto V_c   = C->clone();
+    auto V_l   = C->dual().clone();
+    auto ajv   = X->dual().clone();
+    auto ajvpx = X->dual().clone();
+    auto jv    = C->clone();
+
+    /*************************************************************************/
+    /******************* APPLY AUGMENTED SYSTEM TO 1's ***********************/
+    /*************************************************************************/
+    X->zero();
+    V_x->setScalar(1.0);
+    V_l->setScalar(1.0);
+    ajvpx->set(V_x->dual());
+    serial_con->applyAdjointJacobian(*ajv, *V_l, *X, dummytol);
+    ajvpx->plus(*ajv);
+    serial_con->applyJacobian(*jv, *V_x, *X, dummytol);
+    (*outStream) << "Norm of Aug*1 1st component = " << ajvpx->norm() << "\n";
+    (*outStream) << "Norm of Aug*1 2nd component = " << jv->norm() << "\n";
+
     }
   }
   catch (std::logic_error& err) {
