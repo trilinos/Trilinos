@@ -46,6 +46,7 @@
 /// \brief Definition of Tpetra::Experimental::BlockCrsMatrix
 
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 
@@ -3097,7 +3098,6 @@ public:
     using std::endl;
     using host_exec =
       typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
-    const char tfecfFuncName[] = "unpackAndCombineNew: ";
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombineNew");
     const bool verbose = Behavior::verbose ();
@@ -3213,12 +3213,33 @@ public:
       return;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (importLIDs.need_sync_host (),
-       std::runtime_error, "importLIDs must be sync'd to host.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (numPacketsPerLID.need_sync_host (),
-       std::runtime_error, "numPacketsPerLID must be sync'd to host.");
+    // Hack so we can sync imports.  NOTE (mfh 07 Feb 2019) This does
+    // _not_ modify the sync flags of imports, even though the data
+    // have been sync'd!
+    {
+      using Tpetra::Details::castAwayConstDualView;
+      auto imports_nc = castAwayConstDualView (imports);
+      imports_nc.sync_host ();
+
+      if (imports_nc.need_sync_host () || numPacketsPerLID.need_sync_host () ||
+          importLIDs.need_sync_host ()) {
+        std::ostream& err = this->markLocalErrorAndGetStream ();
+        std::ostringstream os;
+        os << prefix << "All input DualViews must be sync'd to host by now. "
+           << "imports_nc.need_sync_host()="
+           << (imports_nc.need_sync_host () ? "true" : "false")
+           << ", numPacketsPerLID.need_sync_host()="
+           << (numPacketsPerLID.need_sync_host () ? "true" : "false")
+           << ", importLIDs.need_sync_host()="
+           << (importLIDs.need_sync_host () ? "true" : "false")
+           << "." << endl;
+        if (verbose) {
+          std::cerr << os.str ();
+        }
+        err << os.str ();
+        return;
+      }
+    }
 
     const auto importLIDsHost = importLIDs.view_host ();
     const auto numPacketsPerLIDHost = numPacketsPerLID.view_host ();
