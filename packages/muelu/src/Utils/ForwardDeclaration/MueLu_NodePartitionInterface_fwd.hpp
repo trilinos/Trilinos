@@ -58,6 +58,6 @@ namespace MueLu {
 #define MUELU_NODEPARTITIONINTERFACE_SHORT
 #endif
 
-#endif // defined(HAVE_MPI)
+#endif
 
 #endif // MUELU_NODEPARTITIONINTERFACE_FWD_HPP
