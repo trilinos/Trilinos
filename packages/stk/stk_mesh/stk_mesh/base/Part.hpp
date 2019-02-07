@@ -215,19 +215,29 @@ bool contains( const PartVector & v , const Part & part );
 inline
 bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
 {
-  for(OrdinalVector::iterator i=v.begin(), e=v.end(); i!=e; ++i) {
-    if (*i == part_ordinal) return false;
-    if (*i > part_ordinal) {
-      v.insert(i, part_ordinal);
-      return true;
-    }
+  OrdinalVector::iterator iter = std::lower_bound(v.begin(), v.end(), part_ordinal);
+  if (iter == v.end() || *iter != part_ordinal) {
+    v.insert(iter, part_ordinal);
+    return true;
   }
-
-  v.push_back(part_ordinal);
-  return true ;
+  return false;
 }
 
 void get_part_and_all_subsets(const Part& part, ConstPartVector& part_and_all_subsets);
+
+template<typename PARTVECTOR>
+void get_parts_and_all_subsets(const PARTVECTOR& parts, OrdinalVector& parts_and_all_subsets)
+{
+  parts_and_all_subsets.clear();
+  for(const Part* part : parts) {
+    insert_ordinal(parts_and_all_subsets, part->mesh_meta_data_ordinal());
+  
+    const PartVector& subsets = part->subsets();
+    for(const Part* subset : subsets) {
+      insert_ordinal(parts_and_all_subsets, subset->mesh_meta_data_ordinal());
+    }
+  }
+}
 
 /** \brief  Remove a part from a properly ordered collection of parts. */
 void remove( PartVector & , Part & );
@@ -256,6 +266,13 @@ bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
   }
 
   return false;
+}
+
+inline
+bool contains_ordinal(const OrdinalVector& ordinals, Ordinal ord)
+{
+  OrdinalVector::const_iterator iter = std::lower_bound(ordinals.begin(), ordinals.end(), ord);
+  return iter != ordinals.end() && *iter == ord;
 }
 
 template<class Iterator>

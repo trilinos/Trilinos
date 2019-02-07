@@ -156,6 +156,11 @@ lib stk_transfer_impl
     [ ifuserbuild
         <file>$(stk_transfer-root)/lib/libstk_transfer_impl.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 exe stk_transfer_utest

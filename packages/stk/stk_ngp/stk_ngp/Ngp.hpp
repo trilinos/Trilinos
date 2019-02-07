@@ -44,7 +44,7 @@
 
 namespace ngp {
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 using Mesh = StaticMesh;
 template <typename T> using Field = ngp::StaticField<T>;
 template <typename T> using ConstField = ngp::ConstStaticField<T>;

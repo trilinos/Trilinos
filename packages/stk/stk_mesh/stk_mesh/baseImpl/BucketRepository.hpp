@@ -117,14 +117,16 @@ public:
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,
-                                        const OrdinalVector &parts);
+                                        const OrdinalVector &parts,
+                                        std::vector<unsigned>& scratchSpace);
 
-  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts);
+  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts,
+                                     std::vector<unsigned>& scratchSpace);
 
   void remove_entity(const MeshIndex &meshIndex);
 
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
-                                     const OrdinalVector &parts);
+                                     const OrdinalVector &parts, std::vector<unsigned>& scratchSpace);
 
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();

@@ -64,7 +64,7 @@ TEST_F(NGP_Kokkos, calculate_average)
   }
 }
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 void run_it_uvm()
 {
     typedef Kokkos::View<int*, Layout, MemSpace> IntViewType;

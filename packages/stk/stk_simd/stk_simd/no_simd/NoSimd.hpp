@@ -34,6 +34,22 @@ STK_MATH_FORCE_INLINE float reduce_sum(const Float& x) {
   return x[0]+x[1];
 }
 
+STK_MATH_FORCE_INLINE double reduce_max(const Double& x) {
+  return x[0];
+}
+
+STK_MATH_FORCE_INLINE float reduce_max(const Float& x) {
+  return x[0] > x[1] ? x[0] : x[1];
+}
+
+STK_MATH_FORCE_INLINE double reduce_min(const Double& x) {
+  return x[0];
+}
+
+STK_MATH_FORCE_INLINE float reduce_min(const Float& x) {
+  return x[0] < x[1] ? x[0] : x[1];
+}
+
 }
 }
 

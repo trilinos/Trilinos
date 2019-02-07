@@ -54,7 +54,7 @@ TEST(BucketRepositoryTest, createBuckets)
     size_t spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
 
-    stk::mesh::OrdinalVector parts;
+    stk::mesh::OrdinalVector parts, scratch;
     parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());
     parts.push_back(stkMeshMetaData.locally_owned_part().mesh_meta_data_ordinal());
     parts.push_back(stkMeshMetaData.declare_part("part1").mesh_meta_data_ordinal());
@@ -65,7 +65,7 @@ TEST(BucketRepositoryTest, createBuckets)
     stk::mesh::impl::EntityRepository entityRepository;
 
     stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
-    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
+    stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
 
     size_t numNodes = 1024;
     for(size_t i=0; i<numNodes; i++)

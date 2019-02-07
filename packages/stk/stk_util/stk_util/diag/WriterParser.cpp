@@ -123,10 +123,8 @@ WriterParser::parseArg(
         m_optionMask |= mask_hex;
       else
       {
-        m_status = false;
         throw std::runtime_error("Error: Unrecognized option flag argument" + name + "\n");
       }
-
     }
   }
 }

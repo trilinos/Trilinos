@@ -440,6 +440,9 @@ Selector selectField( const FieldBase& field );
 /** \brief Is lhs a subset of rhs, only works for simple selectors (parts and unions)
  */
 bool is_subset(Selector const& lhs, Selector const& rhs);
+bool is_subset(Selector const& lhs, Selector const& rhs, PartVector& scratchLhs, PartVector& scratchRhs);
+bool is_subset(const PartVector& lhsParts, const PartVector& rhsParts);
+bool is_subset(const OrdinalVector& lhsParts, const OrdinalVector& rhsParts);
 
 /** \} */
 

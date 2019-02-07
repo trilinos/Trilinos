@@ -340,6 +340,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 {
     std::vector<SharedEdgeInfo>::const_iterator iter = newlySharedEdges.begin();
     std::vector<SharedEdgeInfo>::const_iterator endIter = newlySharedEdges.end();
+    std::vector<stk::mesh::EntityKey> side_node_entity_keys;
 
     for(; iter!= endIter; ++iter)
     {
@@ -351,7 +352,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         int sharing_proc       = iter->get_remote_processor_rank();
 
         size_t numNodes= iter->m_sharedNodes.size();
-        std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
+        side_node_entity_keys.resize(numNodes);
         for(size_t i=0; i<numNodes; ++i)
         {
             side_node_entity_keys[i] = bulkData.entity_key(iter->m_sharedNodes[i]);
@@ -378,7 +379,10 @@ bool is_local_element(stk::mesh::impl::LocalId elemId)
 void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
                       const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
-    std::vector<int> elemSides(maxSidesThisElement, -1);
+    constexpr int MAX_SIDES_PER_ELEM = 12;
+    ThrowRequireMsg(maxSidesThisElement <= MAX_SIDES_PER_ELEM, "STK Error, violated assumption that max sides per element is "<<MAX_SIDES_PER_ELEM<<", trying to use value of " << maxSidesThisElement);
+    int elemSides[MAX_SIDES_PER_ELEM] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
     for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
     {
         const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
@@ -390,7 +394,6 @@ void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
         if (elemSides[sideId] == -1)
             element_side_pairs.push_back(sideId);
 }
-
 
 }}} // end namespaces stk mesh impl
 

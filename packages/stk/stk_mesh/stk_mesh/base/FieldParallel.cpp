@@ -65,29 +65,25 @@ void communicate_field_data(
   const int parallel_rank = mesh.parallel_rank();
   const unsigned ghost_id = ghosts.ordinal();
 
-  const std::vector<const FieldBase *>::const_iterator fe = fields.end();
-  const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
-        std::vector<const FieldBase *>::const_iterator fi ;
-
   // Sizing for send and receive
 
   const unsigned zero = 0 ;
   std::vector<unsigned> send_size( parallel_size , zero );
   std::vector<unsigned> recv_size( parallel_size , zero );
 
-  for ( EntityCommListInfoVector::const_iterator
-        i =  mesh.internal_comm_list().begin() , iend = mesh.internal_comm_list().end(); i != iend ; ++i ) {
-    Entity e = i->entity;
+  for ( const EntityCommListInfo& ecli : mesh.internal_comm_list()) {
+    Entity e = ecli.entity;
     const MeshIndex meshIdx = mesh.mesh_index(e);
     const unsigned bucketId = meshIdx.bucket->bucket_id();
+    EntityRank erank = meshIdx.bucket->entity_rank();
 
-    const bool owned = i->owner == parallel_rank ;
+    const bool owned = ecli.owner == parallel_rank ;
 
     unsigned e_size = 0 ;
-    for ( fi = fb ; fi != fe ; ++fi ) {
-      const FieldBase & f = **fi ;
+    for ( const FieldBase* fptr : fields) {
+      const FieldBase & f = *fptr ;
 
-      if(is_matching_rank(f, *meshIdx.bucket)) {
+      if(is_matching_rank(f, erank)) {
         e_size += field_bytes_per_entity( f , bucketId );
       }
     }
@@ -96,7 +92,7 @@ void communicate_field_data(
       continue;
     }
 
-    const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
+    const EntityCommInfoVector& infovec = ecli.entity_comm->comm_map;
     if ( owned ) {
       for (const EntityCommInfo& ec : infovec) {
         if (ec.ghost_id == ghost_id) {
@@ -107,7 +103,7 @@ void communicate_field_data(
     else {
       for (const EntityCommInfo& ec : infovec) {
         if (ec.ghost_id == ghost_id) {
-          recv_size[ i->owner ] += e_size ;
+          recv_size[ ecli.owner ] += e_size ;
           break;//jump out since we know we're only recving 1 msg for this entity from the 1-and-only owner
         }
       }
@@ -136,24 +132,25 @@ void communicate_field_data(
 
   for (int phase = 0; phase < 2; ++phase) {
 
-    for ( EntityCommListInfoVector::const_iterator i =  mesh.internal_comm_list().begin(), iend = mesh.internal_comm_list().end() ; i != iend ; ++i ) {
-      if ( (i->owner == parallel_rank && phase == 0) || (i->owner != parallel_rank && phase == 1) ) {
-        Entity e = i->entity;
+    for ( const EntityCommListInfo& ecli : mesh.internal_comm_list()) {
+      if ( (phase == 0 && ecli.owner == parallel_rank) || (phase == 1 && ecli.owner != parallel_rank) ) {
+        Entity e = ecli.entity;
         const MeshIndex meshIdx = mesh.mesh_index(e);
         const unsigned bucketId = meshIdx.bucket->bucket_id();
+        EntityRank erank = meshIdx.bucket->entity_rank();
 
-        for ( fi = fb ; fi != fe ; ++fi ) {
-          const FieldBase & f = **fi ;
+        for (const FieldBase* fptr : fields) {
+          const FieldBase & f = *fptr ;
 
-          if(!is_matching_rank(f, e)) continue;
+          if(!is_matching_rank(f, erank)) continue;
 
-          const unsigned size = field_bytes_per_entity( f , e );
+          const unsigned size = field_bytes_per_entity( f , bucketId );
 
           if ( size ) {
             unsigned char * ptr =
               reinterpret_cast<unsigned char *>(stk::mesh::field_data( f , bucketId, meshIdx.bucket_ordinal, size ));
 
-            const EntityCommInfoVector& infovec = i->entity_comm->comm_map;
+            const EntityCommInfoVector& infovec = ecli.entity_comm->comm_map;
             if (phase == 0) { // send
               for (const EntityCommInfo& ec : infovec) {
                 if (ec.ghost_id == ghost_id) {
@@ -165,7 +162,7 @@ void communicate_field_data(
             else { //recv
               for (const EntityCommInfo& ec : infovec) {
                 if (ec.ghost_id == ghost_id) {
-                  CommBufferV & b = sparse.recv_buffer( i->owner );
+                  CommBufferV & b = sparse.recv_buffer( ecli.owner );
                   b.unpack<unsigned char>( ptr , size );
                   break;
                 }

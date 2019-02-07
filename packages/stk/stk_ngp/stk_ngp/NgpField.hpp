@@ -35,6 +35,7 @@
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
+#include <Kokkos_DualView.hpp>
 #include <stk_ngp/NgpMesh.hpp>
 #include <stk_ngp/NgpForEachEntity.hpp>
 
@@ -43,6 +44,7 @@ namespace ngp {
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
 template<typename T> class ConstStkFieldAdapter;
+template<typename T> class MultistateField;
 
 class FieldBase
 {
@@ -97,22 +99,38 @@ public:
         });
     }
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
-    {
-    }
+    void sync_to_host() { }
 
-    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field_in)
-    {
-    }
+    void sync_to_device() { }
+
+    void modify_on_host() { }
+
+    void modify_on_device() { }
 
     stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
 
     unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
 
+#ifdef STK_HIDE_DEPRECATED_CODE
 private:
+#endif
+    void copy_host_to_device() { };
+
+    void copy_device_to_host() { };
+#ifndef STK_HIDE_DEPRECATED_CODE
+private:
+#endif
+
+    bool need_sync_to_host() const { return false; }
+
+    bool need_sync_to_device() const { return false; }
+
+    void clear_sync_state() { }
+
     const stk::mesh::FieldBase * field;
 
     friend ConstStkFieldAdapter<T>;
+    friend MultistateField<T>;
 };
 
 template<typename T>
@@ -154,26 +172,36 @@ public:
         return stkFieldAdapter.get(entity, component);
     }
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field_in)
-    {
-    }
-
     stk::mesh::EntityRank get_rank() const { return stkFieldAdapter.get_rank(); }
 
     unsigned get_ordinal() const { return stkFieldAdapter.get_ordinal(); }
 
-    void swap_data(ConstStkFieldAdapter<T> &sf)
-    {
-    }
-    void swap_data(StkFieldAdapter<T> &sf)
-    {
-    }
+    void sync_to_host() { }
+
+    void sync_to_device() { }
+
 private:
+    void copy_host_to_device() { };
+
+    void copy_device_to_host() { };
+
+    void swap_data(ConstStkFieldAdapter<T> &sf) { }
+
+    void swap_data(StkFieldAdapter<T> &sf) { }
+
+    bool need_sync_to_host() const { return false; }
+
+    bool need_sync_to_device() const { return false; }
+
+    void clear_sync_state() { }
+
     StkFieldAdapter<T> stkFieldAdapter;
+
+    friend MultistateField<T>;
 };
 
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 #define ORDER_INDICES(i,j) j,i
 #else
 #define ORDER_INDICES(i,j) i,j
@@ -190,24 +218,29 @@ public:
     STK_FUNCTION
     StaticField()
       : FieldBase(),
-        rank(stk::topology::NODE_RANK), ordinal(INVALID_ORDINAL) { }
+        rank(stk::topology::NODE_RANK),
+        ordinal(INVALID_ORDINAL),
+        hostBulk(nullptr),
+        hostField(nullptr) { }
 
     void construct_view(const std::string& name, unsigned numBuckets, unsigned numPerEntity) {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         deviceData = FieldDataType(name, numBuckets, numPerEntity);
 #else
         deviceData = FieldDataType(name, numBuckets, bucketSize, numPerEntity);
 #endif
         hostData = Kokkos::create_mirror_view(deviceData);
+
+        fieldData = FieldDataDualViewType(deviceData, hostData);
     }
 
     StaticField(stk::mesh::EntityRank r, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
       : FieldBase(),
-        deviceData(),
         rank(r),
-        ordinal(INVALID_ORDINAL)
+        ordinal(INVALID_ORDINAL),
+        hostBulk(&bulk),
+        hostField(nullptr)
     {
-      // const stk::mesh::BucketVector& buckets = bulk.get_buckets(rank, selector);
         const stk::mesh::BucketVector& allBuckets = bulk.buckets(rank);
 
         construct_view("no_name", allBuckets.size(), 1);
@@ -217,9 +250,10 @@ public:
 
     StaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
       : FieldBase(),
-        deviceData(),
         rank(field.entity_rank()),
-        ordinal(field.mesh_meta_data_ordinal())
+        ordinal(field.mesh_meta_data_ordinal()),
+        hostBulk(&bulk),
+        hostField(&field)
     {
         stk::mesh::Selector selector = stk::mesh::selectField(field);
         const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
@@ -228,27 +262,37 @@ public:
 
         construct_view("deviceData_"+field.name(), allBuckets.size(), numPerEntity);
 
-        copy_data(buckets, field, [](T &staticData, T &fieldData){staticData = fieldData;});
+        copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
 
         Kokkos::deep_copy(deviceData, hostData);
     }
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    void sync_to_host()
     {
-        Kokkos::deep_copy(hostData, deviceData);
-
-        stk::mesh::Selector selector = stk::mesh::selectField(field);
-        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
-        copy_data(buckets, field, [](T &staticData, T &fieldData){fieldData = staticData;});
+        if (need_sync_to_host()) {
+            copy_device_to_host();
+        }
     }
 
-    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
+    void sync_to_device()
     {
-        stk::mesh::Selector selector = stk::mesh::selectField(field);
-        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
-        copy_data(buckets, field, [](T &staticData, T &fieldData){staticData = fieldData;});
+        if (need_sync_to_device()) {
+            copy_host_to_device();
+        }
+    }
 
-        Kokkos::deep_copy(deviceData, hostData);
+    void modify_on_host()
+    {
+        ThrowRequire(fieldData.modified_host() >= fieldData.modified_device());  // Old Kokkos API
+        fieldData.modified_host()++;                                             // Old Kokkos API
+//        fieldData.modify_host();  // New Kokkos API
+    }
+
+    void modify_on_device()
+    {
+        ThrowRequire(fieldData.modified_device() >= fieldData.modified_host());  // Old Kokkos API
+        fieldData.modified_device()++;                                           // Old Kokkos API
+//        fieldData.modify_device();  // New Kokkos API
     }
 
     STK_FUNCTION StaticField(const StaticField &) = default;
@@ -279,6 +323,7 @@ public:
     {
         Kokkos::deep_copy(hostData, value);
         Kokkos::deep_copy(deviceData, value);
+        clear_sync_state();
     }
 
     STK_FUNCTION
@@ -287,7 +332,44 @@ public:
     STK_FUNCTION
     unsigned get_ordinal() const { return ordinal; }
 
+    const stk::mesh::BulkData& get_bulk() const { return *hostBulk; }
+
 private:
+    bool need_sync_to_host() const
+    {
+        return fieldData.modified_device() > fieldData.modified_host();  // Old Kokkos API
+//        return fieldData.need_sync_host();  // New Kokkos API
+    }
+
+    bool need_sync_to_device() const
+    {
+        return fieldData.modified_host() > fieldData.modified_device();  // Old Kokkos API
+//        return fieldData.need_sync_device();  // New Kokkos API
+    }
+
+    void clear_sync_state()
+    {
+        fieldData.modified_host() = 0;    // Old Kokkos API
+        fieldData.modified_device() = 0;  // Old Kokkos API
+//        fieldData.clear_sync_state();  // New Kokkos API
+    }
+
+    template <typename ViewType>
+    STK_FUNCTION
+    void swap_views(ViewType & view1, ViewType & view2)
+    {
+      ViewType tmpView = view2;
+      view2 = view1;
+      view1 = tmpView;
+    }
+
+    STK_FUNCTION
+    void swap_data(StaticField<T> &sf)
+    {
+      swap_views(hostData,   sf.hostData);
+      swap_views(deviceData, sf.deviceData);
+      swap_views(fieldData,  sf.fieldData);
+    }
 
     template <typename ViewType>
     void allocate_view(ViewType &view, typename ViewType::HostMirror &host, const std::string &name, size_t size)
@@ -303,14 +385,14 @@ private:
     }
 
     template <typename Assigner>
-    void copy_data(const stk::mesh::BucketVector& buckets, const stk::mesh::FieldBase &field, const Assigner &assigner)
+    void copy_data(const stk::mesh::BucketVector& buckets, const Assigner &assigner)
     {
         unsigned numPerEntity = get_num_components_per_entity();
         for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
         {
             const stk::mesh::Bucket &bucket = *buckets[iBucket];
 
-            T* data = static_cast<T*>(stk::mesh::field_data(field, bucket));
+            T* data = static_cast<T*>(stk::mesh::field_data(*hostField, bucket));
             for(size_t iEntity=0; iEntity<bucket.size(); iEntity++)
             {
                 for(unsigned j=0; j<numPerEntity; j++)
@@ -321,28 +403,63 @@ private:
         }
     }
 
+    void copy_device_to_host()
+    {
+        Kokkos::deep_copy(hostData, deviceData);  // Old Kokkos API
+        clear_sync_state();                       // Old Kokkos API
+//        fieldData.sync_host();  // New Kokkos API
+
+        if (hostField) {
+          stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
+          const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+          copy_data(buckets, [](T &hostFieldData, T &stkFieldData){stkFieldData = hostFieldData;});
+        }
+    }
+
+    void copy_host_to_device()
+    {
+        if (hostField) {
+          stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
+          const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+          copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
+        }
+
+        Kokkos::deep_copy(deviceData, hostData);  // Old Kokkos API
+        clear_sync_state();                       // Old Kokkos API
+//        fieldData.sync_device();  // New Kokkos API
+    }
+
     unsigned get_num_components_per_entity() const {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         return hostData.extent(1);
 #else
         return hostData.extent(2);
 #endif
     }
 
-#ifdef KOKKOS_HAVE_CUDA
-    typedef Kokkos::View<T * * [bucketSize], Kokkos::LayoutRight,
-                         Kokkos::CudaSpace> FieldDataType;
+#ifdef KOKKOS_ENABLE_CUDA
+    typedef Kokkos::DualView<T**[bucketSize], Kokkos::LayoutRight,
+                             Kokkos::CudaSpace> FieldDataDualViewType;
 #else
-    typedef Kokkos::View<T***, Kokkos::LayoutRight> FieldDataType;
+    typedef Kokkos::DualView<T***, Kokkos::LayoutRight> FieldDataDualViewType;
 #endif
 
-    typename FieldDataType::HostMirror hostData;
+    typedef typename FieldDataDualViewType::t_dev FieldDataType;
+    typedef typename FieldDataDualViewType::t_host FieldDataHostType;
+
+    FieldDataHostType hostData;
     FieldDataType deviceData;
+    
+    FieldDataDualViewType fieldData;
 
     stk::mesh::EntityRank rank;
     unsigned ordinal;
 
+    const stk::mesh::BulkData* hostBulk;
+    const stk::mesh::FieldBase* hostField;
+
     friend ConstStaticField<T>;
+    friend MultistateField<T>;
 };
 
 template<typename T>
@@ -353,7 +470,9 @@ public:
 
     STK_FUNCTION
     ConstStaticField()
-      : FieldBase() { }
+      : FieldBase()
+    {
+    }
 
     ConstStaticField(const StaticField<T> &sf)
       : FieldBase(),
@@ -398,9 +517,34 @@ public:
     STK_FUNCTION
     unsigned get_ordinal() const { return staticField.get_ordinal(); }
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    void sync_to_host()
     {
-        staticField.copy_device_to_host(bulk, field);
+        if (need_sync_to_host()) {
+            copy_device_to_host();
+        }
+    }
+
+    void sync_to_device()
+    {
+        if (need_sync_to_device()) {
+            copy_host_to_device();
+        }
+    }
+
+private:
+    bool need_sync_to_host() const
+    {
+        return staticField.need_sync_to_host();
+    }
+
+    bool need_sync_to_device() const
+    {
+        return staticField.need_sync_to_device();
+    }
+
+    void clear_sync_state()
+    {
+        staticField.clear_sync_state();
     }
 
     STK_FUNCTION
@@ -408,18 +552,27 @@ public:
     {
         swap_data(sf.staticField);
     }
+
     STK_FUNCTION
     void swap_data(StaticField<T> &sf)
     {
-        StaticField<T> tmp = sf;
-        sf = staticField;
-        staticField = tmp;
+        staticField.swap_data(sf);
         constDeviceData = staticField.deviceData;
     }
 
-private:
+    void copy_device_to_host()
+    {
+        staticField.modify_on_device();
+        staticField.copy_device_to_host();
+    }
 
-#ifdef KOKKOS_HAVE_CUDA
+    void copy_host_to_device()
+    {
+        staticField.modify_on_host();
+        staticField.copy_host_to_device();
+    }
+
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::View<
       const T * * [bucketSize], Kokkos::LayoutRight, Kokkos::CudaSpace,
       Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstFieldDataType;
@@ -429,6 +582,8 @@ private:
 
     StaticField<T> staticField;
     ConstFieldDataType constDeviceData;
+
+    friend MultistateField<T>;
 };
 
 }

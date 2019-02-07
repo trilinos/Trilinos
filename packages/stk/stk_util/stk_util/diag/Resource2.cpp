@@ -10,7 +10,7 @@
 #include "stk_util/diag/WriterExt.hpp"    // for operator<<
 #include "stk_util/util/AnyData.hpp"      // for Value, AnyData
 #include "stk_util/util/Writer.hpp"       // for Writer, operator<<, dendl
-#include <stk_util/util/Resource2.h>
+#include <stk_util/diag/Resource2.h>
 #include <algorithm> // for find
 #include <sstream>   // for operator<<, basic_ostream, etc
 #include <stdexcept> // for runtime_error

@@ -367,18 +367,18 @@ Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank 
   return declare_part(internal_name, rank);
 }
 
-void MetaData::declare_part_subset( Part & superset , Part & subset )
+void MetaData::declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
   if (!is_initialized()) {
     // can't do any topology stuff yet
-    return internal_declare_part_subset(superset, subset);
+    return internal_declare_part_subset(superset, subset, verifyFieldRestrictions);
   }
 
   stk::topology superset_stkTopo = get_topology(superset);
 
   const bool no_superset_topology = (superset_stkTopo == stk::topology::INVALID_TOPOLOGY);
   if ( no_superset_topology ) {
-    internal_declare_part_subset(superset,subset);
+    internal_declare_part_subset(superset,subset, verifyFieldRestrictions);
     return;
   }
 
@@ -401,7 +401,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
       << " coming from the subset part");
 
   // Everything is Okay!
-  internal_declare_part_subset(superset,subset);
+  internal_declare_part_subset(superset,subset, verifyFieldRestrictions);
   // Update PartTopologyVector for "subset" and same-rank subsets, ad nauseum
   if (subset.primary_entity_rank() == superset.primary_entity_rank()) {
     assign_topology(subset, superset_stkTopo);
@@ -414,7 +414,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   }
 }
 
-void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
+void MetaData::internal_declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
   require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
@@ -422,9 +422,12 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 
   m_part_repo.declare_subset( superset, subset );
 
-  // The new superset / subset relationship can cause a
-  // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(superset, subset);
+  if (verifyFieldRestrictions)
+  {
+    // The new superset / subset relationship can cause a
+    // field restriction to become incompatible or redundant.
+    m_field_repo.verify_and_clean_restrictions(superset, subset);
+  }
 }
 
 //----------------------------------------------------------------------
