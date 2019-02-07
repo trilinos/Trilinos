@@ -1576,8 +1576,9 @@ void mult_AT_B_newmatrix(
         int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
         if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
         labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
+        bool isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
 
-        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
+        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM,
                       "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
         labelList.set("compute global constants",params->get("compute global constants",true));
     }
@@ -3291,11 +3292,8 @@ void import_and_extract_views(
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
     auto & labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
-                  "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
-    labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
-                  "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
 
+    bool isMM = true;
     int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
     // Minor speedup tweak - avoid computing the global constants
     Teuchos::ParameterList params_sublist;
@@ -3305,7 +3303,9 @@ void import_and_extract_views(
         mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
         int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
         if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+        isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
     }
+    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM);
     labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
     
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
