@@ -68,16 +68,18 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
   }
 
   if(!importer_.is_null()) {
-    // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements())
-    if(importer_->getNumSameIDs() == importer->getSourceMap()->getNodeNumElements()) {
-      //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView
-      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL)));
+    // The locallyFitted check is debug mode only since it is more expensive
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if(debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !importer->getTargetMap()->isLocallyFitted(*importer->getSourceMap()),
+                                             std::runtime_error,"importer->getTargetMap() must be locally fitted to importer->getSourceMap()");
+      
     }
-    else {
-      //   2) If not call a new constructor for the inactive guy (w/ source map)
-      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),numVecs,zeroOut));
-    }
+
+    // Memory aliasing is required for FEMultiVector
+    inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL)));
   }
+
 }// end constructor
 
 
