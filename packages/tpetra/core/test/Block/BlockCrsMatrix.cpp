@@ -1400,19 +1400,9 @@ namespace {
     // Fill all entries of the first matrix with 3.
     const Scalar three = STS::one () + STS::one () + STS::one ();
     A1.setAllToScalar (three);
-
-#ifdef HAVE_TPETRA_DEBUG
-    if (! std::is_same<typename Kokkos::HostSpace, typename BCM::device_type::memory_space>::value) {
-      // The above setAllToScalar should have run on device.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
-      TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
-#else
-      TEST_ASSERT( ! A1.need_sync_host () );
-      TEST_ASSERT( ! A1.need_sync_device () );
-#endif
-    }
-#endif // HAVE_TPETRA_DEBUG
+    // A1 must have been modified on exactly one side.
+    TEST_ASSERT( (! A1.need_sync_host () && A1.need_sync_device ()) ||
+                 (A1.need_sync_host () && ! A1.need_sync_device ()) );
 
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);
