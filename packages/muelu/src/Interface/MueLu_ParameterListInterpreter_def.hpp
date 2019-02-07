@@ -1304,14 +1304,12 @@ namespace MueLu {
       repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
       manager.SetFactory("number of partitions", repartheurFactory);
 
-      if(partName == "node")
-        repartheurFactory->SetFactory("NodeComm",         manager.GetFactory("NodeComm"));
-
       // Partitioner
       RCP<Factory> partitioner;
       if (levelID == nodeRepartitionLevel) {
 #ifdef HAVE_MPI
-        partitioner = rcp(new NodePartitionInterface());
+        //        partitioner = rcp(new NodePartitionInterface());
+        partitioner = rcp(new MueLu::NodePartitionInterface<SC,LO,GO,NO>());
         ParameterList partParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node id"               ,int,repartheurParams);
         partitioner->SetParameterList(partParams);
