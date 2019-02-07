@@ -214,30 +214,31 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "";                 clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
-  std::string yamlFileName      = "";                 clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  bool        printTimings      = true;               clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
-  std::string timingsFormat     = "table-fixed";      clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
-  int         writeMatricesOPT  = -2;                 clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
-  std::string dsolveType        = "belos", solveType; clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone | matvec)");
-  std::string belosType         = "cg";               clp.setOption("belosType",             &belosType,         "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
-  double      dtol              = 1e-12, tol;         clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
-  bool        binaryFormat      = false;              clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
+  std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+  std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
+  int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
+  std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone | matvec)");
+  double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
+  bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
-  std::string rowMapFile;                             clp.setOption("rowmap",                &rowMapFile,        "map data file");
-  std::string colMapFile;                             clp.setOption("colmap",                &colMapFile,        "colmap data file");
-  std::string domainMapFile;                          clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
-  std::string rangeMapFile;                           clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
-  std::string matrixFile;                             clp.setOption("matrix",                &matrixFile,        "matrix data file");
-  std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
-  std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
-  std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
-  int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
-  int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
-  int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  std::string rowMapFile;                            clp.setOption("rowmap",                &rowMapFile,        "map data file");
+  std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
+  std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
+  std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
+  std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
+  std::string rhsFile;                               clp.setOption("rhs",                   &rhsFile,           "rhs data file");
+  std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
+  std::string materialFile;                          clp.setOption("material",              &materialFile,      "material data file");
+  std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
+  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
+  int         numResolves       = 0;                 clp.setOption("resolve",               &numResolves,       "#times to redo solve");
+  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
-  bool        scaleResidualHist = true;               clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+  bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -334,10 +335,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<const Map>   map;
   RCP<RealValuedMultiVector> coordinates;
   RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
+  RCP<Xpetra::Vector<SC,LO,GO,NO> > material;
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
+  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,materialFile,map,A,coordinates,nullspace,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
 
