@@ -224,7 +224,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
 
 template<class Scalar>
-Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType stepSizeType)
+Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType /* stepSizeType */)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   this->initialize_();
@@ -433,18 +433,18 @@ void ExplicitRKStepper<Scalar>::describe(
     }
     out << "ktemp_vector = " << std::endl;
     out << Teuchos::describe(*ktemp_vector_,verbLevel);
-    out << "ERK Butcher Tableau A matrix: " << erkButcherTableau_->A() << std::endl;
-    out << "ERK Butcher Tableau b vector: " << erkButcherTableau_->b() << std::endl;
-    out << "ERK Butcher Tableau c vector: " << erkButcherTableau_->c() << std::endl;
+    out << "ERK Butcher Tableau A matrix: "; erkButcherTableau_->A().print(out); out << std::endl;
+    out << "ERK Butcher Tableau b vector: "; erkButcherTableau_->b().print(out); out << std::endl;
+    out << "ERK Butcher Tableau c vector: "; erkButcherTableau_->c().print(out); out << std::endl;
     out << "t = " << t_ << std::endl;
   }
 }
 
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::addPoints(
-    const Array<Scalar>& time_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    const Array<Scalar>& /* time_vec */
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
     )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ExplicitRKStepper at this time.\n");
@@ -496,7 +496,7 @@ void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
+void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& /* time_vec */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ExplicitRKStepper at this time.\n");
 }

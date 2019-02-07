@@ -328,7 +328,7 @@ namespace FROSch {
             DDInterface_->divideUnconnectedEntities(this->K_);
         }
         
-        DDInterface_->sortEntities(nodeList);
+        DDInterface_->sortVerticesEdgesFaces(nodeList);
         
         EntitySetPtr vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         
@@ -492,14 +492,13 @@ namespace FROSch {
                 }
                 
                 if (this->Verbose_) {
-                    
                     std::cout << "\n\
                     --------------------------------------------\n\
-                    # vertices:       --- " << numEntitiesGlobal[0] << "\n\
-                    # shortEdges:     --- " << numEntitiesGlobal[1] << "\n\
-                    # straightEdges:  --- " << numEntitiesGlobal[2] << "\n\
-                    # edges:          --- " << numEntitiesGlobal[3] << "\n\
-                    # faces:          --- " << numEntitiesGlobal[4] << "\n\
+                    # vertices:                 --- " << numEntitiesGlobal[0] << "\n\
+                    # shortEdges:               --- " << numEntitiesGlobal[1] << "\n\
+                    # straightEdges:            --- " << numEntitiesGlobal[2] << "\n\
+                    # edges:                    --- " << numEntitiesGlobal[3] << "\n\
+                    # faces (edges in 2D):      --- " << numEntitiesGlobal[4] << "\n\
                     --------------------------------------------\n\
                     Coarse space:\n\
                     --------------------------------------------\n\

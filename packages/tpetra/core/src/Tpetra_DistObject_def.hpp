@@ -211,7 +211,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap)
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& /* newMap */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
@@ -601,8 +601,29 @@ namespace Tpetra {
         getDualViewCopyFromArrayView<LO, DT> (exportLIDs_,
                                               "exportLIDs",
                                               commOnHost);
-      doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
-                     remoteLIDs, exportLIDs, distor, revOp, commOnHost, restrictedMode);
+
+      // Kyungjoo: when we pass dual views as function arguments, 
+      //    the function is responsible to raise a modify flag 
+      //    if it modifies either device buffer or host buffer.
+      //    If host view or device view is extracted and interfaced,
+      //    the call function is responsible to raise a modify flag
+      //    if either device or host buffer is modified.
+      //
+      //    permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs, 
+      //    Question: The above views have data type 
+      //       <const local_ordinal_type*>. This implies that this 
+      //       function consider them as inputs and they are not modified. 
+      //       Then, these should be synced bbefore they are used.
+      //    My suggestion is 
+      // if (!commOnHost) {
+      //   permuteToLIDs.template sync<CDMS>();
+      //   permuteFromLIDs.template sync<CDMS>();
+      //   remoteLIDs.template sync<CDMS>(); 
+      //   exportLIDs.template sync<CDMS>();
+      // }
+      doTransferNew (src, CM, numSameIDs, 
+                     permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs, 
+                     distor, revOp, commOnHost,restrictedMode);
     }
     else {
       if (verbose) {
@@ -662,18 +683,33 @@ namespace Tpetra {
     constexpr size_t tooBigFactor = 10;
 
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
+      const int myRank = [&] () {
+        auto map = this->getMap ();
+        if (map.get () == nullptr) {
+          return -1;
+        }
+        auto comm = map->getComm ();
+        if (comm.get () == nullptr) {
+          return -2;
+        }
+        return comm->getRank ();
+      } ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid before:"
+      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid("
+         << numExportLIDs << ", " << numImportLIDs << "): ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "before:" << endl
+         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                               "numExportPacketsPerLID_")
          << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                    "numExportPacketsPerLID_")
-         << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                    "numImportPacketsPerLID_")
+         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                               "numImportPacketsPerLID_")
          << endl;
       std::cerr << os.str ();
     }
@@ -698,17 +734,13 @@ namespace Tpetra {
                                needFenceBeforeNextAlloc);
 
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid before:"
+      os << *prefix << "after:" << endl
+         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                               "numExportPacketsPerLID_")
          << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                    "numExportPacketsPerLID_")
-         << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                    "numImportPacketsPerLID_")
+         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                               "numImportPacketsPerLID_")
          << endl;
       std::cerr << os.str ();
     }
@@ -1439,9 +1471,17 @@ namespace Tpetra {
         // (constantNumPackets is an output argument).  If there are,
         // constantNumPackets will come back nonzero.  Otherwise, the
         // source will fill the numExportPacketsPerLID_ array.
-        this->packAndPrepareNew (src, exportLIDs, this->exports_,
-                                 this->numExportPacketsPerLID_,
-                                 constantNumPackets, distor);
+        // Kyungjoo: if follows the suggestion lin 581, exportLIDs 
+        //     is read-only and available for both host and device.
+        //     exports and numExportPackesPerLID are dualviews and
+        //     if they are modified in this function, they should
+        //     set appropriate modify flags
+        this->packAndPrepareNew (src,                           // input
+                                 exportLIDs,                    // input
+                                 this->exports_,                // ouput
+                                 this->numExportPacketsPerLID_, // output
+                                 constantNumPackets, // output
+                                 distor); // input
         // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
         // Alternately, make packAndPrepareNew take a "commOnHost"
         // argument to tell it where to leave the data?
@@ -1887,9 +1927,40 @@ namespace Tpetra {
           // FIXME (mfh 26 Apr 2016) Check that all input DualViews
           // were most recently updated in the same memory space, and
           // sync them to the same place (based on commOnHost) if not.
-          this->unpackAndCombineNew (remoteLIDs, this->imports_,
-                                     this->numImportPacketsPerLID_,
-                                     constantNumPackets, distor, CM);
+          
+          // Kyungjoo: remoteLIDs is read only and it should be synced 
+          //   before doTransfer is called (see line 581).
+          //   We still need to sync inputs.
+          //   The commOnHost is a very tricky thing. This variable 
+          //   can control where communication happens and where data
+          //   is updated. However, when we pass dual views to a function,
+          //   we do not have a control where data is available. 
+          //   As this comm routines are used via virtual interface, 
+          //   some code use device routines and some codes might use host
+          //   code. Outputs are selected from the calling function and 
+          //   the caller function can decide whether it wants to sync or not.
+          //   Input dual view should be synced before it calls the function
+          //   so that the calling function has freedom to choose between 
+          //   host and device algorithms.
+          
+          if (commOnHost) {
+            // assume imports_ and numImportsPacketsPerLID_ are modified from host 
+            // make them available for device
+            this->imports_.template sync<CDMS>();
+            this->numImportPacketsPerLID_.template sync<CDMS>();
+          } 
+          else {
+            // assume imports_ and numImportsPacketsPerLID_ are modified from device 
+            // make them available for host
+            this->imports_.sync_host();
+            this->numImportPacketsPerLID_.sync_host();                      
+          }          
+          this->unpackAndCombineNew (remoteLIDs,  // input
+                                     this->imports_, // input
+                                     this->numImportPacketsPerLID_, // input 
+                                     constantNumPackets, // input
+                                     distor, // input 
+                                     CM); // input
         }
       } // if (needCommunication)
     } // if (CM != ZERO)

@@ -101,6 +101,7 @@ EpetraExt::XMLReader::XMLReader(const Epetra_Comm& comm, const std::string& File
   fileXML_ = rcp(new XMLObject(fileSrc.getObject()));
   IsOpen_ = true;
 #else
+  (void)FileName;
   std::cerr << "Teuchos was not configured with support for expat." << std::endl;
   std::cerr << "Please reconfigure teuchos with --enable-teuchos-expat." << std::endl;
   exit(EXIT_FAILURE);

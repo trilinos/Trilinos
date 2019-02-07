@@ -186,7 +186,7 @@ AztecOOLinearOpWithSolveFactory::createOp() const
 void AztecOOLinearOpWithSolveFactory::initializeOp(
   const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
   LinearOpWithSolveBase<double> *Op,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   this->initializeOp_impl(fwdOpSrc,Teuchos::null,Teuchos::null,false,Op);
@@ -229,7 +229,7 @@ void AztecOOLinearOpWithSolveFactory::initializePreconditionedOp(
   const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
   const Teuchos::RCP<const PreconditionerBase<double> > &prec,
   LinearOpWithSolveBase<double> *Op,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(prec.get()==NULL);
@@ -241,7 +241,7 @@ void AztecOOLinearOpWithSolveFactory::initializeApproxPreconditionedOp(
   const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
   const Teuchos::RCP<const LinearOpSourceBase<double> > &approxFwdOpSrc,
   LinearOpWithSolveBase<double> *Op,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(approxFwdOpSrc.get()==NULL);
@@ -255,7 +255,7 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
   Teuchos::RCP<const PreconditionerBase<double> > *prec,
   Teuchos::RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
+  ESupportSolveUse * /* supportSolveUse */
   ) const
 {
 #ifdef TEUCHOS_DEBUG

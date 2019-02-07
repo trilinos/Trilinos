@@ -143,7 +143,7 @@ namespace Tpetra {
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
   void
-  Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+  Distributor::init (const Teuchos::RCP<const Teuchos::Comm<int> >& /* comm */,
                      const Teuchos::RCP<Teuchos::FancyOStream>& out,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {

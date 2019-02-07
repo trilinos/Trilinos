@@ -156,6 +156,8 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   */
   int defineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, MagnitudeType ScaleValue = Teuchos::ScalarTraits<MagnitudeType>::one());
 
+  NormType getResNormType() {return resnormtype_;}
+
   //! Set the value of the tolerance
   /*! We allow the tolerance to be reset for cases where, in the process of testing the residual,
     we find that the initial tolerance was too tight or too lax.

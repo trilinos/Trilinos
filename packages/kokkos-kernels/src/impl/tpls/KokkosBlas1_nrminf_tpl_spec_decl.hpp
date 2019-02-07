@@ -46,11 +46,7 @@
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-extern "C" int idamax_( const int* N, const double* x, const int* x_inc);
-extern "C" int isamax_( const int* N, const float* x, const int* x_inc);
-extern "C" int izamax_( const int* N, const std::complex<double>* x, const int* x_inc);
-extern "C" int icamax_( const int* N, const std::complex<float>* x, const int* x_inc);
+#include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -82,17 +78,19 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { R() = 0.0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      int idx = idamax_(&N,X.data(),&one)-1; \
+      int idx = HostBlas<double>::iamax(N,X.data(),one)-1;  \
       R() = X(idx); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -113,17 +111,19 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { R() = 0.0f; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      int idx = isamax_(&N,X.data(),&one)-1; \
+      int idx = HostBlas<float>::iamax(N,X.data(),one)-1;  \
       R() = X(idx); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -145,17 +145,19 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { R() = 0.0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      int idx = izamax_(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one)-1; \
+      int idx = HostBlas<std::complex<double> >::iamax(N,reinterpret_cast<const std::complex<double>*>(X.data()),one)-1; \
       R() = IPT::norm(X(idx)); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -177,17 +179,19 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { R() = 0.0f; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
       nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      int idx = icamax_(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one)-1; \
+      int idx = HostBlas<std::complex<float> >::iamax(N,reinterpret_cast<const std::complex<float>*>(X.data()),one)-1; \
       R() = IPT::norm(X(idx)); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -232,6 +236,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_CUBLAS,double]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { Kokkos::deep_copy (R, 0.0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
@@ -245,6 +250,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -265,6 +271,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_CUBLAS,float]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { Kokkos::deep_copy (R, 0.0f);; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
@@ -278,6 +285,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -299,6 +307,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_CUBLAS,complex<double>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { Kokkos::deep_copy (R, 0.0); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
@@ -315,6 +324,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 
@@ -336,6 +346,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   \
   static void nrminf (RV& R, const XV& X) \
   { \
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_CUBLAS,complex<float>]"); \
     const size_type numElems = X.extent(0); \
     if (numElems == 0) { Kokkos::deep_copy (R, 0.0f); return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
@@ -352,6 +363,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
+    Kokkos::Profiling::popRegion(); \
   } \
 };
 

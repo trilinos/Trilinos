@@ -1447,7 +1447,7 @@ int testArithTraitsOnDevice (std::ostream& out, const int verbose)
   using std::endl;
   typedef ArithTraitsTester<ScalarType, DeviceType> functor_type;
   int success = 1; // output argument of parallel_reduce
-  Kokkos::parallel_reduce (1, functor_type (), success);
+  Kokkos::parallel_reduce ("KokkosKernels::Common::Test::ArithTraitsOnDevice", 1, functor_type (), success);
   if (success) {
     if (verbose)
       out << Kokkos::Details::ArithTraits<ScalarType>::name () << " passed" << endl;

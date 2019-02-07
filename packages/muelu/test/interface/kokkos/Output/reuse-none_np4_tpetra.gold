@@ -97,6 +97,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.2   [default]
 
 Build (MueLu::Zoltan2Interface)
@@ -226,6 +228,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.2   [default]
 
 Build (MueLu::Zoltan2Interface)
@@ -379,6 +383,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.2   [default]
 
 Build (MueLu::Zoltan2Interface)
@@ -508,6 +514,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
 repartition: min rows per proc = 800   [default]
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.2   [default]
 
 Build (MueLu::Zoltan2Interface)

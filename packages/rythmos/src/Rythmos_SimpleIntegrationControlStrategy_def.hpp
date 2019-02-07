@@ -240,9 +240,9 @@ SimpleIntegrationControlStrategy<Scalar>::resetIntegrationControlStrategy(
 template<class Scalar>
 StepControlInfo<Scalar>
 SimpleIntegrationControlStrategy<Scalar>::getNextStepControlInfo(
-  const StepperBase<Scalar> &stepper,
-  const StepControlInfo<Scalar> &stepCtrlInfoLast,
-  const int timeStepIter
+  const StepperBase<Scalar> &/* stepper */,
+  const StepControlInfo<Scalar> &/* stepCtrlInfoLast */,
+  const int /* timeStepIter */
   )
 {
 

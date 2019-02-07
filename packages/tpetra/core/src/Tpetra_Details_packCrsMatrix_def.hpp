@@ -45,6 +45,7 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_createMirrorView.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
@@ -52,6 +53,8 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include <memory>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 
 /// \file Tpetra_Details_packCrsMatrix.hpp
@@ -1043,6 +1046,29 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   typename local_matrix_type::device_type outputDevice;
 
+  const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    const int myRank = [&] () {
+      auto map = sourceMatrix.getMap ();
+      if (map.get () == nullptr) {
+        return -1;
+      }
+      auto comm = map->getComm ();
+      if (comm.get () == nullptr) {
+        return -2;
+      }
+      return comm->getRank ();
+    } ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": packCrsMatrixWithOwningPIDs: ";
+    prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+
+    std::ostringstream os2;
+    os2 << *prefix << "start" << std::endl;
+    std::cerr << os2.str ();
+  }
+
   // Convert all Teuchos::Array to Kokkos::View
 
   // This is an output array, so we don't have to copy to device here.
@@ -1068,15 +1094,62 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                             sourcePIDs.size (), true,
                                             "export_pids");
   constexpr bool pack_pids = true;
-  PackCrsMatrixImpl::packCrsMatrix(
-      sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
-      export_pids_d, constantNumPackets, pack_pids, distor);
+  try {
+    PackCrsMatrixImpl::packCrsMatrix
+      (sourceMatrix, exports_dv, num_packets_per_lid_d, export_lids_d,
+       export_pids_d, constantNumPackets, pack_pids, distor);
+  }
+  catch (std::exception& e) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "PackCrsMatrixImpl::packCrsMatrix threw: "
+         << e.what () << std::endl;
+      std::cerr << os.str ();
+    }
+    throw;
+  }
+  catch (...) {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "PackCrsMatrixImpl::packCrsMatrix threw an exception "
+        "not a subclass of std::exception" << std::endl;
+      std::cerr << os.str ();
+    }
+    throw;
+  }
 
-  // The counts are an output of PackCrsMatrixImpl::packCrsMatrix, so we have to
-  // copy them back to host.
-  Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
-    (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
-  Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);
+  if (numPacketsPerLID.size () != 0) {
+    try {
+      // The counts are an output of PackCrsMatrixImpl::packCrsMatrix,
+      // so we have to copy them back to host.
+      Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h
+        (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
+      Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);
+    }
+    catch (std::exception& e) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Kokkos::deep_copy threw: " << e.what () << std::endl;
+        std::cerr << os.str ();
+      }
+      throw;
+    }
+    catch (...) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Kokkos::deep_copy threw an exception not a subclass "
+          "of std::exception" << std::endl;
+        std::cerr << os.str ();
+      }
+      throw;
+    }
+  }
+
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "done" << std::endl;
+    std::cerr << os.str ();
+  }
 }
 
 } // namespace Details

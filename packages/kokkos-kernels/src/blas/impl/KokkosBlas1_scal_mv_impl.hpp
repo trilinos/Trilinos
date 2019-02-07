@@ -371,21 +371,21 @@ MV_Scal_Unrolled (const RMV& r, const aVector& av, const XMV& x,
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 0, UNROLL, SizeType> op (r, x, av, startingColumn);
     const SizeType numRows = x.extent(0);
     Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::MV::S0", policy, op);
     return;
   }
   if (a == -1) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, -1, UNROLL, SizeType> op (r, x, av, startingColumn);
     const SizeType numRows = x.extent(0);
     Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::MV::S1", policy, op);
     return;
   }
   if (a == 1) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 1, UNROLL, SizeType> op (r, x, av, startingColumn);
     const SizeType numRows = x.extent(0);
     Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::MV::S2", policy, op);
     return;
   }
 
@@ -393,7 +393,7 @@ MV_Scal_Unrolled (const RMV& r, const aVector& av, const XMV& x,
   MV_Scal_Unroll_Functor<RMV, aVector, XMV, 2, UNROLL, SizeType> op (r, x, av, startingColumn);
   const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
-  Kokkos::parallel_for (policy, op);
+  Kokkos::parallel_for ("KokkosBlas::Scal::MV::S3", policy, op);
 }
 
 // Invoke the "generic" (not unrolled) multivector functor that
@@ -424,23 +424,23 @@ MV_Scal_Generic (const RVector& r,
 
   if (a == 0) {
     MV_Scal_Functor<RVector, aVector, XVector, 0, SizeType> op (r, x, av, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::MV::S4", policy, op);
     return;
   }
   if (a == -1) {
     MV_Scal_Functor<RVector, aVector, XVector, -1, SizeType> op (r, x, av, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::MV::S5", policy, op);
     return;
   }
   if (a == 1) {
     MV_Scal_Functor<RVector, aVector, XVector, 1, SizeType> op (r, x, av, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Scal::MV::S6", policy, op);
     return;
   }
 
   // a arbitrary (not -1, 0, or 1)
   MV_Scal_Functor<RVector, aVector, XVector, 2, SizeType> op (r, x, av, startingColumn);
-  Kokkos::parallel_for (policy, op);
+  Kokkos::parallel_for ("KokkosBlas::Scal::MV::S7", policy, op);
 }
 
 

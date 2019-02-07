@@ -79,6 +79,8 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: start level");
     SET_VALID_ENTRY("repartition: min rows per proc");
     SET_VALID_ENTRY("repartition: target rows per proc");
+    SET_VALID_ENTRY("repartition: min rows per thread");
+    SET_VALID_ENTRY("repartition: target rows per thread");
     SET_VALID_ENTRY("repartition: max imbalance");
 #undef  SET_VALID_ENTRY
 
@@ -100,9 +102,29 @@ namespace MueLu {
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
     const int    startLevel           = pL.get<int>   ("repartition: start level");
-    const LO     minRowsPerProcess    = pL.get<LO>    ("repartition: min rows per proc");
+          LO     minRowsPerProcess    = pL.get<LO>    ("repartition: min rows per proc");
           LO     targetRowsPerProcess = pL.get<LO>    ("repartition: target rows per proc");
+          LO     minRowsPerThread     = pL.get<LO>    ("repartition: min rows per thread");
+          LO     targetRowsPerThread  = pL.get<LO>    ("repartition: target rows per thread");
     const double nonzeroImbalance     = pL.get<double>("repartition: max imbalance");
+
+    int thread_per_mpi_rank = 1;
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
+    using execution_space = typename Node::device_type::execution_space;
+    if (std::is_same<execution_space, Kokkos::OpenMP>::value)
+      thread_per_mpi_rank = execution_space::concurrency();
+#endif
+
+    if (minRowsPerThread > 0)
+      // We ignore the value given by minRowsPerProcess and repartition based on threads instead
+      minRowsPerProcess *= minRowsPerThread*thread_per_mpi_rank;
+
+    if (targetRowsPerThread == 0)
+      targetRowsPerThread = minRowsPerThread;
+
+    if (targetRowsPerThread > 0)
+      // We ignore the value given by targetRowsPerProcess and repartition based on threads instead
+      targetRowsPerProcess = targetRowsPerThread*thread_per_mpi_rank;
 
     if (targetRowsPerProcess == 0)
       targetRowsPerProcess = minRowsPerProcess;
@@ -148,7 +170,17 @@ namespace MueLu {
     // Test 2: check whether A is actually distributed, i.e. more than one processor owns part of A
     // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
     // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
+
+    // TODO: The block transfer factories do not check correctly whether or not repartitioning actually took place.
     {
+      if (comm->getSize() == 1 && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) != Teuchos::null) {
+        GetOStream(Statistics1) << "Repartitioning?  NO:" <<
+            "\n  comm size = 1" << std::endl;
+
+        Set(currentLevel, "number of partitions", -1);
+        return;
+      }
+
       int numActiveProcesses = 0;
       MueLu_sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
@@ -219,15 +251,7 @@ namespace MueLu {
     int numPartitions = 1;
     if (globalNumRows >= targetRowsPerProcess) {
       // Make sure that each CPU thread has approximately targetRowsPerProcess
-
-      int thread_per_mpi_rank = 1;
-#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
-      using execution_space = typename Node::device_type::execution_space;
-      if (std::is_same<execution_space, Kokkos::OpenMP>::value)
-        thread_per_mpi_rank = execution_space::concurrency();
-#endif
-
-      numPartitions = std::max(Teuchos::as<int>(globalNumRows / (targetRowsPerProcess * thread_per_mpi_rank)), 1);
+      numPartitions = std::max(Teuchos::as<int>(globalNumRows / targetRowsPerProcess), 1);
     }
     numPartitions = std::min(numPartitions, comm->getSize());
 

@@ -62,13 +62,11 @@
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
-
-
-
 #include "KokkosCompat_View.hpp"
 #include "KokkosBlas.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
@@ -299,6 +297,52 @@ namespace { // (anonymous)
 
 
 namespace Tpetra {
+
+  namespace Details {
+    // Work-around for #3823.  The right way to fix this is to fix
+    // KokkosBlas::dot for complex, but this at least makes Tpetra's
+    // tests pass for complex.
+    template<class XVector,class YVector>
+    typename std::enable_if<
+      Kokkos::ArithTraits<typename XVector::non_const_value_type>::is_complex ||
+        Kokkos::ArithTraits<typename YVector::non_const_value_type>::is_complex,
+      typename ::Kokkos::Details::InnerProductSpaceTraits<
+        typename XVector::non_const_value_type>::dot_type>::type
+    localDotWorkAround (const XVector& x, const YVector& y)
+    {
+      using x_value_type = typename XVector::non_const_value_type;
+      using y_value_type = typename YVector::non_const_value_type;
+
+      using IPT = ::Kokkos::Details::InnerProductSpaceTraits<x_value_type>;
+      using dot_type = typename IPT::dot_type;
+      using execution_space = typename XVector::execution_space;
+      using range_type = Kokkos::RangePolicy<execution_space, int>;
+      // Use double precision internally; this should improve
+      // accuracy for complex<float> and thus help more tests pass.
+      using impl_dot_type = typename Teuchos::ScalarTraits<dot_type>::doublePrecision;
+
+      impl_dot_type result;
+      Kokkos::parallel_reduce
+        ("Tpetra::MultiVector oneColDotWorkAround",
+         range_type (0, x.extent (0)),
+         KOKKOS_LAMBDA (const int lclRow, impl_dot_type& dst) {
+          dst += IPT::dot (x(lclRow), y(lclRow));
+        }, result);
+      return static_cast<dot_type> (result);
+    }
+
+    template<class XVector,class YVector>
+    typename std::enable_if<
+      !Kokkos::ArithTraits<typename XVector::non_const_value_type>::is_complex &&
+        !Kokkos::ArithTraits<typename YVector::non_const_value_type>::is_complex,
+      typename ::Kokkos::Details::InnerProductSpaceTraits<
+        typename XVector::non_const_value_type>::dot_type>::type
+    localDotWorkAround (const XVector& x, const YVector& y)
+    {
+      return KokkosBlas::dot (x, y);
+    }
+  } // namespace Details
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1904,7 +1948,8 @@ namespace Tpetra {
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
         auto y_2d = y.template getLocalView<dev_memory_space> ();
         auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
-        lclDot = KokkosBlas::dot (x_1d, y_1d);
+        // Work-around for #3823; see notes above.
+        lclDot = ::Tpetra::Details::localDotWorkAround (x_1d, y_1d);
 
         if (x.isDistributed ()) {
           using Teuchos::outArg;

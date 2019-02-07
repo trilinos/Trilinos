@@ -3,31 +3,19 @@
   <ParameterList name="Linear Solver Types">
     <ParameterList name="Belos">
       <Parameter name="Solver Type" type="string" value="Block GMRES"/>
-      <!-- <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/> -->
       <ParameterList name="Solver Types">
         <ParameterList name="Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
           <Parameter name="Orthogonalization" type="string" value="ICGS"/>
           <Parameter name="Output Frequency" type="int" value="1"/>
           <Parameter name="Output Style" type="int" value="1"/>
-          <Parameter name="Verbosity" type="int" value="33"/>
-          <Parameter name="Maximum Iterations" type="int" value="100"/>
+          <Parameter name="Verbosity" type="int" value="1"/>
+          <Parameter name="Maximum Iterations" type="int" value="10"/>
           <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Num Blocks" type="int" value="40"/>
+          <Parameter name="Num Blocks" type="int" value="10"/>
           <Parameter name="Flexible Gmres" type="bool" value="true"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
           <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
-        </ParameterList>
-        <ParameterList name="Pseudo Block GMRES">
-          <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
-          <Parameter name="Orthogonalization" type="string" value="ICGS"/>
-          <Parameter name="Output Frequency" type="int" value="1"/>
-          <Parameter name="Output Style" type="int" value="1"/>
-          <Parameter name="Verbosity" type="int" value="33"/>
-          <Parameter name="Maximum Iterations" type="int" value="100"/>
-          <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Num Blocks" type="int" value="40"/>
-          <Parameter name="Timer Label" type="string" value="GMRES block system"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="VerboseObject">
@@ -52,15 +40,17 @@
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="Belos"/>
-            <Parameter name="Solver Type" type="string" value="Pseudo Block CG"/>
+            <Parameter name="Solver Type" type="string" value="Block CG"/>
             <ParameterList name="Solver Types">
-              <ParameterList name="Pseudo Block CG">
+              <ParameterList name="Block CG">
                 <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
+                <Parameter name="Use Single Reduction" type="bool" value="true"/>
+                <Parameter name="Orthogonalization" type="string" value="ICGS"/>
                 <Parameter name="Maximum Iterations" type="int" value="100"/>
                 <Parameter name="Timer Label" type="string" value="CG Q_B"/>
-                <Parameter name="Output Frequency" type="int" value="1"/>
+                <Parameter name="Output Frequency" type="int" value="10"/>
                 <Parameter name="Output Style" type="int" value="1"/>
-                <Parameter name="Verbosity" type="int" value="33"/>
+                <Parameter name="Verbosity" type="int" value="1"/>
                 <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
               </ParameterList>
             </ParameterList>
@@ -117,15 +107,16 @@
 
           <ParameterList name="S_E Solve">
             <Parameter name="Type" type="string" value="Belos"/>
-            <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
+            <Parameter name="Solver Type" type="string" value="Block CG"/>
             <ParameterList name="Solver Types">
-              <ParameterList name="Pseudo Block GMRES">
+              <ParameterList name="Block CG">
                 <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
+                <Parameter name="Use Single Reduction" type="bool" value="true"/>
                 <Parameter name="Maximum Iterations" type="int" value="100"/>
                 <Parameter name="Timer Label" type="string" value="CG S_E"/>
                 <Parameter name="Output Frequency" type="int" value="10"/>
                 <Parameter name="Output Style" type="int" value="1"/>
-                <Parameter name="Verbosity" type="int" value="33"/>
+                <Parameter name="Verbosity" type="int" value="1"/>
                 <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
               </ParameterList>
             </ParameterList>
@@ -216,6 +207,7 @@
               <Parameter name="z-coordinates" type="string" value="AUXILIARY_NODE"/>
             </ParameterList>
           </ParameterList>
+
         </ParameterList>
       </ParameterList>
     </ParameterList>

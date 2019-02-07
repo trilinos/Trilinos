@@ -55,15 +55,15 @@ namespace FROSch {
     DofsPerNode_ (dofsPerNode),
     NumMyNodes_ (localToGlobalMap->getNodeNumElements()),
     Vertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
-    ShortEdges_ (new EntitySet<SC,LO,GO,NO>(ShortEdgeType)),
-    StraightEdges_ (new EntitySet<SC,LO,GO,NO>(StraightEdgeType)),
+    ShortEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
+    StraightEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
     Edges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
     Faces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
-    Interface_ (new EntitySet<SC,LO,GO,NO>(SurfaceType)),
-    Interior_ (new EntitySet<SC,LO,GO,NO>(VolumeType)),
-    AncestorVertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
-    AncestorEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
-    AncestorFaces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
+    Interface_ (new EntitySet<SC,LO,GO,NO>(InterfaceType)),
+    Interior_ (new EntitySet<SC,LO,GO,NO>(InteriorType)),
+    CoarseNodes_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
+    ConnectivityEntities_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
+    EntitySetVector_ (),
     NodesMap_ (localToGlobalMap),
     UniqueNodesMap_ ()
     {
@@ -87,73 +87,19 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::resetGlobalDofs(MapPtrVecPtr dofsMaps)
     {
-        // Vertices
-        for (UN i=0; i<Vertices_->getNumEntities(); i++) {
-            for (UN j=0; j<Vertices_->getEntity(i)->getNumNodes(); j++) {
-                LO localID = Vertices_->getEntity(i)->getLocalNodeID(j);
-                UNVecPtr dofIDs(DofsPerNode_);
-                GOVecPtr dofsGlobal(DofsPerNode_);
-                for (UN k=0; k<DofsPerNode_; k++) {
-                    dofIDs[k] = k;
-                    dofsGlobal[k] = dofsMaps[k]->getGlobalElement(localID);
+        // EntityVector
+        for (UN l=0; l<EntitySetVector_.size(); l++) {
+            for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
+                for (UN j=0; j<EntitySetVector_[l]->getEntity(i)->getNumNodes(); j++) {
+                    LO localID = EntitySetVector_[l]->getEntity(i)->getLocalNodeID(j);
+                    UNVecPtr dofIDs(DofsPerNode_);
+                    GOVecPtr dofsGlobal(DofsPerNode_);
+                    for (UN k=0; k<DofsPerNode_; k++) {
+                        dofIDs[k] = k;
+                        dofsGlobal[k] = dofsMaps[k]->getGlobalElement(localID);
+                    }
+                    EntitySetVector_[l]->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
                 }
-                Vertices_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
-            }
-        }
-        
-        // ShortEdges
-        for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
-            for (UN j=0; j<ShortEdges_->getEntity(i)->getNumNodes(); j++) {
-                LO localID = ShortEdges_->getEntity(i)->getLocalNodeID(j);
-                UNVecPtr dofIDs(DofsPerNode_);
-                GOVecPtr dofsGlobal(DofsPerNode_);
-                for (UN k=0; k<DofsPerNode_; k++) {
-                    dofIDs[k] = k;
-                    dofsGlobal[k] = dofsMaps[k]->getGlobalElement(localID);
-                }
-                ShortEdges_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
-            }
-        }
-        
-        // StraightEdges
-        for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
-            for (UN j=0; j<StraightEdges_->getEntity(i)->getNumNodes(); j++) {
-                LO localID = StraightEdges_->getEntity(i)->getLocalNodeID(j);
-                UNVecPtr dofIDs(DofsPerNode_);
-                GOVecPtr dofsGlobal(DofsPerNode_);
-                for (UN k=0; k<DofsPerNode_; k++) {
-                    dofIDs[k] = k;
-                    dofsGlobal[k] = dofsMaps[k]->getGlobalElement(localID);
-                }
-                StraightEdges_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
-            }
-        }
-        
-        // Edges
-        for (UN i=0; i<Edges_->getNumEntities(); i++) {
-            for (UN j=0; j<Edges_->getEntity(i)->getNumNodes(); j++) {
-                LO localID = Edges_->getEntity(i)->getLocalNodeID(j);
-                UNVecPtr dofIDs(DofsPerNode_);
-                GOVecPtr dofsGlobal(DofsPerNode_);
-                for (UN k=0; k<DofsPerNode_; k++) {
-                    dofIDs[k] = k;
-                    dofsGlobal[k] = dofsMaps[k]->getGlobalElement(localID);
-                }
-                Edges_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
-            }
-        }
-        
-        // Faces
-        for (UN i=0; i<Faces_->getNumEntities(); i++) {
-            for (UN j=0; j<Faces_->getEntity(i)->getNumNodes(); j++) {
-                LO localID = Faces_->getEntity(i)->getLocalNodeID(j);
-                UNVecPtr dofIDs(DofsPerNode_);
-                GOVecPtr dofsGlobal(DofsPerNode_);
-                for (UN k=0; k<DofsPerNode_; k++) {
-                    dofIDs[k] = k;
-                    dofsGlobal[k] = dofsMaps[k]->getGlobalElement(localID);
-                }
-                Faces_->getEntity(i)->resetGlobalDofs(j,DofsPerNode_,&(dofIDs[0]),&(dofsGlobal[0]));
             }
         }
         
@@ -191,96 +137,30 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs)
     {
-        // Vertices
-        for (UN i=0; i<Vertices_->getNumEntities(); i++) {
-            UN length = Vertices_->getEntity(i)->getNumNodes();
-            for (UN j=0; j<length; j++) {
-                UN itmp = length-1-j;
-                UN k = 0;
-                while (k<DofsPerNode_) {
-                    GO dofGlobal = Vertices_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
-                        Vertices_->getEntity(i)->removeNode(itmp);
-                        break;
+        // EntityVector
+        for (UN l=0; l<EntitySetVector_.size(); l++) {
+            for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
+                UN length = EntitySetVector_[l]->getEntity(i)->getNumNodes();
+                for (UN j=0; j<length; j++) {
+                    UN itmp = length-1-j;
+                    UN k = 0;
+                    while (k<DofsPerNode_) {
+                        GO dofGlobal = EntitySetVector_[l]->getEntity(i)->getGlobalDofID(itmp,k);
+                        if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
+                            EntitySetVector_[l]->getEntity(i)->removeNode(itmp);
+                            break;
+                        }
+                        k++;
                     }
-                    k++;
                 }
             }
         }
-        Vertices_->removeEmptyEntities();
         
-        // ShortEdges
-        for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
-            UN length = ShortEdges_->getEntity(i)->getNumNodes();
-            for (UN j=0; j<length; j++) {
-                UN itmp = length-1-j;
-                UN k = 0;
-                while (k<DofsPerNode_) {
-                    GO dofGlobal = ShortEdges_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
-                        ShortEdges_->getEntity(i)->removeNode(itmp);
-                        break;
-                    }
-                    k++;
-                }
-            }
+        removeEmptyEntities();
+        
+        for (UN l=0; l<EntitySetVector_.size(); l++) {
+            EntitySetVector_[l]->setUniqueIDToFirstGlobalNodeID();
         }
-        ShortEdges_->removeEmptyEntities();
-        
-        // StraightEdges
-        for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
-            UN length = StraightEdges_->getEntity(i)->getNumNodes();
-            for (UN j=0; j<length; j++) {
-                UN itmp = length-1-j;
-                UN k = 0;
-                while (k<DofsPerNode_) {
-                    GO dofGlobal = StraightEdges_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
-                        StraightEdges_->getEntity(i)->removeNode(itmp);
-                        break;
-                    }
-                    k++;
-                }
-            }
-        }
-        StraightEdges_->removeEmptyEntities();
-        
-        // Edges
-        for (UN i=0; i<Edges_->getNumEntities(); i++) {
-            UN length = Edges_->getEntity(i)->getNumNodes();
-            for (UN j=0; j<length; j++) {
-                UN itmp = length-1-j;
-                UN k = 0;
-                while (k<DofsPerNode_) {
-                    GO dofGlobal = Edges_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
-                        Edges_->getEntity(i)->removeNode(itmp);
-                        break;
-                    }
-                    k++;
-                }
-            }
-        }
-        Edges_->removeEmptyEntities();
-        
-        // Faces
-        for (UN i=0; i<Faces_->getNumEntities(); i++) {
-            UN length = Faces_->getEntity(i)->getNumNodes();
-            for (UN j=0; j<length; j++) {
-                UN itmp = length-1-j;
-                UN k = 0;
-                while (k<DofsPerNode_) {
-                    GO dofGlobal = Faces_->getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
-                        Faces_->getEntity(i)->removeNode(itmp);
-                        break;
-                    }
-                    k++;
-                }
-            }
-        }
-        Faces_->removeEmptyEntities();
-        
         return 0;
     }
     
@@ -320,144 +200,158 @@ namespace FROSch {
         Edges_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
         Faces_->divideUnconnectedEntities(matrix,MpiComm_->getRank());
 #endif
+        
+        removeEmptyEntities();
+        
+        // We need to set the unique ID; otherwise, we cannot sort entities
+        Edges_->setUniqueIDToFirstGlobalNodeID();
+        Faces_->setUniqueIDToFirstGlobalNodeID();
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::sortEntities()
+    int DDInterface<SC,LO,GO,NO>::flagEntities(MultiVectorPtr nodeList)
     {
-        // Edges_
-        InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutVertices();
-        for (UN i=0; i<extractedVertices.size(); i++) {
-            Vertices_->addEntity(extractedVertices[i]);
+        for (UN l=0; l<EntitySetVector_.size(); l++) {
+            EntitySetVector_[l]->flagNodes();
+            EntitySetVector_[l]->flagShortEntities();
         }
-        
-        InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEdges();
-        for (UN i=0; i<extractedShortEdges.size(); i++) {
-            ShortEdges_->addEntity(extractedShortEdges[i]);
-        }
-        
-        // Faces_
-        extractedVertices = Faces_->sortOutVertices();
-        for (UN i=0; i<extractedVertices.size(); i++) {
-            Vertices_->addEntity(extractedVertices[i]);
-        }
-        
-        extractedShortEdges = Faces_->sortOutShortEdges();
-        for (UN i=0; i<extractedShortEdges.size(); i++) {
-            ShortEdges_->addEntity(extractedShortEdges[i]);
-        }
-        
-        return 0;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::sortEntities(MultiVectorPtr nodeList)
-    {
-        if (nodeList.is_null()) {
-            this->sortEntities();
-        } else {
-            // Edges_
-            InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutVertices();
-            for (UN i=0; i<extractedVertices.size(); i++) {
-                Vertices_->addEntity(extractedVertices[i]);
-            }
-            
-            InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEdges();
-            for (UN i=0; i<extractedShortEdges.size(); i++) {
-                ShortEdges_->addEntity(extractedShortEdges[i]);
-            }
-            
-            InterfaceEntityPtrVecPtr extractedStraightEdges = Edges_->sortOutStraightEdges(Dimension_,nodeList);
-            for (UN i=0; i<extractedStraightEdges.size(); i++) {
-                StraightEdges_->addEntity(extractedStraightEdges[i]);
-            }
-            
-            // Faces_
-            extractedVertices = Faces_->sortOutVertices();
-            for (UN i=0; i<extractedVertices.size(); i++) {
-                Vertices_->addEntity(extractedVertices[i]);
-            }
-            
-            extractedShortEdges = Faces_->sortOutShortEdges();
-            for (UN i=0; i<extractedShortEdges.size(); i++) {
-                ShortEdges_->addEntity(extractedShortEdges[i]);
-            }
-            
-            extractedStraightEdges = Faces_->sortOutStraightEdges(Dimension_,nodeList);
-            for (UN i=0; i<extractedStraightEdges.size(); i++) {
-                StraightEdges_->addEntity(extractedStraightEdges[i]);
+        if (!nodeList.is_null()) {
+            for (UN l=0; l<EntitySetVector_.size(); l++) {
+                EntitySetVector_[l]->flagStraightEntities(Dimension_,nodeList);
             }
         }
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::findAncestors()
+    int DDInterface<SC,LO,GO,NO>::removeEmptyEntities()
     {
-        if (Faces_->getNumEntities()>0) {
-            if (ShortEdges_->getNumEntities()>0) {
-                Faces_->findAncestors(ShortEdges_);
+        for (UN l=0; l<EntitySetVector_.size(); l++) {
+            EntitySetVector_[l]->removeEmptyEntities();
+        }
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int DDInterface<SC,LO,GO,NO>::sortVerticesEdgesFaces(MultiVectorPtr nodeList)
+    {
+        flagEntities(nodeList);
+        
+        // Make sure that we do not sort any empty entities
+        removeEmptyEntities();
+        
+        for (UN l=0; l<EntitySetVector_.size(); l++) {
+            switch (l) {
+                case 0:
+                    FROSCH_ASSERT(EntitySetVector_[l]->getNumEntities()==0,"This case is impossible.");
+                    break;
+                case 1:
+                    FROSCH_ASSERT(EntitySetVector_[l]->getNumEntities()==0,"In this case, the entity is interior to the subdomain.");
+                    break;
+                case 2:
+                    for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
+                        switch (EntitySetVector_[l]->getEntity(i)->getEntityFlag()) {
+                            case DefaultFlag: // By default, an entity which belongs to 2 subdomains is a face
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(FaceType);
+                                Faces_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            case StraightFlag: // If an entity is straight, it is always a straight edge
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(EdgeType);
+                                StraightEdges_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            case ShortFlag: // If an entity is a short, it is always a short edge
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(EdgeType);
+                                ShortEdges_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            case NodeFlag: // If an entity is a node, it is always a vertex
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(VertexType);
+                                Vertices_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
+                        switch (EntitySetVector_[l]->getEntity(i)->getEntityFlag()) {
+                            case DefaultFlag: // By default, an entity which belongs to more than 2 subdomains is an edge
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(EdgeType);
+                                Edges_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            case StraightFlag:  // If an entity is straight, it is always a straight edge
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(EdgeType);
+                                StraightEdges_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            case ShortFlag: // If an entity is a short, it is always a short edge
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(EdgeType);
+                                ShortEdges_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            case NodeFlag: // If an entity is a node, it is always a vertex
+                                EntitySetVector_[l]->getEntity(i)->resetEntityType(VertexType);
+                                Vertices_->addEntity(EntitySetVector_[l]->getEntity(i));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    break;
             }
-            if (StraightEdges_->getNumEntities()>0) {
-                Faces_->findAncestors(StraightEdges_);
-            }
-            if (Edges_->getNumEntities()>0) {
-                Faces_->findAncestors(Edges_);
+            
+        }
+        return 0;
+    }    
+    
+    template <class SC,class LO,class GO,class NO>
+    int DDInterface<SC,LO,GO,NO>::buildEntityHierarchy()
+    {
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            for (UN j=i+1; j<EntitySetVector_.size(); j++) {
+                EntitySetVector_[i]->findAncestorsInSet(EntitySetVector_[j]);
             }
         }
-        if (Vertices_->getNumEntities()>0) {
-            if (ShortEdges_->getNumEntities()>0) {
-                ShortEdges_->findAncestors(Vertices_);
-            }
-            if (StraightEdges_->getNumEntities()>0) {
-                StraightEdges_->findAncestors(Vertices_);
-            }
-            if (Edges_->getNumEntities()>0) {
-                Edges_->findAncestors(Vertices_);
-            }
+        
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetPtr tmpCoarseNodes = EntitySetVector_[i]->findCoarseNodes();
+            CoarseNodes_->addEntitySet(tmpCoarseNodes);
         }
-        //
-        AncestorVertices_ = Vertices_;
-        for (UN i=0; i<AncestorVertices_->getNumEntities(); i++) {
-            AncestorVertices_->getEntity(i)->setAncestorID(i);
+        CoarseNodes_->sortUnique();
+        CoarseNodes_->setCoarseNodeID();
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int DDInterface<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
+                                                                MultiVectorPtr &nodeList,
+                                                                DistanceFunction distanceFunction)
+    {
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetVector_[i]->computeDistancesToCoarseNodes(dimension,nodeList,distanceFunction);
         }
-        //
-        UN itmp = 0;
-        EntitySetPtr tmpVertices;
-        for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
-            tmpVertices = ShortEdges_->getEntity(i)->getAncestors();
-            if (tmpVertices->getNumEntities() == 0) {
-                AncestorEdges_->addEntity(ShortEdges_->getEntity(i));
-                ShortEdges_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
-            }
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int DDInterface<SC,LO,GO,NO>::identifyConnectivityEntities(UNVecPtr multiplicities,
+                                                               EntityFlagVecPtr flags)
+    {
+        if (multiplicities.is_null()) {
+            multiplicities = UNVecPtr(1,2);
         }
-        for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
-            tmpVertices = StraightEdges_->getEntity(i)->getAncestors();
-            if (tmpVertices->getNumEntities() == 0) {
-                AncestorEdges_->addEntity(StraightEdges_->getEntity(i));
-                StraightEdges_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
-            }
+        if (flags.is_null()) {
+            flags = EntityFlagVecPtr(4);
+            flags[0] = DefaultFlag;
+            flags[1] = StraightFlag;
+            flags[2] = ShortFlag;
+            flags[3] = NodeFlag;
         }
-        for (UN i=0; i<Edges_->getNumEntities(); i++) {
-            tmpVertices = Edges_->getEntity(i)->getAncestors();
-            if (tmpVertices->getNumEntities() == 0) {
-                AncestorEdges_->addEntity(Edges_->getEntity(i));
-                Edges_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
-            }
-        }
-        //
-        itmp = 0;
-        EntitySetPtr tmpEdges;
-        for (UN i=0; i<Faces_->getNumEntities(); i++) {
-            tmpEdges = Faces_->getEntity(i)->getAncestors();
-            if (tmpEdges->getNumEntities() == 0) {
-                AncestorFaces_->addEntity(Faces_->getEntity(i));
-                Faces_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
+        
+        for (UN j=0; j<multiplicities.size(); j++) {
+            for (UN i=0; i<EntitySetVector_[multiplicities[j]]->getNumEntities(); i++) {
+                if (std::binary_search(flags.begin(),flags.end(),EntitySetVector_[multiplicities[j]]->getEntity(i)->getEntityFlag())) {
+                    ConnectivityEntities_->addEntity(EntitySetVector_[multiplicities[j]]->getEntity(i));
+                }
             }
         }
         return 0;
@@ -524,21 +418,21 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorVertices() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getCoarseNodes() const
     {
-        return AncestorVertices_;
+        return CoarseNodes_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorEdges() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetPtrConstVecPtr & DDInterface<SC,LO,GO,NO>::getEntitySetVector() const
     {
-        return AncestorEdges_;
+        return EntitySetVector_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorFaces() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getConnectivityEntities() const
     {
-        return AncestorFaces_;
+        return ConnectivityEntities_;
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -746,11 +640,17 @@ namespace FROSch {
                                                           GOVecVec &componentsSubdomainsUnique)
     {
         // Hier herausfinden, ob Ecke, Kante oder Fläche
-        LOVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
+        UNVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
         GOVecVecPtr components(componentsSubdomainsUnique.size());
         GOVecVecPtr componentsGamma(componentsSubdomainsUnique.size());
+        UN maxMultiplicity = 0;
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
             componentsMultiplicity[i] = componentsSubdomainsUnique[i].size();
+            maxMultiplicity = std::max(maxMultiplicity,componentsMultiplicity[i]);
+        }
+        EntitySetVector_ = EntitySetPtrVecPtr(maxMultiplicity+1);
+        for (UN i=0; i<maxMultiplicity+1; i++) {
+            EntitySetVector_[i].reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         }
         
         typename GOVecVec::iterator classIterator;
@@ -762,11 +662,11 @@ namespace FROSch {
         
         LO tmp1 = 0;
         GO *tmp2 = NULL;
-        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > volume(new InterfaceEntity<SC,LO,GO,NO>(VolumeType,DofsPerNode_,tmp1,tmp2));
-        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > surface(new InterfaceEntity<SC,LO,GO,NO>(SurfaceType,DofsPerNode_,tmp1,tmp2));
+        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
+        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interface(new InterfaceEntity<SC,LO,GO,NO>(InterfaceType,DofsPerNode_,tmp1,tmp2));
         for (LO i=0; i<NumMyNodes_; i++) {
             if (componentsMultiplicity[localComponentIndices[i]] == 1) {
-                LO nodeIDI = volume->getNumNodes();
+                LO nodeIDI = interior->getNumNodes();
                 LO nodeIDLocal = i;
                 GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
                 LOVecPtr dofsI(DofsPerNode_);
@@ -777,12 +677,11 @@ namespace FROSch {
                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
                     dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
                 }
-                volume->addNode(nodeIDI,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsI,dofsLocal,dofsGlobal);
-            }
-            else {
-                LO nodeIDGamma = surface->getNumNodes();
+                interior->addNode(nodeIDI,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsI,dofsLocal,dofsGlobal);
+            } else {
+                LO nodeIDGamma = interface->getNumNodes();
                 LO nodeIDLocal = i;
-                GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << nodeIDGlobal << std::endl;
+                GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
                 LOVecPtr dofsGamma(DofsPerNode_);
                 LOVecPtr dofsLocal(DofsPerNode_);
                 GOVecPtr dofsGlobal(DofsPerNode_);
@@ -791,14 +690,14 @@ namespace FROSch {
                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
                     dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
                 }
-                surface->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
+                interface->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
 
                 components[localComponentIndices[i]].push_back(i);
-                componentsGamma[localComponentIndices[i]].push_back(surface->getNumNodes()-1);
+                componentsGamma[localComponentIndices[i]].push_back(interface->getNumNodes()-1);
             }
         }
-        Interior_->addEntity(volume);
-        Interface_->addEntity(surface);
+        Interior_->addEntity(interior);
+        Interface_->addEntity(interface);
         
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
             Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
@@ -808,115 +707,33 @@ namespace FROSch {
             LOVecPtr dofsGamma(DofsPerNode_);
             LOVecPtr dofsLocal(DofsPerNode_);
             GOVecPtr dofsGlobal(DofsPerNode_);
-            switch (componentsMultiplicity[i]) {
-                case 1:
-                    break;
-                    
-                case 2:
-                    switch (components[i].size()) {
-                            
-                        case 0:
-                            
-                            break;
-                            
-                        case 1:
-                            
-                            nodeIDGamma = componentsGamma[i][0];
-                            nodeIDLocal = components[i][0];
-                            nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
-                            for (UN k=0; k<DofsPerNode_; k++) {
-                                dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                            }
-                            
-                            tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            tmpEntity->resetEntityType(VertexType);
-                            Vertices_->addEntity(tmpEntity);
-                            
-                            break;
-                            
-                        default:
-                            
-                            sortunique(components[i]);
-                            
-                            //
-                            for (UN j=0; j<components[i].size(); j++) {
-                                nodeIDGamma = componentsGamma[i][j];
-                                nodeIDLocal = components[i][j];
-                                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);  //cout << "face " << nodeIDGlobal << std::endl;
-                                for (UN k=0; k<DofsPerNode_; k++) {
-                                    dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                    dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                    dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                                }
-                                
-                                tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            }
-                            tmpEntity->resetEntityType(FaceType);
-                            Faces_->addEntity(tmpEntity);
-                            
-                            break;
-                    }
-                    break;
-                    
-                default:
-                    
-                    switch (components[i].size()) {
-                            
-                        case 0:
-                            
-                            break;
-                            
-                        case 1:
-                            
-                            nodeIDGamma = componentsGamma[i][0];
-                            nodeIDLocal = components[i][0];
-                            nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
-                            for (UN k=0; k<DofsPerNode_; k++) {
-                                dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                            }
-                            
-                            tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            tmpEntity->resetEntityType(VertexType);
-                            Vertices_->addEntity(tmpEntity);
-                            
-                            break;
-                            
-                        default:
-                            
-                            sortunique(components[i]);
-                            
-                            for (UN j=0; j<components[i].size(); j++) {
-                                nodeIDGamma = componentsGamma[i][j];
-                                nodeIDLocal = components[i][j];
-                                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "edge " << nodeIDGlobal << std::endl;
-                                for (UN k=0; k<DofsPerNode_; k++) {
-                                    dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                    dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                    dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                                }
-                                
-                                tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            }
-                            tmpEntity->resetEntityType(EdgeType);
-                            Edges_->addEntity(tmpEntity);
-                            
-                            break;
-                    }
-                    break;
+            
+            sortunique(components[i]);
+            
+            //
+            for (UN j=0; j<components[i].size(); j++) {
+                nodeIDGamma = componentsGamma[i][j];
+                nodeIDLocal = components[i][j];
+                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
+                for (UN k=0; k<DofsPerNode_; k++) {
+                    dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
+                    dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
+                    dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
+                }
+                
+                tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
             }
-        }
-        
-        // If Dimension_ == 2, then the faces are indeed edges and there are no faces
-        if (Dimension_ == 2) {
-            Edges_ = Faces_;
-            Edges_->resetEntityType(EdgeType);
-            Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
+            tmpEntity->resetEntityType(DefaultType);
+            EntitySetVector_[componentsMultiplicity[i]]->addEntity(tmpEntity);
         }
 
+        // Remove the empty entity stemming from the interior nodes
+        removeEmptyEntities();
+        
+        // We need to set the unique ID; otherwise, we cannot sort entities
+        for (UN i=0; i<EntitySetVector_.size(); i++) {
+            EntitySetVector_[i]->setUniqueIDToFirstGlobalNodeID();
+        }
         return 0;
     }
     

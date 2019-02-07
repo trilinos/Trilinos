@@ -1254,13 +1254,13 @@ public:
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                   const MultiVector<Scalar,LO,GO,Node> &B,
-                   const MultiVector<Scalar,LO,GO,Node> &D,
-                   const Scalar& dampingFactor,
-                   const ESweepDirection direction,
-                   const int numSweeps,
-                   const bool zeroInitialGuess) const
+  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &/* X */,
+                   const MultiVector<Scalar,LO,GO,Node> &/* B */,
+                   const MultiVector<Scalar,LO,GO,Node> &/* D */,
+                   const Scalar& /* dampingFactor */,
+                   const ESweepDirection /* direction */,
+                   const int /* numSweeps */,
+                   const bool /* zeroInitialGuess */) const
   {
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
@@ -1272,14 +1272,14 @@ public:
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
-                            const MultiVector<Scalar,LO,GO,Node>& B,
-                            const MultiVector<Scalar,LO,GO,Node>& D,
-                            const Teuchos::ArrayView<LO>& rowIndices,
-                            const Scalar& dampingFactor,
-                            const ESweepDirection direction,
-                            const int numSweeps,
-                            const bool zeroInitialGuess) const
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& /* X */,
+                            const MultiVector<Scalar,LO,GO,Node>& /* B */,
+                            const MultiVector<Scalar,LO,GO,Node>& /* D */,
+                            const Teuchos::ArrayView<LO>& /* rowIndices */,
+                            const Scalar& /* dampingFactor */,
+                            const ESweepDirection /* direction */,
+                            const int /* numSweeps */,
+                            const bool /* zeroInitialGuess */) const
   {
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
@@ -2249,6 +2249,15 @@ public:
         "Please report this bug to the Tpetra developers." << std::endl;
       return;
     }
+    else {
+      // Kyungjoo: where is val_ modified ? 
+      //    When we have dual view as a member variable, 
+      //    which function should make sure the val_ is upto date ? 
+      //    IMO, wherever it is used, the function should check its
+      //    availability.
+      const_cast<this_type*>(src)->sync_host();
+    }
+    this->sync_host();
 
     bool lclErr = false;
 #ifdef HAVE_TPETRA_DEBUG
@@ -2285,16 +2294,13 @@ public:
       std::cerr << os.str ();
     }
 
-    // work around for const object sync
-    if (permuteToLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> permuteToLIDsTemp = permuteToLIDs;
-      permuteToLIDsTemp.sync_host();
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::copyAndPermuteNew : "
+                               "permuteToLIDs is read-only and host buffer must be up-to-date.");
+    TEUCHOS_TEST_FOR_EXCEPTION(permuteFromLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::copyAndPermuteNew : "
+                               "permuteFromLIDs is read-only and host buffer must be up-to-date.");
     const auto permuteToLIDsHost = permuteToLIDs.view_host();
-    if (permuteFromLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> permuteFromLIDsTemp = permuteFromLIDs;
-      permuteFromLIDsTemp.sync_host();
-    }
     const auto permuteFromLIDsHost = permuteFromLIDs.view_host();
 
     if (canUseLocalColumnIndices) {
@@ -2657,7 +2663,7 @@ public:
     unpackRowCount (const typename ::Tpetra::Details::PackTraits<LO, D>::input_buffer_type& imports,
                     const size_t offset,
                     const size_t numBytes,
-                    const size_t numBytesPerValue)
+                    const size_t /* numBytesPerValue */)
     {
       using Kokkos::subview;
       using ::Tpetra::Details::PackTraits;
@@ -2843,8 +2849,8 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   packAndPrepareNew (const ::Tpetra::SrcDistObject& source,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     Kokkos::DualView<packet_type*, buffer_device_type>& exports, // output
+                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID, // output
                      size_t& constantNumPackets,
                      Distributor& /* distor */)
   {
@@ -2941,14 +2947,14 @@ public:
 
     // Graph information is on host; let's do this on host parallel reduce
     // Sync necessary data to host
-
-    if (exportLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> exportLIDsTemp = exportLIDs;
-      exportLIDsTemp.sync_host();
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(exportLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::packAndPrepareNew : "
+                               "exportLIDs is read-only and host buffer must be up-to-date.");
     auto exportLIDsHost = exportLIDs.view_host();
-    auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this
+    auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this.
+    const_cast<Kokkos::DualView<size_t*, buffer_device_type>&>(numPacketsPerLID).modify_host();
     {
+
       typedef Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec> reducer_type;
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
       Kokkos::parallel_reduce
@@ -2962,10 +2968,6 @@ public:
           numPacketsPerLIDHost(i) = numBytes;
           update += typename reducer_type::value_type(numEnt, numBytes, numEnt);
         }, rowReducerStruct);
-      {
-        Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
-        numPacketsPerLIDTemp.modify_host();
-      }
     }
 
     // Compute the number of bytes ("packets") per row to pack.  While
@@ -2986,11 +2988,8 @@ public:
     // We use a "struct of arrays" approach to packing each row's
     // entries.  All the column indices (as global indices) go first,
     // then all their owning process ranks, and then the values.
-    exports.resize (totalNumBytes/numBytesPerValue);
+    exports.resize (totalNumBytes);
     if (totalNumEntries > 0) {
-      // exports is resized in the above and we assume the data on device is invalidated.
-      Kokkos::View<char*,host_exec> exportsByteHost ((char*)exports.view_host().data(), totalNumBytes);
-
       // Current position (in bytes) in the 'exports' output array.
       Kokkos::View<size_t*, host_exec> offset("offset", numExportLIDs+1);
       {
@@ -3021,6 +3020,8 @@ public:
       const map_type& srcColMap = * (srcGraph.getColMap ());
 
       // Pack the data for each row to send, into the 'exports' buffer.
+      // exports will be modified on host.
+      exports.modify_host();
       {
         typedef Kokkos::TeamPolicy<host_exec> policy_type;
         const auto policy =
@@ -3054,7 +3055,7 @@ public:
             //   host scratch space somehow is not considered same as the host_exec
             // Copy the row's data into the current spot in the exports array.
             const size_t numBytes = packRowForBlockCrs<impl_scalar_type,LO,GO,host_exec>
-              (exportsByteHost,
+              (exports.view_host(),
                offset(i),
                numEnt,
                Kokkos::View<const GO*,host_exec>(gblColInds.data(), maxRowLength),
@@ -3078,20 +3079,20 @@ public:
     } // if totalNumEntries > 0
 
     if (debug) {
-      std::ostream& err = this->markLocalErrorAndGetStream ();
+      std::ostringstream os;
       const bool lclSuccess = ! (* (this->localError_));
-      err << prefix
-          << (lclSuccess ? "succeeded" : "FAILED")
-          << " (totalNumEntries = " << totalNumEntries << ") ***" << std::endl;
+      os << prefix
+         << (lclSuccess ? "succeeded" : "FAILED")
+         << std::endl;
+      std::cerr << os.str ();
     }
   }
-
 
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                       const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
+                       const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
                        const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                        const size_t /* constantNumPackets */,
                        Distributor& /* distor */,
@@ -3192,18 +3193,14 @@ public:
       std::cerr << os.str ();
     }
 
-    Kokkos::View<char*,host_exec> importsByteHost((char*)imports.view_host().data(), imports.extent(0)*numBytesPerValue);
+    TEUCHOS_TEST_FOR_EXCEPTION(importLIDs.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::unpackAndCombineNew : "
+                               "importLIDs is read-only and host buffer must be up-to-date.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numPacketsPerLID.need_sync_host(),
+                               std::runtime_error, "Tpetra::Experimental::unpackAndCombineNew : "
+                               "numPacketsPerLID is read-only and host buffer must be up-to-date.");
 
-    if (importLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> importLIDsTemp = importLIDs;
-      importLIDsTemp.sync_host();
-    }
     const auto importLIDsHost = importLIDs.view_host();
-
-    if (numPacketsPerLID.need_sync_host()) {
-      Kokkos::DualView<const size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
-      numPacketsPerLIDTemp.sync_host();
-    }
     const auto numPacketsPerLIDHost = numPacketsPerLID.view_host();
 
     Kokkos::View<size_t*,host_exec> offset("offset", numImportLIDs+1);
@@ -3242,7 +3239,7 @@ public:
           const size_t numBytes = numPacketsPerLIDHost(i);
           const size_t numEnt =
             unpackRowCount<impl_scalar_type, LO, GO, host_exec>
-            (importsByteHost, offval, numBytes, numBytesPerValue);
+            (imports.view_host(), offval, numBytes, numBytesPerValue);
 
           if (numBytes > 0) {
             if (numEnt > maxRowNumEnt) {
@@ -3269,7 +3266,7 @@ public:
             unpackRowForBlockCrs<impl_scalar_type, LO, GO, host_exec>
             (Kokkos::View<GO*,host_exec>(gidsOut.data(), numEnt),
              Kokkos::View<impl_scalar_type*,host_exec>(valsOut.data(), numScalarEnt),
-             importsByteHost,
+             imports.view_host(),
              offval, numBytes, numEnt,
              numBytesPerValue, blockSize);
 
@@ -3344,7 +3341,6 @@ public:
       std::cerr << os.str ();
     }
   }
-
 
   template<class Scalar, class LO, class GO, class Node>
   std::string
@@ -3775,10 +3771,10 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowCopy (GO GlobalRow,
-                    const Teuchos::ArrayView<GO> &Indices,
-                    const Teuchos::ArrayView<Scalar> &Values,
-                    size_t &NumEntries) const
+  getGlobalRowCopy (GO /* GlobalRow */,
+                    const Teuchos::ArrayView<GO> &/* Indices */,
+                    const Teuchos::ArrayView<Scalar> &/* Values */,
+                    size_t &/* NumEntries */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowCopy: "
@@ -3789,9 +3785,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowView (GO GlobalRow,
-                    Teuchos::ArrayView<const GO> &indices,
-                    Teuchos::ArrayView<const Scalar> &values) const
+  getGlobalRowView (GO /* GlobalRow */,
+                    Teuchos::ArrayView<const GO> &/* indices */,
+                    Teuchos::ArrayView<const Scalar> &/* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
@@ -3802,9 +3798,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (LO LocalRow,
-                   Teuchos::ArrayView<const LO>& indices,
-                   Teuchos::ArrayView<const Scalar>& values) const
+  getLocalRowView (LO /* LocalRow */,
+                   Teuchos::ArrayView<const LO>& /* indices */,
+                   Teuchos::ArrayView<const Scalar>& /* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: "
@@ -3867,7 +3863,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::leftScale: "
@@ -3878,7 +3874,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::rightScale: "

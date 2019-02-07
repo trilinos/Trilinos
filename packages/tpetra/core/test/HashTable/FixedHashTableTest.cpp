@@ -46,7 +46,9 @@
 #include <Tpetra_Details_FixedHashTable.hpp>
 #include <Kokkos_Core.hpp>
 #include "Teuchos_OrdinalTraits.hpp"
+#include "KokkosCompat_View.hpp"
 #include <cstdlib> // atexit
+#include <memory>
 
 namespace { // (anonymous)
 
@@ -257,13 +259,14 @@ namespace { // (anonymous)
     // Pick something other than 0, just to make sure that it works.
     const ValueType startingValue = 1;
 
-    Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
+    Teuchos::ArrayView<const KeyType> keys_av = Kokkos::Compat::getArrayView (keys_h);
     out << "Create table" << endl;
 
     const bool keepKeys = true;
-    Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
-    if (table.is_null ()) {
+    using table_ptr_type = std::unique_ptr<table_type>; // macros may not like colons etc.
+    table_ptr_type table;
+    TEST_NOTHROW( table = table_ptr_type (new table_type (keys_av, startingValue, keepKeys)) );
+    if (table.get () == nullptr) {
       out << "table is null!  Its constructor must have thrown.  "
         "No sense in continuing." << endl;
       return; // above constructor must have thrown

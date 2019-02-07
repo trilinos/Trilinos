@@ -71,6 +71,40 @@ tmp := $(shell echo "----------------------------------------------*/" >> Kokkos
 tmp := $(shell echo "\#ifndef KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "\#define KOKKOSKERNELS_CONFIG_H_" >> KokkosKernels_config.tmp)
 
+
+#==== User-settable options for Fortran mangling macros  =================
+#With Makefile build, we rely on users' input
+
+# default mangling scheme with a single under score
+KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle__" | wc -l))
+ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_DOUBLE_UNDERSCORES), 1)
+  KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#__
+else
+  KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle_" | wc -l))
+  ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_SINGLE_UNDERSCORE), 1)
+    KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#_
+  else 
+    KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-mangle" | wc -l))
+    ifeq ($(KOKKOSKERNELS_INTERNAL_OVERRIDE_FORTRAN_MANGLING_WITH_NO_UNDERSCORE), 1)
+      KOKKOSKERNELS_FORTRAN_GLOBAL = name\#\#
+    endif
+  endif
+endif
+
+tmp := $(shell echo "" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "Fortran BLAS mangling:" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "   ---------------------------------------------*/" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#if !defined(F77_BLAS_MANGLE)" >> KokkosKernels_config.tmp )
+tmp := $(shell echo "\#define F77_BLAS_MANGLE(name,NAME) $(KOKKOSKERNELS_FORTRAN_GLOBAL)" >> KokkosKernels_config.tmp)
+tmp := $(shell echo "\#endif" >> KokkosKernels_config.tmp )
+
+KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX := $(strip $(shell echo $(KOKKOSKERNELS_OPTIONS) | grep "blas-return-complex" | wc -l))
+ifeq ($(KOKKOSKERNELS_INTERNAL_TPL_BLAS_RETURN_COMPLEX), 1)
+  tmp := $(shell echo "\#define KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX" >> KokkosKernels_config.tmp )
+endif
+
 #==== ETI Macros Scalars =================================================
 KOKKOSKERNELS_INTERNAL_INST_SCALARS =
 KOKKOSKERNELS_INTERNAL_INST_DOUBLE=$(strip $(shell echo "$(KOKKOSKERNELS_SCALARS)" | grep "double" | wc -l))
@@ -399,6 +433,17 @@ endif
 
 ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS}, 1)
   KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Cuda_tpl.cpp
+endif
+
+KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=0
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_BLAS}, 1)
+  KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=1
+endif
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_MKL}, 1)
+  KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS=1
+endif
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_HOST_BLAS}, 1)
+  KOKKOSKERNELS_INTERNAL_SRC_BLAS += ${KOKKOSKERNELS_PATH}/src/impl/tpls/KokkosBlas_Host_tpl.cpp
 endif
 
 KOKKOSKERNELS_INTERNAL_HEADERS = $(wildcard ${KOKKOSKERNELS_PATH}/src/impl/*.hpp)

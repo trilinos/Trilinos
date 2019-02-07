@@ -151,7 +151,7 @@ struct Flush {
 
   void run() {
     double sum = 0;
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
+    Kokkos::parallel_reduce("KokkosGraph::PerfTest::Flush", Kokkos::RangePolicy<SpaceType>(0,BufSize/sizeof(double)), *this, sum);
     SpaceType::fence();
     std::cout << "Flush sum:" << sum << std::endl;
     FILE *fp = fopen("/dev/null", "w");

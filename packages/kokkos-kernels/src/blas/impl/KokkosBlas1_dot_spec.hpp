@@ -177,6 +177,7 @@ struct Dot<RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "It must be nonconst, because it is an output argument "
                    "(we have to be able to write to its entries).");
 
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::dot[ETI]":"KokkosBlas::dot[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas::dot<> ETI specialization for < %s , %s >\n",typeid(XV).name(),typeid(YV).name());
@@ -196,6 +197,7 @@ struct Dot<RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       DotFunctor<RV,XV,YV,index_type> f(X,Y);
       f.run("KokkosBlas::dot<1D>",R);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -212,6 +214,7 @@ struct Dot<RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
     static_assert (RV::rank == 1, "KokkosBlas::Impl::Dot<2-D>: "
                    "RV is not rank 1.");
 
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::dot[ETI]":"KokkosBlas::dot[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::dot<> ETI specialization for < %s , %s , %s >\n",typeid(RV).name(),typeid(XV).name(),typeid(YV).name());
@@ -231,6 +234,7 @@ struct Dot<RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
       typedef std::int64_t index_type;
       Dot_MV<RV,XV,YV,index_type>::dot(R,X,Y);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif

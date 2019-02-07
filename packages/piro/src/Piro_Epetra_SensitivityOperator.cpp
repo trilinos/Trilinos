@@ -127,7 +127,7 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 
 int 
 Piro::Epetra::SensitivityOperator::
-ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
+ApplyInverse(const Epetra_MultiVector& /* Input */, Epetra_MultiVector& /* Result */) const
 {
   throw "SensitivityOperator::ApplyInverse not defined!";
   return -1;

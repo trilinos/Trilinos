@@ -36,6 +36,17 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       COMM serial mpi
       NUM_MPI_PROCS 4
       )
+
+    IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+      TRIBITS_ADD_TEST(
+        Structured
+        NAME "Structured_Laplace2D_kokkos"
+        ARGS "--linAlgebra=Tpetra --xml=structured_1dof_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25 --nz=25"
+        COMM serial mpi
+        NUM_MPI_PROCS 4
+        )
+    ENDIF()
+
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND (NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor OR NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default))
@@ -58,7 +69,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Structured_cp
-    SOURCE_FILES structured_1dof.xml structured_2dof.xml structured_3dof.xml
+    SOURCE_FILES structured_1dof.xml structured_2dof.xml structured_3dof.xml structured_1dof_kokkos.xml
     )
 
 

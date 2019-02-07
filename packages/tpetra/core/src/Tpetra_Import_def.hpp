@@ -1183,6 +1183,8 @@ namespace Tpetra {
               label = plist->get("Timer Label",label);
           std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:1 ");
           auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+#else
+          (void)plist;
 #endif
 
 

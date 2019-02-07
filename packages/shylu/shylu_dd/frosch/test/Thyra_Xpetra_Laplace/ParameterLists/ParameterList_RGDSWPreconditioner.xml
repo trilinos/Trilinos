@@ -31,7 +31,7 @@
                 <ParameterList name="Blocks">
                     <ParameterList name="1">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
-                        <Parameter name="Option"                                type="int"      value="1"/>
+                        <Parameter name="Option"                                type="string"   value="1"/>
                         <Parameter name="Rotations"                             type="bool"     value="true"/>
                     </ParameterList>
                 </ParameterList>

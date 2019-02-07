@@ -308,7 +308,7 @@ struct ThreadLocalScalarType<
   ViewType,
   typename std::enable_if< is_view_fad_contiguous<ViewType>::value >::type > {
   typedef typename ViewType::traits TraitsType;
-  typedef Impl::ViewMapping<TraitsType, void> MappingType;
+  typedef Impl::ViewMapping<TraitsType, typename TraitsType::specialize> MappingType;
   typedef typename MappingType::thread_local_scalar_type type;
 };
 
@@ -521,7 +521,9 @@ class ViewMapping< Traits , /* View internal mapping */
         std::is_same< typename Traits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    )>::type >
+    )
+    , typename Traits::specialize
+    >::type >
 {
 private:
 
@@ -1156,15 +1158,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFadContiguous >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template< class DstType >
   KOKKOS_INLINE_FUNCTION static
@@ -1252,15 +1256,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Destination view is LayoutStride
     std::is_same< typename DstTraits::array_layout
                 , Kokkos::LayoutStride >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template< class DstType >
   KOKKOS_INLINE_FUNCTION static
@@ -1355,15 +1361,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFadContiguous >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
 
   // Helpers to assign, and generate if necessary, ViewOffset to the dst map
@@ -1518,7 +1526,8 @@ struct ViewMapping
                     , Kokkos::LayoutStride >::value
       )
       && !Sacado::Fad::is_fad_partition<Arg0>::value
-    )>::type
+    )
+    >::type
   , SrcTraits
   , Arg0, Args ... >
 {
@@ -1594,11 +1603,11 @@ public:
 
 
   KOKKOS_INLINE_FUNCTION
-  static void assign( ViewMapping< traits_type , void > & dst
-                    , ViewMapping< SrcTraits , void > const & src
+  static void assign( ViewMapping< traits_type , typename traits_type::specialize > & dst
+                    , ViewMapping< SrcTraits , typename SrcTraits::specialize > const & src
                     , Arg0 arg0 , Args ... args )
     {
-      typedef ViewMapping< traits_type , void > DstType ;
+      typedef ViewMapping< traits_type , typename traits_type::specialize > DstType ;
       typedef typename DstType::offset_type  dst_offset_type ;
       typedef typename DstType::array_offset_type  dst_array_offset_type ;
       typedef typename DstType::handle_type  dst_handle_type ;
@@ -1660,14 +1669,15 @@ template< class DataType, class ...P, unsigned Stride >
 class ViewMapping<
   void,
   ViewTraits<DataType,P...> ,
-  Sacado::Fad::Partition<Stride> >
+  Sacado::Fad::Partition<Stride> 
+  >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef ViewTraits<DataType,P...> src_traits;
-  typedef ViewMapping< src_traits , void >  src_type ;
+  typedef ViewMapping< src_traits , typename src_traits::specialize >  src_type ;
 
   typedef typename src_type::offset_type::dimension_type src_dimension;
   typedef typename src_traits::value_type fad_type;
@@ -1676,7 +1686,7 @@ public:
     ViewDataType< strided_fad_type , src_dimension >::type strided_data_type;
   typedef ViewTraits<strided_data_type,P...> dst_traits;
   typedef View<strided_data_type,P...> type;
-  typedef ViewMapping< dst_traits , void >  dst_type ;
+  typedef ViewMapping< dst_traits , typename dst_traits::specialize >  dst_type ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( dst_type & dst

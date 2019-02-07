@@ -89,13 +89,15 @@ size_t findUniqueGidsCommon(
   // Insert unique GIDs for DD entries in User data here.
 
   // Get value of first gid on this rank
-  ssize_t nDDEntries = (ssize_t)(dd->nodecnt);
-  ssize_t firstIdx;  
+  typedef long long mpi_t;
+  mpi_t nDDEntries = (mpi_t)(dd->nodecnt);
+  mpi_t firstIdx;
   MPI_Scan(&nDDEntries, &firstIdx, 1, MPI_LONG_LONG, MPI_SUM, mpicomm);
   firstIdx -= nDDEntries;  // do not include this rank's entries in prefix sum
 
   // Loop over all directory entries, updating their userdata with updated gid
   DD_NodeIdx cnt = 0;
+
   for (DD_NodeIdx i = 0; i < dd->nodelistlen; i++) {
     DD_Node *ptr = &(dd->nodelist[i]);
     if (!(ptr->free)) {
@@ -112,7 +114,7 @@ size_t findUniqueGidsCommon(
 
   Zoltan_DD_Destroy(&dd);
 
-  ssize_t nUnique = 0;  
+  mpi_t nUnique = 0;
   MPI_Allreduce(&nDDEntries, &nUnique, 1, MPI_LONG_LONG, MPI_SUM, mpicomm);
 
   return size_t(nUnique);

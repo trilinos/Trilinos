@@ -78,7 +78,7 @@ RTOpT<Scalar>::reduct_obj_create_impl() const
 
 template<class Scalar>
 void RTOpT<Scalar>::reduce_reduct_objs_impl(
-  const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
+  const ReductTarget& /* in_reduct_obj */, const Ptr<ReductTarget>& /* inout_reduct_obj */
   ) const
 {
   throwNoReductError();
@@ -87,7 +87,7 @@ void RTOpT<Scalar>::reduce_reduct_objs_impl(
 
 template<class Scalar>
 void RTOpT<Scalar>::reduct_obj_reinit_impl(
-  const Ptr<ReductTarget> &reduct_obj ) const
+  const Ptr<ReductTarget> &/* reduct_obj */ ) const
 {
   throwNoReductError();
 }
@@ -95,10 +95,10 @@ void RTOpT<Scalar>::reduct_obj_reinit_impl(
 
 template<class Scalar>
 void RTOpT<Scalar>::extract_reduct_obj_state_impl(
-  const ReductTarget &reduct_obj,
-  const ArrayView<primitive_value_type> &value_data,
-  const ArrayView<index_type> &index_data,
-  const ArrayView<char_type> &char_data
+  const ReductTarget &/* reduct_obj */,
+  const ArrayView<primitive_value_type> &/* value_data */,
+  const ArrayView<index_type> &/* index_data */,
+  const ArrayView<char_type> &/* char_data */
   ) const
 {
   throwNoReductError();
@@ -107,10 +107,10 @@ void RTOpT<Scalar>::extract_reduct_obj_state_impl(
 
 template<class Scalar>
 void RTOpT<Scalar>::load_reduct_obj_state_impl(
-  const ArrayView<const primitive_value_type> &value_data,
-  const ArrayView<const index_type> &index_data,
-  const ArrayView<const char_type> &char_data,
-  const Ptr<ReductTarget> &reduct_obj
+  const ArrayView<const primitive_value_type> &/* value_data */,
+  const ArrayView<const index_type> &/* index_data */,
+  const ArrayView<const char_type> &/* char_data */,
+  const Ptr<ReductTarget> &/* reduct_obj */
   ) const
 {
   throwNoReductError();

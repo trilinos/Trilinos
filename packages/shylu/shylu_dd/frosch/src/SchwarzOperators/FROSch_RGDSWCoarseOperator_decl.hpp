@@ -62,12 +62,14 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr MultiVectorPtrVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr DDInterfacePtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrVecPtr EntitySetPtrVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr InterfaceEntityPtr;
         
@@ -98,16 +100,17 @@ namespace FROSch {
         
         protected:
         
-        MultiVectorPtr phiGammaReducedGDSW(UN blockId,
-                                           int option,
-                                           bool buildRotations,
-                                           UN dimension,
-                                           MultiVectorPtr nodeList,
-                                           LOVecPtr2D partMappings,
-                                           EntitySetPtr vertices,
-                                           EntitySetPtr edges,
-                                           EntitySetPtr faces,
-                                           MapPtr blockMap); // Sollte man hier nicht auch die typen noch auswählen können
+        virtual MultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                         EntitySetPtr coarseNodes,
+                                                         EntitySetPtrVecPtr entitySetVector,
+                                                         DistanceFunction distanceFunction = ConstantDistanceFunction);
+        
+        virtual MultiVectorPtrVecPtr computeRotations(UN blockId,
+                                                      UN dimension,
+                                                      MultiVectorPtr nodeList,
+                                                      EntitySetPtr coarseNodes,
+                                                      EntitySetPtrVecPtr entitySetVector,
+                                                      DistanceFunction distanceFunction = ConstantDistanceFunction);
         
     };
     

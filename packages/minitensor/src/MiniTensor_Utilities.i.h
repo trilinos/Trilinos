@@ -277,22 +277,17 @@ integer_power(T const & X, Index const exponent)
       break;
     case 0:
       return 1;
-      break;
     case 1:
       return X;
-      break;
     case 2:
       return X * X;
-      break;
     case 3:
       return X * X * X;
-      break;
     case 4:
     {
       T const Y = X * X;
       return Y * Y;
     }
-    break;
   }
 
   Index const

@@ -93,6 +93,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -123,7 +125,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
@@ -219,6 +220,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -249,7 +252,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
@@ -345,6 +347,8 @@ Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -375,7 +379,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Max coarse size (<= 1000) achieved

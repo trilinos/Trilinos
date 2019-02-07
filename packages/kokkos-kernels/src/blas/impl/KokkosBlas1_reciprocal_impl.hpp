@@ -199,11 +199,11 @@ MV_Reciprocal_Generic (const RMV& R, const XMV& X)
 
   if (R == X) { // if R and X are the same (alias one another)
     MV_ReciprocalSelf_Functor<RMV, SizeType> op (R);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Reciprocal::S0", policy, op);
   }
   else {
     MV_Reciprocal_Functor<RMV, XMV, SizeType> op (R, X);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Reciprocal::S1", policy, op);
   }
 }
 
@@ -227,11 +227,11 @@ V_Reciprocal_Generic (const RV& R, const XV& X)
 
   if (R == X) { // if R and X are the same (alias one another)
     V_ReciprocalSelf_Functor<RV, SizeType> op (R);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Reciprocal::S2", policy, op);
   }
   else {
     V_Reciprocal_Functor<RV, XV, SizeType> op (R, X);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Reciprocal::S3", policy, op);
   }
 }
 

@@ -120,7 +120,7 @@ inline void kk_a_times_x_plus_b(
                   out_array_t out_arr, in_array_t in_arr,
                   scalar_1 a, scalar_2 b){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, num_elements),
+  Kokkos::parallel_for( "KokkosKernels::Common::ATimesXPlusB", my_exec_space(0, num_elements),
       A_times_X_plus_B<out_array_t, in_array_t, scalar_1, scalar_2>(out_arr, in_arr, a, b));
 }
 
@@ -134,7 +134,7 @@ inline void kk_a_times_x_plus_b(
 template <typename out_array_type, typename in_array_type, typename MyExecSpace>
 inline void kk_modular_view(typename in_array_type::value_type num_elements, out_array_type out_arr, in_array_type in_arr, int mod_factor_){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, num_elements), ModularView<out_array_type, in_array_type>(out_arr, in_arr, mod_factor_));
+  Kokkos::parallel_for( "KokkosKernels::Common::ModularView", my_exec_space(0, num_elements), ModularView<out_array_type, in_array_type>(out_arr, in_arr, mod_factor_));
 }
 
 
@@ -144,7 +144,7 @@ void kk_copy_vector(
     size_t num_elements,
     from_vector from, to_vector to){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0,num_elements), CopyVectorFunctor<from_vector, to_vector>(from, to));
+  Kokkos::parallel_for( "KokkosKernels::Common::CopyVector", my_exec_space(0,num_elements), CopyVectorFunctor<from_vector, to_vector>(from, to));
 
 }
 }
