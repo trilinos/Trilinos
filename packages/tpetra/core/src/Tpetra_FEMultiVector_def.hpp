@@ -48,6 +48,8 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+
 
 namespace Tpetra {
 
@@ -59,6 +61,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
               const bool zeroOut):
   base_type(importer.is_null()? map:importer->getTargetMap(),numVecs,zeroOut),
   importer_(importer) {
+  const char tfecfFuncName[] = "FEMultiVector::FEMultiVector(): ";
 
   activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
