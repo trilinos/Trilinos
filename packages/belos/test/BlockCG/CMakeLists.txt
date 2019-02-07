@@ -4,7 +4,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
-    
+
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
   IF(Teuchos_ENABLE_COMPLEX)
 
@@ -12,7 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_cg_complex_hb
-      SOURCES test_bl_cg_complex_hb.cpp 
+      SOURCES test_bl_cg_complex_hb.cpp
       ARGS
         "--verbose --filename=mhd1280b.cua"
         "--verbose --filename=mhd1280b.cua --pseudo"
@@ -24,11 +24,26 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       ASSERT_DEFINED(Anasazi_SOURCE_DIR)
       TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGComplexFiles
         SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
-        SOURCE_FILES mhd1280b.cua 
+        SOURCE_FILES mhd1280b.cua
         EXEDEPS bl_cg_complex_hb
       )
     ENDIF()
 
   ENDIF(Teuchos_ENABLE_COMPLEX)
+
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    bl_cg_real_hb
+    SOURCES test_bl_cg_real_hb.cpp
+    ARGS
+    "--verbose --filename=A.hb"
+    "--verbose --filename=A.hb --pseudo"
+    "--verbose --filename=A.hb --use-single-red"
+    "--verbose --filename=A.hb --use-single-red --combine-conv-inner"
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGFiles2
+    SOURCE_FILES A.hb
+    )
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)

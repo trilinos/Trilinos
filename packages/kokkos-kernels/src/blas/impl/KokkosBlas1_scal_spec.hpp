@@ -144,7 +144,7 @@ struct Scal<RV,  typename XV::non_const_value_type, XV, 1, false, KOKKOSKERNELS_
                    "RV is not rank 1.");
     static_assert (XV::rank == 1, "KokkosBlas::Impl::Scal<1-D>: "
                    "XV is not rank 1.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::scal[ETI]":"KokkosBlas::scal[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -173,6 +173,7 @@ struct Scal<RV,  typename XV::non_const_value_type, XV, 1, false, KOKKOSKERNELS_
       typedef typename XV::size_type index_type;
       V_Scal_Generic<RV, AV, XV, index_type> (R, alpha, X, a);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -202,7 +203,7 @@ struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    "AV is not rank 1.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::Scal<2-D>: "
                    "XMV is not rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::scal[ETI]":"KokkosBlas::scal[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::scal<2D> ETI specialization for < %s , %s , %s >\n",typeid(RMV).name(),typeid(AV).name(),typeid(XMV).name());
@@ -222,6 +223,7 @@ struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       typedef typename XMV::size_type index_type;
       MV_Scal_Invoke_Left<RMV, AV, XMV, index_type> (R, av, X, a);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -248,7 +250,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false, KOKKOSKERNEL
                    "RMV is not rank 2.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::Scal<2-D, AV=scalar>: "
                    "XMV is not rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::scal[ETI]":"KokkosBlas::scal[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -281,6 +283,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false, KOKKOSKERNEL
       MV_Scal_Invoke_Left<RMV, typename XMV::non_const_value_type, XMV,
         index_type> (R, alpha, X, a);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif

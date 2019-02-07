@@ -330,11 +330,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
   }
 
+#ifdef HAVE_MPI
   // Generate the node-level communicator, if we want one
   Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
   int NodeId = comm->getRank();
-#ifdef HAVE_MPI
-  if(provideNodeComm) {                        
+  if(provideNodeComm) {
     nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
     //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
   }
@@ -490,7 +490,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
         }
         else {
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates, nullspace);
+          const std::string userName = "user data";
+          Teuchos::Array<LO> lNodesPerDim(3, 10);
+          Teuchos::ParameterList& userParamList = mueluList.sublist(userName);
+          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+          userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
+          userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
         }
       }
 #ifdef HAVE_MUELU_CUDA

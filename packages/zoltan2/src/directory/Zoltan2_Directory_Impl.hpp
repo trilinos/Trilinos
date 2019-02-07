@@ -50,53 +50,6 @@
 #include "Zoltan2_Directory.hpp"
 #include "Zoltan2_Directory_Comm.hpp"
 
-// Copied from murmurc.3
-// TODO: Will be removed as Kokkos form develops
-#define ZOLTAN2_ROTL32(x,r) (uint32_t) \
-  (((uint32_t)(x) << (int8_t)(r)) | ((uint32_t)(x) >> (32 - (int8_t)(r))))
-static inline void Zoltan2_MurmurHash3_x86_32 ( const void * key, int len,
-  uint32_t seed, void * out )
-{
-  const uint8_t * data = (const uint8_t*)key;
-  const int nblocks = len / 4;
-  int i;
-  uint32_t h1 = seed;
-  uint32_t c1 = 0xcc9e2d51;
-  uint32_t c2 = 0x1b873593;
-  const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
-  for(i = -nblocks; i; i++)
-  {
-    uint32_t k1 = blocks[i];
-    k1 *= c1;
-    k1 = ZOLTAN2_ROTL32(k1,15);
-    k1 *= c2;
-    h1 ^= k1;
-    h1 = ZOLTAN2_ROTL32(h1,13);
-    h1 = h1*5+0xe6546b64;
-  }
-  const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
-  uint32_t k1 = 0;
-  switch(len & 3)
-  {
-    case 3: k1 ^= tail[2] << 16;
-    case 2: k1 ^= tail[1] << 8;
-    case 1: k1 ^= tail[0];
-            k1 *= c1; k1 = ZOLTAN2_ROTL32(k1,15); k1 *= c2; h1 ^= k1;
-  };
-  h1 ^= len;
-  h1 ^= h1 >> 16;
-  h1 *= 0x85ebca6b;
-  h1 ^= h1 >> 13;
-  h1 *= 0xc2b2ae35;
-  h1 ^= h1 >> 16;
-  *(uint32_t*)out = h1;
-}
-
-/*--------------------------------------------------------------------------- */
-
-
-
-
 namespace Zoltan2 {
 
 // These macros were rolled over from the original zoltan code. I've preserved
@@ -225,17 +178,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // part of initializing the error checking process
   // for each linked list head, walk its list resetting errcheck
   if(debug_level) {
-    for(auto itr = node_map.begin(); itr != node_map.end(); ++itr) {
-      itr->second.errcheck = -1;
-    }
-
-    // TODO Switch to Kokkos Map
-    /*
     for(size_t n = 0; n < node_map.size(); ++n) {
-    //  node_map.value_at(n).errcheck = -1; // not possible processor
-      node_map.at(n).errcheck = -1; // not possible processor
+      node_map.value_at(n).errcheck = -1; // not possible processor
     }
-    */
   }
 
   if (debug_level > 6) {
@@ -498,12 +443,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
   }
 
   // compute offset into hash table to find head of linked list
-  // size_t node_index = node_map.find(*gid); // TODO Switch to Kokkos map
-  if(node_map.find(*gid) != node_map.end()) {
-  // if(node_map.valid_at(node_index)) { // TODO Switch to Kokkos map
+  size_t node_index = node_map.find(*gid);
+  if(node_map.valid_at(node_index)) {
     Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
-      node_map[*gid];
-      // node_map.value_at(node_index); // TODO Switch to Kokkos map
+      node_map.value_at(node_index);
 
     // found match, update directory information
     if (lid) {
@@ -595,8 +538,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
   node.owner = owner;
   node.errcheck = owner;
 
-  if(!node_map.insert({*gid, node}).second) {
-  // if(node_map.insert(*gid, node).failed()) { // TODO Switch to Kokkos map
+  if(node_map.insert(*gid, node).failed()) {
     // Need more nodes (that's the assumption here if we have failure)
     // A new update has added more to our local list and we need more capacity.
     // TODO: Decide most efficient scheme. Here we bump to at least 10 or if
@@ -606,8 +548,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
     size_t new_guess_size = (node_map.size() < 10) ? 10 :
       ( node_map.size() + node_map.size()/10); // adds a minimum of 1
     rehash_node_map(new_guess_size);
-    if(!node_map.insert({*gid, node}).second) {
-    // if(node_map.insert(*gid, node).failed()) { // TODO: Switch to Kokkos Map
+    if(node_map.insert(*gid, node).failed()) {
       throw std::logic_error("Hash insert failed. Mem sufficient?....");
     }
   }
@@ -901,13 +842,11 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
   // and use index to call value_at. Alternative is to call exists(*gid) and
   // then node_map.value_at(node_map.find(*gid))) which is slower.
   // TODO: Can this be optimized further?
-  // size_t node_index = node_map.find(*gid); // TODO: Switch to Kokkos Map
-  if(node_map.find(*gid) != node_map.end())
-  // if(node_map.valid_at(node_index))
+  size_t node_index = node_map.find(*gid);
+  if(node_map.valid_at(node_index))
   {
     const Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
-      node_map.at(*gid);
-    //  node_map.value_at(node_index); // TODO: Switch to Kokkos map
+      node_map.value_at(node_index);
     /* matching global ID found! Return gid's information */
     if(lid) {
       *lid = node.lid;
@@ -1084,7 +1023,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   // eliminating remove_local and just calling here but will keep for now to
   // keep symmetry with other modes.
   if(nrec > 0) {
-    // node_map.begin_erase(); // TODO Switch to Kokkos Map
+    node_map.begin_erase();
     for (int i = 0; i < nrec; i++)  {
       msg_t *ptr = reinterpret_cast<msg_t*>(&(rbuff[i*remove_msg_size]));
       err = remove_local(ptr->adjData);
@@ -1092,7 +1031,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
         ++errcount;
       }
     }
-    // node_map.end_erase(); // TODO Switch to Kokkos Map
+    node_map.end_erase();
   } // if nrec > 0
 
   err = 0;
@@ -1123,8 +1062,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
     ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
   }
 
-  if(node_map.find(*gid) != node_map.end()) {
-  // if(node_map.exists(*gid)) { // TODO Switch to Kokkos Map
+  if(node_map.exists(*gid)) {
     node_map.erase(*gid);
     return 0;
   }
@@ -1142,7 +1080,51 @@ unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(
   const gid_t & gid) const
 {
   uint32_t k;
-  Zoltan2_MurmurHash3_x86_32((void *)(&gid), sizeof(gid_t), 14, (void *)&k);
+
+  // Copied from murmurc.3
+  // TODO: Will be removed as Kokkos form develops
+  #define ZOLTAN2_ROTL32(x,r) (uint32_t) \
+    (((uint32_t)(x) << (int8_t)(r)) | ((uint32_t)(x) >> (32 - (int8_t)(r))))
+
+  const void * key = (void *)(&gid);
+  int len = sizeof(gid_t);
+  uint32_t seed = 14;
+  void * out = (void *)&k;
+
+  const uint8_t * data = (const uint8_t*)key;
+  const int nblocks = len / 4;
+  int i;
+  uint32_t h1 = seed;
+  uint32_t c1 = 0xcc9e2d51;
+  uint32_t c2 = 0x1b873593;
+  const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
+  for(i = -nblocks; i; i++)
+  {
+    uint32_t k1 = blocks[i];
+    k1 *= c1;
+    k1 = ZOLTAN2_ROTL32(k1,15);
+    k1 *= c2;
+    h1 ^= k1;
+    h1 = ZOLTAN2_ROTL32(h1,13);
+    h1 = h1*5+0xe6546b64;
+  }
+  const uint8_t * tail = (const uint8_t*)(data + nblocks*4);
+  uint32_t k1 = 0;
+  switch(len & 3)
+  {
+    case 3: k1 ^= tail[2] << 16;
+    case 2: k1 ^= tail[1] << 8;
+    case 1: k1 ^= tail[0];
+            k1 *= c1; k1 = ZOLTAN2_ROTL32(k1,15); k1 *= c2; h1 ^= k1;
+  };
+  h1 ^= len;
+  h1 ^= h1 >> 16;
+  h1 *= 0x85ebca6b;
+  h1 ^= h1 >> 13;
+  h1 *= 0xc2b2ae35;
+  h1 ^= h1 >> 16;
+  *(uint32_t*)out = h1;
+
   return(k % comm->getSize());
 }
 

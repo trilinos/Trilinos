@@ -98,8 +98,16 @@ public:
     else {
 
       // Copy reused data into fast scratch space
-      scratch_view dof_values(team.team_shmem(),numFields,fadSize);
-      scratch_view point_values(team.team_shmem(),numPoints,fadSize);
+      scratch_view dof_values;
+      scratch_view point_values;
+      if (Sacado::IsADType<ScalarT>::value) {
+        dof_values = scratch_view(team.team_shmem(),numFields,fadSize);
+        point_values = scratch_view(team.team_shmem(),numPoints,fadSize);
+      }
+      else {
+        dof_values = scratch_view(team.team_shmem(),numFields);
+        point_values = scratch_view(team.team_shmem(),numPoints);
+      }
 
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numFields), [&] (const int& dof) {
 	dof_values(dof) = dof_basis(cell,dof);

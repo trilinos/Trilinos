@@ -112,7 +112,8 @@ namespace KokkosBatched {
         InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
         const int tsize = member.team_size();
         const int mb_a = m/tsize + (m%tsize>0), mb_b = mbAlgo;
-        const int mb = mb_a < mb_b ? mb_a : mb_b, mp = m%mb;
+        // Made this non-const in order to WORKAROUND issue #349
+        int mb = mb_a < mb_b ? mb_a : mb_b, mp = m%mb;
         
         Kokkos::parallel_for
           (Kokkos::TeamThreadRange(member, (m/mb) + (mp>0)),

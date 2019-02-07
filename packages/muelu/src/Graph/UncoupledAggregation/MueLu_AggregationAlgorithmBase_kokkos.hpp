@@ -74,6 +74,9 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
     public:
 
+    typedef typename LWGraph_kokkos::local_graph_type::device_type::execution_space execution_space;
+    typedef typename LWGraph_kokkos::local_graph_type::device_type::memory_space memory_space;
+
     //! @name Constructors/Destructors
     //@{
 
@@ -86,8 +89,11 @@ namespace MueLu {
     //@{
 
     //! BuildAggregates routine.
-    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-                                 std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
+    virtual void BuildAggregates(const Teuchos::ParameterList& params,
+                                 const LWGraph_kokkos& graph,
+                                 Aggregates_kokkos& aggregates,
+                                 std::vector<unsigned>& aggStat,
+                                 LO& numNonAggregatedNodes) const = 0;
     //@}
   };
 
