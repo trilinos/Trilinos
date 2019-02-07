@@ -144,6 +144,7 @@ namespace MueLu {
 
   };  //class NodePartitionInterface
 
+} //namespace MueLu
 
 #define MUELU_NODEPARTITIONINTERFACE_SHORT
 #endif //if defined(HAVE_MPI)
