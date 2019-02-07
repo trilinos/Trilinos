@@ -94,10 +94,8 @@ namespace MueLu {
     RCP<Matrix>    A      = Get<RCP<Matrix> >(level, "A");
     RCP<const Map> rowMap = A->getRowMap();
     LO blkSize  = A->GetFixedBlockSize();
-    const ParameterList& pL = GetParameterList();
 
     int numParts = Get<int>(level, "number of partitions");
-    int nodeId = pL.get<int>("repartition: node id");
     if (numParts == 1 || numParts == -1) {
       // Single processor, decomposition is trivial: all zeros
       RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
@@ -108,17 +106,6 @@ namespace MueLu {
     // Let us repartition nodally
     RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<Teuchos::Comm<int> > >(level, "Node Comm");
     TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::NodePartitionInterface::Build(): NodeComm is null.");
-
-#ifdef HAVE_MUELU_DEBUG
-    {
-      // Check the consistency of the nodeId with the NodeComm object
-      int isNodeZero = !NodeComm->getRank();
-      int correctNodeId = 0;
-      Teuchos::scan(*A->getMap()->getComm(),Teuchos::REDUCE_SUM,1,&isNodeZero,&correctNodeId);
-      correctNodeId--; // correct for reindexing
-      TEUCHOS_TEST_FOR_EXCEPTION(nodeId !=correctNodeId, Exceptions::RuntimeError, "MueLu::NodePartitionInterface::Build(): NodeId inconsistent with input.");
-    }
-#endif
 
     // Get the rank (in current comm) of rank 0 in my NodeComm
     int nodeZeroRank =A->getMap()->getComm()->getRank();
