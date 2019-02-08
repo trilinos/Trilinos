@@ -46,6 +46,7 @@
 #include <vector>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -919,13 +920,15 @@ namespace MueLuTests {
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    /*    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 #   if !defined(MUELU_HAVE_AMESOS) || !defined(MUELU_HAVE_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
 #   if !defined(MUELU_HAVE_AMESOS2) || !defined(MUELU_HAVE_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
+    */
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Tests that node repartitioning works " << std::endl;
@@ -940,7 +943,7 @@ namespace MueLuTests {
     }
 
  
-   typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
     typedef Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Create a matrix and coordinates.
@@ -974,8 +977,9 @@ namespace MueLuTests {
     nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
 
     Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast("testCoordinates.xml", Teuchos::Ptr<ParameterList>(&paramList), *comm);
+    Teuchos::updateParametersFromXmlFileAndBroadcast("testCoordinates.xml", Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
     paramList.set("Node Comm",nodeComm);
+    paramList.set("verbosity","high");
     RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(paramList));
  
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
@@ -986,7 +990,7 @@ namespace MueLuTests {
     
 
 
-  } // CoordinateMap
+  } // NodePartition
 
 
 
@@ -1000,7 +1004,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement4,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,Correctness,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,CoordinateMap,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,NodePartiton,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,NodePartition,Scalar,LO,GO,Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 
