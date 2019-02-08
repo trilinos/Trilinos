@@ -978,7 +978,9 @@ namespace MueLuTests {
 
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast("testCoordinates.xml", Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-    paramList.set("Node Comm",nodeComm);
+    paramList.set("repartition: node repartition level",1);
+    paramList.set("repartition: start level",2);
+    paramList.sublist("user data").set("Node Comm",nodeComm);
     paramList.set("verbosity","high");
     RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(paramList));
  
