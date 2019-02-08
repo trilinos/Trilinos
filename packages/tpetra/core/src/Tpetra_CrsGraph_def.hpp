@@ -5551,7 +5551,7 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermute (const SrcDistObject& source,
-                  size_t numSameIDs,
+                  const size_t numSameIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
                   const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
