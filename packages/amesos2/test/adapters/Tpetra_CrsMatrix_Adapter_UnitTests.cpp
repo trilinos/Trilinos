@@ -194,8 +194,8 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<MAT> eye = rcp( new MAT(map,numLocal,Tpetra::StaticProfile) );
     GO base = numLocal*rank;
-    RCP<MAT> eye = rcp( new MAT(map,base,Tpetra::StaticProfile) );
     for( size_t i = 0; i < numLocal; ++i ){
       eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
     }
@@ -227,8 +227,8 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<MAT> eye = rcp( new MAT(map,numLocal,Tpetra::StaticProfile) );
     GO base = numLocal*rank;
-    RCP<MAT> eye = rcp( new MAT(map,base,Tpetra::StaticProfile) );
     for( size_t i = 0; i < numLocal; ++i ){
       eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
     }

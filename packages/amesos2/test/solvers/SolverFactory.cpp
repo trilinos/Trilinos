@@ -124,7 +124,7 @@ namespace {
     const size_t maxNumEntPerRow = 3;
     const SC two = static_cast<SC> (2.0);
     const SC minusOne = static_cast<SC> (-1.0);
-    RCP<MAT> A (new MAT (rowMap, maxNumEntPerRow, Tpetra::DynamicProfile));
+    RCP<MAT> A (new MAT (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
 
     if (rowMap->getNodeNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
