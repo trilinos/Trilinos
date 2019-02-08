@@ -171,7 +171,7 @@ ATDM_SET_CACHE(CMAKE_CXX_FLAGS
 ATDM_SET_CACHE(CMAKE_Fortran_FLAGS
   "$ENV{ATDM_CONFIG_Fortran_FLAGS} $ENV{EXTRA_Fortran_FLAGS}" CACHE STRING)
 # NOTE: That above "EXTRA_<LANG>_FLAGS" env vars are left in for backward
-# compatiblity with the EMPIRE configuration and are not directly set in any
+# compatibility with the EMPIRE configuration and are not directly set in any
 # offical ATDM Trilinos configuration setup.  Only the
 # "ATDM_CONFIG_<LANG>_FLAGS" env vars are set.
 

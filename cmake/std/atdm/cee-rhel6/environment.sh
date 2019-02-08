@@ -55,7 +55,7 @@ else
 fi
 # NOTE: Above, we use 1/2 as many executors as
 
-# Warning opptions requested by Gemma team (which should hopefully also take
+# Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
 # #4221
 ATDM_CONFIG_GNU_CXX_WARNINGS="-Wall -Wextra"
