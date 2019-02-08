@@ -54,7 +54,6 @@
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
-#include "VerifyVectorGenerateFiles.hpp"
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
@@ -165,12 +164,11 @@ int main(int narg, char *arg[])
   // and Epetra vectors for testing.
 
   RCP<UserInputForTests> uinput;
-  const char *inputFilePrefix = "simple";
-
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
   try{
-    uinput = 
-      rcp(new UserInputForTests(testDataFilePath,std::string(inputFilePrefix),
-                                comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -225,8 +223,6 @@ int main(int narg, char *arg[])
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter ", 1);
   
     fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, 0, NULL, NULL);
-    fail = verifyGenerateFiles<tvector_t>(*tVInput, inputFilePrefix,
-                                          *comm);
   
     gfail = globalFail(*comm, fail);
   

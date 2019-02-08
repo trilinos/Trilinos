@@ -125,7 +125,7 @@ public:
   // The user must implement these methods in his VectorAdapter
   ///////////////////////////////////////////////////////////////
 
-  /*! \brief Return the number of vectors (typically one).
+  /*! \brief Return the number of vectors.
    */
   virtual int getNumEntriesPerID() const = 0;
 
@@ -134,7 +134,7 @@ public:
       \param elements will on return point to the vector values
         corresponding to the global Ids.
       \param stride the k'th element is located at elements[stride*k]
-      \param idx ranges from zero to one less than getNumVectors(), and
+      \param idx ranges from zero to one less than getNumEntriesPerID(), and
          represents the vector for which data is being requested.
    */
 
@@ -154,7 +154,6 @@ public:
     const Teuchos::Comm<int> &comm
   ) const 
   {
-
     // Generate the graph file with weights using the base adapter method
     this->generateWeightFileOnly(fileprefix, comm);
 

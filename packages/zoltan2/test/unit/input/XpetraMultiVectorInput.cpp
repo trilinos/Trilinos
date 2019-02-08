@@ -71,6 +71,7 @@ using Teuchos::Comm;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tvector_t;
 typedef Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> xvector_t;
 
+/////////////////////////////////////////////////////////////////////////
 template <typename User>
 int verifyInputAdapter(
   Zoltan2::XpetraMultiVectorAdapter<User> &ia, tvector_t &vector, int nvec,
@@ -104,12 +105,18 @@ int verifyInputAdapter(
     ia.getIDsView(vtxIds);
 
     for (int v=0; v < nvec; v++){
+      auto vecdata = vector.getData(v);
+
       ia.getEntriesView(vals, stride, v);
 
       if (!fail && stride != 1)
         fail = 10;
 
-      // TODO check the values returned
+      // check the values returned
+      for (size_t i = 0; i < length; i++)
+        if (vals[i*stride] != vecdata[i]) {
+          fail = 104;
+        }
     }
 
     gfail = globalFail(*comm, fail);
@@ -137,6 +144,128 @@ int verifyInputAdapter(
   return gfail;
 }
 
+/////////////////////////////////////////////////////////////////////////
+
+template <typename User>
+int verifyGenerateFiles(
+  Zoltan2::VectorAdapter<User> &ia, 
+  const char *fileprefixInput,
+  const Teuchos::Comm<int> &comm
+)
+{
+  int fail = 0, gfail=0;
+
+  const char *fileprefixGen = "unitTestOutput";
+  ia.generateFiles(fileprefixGen, comm);
+
+  // Only rank zero needs to check the resulting files
+  if (comm.getRank() == 0) {
+
+    size_t nIDsGen, nIDsInput;
+    size_t nEdgeGen, nEdgeInput;
+    char codeGen[4], codeInput[4];
+
+    std::ifstream fpGen, fpInput;
+    std::string graphFilenameGen = fileprefixGen;
+    graphFilenameGen = graphFilenameGen + ".graph";
+    std::string graphFilenameInput = fileprefixInput;
+    graphFilenameInput = graphFilenameInput + ".graph";
+
+    // Read header info from generated file
+    fpGen.open(graphFilenameGen.c_str(), std::ios::in);
+    std::string lineGen;
+    std::getline(fpGen, lineGen);
+    std::istringstream issGen(lineGen);
+    issGen >> nIDsGen >> nEdgeGen >> codeGen;
+
+    // Read header info from input file
+    fpInput.open(graphFilenameInput.c_str(), std::ios::in);
+    std::string lineInput;
+    std::getline(fpInput, lineInput);
+    while (lineInput[0]=='#') std::getline(fpInput, lineInput); // skip comments
+    std::istringstream issInput(lineGen);
+    issInput >> nIDsInput >> nEdgeInput >> codeInput;
+
+    // input file and generated file should have same number of IDs
+    if (nIDsGen != nIDsInput) {
+      std::cout << "GenerateFiles:  nIDsGen " << nIDsGen
+                << " != nIDsInput " << nIDsInput << std::endl;
+      fail = 222;
+    }
+
+    // Vector adapters don't have edges
+    if (!fail && nEdgeGen != 0) {
+      std::cout << "GenerateFiles:  nEdgeGen " << nEdgeGen << " != 0" << std::endl;
+      fail = 222;
+    }
+
+    // Check the weights, if any
+    if (!fail && !strcmp(codeGen, "010")) {
+      // TODO
+      // If input file has weights, compare weights
+      // Otherwise, just make sure there are enough weights in file
+    }
+
+    fpGen.close();
+    fpInput.close();
+    
+    // check coordinate files
+    if (!fail) {
+      std::string coordsFilenameGen = fileprefixGen;
+      coordsFilenameGen = coordsFilenameGen + ".coords";
+      std::string coordsFilenameInput = fileprefixInput;
+      coordsFilenameInput = coordsFilenameInput + ".coords";
+
+      fpGen.open(coordsFilenameGen.c_str(), std::ios::in);
+      fpInput.open(coordsFilenameInput.c_str(), std::ios::in);
+
+      size_t cnt = 0;
+      for (; std::getline(fpGen,lineGen) && std::getline(fpInput,lineInput);) { 
+
+        cnt++;
+
+        // Check each token
+        issGen.str(lineGen);
+        issInput.str(lineInput);
+
+        while (issGen && issInput) {
+          double xGen, xInput;
+          issGen >> xGen;
+          issInput >> xInput;
+
+          if (xGen != xInput) {
+            std::cout << "Coordinates " << xGen << " != " << xInput 
+                      << std::endl;
+            fail = 333;
+          }
+        }
+
+        // Check same number of tokens:  are there any left in either line?
+        if (issGen || issInput) {
+          std::cout << "Dimension of generated file != dimension of input file"
+                    << std::endl;
+          fail = 334;
+        }
+      }
+
+      // Did we have the correct number of coordinates?
+      if (!fail && cnt != nIDsGen) {
+        std::cout << "Number of coordinates read " << cnt 
+                  << " != number of IDs " << nIDsGen << std::endl;
+        fail = 444;
+      }
+
+      fpGen.close();
+      fpInput.close();
+    }
+  }
+
+  gfail = globalFail(comm, fail);
+  return gfail;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
 int main(int narg, char *arg[])
 {
   Tpetra::ScopeGuard tscope(&narg, &arg);
@@ -150,10 +279,13 @@ int main(int narg, char *arg[])
   // and Epetra vectors for testing.
 
   RCP<UserInputForTests> uinput;
+  Teuchos::ParameterList params;
+  const char *inputFilePrefix = "simple";
+  params.set("input file", inputFilePrefix);
+  params.set("file type", "Chaco");
 
   try{
-    uinput = 
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -161,15 +293,13 @@ int main(int narg, char *arg[])
   }
   TEST_FAIL_AND_EXIT(*comm, aok, "input ", 1);
 
-  RCP<tvector_t> tV;     // original vector (for checking)
-  RCP<tvector_t> newV;   // migrated vector
+  RCP<tvector_t> inputMVector;     // original vector (for checking)
+  RCP<tvector_t> migratedMVector;   // migrated vector
 
   int nVec = 2;
 
-  tV = rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap(), nVec));
-  tV->randomize();
-
-  size_t vlen = tV->getLocalLength();
+  inputMVector = uinput->getUICoordinates();
+  size_t vlen = inputMVector->getLocalLength();
 
   // To test migration in the input adapter we need a Solution object.
 
@@ -197,7 +327,7 @@ int main(int narg, char *arg[])
     if (rank==0)
       std::cout << "Constructed with Tpetra::MultiVector" << std::endl;
     
-    RCP<const tvector_t> ctV = rcp_const_cast<const tvector_t>(tV);
+    RCP<const tvector_t> ctV = rcp_const_cast<const tvector_t>(inputMVector);
     RCP<Zoltan2::XpetraMultiVectorAdapter<tvector_t> > tVInput;
   
     try {
@@ -211,15 +341,16 @@ int main(int narg, char *arg[])
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter ", 1);
   
-    fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, nVec, 0, NULL, NULL);
+    fail = verifyInputAdapter<tvector_t>(*tVInput, *inputMVector, nVec, 0, NULL, NULL);
+    fail = verifyGenerateFiles(*tVInput, inputFilePrefix, *comm);
   
     gfail = globalFail(*comm, fail);
   
     if (!gfail){
       tvector_t *vMigrate = NULL;
       try{
-        tVInput->applyPartitioningSolution(*tV, vMigrate, solution);
-        newV = rcp(vMigrate);
+        tVInput->applyPartitioningSolution(*inputMVector, vMigrate, solution);
+        migratedMVector = rcp(vMigrate);
       }
       catch (std::exception &e){
         fail = 11;
@@ -228,7 +359,7 @@ int main(int narg, char *arg[])
       gfail = globalFail(*comm, fail);
   
       if (!gfail){
-        RCP<const tvector_t> cnewV = rcp_const_cast<const tvector_t>(newV);
+        RCP<const tvector_t> cnewV = rcp_const_cast<const tvector_t>(migratedMVector);
         RCP<Zoltan2::XpetraMultiVectorAdapter<tvector_t> > newInput;
         try{
           newInput = rcp(new Zoltan2::XpetraMultiVectorAdapter<tvector_t>(
@@ -244,7 +375,7 @@ int main(int narg, char *arg[])
           std::cout << "Constructed with ";
           std::cout << "Tpetra::MultiVector migrated to proc 0" << std::endl;
         }
-        fail = verifyInputAdapter<tvector_t>(*newInput, *newV, nVec, 0, NULL, NULL);
+        fail = verifyInputAdapter<tvector_t>(*newInput, *migratedMVector, nVec, 0, NULL, NULL);
         if (fail) fail += 100;
         gfail = globalFail(*comm, fail);
       }
@@ -260,10 +391,7 @@ int main(int narg, char *arg[])
     if (rank==0)
       std::cout << "Constructed with Xpetra::MultiVector" << std::endl;
 
-    RCP<tvector_t> tMV = 
-        rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap(), nVec));
-    tMV->randomize();
-    RCP<xvector_t> xV = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(tMV);
+    RCP<xvector_t> xV = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(inputMVector);
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
@@ -278,7 +406,7 @@ int main(int narg, char *arg[])
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 3 ", 1);
   
-    fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, nVec, 0, NULL, NULL);
+    fail = verifyInputAdapter<xvector_t>(*xVInput, *inputMVector, nVec, 0, NULL, NULL);
   
     gfail = globalFail(*comm, fail);
   
@@ -311,7 +439,7 @@ int main(int narg, char *arg[])
           std::cout << "Constructed with ";
           std::cout << "Xpetra::MultiVector migrated to proc 0" << std::endl;
         }
-        fail = verifyInputAdapter<xvector_t>(*newInput, *newV, nVec, 0, NULL, NULL);
+        fail = verifyInputAdapter<xvector_t>(*newInput, *migratedMVector, nVec, 0, NULL, NULL);
         if (fail) fail += 100;
         gfail = globalFail(*comm, fail);
       }
@@ -332,7 +460,13 @@ int main(int narg, char *arg[])
     RCP<evector_t> eV = 
         rcp(new Epetra_MultiVector(uinput->getUIEpetraCrsGraph()->RowMap(),
                                    nVec));
-    eV->Random();
+    for (int v = 0; v < nVec; v++) {
+      auto inV = inputMVector->getData(v);
+      for (int i = 0; i < eV->MyLength(); i++)
+        eV->ReplaceMyValue(i, v, inV[i]);
+    }
+        
+    RCP<xvector_t> xV = Zoltan2::XpetraTraits<evector_t>::convertToXpetra(eV);
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   
@@ -361,7 +495,7 @@ int main(int narg, char *arg[])
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 5 ", 1);
   
     if (goodAdapter) {
-      fail = verifyInputAdapter<evector_t>(*eVInput, *tV, nVec, 0, NULL, NULL);
+      fail = verifyInputAdapter<evector_t>(*eVInput, *inputMVector, nVec, 0, NULL, NULL);
   
       gfail = globalFail(*comm, fail);
   
@@ -394,7 +528,7 @@ int main(int narg, char *arg[])
             std::cout << "Constructed with ";
             std::cout << "Epetra_MultiVector migrated to proc 0" << std::endl;
           }
-          fail = verifyInputAdapter<evector_t>(*newInput, *newV, nVec, 0, NULL, NULL);
+          fail = verifyInputAdapter<evector_t>(*newInput, *migratedMVector, nVec, 0, NULL, NULL);
           if (fail) fail += 100;
           gfail = globalFail(*comm, fail);
         }
