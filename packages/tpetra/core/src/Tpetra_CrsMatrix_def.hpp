@@ -9113,7 +9113,7 @@ namespace Tpetra {
       }
     }
 
-    if( isMM && !MyImporter.is_null()) {
+    if( isMM ) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMisMM (*TimeMonitor::getNewTimer(prefix + std::string("isMM Block")));
 #endif
@@ -9164,8 +9164,8 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        Teuchos::ArrayView<const int>  EPID1 =  MyImporter->getExportPIDs();// SourceMatrix->graph->importer
-        Teuchos::ArrayView<const LO>   ELID1 =  MyImporter->getExportLIDs();
+        Teuchos::ArrayView<const int>  EPID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportPIDs();
+        Teuchos::ArrayView<const LO>   ELID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportLIDs();
 
         Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
         Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();
@@ -9199,23 +9199,11 @@ namespace Tpetra {
           }
         }
 
-        if (verbose) {
-          std::ostringstream os;
-          os << *verbosePrefix << "sort, unique, & erase usrtg" << std::endl;
-          std::cerr << os.str ();
-        }
-
 // This sort can _not_ be omitted.[
         std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order
         auto eopg = std ::unique(usrtg.begin(),usrtg.end());
         // 25 Jul 2018: Could just ignore the entries at and after eopg.
         usrtg.erase(eopg,usrtg.end());
-
-        if (verbose) {
-          std::ostringstream os;
-          os << *verbosePrefix << "Done with sort, unique, & erase" << std::endl;
-          std::cerr << os.str ();
-        }
 
         const Array_size_type type2_us_size = usrtg.size();
         Teuchos::ArrayRCP<int>  EPID2=Teuchos::arcp(new int[type2_us_size],0,type2_us_size,true);
