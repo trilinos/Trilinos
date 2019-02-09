@@ -234,6 +234,11 @@ public:
   /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
   inline T* getRawPtr() const;
 
+  /// \brief Return a raw pointer to beginning of array.
+  ///
+  /// Same semantics as \c getRawPtr (which see).
+  inline T* data() const;
+
   /** \brief Random object access.
    *
    * <b>Preconditions:</b><ul>
@@ -466,6 +471,8 @@ public:
   std::string toString() const;
 
   inline const T* getRawPtr() const;
+
+  inline const T* data() const;
 
   const T& operator[] (size_type i) const;
 
