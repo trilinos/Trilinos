@@ -46,68 +46,94 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+namespace { // (anonymous)
+
+  Teuchos::RCP<Teuchos::FancyOStream>
+  makeValidVerboseStream (const Teuchos::RCP<Teuchos::FancyOStream>& out =
+			  Teuchos::null)
+  {
+    if (out.is_null ()) {
+      try {
+	return Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+      }
+      catch (std::exception& e) {
+	TEUCHOS_TEST_FOR_EXCEPTION
+	  (true, std::logic_error, "getFancyOStream threw: " << e.what ());
+      }
+      catch (...) {
+	TEUCHOS_TEST_FOR_EXCEPTION
+	  (true, std::logic_error, "getFancyOStream threw an exception "
+	   "not a subclass of std::exception.");
+      }
+    }
+    else {
+      try {
+	return out;
+      }
+      catch (std::exception& e) {
+	TEUCHOS_TEST_FOR_EXCEPTION
+	  (true, std::logic_error, "Returning 'out' threw: " << e.what ());
+      }
+      catch (...) {
+	TEUCHOS_TEST_FOR_EXCEPTION
+	  (true, std::logic_error, "Returning 'out' threw an exception "
+	   "not a subclass of std::exception.");
+      }
+    }
+  }
+
+} // namespace (anonymous)
+
 namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
-    source_ (source),
-    target_ (target),
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    numSameIDs_ (0),
-    distributor_ (source->getComm (), out_),
-    isLocallyComplete_ (true) // Import/Export constructor may change this
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::FancyOStream>& out) :
-    source_ (source),
-    target_ (target),
-    out_ (out),
-    numSameIDs_ (0),
-    distributor_ (source->getComm (), out_),
-    isLocallyComplete_ (true) // Import/Export constructor may change this
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-                    const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    source_ (source),
-    target_ (target),
-    out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
-    numSameIDs_ (0),
-    distributor_ (source->getComm (), out_, plist),
-    isLocallyComplete_ (true) // Import/Export constructor may change this
-  {}
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
-  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  ImportExportData<LocalOrdinal, GlobalOrdinal, Node>::
+  ImportExportData (const Teuchos::RCP<const map_type>& source,
+                    const Teuchos::RCP<const map_type>& target,
                     const Teuchos::RCP<Teuchos::FancyOStream>& out,
                     const Teuchos::RCP<Teuchos::ParameterList>& plist) :
-    source_ (source),
-    target_ (target),
-    out_ (out),
-    numSameIDs_ (0),
-    distributor_ (source->getComm (), out_, plist),
-    isLocallyComplete_ (true) // Import/Export constructor may change this
+    source_ (source), // NOT allowed to be null
+    target_ (target), // allowed to be null
+    out_ (makeValidVerboseStream (out)),
+    numSameIDs_ (0), // Import/Export constructor may change this
+    distributor_ (source->getComm (), out_, plist), // Im/Ex ctor will init
+    isLocallyComplete_ (true) // Im/Ex ctor may change this
+  {
+    TEUCHOS_ASSERT( ! out_.is_null () );
+  }
+  
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal, GlobalOrdinal, Node>::
+  ImportExportData (const Teuchos::RCP<const map_type>& source,
+                    const Teuchos::RCP<const map_type>& target) :
+    ImportExportData (source, target, Teuchos::null, Teuchos::null)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal, GlobalOrdinal, Node>::
+  ImportExportData (const Teuchos::RCP<const map_type>& source,
+                    const Teuchos::RCP<const map_type>& target,
+                    const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+    ImportExportData (source, target, out, Teuchos::null)
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal, GlobalOrdinal, Node>::
+  ImportExportData (const Teuchos::RCP<const map_type>& source,
+                    const Teuchos::RCP<const map_type>& target,
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    ImportExportData (source, target, Teuchos::null, plist)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<ImportExportData<LocalOrdinal, GlobalOrdinal, Node> >
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::reverseClone()
+  ImportExportData<LocalOrdinal, GlobalOrdinal, Node>::
+  reverseClone ()
   {
     using Teuchos::ArrayView;
-
-    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > tData =
-      Teuchos::rcp (new ImportExportData<LocalOrdinal,GlobalOrdinal,Node> (target_, source_));
+    using data_type = ImportExportData<LocalOrdinal, GlobalOrdinal, Node>;
+  
+    auto tData = Teuchos::rcp (new data_type (target_, source_, out_));
 
     // Things that stay the same
     tData->numSameIDs_       = numSameIDs_;
@@ -120,10 +146,10 @@ namespace Tpetra {
     // Remotes / exports (easy part)
     tData->exportLIDs_       = remoteLIDs_;
     tData->remoteLIDs_       = exportLIDs_;
-    tData->exportPIDs_.resize(tData->exportLIDs_.size());
+    tData->exportPIDs_.resize (tData->exportLIDs_.extent (0));
 
     // Remotes / exports (hard part) - extract the exportPIDs from the remotes of my distributor
-    size_t NumReceives                  = distributor_.getNumReceives();
+    const size_t NumReceives            = distributor_.getNumReceives();
     ArrayView<const int> ProcsFrom      = distributor_.getProcsFrom();
     ArrayView<const size_t> LengthsFrom = distributor_.getLengthsFrom();
 
@@ -145,11 +171,6 @@ namespace Tpetra {
 
     return tData;
   }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData()
-  {}
 
 } // namespace Tpetra
 
