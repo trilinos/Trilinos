@@ -37,11 +37,11 @@
  ////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////-->
 
-<ParameterList name="chacoEdgeWeight">
+<ParameterList name="chacoNoGraph">
   
   <ParameterList name="InputParameters">
     <Parameter name="input path" type="string" value="./"/>
-    <Parameter name="input file" type="string" value="ewgt"/>
+    <Parameter name="input file" type="string" value="nograph"/>
     <Parameter name="file type" type="string" value="Chaco"/>
   </ParameterList>
   
@@ -60,32 +60,31 @@
     <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="max edge cuts"/>
-        <Parameter name="lower" type="double" value="1.0"/>
-        <Parameter name="upper" type="double" value="999.0"/>
+        <Parameter name="lower" type="double" value="0"/>
+        <Parameter name="upper" type="double" value="0"/>
       </ParameterList>
       <ParameterList name="metriccheck2">
         <Parameter name="check" type="string" value="max edge cuts"/>
         <Parameter name="weight" type="int" value="0"/>
-        <Parameter name="lower" type="double" value="1.0"/>
-        <Parameter name="upper" type="double" value="999.0"/>
+        <Parameter name="lower" type="double" value="0"/>
+        <Parameter name="upper" type="double" value="0"/>
       </ParameterList>
       <ParameterList name="metriccheck3">
         <Parameter name="check" type="string" value="total edge cuts"/>
-        <Parameter name="lower" type="double" value="1.0"/>
-        <Parameter name="upper" type="double" value="999.0"/>
+        <Parameter name="lower" type="double" value="0"/>
+        <Parameter name="upper" type="double" value="0"/>
       </ParameterList>
       <ParameterList name="metriccheck4">
         <Parameter name="check" type="string" value="total edge cuts"/>
         <Parameter name="weight" type="int" value="0"/>
-        <Parameter name="lower" type="double" value="1.0"/>
-        <Parameter name="upper" type="double" value="999.0"/>
+        <Parameter name="lower" type="double" value="0"/>
+        <Parameter name="upper" type="double" value="0"/>
       </ParameterList>
       <ParameterList name="metriccheck5">
         <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="1.0"/>
-        <Parameter name="upper" type="double" value="1.5"/>
+        <Parameter name="upper" type="double" value="1.2"/>
       </ParameterList>
      </ParameterList>
-
   </ParameterList>
 </ParameterList>
