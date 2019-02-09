@@ -1,23 +1,23 @@
 C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.  
-C    
+C          with the distribution.
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
       program testwt
 c
@@ -42,7 +42,7 @@ c
       integer exoid, num_dim,num_nodes,elem_map(5),num_elem,num_elem_blk
       integer num_elem_in_block(10), num_nodes_per_elem(10),numattr(10)
       integer num_node_sets, num_side_sets
-      integer i, j, k, m, connect(10) 
+      integer i, j, k, m, connect(10)
       integer node_list(100), elem_list(100), side_list(100)
       integer ebids(10),ids(10), num_nodes_per_set(10)
       integer num_elem_per_set(10), num_df_per_set(10)
@@ -54,7 +54,7 @@ c
       integer cpu_word_size, io_word_size
       integer prop_array(2)
 
-      real glob_var_vals(100), nodal_var_vals(100) 
+      real glob_var_vals(100), nodal_var_vals(100)
       real time_value, elem_var_vals(100)
       real x(100), y(100), z(100)
       real attrib(100), dist_fact(100)
@@ -77,7 +77,7 @@ c
       cpu_word_size = 0
       io_word_size = 0
 c
-c  create EXODUS II files 
+c  create EXODUS II files
 c
       exoid = excre ("test.exo",
      1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
@@ -95,8 +95,8 @@ c
       num_elem_blk = 5
       num_node_sets = 2
       num_side_sets = 5
-      call expini (exoid, "This is a test", num_dim, num_nodes, 
-     1             num_elem, num_elem_blk, num_node_sets, 
+      call expini (exoid, "This is a test", num_dim, num_nodes,
+     1             num_elem, num_elem_blk, num_node_sets,
      2             num_side_sets, ierr)
 
       write (iout, '("after expini, error = ", i4)' ) ierr
@@ -110,15 +110,15 @@ c
 c  write nodal coordinates values and names to database
 c
 c  Quad #1
-      x(1) = 0.0 
-      x(2) = 1.0 
-      x(3) = 1.0 
-      x(4) = 0.0 
+      x(1) = 0.0
+      x(2) = 1.0
+      x(3) = 1.0
+      x(4) = 0.0
 
-      y(1) = 0.0 
-      y(2) = 0.0 
-      y(3) = 1.0 
-      y(4) = 1.0 
+      y(1) = 0.0
+      y(2) = 0.0
+      y(3) = 1.0
+      y(4) = 1.0
 
       z(1) = 0.0
       z(2) = 0.0
@@ -126,14 +126,14 @@ c  Quad #1
       z(4) = 0.0
 
 c  Quad #2
-      x(5) = 1.0 
-      x(6) = 2.0 
-      x(7) = 2.0 
+      x(5) = 1.0
+      x(6) = 2.0
+      x(7) = 2.0
       x(8) = 1.0
 
-      y(5) = 0.0 
-      y(6) = 0.0 
-      y(7) = 1.0 
+      y(5) = 0.0
+      y(6) = 0.0
+      y(7) = 1.0
       y(8) = 1.0
 
       z(5) = 0.0
@@ -326,7 +326,7 @@ c
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      
+
 c  write element block properties
 
       prop_names(1) = "MATL"
@@ -374,8 +374,8 @@ c write element connectivity
 c
 
       connect(1) = 1
-      connect(2) = 2 
-      connect(3) = 3 
+      connect(2) = 2
+      connect(3) = 3
       connect(4) = 4
 
       call expelc (exoid, ebids(1), connect, ierr)
@@ -386,8 +386,8 @@ c
       endif
 
       connect(1) = 5
-      connect(2) = 6 
-      connect(3) = 7 
+      connect(2) = 6
+      connect(3) = 7
       connect(4) = 8
 
       call expelc (exoid, ebids(2), connect, ierr)
@@ -399,7 +399,7 @@ c
 
       connect(1) =  9
       connect(2) = 10
-      connect(3) = 11 
+      connect(3) = 11
       connect(4) = 12
       connect(5) = 13
       connect(6) = 14
@@ -415,7 +415,7 @@ c
 
       connect(1) = 17
       connect(2) = 18
-      connect(3) = 19 
+      connect(3) = 19
       connect(4) = 20
 
       call expelc (exoid, ebids(4), connect, ierr)
@@ -492,16 +492,16 @@ c
 c write individual node sets
 c
 
-      node_list(1) = 100 
-      node_list(2) = 101 
-      node_list(3) = 102 
-      node_list(4) = 103 
-      node_list(5) = 104 
+      node_list(1) = 100
+      node_list(2) = 101
+      node_list(3) = 102
+      node_list(4) = 103
+      node_list(5) = 104
 
-      dist_fact(1) = 1.0 
-      dist_fact(2) = 2.0 
+      dist_fact(1) = 1.0
+      dist_fact(2) = 2.0
       dist_fact(3) = 3.0
-      dist_fact(4) = 4.0 
+      dist_fact(4) = 4.0
       dist_fact(5) = 5.0
 
       call expnp (exoid, 20, 5, 5, ierr)
@@ -523,12 +523,12 @@ c
          call exit (0)
       endif
 
-      node_list(1) = 200 
-      node_list(2) = 201 
-      node_list(3) = 202 
-   
-      dist_fact(1) = 1.1 
-      dist_fact(2) = 2.1 
+      node_list(1) = 200
+      node_list(2) = 201
+      node_list(3) = 202
+
+      dist_fact(1) = 1.1
+      dist_fact(2) = 2.1
       dist_fact(3) = 3.1
 
       call expnp (exoid, 21, 3, 3, ierr)
@@ -555,37 +555,37 @@ c write concatenated node sets; this produces the same information as
 c the above code which writes individual node sets
 c
 
-      ids(1) = 20 
+      ids(1) = 20
       ids(2) = 21
 
-      num_nodes_per_set(1) = 5 
+      num_nodes_per_set(1) = 5
       num_nodes_per_set(2) = 3
 
-      num_df_per_set(1) = 5 
+      num_df_per_set(1) = 5
       num_df_per_set(2) = 3
 
-      node_ind(1) = 1 
+      node_ind(1) = 1
       node_ind(2) = 6
 
-      df_ind(1) = 1 
+      df_ind(1) = 1
       df_ind(2) = 6
 
-      node_list(1) = 100 
-      node_list(2) = 101 
-      node_list(3) = 102 
-      node_list(4) = 103 
-      node_list(5) = 104 
-      node_list(6) = 200 
-      node_list(7) = 201 
+      node_list(1) = 100
+      node_list(2) = 101
+      node_list(3) = 102
+      node_list(4) = 103
+      node_list(5) = 104
+      node_list(6) = 200
+      node_list(7) = 201
       node_list(8) = 202
 
-      dist_fact(1) = 1.0 
-      dist_fact(2) = 2.0 
-      dist_fact(3) = 3.0 
-      dist_fact(4) = 4.0 
-      dist_fact(5) = 5.0 
-      dist_fact(6) = 1.1 
-      dist_fact(7) = 2.1 
+      dist_fact(1) = 1.0
+      dist_fact(2) = 2.0
+      dist_fact(3) = 3.0
+      dist_fact(4) = 4.0
+      dist_fact(5) = 5.0
+      dist_fact(6) = 1.1
+      dist_fact(7) = 2.1
       dist_fact(8) = 3.1
 
 c     call expcns (exoid, ids, num_nodes_per_set, num_df_per_set,
@@ -601,7 +601,7 @@ c     write (iout, '("after expcns, error = ", i4)' ) ierr
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      
+
 
 c     write node set properties
 
@@ -640,11 +640,11 @@ c     side set #1 - quad
       elem_list(1) = 2
       elem_list(2) = 2
 
-      side_list(1) = 4 
-      side_list(2) = 2 
+      side_list(1) = 4
+      side_list(2) = 2
 
-      dist_fact(1) = 30.0 
-      dist_fact(2) = 30.1 
+      dist_fact(1) = 30.0
+      dist_fact(2) = 30.1
       dist_fact(3) = 30.2
       dist_fact(4) = 30.3
 
@@ -813,7 +813,7 @@ c     side set #2
       node_list(8) = 8
 
 c     side set #3
-      node_list(9)  =  9 
+      node_list(9)  =  9
       node_list(10) = 12
       node_list(11) = 11
       node_list(12) = 10
@@ -912,10 +912,10 @@ c     side set #5
       node_ind(3) = 9
       node_ind(4) = 37
       node_ind(5) = 48
-   
-      elem_list(1) = 3 
+
+      elem_list(1) = 3
       elem_list(2) = 3
-      elem_list(3) = 1 
+      elem_list(3) = 1
       elem_list(4) = 3
       elem_list(5) = 4
       elem_list(6) = 4
@@ -934,9 +934,9 @@ c     side set #5
       elem_list(19) = 6
       elem_list(20) = 6
 
-c     side_list(1) = 1 
-c     side_list(2) = 2 
-c     side_list(3) = 3 
+c     side_list(1) = 1
+c     side_list(2) = 2
+c     side_list(3) = 3
 c     side_list(4) = 4
 
 c     call excn2s(exoid, num_elem_per_set, num_nodes_per_set, elem_ind,
@@ -952,17 +952,17 @@ c     write (iout, '("after excn2s, error = ", i4)' ) ierr
 
       df_ind(1) = 1
       df_ind(2) = 5
-   
-      dist_fact(1) = 30.0 
-      dist_fact(2) = 30.1 
-      dist_fact(3) = 30.2
-      dist_fact(4) = 30.3 
-      dist_fact(5) = 31.0 
-      dist_fact(6) = 31.1 
-      dist_fact(7) = 31.2
-      dist_fact(8) = 31.3 
 
-c     call expcss (exoid, ids, num_elem_per_set, num_df_per_set, 
+      dist_fact(1) = 30.0
+      dist_fact(2) = 30.1
+      dist_fact(3) = 30.2
+      dist_fact(4) = 30.3
+      dist_fact(5) = 31.0
+      dist_fact(6) = 31.1
+      dist_fact(7) = 31.2
+      dist_fact(8) = 31.3
+
+c     call expcss (exoid, ids, num_elem_per_set, num_df_per_set,
 c    1             elem_ind, df_ind, elem_list, side_list, dist_fact,
 c    2             ierr)
 c     write (iout, '("after expcss, error = ", i4)' ) ierr
@@ -1038,7 +1038,7 @@ c
 c write results variables parameters and names
 
       num_glo_vars = 1
-  
+
       var_names(1) = "glo_vars"
 
       call expvp (exoid, "g", num_glo_vars, ierr)
@@ -1073,7 +1073,7 @@ c write results variables parameters and names
          call exit (0)
       endif
 
-   
+
       num_ele_vars = 3
 
       var_names(1) = "ele_var0"
@@ -1114,7 +1114,7 @@ c
 
 c
 c for each time step, write the analysis results;
-c the code below fills the arrays glob_var_vals, 
+c the code below fills the arrays glob_var_vals,
 c nodal_var_vals, and elem_var_vals with values for debugging purposes;
 c obviously the analysis code will populate these arrays
 c
@@ -1143,7 +1143,7 @@ c
           glob_var_vals(j) = real(j+1) * time_value
 50      continue
 
-        call expgv (exoid, whole_time_step, num_glo_vars, 
+        call expgv (exoid, whole_time_step, num_glo_vars,
      1              glob_var_vals, ierr)
         write (iout, '("after expgv, error = ", i4)' ) ierr
         if (ierr .ne. 0) then
@@ -1162,7 +1162,7 @@ c
 
 60        continue
 
-          call expnv (exoid, whole_time_step, k, num_nodes, 
+          call expnv (exoid, whole_time_step, k, num_nodes,
      1                nodal_var_vals, ierr)
           write (iout, '("after expnv, error = ", i4)' ) ierr
           if (ierr .ne. 0) then
@@ -1180,13 +1180,13 @@ c
           do 90 j = 1, num_elem_blk
             do 80 m = 1, num_elem_in_block(j)
 
-              elem_var_vals(m) = real(k+1) + real(j+1) + 
+              elem_var_vals(m) = real(k+1) + real(j+1) +
      1                          (real(m)*time_value)
 c             write(iout,*)'elem_var_val(',m,'): ',elem_var_vals(m)
 
 80          continue
 
-            call expev (exoid, whole_time_step, k, ebids(j), 
+            call expev (exoid, whole_time_step, k, ebids(j),
      1                  num_elem_in_block(j), elem_var_vals, ierr)
             write (iout, '("after expev, error = ", i4)' ) ierr
             if (ierr .ne. 0) then
@@ -1200,7 +1200,7 @@ c             write(iout,*)'elem_var_val(',m,'): ',elem_var_vals(m)
         whole_time_step = whole_time_step + 1
 
 c
-c update the data file; this should be done at the end of every time 
+c update the data file; this should be done at the end of every time
 c step to ensure that no data is lost if the analysis dies
 c
         call exupda (exoid, ierr)

@@ -12,14 +12,14 @@
  CYCLE\_COUNT | {int}[infinite] | See `OVERLAY_COUNT` description below
  OVERLAY\_COUNT | {int}[0] | Output `OVERLAY_COUNT` steps to database on top of each other.  `DB_STEP = (((IOSS_STEP-1) / (OVERLAY_COUNT+1)) % CYCLE_COUNT) +1`
 ## Auto-Decomposition-Related Properties
- 
+
  Property        | Value  | Description
 -----------------|--------|-----------------------------------------------------------
 MODEL\_DECOMPOSITION\_METHOD | {method} | Decompose a DB with type `MODEL` using `method`
 RESTART\_DECOMPOSITION\_METHOD | {method} | Decompose a DB with type `RESTART_IN` using `method`
 DECOMPOSITION\_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL\_CONSISTENCY | [on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
-RETAIN\_FREE\_NODES | [on]/off | In auto-decomp, will nodes not connected to any elements be retained. 
+RETAIN\_FREE\_NODES | [on]/off | In auto-decomp, will nodes not connected to any elements be retained.
 LOAD\_BALANCE\_THRESHOLD | {real} [1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
 
 ### Valid values for Decomposition Method
@@ -28,16 +28,16 @@ Method     | Description
 ------------|-------------------
 rcb        | recursive coordinate bisection
 rib        | recursive inertial bisection
-hsfc       | hilbert space-filling curve 
-metis\_sfc  | metis space-filling-curve 
-kway       | metis kway graph-based 
+hsfc       | hilbert space-filling curve
+metis\_sfc  | metis space-filling-curve
+kway       | metis kway graph-based
 kway\_geom  | metis kway graph-based method with geometry speedup
 linear     | elements in order first n/p to proc 0, next to proc 1.
 cyclic     | elements handed out to id % proc\_count
 random     | elements assigned randomly to processors in a way that preserves balance (do not use for a real run)
 external   | Files are decomposed externally into a file-per-processor in a parallel run.
 
-## Output File Composition -- Single File output from parallel run instead of file-per-processor 
+## Output File Composition -- Single File output from parallel run instead of file-per-processor
 
  Property        | Value  | Description
 -----------------|--------|-----------------------------------------------------------
@@ -45,8 +45,8 @@ COMPOSE\_RESTART  | on/[off] |
 COMPOSE\_RESULTS  | on/[off] |
 PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated hdf5=netcdf4
 
-## Properties Related to byte size of reals and integers 
- 
+## Properties Related to byte size of reals and integers
+
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
  INTEGER\_SIZE\_DB       | [4] / 8 | byte size of integers stored on the database.
@@ -54,8 +54,8 @@ PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated 
  REAL\_SIZE\_DB          | 4 / [8] | byte size of floating point stored on the database.
  REAL\_SIZE\_API         | 4 / [8] | byte size of floating point used in api functions.
 
-## Properties related to underlying file type (exodus only) 
- 
+## Properties related to underlying file type (exodus only)
+
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
   FILE\_TYPE            | [netcdf], netcdf4, netcdf-4, hdf5 |
@@ -66,7 +66,7 @@ PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated 
  APPEND\_OUTPUT\_AFTER\_STEP | {step}| Max step to read from an input db or a db being appended to (typically used with APPEND\_OUTPUT)
  APPEND\_OUTPUT\_AFTER\_TIME | {time}| Max time to read from an input db or a db being appended to (typically used with APPEND\_OUTPUT)
 
-## Properties for the heartbeat output 
+## Properties for the heartbeat output
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
   FLUSH\_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
@@ -80,7 +80,7 @@ PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated 
   SHOW\_TIME\_FIELD      | on/[off]  | Should the current analysis time be output as the first field.
 
 
-## Experimental 
+## Experimental
 
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------

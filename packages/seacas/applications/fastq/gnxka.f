@@ -1,23 +1,23 @@
 C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
 C $Id: gnxka.f,v 1.2 2000/11/13 15:41:35 gdsjaar Exp $
       SUBROUTINE GNXKA (MXND, XN, YN, K, NODES, AREA, LXK, NXL, CCW)
@@ -84,7 +84,7 @@ C... Find other ends of the two sides
          ELSE IF (M2 .EQ. NODES(2)) THEN
            NODES(3) = M1
          END IF
-         
+
   110 CONTINUE
 
 C... Compute signed area
@@ -93,7 +93,7 @@ C... Compute signed area
      *   (YN(NODES(4)) - YN(NODES(2))) -
      &   (YN(NODES(3)) - YN(NODES(1))) *
      *   (XN(NODES(4)) - XN(NODES(2))))
-      
+
       IF (AREA .LT. 0.) THEN
 C ... Clockwise case  -  reverse the order
         NTMP = NODES(2)
@@ -101,6 +101,6 @@ C ... Clockwise case  -  reverse the order
         NODES(4) = NTMP
         AREA = -AREA
       ENDIF
-      
+
       RETURN
       END

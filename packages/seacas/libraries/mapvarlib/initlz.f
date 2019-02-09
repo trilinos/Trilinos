@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
 *DECK,INITLZ
@@ -42,7 +42,7 @@ C     NAMED COMMON BLOCKS
 C
 C     ******************************************************************
 C
-C...NOTE: Cannot include exodusII.inc in a block data routine.      
+C...NOTE: Cannot include exodusII.inc in a block data routine.
       PARAMETER (MXSTLN=32)
 c      CHARACTER*10 ELTYPE
 C
@@ -61,7 +61,7 @@ C
       include 'inival.blk'
 C
       DATA HED/' '/
-      DATA NOUT,NTPOUT,NTP2,NTP3,NTP4/                      
+      DATA NOUT,NTPOUT,NTP2,NTP3,NTP4/
      1     6,7,12,13,14/
       DATA (IFILES(I),I=1,5)/5*0/
       DATA ISCHEM/1/
@@ -73,8 +73,8 @@ C
       DATA NUMELA,NODESA,NBLKSA,NDIMA,NELNDA/5*0/
       DATA NUMELB,NODESB,NBLKSB,NDIMB,NELNDB/5*0/
       DATA NQAREC,NVARGP,NVARNP,NVAREL/4*0/
-c      DATA (ELTYPE(I),I=1,13)/'TRI3','TRI6','QUAD4','QUAD8','QUAD9',    
-c     1     'TETRA4','TETRA10','PRISM6','PRISM15','HEX8','HEX20',    
+c      DATA (ELTYPE(I),I=1,13)/'TRI3','TRI6','QUAD4','QUAD8','QUAD9',
+c     1     'TETRA4','TETRA10','PRISM6','PRISM15','HEX8','HEX20',
 c     2     'HEX27','SHELL'/
 C      DATA (NNELM(I),I=1,13)/3,6,4,8,9,4,10,6,15,8,20,27,4/
 C

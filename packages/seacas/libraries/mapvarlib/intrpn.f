@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,16 +29,16 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
 *DECK,INTRPN
       SUBROUTINE INTRPN(ICONA,SOLNA,IELPT,STRPT,
      &                  SOLNB,NDLSTB,XB,YB,ZB,
      &                  IDBLK,TIMES,INSUB,SN)
-C     
+C
 C     ******************************************************************
-C     
+C
 C     SUBROUTINE TO CONTROL INTERPOLATION OF NODAL RESULTS FROM MESH-A
 C     TO MESH-B
 C     INTERPOLATED SOLUTION IS WRITTEN TO MESH-C EXODUS FILE
@@ -46,12 +46,12 @@ C
 C     Calls subroutine SHAPEF, ININOD
 C
 C     Called by MAPVAR
-C     
+C
 C     ******************************************************************
 C
 C ICONA   INT   Connectivity of donor Mesh (1:nelnda,1:numeba)
 C SOLNA   REAL  Nodal variables  for donor mesh
-C IELPT   INT   The element in donor mesh within which the point 
+C IELPT   INT   The element in donor mesh within which the point
 C               (node in recipient mesh) is found
 C STRPT   REAL  The isoparametric coords of point in IELPT element
 C SOLNB   REAL  Nodal variables for recipient mesh
@@ -74,12 +74,12 @@ C
       include 'tapes.blk'
       include 'varnpt.blk'
 C
-      DIMENSION XB(*), YB(*), ZB(*), TIMES(*)     
+      DIMENSION XB(*), YB(*), ZB(*), TIMES(*)
       DIMENSION ICONA(NELNDA,*), SOLNA(NODESA,NVARNP)
       DIMENSION SOLNB(NODESB,NVARNP), NDLSTB(*)
       DIMENSION IELPT(*), STRPT(3,NODESB)
       DIMENSION SOLN(27), SN(*)
-C     
+C
 C     ******************************************************************
 C
 C set up time steps
@@ -96,7 +96,7 @@ C
         ELSE
           ISTP = ISTEP
         END IF
-C     
+C
 C Start interpolation
 C
         DO 10 IVAR = 1, NVARNP
@@ -122,15 +122,15 @@ C
 C Get nodal results on donor mesh
 C
           CALL EXGNV(NTP2EX,ISTP,IVAR,NODESA,SOLNA(1,IVAR),IERR)
-C     
+C
 C Loop on nodes in recipient mesh
-C     
+C
           DO 30 I = 1,NUMNDB
             NEL = IELPT(I)
             IF (NEL .NE. 0) THEN
-C     
+C
 C Set parameters for element in donor mesh
-C     
+C
               S = STRPT(1,I)
               T = STRPT(2,I)
               R = 0.
@@ -142,7 +142,7 @@ C              NNODES = NNELM(ITYPE)
                 INODE = ICONA(J,NEL)
                 SOLN(J) = SOLNA(INODE,IVAR)
  20           CONTINUE
-C     
+C
 C Shape function
 C
               CALL SHAPEF(ITYPE,S,T,R,SOLN,BVALUE)

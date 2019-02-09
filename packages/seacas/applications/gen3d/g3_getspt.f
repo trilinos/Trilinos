@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,7 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       SUBROUTINE GETSPT(A)
       DIMENSION A(*)
       INCLUDE 'g3_splxyz.blk'
-      
+
       PARAMETER (BINGO = 1.0E38)
       PARAMETER (MAXFLD = 10)
       PARAMETER (NDEFS = 64)
@@ -42,32 +42,32 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       CHARACTER*8 CFIELD(MAXFLD)
       INTEGER     IFIELD(MAXFLD)
       REAL        RFIELD(MAXFLD)
-      
+
       LOGICAL MATSTR, HELP, ISHELP
-      
+
       CHARACTER*8 CMDTBL(6)
       SAVE CMDTBL
 C     --CMDTBL - the valid commands table
-      
+
 C     --Command table follows.  Remember to change the dimensioned size when
 C     --changing the table.
       DATA CMDTBL /
      1     'SLOPE   ', 'END     ', 'EXIT    ', 'LIST    ', 'HELP    ',
      3     '        ' /
-      
+
       CALL SHOCMD ('COMMANDS', CMDTBL)
-      
+
 C     ... Initialize default values
-      
+
       IPT = 0
       SLBOT(1) = BINGO
       SLTOP(1) = BINGO
       SLBOT(2) = BINGO
       SLTOP(2) = BINGO
       ISPL = 1
-      
+
 C     ... Allocate arrays, guess on amount and increase if more points entered.
-      
+
       CALL MDRSRV ('ZSPL',  KZSPL,  NDEFS)
       CALL MDRSRV ('XSPL',  KXSPL,  NDEFS)
       CALL MDRSRV ('YSPL',  KYSPL,  NDEFS)
@@ -76,27 +76,27 @@ C     ... Allocate arrays, guess on amount and increase if more points entered.
          CALL MEMERR
          STOP 'Memory Allocation in GETSPL'
       END IF
-      
+
       NTOT = NDEFS
-      
+
    10 CONTINUE
-      
+
 C     --Read command line
-      
+
       WRITE (*, *)
       CALL FREFLD (0, 0, '   Spline Option > ', MAXFLD,
      &     IOSTAT, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
       IF (IOSTAT .LT. 0) GOTO 20
       IF (NUMFLD .EQ. 0) GOTO 10
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
-      
+
       IFLD = 1
       CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
       CALL ABRSTR (VERB, WORD, CMDTBL)
       IF (VERB .EQ. ' ') VERB = WORD
-      
+
       IF (VERB .EQ. 'EXIT' .OR. VERB .EQ. 'END') GO TO 20
-      
+
       IF (VERB .EQ. 'HELP') THEN
          ISHELP = HELP ('GEN3D', 'COMMANDS', CFIELD(IFLD))
          IF (.NOT. ISHELP) CALL SHOCMD ('COMMANDS', CMDTBL)
@@ -112,8 +112,8 @@ C     --Read command line
      &              'X slope at bottom end', 0.0, SLTOP(1), *10)
                CALL FFREAL (IFLD, INTYP, RFIELD,
      &              'Y slope at bottom end', 0.0, SLTOP(2), *10)
-            END IF 
-            
+            END IF
+
          ELSE IF (VERB .EQ. 'LIST') THEN
             CALL SHOCMD ('COMMANDS', CMDTBL)
          END IF
@@ -135,25 +135,25 @@ C     --Read command line
          A(KYSPL + IPT - 1) = RFIELD(3)
       END IF
       GO TO 10
-      
+
 C     ... Done reading data, compress arrays and allocate remaining arrays
-      
+
    20 CONTINUE
       CALL MDLONG ('ZSPL',  KZSPL, IPT)
       CALL MDLONG ('XSPL',  KXSPL, IPT)
       CALL MDLONG ('YSPL',  KYSPL, IPT)
-      
+
       CALL MDRSRV ('XSPL2', KXSPL2, IPT)
       CALL MDRSRV ('YSPL2', KYSPL2, IPT)
       CALL MDRSRV ('SCR',   KSCR,   IPT)
-      
+
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) THEN
          CALL MEMERR
          STOP 'Memory Allocation in GETSPL'
       END IF
-      
+
       NSPLT = IPT
-      
+
       RETURN
       END

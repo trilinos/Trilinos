@@ -107,7 +107,7 @@ void SystemInterface::enroll_options()
 		  "Combine elements if their global ids match and they are compatible.\n"
 		  "\t\tCompatible = same element type, nodes of the two elements match",
 		  nullptr);
-		  
+
   options_.enroll("match_element_coordinates", GetLongOption::NoValue,
 		  "Combine elements if their centroids are within tolerance distance\n"
 		  "\t\tand they are compatible (same element type, nodes match).",
@@ -442,7 +442,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   } else {
     matchElemIds_ = false;
   }
-  
+
   if (options_.retrieve("match_elem_coordinates")) {
     matchElemXYZ_ = true;
     matchElemIds_ = false;
