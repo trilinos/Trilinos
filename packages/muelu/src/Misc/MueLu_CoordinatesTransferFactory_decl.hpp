@@ -142,6 +142,8 @@ namespace MueLu {
     //@}
 
   private:
+    template<class CoordinatesType, typename CoordinatesFactoryType>
+    RCP<CoordinatesType> TransferCoords(Level& fineLevel, RCP<CoordinatesType> coords) const;
 
   }; // class CoordinatesTransferFactory
 
