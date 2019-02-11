@@ -89,8 +89,8 @@
                           <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
                       
                           <!-- start of default values for general options (can be omitted) -->
-                          <Parameter        name="max levels"                         type="int"      value="10"/>
-                          <Parameter        name="number of equations"                  type="int"      value="3"/>
+                          <Parameter        name="max levels"                           type="int"      value="10"/>
+                          <Parameter        name="number of equations"                  type="int"      value="1"/>
                           <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
                           <!-- end of default values -->
                       
