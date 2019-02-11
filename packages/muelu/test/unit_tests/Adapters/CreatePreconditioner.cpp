@@ -454,11 +454,11 @@ namespace MueLuTests {
       if (k == 0) xmlFileName = "testPDE.xml";
       if (k == 1) xmlFileName = "testPDE1.xml";
 
-      int numPDEs=3;
-
       if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
         typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
+
+        int numPDEs=3;
 
         // Matrix
         RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
@@ -527,6 +527,8 @@ namespace MueLuTests {
 
       } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
+        int numPDEs=3;
+
         // Matrix
         RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
         RCP<const Map > map = Op->getRowMap();
