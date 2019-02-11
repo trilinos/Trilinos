@@ -165,10 +165,19 @@ void globalWeightedByPart(
     typedef Zoltan2_Directory_Simple<part_t,lno_t,gno_t> directory_t;
     int debug_level = 0;
     directory_t directory(comm, bUseLocalIDs, debug_level);
-    directory.update(localNumVertices, &Ids[0], NULL, &parts[0],
-      NULL, directory_t::Update_Mode::Replace);
-    directory.find(localNumEdges, &edgeIds[0], NULL, &e_parts[0],
-      NULL, NULL, false);
+    if (localNumVertices)
+      directory.update(localNumVertices, &Ids[0], NULL, &parts[0],
+        NULL, directory_t::Update_Mode::Replace);
+    else
+      directory.update(localNumVertices, NULL, NULL, NULL,
+        NULL, directory_t::Update_Mode::Replace);
+
+    if (localNumEdges)
+      directory.find(localNumEdges, &edgeIds[0], NULL, &e_parts[0],
+        NULL, NULL, false);
+    else
+      directory.find(localNumEdges, NULL, NULL, NULL,
+        NULL, NULL, false);
   } else
 #endif
   {

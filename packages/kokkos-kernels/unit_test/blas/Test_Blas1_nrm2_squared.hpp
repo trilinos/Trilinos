@@ -171,37 +171,53 @@ int test_nrm2_squared_mv() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_squared_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_float");
     test_nrm2_squared<float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_squared_mv_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_float");
     test_nrm2_squared_mv<float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_squared_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_double");
     test_nrm2_squared<double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_squared_mv_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_double");
     test_nrm2_squared_mv<double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_squared_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_complex_double");
     test_nrm2_squared<Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_squared_mv_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_complex_double");
     test_nrm2_squared_mv<Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_squared_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_int");
     test_nrm2_squared<int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_squared_mv_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_squared_mv_int");
     test_nrm2_squared_mv<int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 

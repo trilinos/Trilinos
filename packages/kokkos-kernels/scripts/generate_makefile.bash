@@ -4,7 +4,7 @@ KOKKOS_DEVICES=""
 
 KOKKOS_DO_EXAMPLES="1"
 
-KOKKOSKERNELS_OPTIONS="eti-only"
+KOKKOSKERNELS_OPTIONS="eti-only,blas-mangle_"
 KOKKOSKERNELS_ENABLE_TPLS=""
 
 while [[ $# > 0 ]]
@@ -75,6 +75,9 @@ do
     --cxxflags*)
       CXXFLAGS="${key#*=}"
       ;;
+    --cxxstandard*)
+      KOKKOS_CXX_STANDARD="${key#*=}"
+      ;;
     --ldflags*)
       LDFLAGS="${key#*=}"
       ;;
@@ -138,7 +141,12 @@ do
       echo "--with-layouts=[LAYOUTS]:             Set layouts to be instantiated (LayoutLeft,LayoutRight)."
       echo "--prefix=/Install/Path:               Path to install the Kokkos library."
       echo "--with-options=[OPT]:                 Set KokkosKernels Options:"
-      echo "                                        eti_only: only allow ETI types to be enabled [default]"
+      echo "                                        eti-only: only allow ETI types to be enabled [default]"
+      echo "                                        manual overriding for fortran blas mangling:"
+      echo "                                          blas-mangle, blas-mangle_[default], blas-mangle__"
+      echo "                                        manual overriding for blas complex interface"
+      echo "                                          blas-return-complex: e.g., ret = zdotc(&N, a, &inc_a, b, &inc_b)"
+      echo "                                          otherwise, the interface would search zdotc(&ret, &N, a, &inc_a, b, &inc_b)"
       echo "--with-tpls=[OPT]:                    Set KokkosKernels TPLs:"
       echo "                                        mkl,blas,cublas,cusparse"
       echo ""
@@ -193,6 +201,8 @@ do
       echo "                                        build.  This will still set certain required"
       echo "                                        flags via KOKKOS_CXXFLAGS (such as -fopenmp,"
       echo "                                        --std=c++11, etc.)."
+      echo "--cxxstandard=[FLAGS]         Overwrite KOKKOS_CXX_STANDARD for library build and test"
+      echo "                                c++11 (default), c++14, c++17, c++1y, c++1z, c++2a"
       echo "--ldflags=[FLAGS]                     Overwrite LDFLAGS for library build and test"
       echo "                                        build. This will still set certain required"
       echo "                                        flags via KOKKOS_LDFLAGS (such as -fopenmp,"
@@ -278,6 +288,10 @@ if [ ${#CXXFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} CXXFLAGS=\"${CXXFLAGS}\""
 fi
 
+if [ ${#KOKKOS_CXX_STANDARD} -gt 0 ]; then
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOS_CXX_STANDARD=\"${KOKKOS_CXX_STANDARD}\""
+fi
+
 if [ ${#LDFLAGS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} LDFLAGS=\"${LDFLAGS}\""
 fi
@@ -357,9 +371,14 @@ else
 fi
 
 mkdir -p install
-echo "#Makefile to satisfy existens of target kokkos-clean before installing the library" > install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean before installing the library" > install/Makefile.kokkos
 echo "kokkos-clean:" >> install/Makefile.kokkos
 echo "" >> install/Makefile.kokkos
+echo "#Makefile to satisfy existence of target kokkos-clean and kokkoskernels-clean before installing the library" > install/Makefile.kokkos-kernels
+echo "kokkoskernels-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
+echo "kokkos-clean:" >> install/Makefile.kokkos-kernels
+echo "" >> install/Makefile.kokkos-kernels
 mkdir -p kokkos
 mkdir -p src
 mkdir -p unit_test

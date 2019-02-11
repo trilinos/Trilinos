@@ -96,8 +96,16 @@ namespace {
 	  }
 	});
       } else {
-	scratch_view dof_values(team.team_shmem(),num_fields_,fad_size_);
-	scratch_view point_values(team.team_shmem(),num_points_,fad_size_);
+        scratch_view dof_values;
+        scratch_view point_values;
+        if (Sacado::IsADType<ScalarT>::value) {
+          dof_values = scratch_view(team.team_shmem(),num_fields_,fad_size_);
+          point_values = scratch_view(team.team_shmem(),num_points_,fad_size_);
+        }
+        else {
+          dof_values = scratch_view(team.team_shmem(),num_fields_);
+          point_values = scratch_view(team.team_shmem(),num_points_);
+        }
 
 	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_fields_), [&] (const int& dof) {
 	  dof_values(dof) = dof_value_(cell,dof);

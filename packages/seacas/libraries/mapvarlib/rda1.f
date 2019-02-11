@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,9 +29,9 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
-c 
+c
 C=======================================================================
 *DECK,RDA1
       SUBROUTINE RDA1(XA,YA,ZA,DISXA,DISYA,DISZA)
@@ -120,62 +120,62 @@ C
 C Do some error checking on number of variables - got me once
 C
       NUMNAM = NVARGP
-      IF (NUMNAM .GT. MXVAR)CALL ERROR('RDA1','TOO MANY VARIABLE NAMES 
-     1IN MESH-A DATA BASE','NUMBER OF VARIABLE NAMES ENCOUNTERED SO 
-     2FAR',NUMNAM,'NUMBER ALLOWED - FIXED DIMENSION',MXVAR,'SEE CODE 
+      IF (NUMNAM .GT. MXVAR)CALL ERROR('RDA1','TOO MANY VARIABLE NAMES
+     1IN MESH-A DATA BASE','NUMBER OF VARIABLE NAMES ENCOUNTERED SO
+     2FAR',NUMNAM,'NUMBER ALLOWED - FIXED DIMENSION',MXVAR,'SEE CODE
      3SPONSOR FOR INCREASE IN --NAMVAR--',' ',1)
 C
       if (nvargp .gt. 0) then
          CALL EXGVAN (NTP2EX,"G",NVARGP,NAMVAR,IERR)
-C     
+C
 C     Convert to upper case
-C     
+C
          DO 20 I = 1, NVARGP
             CALL EXUPCS(NAMVAR(I))
  20      CONTINUE
-C     
+C
          CALL EXPVP (NTP4EX,"G",NVARGP,IERR)
          CALL EXPVAN (NTP4EX,"G",NVARGP,NAMVAR,IERR)
       end if
-      
+
       CALL EXGVP (NTP2EX,"E",NVAREL,IERR)
 C
       NUMNAM = NUMNAM + NVAREL
-      IF (NUMNAM .GT. MXVAR)CALL ERROR('RDA1','TOO MANY VARIABLE NAMES 
-     1IN MESH-A DATA BASE','NUMBER OF VARIABLE NAMES ENCOUNTERED SO 
-     2FAR',NUMNAM,'NUMBER ALLOWED - FIXED DIMENSION',MXVAR,'SEE CODE 
+      IF (NUMNAM .GT. MXVAR)CALL ERROR('RDA1','TOO MANY VARIABLE NAMES
+     1IN MESH-A DATA BASE','NUMBER OF VARIABLE NAMES ENCOUNTERED SO
+     2FAR',NUMNAM,'NUMBER ALLOWED - FIXED DIMENSION',MXVAR,'SEE CODE
      3SPONSOR FOR INCREASE IN --NAMVAR--',' ',1)
 C
       if (nvarel .gt. 0) then
          CALL EXGVAN (NTP2EX,"E",NVAREL,NAMVAR(NVARGP+1),IERR)
-C     
+C
 C     Convert to upper case
-C     
+C
          DO 30 I = 1, NVAREL
             CALL EXUPCS(NAMVAR(NVARGP+I))
  30      CONTINUE
-C     
+C
          CALL EXPVP (NTP4EX,"E",NVAREL,IERR)
          CALL EXPVAN (NTP4EX,"E",NVAREL,NAMVAR(NVARGP+1),IERR)
       end if
-      
+
       CALL EXGVP (NTP2EX,"N",NVARNP,IERR)
 C
       NUMNAM = NUMNAM + NVARNP
-      IF (NUMNAM .GT. MXVAR)CALL ERROR('RDA1','TOO MANY VARIABLE NAMES 
-     1IN MESH-A DATA BASE','NUMBER OF VARIABLE NAMES ENCOUNTERED SO 
-     2FAR',NUMNAM,'NUMBER ALLOWED - FIXED DIMENSION',MXVAR,'SEE CODE 
+      IF (NUMNAM .GT. MXVAR)CALL ERROR('RDA1','TOO MANY VARIABLE NAMES
+     1IN MESH-A DATA BASE','NUMBER OF VARIABLE NAMES ENCOUNTERED SO
+     2FAR',NUMNAM,'NUMBER ALLOWED - FIXED DIMENSION',MXVAR,'SEE CODE
      3SPONSOR FOR INCREASE IN --NAMVAR--',' ',1)
 C
       if (nvarnp .gt. 0) then
          CALL EXGVAN (NTP2EX,"N",NVARNP,NAMVAR(NVARGP+NVAREL+1),IERR)
-C     
+C
 C     Convert to upper case
-C     
+C
          DO 40 I = 1, NVARNP
             CALL EXUPCS(NAMVAR(NVARGP+NVAREL+I))
  40      CONTINUE
-C     
+C
          CALL EXPVP (NTP4EX,"N",NVARNP,IERR)
          CALL EXPVAN (NTP4EX,"N",NVARNP,NAMVAR(NVARGP+NVAREL+1),IERR)
       end if
@@ -228,8 +228,8 @@ C
 C
 C find needed variables
 C 1st velocities
-C coordinate names - velocity will start with "v" 
-C                    and end with last character 
+C coordinate names - velocity will start with "v"
+C                    and end with last character
 C                    of coordinate name
 C
         LC1 = LENSTR(NAMECO(1))

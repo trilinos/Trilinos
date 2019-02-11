@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -47,7 +47,7 @@ C       VOLUME  REAL      Volume of this cavity
 C       NDIM    INTEGER   Number of Nodes
 C       CENT    REAL      Apex of Cavity Volume pentahedra
 C
-C     CALLED BY: 
+C     CALLED BY:
 C
 C***********************************************************************
 C
@@ -66,21 +66,21 @@ C
           J = LSTSN(4*KSEG - 2)
           I = LSTSN(4*KSEG - 3)
 C
-          X1 = COORD(I,1) 
-          X2 = COORD(J,1) 
-          X3 = COORD(K,1) 
-          X4 = COORD(L,1) 
-C             
-          Y1 = COORD(I,2) 
-          Y2 = COORD(J,2) 
-          Y3 = COORD(K,2) 
-          Y4 = COORD(L,2) 
-C             
-          Z1 = COORD(I,3) 
-          Z2 = COORD(J,3) 
-          Z3 = COORD(K,3) 
-          Z4 = COORD(L,3) 
-C        
+          X1 = COORD(I,1)
+          X2 = COORD(J,1)
+          X3 = COORD(K,1)
+          X4 = COORD(L,1)
+C
+          Y1 = COORD(I,2)
+          Y2 = COORD(J,2)
+          Y3 = COORD(K,2)
+          Y4 = COORD(L,2)
+C
+          Z1 = COORD(I,3)
+          Z2 = COORD(J,3)
+          Z3 = COORD(K,3)
+          Z4 = COORD(L,3)
+C
           XC = XC + x1 + x2 + x3 + x4
           YC = YC + y1 + y2 + y3 + y4
           ZC = ZC + z1 + z2 + z3 + z4
@@ -100,21 +100,21 @@ C
          J = LSTSN(4*KSEG - 2)
          I = LSTSN(4*KSEG - 3)
 C
-         X1 = COORD(I,1) 
-         X2 = COORD(J,1) 
-         X3 = COORD(K,1) 
-         X4 = COORD(L,1) 
-C             
-         Y1 = COORD(I,2) 
-         Y2 = COORD(J,2) 
-         Y3 = COORD(K,2) 
-         Y4 = COORD(L,2) 
-C             
-         Z1 = COORD(I,3) 
-         Z2 = COORD(J,3) 
-         Z3 = COORD(K,3) 
-         Z4 = COORD(L,3) 
-C             
+         X1 = COORD(I,1)
+         X2 = COORD(J,1)
+         X3 = COORD(K,1)
+         X4 = COORD(L,1)
+C
+         Y1 = COORD(I,2)
+         Y2 = COORD(J,2)
+         Y3 = COORD(K,2)
+         Y4 = COORD(L,2)
+C
+         Z1 = COORD(I,3)
+         Z2 = COORD(J,3)
+         Z3 = COORD(K,3)
+         Z4 = COORD(L,3)
+C
          Z13 = Z1 - Z3
          Z24 = Z2 - Z4
          Z31 = Z3 - Z1

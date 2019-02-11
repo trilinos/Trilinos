@@ -1,23 +1,23 @@
 # Copyright(C) 1999-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
-# 
+#
 #     * Redistributions in binary form must reproduce the above
 #       copyright notice, this list of conditions and the following
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
-# 
+#
 #     * Neither the name of NTESS nor the names of its
 #       contributors may be used to endorse or promote products derived
 #       from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -102,7 +102,7 @@ def CreateCoProcessor():
 #reuse same coprocesor instance (?), then have LocalWriteImages3 only do the images for a given output results bloxk:q
 
       #PhactoriScript.CreatePipeline(datadescription)
-    
+
     return Pipeline()
 
   class CoProcessor(coprocessing.CoProcessor):
@@ -115,7 +115,7 @@ def CreateCoProcessor():
     def LocalExportOperationsData3(self, datadescription, rescale_lookuptable=False):
       phactori.ExportOperationsDataForCurrentPipeAndViewsState(datadescription)
 
-      
+
 
   coprocessor = CoProcessor()
   freqs = {'input': [1]}
@@ -233,7 +233,7 @@ def compareTearDeath(tList, dList):
   phactori.myDebugPrint2('compareTearDeath entered\n')
   phactori.myDebugPrint2('compareTearDeath returning\n')
 #end tear/death persistence; not used now but may be useful later
-   
+
 
 # ---------------------- Data Selection method ----------------------
 
@@ -254,14 +254,14 @@ def RequestDataDescription(datadescription):
 
   if phactori.GetBypassUserDataFlag() == False:
     fd = datadescription.GetUserData()
- 
+
     if fd == None:
       phactori.myDebugPrint2("no user data, returning {}\n")
       returnViewMapC = {}
       return returnViewMapC
 
   global gCatchAllExceptionsAndPassUpFlag
-  if gCatchAllExceptionsAndPassUpFlag: 
+  if gCatchAllExceptionsAndPassUpFlag:
     try:
       return RequestDataDescriptionSub(datadescription)
     except:
@@ -279,7 +279,7 @@ def RequestDataDescriptionSub(datadescription):
 
     if phactori.GetBypassUserDataFlag() == False:
       fd = datadescription.GetUserData()
- 
+
       if fd == None:
         phactori.myDebugPrint2("no user data, returning {}\n")
         returnViewMapC = {}
@@ -333,15 +333,15 @@ def DoCoProcessing(datadescription):
   phactori.myDebugPrint3("PhactoriDriver.DoCoProcessing entered: " + str(gDoCoProcessingCount)+ "\n");
 
   fd = datadescription.GetUserData()
- 
+
   if phactori.GetBypassUserDataFlag() == False:
     if fd == None:
       phactori.myDebugPrint2("no user data, returning {}\n")
       returnViewMapC = {}
       return returnViewMapC
- 
+
   global gCatchAllExceptionsAndPassUpFlag
-  if gCatchAllExceptionsAndPassUpFlag: 
+  if gCatchAllExceptionsAndPassUpFlag:
     try:
       DoCoProcessingSub(datadescription)
     except:
@@ -361,13 +361,13 @@ def DoCoProcessingSub(datadescription):
 
 
     fd = datadescription.GetUserData()
- 
+
     if phactori.GetBypassUserDataFlag() == False:
       if fd == None:
         phactori.myDebugPrint2("no user data, returning {}\n")
         returnViewMapC = {}
         return returnViewMapC
- 
+
     global coprocessor
     global gFirstTimeInDoCoProcessing
     global gSkipCountdown
@@ -437,7 +437,7 @@ def DoCoProcessingSub(datadescription):
     coprocessor.WriteData(datadescription)
 
     coprocessor.LocalExportOperationsData3(datadescription)
-   
+
     # Write image capture (Last arg: rescale lookup table), if appropriate.
     coprocessor.LocalWriteImages3(datadescription,
         rescale_lookuptable=False)

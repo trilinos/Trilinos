@@ -33,14 +33,14 @@ SET(HEADERS
 )
 
 SET(SOURCES
- apr_aprepro.cc 
- apr_util.cc 
- apr_stats.cc 
- apr_init.cc 
- apr_builtin.cc 
- apr_units.cc 
+ apr_aprepro.cc
+ apr_util.cc
+ apr_stats.cc
+ apr_init.cc
+ apr_builtin.cc
+ apr_units.cc
  apr_tokenize.cc
- apr_scanner.cc  
+ apr_scanner.cc
  apr_getline_int.c
  ${BISON_LIB_SOURCE}
  apr_exodus.cc
@@ -100,7 +100,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
           COMMAND ${DOXYGEN_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
           COMMENT "Generating Aprepro API documentation with Doxygen" VERBATIM
-        )     
+        )
      endif(DOXYGEN_FOUND)
    endif()
 endif()
@@ -111,11 +111,11 @@ if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
 
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_unit_test
- TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app 
-        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app 
+ TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/aprepro_test_app
+        ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
   OUTPUT_FILE test.stderr
   PASS_ANY
- TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++ 
+ TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++
 		       ${CMAKE_CURRENT_BINARY_DIR}/test.stderr
   OUTPUT_FILE filtered.output
   PASS_ANY
@@ -125,9 +125,9 @@ TRIBITS_ADD_ADVANCED_TEST(
  TEST_3 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
- COMM mpi serial		      
+ COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
- FINAL_PASS_REGULAR_EXPRESSION 
+ FINAL_PASS_REGULAR_EXPRESSION
 )
 
 TRIBITS_ADD_ADVANCED_TEST(
@@ -143,9 +143,9 @@ TRIBITS_ADD_ADVANCED_TEST(
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.stderr.gold
 		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.stderr
- COMM mpi serial		      
+ COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
- FINAL_PASS_REGULAR_EXPRESSION 
+ FINAL_PASS_REGULAR_EXPRESSION
 )
 endif()
 

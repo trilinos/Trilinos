@@ -415,7 +415,7 @@ struct MV_V_Dot_Invoke_Impl<RV, XMV, YMV, SizeType, 2, 1>
     typedef MV_V_Dot_Functor<RV, XMV, YMV, size_type> op_type;
     constexpr bool reverseOrder = false;
     op_type op (r, X, Y, reverseOrder);
-    Kokkos::parallel_reduce (range_type (0, numRows), op, r);
+    Kokkos::parallel_reduce ("KokkosBlas::Dot::2_1", range_type (0, numRows), op, r);
   }
 };
 
@@ -439,7 +439,7 @@ struct MV_V_Dot_Invoke_Impl<RV, XMV, YMV, SizeType, 1, 2>
     typedef MV_V_Dot_Functor<RV, YMV, XMV, size_type> op_type;
     constexpr bool reverseOrder = true;
     op_type op (r, Y, X, reverseOrder);
-    Kokkos::parallel_reduce (range_type (0, numRows), op, r);
+    Kokkos::parallel_reduce ("KokkosBlas::Dot::1_2", range_type (0, numRows), op, r);
   }
 };
 
@@ -488,7 +488,7 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
     auto r_cur = Kokkos::subview (r, std::make_pair (j, j+8));
 
     MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8, SizeType> op (r_cur, X_cur, Y_cur);
-    Kokkos::parallel_reduce (policy, op, r_cur);
+    Kokkos::parallel_reduce ("KokkosBlas::Dot::2_2::8", policy, op, r_cur);
   }
   for ( ; j + 4 <= numCols; j += 4) {
     auto X_cur = Kokkos::subview (X, Kokkos::ALL (), std::make_pair (j, j+4));
@@ -496,7 +496,7 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
     auto r_cur = Kokkos::subview (r, std::make_pair (j, j+4));
 
     MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4, SizeType> op (r_cur, X_cur, Y_cur);
-    Kokkos::parallel_reduce (policy, op, r_cur);
+    Kokkos::parallel_reduce ("KokkosBlas::Dot::2_2::4", policy, op, r_cur);
   }
   for ( ; j < numCols; ++j) {
     // RV needs to turn 0-D, and XMV and YMV need to turn 1-D.
@@ -508,90 +508,90 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
     typedef decltype (y_cur) YMV1D;
 
     DotFunctor<RV0D, XMV1D, YMV1D, SizeType> op(x_cur, y_cur);
-    Kokkos::parallel_reduce (policy, op, r_cur);
+    Kokkos::parallel_reduce ("KokkosBlas::Dot::2_2::1", policy, op, r_cur);
   }
 
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_DOT > 2
 
   if (numCols > 16) {
     MV_Dot_Right_FunctorVector<RV, XMV, YMV, SizeType> op (r, X, Y);
-    Kokkos::parallel_reduce (policy, op, r);
+    Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::16Above", policy, op, r);
   }
   else {
     switch (numCols) {
     case 16: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 16, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::16", policy, op, r);
       break;
     }
     case 15: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 15, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::15", policy, op, r);
       break;
     }
     case 14: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 14, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::14", policy, op, r);
       break;
     }
     case 13: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 13, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::13", policy, op, r);
       break;
     }
     case 12: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 12, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::12", policy, op, r);
       break;
     }
     case 11: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 11, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::11", policy, op, r);
       break;
     }
     case 10: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 10, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::10", policy, op, r);
       break;
     }
     case 9: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 9, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::9", policy, op, r);
       break;
     }
     case 8: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 8, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::8", policy, op, r);
       break;
     }
     case 7: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 7, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::7", policy, op, r);
       break;
     }
     case 6: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 6, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::6", policy, op, r);
       break;
     }
     case 5: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 5, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::5", policy, op, r);
       break;
     }
     case 4: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 4, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::4", policy, op, r);
       break;
     }
     case 3: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 3, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::3", policy, op, r);
       break;
     }
     case 2: {
       MV_Dot_Right_FunctorUnroll<RV, XMV, YMV, 2, SizeType> op (r, X, Y);
-      Kokkos::parallel_reduce (policy, op, r);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::2", policy, op, r);
       break;
     }
     case 1: {
@@ -605,7 +605,7 @@ MV_Dot_Invoke (const RV& r, const XMV& X, const YMV& Y)
 
       typedef V_Dot_Functor<RV0D, XMV1D, YMV1D, SizeType> op_type;
       op_type op (r_0, X_0, Y_0);
-      Kokkos::parallel_reduce (policy, op, r_0);
+      Kokkos::parallel_reduce ("KokkosBlas::Dot::NumCols::1", policy, op, r_0);
       break;
     }
     } // switch

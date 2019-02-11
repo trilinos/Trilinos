@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,43 +29,43 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C
-C VDMOVA VDMONI VDGNAM VBIQDV VBIQPK VDLINA VDTEXT VDPNTA VDPOLY VDIQCP VDSTOS 
-C WPSTMV WPSTMO WPSTGN WPSTIV WPSTQP WPSTLN WPSTTX WPSTPT WPSTPY WPSTCP WPSTOS 
+C VDMOVA VDMONI VDGNAM VBIQDV VBIQPK VDLINA VDTEXT VDPNTA VDPOLY VDIQCP VDSTOS
+C WPSTMV WPSTMO WPSTGN WPSTIV WPSTQP WPSTLN WPSTTX WPSTPT WPSTPY WPSTCP WPSTOS
 C
 C
-C VDIQOS VDSTFC VDSTBC VDSTIN VDSTLS VDSTLW VDSTCS VDAABU VDALOC VDABGL VDAKGL 
-C WPSTIO WPSTFC WPSTBC WPSTIN WPSTLS WPSTLW WPSTCS WPSTBU WPSTLO WPSTBL WPSTKL 
+C VDIQOS VDSTFC VDSTBC VDSTIN VDSTLS VDSTLW VDSTCS VDAABU VDALOC VDABGL VDAKGL
+C WPSTIO WPSTFC WPSTBC WPSTIN WPSTLS WPSTLW WPSTCS WPSTBU WPSTLO WPSTBL WPSTKL
 C
 C
-C VDSTLA VDINIT VDFRAM VDTERM VDIQDC VDNWPG VDBELL VDWAIT VDBUFL VDSTCO VDIQCO 
-C WPSTLA WPSTNT WPSTFR WPSTTR WPSTDC WPSTPG WPSTBE WPSTWT WPSTFL WPSTCO WPSTIC 
+C VDSTLA VDINIT VDFRAM VDTERM VDIQDC VDNWPG VDBELL VDWAIT VDBUFL VDSTCO VDIQCO
+C WPSTLA WPSTNT WPSTFR WPSTTR WPSTDC WPSTPG WPSTBE WPSTWT WPSTFL WPSTCO WPSTIC
 C
 C
-C VDESCP VDIQES VDIQND VIMOVA VILINA VIPNTA VITEXT VIINIT VITERM VINWPG CDRCOM 
-C WPSTES WPSTIE WPSTID WPSTIM WPSTIL WPSTIP WPSTIX WPSTII WPSTIT WPSTIG CDRCOM 
+C VDESCP VDIQES VDIQND VIMOVA VILINA VIPNTA VITEXT VIINIT VITERM VINWPG CDRCOM
+C WPSTES WPSTIE WPSTID WPSTIM WPSTIL WPSTIP WPSTIX WPSTII WPSTIT WPSTIG CDRCOM
 C
 C
-C VCJOB  VCONOD VBERRH VDLOGE CDRWFS CDRRFS CDROFS CDROF3 CDRCFS CDROFF CDROAB 
-C  VCJOB WPSTON WPSTER WPSTLE WPSTWF WPSTRF WPSTOF WPSTO3 WPSTCF WPSTFF WPSTAB 
+C VCJOB  VCONOD VBERRH VDLOGE CDRWFS CDRRFS CDROFS CDROF3 CDRCFS CDROFF CDROAB
+C  VCJOB WPSTON WPSTER WPSTLE WPSTWF WPSTRF WPSTOF WPSTO3 WPSTCF WPSTFF WPSTAB
 C
 C
-C BGPBUF QMSBUF QMSBU1 DDCBUF H75BUF BTKBUF NMTBUF ONHBUF VBIMBF VBPKG  VBDEV  
-C WPSTBF WPSTQM WPSTBF WPSTBF WPSTBF WPSTBF WPSTBF WPSTOH WPSTIB WPSTPK WPSTDV 
+C BGPBUF QMSBUF QMSBU1 DDCBUF H75BUF BTKBUF NMTBUF ONHBUF VBIMBF VBPKG  VBDEV
+C WPSTBF WPSTQM WPSTBF WPSTBF WPSTBF WPSTBF WPSTBF WPSTOH WPSTIB WPSTPK WPSTDV
 C
 C
-C VDIQRS VDSTMP VDSTRS VDSTRV VDBRGB VDFRGB VDPIXL VDPIXI VDRPIX VDRPXI VDRSCL 
-C WPSTQR WPSTMP WPSTRS WPSTRV WPSTBG WPSTFG WPSTPX WPSTPI WPSTRP WPSTRI WPSTRL 
+C VDIQRS VDSTMP VDSTRS VDSTRV VDBRGB VDFRGB VDPIXL VDPIXI VDRPIX VDRPXI VDRSCL
+C WPSTQR WPSTMP WPSTRS WPSTRV WPSTBG WPSTFG WPSTPX WPSTPI WPSTRP WPSTRI WPSTRL
 C
 C
-C VDIQCI VBSTMP VCNDCM VCATTR VIFRAM VCCRPS VCESCP DEVCAP VCSCAL VCDDIM VIPOLY 
-C WPSTCI WPST01 WPST02 WPST03 WPST04 WPST05 WPST06 WPST07 WPST08 WPST09 WPST10 
+C VDIQCI VBSTMP VCNDCM VCATTR VIFRAM VCCRPS VCESCP DEVCAP VCSCAL VCDDIM VIPOLY
+C WPSTCI WPST01 WPST02 WPST03 WPST04 WPST05 WPST06 WPST07 WPST08 WPST09 WPST10
 C
 C
-C VCVECT VBLINA VBVECT VBSTLS PSTBUF                                           
-C WPST11 WPST12 WPST13 WPST14 WPST15                                           
+C VCVECT VBLINA VBVECT VBSTLS PSTBUF
+C WPST11 WPST12 WPST13 WPST14 WPST15
 C
       SUBROUTINE WPST01( IMAP )
       GOTO (1,2,3,4,5),IMAP
@@ -163,7 +163,7 @@ C                   Device-independent.
 C
 C ENTRY CONDITIONS -NAME = character string; < 80 characters
 C
-C CALLS            
+C CALLS
 C
 C EXIT CONDITIONS  -output graphics file is assigned the name NAME
 C
@@ -178,7 +178,7 @@ C
       CHARACTER*(*) NAME
       INTEGER LENGTH,ISTART,IEND,I
       LENGTH = MIN(LEN(NAME),132)
-C Strip off any leading blanks 
+C Strip off any leading blanks
       ISTART = 0
       DO 10 I=1,LENGTH
        IF(NAME(I:I) .NE. ' ')THEN
@@ -251,14 +251,14 @@ C                            ---------
 C                           | 7  8  9 |
 C                           | 4  5  6 |
 C                           | 1  2  3 |
-C                            ---------  
+C                            ---------
 C                   For example, JUSTIF = 7 indicates NDC space will be
 C                   upper left justified on the device.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       REAL ASPECT
-      INTEGER JUSTIF  
+      INTEGER JUSTIF
 C
       INTEGER*4 MACHIN(3),MACLEN
       INTEGER*4 KIDSIZ,KJOBID(4),KUSRSZ,KUSRID(4),KSZROU
@@ -439,21 +439,21 @@ C ENTRY CONDITIONS -ISTATE = 0 - initialization
 C                            1 - new page
 C                            2 - terminate
 C
-C CALLS            -CDRMON 
+C CALLS            -CDRMON
 C
 C EXIT CONDITIONS  -
 C
 c NARRATIVE        -For ISTATE=0, job information is initialized, and
 C                   timers are initialized called by VIINIT.
-C                   ISTATE=1 will increment a common block page 
+C                   ISTATE=1 will increment a common block page
 C                   counter called by VINWPG.
 C                   ISTATE=2 is called by VITERM and will cause
-C                   the collected usage monitoring information to 
+C                   the collected usage monitoring information to
 C                   be written to a file.
 C                   Contains entry points VBPKG which will has
 C                   an 8 character parameter which will set a common
 C                   block variable specifying the package being used.
-C                   Entry point VBDEV has an 8 character parameter 
+C                   Entry point VBDEV has an 8 character parameter
 C                   which will set a common block variable specifying
 C                   the device being used.
 C
@@ -469,9 +469,9 @@ C
 c
       IF(ISTATE.EQ.0) THEN
           CALL CDRELA(0)
-      ELSEIF (ISTATE.EQ.1) THEN 
+      ELSEIF (ISTATE.EQ.1) THEN
           MPAGES=MPAGES+1
-      ELSE     
+      ELSE
           CALL CDRELA(1)
           CALL CDRMON(MDEV,MPKG,MPAGES)
       ENDIF
@@ -488,7 +488,7 @@ c
       C1 = MPKG
       RETURN
       ENTRY WPSTIV(C2)
-      C2 = MDEV 
+      C2 = MDEV
       RETURN
       END
       SUBROUTINE WPSTMV(X,Y)
@@ -596,29 +596,29 @@ C
 C NARRATIVE        -The polygon defined by XARRAY,YARRAY will be drawn
 C                   and filled (constrained by any limitations of the
 C                   physical device -- see below).  No checking will be
-C                   done -- all points will be passed to the device.  
-C                   Current foreground color is used and the polygon 
-C                   boundary is drawn using the solid line style.  
-C                   VDI will close the polygon (i.e. the last point 
-C                   will be connected to the first). 
+C                   done -- all points will be passed to the device.
+C                   Current foreground color is used and the polygon
+C                   boundary is drawn using the solid line style.
+C                   VDI will close the polygon (i.e. the last point
+C                   will be connected to the first).
 C
 C                   The level of support for this primitive is device-
 C                   dependent.  The level of support is categorized
 C                   as follows:
 C
-C                     Level 0 -- no polygon fill.  Only the polygon 
+C                     Level 0 -- no polygon fill.  Only the polygon
 C                        boundary is drawn.
 C                     Level 1 -- the device fills convex polygons.
 C                     Level 2 -- the device fills simple polygons (may
 C                        be concave but not self-crossing)
 C                     Level 3 -- full support for complex polygons (may
-C                        be self-crossing). In general, the interior of 
-C                        a complex polygon is defined by the set of points 
-C                        such that, for each point, when an imaginary line 
-C                        is drawn to that point from a point far outside 
-C                        the polygon, that line intersects the polygon 
+C                        be self-crossing). In general, the interior of
+C                        a complex polygon is defined by the set of points
+C                        such that, for each point, when an imaginary line
+C                        is drawn to that point from a point far outside
+C                        the polygon, that line intersects the polygon
 C                        boundary an odd number of times.
-C                   
+C
 C                   Note that the level of support for a particular device
 C                   can be inquired using the function VDIQDC.
 C
@@ -728,7 +728,7 @@ C                   current position and update current position to
 C                   the point after the last character box where the
 C                   next character would begin.  Current position
 C                   indicates the lower left corner of the first
-C                   character box.  Only printable characters (32-126 
+C                   character box.  Only printable characters (32-126
 C                   decimal) and backspace and linefeed are allowed.
 C                   All values in this range must produce "reasonable"
 C                   output; mapping lower; case to upper case letters is
@@ -785,11 +785,11 @@ C
 C ENTRY CONDITIONS - ITYPE = 0   for header frame
 C                          = 1   for trailer frame
 C
-C CALLS            - 
+C CALLS            -
 C
 C EXIT CONDITIONS  -
 C
-C NARRATIVE        -NULL ROUTINE 
+C NARRATIVE        -NULL ROUTINE
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -1406,7 +1406,7 @@ C
 C NARRATIVE        -Set the foreground color index, i.e., the color
 C                   table index used for drawing future primitives.
 C                   Color is an integer from 0-255 which is used as an
-C                   index into the color table (see VDSTCO). 
+C                   index into the color table (see VDSTCO).
 C                   All devices must support at least a single device
 C                   dependent value in the range 0-7.
 C                   If an unsupported value is specified, set to
@@ -1527,7 +1527,7 @@ C           as in (1) above.  Asynchronous means the user can provide
 C           input at any time; this input; is then saved by the system
 C           in an event queue until the program calls for it.
 C    14. Input Timing
-C        0. no timeout supported 
+C        0. no timeout supported
 C        1. unreliable timing
 C        2. timeout with reliable timing
 C    15. X Dimension of View Surface in Device Coordinates
@@ -1593,12 +1593,12 @@ C       23.  R25 - RASTER TECHNOLOGIES MODEL ONE/25
 C       24.  QLF - QCR large format (8 x 10)
 C       24.1 Q35 - QCR 35mm format
 C       25.  T45 - Tektronix 4510 Rasterizer
-C    24. Polygon support level 
+C    24. Polygon support level
 C        0.  no support
 C        1.  fills convex polygons
 C        2.  fills simple polygons (may be concave but not
 C            self-crossing)
-C        3.  full complex polygon fill support   
+C        3.  full complex polygon fill support
 C    25. Maximum number of points in a polygon (99999. if infinite)
 C    26. Setable color table
 C        0.  no
@@ -1606,7 +1606,7 @@ C        1.  yes
 C    27. Device color palette size (1-N) - the number of different
 C            colors a device can produce (may be more than the device
 C            can display simultaneously)
-C    28. Direct color space size (0-N) - the number of colors 
+C    28. Direct color space size (0-N) - the number of colors
 C            available via direct RGB color specification
 C            (displayable simultaneously)
 C    29. Vector verses Raster VDI
@@ -1727,14 +1727,14 @@ C                            ---------
 C                           | 7  8  9 |
 C                           | 4  5  6 |
 C                           | 1  2  3 |
-C                            ---------  
+C                            ---------
 C                   For example, JUSTIF = 7 indicates NDC space will be
 C                   upper left justified on the device.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       REAL ASPECT
-      INTEGER JUSTIF  
+      INTEGER JUSTIF
 C
       REAL XNDCMX,YNDCMX
       COMMON /WPST02/ XNDCMX,YNDCMX
@@ -1814,10 +1814,10 @@ C
 C SCALE NDC UNITS TO DEVICE UNITS.
 C FOR QMS, THE PHYSICAL PLOT SURFACE IS XINCH X YINCH (10.x7.5).
 C    DEVICE COORDINATES ARE KEPT IN 1/723 INCH TO GAIN SIMPLICITY
-C    IN ASSEMBLING CHARACTER STRINGS WITH FLOATING NUMBERS 
+C    IN ASSEMBLING CHARACTER STRINGS WITH FLOATING NUMBERS
 C    ACCURATE TO TENTHS OF DEVICE UNITS
 C THE DEVICE ASPECT IS XINCH/YINCH
-C BUT WE MUST MAP THE ASPECT SPECIFIED IN DC INTO THIS 
+C BUT WE MUST MAP THE ASPECT SPECIFIED IN DC INTO THIS
 C ADDRESSABILITY,USING AS MUCH OF THE SPACE AS POSSIBLE.
       XINCH=10.0
       YINCH=7.5
@@ -1881,7 +1881,7 @@ C FIGURE MAXIMUM NDC VALUES XNDCMX AND YNDCMX.
          YNDCMX=1.
       END IF
 C
-C SET SCALE FACTORS FOR NDC-TO-DEVICE MAPPING.  
+C SET SCALE FACTORS FOR NDC-TO-DEVICE MAPPING.
       XSCALE=FLOAT(XDEVIC)/XNDCMX
       YSCALE=FLOAT(YDEVIC)/YNDCMX
       IF (PGFORM .GT. 0) THEN
@@ -1915,7 +1915,7 @@ C INITIALIZE THE QMS PS JET
       CALL WPST15(14,'1 setlinejoin ')
 C                                       SET PAGE FORMAT (LANDSCAPE/PORTRAIT)
        IF (PGFORM.EQ.0) THEN
-          CALL WPST15(4,'/o {')          
+          CALL WPST15(4,'/o {')
           CALL WPST15(10,'90 rotate ')
           CALL CDRI2C(0,4,XCOORD)
           CALL CDRI2C(INT(YDEVIC+YDEVIC*3./32.),4,YCOORD)
@@ -1966,7 +1966,7 @@ c  put out the last page and restore postscript environment so
 c                            nothing is left on the stack
       CALL WPSTIG
       CALL WPST15(2,'r ')
-C FLUSH BUFFER 
+C FLUSH BUFFER
       CALL WPST15(0,' ')
 C CLOSE OUTPUT FILE
       CALL WPSTCF(KOUTFL,1)
@@ -1998,7 +1998,7 @@ C move
       CALL WPST13(0,X,Y)
 c
       RETURN
-      END         
+      END
       SUBROUTINE WPSTIP(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -2046,29 +2046,29 @@ C
 C NARRATIVE        -The polygon defined by XARRAY,YARRAY will be drawn
 C                   and filled (constrained by any limitations of the
 C                   physical device -- see below).  No checking will be
-C                   done -- all points will be passed to the device.  
-C                   Current foreground color is used and the polygon 
-C                   boundary is drawn using the solid line style.  
-C                   VDI will close the polygon (i.e. the last point 
-C                   will be connected to the first). 
+C                   done -- all points will be passed to the device.
+C                   Current foreground color is used and the polygon
+C                   boundary is drawn using the solid line style.
+C                   VDI will close the polygon (i.e. the last point
+C                   will be connected to the first).
 C
 C                   The level of support for this primitive is device-
 C                   dependent.  The level of support is categorized
 C                   as follows:
 C
-C                     Level 0 -- no polygon fill.  Only the polygon 
+C                     Level 0 -- no polygon fill.  Only the polygon
 C                        boundary is drawn.
 C                     Level 1 -- the device fills convex polygons.
 C                     Level 2 -- the device fills simple polygons (may
 C                        be concave but not self-crossing)
 C                     Level 3 -- full support for complex polygons (may
-C                        be self-crossing). In general, the interior of 
-C                        a complex polygon is defined by the set of points 
-C                        such that, for each point, when an imaginary line 
-C                        is drawn to that point from a point far outside 
-C                        the polygon, that line intersects the polygon 
+C                        be self-crossing). In general, the interior of
+C                        a complex polygon is defined by the set of points
+C                        such that, for each point, when an imaginary line
+C                        is drawn to that point from a point far outside
+C                        the polygon, that line intersects the polygon
 C                        boundary an odd number of times.
-C                   
+C
 C                   Note that the level of support for a particular device
 C                   can be inquired using the function VDIQDC.
 C
@@ -2111,7 +2111,7 @@ C
 C
 C DRAW POLYGON VECTORS
 C
-C MOVE TO FIRST POINT    
+C MOVE TO FIRST POINT
       CALL WPSTMV(XARRAY(1),YARRAY(1))
 C
 C CALL VDLINA TO DRAW POINTS FROM 1ST POINT TO NTH POINT
@@ -2191,9 +2191,9 @@ C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C
 C ENTRY CONDITIONS -ESCPCD = integer escape function code.
 C                   N = integer number of arguments in ARG.  RANGE >=0.
-C                   ARGS = real array of arguments for the escape 
+C                   ARGS = real array of arguments for the escape
 C                   function specified.
-C 
+C
 C CALLS            -
 C
 C EXIT CONDITIONS  -
@@ -2236,14 +2236,14 @@ C 2100 - PAGE FORMAT (0=LANDSCAPE,1=PORTRAIT)
          ELSE
             PGFORM=1
          ENDIF
-      ENDIF      
+      ENDIF
 C
  999  RETURN
       END
       SUBROUTINE WPSTIL (X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-C VILINA           
+C VILINA
 C
 C D.L. CAMPBELL    -1-DEC-1986
 C J.P. LONG        -9-NOV-1987
@@ -2257,8 +2257,8 @@ C
 C EXIT CONDITIONS  -CURRENT POSITION IS SET
 C
 C
-C NARRATIVE   
-C                   LINE-DRAW A LINE FROM CP TO ABSOLUTE NDC POSITION X,Y 
+C NARRATIVE
+C                   LINE-DRAW A LINE FROM CP TO ABSOLUTE NDC POSITION X,Y
 C                        AND UPDATE CP . ATTRIBUTES COLOR,INTEN,LINSTY AND
 C                        LINWTH APPLY.
 C
@@ -2269,12 +2269,12 @@ C***************************************************************************
 C
       REAL X,Y
 C
-C draw 
+C draw
       ENTRY WPST12(X,Y)
       CALL WPST13(1,X,Y)
 c
       RETURN
-      END         
+      END
 c
 c
       SUBROUTINE WPST13(IPEN,X,Y)
@@ -2283,7 +2283,7 @@ c vbvect - do move or draw to x,y (depending on ipen)
 c
 c     ipen = 0 for move, 1 for draw
 c     x,y = NDC coordinates to be moved/drawn to
-c 
+c
 c******************************************************
 c
       REAL X,Y,XOFF,YOFF
@@ -2565,13 +2565,13 @@ C GENERATE THE LINESTYLE COMMANDS
 c
 c calculate the linewidth -- it's needed below in every case
 c
-c        actual xscale is xscale*.1; linewidth=1 => .01 in NDC 
+c        actual xscale is xscale*.1; linewidth=1 => .01 in NDC
          LW=VECTOR(5)
          LW=XSCALE*VECTOR(5)*.001
 c        a linewidth of zero isn't good with postscript
          IF(LW.LT.1.) LW=1.
 c
-c     from here on, set; up patterns that depend on the linewidth and 
+c     from here on, set; up patterns that depend on the linewidth and
 c          the extra length added to the line segment
 c          by the hemispherical end cap
 c
@@ -2625,7 +2625,7 @@ c
 c
 c     redefine the postscript current position
 c
-c     the code below is equivalent to 
+c     the code below is equivalent to
 c      call vbvect(0,xcp,ycp)
 c     but can't do it because vbvect calls vdstlw which calls this routine
 c

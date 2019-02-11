@@ -113,7 +113,7 @@ namespace { // (anonymous)
     typedef Kokkos::RangePolicy<execution_space, typename CrsMatrixType::ordinal_type> policy_type;
 
     ::Test::ModifyEvenNumberedRows<CrsMatrixType> functor (A, replace, sorted, atomic);
-    Kokkos::parallel_for (policy_type (0, A.numRows ()), functor);
+    Kokkos::parallel_for ( "KokkosSparse::Test::ReplaceSumInto", policy_type (0, A.numRows ()), functor);
   }
 
   template<class CrsMatrixType>

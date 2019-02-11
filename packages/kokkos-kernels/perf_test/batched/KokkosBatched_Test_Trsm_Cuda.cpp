@@ -477,7 +477,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
             
-              Kokkos::parallel_for(policy, functor_type(a, b));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::RangeTag", policy, functor_type(a, b));
 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -540,7 +540,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
             
-              Kokkos::parallel_for(policy, functor_type(a, b));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::TeamTagV1", policy, functor_type(a, b));
 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -612,7 +612,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
             
-              Kokkos::parallel_for(policy, functor_type(a, b));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::TeamTagV2", policy, functor_type(a, b));
 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -689,7 +689,7 @@ namespace KokkosBatched {
                 DeviceSpaceType::fence();
                 timer.reset();
             
-                Kokkos::parallel_for(policy, functor_type(a, b));
+                Kokkos::parallel_for("KokkosBatched::PerfTest::TeamTagV3", policy, functor_type(a, b));
 
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();

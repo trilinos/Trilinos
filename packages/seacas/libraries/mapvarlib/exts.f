@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C========================================================================
       SUBROUTINE EXTS(IGLND,INVCN,MAXLN,NXGLND,INVLEN,XA,YA,ZA,
@@ -38,9 +38,9 @@ C
 C************************************************************************
 C
 C Subroutine EXTS sets up the matrix and vectors for a least squares
-C linear interpolation/extrapolation of element variable data to the 
-C nodes for a 4-node quad element. In the special case of data from 
-C only 3 elements, the result is not least squares fit but a 
+C linear interpolation/extrapolation of element variable data to the
+C nodes for a 4-node quad element. In the special case of data from
+C only 3 elements, the result is not least squares fit but a
 C triangularization.
 C
 C Calls subroutines FRGE & BS
@@ -55,7 +55,7 @@ C  MAXLN  INT   The maximum number of elements connected to any node
 C  NXGLND    INT   The local node used to get elements from INVCN
 C  INVLEN INT   The number of elements connected to NXGLND
 C  XA,etc REAL  Vectors containing nodal coordinates
-C  CNTRA  REAL  Array containing the coordinates of the element 
+C  CNTRA  REAL  Array containing the coordinates of the element
 C               centroids (1:3)
 C  SOLEA  REAL  The element variables
 C  SOLENA REAL  Element variables at nodes
@@ -141,14 +141,14 @@ C
       END IF
 C
 C use three closest element centroids to define a plane
-C establish coordinate system on this plane centered on 
+C establish coordinate system on this plane centered on
 C interpolation point
 C
-      A11 = CNTRA(INVCN(IFRST(2),NXGLND),1) - 
+      A11 = CNTRA(INVCN(IFRST(2),NXGLND),1) -
      &      CNTRA(INVCN(IFRST(1),NXGLND),1)
-      A12 = CNTRA(INVCN(IFRST(2),NXGLND),2) - 
+      A12 = CNTRA(INVCN(IFRST(2),NXGLND),2) -
      &      CNTRA(INVCN(IFRST(1),NXGLND),2)
-      A13 = CNTRA(INVCN(IFRST(2),NXGLND),3) - 
+      A13 = CNTRA(INVCN(IFRST(2),NXGLND),3) -
      &      CNTRA(INVCN(IFRST(1),NXGLND),3)
       RLN = SQRT(A11*A11 + A12*A12 + A13*A13)
       A11 = A11/RLN
@@ -157,27 +157,27 @@ C
 C
       A31 = (CNTRA(INVCN(IFRST(2),NXGLND),2) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),2))
-     &    * (CNTRA(INVCN(IFRST(3),NXGLND),3) - 
+     &    * (CNTRA(INVCN(IFRST(3),NXGLND),3) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),3))
-     &    - (CNTRA(INVCN(IFRST(2),NXGLND),3) - 
+     &    - (CNTRA(INVCN(IFRST(2),NXGLND),3) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),3))
-     &    * (CNTRA(INVCN(IFRST(3),NXGLND),2) - 
+     &    * (CNTRA(INVCN(IFRST(3),NXGLND),2) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),2))
-      A32 = (CNTRA(INVCN(IFRST(2),NXGLND),3) - 
+      A32 = (CNTRA(INVCN(IFRST(2),NXGLND),3) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),3))
-     &    * (CNTRA(INVCN(IFRST(3),NXGLND),1) - 
+     &    * (CNTRA(INVCN(IFRST(3),NXGLND),1) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),1))
-     &    - (CNTRA(INVCN(IFRST(2),NXGLND),1) - 
+     &    - (CNTRA(INVCN(IFRST(2),NXGLND),1) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),1))
-     &    * (CNTRA(INVCN(IFRST(3),NXGLND),3) - 
+     &    * (CNTRA(INVCN(IFRST(3),NXGLND),3) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),3))
-      A33 = (CNTRA(INVCN(IFRST(2),NXGLND),1) - 
+      A33 = (CNTRA(INVCN(IFRST(2),NXGLND),1) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),1))
-     &    * (CNTRA(INVCN(IFRST(3),NXGLND),2) - 
+     &    * (CNTRA(INVCN(IFRST(3),NXGLND),2) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),2))
-     &    - (CNTRA(INVCN(IFRST(2),NXGLND),2) - 
+     &    - (CNTRA(INVCN(IFRST(2),NXGLND),2) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),2))
-     &    * (CNTRA(INVCN(IFRST(3),NXGLND),1) - 
+     &    * (CNTRA(INVCN(IFRST(3),NXGLND),1) -
      &       CNTRA(INVCN(IFRST(1),NXGLND),1))
       RLN = SQRT(A31*A31 + A32*A32 + A33*A33)
       A31 = A31/RLN
@@ -185,7 +185,7 @@ C
       A33 = A33/RLN
 C
       A21 = A32*A13 - A33*A12
-      A22 = A11*A33 - A31*A13 
+      A22 = A11*A33 - A31*A13
       A23 = A31*A12 - A11*A32
 C
       DO 70 I = 1, INVLEN

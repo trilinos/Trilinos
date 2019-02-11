@@ -131,7 +131,7 @@ struct Nrm1<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "RMV is not rank 0.");
     static_assert (XMV::rank == 1, "KokkosBlas::Impl::Nrm1<1-D>: "
                    "XMV is not rank 1.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::nrm1[ETI]":"KokkosBlas::nrm1[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::nrm1<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
@@ -148,6 +148,7 @@ struct Nrm1<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       typedef std::int64_t index_type;
       V_Nrm1_Invoke<RMV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -174,7 +175,7 @@ struct Nrm1<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       printf("KokkosBlas1::nrm1<> non-ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
     }
     #endif
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::nrm1[ETI]":"KokkosBlas::nrm1[noETI]");
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
     if (numRows < static_cast<size_type> (INT_MAX) &&
@@ -185,6 +186,7 @@ struct Nrm1<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       typedef std::int64_t index_type;
       MV_Nrm1_Invoke<RV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif

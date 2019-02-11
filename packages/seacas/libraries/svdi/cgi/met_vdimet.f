@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,47 +29,47 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C
-C VDMOVA VDMONI VDGNAM VBIQDV VBIQPK VDLINA VDTEXT VDPNTA VDPOLY VDIQCP VDSTOS 
-C WMETMV WMETMO WMETGN WMETIV WMETQP WMETLN WMETTX WMETPT WMETPY WMETCP WMETOS 
+C VDMOVA VDMONI VDGNAM VBIQDV VBIQPK VDLINA VDTEXT VDPNTA VDPOLY VDIQCP VDSTOS
+C WMETMV WMETMO WMETGN WMETIV WMETQP WMETLN WMETTX WMETPT WMETPY WMETCP WMETOS
 C
 C
-C VDIQOS VDSTFC VDSTBC VDSTIN VDSTLS VDSTLW VDSTCS VDAABU VDALOC VDABGL VDAKGL 
-C WMETIO WMETFC WMETBC WMETIN WMETLS WMETLW WMETCS WMETBU WMETLO WMETBL WMETKL 
+C VDIQOS VDSTFC VDSTBC VDSTIN VDSTLS VDSTLW VDSTCS VDAABU VDALOC VDABGL VDAKGL
+C WMETIO WMETFC WMETBC WMETIN WMETLS WMETLW WMETCS WMETBU WMETLO WMETBL WMETKL
 C
 C
-C VDSTLA VDINIT VDFRAM VDTERM VDIQDC VDNWPG VDBELL VDWAIT VDBUFL VDSTCO VDIQCO 
-C WMETLA WMETNT WMETFR WMETTR WMETDC WMETPG WMETBE WMETWT WMETFL WMETCO WMETIC 
+C VDSTLA VDINIT VDFRAM VDTERM VDIQDC VDNWPG VDBELL VDWAIT VDBUFL VDSTCO VDIQCO
+C WMETLA WMETNT WMETFR WMETTR WMETDC WMETPG WMETBE WMETWT WMETFL WMETCO WMETIC
 C
 C
-C VDESCP VDIQES VDIQND VIMOVA VILINA VIPNTA VITEXT VIINIT VITERM VINWPG CDRCOM 
-C WMETES WMETIE WMETID WMETIM WMETIL WMETIP WMETIX WMETII WMETIT WMETIG CDRCOM 
+C VDESCP VDIQES VDIQND VIMOVA VILINA VIPNTA VITEXT VIINIT VITERM VINWPG CDRCOM
+C WMETES WMETIE WMETID WMETIM WMETIL WMETIP WMETIX WMETII WMETIT WMETIG CDRCOM
 C
 C
-C VCJOB  VCONOD VBERRH VDLOGE CDRWFS CDRRFS CDROFS CDROF3 CDRCFS CDROFF CDROAB 
-C  VCJOB VCONOD WMETER WMETLE WMETWF WMETRF WMETOF WMETO3 WMETCF WMETFF WMETAB 
+C VCJOB  VCONOD VBERRH VDLOGE CDRWFS CDRRFS CDROFS CDROF3 CDRCFS CDROFF CDROAB
+C  VCJOB VCONOD WMETER WMETLE WMETWF WMETRF WMETOF WMETO3 WMETCF WMETFF WMETAB
 C
 C
-C BGPBUF QMSBUF QMSBU1 DDCBUF H75BUF BTKBUF NMTBUF VBIMBF VBPKG  VBDEV  VDIQRS 
-C WMETBF WMETQM WMETBF WMETBF WMETBF WMETBF WMETBF WMETIB WMETPK WMETDV WMETQR 
+C BGPBUF QMSBUF QMSBU1 DDCBUF H75BUF BTKBUF NMTBUF VBIMBF VBPKG  VBDEV  VDIQRS
+C WMETBF WMETQM WMETBF WMETBF WMETBF WMETBF WMETBF WMETIB WMETPK WMETDV WMETQR
 C
 C
-C VDSTMP VDSTRS VDSTRV VDBRGB VDFRGB VDPIXL VDPIXI VDRPIX VDRPXI VDRSCL VDIQCI 
-C WMETMP WMETRS WMETRV WMETBG WMETFG WMETPX WMETPI WMETRP WMETRI WMETRL WMETCI 
+C VDSTMP VDSTRS VDSTRV VDBRGB VDFRGB VDPIXL VDPIXI VDRPIX VDRPXI VDRSCL VDIQCI
+C WMETMP WMETRS WMETRV WMETBG WMETFG WMETPX WMETPI WMETRP WMETRI WMETRL WMETCI
 C
 C
-C VBSTMP VIFRAM VCNDCM VCATTR VBINI1 VB2HLS VB2RGB VCCOLT VCCRPS VCSCAL VCDDIM 
-C WMET01 WMET02 WMET03 WMET04 WMET05 WMET06 WMET07 WMET08 WMET09 WMET10 WMET11 
+C VBSTMP VIFRAM VCNDCM VCATTR VBINI1 VB2HLS VB2RGB VCCOLT VCCRPS VCSCAL VCDDIM
+C WMET01 WMET02 WMET03 WMET04 WMET05 WMET06 WMET07 WMET08 WMET09 WMET10 WMET11
 C
 C
-C VIPOLY VBOUT                                                                 
-C WMET12 WMET13                                                                
+C VIPOLY VBOUT
+C WMET12 WMET13
 C
       SUBROUTINE WMET01( IMAP )
       integer*4 imap
-      
+
       GOTO (1,2,3,4,5),IMAP
 C
       CALL WMETMP('UNKNOWN')
@@ -102,7 +102,7 @@ c*************************************************************************
       REAL*4 RA1(1),RA2(1),RA3(1)
       INTEGER*4 IA1(1),IA2(1)
       real*4 r1, r2, r3, r4
-      
+
       ENTRY WMETRV(R1,R2,R3,R4)
       ENTRY WMETMP(C1)
       ENTRY WMETPX(I1,I2,RA1,RA2,RA3,I3)
@@ -155,11 +155,11 @@ C
 C ENTRY CONDITIONS - ITYPE = 0   for header frame
 C                          = 1   for trailer frame
 C
-C CALLS            - 
+C CALLS            -
 C
 C EXIT CONDITIONS  -
 C
-C NARRATIVE        -NULL ROUTINE 
+C NARRATIVE        -NULL ROUTINE
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -178,7 +178,7 @@ C                   Device-independent.
 C
 C ENTRY CONDITIONS -NAME = character string; < 80 characters
 C
-C CALLS            
+C CALLS
 C
 C EXIT CONDITIONS  -output graphics file is assigned the name NAME
 C
@@ -193,7 +193,7 @@ C
       CHARACTER*(*) NAME
       INTEGER*4 LENGTH,ISTART,IEND,I
       LENGTH = MIN(LEN(NAME),132)
-C Strip off any leading blanks 
+C Strip off any leading blanks
       ISTART = 0
       DO 10 I=1,LENGTH
        IF(NAME(I:I) .NE. ' ')THEN
@@ -266,14 +266,14 @@ C                            ---------
 C                           | 7  8  9 |
 C                           | 4  5  6 |
 C                           | 1  2  3 |
-C                            ---------  
+C                            ---------
 C                   For example, JUSTIF = 7 indicates NDC space will be
 C                   upper left justified on the device.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       REAL*4 ASPECT
-      INTEGER*4 JUSTIF  
+      INTEGER*4 JUSTIF
 
       CALL WMETII(ASPECT,JUSTIF)
 C
@@ -447,21 +447,21 @@ C ENTRY CONDITIONS -ISTATE = 0 - initialization
 C                            1 - new page
 C                            2 - terminate
 C
-C CALLS            -CDRMON 
+C CALLS            -CDRMON
 C
 C EXIT CONDITIONS  -
 C
 c NARRATIVE        -For ISTATE=0, job information is initialized, and
 C                   timers are initialized called by VIINIT.
-C                   ISTATE=1 will increment a common block page 
+C                   ISTATE=1 will increment a common block page
 C                   counter called by VINWPG.
 C                   ISTATE=2 is called by VITERM and will cause
-C                   the collected usage monitoring information to 
+C                   the collected usage monitoring information to
 C                   be written to a file.
 C                   Contains entry points VBPKG which will has
 C                   an 8 character parameter which will set a common
 C                   block variable specifying the package being used.
-C                   Entry point VBDEV has an 8 character parameter 
+C                   Entry point VBDEV has an 8 character parameter
 C                   which will set a common block variable specifying
 C                   the device being used.
 C
@@ -479,9 +479,9 @@ C
 c
       IF(ISTATE.EQ.0) THEN
           CALL CDRELA(0)
-      ELSEIF (ISTATE.EQ.1) THEN 
+      ELSEIF (ISTATE.EQ.1) THEN
           MPAGES=MPAGES+1
-      ELSE     
+      ELSE
           CALL CDRELA(1)
           CALL CDRMON(MDEV,MPKG,MPAGES)
       ENDIF
@@ -498,7 +498,7 @@ c
       C1 = MPKG
       RETURN
       ENTRY WMETIV(C2)
-      C2 = MDEV 
+      C2 = MDEV
       RETURN
       END
       SUBROUTINE WMETMV(X,Y)
@@ -606,29 +606,29 @@ C
 C NARRATIVE        -The polygon defined by XARRAY,YARRAY will be drawn
 C                   and filled (constrained by any limitations of the
 C                   physical device -- see below).  No checking will be
-C                   done -- all points will be passed to the device.  
-C                   Current foreground color is used and the polygon 
-C                   boundary is drawn using the solid line style.  
-C                   VDI will close the polygon (i.e. the last point 
-C                   will be connected to the first). 
+C                   done -- all points will be passed to the device.
+C                   Current foreground color is used and the polygon
+C                   boundary is drawn using the solid line style.
+C                   VDI will close the polygon (i.e. the last point
+C                   will be connected to the first).
 C
 C                   The level of support for this primitive is device-
 C                   dependent.  The level of support is categorized
 C                   as follows:
 C
-C                     Level 0 -- no polygon fill.  Only the polygon 
+C                     Level 0 -- no polygon fill.  Only the polygon
 C                        boundary is drawn.
 C                     Level 1 -- the device fills convex polygons.
 C                     Level 2 -- the device fills simple polygons (may
 C                        be concave but not self-crossing)
 C                     Level 3 -- full support for complex polygons (may
-C                        be self-crossing). In general, the interior of 
-C                        a complex polygon is defined by the set of points 
-C                        such that, for each point, when an imaginary line 
-C                        is drawn to that point from a point far outside 
-C                        the polygon, that line intersects the polygon 
+C                        be self-crossing). In general, the interior of
+C                        a complex polygon is defined by the set of points
+C                        such that, for each point, when an imaginary line
+C                        is drawn to that point from a point far outside
+C                        the polygon, that line intersects the polygon
 C                        boundary an odd number of times.
-C                   
+C
 C                   Note that the level of support for a particular device
 C                   can be inquired using the function VDIQDC.
 C
@@ -742,7 +742,7 @@ C                   current position and update current position to
 C                   the point after the last character box where the
 C                   next character would begin.  Current position
 C                   indicates the lower left corner of the first
-C                   character box.  Only printable characters (32-126 
+C                   character box.  Only printable characters (32-126
 C                   decimal) and backspace and linefeed are allowed.
 C                   All values in this range must produce "reasonable"
 C                   output; mapping lower; case to upper case letters is
@@ -1072,7 +1072,7 @@ C BATCH DEVICES IGNORE THIS COMMAND.
 C
       RETURN
       END
-      SUBROUTINE WMET05(N,NSTR) 
+      SUBROUTINE WMET05(N,NSTR)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
 C VBINI1           -Virtual Device Initialization String Output.
@@ -1082,7 +1082,7 @@ C
 C ENVIRONMENT      -Computer-independent, System-independent, FORTRAN 77
 C                   Hard Copy Format 1.
 C
-C ENTRY CONDITIONS -N = integer number of words in NSTR. (max=4) 
+C ENTRY CONDITIONS -N = integer number of words in NSTR. (max=4)
 C                   NSTR = integer array containing the string to be
 C                   converted and output.  The last character must
 C                   be the string terminator.
@@ -1096,9 +1096,9 @@ C                   internal computer-dependent format to
 C                   ASCII and sends it to the device.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
-C 
+C
       INTEGER   N
-      INTEGER*4 NSTR(4) 
+      INTEGER*4 NSTR(4)
       integer i, j
       integer   itemp
       integer*4 itemp1, itemp2
@@ -1111,16 +1111,16 @@ C
 C KTERM = STRING TERMINATOR CHARACTER (\).
       INTEGER*4 KTERM
       DATA KTERM /92/
-      
-C 
-C LOOP THROUGH EACH CHARACTER IN EACH WORD OF NSTR. 
-      DO 10 I=1,N 
+
+C
+C LOOP THROUGH EACH CHARACTER IN EACH WORD OF NSTR.
+      DO 10 I=1,N
       DO 10 J=1,KCPW
       CALL CDR1CH(J,NSTR(I),ITEMP)
-C 
+C
 C CONVERT CHARACTER.
       CALL CDRCVT(ITEMP,ITEMP1)
-C 
+C
 C CHECK FOR END-OF-STRING CHARACTER.
       IF (ITEMP1.EQ.KTERM) GO TO 20
 C
@@ -1132,15 +1132,15 @@ C SEND PAIRS OF CHARACTERS TO THE OUTPUT FILE.
          CALL WMET13S(ITEMP)
       ENDIF
    10 CONTINUE
-C 
-C PAD WITH A BLANK IF NECESSARY TO MAKE NUMBER OF CHARS EVEN. 
+C
+C PAD WITH A BLANK IF NECESSARY TO MAKE NUMBER OF CHARS EVEN.
    20 IF(MOD(J,2).EQ.0) THEN
          ITEMP=256*ITEMP2+32
          CALL WMET13S(ITEMP)
       ENDIF
 C
       RETURN
-      END 
+      END
       SUBROUTINE WMET06(RGB,MAXVAL,HLS)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -1154,7 +1154,7 @@ C ENTRY CONDITIONS - RGB = integer array with 3 elements specifying
 C                          Red,   RGB(1),    range 0 - MAXVAL
 C                          Green,  RGB(2),    range 0 - MAXVAL
 C                          Blue, RGB(3),    range 0 - MAXVAL
-C 
+C
 C                    MAXVAL = integer, largest value that each of R, G or B
 C                             can assume
 C
@@ -1277,7 +1277,7 @@ C
 C
 C          copy the inputs to locals
 C
-      HUE = HLS(1) 
+      HUE = HLS(1)
       LIT = HLS(2)
       SAT = HLS(3)
 C
@@ -1432,7 +1432,7 @@ C
 C          check for valid num.
 C
       integer*4 i, indexn
-      
+
       IF(NUM.LT.1.OR.NUM.GT.256) THEN
          CALL WMETER(723,5)
          GOTO 999
@@ -1453,8 +1453,8 @@ C
             CALL WMETER(724,5)
             GOTO 100
          END IF
-         RGB(1) =CLRTAB(INDEX(I)+1,1) 
-         RGB(2) =CLRTAB(INDEX(I)+1,2) 
+         RGB(1) =CLRTAB(INDEX(I)+1,1)
+         RGB(2) =CLRTAB(INDEX(I)+1,2)
          RGB(3) =CLRTAB(INDEX(I)+1,3)
          IF(CLRMOD.EQ.0) THEN
              CLRARY(1,I) = RGB(1)/255.
@@ -1487,7 +1487,7 @@ C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
       COMMON /WMET09/XCP,YCP
       REAL*4 XCP,YCP
       REAL*4 X,Y
-C     
+C
 C     ASSIGN THE CP TO X,Y
 C
       X=XCP
@@ -1614,11 +1614,11 @@ c
                CALL WMETER(727,5)
                GOTO 100
             END IF
-            IBUF(3)=INT(255.99*CLRARY(1,I))     
+            IBUF(3)=INT(255.99*CLRARY(1,I))
 c                             zero/red
-            IBUF(4)=INT(255.99*CLRARY(2,I))*256    
+            IBUF(4)=INT(255.99*CLRARY(2,I))*256
 c                              green/yellow
-            IBUF(5)=INT(255.99*CLRARY(3,I)) *256    
+            IBUF(5)=INT(255.99*CLRARY(3,I)) *256
 c                              blue/magenta
 c
          ELSE
@@ -1631,11 +1631,11 @@ c
                GOTO 100
             END IF
             CALL WMET07(CLRARY(1,I),RGB,15)
-            IBUF(3)=INT(255.99*RGB(1))        
+            IBUF(3)=INT(255.99*RGB(1))
 c                            red
-            IBUF(4)=INT(255.99*RGB(2))*256        
+            IBUF(4)=INT(255.99*RGB(2))*256
 c                            green
-            IBUF(5)=INT(255.99*RGB(3))*256        
+            IBUF(5)=INT(255.99*RGB(3))*256
 c                            blue
 c
          END IF
@@ -1643,7 +1643,7 @@ c  store color table values
 c
          CLRTAB(IBUF(2)+1,1)=IBUF(3)
          CLRTAB(IBUF(2)+1,2)=IBUF(4)/256
-         CLRTAB(IBUF(2)+1,3)=IBUF(5)/256      
+         CLRTAB(IBUF(2)+1,3)=IBUF(5)/256
 c
       CALL WMET13(6,IBUF)
   100 CONTINUE
@@ -1671,7 +1671,7 @@ C
 C NARRATIVE        -Set the foreground color index, i.e., the color
 C                   table index used for drawing future primitives.
 C                   Color is an integer from 0-255 which is used as an
-C                   index into the color table (see VDSTCO). 
+C                   index into the color table (see VDSTCO).
 C                   All devices must support at least a single device
 C                   dependent value in the range 0-7.
 C                   If an unsupported value is specified, set to
@@ -1769,7 +1769,7 @@ C
 C  SEND BGP COMMAND
 C
       CALL WMET13(2,LW)
-C   
+C
   999 RETURN
       END
       SUBROUTINE WMETIG
@@ -1874,9 +1874,9 @@ C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C
 C ENTRY CONDITIONS -ESCPCD = integer escape function code.
 C                   N = integer number of arguments in ARG.  RANGE 0-.
-C                   ARGS = real array of arguments for the escape 
+C                   ARGS = real array of arguments for the escape
 C                   function specified.
-C 
+C
 C CALLS            -vbout
 C
 C EXIT CONDITIONS  -
@@ -1902,7 +1902,7 @@ C CHECK FOR VALID N.
          GOTO 999
       END IF
 C
-C          meta file escapes 800 - 
+C          meta file escapes 800 -
 C
       IF(ESCPCD.EQ.800) THEN
 C
@@ -1960,29 +1960,29 @@ C
 C NARRATIVE        -The polygon defined by XARRAY,YARRAY will be drawn
 C                   and filled (constrained by any limitations of the
 C                   physical device -- see below).  No checking will be
-C                   done -- all points will be passed to the device.  
-C                   Current foreground color is used and the polygon 
-C                   boundary is drawn using the solid line style.  
-C                   VDI will close the polygon (i.e. the last point 
-C                   will be connected to the first). 
+C                   done -- all points will be passed to the device.
+C                   Current foreground color is used and the polygon
+C                   boundary is drawn using the solid line style.
+C                   VDI will close the polygon (i.e. the last point
+C                   will be connected to the first).
 C
 C                   The level of support for this primitive is device-
 C                   dependent.  The level of support is categorized
 C                   as follows:
 C
-C                     Level 0 -- no polygon fill.  Only the polygon 
+C                     Level 0 -- no polygon fill.  Only the polygon
 C                        boundary is drawn.
 C                     Level 1 -- the device fills convex polygons.
 C                     Level 2 -- the device fills simple polygons (may
 C                        be concave but not self-crossing)
 C                     Level 3 -- full support for complex polygons (may
-C                        be self-crossing). In general, the interior of 
-C                        a complex polygon is defined by the set of points 
-C                        such that, for each point, when an imaginary line 
-C                        is drawn to that point from a point far outside 
-C                        the polygon, that line intersects the polygon 
+C                        be self-crossing). In general, the interior of
+C                        a complex polygon is defined by the set of points
+C                        such that, for each point, when an imaginary line
+C                        is drawn to that point from a point far outside
+C                        the polygon, that line intersects the polygon
 C                        boundary an odd number of times.
-C                   
+C
 C                   Note that the level of support for a particular device
 C                   can be inquired using the function VDIQDC.
 C
@@ -2021,7 +2021,7 @@ C BEGIN POLYGON COMMAND = AA00
 C                       = 43520
 C END POLYGON COMMAND = AB00
 C                     = 43776
-C 
+C
       CALL WMET13S(43520)
 C
       NN=NPTS
@@ -2033,7 +2033,7 @@ C CONVERT EACH X,Y TO SCREEN UNITS AND WRITE OUT
         OUTARY(2) = YARRAY(I) * YSCALE + YPAD
         CALL WMET13(2,OUTARY)
  100  CONTINUE
-C                        
+C
       CALL WMET13S(43776)
 C
 C MOVE SOMEWHERE TO UPDATE CURRENT POSITION
@@ -2156,7 +2156,7 @@ C           as in (1) above.  Asynchronous means the user can provide
 C           input at any time; this input is then saved by the system
 C           in an event queue until the program calls for it.
 C    14. Input Timing
-C        0. no timeout supported 
+C        0. no timeout supported
 C        1. unreliable timing
 C        2. timeout with reliable timing
 C    15. X Dimension of View Surface in Device Coordinates
@@ -2222,12 +2222,12 @@ C       23.  R25 - RASTER TECHNOLOGIES MODEL ONE/25
 C       24.  QLF - QCR large format (8 x 10)
 C       24.1 Q35 - QCR 35mm format
 C       25.  T45 - Tektronix 4510 Rasterizer
-C    24. Polygon support level 
+C    24. Polygon support level
 C        0.  no support
 C        1.  fills convex polygons
 C        2.  fills simple polygons (may be concave but not
 C            self-crossing)
-C        3.  full complex polygon fill support   
+C        3.  full complex polygon fill support
 C    25. Maximum number of points in a polygon (99999. if infinite)
 C    26. Setable color table
 C        0.  no
@@ -2235,7 +2235,7 @@ C        1.  yes
 C    27. Device color palette size (1-N) - the number of different
 C            colors a device can produce (may be more than the device
 C            can display simultaneously)
-C    28. Direct color space size (0-N) - the number of colors 
+C    28. Direct color space size (0-N) - the number of colors
 C            available via direct RGB color specification
 C            (displayable simultaneously)
 C    29. Vector verses Raster VDI
@@ -2262,7 +2262,7 @@ C     THE VALUES CONTAINED IN DEV ARE:
 C
 c ** Jan 16, 1991 -- Dino Pavlakos
 c       changed polygon support level (entry# 24) from 2 to 3
-c 
+c
        DATA DEV/ 0.,0.,256.,256.,4096.,31.,32767.,0.,0.,0.,
      *          0.,0.,0.,0.,32767.,32767.,0.0,0.0,8.,8.,
      *          0.,0.,11.,3.,508.,1.,16777216.,0.,0.,21298.,
@@ -2400,7 +2400,7 @@ C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       REAL*4 YSIZE
-C 
+C
       INTEGER*4 IBUF(4)
 c
       REAL*4 VECTOR(7)
@@ -2427,12 +2427,12 @@ C
 C  SET CHARACTER BOX = SPACING OF LETTERS TO A 5/7 BOX
       VECTOR(6)=YSIZE
       VECTOR(7)=VECTOR(6)*(5./7.)
-C      
+C
 C   SEND 15 BITS FOR THE HEIGHT AND WIDTH TO BGP. NOTE THAT CHARACTER SIZES
 C   ARE MAPPED FROM THE SMALLEST TO THE LARGEST CHARACTER DEFINED TO BE A
 C   CHARACTER FILLING THE SMALLEST DIMENSION OF THE SCREEN ASPECT RATIO.
 C
-C  SEND BGP COMMAND ,B202-HEIGHT-WIDTH 
+C  SEND BGP COMMAND ,B202-HEIGHT-WIDTH
       IBUF(1)=45570
       IBUF(2)=.65*VECTOR(6)*YSCALE
       IBUF(3)=.65*VECTOR(7)*XSCALE
@@ -2488,7 +2488,7 @@ C           (5)=LINE WIDTH
 C           (6)=CHARACTER BOX Y
 C           (7)=CHARACTER BOX X
 C
-      VECTOR(3)=INTEN         
+      VECTOR(3)=INTEN
 C MAP INTEN VALUE OF 0.-1. INTO 0.-32767. (15 BITS OF INFO)
       INTE(2)=INTEN*32767.
 C
@@ -2607,14 +2607,14 @@ C                            ---------
 C                           | 7  8  9 |
 C                           | 4  5  6 |
 C                           | 1  2  3 |
-C                            ---------  
+C                            ---------
 C                   For example, JUSTIF = 7 indicates NDC space will be
 C                   upper left justified on the device.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       REAL*4 ASPECT
-      INTEGER*4 JUSTIF  
+      INTEGER*4 JUSTIF
       integer     iidsiz, iusrsz, iszrou
       integer*4 i, just, aspe
       integer istat
@@ -2662,7 +2662,7 @@ C
       INTEGER*4 KJROUT(4),KSECUR,KJTIME(4),KJDATE(4)
       COMMON / VCJOB/ KIDSIZ,KJOBID,KUSRSZ,KUSRID,KSZROU,
      1               KJROUT,KSECUR,KJTIME,KJDATE,MACHIN,MACLEN
-C 
+C
 C DECLARE FILE INITIALIZATION COMMANDS.
       integer*4 idfile(2),isecur(3), zero(1)
       real*4 rzero
@@ -2681,15 +2681,15 @@ C           FOREGROUND COLOR - white
       VECTOR(2)=0.
 C           BACKGROUND COLOR - black
       VECTOR(3)=1.0
-C           INTENSITY        - 
+C           INTENSITY        -
       VECTOR(4)=0.
 C           LINE STYLE       - SOLID
-      VECTOR(5)=.00024414 
+      VECTOR(5)=.00024414
 C           LINE WIDTH       - 1/4096
       VECTOR(6)=.01
 C           CHARACTER BOX Y  - NORMAL PRINT SIZE (100 LINES/PAGE)
       VECTOR(7)=.00714286
-C           CHARACTER BOX X  - NORMAL PRINT SIZE (VECTOR(6)*5/7)  
+C           CHARACTER BOX X  - NORMAL PRINT SIZE (VECTOR(6)*5/7)
 C
 C     ESTABLISH DEVICE UNITS (MAX ADDRESSABLE UNITS)
 C
@@ -2701,8 +2701,8 @@ C     ASSIGN INPUT PARAMETERS TO ASPE AND JUST
       JUST=JUSTIF
 C
 C CHECK FOR VALID ASPECT.  IF(ASPECT.LT.0.0) THEN CALL VBERRH(721,5),
-C AND USE DEFAULT ASPECT.      
-C     
+C AND USE DEFAULT ASPECT.
+C
       IF(ASPE.LT.0.) THEN
         CALL WMETER(721,5)
         ASPE=XDEVIC/YDEVIC
@@ -2742,36 +2742,36 @@ C
 C  SET UP MONITORING INFORMATION
       CALL WMETDV('C MET   ')
       CALL WMETMO(0)
-C    
+C
 C INITIALIZE THE OUTPUT FILE.
       CALL WMETFF(KOUTFL,1440,1,ISTAT)
 C
 C COMPUTE LENGTH OF FILE ID INSTRUCTION.
-      IIDSIZ=(KIDSIZ+1)/2 
-      IUSRSZ=(KUSRSZ+1)/2 
-      ISZROU=(KSZROU+1)/2 
-      IDFILE(1)=33792+12+IIDSIZ+IUSRSZ+ISZROU 
+      IIDSIZ=(KIDSIZ+1)/2
+      IUSRSZ=(KUSRSZ+1)/2
+      ISZROU=(KSZROU+1)/2
+      IDFILE(1)=33792+12+IIDSIZ+IUSRSZ+ISZROU
       IDFILE(2)=KCOMTP
 c SEND FILE ID.
-  
-      CALL WMET13(2,IDFILE) 
-C 
+
+      CALL WMET13(2,IDFILE)
+C
 C SEND DATE AND TIME.
-      CALL WMET05(3,KJDATE) 
-      CALL WMET05(3,KJTIME) 
-C 
-C SEND LENGTH OF JOB ID AND JOB ID. 
+      CALL WMET05(3,KJDATE)
+      CALL WMET05(3,KJTIME)
+C
+C SEND LENGTH OF JOB ID AND JOB ID.
       CALL WMET13S(IIDSIZ)
-      CALL WMET05(4,KJOBID) 
-C 
-C SEND LENGTH OF USER ID AND USER ID. 
+      CALL WMET05(4,KJOBID)
+C
+C SEND LENGTH OF USER ID AND USER ID.
       CALL WMET13S(IUSRSZ)
-      CALL WMET05(4,KUSRID) 
-C 
-C SEND LENGTH OF ROUTING INFO AND ROUTING INFO. 
+      CALL WMET05(4,KUSRID)
+C
+C SEND LENGTH OF ROUTING INFO AND ROUTING INFO.
       CALL WMET13S(ISZROU)
-      CALL WMET05(4,KJROUT) 
-C 
+      CALL WMET05(4,KJROUT)
+C
 C SEND SECURITY AND FLUSH BUFFER.
       ISECUR(3)=KSECUR
       CALL WMET13(3,ISECUR)
@@ -2864,7 +2864,7 @@ C UPDATE CURRENT POSITION.
       YCP=YNDC
 C
       RETURN
-      END 
+      END
       SUBROUTINE WMETIP(X,Y)
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
@@ -2917,7 +2917,7 @@ C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       integer*4 i
-      
+
       INTEGER*4 KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,KBAUD,
      1KCOMTP
       COMMON /CDRCOM/ KWRTFL,KRDFL,KOUTFL,KINFL,KWRDSZ,KBYTEL,KCPW,
@@ -3025,7 +3025,7 @@ c
       DO 100 I=1,LENGTH
 c
 c          check for valid chars.
-c          ignore control characters, except backspace and linefeed. 
+c          ignore control characters, except backspace and linefeed.
 C
          IF(CHARS(I).LT.32 .OR. CHARS(I).GT.126) THEN
                 IF(CHARS(I).NE.8.AND.CHARS(I).NE.10) THEN
@@ -3060,7 +3060,7 @@ c          send the chars to the bgp file
 c
 c  45056 :: b000      tbuf(1)=45056  + jspot -1
 c  jspot is the number of words filled or partially filled up in tbuf
-c    including the 1st word with the command 
+c    including the 1st word with the command
 C
       TBUF(1)=JSPOT+45055
       CALL WMET13(JSPOT,TBUF)

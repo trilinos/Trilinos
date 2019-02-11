@@ -237,8 +237,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (do_kk && comm->getSize() > 1)
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"The Kokkos-Kernels matvec kernel cannot be run with more than one rank.");
 
-    // Load the matrix off disk (or generate it via Galeri)
-    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, nullFile, map, A, coordinates, nullspace, x, b, galeriParameters, xpetraParameters, galeriStream);
+    // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
+    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, nullFile, map, A, coordinates, nullspace, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
 
 #ifndef HAVE_MUELU_MKL
     if (do_mkl) {

@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -93,7 +93,7 @@ C ... Check minimum X coordinate to see if we will generate bad elements
      &       'Input mesh crosses over axis of rotation (Y). Negative '//
      &       'elements may be generated. Adjust ROTCEN or input mesh.')
          end if
-         
+
 C      --If center block exists, calculate center of rotation
       IF (NUMCOL .GT. 0) THEN
          CENTER = 1E36
@@ -112,7 +112,7 @@ C      --Subtract center, so rotation is around zero
    20    CONTINUE
       END IF
 
-C      --Get the coordinates for the non-center nodes 
+C      --Get the coordinates for the non-center nodes
 
       IBLK = 0
       NXTNR = 1
@@ -123,8 +123,8 @@ C      --Get the coordinates for the non-center nodes
          IF (NRTRAN(IBLK) .GT. 0) THEN
             ZBEG = ZEND
             ZEND = ZBEG + D3TRAN(IBLK) * PI / 180.0
-            
-            CALL INIGRD (-ZBEG, -ZEND, ZGRAD(IBLK), 
+
+            CALL INIGRD (-ZBEG, -ZEND, ZGRAD(IBLK),
      *         NRTRAN(IBLK), MIN(NRTRAN(IBLK)+1,NNREPL-NXTNR+1),
      *        COSANG(NXTNR))
             NXTNR = NXTNR + NRTRAN(IBLK)

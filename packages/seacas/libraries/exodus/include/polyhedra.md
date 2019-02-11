@@ -7,14 +7,14 @@ regular faces such as quadrilateral or triangles; or they can be
 topologically two-dimensional arbitrary polyhedra themselves.
 
 An arbitrary polyhedra 3D element block will have an element type of
-"nfaced" or "NFACED".  
+"nfaced" or "NFACED".
 
 The faces that are used in the connectivity of this block should be
 defined in one or more face blocks.  If the faces are arbitrary
 polyhedra, then they will have a face type of "nsided" or "NSIDED".
 
 An annotated example of defining an arbitrary polyhedral element block
-consisting of 3 elements is shown below.  
+consisting of 3 elements is shown below.
 
 The three elements have the following geometry:
 
@@ -132,25 +132,25 @@ The Exodus model is created via the following calls:
    j = 0;
    nnpe[ 1] = 3;   /* Face 1 */
    nnpe[ 2] = 3;
-   nnpe[ 3] = 4;  
+   nnpe[ 3] = 4;
    nnpe[ 4] = 4;
    nnpe[ 5] = 4;
    nnpe[ 6] = 3;
    nnpe[ 7] = 3;
    nnpe[ 8] = 4;
    nnpe[ 9] = 4;
-   nnpe[10] = 5;  
+   nnpe[10] = 5;
    nnpe[11] = 5;
    nnpe[12] = 4;
    nnpe[13] = 4;
    nnpe[14] = 4;
-   nnpe[15] = 4;  
-   
+   nnpe[15] = 4;
+
    ex_put_entity_count_per_polyhedra(exoid, EX_FACE_BLOCK, block_id, nnpe);
 ~~~~
 
 * The face block is now fully defined; now define the nfaced element
-  block which uses these faces.  
+  block which uses these faces.
 
 ~~~~{.c}
    block_name = "nfaced_1";
@@ -173,7 +173,7 @@ The Exodus model is created via the following calls:
    arguments are passed zeros.  The nodal connectivity can be defined,
    but it isn't required.  The face connectivity argument for an
    nfaced block is the total number of faces in the connectivity for all
-   elements in the nfaced block. 
+   elements in the nfaced block.
 
 * Write the face connectivity:
 
@@ -187,7 +187,7 @@ The Exodus model is created via the following calls:
    connect[i++] = 3;
    connect[i++] = 4;
    connect[i++] = 5;
-   
+
    connect[i++] = 4;
    connect[i++] = 6;
    connect[i++] = 7;
@@ -221,7 +221,7 @@ The Exodus model is created via the following calls:
   * There is a similar `ex_get_entity_count_per_polyhedra()` function for read.
   * The `ex_get_block()` functions return the total number of nodes or
     faces for all faces or element for "nfaced" and "nsided" blocks
-    and not the number per element 
+    and not the number per element
 
 * An example read/write usage is shown in the
   [testwt-nfaced.c](../test/testwt-nfaced.c) and [testrd-nfaced](../test/testrd-nfaced.c) files.

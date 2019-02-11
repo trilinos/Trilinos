@@ -5366,9 +5366,9 @@ namespace Tpetra {
           RCP<ParameterList> importSublist = sublist (params, "Import", true);
           if (useRemotePIDs) {
             RCP<import_type> newImp =
-              rcp (new import_type (domainMap_, colMap_, remotePIDs));
-            newImp->setParameterList (importSublist); // nonconst method
-            importer_ = newImp; // assign nonconst to const
+              rcp (new import_type (domainMap_, colMap_, remotePIDs,
+                                    importSublist));
+            importer_ = newImp;
           }
           else {
             importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
@@ -6897,7 +6897,7 @@ namespace Tpetra {
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
       const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
-      destGraph->reallocImportsIfNeeded(rbufLen);
+      destGraph->reallocImportsIfNeeded(rbufLen, false, nullptr);
     }
 
     {
@@ -6939,7 +6939,7 @@ namespace Tpetra {
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
-          destGraph->reallocImportsIfNeeded(totalImportPackets);
+          destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
           destGraph->imports_.modify_host();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView(destGraph->imports_);
@@ -6987,7 +6987,7 @@ namespace Tpetra {
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
-          destGraph->reallocImportsIfNeeded(totalImportPackets);
+          destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
           destGraph->imports_.modify_host();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView(destGraph->imports_);

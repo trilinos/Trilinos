@@ -140,7 +140,7 @@ template<class T> inline
 ArrayView<T>::ArrayView(
   std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -149,7 +149,7 @@ template<class T> inline
 ArrayView<const T>::ArrayView(
   std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -159,7 +159,7 @@ template<class T> inline
 ArrayView<T>::ArrayView(
   const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -168,7 +168,7 @@ template<class T> inline
 ArrayView<const T>::ArrayView(
   const std::vector<typename ConstTypeTraits<T>::NonConstType>& vec
   )
-  : ptr_( vec.empty() ? 0 : &vec[0] ), size_(vec.size())
+  : ptr_( vec.empty() ? 0 : vec.data() ), size_(vec.size())
 {
   setUpIterators();
 }
@@ -316,12 +316,25 @@ T* ArrayView<T>::getRawPtr() const
 }
 
 template<class T> inline
+T* ArrayView<T>::data() const
+{
+  debug_assert_valid_ptr();
+  return ptr_;
+}
+
+template<class T> inline
 const T* ArrayView<const T>::getRawPtr() const
 {
   debug_assert_valid_ptr();
   return ptr_;
 }
 
+template<class T> inline
+const T* ArrayView<const T>::data() const
+{
+  debug_assert_valid_ptr();
+  return ptr_;
+}
 
 template<class T> inline
 T& ArrayView<T>::operator[](size_type i) const

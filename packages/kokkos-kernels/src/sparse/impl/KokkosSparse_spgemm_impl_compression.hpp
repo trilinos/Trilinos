@@ -603,9 +603,9 @@ struct KokkosSPGEMM
       });
 
       //here we find the column_set indices for each column.
-      //if it is integer, we divide the column index by 32 with shifts. 
+      //if it is integer, we divide the column index by 32 with shifts.
       //result_keys is an array of size vector_size
-      //this is used as hashtable. 
+      //this is used as hashtable.
       Kokkos::parallel_for(
           Kokkos::ThreadVectorRange(teamMember, work_to_handle),
           [&] (nnz_lno_t i) {
@@ -624,14 +624,14 @@ struct KokkosSPGEMM
         else if (result_keys[new_hash] == r){
           if (Kokkos::atomic_compare_exchange_strong(result_keys + new_hash, r, n_set_index)){
 	    //MD 4/4/18: one these architectures there can be divergence in the warp.
-	    //once the keys are set, some other vector lane might be doing a 
+	    //once the keys are set, some other vector lane might be doing a
 	    //fetch_or before we set with n_set. Therefore it is necessary to do
 	    //atomic, and set it with zero as above.
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
             Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
 #else
             result_vals[new_hash] = n_set;
-#endif      
+#endif
             break;
           }
         }
@@ -655,7 +655,7 @@ struct KokkosSPGEMM
           nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
           if (n_set_index == -1) hash = -1;
           num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-                              teamMember, vector_size, hash,n_set_index, 
+                              teamMember, vector_size, hash,n_set_index,
 			      n_set, used_hash_sizes, shmem_hash_size);
 
       }, overall_num_unsuccess);
@@ -689,8 +689,8 @@ struct KokkosSPGEMM
 	      if (num_unsuccess) hash = n_set_index & (pow2_hash_func);
 
 	      //this parallel_for is not really needed.
-	      //we just need a sync threads at the end of the insertion. 
-	      //Basically, we do not want 
+	      //we just need a sync threads at the end of the insertion.
+	      //Basically, we do not want
 	      //new_row_map(row_ind) = rowBeginP + used_hash_sizes[0] + used_hash_sizes[1];
 	      //to execute before the below insertion finishes.
 	      //parallel_for will provide this mechanism.
@@ -764,7 +764,7 @@ bool KokkosSPGEMM
     out_nnz_view_t &out_nnz_sets,
     bool compress_in_single_step){
   //get the execution space type.
-  KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
+  KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
   //get the suggested vectorlane size based on the execution space, and average number of nnzs per row.
   int suggested_vector_size = this->handle->get_suggested_vector_size(n, nnz);
   //get the suggested team size.
@@ -795,7 +795,7 @@ bool KokkosSPGEMM
   out_nnz_view_t set_nexts_;
   out_nnz_view_t set_begins_;
 #ifdef KOKKOSKERNELSMOREMEM
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     set_nexts_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_nexts_"), nnz);
     set_begins_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
     Kokkos::deep_copy (set_begins_, -1);
@@ -809,7 +809,7 @@ bool KokkosSPGEMM
 
   //if compressing in single step, allocate the memory as upperbound.
   //TODO: two step is not there for cuda.
-  if (compress_in_single_step || my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (compress_in_single_step || lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
     out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
   }
@@ -831,14 +831,14 @@ bool KokkosSPGEMM
       shmem_size, //shared memory size.
       team_row_chunk_size //chunksize.
       ,suggested_team_size, KOKKOSKERNELS_VERBOSE,
-      my_exec_space
+      lcl_my_exec_space
   );
   double min_reduction = this->handle->get_spgemm_handle()->get_compression_cut_off();
   size_t OriginaltotalFlops = this->handle->get_spgemm_handle()->original_overall_flops;
 
   timer1.reset();
   //bool compression_applied = false;
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
@@ -861,7 +861,7 @@ bool KokkosSPGEMM
 
 
 #if defined( KOKKOS_ENABLE_CUDA )
-	if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 
 		size_t free_byte ;
 		size_t total_byte ;
@@ -1030,7 +1030,7 @@ bool KokkosSPGEMM
   }
   return true;
 
-}
+}  // compressMatrix (end)
 
 
 }
