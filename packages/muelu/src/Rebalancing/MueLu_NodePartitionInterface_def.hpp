@@ -77,6 +77,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >   ("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >   ("Node Comm", Teuchos::null, "Generating factory of the node level communicator");
 
+    // We don't really need this, but we might need it on coarser levels
+    validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
     return validParamList;
   }
 
@@ -86,6 +88,7 @@ namespace MueLu {
     Input(currentLevel, "A");
     Input(currentLevel, "number of partitions");
     Input(currentLevel, "Node Comm");
+    Input(currentLevel, "Coordinates");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -1313,7 +1313,7 @@ namespace MueLu {
         ParameterList partParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node id"               ,int,repartheurParams);
         partitioner->SetParameterList(partParams);
-        partitioner->SetFactory("NodeComm",         manager.GetFactory("NodeComm"));
+        partitioner->SetFactory("Node Comm",         manager.GetFactory("Node Comm"));
 #else
         throw Exceptions::RuntimeError("MPI is not available");
 #endif

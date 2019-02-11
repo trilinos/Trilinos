@@ -981,12 +981,12 @@ namespace MueLuTests {
     paramList.set("repartition: node repartition level",1);
     paramList.set("repartition: start level",2);
     paramList.sublist("user data").set("Node Comm",nodeComm);
+    paramList.sublist("user data").set("Coordinates",coordinates);
     paramList.set("verbosity","high");
     RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(paramList));
  
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
     H->GetLevel(0)->Set("A", A);
-    H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
 
     
