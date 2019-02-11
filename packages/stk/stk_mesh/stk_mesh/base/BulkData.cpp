@@ -5375,7 +5375,7 @@ void BulkData::internal_send_part_memberships_from_owner(const std::vector<Entit
                 unsigned part_ord = 0;
                 buf.unpack<unsigned>(part_ord);
                 if (all_parts[part_ord]->entity_membership_is_parallel_consistent()) {
-                    insert_ordinal(owner_parts, part_ord);
+                    stk::util::insert_keep_sorted_and_unique(part_ord, owner_parts);
                 }
             }
 

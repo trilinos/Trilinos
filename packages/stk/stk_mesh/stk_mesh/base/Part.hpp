@@ -212,8 +212,8 @@ bool insert( ConstPartVector & , const Part & );
 bool insert( PartVector & , Part & );
 bool contains( const PartVector & v , const Part & part );
 
-inline
-bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
+#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 4 2019
+STK_DEPRECATED inline bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
 {
   OrdinalVector::iterator iter = std::lower_bound(v.begin(), v.end(), part_ordinal);
   if (iter == v.end() || *iter != part_ordinal) {
@@ -222,22 +222,9 @@ bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
   }
   return false;
 }
+#endif
 
 void get_part_and_all_subsets(const Part& part, ConstPartVector& part_and_all_subsets);
-
-template<typename PARTVECTOR>
-void get_parts_and_all_subsets(const PARTVECTOR& parts, OrdinalVector& parts_and_all_subsets)
-{
-  parts_and_all_subsets.clear();
-  for(const Part* part : parts) {
-    insert_ordinal(parts_and_all_subsets, part->mesh_meta_data_ordinal());
-  
-    const PartVector& subsets = part->subsets();
-    for(const Part* subset : subsets) {
-      insert_ordinal(parts_and_all_subsets, subset->mesh_meta_data_ordinal());
-    }
-  }
-}
 
 /** \brief  Remove a part from a properly ordered collection of parts. */
 void remove( PartVector & , Part & );

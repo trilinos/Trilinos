@@ -5,6 +5,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Mesh            stk_mesh             PT  OPTIONAL
   NGP             stk_ngp              PT  OPTIONAL
   IO              stk_io               PT  OPTIONAL
+  NGP_TEST        stk_ngp_test         PT  OPTIONAL
   Unit_test_utils stk_unit_test_utils  PT  OPTIONAL
   Math            stk_math             PT  OPTIONAL
   Search          stk_search           PT  OPTIONAL

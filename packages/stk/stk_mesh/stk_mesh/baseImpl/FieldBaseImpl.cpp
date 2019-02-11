@@ -108,6 +108,20 @@ FieldRestrictionVector & FieldBaseImpl::restrictions()
 
 //----------------------------------------------------------------------
 
+template<typename PARTVECTOR>
+void get_parts_and_all_subsets(const PARTVECTOR& parts, OrdinalVector& parts_and_all_subsets)
+{
+  parts_and_all_subsets.clear();
+  for(const Part* part : parts) {
+    stk::util::insert_keep_sorted_and_unique(part->mesh_meta_data_ordinal(), parts_and_all_subsets);
+
+    const PartVector& subsets = part->subsets();
+    for(const Part* subset : subsets) {
+      stk::util::insert_keep_sorted_and_unique(subset->mesh_meta_data_ordinal(), parts_and_all_subsets);
+    }
+  }
+}
+
 std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& tmp,
                                                              FieldRestrictionVector::iterator i,
                                                              PartVector& selectorI_parts,
