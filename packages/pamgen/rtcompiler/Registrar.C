@@ -532,12 +532,15 @@ double Readline::execute(Value** args)
   assert(args[0]->getObjectType() == ArrayNumberOT);
   assert(args[0]->getType() == CharT);
 
-  assert(args[1]->getObjectType() == ArrayNumberOT);
+  assert(args[1]->getObjectType() == ArrayVarOT);
   assert(args[1]->getType() == CharT);
 
   string filename = "";
   for (long i = 0; i < args[0]->getSize(); ++i) {
-    filename += (char) args[0]->getArrayValue(i);
+    char c = (char) args[0]->getArrayValue(i);
+    if (c != '"') {
+      filename += c;
+    }
   }
 
   static string curr_filename("");
@@ -571,7 +574,7 @@ double Scanf::execute(Value** args)
 /*****************************************************************************/
 {
   //first argument to scanf should be a character array
-  assert(args[0]->getObjectType() == ArrayNumberOT);
+  assert(args[0]->getObjectType() == ArrayNumberOT || args[0]->getObjectType() == ArrayVarOT);
   assert(args[0]->getType() == CharT);
   assert(_numArgs < 22);
 
