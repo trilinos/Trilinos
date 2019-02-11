@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -37,7 +37,7 @@ C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       REAL XXI(3), XET(3), XZE(3)
 
       JACMN = 1.0e38
-      
+
 C... Jacobian at mid-point:
 
       xxi(1) = x2 + x3 + x6 + x7 - x1 - x4 - x5 - x8
@@ -51,7 +51,7 @@ C... Jacobian at mid-point:
       xxi(3) = z2 + z3 + z6 + z7 - z1 - z4 - z5 - z8
       xet(3) = z3 + z4 + z7 + z8 - z1 - z2 - z5 - z6
       xze(3) = z5 + z6 + z7 + z8 - z1 - z2 - z3 - z4
-      
+
       jacobi = CRSDOT(xxi,xet,xze)/64.0
       jacmn = min(jacobi, jacmn)
 C... J(0,0,0):
@@ -189,14 +189,14 @@ C... J(1,1,1):
 
       jacobi = CRSDOT(xxi,xet,xze)
       jacmn = min(jacobi, jacmn)
-      
+
       return
       end
 
       REAL FUNCTION CRSDOT(a, b, c)
       REAL a(3), b(3), c(3)
-C ... Compute d = a dot (b cross c)      
-      
+C ... Compute d = a dot (b cross c)
+
       REAL xcross, ycross, zcross
 
       xcross = b(2) * c(3) - b(3) * c(2)
@@ -204,5 +204,5 @@ C ... Compute d = a dot (b cross c)
       zcross = b(1) * c(2) - b(2) * c(1)
 
       crsdot = (a(1) * xcross + a(2) * ycross + a(3) * zcross)
-      return 
+      return
       end

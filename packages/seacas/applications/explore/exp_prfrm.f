@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE PRFRM (NOUT)
 C=======================================================================
@@ -41,13 +41,13 @@ C   --   NOUT - IN - the output file, <=0 for standard
 
       include 'exp_dbase.blk'
       include 'exodusII.inc'
-      
+
       REAL RDUM
       character*1 cdum
 
 C ... Get count of coordinate frames in model...
       call exinq(ndb, EXNCF, ncf, rdum, cdum, ierr)
-      
+
       call prfrm1(nout, ncf)
       end
 
@@ -56,7 +56,7 @@ C=======================================================================
 C=======================================================================
       include 'exp_dbase.blk'
       include 'exodusII.inc'
-      
+
       integer cfids(ncf), tags(ncf)
       real    coord(27)
 
@@ -65,7 +65,7 @@ C=======================================================================
 
       character*12 tag
       character*32 str32
-      
+
       PRTLEN = GETPRC() + 7
       WRITE(FMT1,20) PRTLEN, PRTLEN-7
       CALL SQZSTR(FMT1, LFMT)
@@ -94,7 +94,7 @@ C=======================================================================
         else if (tags(i) .eq. EXCFSPH) then
           tag = 'Spherical  '
         end if
-        
+
         IF (NOUT .GT. 0) THEN
           write (nout,FMT) cfids(i), tag, (coord(j),j=icbeg, icend)
         ELSE
@@ -105,7 +105,7 @@ C=======================================================================
       RETURN
 
  20   FORMAT('1PE',I2.2,'.',I2.2)
-      
+
  35   FORMAT ('(/,'' Coordinate Frame '',',A,
      *  ','': '',A,/,5x,''Origin:          '',3(1x, ',A,
      *  '),/,5x,''3rd Axis Point:  '',3(1x, ',A,

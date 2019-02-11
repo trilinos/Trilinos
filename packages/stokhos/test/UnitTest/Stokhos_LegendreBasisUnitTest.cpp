@@ -133,7 +133,7 @@ namespace LegendreBasisUnitTest {
     if (!success) {
       out << "\n Error, mat.normInf() < atol = " << mat.normInf() 
 	  << " < " << setup.atol << ": failed!\n";
-      out << "mat = "; mat.print(out); out << std::endl;
+      out << "mat = " << mat << std::endl;
     }
   }
 

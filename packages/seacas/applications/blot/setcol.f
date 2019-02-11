@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -41,7 +41,7 @@ C     SHDCOL(4-7,*) - Future Use
       REAL SHDCOL(7,NELBLK)
 C ... ISHDCL(1, *) = -1 if color not set, >0 if color set
 C     ISHDCL(2, *) = Number of colors to use for this block (SET if 0)
-C     ISHDCL(3, *) = Starting location in color map (SET)      
+C     ISHDCL(3, *) = Starting location in color map (SET)
       INTEGER ISHDCL(3,NELBLK)
       INTEGER IELBST(NELBLK)
       INTEGER BLKCOL(0:NELBLK)
@@ -71,7 +71,7 @@ C     ISHDCL(3, *) = Starting location in color map (SET)
           ishdcl(1,i) = i
         end if
  10   continue
-      
+
       if (blkclr) then
 
 C ... Determine whether any of the block colors match.
@@ -105,8 +105,8 @@ C ... Determine whether any of the block colors match.
             end if
           end if
  20     continue
-C ... If number of colors not set for at least one block, 
-C       determine number of colors specified vs. spectrum colors, 
+C ... If number of colors not set for at least one block,
+C       determine number of colors specified vs. spectrum colors,
 C       divide remainder of colors to unspecified blocks
         call grgpar('SPECTRUM', 0, IPARMS, STRING)
         NUMCOL = IPARMS(2)
@@ -180,7 +180,7 @@ C ... Single color for entire model
  90     continue
       end if
       call grcolu('ALTERNATE')
-      
+
       return
       end
 C-----------------------------------------------------------------------
@@ -210,5 +210,5 @@ C Initial checkin of ACCESS/graphics/blotII2
 C
 c Revision 1.1  1993/10/22  18:56:42  gdsjaar
 c Moved block shading routine to separate subroutine.
-c      
-      
+c
+

@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,7 +57,7 @@ C
       INTEGER   LSTEL(*), IX(8,*), NIQSLV(*), LTNESS(4,*)
       INTEGER   LFACE(6,*)
       REAL      MINMAX(6,*), CORD(NUMNP,*), TEMP(*)
-      
+
       CHARACTER*16 ENGNOT, ENG1
       DIMENSION MAP(4,6), V(6), FCORD(3,4), DIST(6), SCORD(3)
       LOGICAL   INSIDE, ONFACE, INIT
@@ -258,7 +258,7 @@ C ... CHECK FOR NODE ON BOTH SURFACES
                      END IF
   110             CONTINUE
                      DO 120 IFAC = 1, MAXFAC
-                        IF (LFACE(IFAC,IEL) .NE. 0 .AND. 
+                        IF (LFACE(IFAC,IEL) .NE. 0 .AND.
      *                     DIST(IFAC) .NE. 0.0) THEN
                            NUMIN = NUMIN + 1
                            IF (.NOT. INIT) THEN
@@ -269,7 +269,7 @@ C ... CHECK FOR NODE ON BOTH SURFACES
                            END IF
                            ENG1 = ENGNOT(DIST(IFAC),2)
                            DO 130 IO=IOMIN, IOMAX
-                              WRITE (IO,160) NIQSLV(ISLV), IEL, 
+                              WRITE (IO,160) NIQSLV(ISLV), IEL,
      *                             ENG1,
      $                             CORD(NIQSLV(ISLV),1),
      $                             CORD(NIQSLV(ISLV),2),

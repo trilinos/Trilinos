@@ -50,7 +50,9 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
+
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AggregationStructuredAlgorithm_kokkos_fwd.hpp"
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 

@@ -1,23 +1,23 @@
 C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.  
-C    
+C          with the distribution.
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
       program testwt
 c
@@ -61,7 +61,7 @@ c
       cpu_word_size = 0
       io_word_size = 0
 c
-c  create EXODUS II files 
+c  create EXODUS II files
 c
       exoid = excre ("test-nsided.exo",
      1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
@@ -79,8 +79,8 @@ c
       num_node_sets = 0
       num_side_sets = 0
 
-      call expini (exoid, "This is a test", num_dim, num_nodes, 
-     1             num_elem, num_elem_blk, num_node_sets, 
+      call expini (exoid, "This is a test", num_dim, num_nodes,
+     1             num_elem, num_elem_blk, num_node_sets,
      2             num_side_sets, ierr)
 
       write (iout, '("after expini, error = ", i4)' ) ierr
@@ -94,15 +94,15 @@ c
 c  write nodal coordinates values and names to database
 c
 c  Quad #1
-      x(1) = 0.0 
-      x(2) = 1.0 
-      x(3) = 1.0 
-      x(4) = 0.0 
+      x(1) = 0.0
+      x(2) = 1.0
+      x(3) = 1.0
+      x(4) = 0.0
 
-      y(1) = 0.0 
-      y(2) = 0.0 
-      y(3) = 1.0 
-      y(4) = 1.0 
+      y(1) = 0.0
+      y(2) = 0.0
+      y(3) = 1.0
+      y(4) = 1.0
 
       z(1) = 0.0
       z(2) = 0.0
@@ -110,14 +110,14 @@ c  Quad #1
       z(4) = 0.0
 
 c  Quad #2
-      x(5) = 1.0 
-      x(6) = 2.0 
-      x(7) = 2.0 
+      x(5) = 1.0
+      x(6) = 2.0
+      x(7) = 2.0
       x(8) = 1.0
 
-      y(5) = 0.0 
-      y(6) = 0.0 
-      y(7) = 1.0 
+      y(5) = 0.0
+      y(6) = 0.0
+      y(7) = 1.0
       y(8) = 1.0
 
       z(5) = 0.0
@@ -191,7 +191,7 @@ c  Wedge #1
       z(25) =  2.0
       z(26) =  0.0
 
-C Tetra #2 
+C Tetra #2
       x(27) =  2.7
       x(28) =  6.0
       x(29) =  5.7
@@ -207,7 +207,7 @@ C Tetra #2
       z(29) =  1.7
       z(30) =  2.3
 
-C 3d Tri 
+C 3d Tri
       x(31) =  0.0
       x(32) = 10.0
       x(33) = 10.0
@@ -281,20 +281,20 @@ c
 c write element connectivity
 c
       connect( 1) = 1
-      connect( 2) = 2 
-      connect( 3) = 3 
+      connect( 2) = 2
+      connect( 3) = 3
       connect( 4) = 4
       nnpe(1) = 4
 
       connect( 5) = 5
-      connect( 6) = 6 
-      connect( 7) = 7 
+      connect( 6) = 6
+      connect( 7) = 7
       connect( 8) = 8
       nnpe(2) = 4
 
       connect( 9) =  9
       connect(10) = 10
-      connect(11) = 11 
+      connect(11) = 11
       connect(12) = 12
       connect(13) = 13
       connect(14) = 14
@@ -304,7 +304,7 @@ c
 
       connect(17) = 17
       connect(18) = 18
-      connect(19) = 19 
+      connect(19) = 19
       connect(20) = 20
       nnpe(4) = 4
 
@@ -407,7 +407,7 @@ c
       real    coord(27)
 
       numfrm = 3
-      
+
       cfids(1) =   1
       cfids(2) =  11
       cfids(3) = 111
@@ -428,7 +428,7 @@ c
         COORD(9*i+8) = i+0.8
         COORD(9*i+9) = i+0.9
       end do
-      
+
       call expfrm(exoid, numfrm, cfids, coord, tags, ierr);
       write (6,'("after expfrm, error = ", i4)') ierr
 

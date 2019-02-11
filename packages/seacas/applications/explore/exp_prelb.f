@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE PRELB (OPTION, NOUT, NELBLK, NLISEL, LISEL,
      &  IDELB, LENE, NUMLNK, NUMATR, LINK, ATRIB,
@@ -114,7 +114,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
         if (domape) write (*, 10060) 'Element'
         if (domapn) write (*, 10060) 'Nodal'
       end if
-      
+
       WRITE (STRA, 10000, IOSTAT=IDUM) NELBLK
 10000 FORMAT ('(#', I10, ')')
       CALL PCKSTR (1, STRA)
@@ -127,13 +127,13 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       ISLNK = 1
       ISATR = 1
       ISATN = 1
-      
+
       DO 110 IELB = 1, NELBLK
         NUME = LENE(IELB) - LENE(IELB-1)
         if (ebtype(ielb) .eq. 'nsided' .or.
      *    ebtype(ielb) .eq. 'NSIDED') THEN
           numnod = numlnk(ielb)
-        else 
+        else
           numnod = numlnk(ielb)*nume
         end if
         IF (ISABRT ()) RETURN
@@ -209,7 +209,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
               if (mxnam .gt. 24) then
                 WRITE (NOUT, 10070, IOSTAT=IDUM)
      &            (NAMEEV(LISEV(I))(:mxnam), I=1,NSEL)
-              else 
+              else
                 WRITE (NOUT, 10050, IOSTAT=IDUM)
      &            (NAMEEV(LISEV(I))(:mxnam), I=1,NSEL)
               endif
@@ -218,7 +218,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
               if (mxnam .gt. 24) then
                 WRITE (*, 10070, IOSTAT=IDUM)
      &            (NAMEEV(LISEV(I))(:mxnam), I=1,NSEL)
-              else 
+              else
                 WRITE (*, 10050, IOSTAT=IDUM)
      &            (NAMEEV(LISEV(I))(:mxnam), I=1,NSEL)
               endif
@@ -254,7 +254,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
 
 10020 FORMAT (/, 1X, 'ELEMENT BLOCKS', :, ' - ', A)
 C ... NOTE: Normal elements hava a mximum of <100 nodes, but superelements
-C           Or other "strange" elements may have lots of nodes; keep format high       
+C           Or other "strange" elements may have lots of nodes; keep format high
 10030 FORMAT (1X, 'Block', I10, 1X, A, ':',
      &  I10, ' elements', 1X, A,
      &  I6, '-node', I4, ' attributes')

@@ -77,16 +77,16 @@ int main( int argc, char* argv[] ) {
     //
     // Read options from the commandline
     //
-    
+
     CommandLineProcessor clp(false); // Don't throw exceptions
-    
+
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-    
+
     if ( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
       *out << "\nEnd Result: TEST FAILED" << std::endl;
       return parse_return;
     }
-    
+
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
     *out << "\nTesting Teuchos::Ptr class ...\n";

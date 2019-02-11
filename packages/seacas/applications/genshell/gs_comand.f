@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -120,7 +120,7 @@ C   --Command table follows.  Remember to change the dimensioned size when
 C   --changing the table.
       DATA CMDTBL /
      1   'TRANSLAT', 'OFFSET  ', 'REVOLVE ', 'REVCEN  ',
-     2   'WARP    ', 
+     2   'WARP    ',
      3   'NSETS   ', 'NODESETS', 'SSETS   ', 'SIDESETS', 'MIRROR  ',
      4   'LIST    ', 'SHOW    ', 'HELP    ', 'ZERO    ', 'SCALE   ',
      5   'END     ', 'EXIT    ', 'QUIT    ', 'RANDOMIZ',
@@ -155,7 +155,7 @@ C   --Initialize
 
 C     -- Initialize the elattr array here.  These will be used for the
 C     -- attributes of any 3d BEAM blocks. User can change using
-C     -- ATTRIBUTE command.      
+C     -- ATTRIBUTE command.
       do 15 i = 1, nelblk
         elattr(1,i) = 1.0
         elattr(2,i) = 1.0
@@ -165,7 +165,7 @@ C     -- ATTRIBUTE command.
         elattr(6,i) = 0.0
         elattr(7,i) = 1.0
  15   continue
-      
+
       CALL MINMAX (NUMNP, XN, XMIN, XMAX)
       ROTCEN(1) = XMIN
       CALL MINMAX (NUMNP, YN, YMIN, YMAX)
@@ -209,13 +209,13 @@ C   --Perform command
             CALL FFREAL (IFLD, INTYP, RFIELD,
      *           'thickness', 1.0, DIM3, *170)
          end if
-         
+
       ELSE IF (VERB .EQ. 'SPLINE') THEN
          ITRANT = 64
          CALL FFREAL (IFLD, INTYP, RFIELD,
      *      'spline thickness', 1.0, DIM3, *170)
 
-         CALL GETSPL (A) 
+         CALL GETSPL (A)
 
 C --- BEGINNING OF WARP
       ELSE IF (VERB .EQ. 'WARP') THEN
@@ -243,10 +243,10 @@ C --- BEGINNING OF WARP
          IF (MATSTR(WORD, 'LINE', 1)) THEN
             IWARP = 2
 
-C ... For XAXIS and YAXIS warps, we can either map vertically onto 
-C     the cylinder, keeping both X and Y coordinates the same as in 
+C ... For XAXIS and YAXIS warps, we can either map vertically onto
+C     the cylinder, keeping both X and Y coordinates the same as in
 C     the 2D mesh.  Or, we can map onto the surface keeping the length
-C     of the mesh the same in the 2D and 3D meshes.  
+C     of the mesh the same in the 2D and 3D meshes.
 
          ELSE IF (MATSTR(WORD, 'XAXIS', 1)) THEN
             IF (MATSTR(TMPWRD, 'VERTICAL', 1)) THEN
@@ -397,9 +397,9 @@ C     ... Set for cumulative offsets/shifts
             END IF
             GOTO 90
          END IF
-         
+
  100     CONTINUE
-         
+
       ELSE IF (VERB .EQ. 'RANDOMIZ') THEN
  101     CONTINUE
          IF (FFEXST (IFLD, INTYP)) THEN
@@ -433,7 +433,7 @@ C     ... Set for cumulative offsets/shifts
             END IF
             GOTO 101
          END IF
-         
+
  141     CONTINUE
 
       ELSE IF (VERB .EQ. 'MIRROR') THEN
@@ -602,7 +602,7 @@ C ... ATTRIBUTE {id} {which } {value}
             CALL PRTERR ('ERROR', 'Block is not a beam, bar, or truss')
          end if
          verb = ' '
-         
+
       ELSE IF (VERB .EQ. 'CHANGE') THEN
          CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
          CALL FFINTG (IFLD, INTYP, IFIELD,

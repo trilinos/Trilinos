@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,7 +34,7 @@ C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       QAINFO(1) = 'Numbers '
       QAINFO(2) = '        '
       QAINFO(3) = '        '
-      
+
       QAINFO(2)(:8) = '20160510'
       QAINFO(3)(:8) = '    1.27'
 
@@ -44,13 +44,13 @@ C ... Added copyright notice
 C ... Widened element id output in condition
 C ... Trapped non-hex (3d) and non-quad (2d) element blocks
 C ... Added minimum jacobian calculation to condition command
-c ... Cleanup, remove unused variables. 
+c ... Cleanup, remove unused variables.
 c ... Convert to exodusII
 c ... fixed duplicate array name (jacob)
 c ... Fix memory errors with time array
 c ... Fix assumption that variables saved in subs.
 c ... LIST VOLUME for Frank Dempsey -- outputs to output file
-c ... nodalvol for frank 
+c ... nodalvol for frank
 c ... fixed sideset nodes problem
 c ... coordinate names need to be uppercased
 c ... expand input to 32 characters; fix esum logicals
