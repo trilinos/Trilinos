@@ -679,9 +679,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 #       ifdef TEUCHOS_DEBUG
           {
             std::stringstream os;
-            os << "KK before HEEV...\n";
-            state.KK->print(os);
-            os << "\n";
+            os << "KK before HEEV...\n"
+              << *state.KK << "\n";
             *out << os.str();
           }
 #       endif
@@ -696,9 +695,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             std::stringstream os;
             *out << "Ritz values from heev(KK):\n";
             for (unsigned int i=0; i<theta.size(); i++) *out << theta[i] << " ";
-            os << "\nRitz vectors from heev(KK):\n";
-            S.print(os);
-            os << "\n";
+            os << "\nRitz vectors from heev(KK):\n" 
+                                                 << S << "\n";
             *out << os.str();
           }
 #       endif
@@ -717,9 +715,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             std::stringstream os;
             *out << "Ritz values from heev(KK) after sorting:\n";
             std::copy(theta.begin(), theta.end(), std::ostream_iterator<ScalarType>(*out, " "));
-            os << "\nRitz vectors from heev(KK) after sorting:\n";
-            S.print(os);
-            os << "\n";
+            os << "\nRitz vectors from heev(KK) after sorting:\n" 
+              << S << "\n";
             *out << os.str();
           }
 #       endif
@@ -729,9 +726,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 #       ifdef TEUCHOS_DEBUG
           {
             std::stringstream os;
-            os << "Significant primitive Ritz vectors:\n";
-            Sr.print(os);
-            os << "\n";
+            os << "Significant primitive Ritz vectors:\n"
+              << Sr << "\n";
             *out << os.str();
           }
 #       endif
@@ -760,9 +756,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 #       ifdef TEUCHOS_DEBUG
           {
             std::stringstream os;
-            os << "Sr'*KK*Sr:\n";
-            newKK.print(os);
-            os << "\n";
+            os << "Sr'*KK*Sr:\n"
+              << newKK << "\n";
             *out << os.str();
           }
 #       endif
