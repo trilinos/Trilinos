@@ -72,6 +72,36 @@
 #include <MueLu_Utilities.hpp>
 #endif
 
+#include <Xpetra_ThyraUtils.hpp>
+
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+//Thyra includes
+#include <Thyra_LinearOpWithSolveBase.hpp>
+#include <Thyra_VectorBase.hpp>
+#include <Thyra_SolveSupportTypes.hpp>
+#include <Thyra_LinearOpWithSolveBase.hpp>
+#include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
+#include <Thyra_TpetraLinearOp.hpp>
+#include <Thyra_TpetraMultiVector.hpp>
+#include <Thyra_TpetraVector.hpp>
+#include <Thyra_TpetraThyraWrappers.hpp>
+#include <Thyra_TpetraThyraWrappers_def.hpp>
+#include <Thyra_VectorBase.hpp>
+#include <Thyra_VectorStdOps.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include <Thyra_EpetraLinearOp.hpp>
+#endif
+#include <Thyra_VectorSpaceBase_def.hpp>
+#include <Thyra_VectorSpaceBase_decl.hpp>
+#include <Thyra_TpetraMultiVector_decl.hpp>
+#include <Thyra_TpetraMultiVector_def.hpp>
+
+
+//Stratimikos
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#endif
+
+
 namespace FROSch {
     
     template <class SC,
@@ -134,7 +164,12 @@ namespace FROSch {
         typedef Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > MueLuFactoryPtr;
         typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
 #endif
-        
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+
+        typedef typename Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> SolverBuilderPtr;
+        typedef typename Teuchos::RCP<Thyra::LinearOpWithSolveBase<SC> > ThyraSolveBasePtr;
+         typedef Xpetra::ThyraUtils<SC,LO,GO,NO>       XpThyUtils;
+#endif
         SubdomainSolver(CrsMatrixPtr k,
                         ParameterListPtr parameterList,
                         GOVecPtr blockCoarseSize=Teuchos::null);
@@ -193,6 +228,11 @@ namespace FROSch {
         Teuchos::RCP<Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > >  BelosLinearProblem_;
         Teuchos::RCP<Belos::SolverManager<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > > BelosSolverManager_;
 #endif
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+         ThyraSolveBasePtr ThyraSolver_;
+#endif
+        
+        
         
         bool IsInitialized_;
         bool IsComputed_;        

@@ -66,6 +66,9 @@ namespace FROSch {
     BelosLinearProblem_(),
     BelosSolverManager_(),
 #endif
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+    ThyraSolver_(),
+#endif
     IsInitialized_ (false),
     IsComputed_ (false)
     {
@@ -167,7 +170,33 @@ namespace FROSch {
             
             BelosSolverManager_->setProblem(BelosLinearProblem_);
 #endif
-        } else {
+        }
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+        else if(!ParameterList_->get("SolverType","Amesos").compare("Thyra")){
+            Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO> > K_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO> >(K_);
+            Teuchos::RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(K_wrap->getCrsMatrix());
+            Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+            K_->getMap()->getComm()->barrier();
+            K_->getMap()->getComm()->barrier();
+            K_->getMap()->getComm()->barrier();
+            if(K_->getMap()->getComm()->getRank() == 0) std::cout<<"Test 1\n";
+            ParameterListPtr solverParameterList = sublist(ParameterList_,"Thyra");
+            ParameterList_->print(std::cout);
+            linearSolverBuilder.setParameterList(solverParameterList);
+            Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<SC> > lowsfactory = linearSolverBuilder.createLinearSolveStrategy("");
+            lowsfactory->setVerbLevel(Teuchos::VERB_LOW);
+            K_->getMap()->getComm()->barrier();
+            K_->getMap()->getComm()->barrier();
+            K_->getMap()->getComm()->barrier();
+            if(K_->getMap()->getComm()->getRank() == 0) std::cout<<"Test 2\n";
+            ThyraSolver_ = Thyra::linearOpWithSolve(*lowsfactory,K_thyra);
+            K_->getMap()->getComm()->barrier();
+            K_->getMap()->getComm()->barrier();
+            K_->getMap()->getComm()->barrier();
+            if(K_->getMap()->getComm()->getRank() == 0) std::cout<<"Test 3\n";
+        }
+#endif
+        else {
             FROSCH_ASSERT(false,"SolverType unknown...");
         }
     }
@@ -195,6 +224,9 @@ namespace FROSch {
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS
         BelosLinearProblem_.reset();
         BelosSolverManager_.reset();
+#endif
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+        ThyraSolver_.reset();
 #endif
     }
     
@@ -230,7 +262,13 @@ namespace FROSch {
             IsInitialized_ = true;
             IsComputed_ = false;
 #endif
-        } else {
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Thyra")){
+            IsInitialized_ = true;
+            IsComputed_ = false;
+        }
+#endif
+            else {
             FROSCH_ASSERT(false,"SolverType unknown...");
         }
         return 0;
@@ -285,6 +323,10 @@ namespace FROSch {
                 }
             }
             IsComputed_ = true;
+#endif
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+        }else if (!ParameterList_->get("SolverType","Amesos").compare("Thyra")) {
+             IsComputed_ = true;
 #endif
         } else {
             FROSCH_ASSERT(false,"SolverType unknown...");
@@ -377,7 +419,34 @@ namespace FROSch {
             BelosSolverManager_->solve();
             y = *yTmp;
 #endif
-        } else {
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
+        } else if(!ParameterList_->get("SolverType","Amesos").compare("Thyra")){
+            yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),x.getNumVectors());
+            Teuchos::RCP<Thyra::MultiVectorBase<SC> > thyrax = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> > (Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(yTmp));
+            Teuchos::RCP<const Thyra::MultiVectorBase<SC> > thyraB = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(rcpFromRef(x));
+            Thyra::SolveStatus<SC> status  = Thyra::solve<SC> (*ThyraSolver_, Thyra::NOTRANS, *thyraB, thyrax.ptr());
+            const Teuchos::RCP<const Teuchos::Comm<int> > theComm = x.getMap()->getComm();
+            if(K_->getMap()->lib() == Xpetra::UseEpetra){
+                Teuchos::RCP<const Xpetra::EpetraMapT<GO,NO> > eDomainM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(K_->getDomainMap());
+                const Epetra_Map epetraMap = eDomainM->getEpetra_Map();
+                Teuchos::RCP<const Epetra_MultiVector> YY;
+                YY = Thyra::get_Epetra_MultiVector(epetraMap, thyrax );
+                
+                const Epetra_MultiVector Yy = *YY;
+                
+                for (LO i=0; i<YY->NumVectors(); i++) {
+                    for (LO j=0; j<YY->MyLength(); j++) {
+                        y.getDataNonConst(i)[j] = Yy[i][j];
+                    }
+                }
+            }else if(K_->getMap()->lib() == Xpetra::UseTpetra){
+                //Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > YY = Thyra::getTpetraMultiVector(thyrax);
+                Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > YTMP = XpThyUtils::toXpetra(thyrax,K_->getMap()->getComm());
+                y = *YTMP;
+            }
+        
+#endif
+        }else {
             FROSCH_ASSERT(false,"SolverType unknown...");
         }
         y.update(alpha,*yTmp,beta);
