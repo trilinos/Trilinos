@@ -534,8 +534,7 @@ namespace FROSch {
                                 entries.push_back(x.first);
                             }
                         }
-                        
-                        
+                        Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,entries.size(),entries.size(),0,this->K_->getMap()->getComm());
                         MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
                         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
                         std::vector<GO> col_vec(entries.size());
@@ -544,7 +543,7 @@ namespace FROSch {
                             col_vec.at(i) =i;
                         }
                         Teuchos::ArrayView<GO> cols(col_vec);
-                        this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
+                        this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,10));
                         this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),cols,entries());
                         this->GraphEntriesList_->fillComplete();
                         
