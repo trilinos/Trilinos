@@ -457,7 +457,7 @@ template<class LO, class GO, class Node, class Scalar>
 void
 print_crsmatrix(const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
                 Teuchos::FancyOStream&                         out,
-                const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& m, 
+                const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& m,
                 const std::string                              label)
 {
     using Teuchos::Comm;
@@ -581,12 +581,315 @@ compare_crsmatrix(const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
 }
 
 
+template<class LO, class GO, class Node>
+class crsMatrix_Swap_Tester
+{
+    using Scalar                   = int;
+    using comm_type                = Teuchos::RCP<const Teuchos::Comm<int>>;       // The comm type
+    using graph_type               = Tpetra::CrsGraph<LO, GO, Node>;               // Tpetra CrsGraph type
+    using pair_owner_type          = std::pair<GO, int>;                           // For row owners, pairs are (rowid, comm rank)
+    using vec_owners_type          = std::vector<pair_owner_type>;                 // For vectors of owners
+    using tuple_weighted_edge_type = std::tuple<GO, GO, Scalar>;                   // Weighted edges (u,v,w)
+    using vec_weighted_edge_type   = std::vector<tuple_weighted_edge_type>;        // Vector of weighted edges
+    using matrix_type              = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;      // Tpetra CrsMatrix type
+
+  public:
+    void execute(Teuchos::FancyOStream& out, bool& success)
+    {
+        using std::endl;
+        using Teuchos::Comm;
+        using Teuchos::outArg;
+        using Teuchos::RCP;
+
+        bool verbose = Tpetra::Details::Behavior::verbose();
+
+        comm_type initialComm = getDefaultComm();
+
+        TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
+
+        // Set up a communicator that has exactly two processors in it for the actual test.
+        const int color = (initialComm->getRank() < 2) ? 0 : 1;
+        const int key   = 0;
+        comm_type comm  = initialComm->split(color, key);
+
+        // If I am involved in this test (i.e., my pid == 0 or 1)
+        if(0 == color)
+        {
+            const int num_procs = comm->getSize();
+            const int my_rank   = comm->getRank();
+            assert(num_procs == 2);
+
+            out << ">>> CrsGraph::swap() Unit Test" << std::endl;
+            out << ">>> num_procs: " << num_procs << std::endl;
+
+            success = true;
+
+            //--------------------------------------------------------------------
+            //
+            // Construct CrsGraphs & CrsMatrices
+            //
+            //--------------------------------------------------------------------
+            out << std::endl
+                << ">>> ----------------------------------------------------------" << std::endl
+                << ">>> -" << std::endl
+                << ">>> - Construct CrsGraphs & CrsMatrices" << std::endl
+                << ">>> -" << std::endl
+                << ">>> ----------------------------------------------------------" << std::endl
+                << std::endl;
+
+            // Create weighted edge pairs for graph/matrix type 1
+            vec_weighted_edge_type vec_edges_wgt = {
+              std::make_tuple(0, 0, 0),
+              std::make_tuple(0, 11, 11),      // row 0
+              std::make_tuple(1, 3, 103),
+              std::make_tuple(1, 4, 104),      // row 1
+              std::make_tuple(3, 2, 302),      // row 3
+              std::make_tuple(7, 5, 705),
+              std::make_tuple(7, 7, 707),       // row 7
+              std::make_tuple(10, 6, 1006)      // row 10
+            };
+
+            vec_owners_type vec_owners = {
+              pair_owner_type(0, 0),
+              pair_owner_type(1, 0),
+              pair_owner_type(3, 0),      // p0
+              pair_owner_type(7, 1),
+              pair_owner_type(10, 1)      // p1
+            };
+
+            if(verbose)
+            {
+                for(auto& p: vec_edges_wgt)
+                    out << "ew: " << std::get<0>(p) << ", " << std::get<1>(p) << ", " << std::get<2>(p) << std::endl;
+                for(auto& p: vec_owners) out << "o : " << p.first << ", " << p.second << std::endl;
+            }
+
+            if(my_rank == 0)
+                out << ">>> create graph_a" << std::endl;
+            RCP<graph_type> graph_a = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                graph_a->describe(out, Teuchos::VERB_DEFAULT);
+
+            if(my_rank == 0)
+                out << ">>> create matrix_a" << std::endl;
+            RCP<matrix_type> matrix_a = generate_crsmatrix<LO, GO, Node, Scalar>(comm, graph_a, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                matrix_a->describe(out, Teuchos::VERB_DEFAULT);
+
+            if(my_rank == 0)
+                out << ">>> create graph_b" << std::endl;
+            RCP<graph_type> graph_b = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                graph_b->describe(out, Teuchos::VERB_DEFAULT);
+
+            if(my_rank == 0)
+                out << ">>> create matrix_b" << std::endl;
+            RCP<matrix_type> matrix_b = generate_crsmatrix<LO, GO, Node, Scalar>(comm, graph_b, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                matrix_b->describe(out, Teuchos::VERB_DEFAULT);
+
+            vec_edges_wgt.clear();
+            vec_owners.clear();
+
+            vec_edges_wgt = {
+              std::make_tuple(0, 0, 0),
+              std::make_tuple(0, 11, 11),      // row 0
+              std::make_tuple(1, 7, 107),
+              std::make_tuple(1, 8, 108),       // row 1
+              std::make_tuple(3, 1, 301),       // row 3
+              std::make_tuple(7, 5, 705),       // row 7
+              std::make_tuple(10, 4, 1004)      // row 10
+            };
+
+            vec_owners = {
+              pair_owner_type(0, 0),
+              pair_owner_type(1, 0),      // p0
+              pair_owner_type(3, 1),
+              pair_owner_type(7, 1),
+              pair_owner_type(10, 1)      // p1
+            };
+
+            if(my_rank == 0)
+                out << ">>> create graph_c" << std::endl;
+            RCP<graph_type> graph_c = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                graph_c->describe(out, Teuchos::VERB_DEFAULT);
+
+            if(my_rank == 0)
+                out << ">>> create matrix_c" << std::endl;
+            RCP<matrix_type> matrix_c = generate_crsmatrix<LO, GO, Node, Scalar>(comm, graph_c, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                matrix_c->describe(out, Teuchos::VERB_DEFAULT);
+
+            if(my_rank == 0)
+                out << ">>> create graph_d" << std::endl;
+            RCP<graph_type> graph_d = generate_crsgraph<LO, GO, Node, Scalar>(comm, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                graph_d->describe(out, Teuchos::VERB_DEFAULT);
+
+            if(my_rank == 0)
+                out << ">>> create matrix_d" << std::endl;
+            RCP<matrix_type> matrix_d = generate_crsmatrix<LO, GO, Node, Scalar>(comm, graph_d, vec_edges_wgt, vec_owners, 12);
+            if(verbose)
+                matrix_d->describe(out, Teuchos::VERB_DEFAULT);
+
+            //--------------------------------------------------------------------
+            //
+            // Test CrsGraph::swap()
+            //
+            //--------------------------------------------------------------------
+            out << std::endl
+                << ">>> ----------------------------------------------------------" << std::endl
+                << ">>> -" << std::endl
+                << ">>> - Test CrsGraph::swap()" << std::endl
+                << ">>> -" << std::endl
+                << ">>> ----------------------------------------------------------" << std::endl
+                << std::endl;
+
+            // Verify the initial matching state of the graphs and matrices.
+            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), true);       // graph_a and graph_b should be the same
+            TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), true);       // graph_c and graph_d should be the same
+            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), false);      // graph_a and graph_c should be different
+            TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
+
+            //
+            // Swap graph b and c
+            //
+            out << std::endl << ">>> swap B and C so that A!=B, B!=C, A==C, B==D" << std::endl;
+            out << ">>> swap graph_b and graph_c" << std::endl;
+            graph_b->swap(*graph_c);
+
+            // Verify that the graph and matrices were swapped correctly.
+            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), false);      // graph_a and graph_b should be different
+            TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), false);      // graph_c and graph_d should be different
+            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), true);       // graph_a and graph_c should be the same
+            TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), true);       // graph_b and graph_d should be the same
+
+            //
+            // Swap graph b and c again.
+            //
+            out << std::endl << ">>> swap B and C back to original state." << std::endl;
+            out << ">>> swap graph_b and graph_c" << std::endl;
+            graph_b->swap(*graph_c);
+
+            // Verify the initial identical-to state of the graphs (they should be back to the original state)
+            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), true);       // graph_a and graph_b should be the same
+            TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), true);       // graph_c and graph_d should be the same
+            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), false);      // graph_a and graph_c should be different
+            TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
+
+            //--------------------------------------------------------------------
+            //
+            // Test CrsMatrix::swap()
+            //
+            //--------------------------------------------------------------------
+            out << std::endl
+                << ">>> ----------------------------------------------------------" << std::endl
+                << ">>> -" << std::endl
+                << ">>> - Test CrsMatrix::swap()" << std::endl
+                << ">>> -" << std::endl
+                << ">>> ----------------------------------------------------------" << std::endl
+                << std::endl;
+
+            //
+            // Compare the matrices to verify the right initial state:
+            // - A == B
+            // - C == D
+            // - A != C
+            // - B != D
+            //
+            out << std::endl << ">>> Compare matrix_a == matrix_b" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_a, *matrix_b),
+                          true);      // matrix_a and matrix_b should be the same
+
+            out << std::endl << ">>> Compare matrix_c == matrix_d" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_c, *matrix_d),
+                          true);      // matrix_c and matrix_d should be the same
+
+            out << std::endl << ">>> Compare matrix_a != matrix_c" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_a, *matrix_c),
+                          false);      // matrix_a and matrix_c should be different
+
+            out << std::endl << ">>> Compare matrix_b != matrix_d" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_b, *matrix_d),
+                          false);      // matrix_b and matrix_d should be different
+
+            //
+            // Swap matrix b and c
+            //
+            out << ">>> swap matrix_b and matrix_c" << std::endl << std::endl;
+            matrix_b->swap(*matrix_c);
+
+            //
+            // Compare the matrices to verify the right initial state:
+            // - A != B
+            // - C != D
+            // - A == C
+            // - B == D
+            //
+            out << std::endl << ">>> Compare matrix_a != matrix_b" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_a, *matrix_b),
+                          false);      // matrix_a and matrix_b should be different
+
+            out << std::endl << ">>> Compare matrix_c != matrix_d" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_c, *matrix_d),
+                          false);      // matrix_c and matrix_d should be different
+
+            out << std::endl << ">>> Compare matrix_a == matrix_c" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_a, *matrix_c),
+                          true);      // matrix_a and matrix_c should be the same
+
+            out << std::endl << ">>> Compare matrix_b == matrix_d" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_b, *matrix_d),
+                          true);      // matrix_b and matrix_d shoudl be the same
+
+            //
+            // Swap matrix b and c again
+            //
+            out << ">>> swap matrix_b and matrix_c" << std::endl << std::endl;
+            matrix_c->swap(*matrix_b);
+
+            //
+            // Compare the matrices to verify the right initial state:
+            // - A == B
+            // - C == D
+            // - A != C
+            // - B != D
+            //
+            out << std::endl << ">>> Compare matrix_a == matrix_b" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_a, *matrix_b),
+                          true);      // matrix_a and matrix_b should be the same
+
+            out << std::endl << ">>> Compare matrix_c == matrix_d" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_c, *matrix_d),
+                          true);      // matrix_c and matrix_d should be the same
+
+            out << std::endl << ">>> Compare matrix_a != matrix_c" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_a, *matrix_c),
+                          false);      // matrix_a and matrix_c should be different
+
+            out << std::endl << ">>> Compare matrix_b != matrix_d" << std::endl;
+            TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_b, *matrix_d),
+                          false);      // matrix_b and matrix_d should be different
+
+        }      // if(0==color) ...   i.e., if I am in the active communicator group for the test.
+    }
+};
+
+
+
 
 //
 // UNIT TESTS
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 {
+
+    crsMatrix_Swap_Tester<LO,GO,Node> crsMatrixTester = crsMatrix_Swap_Tester<LO,GO,Node>();
+
+    crsMatrixTester.execute(out, success);
+
+#if 0
     using std::endl;
     using Teuchos::Comm;
     using Teuchos::outArg;
@@ -604,7 +907,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     using vec_weighted_edge_type   = std::vector<tuple_weighted_edge_type>;      // Vector of weighted edges
 
     using matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;      // Tpetra CrsMatrix type
-
 
     bool verbose = Tpetra::Details::Behavior::verbose();
 
@@ -765,7 +1067,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
             << ">>> ----------------------------------------------------------" << std::endl
             << std::endl;
 
-        // 
+        //
         // Compare the matrices to verify the right initial state:
         // - A == B
         // - C == D
@@ -790,7 +1092,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         out << ">>> swap matrix_b and matrix_c" << std::endl << std::endl;
         matrix_b->swap(*matrix_c);
 
-        // 
+        //
         // Compare the matrices to verify the right initial state:
         // - A != B
         // - C != D
@@ -815,7 +1117,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         out << ">>> swap matrix_b and matrix_c" << std::endl << std::endl;
         matrix_c->swap(*matrix_b);
 
-        // 
+        //
         // Compare the matrices to verify the right initial state:
         // - A == B
         // - C == D
@@ -835,6 +1137,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         TEST_EQUALITY(compare_crsmatrix(comm, out, *matrix_b, *matrix_d), false); // matrix_b and matrix_d should be different
 
     }      // if(0==color) ...   i.e., if I am in the active communicator group for the test.
+#endif
 }
 
 
