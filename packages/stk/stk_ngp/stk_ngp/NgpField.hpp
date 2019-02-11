@@ -180,10 +180,15 @@ public:
 
     void sync_to_device() { }
 
+#ifdef STK_HIDE_DEPRECATED_CODE
 private:
+#endif
     void copy_host_to_device() { };
 
     void copy_device_to_host() { };
+#ifndef STK_HIDE_DEPRECATED_CODE
+private:
+#endif
 
     void swap_data(ConstStkFieldAdapter<T> &sf) { }
 
@@ -334,7 +339,38 @@ public:
 
     const stk::mesh::BulkData& get_bulk() const { return *hostBulk; }
 
+#ifdef STK_HIDE_DEPRECATED_CODE
 private:
+#endif
+    void copy_device_to_host()
+    {
+        Kokkos::deep_copy(hostData, deviceData);  // Old Kokkos API
+        clear_sync_state();                       // Old Kokkos API
+//        fieldData.sync_host();  // New Kokkos API
+
+        if (hostField) {
+          stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
+          const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+          copy_data(buckets, [](T &hostFieldData, T &stkFieldData){stkFieldData = hostFieldData;});
+        }
+    }
+
+    void copy_host_to_device()
+    {
+        if (hostField) {
+          stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
+          const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
+          copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
+        }
+
+        Kokkos::deep_copy(deviceData, hostData);  // Old Kokkos API
+        clear_sync_state();                       // Old Kokkos API
+//        fieldData.sync_device();  // New Kokkos API
+    }
+
+#ifndef STK_HIDE_DEPRECATED_CODE
+private:
+#endif
     bool need_sync_to_host() const
     {
         return fieldData.modified_device() > fieldData.modified_host();  // Old Kokkos API
@@ -401,32 +437,6 @@ private:
                 }
             }
         }
-    }
-
-    void copy_device_to_host()
-    {
-        Kokkos::deep_copy(hostData, deviceData);  // Old Kokkos API
-        clear_sync_state();                       // Old Kokkos API
-//        fieldData.sync_host();  // New Kokkos API
-
-        if (hostField) {
-          stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
-          const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
-          copy_data(buckets, [](T &hostFieldData, T &stkFieldData){stkFieldData = hostFieldData;});
-        }
-    }
-
-    void copy_host_to_device()
-    {
-        if (hostField) {
-          stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
-          const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
-          copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
-        }
-
-        Kokkos::deep_copy(deviceData, hostData);  // Old Kokkos API
-        clear_sync_state();                       // Old Kokkos API
-//        fieldData.sync_device();  // New Kokkos API
     }
 
     unsigned get_num_components_per_entity() const {
@@ -531,7 +541,24 @@ public:
         }
     }
 
+#ifdef STK_HIDE_DEPRECATED_CODE
 private:
+#endif
+    void copy_device_to_host()
+    {
+        staticField.modify_on_device();
+        staticField.copy_device_to_host();
+    }
+
+    void copy_host_to_device()
+    {
+        staticField.modify_on_host();
+        staticField.copy_host_to_device();
+    }
+#ifndef STK_HIDE_DEPRECATED_CODE
+private:
+#endif
+
     bool need_sync_to_host() const
     {
         return staticField.need_sync_to_host();
@@ -558,18 +585,6 @@ private:
     {
         staticField.swap_data(sf);
         constDeviceData = staticField.deviceData;
-    }
-
-    void copy_device_to_host()
-    {
-        staticField.modify_on_device();
-        staticField.copy_device_to_host();
-    }
-
-    void copy_host_to_device()
-    {
-        staticField.modify_on_host();
-        staticField.copy_host_to_device();
     }
 
 #ifdef KOKKOS_ENABLE_CUDA
