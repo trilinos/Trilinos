@@ -566,7 +566,6 @@ int main(int narg, char *arg[])
         eV->ReplaceMyValue(i, v, inV[i]);
     }
         
-    RCP<xvector_t> xV = Zoltan2::XpetraTraits<evector_t>::convertToXpetra(eV);
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   
