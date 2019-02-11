@@ -88,6 +88,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Material Coordinates",        Teuchos::null, "Generating factory of the material coordinates");
     validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
@@ -116,6 +117,15 @@ namespace MueLu {
     } else if (bTransferCoordinates_) {
       Input(fineLevel, "Coordinates");
     }
+   if( fineLevel.GetLevelID() == 0 &&
+        fineLevel.IsAvailable("Material Coordinates", NoFactory::get()) &&     // we have coordinates (provided by user app)
+       pL.get<bool>("tentative: build coarse coordinates") ) {       // and we want coordinates on other levels
+     bTransferMatCoordinates_ = true;                                   // then set the transfer coordinates flag to true
+     Input(fineLevel, "Material Coordinates");
+   } else if (bTransferMatCoordinates_) {
+     Input(fineLevel, "Material Coordinates");
+   }
+  
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -136,8 +146,12 @@ namespace MueLu {
     RCP<MultiVector>           fineNullspace = Get< RCP<MultiVector> >          (fineLevel, "Nullspace");
     RCP<const Map>             coarseMap     = Get< RCP<const Map> >            (fineLevel, "CoarseMap");
     RCP<RealValuedMultiVector> fineCoords;
+    RCP<Vector>                fineMatCoords;
     if(bTransferCoordinates_) {
       fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
+    }
+    if(bTransferMatCoordinates_) {
+      fineMatCoords = Get< RCP<Vector> >(fineLevel, "Material Coordinates");
     }
 
     // FIXME: We should remove the NodeComm on levels past the threshold
@@ -152,66 +166,13 @@ namespace MueLu {
     RCP<Matrix>                Ptentative;
     RCP<MultiVector>           coarseNullspace;
     RCP<RealValuedMultiVector> coarseCoords;
+    RCP<Vector>                coarseMatCoords;
 
     if(bTransferCoordinates_) {
-      //*** Create the coarse coordinates ***
-      // First create the coarse map and coarse multivector
-      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
-      LO                  blkSize      = 1;
-      if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
-        blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
-      GO                  indexBase     = coarseMap->getIndexBase();
-      size_t              numNodes      = elementAList.size() / blkSize;
-      Array<GO>           nodeList(numNodes);
-      const int           numDimensions = fineCoords->getNumVectors();
-
-      for (LO i = 0; i < Teuchos::as<LO>(numNodes); i++) {
-        nodeList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
-      }
-      RCP<const Map> coarseCoordsMap = MapFactory::Build(fineCoords->getMap()->lib(),
-                                                         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                         nodeList,
-                                                         indexBase,
-                                                         fineCoords->getMap()->getComm());
-      coarseCoords = RealValuedMultiVectorFactory::Build(coarseCoordsMap, numDimensions);
-
-      // Create overlapped fine coordinates to reduce global communication
-      RCP<RealValuedMultiVector> ghostedCoords;
-      if (aggregates->AggregatesCrossProcessors()) {
-        RCP<const Map>    aggMap = aggregates->GetMap();
-        RCP<const Import> importer     = ImportFactory::Build(fineCoords->getMap(), aggMap);
-
-        ghostedCoords = RealValuedMultiVectorFactory::Build(aggMap, numDimensions);
-        ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
-      } else {
-        ghostedCoords = fineCoords;
-      }
-
-      // Get some info about aggregates
-      int                         myPID        = coarseCoordsMap->getComm()->getRank();
-      LO                          numAggs      = aggregates->GetNumAggregates();
-      ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
-      const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
-      const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
-
-      // Fill in coarse coordinates
-      for (int dim = 0; dim < numDimensions; ++dim) {
-        ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
-        ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
-
-        for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
-          if (procWinner[lnode] == myPID &&
-              lnode < vertex2AggID.size() &&
-              lnode < fineCoordsData.size() &&
-              vertex2AggID[lnode] < coarseCoordsData.size() &&
-              Teuchos::ScalarTraits<coordinate_type>::isnaninf(fineCoordsData[lnode]) == false) {
-            coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
-          }
-        }
-        for (LO agg = 0; agg < numAggs; agg++) {
-          coarseCoordsData[agg] /= aggSizes[agg];
-        }
-      }
+      coarseCoords    = TransferCoords<RealValuedMultiVector,RealValuedMultiVectorFactory>(fineLevel,fineCoords);
+    }
+    if(bTransferMatCoordinates_) {
+      coarseMatCoords = TransferCoords<Vector,VectorFactory>(fineLevel,fineMatCoords);
     }
 
     if (!aggregates->AggregatesCrossProcessors())
@@ -234,6 +195,9 @@ namespace MueLu {
 
     if(bTransferCoordinates_) {
       Set(coarseLevel, "Coordinates", coarseCoords);
+    }
+    if(bTransferMatCoordinates_) {
+      Set(coarseLevel, "Material Coordinates", coarseMatCoords);
     }
     Set(coarseLevel, "Nullspace",   coarseNullspace);
     Set(coarseLevel, "P",           Ptentative);
@@ -956,6 +920,80 @@ namespace MueLu {
     return goodMap;
   }
 
+
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+template<class CoordinatesType, class CoordinatesFactoryType>
+RCP<CoordinatesType> TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TransferCoords(Level& fineLevel, RCP<CoordinatesType> fineCoords) const{
+  typedef typename CoordinatesType::scalar_type coordinate_type;
+
+  RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
+  RCP<const Map>             coarseMap     = Get< RCP<const Map> >            (fineLevel, "CoarseMap");
+
+  //*** Create the coarse coordinates ***
+  // First create the coarse map and coarse multivector
+  ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+  LO                  blkSize      = 1;
+  if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+    blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+  GO                  indexBase     = coarseMap->getIndexBase();
+  size_t              numNodes      = elementAList.size() / blkSize;
+  Array<GO>           nodeList(numNodes);
+  const int           numDimensions = fineCoords->getNumVectors();
+  
+  for (LO i = 0; i < Teuchos::as<LO>(numNodes); i++) {
+    nodeList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+  }
+
+  RCP<const Map> coarseCoordsMap = MapFactory::Build(fineCoords->getMap()->lib(),
+                                                     Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                     nodeList,
+                                                     indexBase,
+                                                     fineCoords->getMap()->getComm());
+  RCP<CoordinatesType> coarseCoords = CoordinatesFactoryType::Build(coarseCoordsMap, numDimensions);
+  
+  // Create overlapped fine coordinates to reduce global communication
+  RCP<CoordinatesType> ghostedCoords;
+  if (aggregates->AggregatesCrossProcessors()) {
+    RCP<const Map>    aggMap = aggregates->GetMap();
+    // FIXME: We shouldn't have to build this importer from scratch here...
+    RCP<const Import> importer     = ImportFactory::Build(fineCoords->getMap(), aggMap);
+    
+    ghostedCoords = CoordinatesFactoryType::Build(aggMap, numDimensions);
+    ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
+  } else {
+    ghostedCoords = fineCoords;
+  }
+  
+  // Get some info about aggregates
+  int                         myPID        = coarseCoordsMap->getComm()->getRank();
+  LO                          numAggs      = aggregates->GetNumAggregates();
+  ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
+  const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
+  const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
+  
+  // Fill in coarse coordinates
+  for (int dim = 0; dim < numDimensions; ++dim) {
+    ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
+    ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
+    
+    for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
+      if (procWinner[lnode] == myPID &&
+          lnode < vertex2AggID.size() &&
+          lnode < fineCoordsData.size() &&
+          vertex2AggID[lnode] < coarseCoordsData.size() &&
+          Teuchos::ScalarTraits<coordinate_type>::isnaninf(fineCoordsData[lnode]) == false) {
+        coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
+      }
+    }
+    for (LO agg = 0; agg < numAggs; agg++) {
+      coarseCoordsData[agg] /= aggSizes[agg];
+    }
+  }
+
+  return coarseCoords;
+}
+  
+  
 } //namespace MueLu
 
 // TODO ReUse: If only P or Nullspace is missing, TentativePFactory can be smart and skip part of the computation.

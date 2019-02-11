@@ -159,7 +159,12 @@ namespace MueLu {
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
+    template<class CoordinatesType, typename CoordinatesFactoryType>
+    RCP<CoordinatesType> TransferCoords(Level& fineLevel, RCP<CoordinatesType> coords) const;
+
+
     mutable bool bTransferCoordinates_ = false;
+    mutable bool bTransferMatCoordinates_ = false;
 
   }; //class TentativePFactory
 
