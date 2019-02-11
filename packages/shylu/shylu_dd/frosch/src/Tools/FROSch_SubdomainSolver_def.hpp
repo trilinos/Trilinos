@@ -130,7 +130,7 @@ namespace FROSch {
                 nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(K_->getRowMap(), 1);
                 nullspace->putScalar(1.);
             }
-            else if (!ParameterList_->sublist("MueLu").get("NullSpace","Laplace").compare("SPP")) {
+            else if (!ParameterList_->sublist("MueLu").get("NullSpace","Laplace").compare("SPP")) { // Hier matrix zu block matrix konvertieren
                 FROSCH_ASSERT(blockCoarseSize.size()==2,"Wrong size of blockCoarseSize for MueLu nullspace...");
                 unsigned dofs = (unsigned) ParameterList_->sublist("MueLu").get("Dimension",2);
                 nullspace = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(K_->getRowMap(), dofs+1);
@@ -146,8 +146,8 @@ namespace FROSch {
                     }
                 }
             }
-            MueLuHierarchy_ = MueLuFactory_->CreateHierarchy();
-            MueLuHierarchy_->GetLevel(0)->Set("A",K_);
+            MueLuHierarchy_ = MueLuFactory_->CreateHierarchy(); // Das vor den if block
+            MueLuHierarchy_->GetLevel(0)->Set("A",K_); // Das in den if block
             MueLuHierarchy_->GetLevel(0)->Set("Nullspace", nullspace);
 #endif
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS

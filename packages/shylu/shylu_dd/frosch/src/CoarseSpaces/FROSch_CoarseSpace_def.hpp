@@ -165,6 +165,12 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
+    bool CoarseSpace<SC,LO,GO,NO>::hasBasisMap() const
+    {
+        return !AssembledBasisMap_.is_null();
+    }
+    
+    template <class SC,class LO,class GO,class NO>
     typename CoarseSpace<SC,LO,GO,NO>::MapPtr CoarseSpace<SC,LO,GO,NO>::getBasisMap() const
     {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"AssembledBasisMap_.is_null().");
@@ -172,10 +178,22 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename CoarseSpace<SC,LO,GO,NO>::MultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getLocalBasis() const
+    bool CoarseSpace<SC,LO,GO,NO>::hasAssembledBasis() const
+    {
+        return !AssembledBasis_.is_null();
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename CoarseSpace<SC,LO,GO,NO>::MultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getAssembledBasis() const
     {
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"AssembledBasis_.is_null().");
         return AssembledBasis_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    bool CoarseSpace<SC,LO,GO,NO>::hasGlobalBasisMatrix() const
+    {
+        return !GlobalBasisMatrix_.is_null();
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -183,12 +201,6 @@ namespace FROSch {
     {
         FROSCH_ASSERT(!GlobalBasisMatrix_.is_null(),"GlobalBasisMatrix_.is_null().");
         return GlobalBasisMatrix_;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    bool CoarseSpace<SC,LO,GO,NO>::hasAssembledBasis() const
-    {
-        return !AssembledBasis_.is_null();
     }
 }
 
