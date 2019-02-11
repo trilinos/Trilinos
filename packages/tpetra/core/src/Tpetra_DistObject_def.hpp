@@ -527,7 +527,7 @@ namespace Tpetra {
     Distributor& distor = transfer.getDistributor ();
 
     if (debug) {
-      if (restrictedMode && (permuteToLIDs_dv.extent(0) != 0 || permuteFromLIDs_dv.extent(0) !=0)) {
+      if (restrictedMode && (transfer.getPermuteToLIDs_dv().extent(0) != 0 || transfer.getPermuteFromLIDs_dv().extent(0) !=0)) {
         TEUCHOS_TEST_FOR_EXCEPTION
           (1, std::invalid_argument,
            "Tpetra::DistObject::" << modeString << ": transfer object "
@@ -1345,7 +1345,6 @@ namespace Tpetra {
         os << *prefix << "2. copyAndPermuteNew" << endl;
         std::cerr << os.str ();
       }
-    {
       ProfilingRegion region_cp
         ("Tpetra::DistObject::doTransferNew::copyAndPermuteNew");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
