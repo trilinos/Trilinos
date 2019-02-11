@@ -1300,6 +1300,7 @@ namespace MueLu {
       repartheurFactory->SetParameterList(repartheurParams);
       repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
       manager.SetFactory("number of partitions", repartheurFactory);
+      manager.SetFactory("repartition: heuristic target rows per process", repartheurFactory);
 
       // Partitioner
       RCP<Factory> partitioner;
@@ -1317,6 +1318,8 @@ namespace MueLu {
         RCP<const ParameterList> partpartParams = rcp(new ParameterList(paramList.sublist("repartition: params", false)));
         partParams.set("ParameterList", partpartParams);
         partitioner->SetParameterList(partParams);
+        partitioner->SetFactory("repartition: heuristic target rows per process",
+                                manager.GetFactory("repartition: heuristic target rows per process"));
 #else
         throw Exceptions::RuntimeError("Zoltan2 interface is not available");
 #endif

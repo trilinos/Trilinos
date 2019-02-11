@@ -129,6 +129,9 @@ namespace MueLu {
     if (targetRowsPerProcess == 0)
       targetRowsPerProcess = minRowsPerProcess;
 
+    // Stick this on the level so Zoltan2Interface can use this later
+    Set<LO>(currentLevel,"repartition: heuristic target rows per process",targetRowsPerProcess);
+
     RCP<const FactoryBase> Afact = GetFactory("A");
     if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
        Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
