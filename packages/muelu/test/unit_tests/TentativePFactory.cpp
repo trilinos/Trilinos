@@ -779,6 +779,79 @@ namespace MueLuTests {
 
   } // TentativePFactory_EpetraVsTpetra
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, MakeTentativeWithMatCoords, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename TST::magnitudeType real;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
+
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test QR with user-supplied nullspace" << std::endl;
+
+    Level fineLevel, coarseLevel;
+    test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+    coarseLevel.SetFactoryManager(Teuchos::null);
+
+    GO nx = 199;
+    RCP<Matrix> A = test_factory::Build1DPoisson(nx);
+    fineLevel.Request("A");
+    fineLevel.Set("A",A);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+    fineLevel.Set("Coordinates", coordinates);
+
+    // Make some very boring material coordinates, just to make sure they're propagated to the coarse level
+    RCP<Vector> matCoords = VectorFactory::Build(A->getRowMap(),1);
+    matCoords->putScalar(TST::one());
+    fineLevel.Set("Material Coordinates", matCoords);
+
+    // only one NS vector -> exercises manual orthogonalization
+    LocalOrdinal NSdim = 1;
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    nullSpace->randomize();
+    fineLevel.Set("Nullspace",nullSpace);
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
+    CoupledAggFact->SetFactory("Graph", dropFact);
+    CoupledAggFact->SetMinNodesPerAggregate(3);
+    CoupledAggFact->SetMaxNeighAlreadySelected(0);
+    CoupledAggFact->SetOrdering("natural");
+    CoupledAggFact->SetPhase3AggCreation(0.5);
+
+    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+    coarseMapFact->SetFactory("Aggregates", CoupledAggFact);
+    RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+    TentativePFact->SetFactory("Aggregates", CoupledAggFact);
+    TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    TentativePFact->SetFactory("CoarseMap", coarseMapFact);
+
+    coarseLevel.Request("P",TentativePFact.get());  // request Ptent
+    coarseLevel.Request("Nullspace",TentativePFact.get());
+    coarseLevel.Request(*TentativePFact);
+    coarseLevel.Request("Material Coordinates",TentativePFact.get());
+
+    TentativePFact->Build(fineLevel,coarseLevel);
+
+    RCP<Vector> coarseCoords;
+    coarseLevel.Get("Material Coordinates",coarseCoords,TentativePFact.get());
+
+  } //MakeTentativeWithMatCoords
+
+
+
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,Constructor,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentative_LapackQR,Scalar,LO,GO,Node) \
@@ -786,7 +859,9 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeUsingDefaultNullSpace,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NoQROption,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,NonStandardMaps,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,PtentEpetraVsTpetra,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,PtentEpetraVsTpetra,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory,MakeTentativeWithMatCoords,Scalar,LO,GO,Node)
+
 
 #include <MueLu_ETI_4arg.hpp>
 
