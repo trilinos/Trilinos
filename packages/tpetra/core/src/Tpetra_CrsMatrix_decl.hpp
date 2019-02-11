@@ -1022,7 +1022,9 @@ namespace Tpetra {
     virtual ~CrsMatrix ();
 
 
-    template <class LO, class GO, class N> friend class crsMatrix_Swap_Tester;
+    template <class LO, class GO, class N> friend class Tpetra::TestingUtilities::crsMatrix_Swap_Tester;
+    // template <class LocalOrdinal, class GlobalOrdinal, class Node> friend class crsMatrix_Swap_Tester; // SCAFFOLDING (fails due to shadow declaration errors)
+    // template <class LO, class GO, class N> friend class tpetra_crsmatrix_swap_test::crsMatrix_Swap_Tester; // SCAFFOLDING
 
 
   protected:      // SCAFFOLDING - We need to make this protected
