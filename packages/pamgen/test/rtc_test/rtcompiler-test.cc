@@ -184,16 +184,15 @@ int main( int argc, char* argv[] )
   /* tes *(&^&*(^ sdfkjs 32 kjs f  * \n\
    *    * /  *                     */ \n\
   printf(\"One:% Two:% Three:% \", 5-4, 2.0e0, 'c');\n\
-  for (i = 0; i < 3; i = i + 1) { \n\
+  int numRead = 0; \n\
+  int index = 0; \n\
+  while (numRead != -1) { \n\
     char buffer[256]; \n\
-    double one = 0; \n\
-    double two = 0; \n\
-    double three = 0; \n\
-    readline(\"table.dat\", buffer); \n\
-    scanf(buffer, one, two, three); \n\
-    testCol1[i] = one; \n\
-    testCol2[i] = two; \n\
-    testCol3[i] = three; \n\
+    numRead = readline(\"table.dat\", buffer); \n\
+    if (numRead != -1) { \n\
+      scanf(buffer, testCol1[index], testCol2[index], testCol3[index]); \n\
+    } \n\
+    index = index + 1; \n\
   }\n\
 ";
 
@@ -249,6 +248,12 @@ int main( int argc, char* argv[] )
   cout << "############################################################" << endl;
   cout << "Second run done" << endl;
   cout << "############################################################" << endl;
+
+  for (int i = 0; i < 3; ++i) {
+    assert(testCol1[i] == 1.0 + i/10.0);
+    assert(testCol2[i] == 2.0 + i/10.0);
+    assert(testCol3[i] == 3.0 + i/10.0);
+  }
 
   realProgram(arrayOneReal, arrayTwoReal, plainValOneReal,
               plainValTwoReal, plainValThreeReal, testChar);
