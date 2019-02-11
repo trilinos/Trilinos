@@ -247,11 +247,12 @@ namespace Ifpack2 {
       template<typename T, int l> using Vector = KokkosBatched::Experimental::Vector<T,l>;
       template<typename T> using SIMD = KokkosBatched::Experimental::SIMD<T>;
       template<typename T, typename M> using DefaultVectorLength = KokkosBatched::Experimental::DefaultVectorLength<T,M>;
+      template<typename T, typename M> using DefaultInternalVectorLength = KokkosBatched::Experimental::DefaultInternalVectorLength<T,M>;
 
-      // Kyungjoo: hansen enum does not work (don't know why)
-      // enum : int { vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value };
       static constexpr int vector_length = DefaultVectorLength<impl_scalar_type,memory_space>::value;
+      static constexpr int internal_vector_length = DefaultInternalVectorLength<impl_scalar_type,memory_space>::value;
       typedef Vector<SIMD<impl_scalar_type>,vector_length> vector_type;
+      typedef Vector<SIMD<impl_scalar_type>,internal_vector_length> internal_vector_type;
 
       ///
       /// commonly used view types 
@@ -265,6 +266,7 @@ namespace Ifpack2 {
       // packed data always use layout right
       typedef Kokkos::View<vector_type*,device_type> vector_type_1d_view;
       typedef Kokkos::View<vector_type***,Kokkos::LayoutRight,device_type> vector_type_3d_view;
+      typedef Kokkos::View<internal_vector_type****,Kokkos::LayoutRight,device_type> internal_vector_type_4d_view;
       typedef Kokkos::View<impl_scalar_type****,Kokkos::LayoutRight,device_type> impl_scalar_type_4d_view;
     };
     
@@ -1040,23 +1042,25 @@ namespace Ifpack2 {
 
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr(btdm.pack_td_ptr);
       const local_ordinal_type blocksize = btdm.values.extent(1);
-      
-      if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
-        constexpr int vector_length = impl_type::vector_length;
-        using impl_scalar_type = typename impl_type::impl_scalar_type;
-        using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+
+      {
+        const int vector_length = impl_type::vector_length;
+        const int internal_vector_length = impl_type::internal_vector_length;
+
+        using internal_vector_type = typename impl_type::internal_vector_type;
+        using internal_vector_type_4d_view = typename impl_type::internal_vector_type_4d_view;
         using team_policy_type = Kokkos::TeamPolicy<execution_space>;
-        const impl_scalar_type_4d_view values((impl_scalar_type*)btdm.values.data(), 
-                                              btdm.values.extent(0), 
-                                              btdm.values.extent(1),
-                                              btdm.values.extent(2),
-                                              vector_length);
-	// vector_lengh (enum or constexpr) sometimes is not captured by device lambda
-	// reference should not be used but some compilers interpret vector_length as 
-	// a reference
-	const local_ordinal_type vector_length_value = vector_length;
-        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_length); 
+        const internal_vector_type_4d_view values(reinterpret_cast<internal_vector_type*>(btdm.values.data()),
+                                                  btdm.values.extent(0), 
+                                                  btdm.values.extent(1),
+                                                  btdm.values.extent(2),
+                                                  vector_length/internal_vector_length);
+        const local_ordinal_type vector_loop_size = values.extent(3);
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size); 
+#else // Host architecture: team size is always one
+        const team_policy_type policy(packptr.extent(0)-1, 1, 1); 
+#endif
         Kokkos::parallel_for
           ("setTridiagsToIdentity::TeamPolicy", 
            policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
@@ -1065,30 +1069,15 @@ namespace Ifpack2 {
             const local_ordinal_type iend = pack_td_ptr(packptr(k+1));
             const local_ordinal_type diff = iend - ibeg;
             const local_ordinal_type icount = diff/3 + (diff%3 > 0);
-	    Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
-		Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_length_value),[&](const int &v) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,icount),[&](const local_ordinal_type &ii) {
                     const local_ordinal_type i = ibeg + ii*3;
                     for (local_ordinal_type j=0;j<blocksize;++j) 
                       values(i,j,j,v) = 1;
                   });
               });
           });
-#endif
-      } else {
-        // exclude from cuda to remove warning to compile host code on device
-#if defined(__CUDA_ARCH__)
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
-#else
-        const Unmanaged<vector_type_3d_view> values = btdm.values;
-        const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
-        Kokkos::parallel_for
-          ("setTridiagsToIdentity::RangePolicy", 
-           policy, KOKKOS_LAMBDA(const local_ordinal_type k) {
-            for (size_type i=pack_td_ptr(packptr(k)),iend=pack_td_ptr(packptr(k+1));i<iend;i+=3)
-              for (local_ordinal_type j=0;j<blocksize;++j)
-                values(i,j,j) = 1;
-          });
-#endif
+            
       }
     }
     
