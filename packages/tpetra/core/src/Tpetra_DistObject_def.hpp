@@ -527,7 +527,7 @@ namespace Tpetra {
     Distributor& distor = transfer.getDistributor ();
 
     if (debug) {
-      if (restrictedMode && (permuteToLIDs_.size() != 0 || permuteFromLIDs_.size() !=0)) {
+      if (restrictedMode && (permuteToLIDs_dv.extent(0) != 0 || permuteFromLIDs_dv.extent(0) !=0)) {
         TEUCHOS_TEST_FOR_EXCEPTION
           (1, std::invalid_argument,
            "Tpetra::DistObject::" << modeString << ": transfer object "
