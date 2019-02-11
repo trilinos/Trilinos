@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 
 C=======================================================================
@@ -47,7 +47,7 @@ C                             GERALD W. WELLMAN
 C                        SANDIA NATIONAL LABORATORIES
 C                          ALBUQUERQUE, NEW MEXICO
 C
-C     MAPVAR IS BASED ON MERLIN II,A FINITE ELEMENT INTERPOLATION 
+C     MAPVAR IS BASED ON MERLIN II,A FINITE ELEMENT INTERPOLATION
 C     PROGRAM BY DAVID K. GARTLING.
 C
 C     THE MERLIN PROGRAM IS DESIGNED TO TRANSFER DATA BETWEEN TWO- AND
@@ -59,32 +59,32 @@ C     ELEMENT SHAPE FUNCTIONS IN MESH-A.
 C
 C     MAPVAR IS DESIGNED TO SERVE THE SAME GENERAL PURPOSE AS MERLIN
 C     HOWEVER, MAPVAR IS DESIGNED TO PROVIDE THE TRANSLATION IN TERMS
-C     OF EXODUS-II-V2 RESTART FILES. MAPVAR ALSO TRANSLATES ELEMENT 
-C     VARIABLES AS WELL AS NODAL VARIABLES AND READS/WRITES GLOBAL 
+C     OF EXODUS-II-V2 RESTART FILES. MAPVAR ALSO TRANSLATES ELEMENT
+C     VARIABLES AS WELL AS NODAL VARIABLES AND READS/WRITES GLOBAL
 C     VARIABLES. MAPVAR IS CURRENTLY SET UP FOR THREE ELEMENT TYPES,
-C     2-D QUADS, 3-D HEXES, AND 3-D QUAD SHELLS. ALL THE ELEMENTS 
-C     ORIGINALLY SUPPORTED BY MERLIN CAN BE INCLUDED IN MAPVAR GIVEN 
+C     2-D QUADS, 3-D HEXES, AND 3-D QUAD SHELLS. ALL THE ELEMENTS
+C     ORIGINALLY SUPPORTED BY MERLIN CAN BE INCLUDED IN MAPVAR GIVEN
 C     THE DESIRE AND RESOURCES. THE SEARCH ENGINE OF MAPVAR HAS BEEN
 C     CHANGED TO A BINARY SEARCH FROM THE BIN OR BUCKET SEARCH OF MERLIN.
 C
 C     THE INTENT OF MAPVAR IS TO CREATE A RESTART FILE THAT WILL ALLOW
-C     A FINITE ELEMENT SOLUTION TO PROCEED WITH A DIFFERENT MESH THAN 
+C     A FINITE ELEMENT SOLUTION TO PROCEED WITH A DIFFERENT MESH THAN
 C     THE MESH WITH WHICH THE SOLUTION WAS STARTED. THUS, THERE IS AN
 C     INHERENT ASSUMPTION THAT MESH-A IS AN EXODUS RESTART FILE.
 C
 C     NODAL VARIABLE TRANSFER IS STRAIGHT FORWARD. THE MESH-B NODE IS
-C     FOUND INSIDE THE APPROPRIATE MESH-A ELEMENT. THE ELEMENT SHAPE 
+C     FOUND INSIDE THE APPROPRIATE MESH-A ELEMENT. THE ELEMENT SHAPE
 C     FUNCTIONS ARE USED TO INTERPOLATE RESULTS ONTO THE MESH-B NODE.
-C     ELEMENT VARIABLE TRANSFER TAKES TWO STEPS. FIRST THE ELEMENT 
-C     VARIABLE IS "SCATTERED" TO THE NODES. THEN THE MESH-B ELEMENT 
-C     CENTROID IS FOUND INSIDE THE MESH-A ELEMENT. TRANSFER TO THE 
+C     ELEMENT VARIABLE TRANSFER TAKES TWO STEPS. FIRST THE ELEMENT
+C     VARIABLE IS "SCATTERED" TO THE NODES. THEN THE MESH-B ELEMENT
+C     CENTROID IS FOUND INSIDE THE MESH-A ELEMENT. TRANSFER TO THE
 C     MESH-B ELEMENT CENTROID TAKES PLACE USING THE ELEMENT SHAPE
 C     FUNCTIONS AND THE "SCATTERED" ELEMENT DATA (NOW NODAL DATA).
 C     ELEMENT DATA IS "SCATTERED" TO THE NODES IN TWO SCHEMES. THE
 C     FIRST IS SIMPLE AVERAGING. THIS IS ROBUST AND FAST BUT CAN LEAD
 C     TO SIGNIFICANT DISSIPATION IN THE CASE OF GRADIENTS APPROACHING
 C     A FREE SURFACE. THE SECOND METHOD EMPLOYS A CONSTRAINED LEAST
-C     SQUARES FITTING PROCEDURE TO "SCATTER" ELEMENT RESULTS TO THE 
+C     SQUARES FITTING PROCEDURE TO "SCATTER" ELEMENT RESULTS TO THE
 C     NODES. THE CONSTRAINTS ARE BASED ON THE REQUIREMENTS OF THE
 C     CONSTITUTIVE MODEL. FINALLY, A DIRECT TRANSFER HAS BEEN IMPLEMENTED
 C     BUT IS NOT RECOMMENDED.
@@ -100,7 +100,7 @@ C       DECAY - constrained to be .lt. 1.
 C
 C       Code Tree:
 C (SUPES, EXODUSII, and multiple calls to ERROR not included)
-C 
+C
 C SET-UP
 C                 MAPVAR - OPNFIL
 C                          ERROR -  CLSFIL
@@ -121,7 +121,7 @@ C                                -  MKLSTV
 C                                -  SHLSRC
 C                          SINTPN - SHAPEF
 C                          BLDPTE - CNTR
-C                          SRCHS - 
+C                          SRCHS -
 C      SCHEME 0
 C                          SETON0 - VOL
 C                          SINTPE - SHAPEF
@@ -155,7 +155,7 @@ C                                            JACOBN
 C                          INTRPN - SHAPEF
 C                          BLDPTE -
 C                          SRCHQ -
-C      SCHEME 0 
+C      SCHEME 0
 C                          ELTON0 - VOL
 C                          INTRPE - SHAPEF
 C                                   VOL
@@ -215,7 +215,7 @@ C              EXDATE, EXTIME, FREFLD, MDDEL, MDEROR, MDGET,
 C              MDINIT, MDRSRV, MDSTAT, STRIPB
 C
 C EXODUSII CALLS:
-C              EXCLOS, EXINQ,  (EXOPN)-fcn,    
+C              EXCLOS, EXINQ,  (EXOPN)-fcn,
 C              EXGATM, EXGCON, EXGCOR, EXGEAT, EXGEBI, EXGELB,
 C              EXGELC, EXGEV,  EXGGV,  EXGINI, EXGNSI, EXGNP,
 C              EXGNV,  EXGNS,  EXGNSD, EXGP,   EXGPN,  EXGQA,
@@ -224,7 +224,7 @@ C              EXGVP,
 C              EXPCON, EXPCOR, EXPEAT, EXPELB, EXPELC, EXPEV,
 C              EXPGV,  EXPINI, EXPNS,  EXPNSD, EXPNV,  EXPNP,
 C              EXPP,   EXPPN,  EXPQA,  EXPSP,  EXPSS,  EXPSSD,
-C              EXPTIM, EXPVAN, 
+C              EXPTIM, EXPVAN,
 C
 C     ******************************************************************
 C
@@ -298,7 +298,7 @@ C
       CALL MDINIT (A)
 
 C ... If EXT99 Environment variable set, turn on supes memory debugging
-C     The numeric value of the variable is used as the unit to write 
+C     The numeric value of the variable is used as the unit to write
 C     debug information to.
       CALL EXNAME (-99, MEMDBG, L)
       IF (L .GE. 1) THEN
@@ -395,7 +395,7 @@ C
      &             ' ',0,' ',0,' ',' ',1)
 C
 C
-c read mesh A (coords,displ,variable names,QA, INFO records), 
+c read mesh A (coords,displ,variable names,QA, INFO records),
 c write mesh C, (variable names, QA, INFO records)
 c
 c
@@ -403,7 +403,7 @@ c
       CALL RDA1 (A(NAX),A(NAY),A(NAZ),A(NADX),A(NADY),A(NADZ))
 C
       IF (IACCU .EQ. 1)THEN
-        IF (IXVEL .NE. 0 .AND. IYVEL .NE. 0 .AND. 
+        IF (IXVEL .NE. 0 .AND. IYVEL .NE. 0 .AND.
      &      (IELMS .NE. 0 .OR. IDENS .NE. 0))THEN
 C
 C velocities and mass are available, compute momenta and k.e.
@@ -442,7 +442,7 @@ C
      &                  0,' ',0,' ',' ',1)
           END IF
 C
-C initialization quantities (6 each for now) that need to be 
+C initialization quantities (6 each for now) that need to be
 C summed over the element blocks if doing an accuracy check
 C
           IF (ISTEP .EQ. -1)THEN
@@ -519,7 +519,7 @@ C
       WRITE (NOUT, 300) NDIMB,NODESB,NUMELB,NBLKSB
       WRITE (NTPOUT, 300) NDIMB,NODESB,NUMELB,NBLKSB
 c
-c quick initial check of compatibility mesh-A to mesh-B 
+c quick initial check of compatibility mesh-A to mesh-B
 c
       IF (NDIMB .NE. NDIMA) THEN
         CALL ERROR('MAPVAR',
@@ -564,11 +564,11 @@ C *********************************************************
 C
 C set up memory for arrays for nodal results and truth table
 C these arrays stay around forever - they don't get deleted
-C after each element block is processed like the arrays 
+C after each element block is processed like the arrays
 C set up within the element block loop
 C
 C   A(NASOLN)    =    SOLNA(1:NODESA,1:NVARNP) - Mesh-A nodal data
-C   A(NBSOLN)    =    SOLNB(1:NODESB,1:NVARNP) - Mesh-B interpolated  
+C   A(NBSOLN)    =    SOLNB(1:NODESB,1:NVARNP) - Mesh-B interpolated
 C                                                nodal data
 C   IA(ITTA)     =    ITRTA(1:NVAREL,1:NBLKSA) - Mesh-A truth table
 C   IA(ITTB)     =    ITRTB(1:NVAREL,1:NBLKSB) - Mesh-B truth table
@@ -609,8 +609,8 @@ C store default values of search box tolerances per element type
       TOLQAC = TOLQAD
       TOLHEC = TOLHEX
       TOLTEC = TOLTET
-      
-c      
+
+c
 C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
 C
       CALL MDRSRV ('GVAR',   NAGV, NVARGP)
@@ -625,7 +625,7 @@ C
         IDBLKB = IA(NMAP-2+IMOFF)
         ISCHEM = IA(NMAP-1+IMOFF)
         TOLSEA = A(NMAPS+IM-1)
-        
+
         do 15 i=1, nblksa
           if (idblka .eq. ia(naeb-1+i)) then
             iblka = i
@@ -633,7 +633,7 @@ C
           endif
  15     continue
  16     continue
-        
+
         do 25 i=1, nblksb
           if (idblkb .eq. ia(nbeb-1+i)) then
             iblkb = i
@@ -641,7 +641,7 @@ C
           endif
  25     continue
  26     continue
-          
+
 C
 C set up controls for many to 1 map
 C if first time recipient mesh element block called, insub = 1
@@ -713,7 +713,7 @@ c
         call debug('RDA2')
         CALL RDA2 (IDBLKA,IA(NACON),IA(NANDLST),A(NASTAT),
      &             MAXLN)
-C 
+C
 C Set the search box tolerance for the current mapping
 C
         IF ( ITYPE .EQ. 13) THEN
@@ -770,7 +770,7 @@ C these arrays will be deleted at the end of the loop
 C
 C IA(NS1)     =  ISRCHR(1:1(NISR),1:NUMNDB) Integer search results
 C  A(NS2)     =  RSRCHR(1:6(NRSR),1:NUMNDB) Real search results
-C IA(NS3)     =    LIST(1:NUMNDB)         Potential contacts 
+C IA(NS3)     =    LIST(1:NUMNDB)         Potential contacts
 C IA(NS4)     =     IND(1:NUMNDB,1:3)     Index array point order
 C IA(NS5)     =    IRNK(1:NUMNDB,1:3)     Rank array
 C IA(NS6)     =   IRNK2(1:NUMNDB,1:3,1:2) Indirect rank array
@@ -782,9 +782,9 @@ C IA(NS10)    =     IDP(1:LBLK)           Points paired with element
 C IA(NS11)    =     IDS(1:LBLK)           Elements paired with point
 C  A(NS12)    =    XMIN(1:LBLK,1:3)       Min dim search box
 C  A(NS13)    =    XMAX(1:LBLK,1:3)       Max dim search box
-C IA(NS14)    =    ISCR(1:NISS,1:LBLK)    Integer scratch          
-C  A(NS15)    =    RSCR(1:NRSS,1:LBLK)    Real scratch             
-C  A(NS16)    =    XYZSRF(1:NODESA,1:3)   Coords defining element  
+C IA(NS14)    =    ISCR(1:NISS,1:LBLK)    Integer scratch
+C  A(NS15)    =    RSCR(1:NRSS,1:LBLK)    Real scratch
+C  A(NS16)    =    XYZSRF(1:NODESA,1:3)   Coords defining element
 C  A(NS17)    =    XYZPTS(1:NUMNDB,1:3)   Coords of points searched
 C
 C  A(NASOLE)  =    SOLEA(1:NUMEBA,1:NVAREL) - Mesh-A element data
@@ -910,7 +910,7 @@ C
                 ELSE
                   ISTP = ISTEP
                 END IF
-C     
+C
                 call debug('SETON0')
                 CALL SETON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &           A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
@@ -942,7 +942,7 @@ C
                 ELSE
                   ISTP = ISTEP
                 END IF
-C     
+C
                 call debug('SETON1')
                 CALL SETON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
@@ -1012,7 +1012,7 @@ C ITYPE = 3 - 4 node quad
 C ITYPE = 4 - 8 node quad
 C ITYPE = 5 - 9 node quad
 C
-        ELSE IF (ITYPE .EQ. 3 .OR. ITYPE .EQ. 4 .OR. 
+        ELSE IF (ITYPE .EQ. 3 .OR. ITYPE .EQ. 4 .OR.
      &           ITYPE .EQ. 5) THEN
 C
 C
@@ -1030,7 +1030,7 @@ C
 C
             call debug('BLDPTN')
             CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
-C   
+C
             call debug('SRCHQ-nodes')
             CALL SRCHQ (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMNDB,A(NS17),TOLQAD,1,3,
@@ -1043,9 +1043,9 @@ c               WRITE(NOUT,430)IA(NBNDLST-1+I),IDBLKB
 c               WRITE(NTPOUT,430)IA(NBNDLST-1+I),IDBLKB
 c             END IF
 c 530       CONTINUE
-C   
+C
 c   interpolate nodal variables
-c   
+c
 c            write(nout,1037)
 c            write(ntpout,1037)
             CALL INTRPN(IA(NACON),A(NASOLN),IA(NS1),A(NS2),
@@ -1171,7 +1171,7 @@ C
                 ELSE
                   ISTP = ISTEP
                 END IF
-C 
+C
                 call debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                    A(NASOLE),A(NSOLGR),IA(NICHKE),
@@ -1285,7 +1285,7 @@ C
                 ELSE
                   ISTP = ISTEP
                 END IF
-C     
+C
                 call debug('ELTON0')
                 CALL ELTON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &               A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
@@ -1319,7 +1319,7 @@ C
                 ELSE
                   ISTP = ISTEP
                 END IF
-C     
+C
                 call debug('ELTON1')
                 CALL ELTON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),

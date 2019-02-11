@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -46,18 +46,18 @@ c Added actual pronto3d time step estimation
 c
 c     Revision 1.2  1991/02/21  16:37:57  gdsjaar
 c     Moved ENGNOT function out of write statements
-c     
+c
 c     Revision 1.1.1.1  1991/02/21  15:43:09  gdsjaar
 c     NUMBERS: Greg Sjaardema, initial Unix release
-c     
+c
 c     Revision 1.1  1991/02/21  15:43:08  gdsjaar
 c     Initial revision
-c     
+c
       SUBROUTINE ESTIME (CRD, WAVE, IX, MAT, LABEL, NDIM, NNODE,
      *     NELBLK, SSQ, CCC, CDAMP, NUMNP)
-C     
+C
 C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
-C     
+C
       DIMENSION CRD(NUMNP, *), IX(NNODE,*), MAT(6,*),
      *     WAVE(*), SSQ(3,NELBLK), CCC(NDIM,NNODE)
       DIMENSION GRADOP(8,3)
@@ -65,9 +65,9 @@ C
       CHARACTER*(*) LABEL(*)
       CHARACTER*80 STRA
       CHARACTER*16 ENGNOT, ENG1
-      
+
       include 'nu_io.blk'
-C     
+C
       IF (NDIM .EQ. 3) THEN
          DO 30 IBLK = 1, NELBLK
             IF (MAT(5,IBLK) .NE. 1) GOTO 30
@@ -84,7 +84,7 @@ C
                x6 = crd(ix(6,iel),1)
                x7 = crd(ix(7,iel),1)
                x8 = crd(ix(8,iel),1)
-               
+
                y1 = crd(ix(1,iel),2)
                y2 = crd(ix(2,iel),2)
                y3 = crd(ix(3,iel),2)
@@ -93,7 +93,7 @@ C
                y6 = crd(ix(6,iel),2)
                y7 = crd(ix(7,iel),2)
                y8 = crd(ix(8,iel),2)
-               
+
                Z1 = crd(ix(1,iel),3)
                Z2 = crd(ix(2,iel),3)
                Z3 = crd(ix(3,iel),3)
@@ -102,7 +102,7 @@ C
                Z6 = crd(ix(6,iel),3)
                Z7 = crd(ix(7,iel),3)
                Z8 = crd(ix(8,iel),3)
-               
+
                Z24 = Z2 - Z4
                Z52 = Z5 - Z2
                Z45 = Z4 - Z5
@@ -223,10 +223,10 @@ C
                Y54 = Y5 - Y4
                GRADOP(8,3) = ( X7*(Y3-Y6-Y54) + X6*Y75 + X5*(Y6-Y1-Y47)
      *              + X4*(Y1-Y3-Y75) + X3*Y47 + X1*Y54 ) / 12.
-               
+
 C     Calculate element volume and characteristic element aspect ratio
 C     (used in time step and hourglass control) -
-               
+
                VOLUME = crd(ix(1,iel),1) * GRADOP(1,1)
      *              + crd(ix(2,iel),1) * GRADOP(2,1)
      *              + crd(ix(3,iel),1) * GRADOP(3,1)
@@ -248,7 +248,7 @@ C     (used in time step and hourglass control) -
      *              + GRADOP(3,3)**2 + GRADOP(4,3)**2
      *              + GRADOP(5,3)**2 + GRADOP(6,3)**2
      *              + GRADOP(7,3)**2 + GRADOP(8,3)**2 )
-C ... for quads we calculate 
+C ... for quads we calculate
                ASPECT = 1.0 / ASPECT
 
                IF (SSQ(1,MIEL) .LT. ASPECT) THEN
@@ -265,20 +265,20 @@ C ... for quads we calculate
             IELEND = MAT(4,IBLK)
             MIEL   = IBLK
             DO 50 IEL = IELBEG, IELEND
-C     
+C
                DO 40 I=1,4
                   CCC(1,I) = CRD(IX(I,IEL),1)
                   CCC(2,I) = CRD(IX(I,IEL),2)
  40            CONTINUE
-C     
+C
 C     ... CALCULATE SUM OF SQUARES OF INVERSE LENGTHS, ASSUME RECTANGULAR
 C     USE SIDES 1-2 1-4
-C     
+C
                S12 = (CCC(1,1)-CCC(1,2))**2 +
      *              (CCC(2,1)-CCC(2,2))**2
                S14 = (CCC(1,1)-CCC(1,4))**2 +
      *              (CCC(2,1)-CCC(2,4))**2
-C     
+C
                IF (S12 .EQ. 0.0 .OR. S14 .EQ. 0.0)
      *              THEN
                   PRINT *,'*** WARNING *** Coincident nodes in element',
@@ -290,7 +290,7 @@ C
                      SSQ(2,MIEL)  = IEL
                   END IF
                END IF
-C     
+C
  50         CONTINUE
  60      CONTINUE
       END IF

@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,9 +29,9 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
-c vdicgi_char - FORTRAN shell for handling strings 
+c vdicgi_char - FORTRAN shell for handling strings
 
 
 C  CESC - Escape
@@ -40,13 +40,13 @@ C  CESC - Escape
       REAL ARGS(N+1)
       INTEGER LDR
       CHARACTER*80 DATA
-c  CGI enumerated type definitions for FORTRAN programs 
+c  CGI enumerated type definitions for FORTRAN programs
 c  8 Sep 1989, last date modified
 c  Pat McGee, jpm@lanl.gov
 
 c  SRCP escapes
       integer XEMFNM, XEMXCL, XEPCTL, XEAGMD, XEPCCL, XESVDI
-      parameter (XEMFNM= -28372, XEMXCL= -19281, XEPCTL= -190, 
+      parameter (XEMFNM= -28372, XEMXCL= -19281, XEPCTL= -190,
      *           XEAGMD= -23671, XEPCCL= -12048, XESVDI= -1001)
 
 
@@ -101,7 +101,7 @@ c  dynamic modification
       parameter (CIRG= 0, CCBS= 1, CIMM= 2)
 
 c  pixel location relative to coordinates */
-      integer CPXON, CPXBET 
+      integer CPXON, CPXBET
       parameter (CPXON=0, CPXBET=1)
 
 c  support indicator
@@ -112,7 +112,7 @@ c  text final flag
       integer CNOTFI, CFINAL
       parameter (CNOTFI=0, CFINAL=1)
 
-c  clipping mode 
+c  clipping mode
       integer CLOCUS, CSHAPE, CLOCSH
       parameter(CLOCUS=0, CSHAPE=1, CLOCSH=2)
 
@@ -142,15 +142,15 @@ c  color selection mode (arg of CCSM, CQTXA)
       integer CDRECT, CINDEX
       parameter (CDRECT= 0, CINDEX= 1)
 
-c  line, edge width specification mode 
+c  line, edge width specification mode
 c  marker specification mode
 
-c  cell array fill capability 
+c  cell array fill capability
       integer COUTLN, CFILLD
       parameter (COUTLN=0, CFILLD=1)
 
-c  cell array alignment 
-      integer CAXIS, CSKEW 
+c  cell array alignment
+      integer CAXIS, CSKEW
       parameter (CAXIS=0, CSKEW=1)
 
 c  compound text capability
@@ -177,7 +177,7 @@ c  request status
 
 c  input device state
 
-c  direction 
+c  direction
       integer CINCR, CDECR
       parameter (CINCR= 0, CDECR= 1)
 
@@ -185,11 +185,11 @@ c  action required flag
       integer CNOACT, CACT
       parameter (CNOACT= 0, CACT= 1)
 
-c  pixel validity flag 
+c  pixel validity flag
       integer CVNONE, CVALL, CVSOME
       parameter (CVNONE= 0, CVALL= 1, CVSOME= 2)
 
-      LDR = 1 
+      LDR = 1
       DATA = ' '
       IF (FUNCID .EQ. XEAGMD) THEN
         IF (ARGS(1) .EQ. 0) THEN
@@ -203,7 +203,7 @@ c*** I know this won't work for real, real numbers
           DATA(I:I) = CHAR(INT(ARGS(I)))
   10    CONTINUE
       ENDIF
-   
+
       CALL CESC( FUNCID, LDR, DATA )
       RETURN
       END
@@ -227,7 +227,7 @@ C  CTX - Text
       END
 
 C  CGTXX - Get Text Extent
-      SUBROUTINE CGTXX2 ( X, Y, VSTAT, VCONC, XCONC, YCONC, 
+      SUBROUTINE CGTXX2 ( X, Y, VSTAT, VCONC, XCONC, YCONC,
      1                    X1, Y1, X2, Y2, X3, Y3, X4, Y4)
       REAL X,Y
       CHARACTER*1 STRING
@@ -242,28 +242,28 @@ C  CGTXX - Get Text Extent
       END
 
 C  CQCHH - Inquire Character Height
-      SUBROUTINE CQCHH2 (txp, nreq, first, vstat, ntotal, 
-     1                   nlist, chhit) 
-      CHARACTER*1 FONT 
+      SUBROUTINE CQCHH2 (txp, nreq, first, vstat, ntotal,
+     1                   nlist, chhit)
+      CHARACTER*1 FONT
       INTEGER TXP, NREQ, FIRST, VSTAT, NTOTAL, NLIST
       INTEGER CHHIT(*)
- 
+
       FONT = char(0)
       CALL CQCHH( FONT, TXP, NREQ, FIRST, VSTAT, NTOTAL,
      1             NLIST, CHHIT)
       RETURN
       END
 
-C  vdgnam - 
+C  vdgnam -
       subroutine vdgnam(name)
       character *(*) name
-c  CGI enumerated type definitions for FORTRAN programs 
+c  CGI enumerated type definitions for FORTRAN programs
 c  8 Sep 1989, last date modified
 c  Pat McGee, jpm@lanl.gov
 
 c  SRCP escapes
       integer XEMFNM, XEMXCL, XEPCTL, XEAGMD, XEPCCL, XESVDI
-      parameter (XEMFNM= -28372, XEMXCL= -19281, XEPCTL= -190, 
+      parameter (XEMFNM= -28372, XEMXCL= -19281, XEPCTL= -190,
      *           XEAGMD= -23671, XEPCCL= -12048, XESVDI= -1001)
 
 
@@ -318,7 +318,7 @@ c  dynamic modification
       parameter (CIRG= 0, CCBS= 1, CIMM= 2)
 
 c  pixel location relative to coordinates */
-      integer CPXON, CPXBET 
+      integer CPXON, CPXBET
       parameter (CPXON=0, CPXBET=1)
 
 c  support indicator
@@ -329,7 +329,7 @@ c  text final flag
       integer CNOTFI, CFINAL
       parameter (CNOTFI=0, CFINAL=1)
 
-c  clipping mode 
+c  clipping mode
       integer CLOCUS, CSHAPE, CLOCSH
       parameter(CLOCUS=0, CSHAPE=1, CLOCSH=2)
 
@@ -359,15 +359,15 @@ c  color selection mode (arg of CCSM, CQTXA)
       integer CDRECT, CINDEX
       parameter (CDRECT= 0, CINDEX= 1)
 
-c  line, edge width specification mode 
+c  line, edge width specification mode
 c  marker specification mode
 
-c  cell array fill capability 
+c  cell array fill capability
       integer COUTLN, CFILLD
       parameter (COUTLN=0, CFILLD=1)
 
-c  cell array alignment 
-      integer CAXIS, CSKEW 
+c  cell array alignment
+      integer CAXIS, CSKEW
       parameter (CAXIS=0, CSKEW=1)
 
 c  compound text capability
@@ -394,7 +394,7 @@ c  request status
 
 c  input device state
 
-c  direction 
+c  direction
       integer CINCR, CDECR
       parameter (CINCR= 0, CDECR= 1)
 
@@ -402,7 +402,7 @@ c  action required flag
       integer CNOACT, CACT
       parameter (CNOACT= 0, CACT= 1)
 
-c  pixel validity flag 
+c  pixel validity flag
       integer CVNONE, CVALL, CVSOME
       parameter (CVNONE= 0, CVALL= 1, CVSOME= 2)
 

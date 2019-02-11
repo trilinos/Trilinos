@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
       PROGRAM EXOTXT
@@ -192,7 +192,7 @@ C   --ExodusIIv2 Read node number map, element number map,
 C   --and element order map
       CALL MDRSRV ('NPMAP', KNPMAP, NUMNP)
       CALL MDRSRV ('ELMAP', KELMAP, NUMEL)
-      CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)   
+      CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) THEN
          CALL MEMERR
@@ -334,9 +334,9 @@ C   --Read/write the element side sets
       IF (NUMESS .GT. 0) THEN
 C     IDESS  - array containing side set IDS
 C     NEESS  - array containing the number of sides for each sets
-C     KNDSS  - Returned array containing the number of dist 
+C     KNDSS  - Returned array containing the number of dist
 C              factors for each set
-C     IXEESS - returned array containing the indices into the 
+C     IXEESS - returned array containing the indices into the
 C              LTEESS array which are the locations of the 1st
 C              element of each set
 C     IXNESS - Returned array containing the indices into the
@@ -374,7 +374,7 @@ C        Read concatenated side sets
      &                A(KLTSSS), A(KFACSS), IOERR)
 
 C        Convert sides to nodes
-         CALL DBIGN (NDB, NUMESS, A(KIDSS), A(KNNSS), 
+         CALL DBIGN (NDB, NUMESS, A(KIDSS), A(KNNSS),
      &               A(KIXNSS), A(KLTNSS), A(KLTNNN), IOERR)
          IF (IOERR .EQ. 1) GO TO 140
 
@@ -424,7 +424,7 @@ C     Reserve memory for element block properties names and values
          call memerr()
          ioerr = 1
       end if
-      write (NTXT, '(I10,12x,A)') numebp, 
+      write (NTXT, '(I10,12x,A)') numebp,
      &      '! Number of ELEMENT BLOCK Properties'
       call wrprop (ndb, NTXT, EXEBLK, numebp, nelblk,
      &             c(iebpn), a(iebpv), namlen)
@@ -444,7 +444,7 @@ C************************************************************************
          ioerr = 1
       end if
 
-      write (NTXT, '(I10,12x,A)') numnsp, 
+      write (NTXT, '(I10,12x,A)') numnsp,
      &      '! Number of NODE SET Properties'
       call wrprop (ndb, NTXT, EXNSET, numnsp, numnps,
      &             c(inspn), a(inspv), namlen)
@@ -465,7 +465,7 @@ C************************************************************************
          ioerr = 1
       end if
 
-      write (NTXT, '(I10,12x,A)') numssp, 
+      write (NTXT, '(I10,12x,A)') numssp,
      &      '! Number of SIDE SET Properties'
       call wrprop (ndb, NTXT, EXSSET, numssp, numess,
      &             c(isspn), a(isspv), namlen)
@@ -571,7 +571,7 @@ C   --Read the number of database time steps
          GO TO 140
       end if
 
-C ... Zero out memory to account for variables not read from DB 
+C ... Zero out memory to account for variables not read from DB
 C     due to truth table...
       CALL INIREA(NVAREL*NUMEL, 0.0, A(KVAREL))
       CALL INIREA(NVARNP*NUMNP, 0.0, A(KVARNP))
@@ -580,10 +580,10 @@ C     due to truth table...
       WRITE (*, *)
 
       WRITE (*, 10020) NSTEPS
-10020 FORMAT (' ', I8, ' time steps on the input database') 
+10020 FORMAT (' ', I8, ' time steps on the input database')
       DO 110 ISTEP = 1, NSTEPS
-         CALL DBISTE (NDB, '*', ISTEP, NELBLK, TIME, 
-     &                NVARGL, NVARNP, NVAREL, NUMNP, 
+         CALL DBISTE (NDB, '*', ISTEP, NELBLK, TIME,
+     &                NVARGL, NVARNP, NVAREL, NUMNP,
      &                A(KIDELB), A(KNELB), A(KIEVOK),
      &                A(KVARGL), A(KVARNP), A(KVAREL), IOERR)
          IF (IOERR .EQ. 1) GO TO 140
@@ -597,7 +597,7 @@ C     due to truth table...
          IF (IOERR .EQ. 1) GO TO 140
 
          WRITE (*, 10000) ISTEP
-10000     FORMAT (I8, ' time steps processed') 
+10000     FORMAT (I8, ' time steps processed')
   110 CONTINUE
 
       WRITE (STR8, '(I8)', IOSTAT=K) NSTEPS
@@ -627,7 +627,7 @@ C     Delete dynamic memory
 
 
 C ... Written as wrapper to get string lengths correct on coordinate
-C     name array which is dynamically allocated      
+C     name array which is dynamically allocated
       SUBROUTINE GETXYZ(NDB, NAMECO, X, Y, Z, ierr, namlen)
       character*(NAMLEN) NAMECO(*)
       real x(*), y(*), z(*)
@@ -635,4 +635,4 @@ C     name array which is dynamically allocated
       call exgcon(ndb, nameco, ierr)
       return
       end
- 
+

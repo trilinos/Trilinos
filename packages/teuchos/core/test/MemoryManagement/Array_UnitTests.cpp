@@ -194,7 +194,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, defaultConstruct, T )
   TEST_EQUALITY_CONST( as<int>(a2.size()), 0 );
   TEST_EQUALITY_CONST( as<int>(a2.empty()), true );
   TEST_EQUALITY_CONST( a2.getRawPtr(), 0 );
+  TEST_EQUALITY_CONST( a2.getRawPtr(), a2.data() );
   TEST_EQUALITY_CONST( getConst(a2).getRawPtr(), 0 );
+  TEST_EQUALITY_CONST( getConst(a2).getRawPtr(), getConst(a2).data() );
 }
 
 
@@ -206,7 +208,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, sizedConstruct, T )
   TEST_EQUALITY( a.length(), n );
   TEST_EQUALITY( as<int>(a.size()), n );
   TEST_EQUALITY( a.getRawPtr(), &a[0] );
+  TEST_EQUALITY( a.getRawPtr(), a.data() );
   TEST_EQUALITY( getConst(a).getRawPtr(), &getConst(a)[0] );
+  TEST_EQUALITY( getConst(a).getRawPtr(), getConst(a).data() );
   TEST_COMPARE( a.max_size(), >=, as<size_type>(n) );
   TEST_COMPARE( as<int>(a.capacity()), >=, n );
 }

@@ -2,23 +2,23 @@ C     -*- Mode: fortran -*-
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,11 +30,11 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
       QAINFO(1) = 'Explore '
       QAINFO(2) = '        '
       QAINFO(3) = '        '
-      
+
       QAINFO(2)(:8) = '20180828'
       QAINFO(3)(:8) = '    3.02'
 C
@@ -47,7 +47,7 @@ c..Fix printing of global variables
 c..fix when no distribution factors on ns or ss
 c..Add node number map and change element map to element number map
 c..Fix map-check to work with non-permutation maps (id can be greater than numel/numnp)
-c  Add check of node map also.  Added indexx to do indexed sort.      
+c  Add check of node map also.  Added indexx to do indexed sort.
 c..Minor typo in ckess (nodes -> faces)
 c..Add limits, node in connectivity check, and select nodes nodeset
 c..Add node and element selection based on nodesets and sidesets

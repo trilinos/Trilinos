@@ -89,7 +89,7 @@ namespace {
 	  std::cerr << "\nDecomposition for " << proc_count << " processors; Total work = " << total_work << " Average = " << avg_work << "\n";
 	  for (const auto zone : zones) {
 	    std::cerr << "Zone " << zone->m_name << "\tProc: " << zone->m_proc
-		      << "\tOrdinal: " << zone->m_ordinal[0] << "x" << zone->m_ordinal[1] << "x" << zone->m_ordinal[2] 
+		      << "\tOrdinal: " << zone->m_ordinal[0] << "x" << zone->m_ordinal[1] << "x" << zone->m_ordinal[2]
 		      << " \tWork: " << zone->work() << "\n";
 	  }
 #endif

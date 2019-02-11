@@ -3829,12 +3829,12 @@ namespace Tpetra {
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs) override;
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) override;
 
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                        Kokkos::DualView<char*, buffer_device_type>& exports,
                        const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                        size_t& constantNumPackets,
@@ -3844,9 +3844,12 @@ namespace Tpetra {
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                             const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                             const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+    unpackAndCombineNewImpl (const Kokkos::DualView<const local_ordinal_type*,
+                               buffer_device_type>& importLIDs,
+                             const Kokkos::DualView<const char*,
+                               buffer_device_type>& imports,
+                             const Kokkos::DualView<const size_t*,
+                               buffer_device_type>& numPacketsPerLID,
                              const size_t constantNumPackets,
                              Distributor& distor,
                              const CombineMode combineMode,
@@ -3854,9 +3857,12 @@ namespace Tpetra {
     /// \brief Implementation of unpackAndCombineNewImpl for when the
     ///   target matrix's structure may change.
     void
-    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                                      const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                                      const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
+                                        buffer_device_type>& importLIDs,
+                                      const Kokkos::DualView<const char*,
+                                        buffer_device_type>& imports,
+                                      const Kokkos::DualView<const size_t*,
+                                        buffer_device_type>& numPacketsPerLID,
                                       const size_t constantNumPackets,
                                       Distributor& distor,
                                       const CombineMode combineMode);
@@ -3873,7 +3879,7 @@ namespace Tpetra {
     ///   serious changes to matrix assembly in order to implement
     ///   sensibly).
     void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
                          const Kokkos::DualView<const char*, buffer_device_type>& imports,
                          const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                          const size_t constantNumPackets,
@@ -3988,7 +3994,7 @@ namespace Tpetra {
     /// Knowing the number of entries for each row also makes
     /// parallelizing packing and unpacking easier.
     void
-    packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+    packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
              Kokkos::DualView<char*, buffer_device_type>& exports,
              const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
              size_t& constantNumPackets,
@@ -4002,7 +4008,7 @@ namespace Tpetra {
     /// Call this only when this matrix (which is the source matrix to
     /// pack) does not yet have a KokkosSparse::CrsMatrix.
     void
-    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                       Kokkos::DualView<char*, buffer_device_type>& exports,
                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                       size_t& constantNumPackets,
@@ -4120,7 +4126,8 @@ namespace Tpetra {
     void
     allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
                           size_t& totalNumEntries,
-                          const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const;
+                          const Kokkos::DualView<const local_ordinal_type*,
+                            buffer_device_type>& exportLIDs) const;
     //@}
 
   public:

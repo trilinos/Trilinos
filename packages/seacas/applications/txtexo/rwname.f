@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C $Id: rwname.f,v 1.4 2007/10/17 18:47:22 gdsjaar Exp $
 C=======================================================================
@@ -97,11 +97,11 @@ C ... Allocate array for names
       if (nerr .gt. 0) then
         return 1
       end if
-      
+
       call rwnam1(ntxt, ndb, 'G', nvargl, c(kname), namlen, *180)
       call rwnam1(ntxt, ndb, 'N', nvarnp, c(kname), namlen, *180)
       call rwnam1(ntxt, ndb, 'E', nvarel, c(kname), namlen, *180)
-      
+
       call mcdel('NAMES')
       call mcstat(nerr, mem)
       if (nerr .gt. 0) then
@@ -138,20 +138,20 @@ C ... Temporary logical array
       include 'exodusII.inc'
       character*1 flag
       character*(namlen) names(*)
-      
+
       if (nvar .eq. 0) then
         read (ntxt,*,end=150, err=150)
         return
       else
         READ (NTXT, '(2 (A, 1X))', END=150, ERR=150)
      &    (NAMES(I), I=1, nvar)
-        
+
         call expvp(ndb, flag, nvar, ierr)
         call expvan(ndb, flag, nvar, names, ierr)
         if (ierr .ne. 0) go to 160
       end if
       return
-      
+
   150 CONTINUE
       CALL PRTERR ('FATAL', 'Reading VARIABLE NAMES')
       return 1
@@ -159,4 +159,4 @@ C ... Temporary logical array
       CALL PRTERR ('FATAL', 'Writing VARIABLE NAMES')
       return 1
       end
-      
+

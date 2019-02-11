@@ -2,23 +2,23 @@
 # Copyright(C) 2005 National Technology & Engineering Solutions of
 # Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 # * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#           
+#
 # * Redistributions in binary form must reproduce the above
 #   copyright notice, this list of conditions and the following
 #   disclaimer in the documentation and/or other materials provided
 #   with the distribution.
-#                         
+#
 # * Neither the name of NTESS nor the names of its
 #   contributors may be used to endorse or promote products derived
 #   from this software without specific prior written permission.
-#                                                 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -37,7 +37,7 @@ cat <<EPU_USAGE_EOF
 Usage:  epup --subcycle <cycle_count> ...normal epu options...
 
    Runs multiple copies of epu simultaneously to create <cycle_count>
-   sub-files from the original files.  
+   sub-files from the original files.
 
    ->->-> Send email to gdsjaar@sandia.gov for epup support.<-<-<-
 
@@ -49,7 +49,7 @@ exit 1
 function execute_epu {
     cycles=`expr $1 - 1`
     all_options=$2
-    
+
     $PARALLEL --will-cite -u "$EPU -cycle {} $all_options" ::: $($SEQ 0 $cycles)
 
     epu_rc=$?
@@ -106,9 +106,9 @@ done
 if [ $# -eq 0 ] ; then
     echo "${txtred}ERROR:  No epu options specified${txtrst}"
     usage
-fi    
+fi
 
-execute_epu "$cycles" "$all_options" 
+execute_epu "$cycles" "$all_options"
 if [ $? -ne 0 ]
 then
     echo "${txtred}ERROR     During epu execution. Check error output above and rerun${txtrst}"

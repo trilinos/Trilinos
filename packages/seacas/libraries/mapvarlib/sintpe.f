@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
 *DECK,SINTPE
@@ -37,10 +37,10 @@ C=======================================================================
      &                   SOLEB,IDBLK,XB,YB,ZB,
      &                   ICONB,ITT,IBLK,TIMES,CENTER,
      &                   ISTP,IST,INSUB,ICOMPL,DUME)
-C     
+C
 C     ******************************************************************
-C     
-C     SUBROUTINE TO CONTROL INTERPOLATION OF ELEMENT TRANSFORMED 
+C
+C     SUBROUTINE TO CONTROL INTERPOLATION OF ELEMENT TRANSFORMED
 C     INTO NODAL RESULTS FROM MESH-A TO MESH-B
 C     INTERPOLATED SOLUTION IS PASSED OUT TO BE RETRANSFORMED
 C     INTO ELEMENT RESULTS AND THEN WRITTEN TO MESH-C EXODUS FILE
@@ -48,7 +48,7 @@ C
 C     Calls subroutines SHAPEF
 C
 C     Called by MAPVAR
-C     
+C
 C     ******************************************************************
 C
 C ICONA   INT   Connectivity of donor mesh (1:nelnda,1:numeba)
@@ -81,16 +81,16 @@ C
       include 'ebbyeb.blk'
       include 'ex2tp.blk'
       include 'tapes.blk'
-C     
+C
       DIMENSION TIMES(*), CENTER(NUMEBB,*)
       DIMENSION ICONA(NELNDA,*), SOLENA(NODESA,NVAREL)
       DIMENSION ITT(NVAREL,*)
       DIMENSION SOLEB(NUMEBB,*), XB(*), YB(*), ZB(*)
       DIMENSION ISRCHR(NISR,*), RSRCHR(NRSR,*), ICONB(nelndb,*)
       DIMENSION SOLN(27), XX(27), YY(27), ZZ(27), DUME(*)
-C     
+C
 C     ******************************************************************
-C     
+C
       DO 10 IVAR = 1,NVAREL
         IF (ITT(IVAR,IBLK) .EQ. 0)GO TO 10
 C
@@ -103,14 +103,14 @@ C
         ELSE
           CALL EXGEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         END IF
-C     
+C
 C Loop on centroids in recipient mesh
-C     
+C
         DO 30 I = 1,NUMEBB
           IF (ISRCHR(1,I) .NE. 0)THEN
-C     
+C
 C Set parameters for element in donor mesh
-C     
+C
             S = RSRCHR(5,I)
             T = RSRCHR(6,I)
             R = 0.
@@ -119,9 +119,9 @@ C
               INODE = ICONA(J,ISRCHR(1,I))
               SOLN(J) = SOLENA(INODE,IVAR)
  20         CONTINUE
-C     
+C
 C Shape function to evaluate interpolation
-C     
+C
             CALL SHAPEF (3,S,T,R,SOLN,BVALUE)
             SOLEB(I,IVAR) = BVALUE
           ELSE

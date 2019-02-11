@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,11 +29,11 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
         subroutine cgidum
         end
-        
+
 #ifdef  Build64
 c
 c       This wrapper module handles two kinds of interface problems:
@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
         integer*4 indexa4
         real*4 value4
         indexa4 = indexa
-C ... 'value' is writeonly,     
+C ... 'value' is writeonly,
         call vdiqdc4 (indexa4,value4)
         indexa = indexa4
         value = value4
@@ -109,7 +109,7 @@ c-----------------------------------------------------------------------
         DO J1X = 1, NUM
           INDEX_ARRAY4(J1X) = INDEX_ARRAY(J1X)
         END DO
-C ... 'color_array' is writeonly.       
+C ... 'color_array' is writeonly.
         color_mod4 = color_mod
         call vdiqco4 (num4,index_array4,color_array4,color_mod4)
 c       num = num4
@@ -148,7 +148,7 @@ c-----------------------------------------------------------------------
         integer*8 support
         integer*4 escape_code4
         integer*4 support4
-C... escape_code unused, support is write only. 
+C... escape_code unused, support is write only.
         call vdiqes4 (escape_code4,support4)
         support = support4
         end
@@ -334,7 +334,7 @@ c-----------------------------------------------------------------------
         integer*4 button4
         real*4 x4
         real*4 y4
-C... 'button', 'x', and 'y' are write-only 
+C... 'button', 'x', and 'y' are write-only
         call vdabgl4 (button4,x4,y4)
         button = button4
         x = x4
@@ -578,4 +578,4 @@ C       l3 = i3
         l8 = i8
         end
 c-----------------------------------------------------------------------
-#endif 
+#endif

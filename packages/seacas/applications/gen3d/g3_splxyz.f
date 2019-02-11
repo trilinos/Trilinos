@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -55,11 +55,11 @@ C     --   Uses NDIM, NUMNP of /DBNUMS/
 C     --   Uses NDIM3, NUMNP3 of /DBNUM3/
 C     --   Uses DOTRAN, NNREPL, DIM3, NRTRAN, D3TRAN, ZGRAD,
 C     --      CENTER, NUMCOL, NUMROW of /PARAMS/
-      
+
       INCLUDE 'g3_dbnums.blk'
       INCLUDE 'g3_dbnum3.blk'
       INCLUDE 'g3_params.blk'
-      
+
       PARAMETER (BINGO = 1.0E38)
       PARAMETER (TOLER = 1.0E-8)
 
@@ -77,15 +77,15 @@ C     --      CENTER, NUMCOL, NUMROW of /PARAMS/
       REAL RSB(NSPL2), ZSB(NSPL2), ZS2B(NSPL2), DISTB(NSPL2),
      &     SCRB(NSPL2)
       REAL SLLFT(2), SLRGT(2)
-      
+
       LOGICAL RDTHET, NOSCAL
-      
+
       PI = ATAN2(0.0, -1.0)
       xb = 0.0
       xt = 0.0
       yb = 0.0
       yt = 0.0
-      
+
 C ... Check for valid options...
       IF (RDTHET .AND. NOSCAL) THEN
         CALL PRTERR('ERROR', 'Cannot use NOSCALE with ANGULAR spline')
@@ -101,11 +101,11 @@ C     ... CALCULATE THE THICKNESS INCREMENT FOR EACH TRANSLATION
          ZTOT = ZTOT + D3TRAN(IBLK)
          IF (IBLK .LT. MAXINT) GO TO 1
       END IF
-      
+
       NXTNR = 1
       IBLK = 0
       ZEND = 0.0
-      
+
     2 CONTINUE
       IBLK = IBLK + 1
       IF (NRTRAN(IBLK) .GT. 0) THEN
@@ -116,9 +116,9 @@ C     ... CALCULATE THE THICKNESS INCREMENT FOR EACH TRANSLATION
          NXTNR = NXTNR + NRTRAN(IBLK)
          IF (IBLK .LT. MAXINT) GO TO 2
       END IF
-      
+
 C     ... Convert angles from degrees to radians
-      
+
       IF (RDTHET) THEN
          DO 10 IPT = 1, NSPL1
             RSA(IPT) = RSA(IPT) * PI / 180.0
@@ -126,18 +126,18 @@ C     ... Convert angles from degrees to radians
          DO 20 IPT = 1, NSPL2
             RSB(IPT) = RSB(IPT) * PI / 180.0
    20    CONTINUE
-         
+
       END IF
-      
+
       CALL SPLINE (RSA, ZSA, NSPL1, SLLFT(1), SLRGT(1), ZS2A, SCRA)
       CALL SPLINE (RSB, ZSB, NSPL2, SLLFT(2), SLRGT(2), ZS2B, SCRB)
-      
+
 C     ... Calculate approximate distance along curve.  Distance is computed
 C     as the straight line distance of the segments.  Accurate for
 C     smooth curves; bad for non-smooth curves.
-C     ... If 'NOSCALE' is set, then the spline must be linear and 
-C     we use the input RSA values for the distance.      
-      
+C     ... If 'NOSCALE' is set, then the spline must be linear and
+C     we use the input RSA values for the distance.
+
       IF (NOSCAL) THEN
         DO 22 IPT = 1, NSPL1
           DISTA(IPT) = RSA(IPT)
@@ -151,16 +151,16 @@ C     we use the input RSA values for the distance.
           DISTB(1) = ZSB(1) * SIN(RSB(1))
           DO 30 IPT = 2, NSPL1
             DISTA(IPT) = DISTA(IPT-1)  + SQRT(
-     &        (ZSA(IPT)   * SIN(RSA(IPT)) - 
-     &        ZSA(IPT-1) * SIN(RSA(IPT-1)))**2 + 
-     &        (ZSA(IPT)   * COS(RSA(IPT)) - 
+     &        (ZSA(IPT)   * SIN(RSA(IPT)) -
+     &        ZSA(IPT-1) * SIN(RSA(IPT-1)))**2 +
+     &        (ZSA(IPT)   * COS(RSA(IPT)) -
      &        ZSA(IPT-1) * COS(RSA(IPT-1)))**2)
  30       CONTINUE
           DO 40 IPT = 2, NSPL2
             DISTB(IPT) = DISTB(IPT-1)  + SQRT(
-     &        (ZSB(IPT)   * SIN(RSB(IPT)) - 
+     &        (ZSB(IPT)   * SIN(RSB(IPT)) -
      &        ZSB(IPT-1) * SIN(RSB(IPT-1)))**2 +
-     &        (ZSB(IPT)   * COS(RSB(IPT)) - 
+     &        (ZSB(IPT)   * COS(RSB(IPT)) -
      &        ZSB(IPT-1) * COS(RSB(IPT-1)))**2)
  40       CONTINUE
         ELSE
@@ -176,9 +176,9 @@ C     we use the input RSA values for the distance.
  60       CONTINUE
         END IF
       END IF
-      
+
 C...  Determine maximum radius of mesh
-      
+
       RMAX = 0.0
       RMIN = BINGO
       IF (SWEEP .EQ. SPHERI) THEN
@@ -206,7 +206,7 @@ C...  Determine maximum radius of mesh
 
 C... If there is not a node at 0,0 - RMIN will not equal zero, therefore,
 C     we assume that if the spline starts at zero, the mesh also starts
-C     at zero. 
+C     at zero.
       IF (DISTA(1) .EQ. 0.0 .OR. DISTB(1) .EQ. 0.0) THEN
          RMIN = 0.0
       END IF
@@ -225,7 +225,7 @@ C     ... Echo spline data
       WRITE (*,70) 'bottom spline',DISTB(NSPL2), PROPB
    70 FORMAT (' Total length of ',A,T32,' = ',1PE12.5,
      &     ', Proportion = ',1PE12.5)
-      
+
       KLOA = 1
       KLOB = 1
       DO 100 INP = 1, NUMNP
@@ -243,17 +243,17 @@ C     ... Echo spline data
 
          RADA = DISTA(1) + PROPA * (RAD - RMIN)
          RADB = DISTB(1) + PROPB * (RAD - RMIN)
-         
+
 C     ... Determine segment containing point and proportion within segment
 C     Assume last segment was close to this segment and start search
-C     there.           
+C     there.
 
          CALL HUNT (DISTA, NSPL1, RADA, KLOA)
          KLOA = MIN(NSPL1-1, MAX(1, KLOA))
-         
+
          CALL HUNT (DISTB, NSPL2, RADB, KLOB)
          KLOB = MIN(NSPL2-1, MAX(1, KLOB))
-         
+
 C     ... We want to map the X-Y plane onto the spline surface without
 C     stretching.  Therefore, calculate a new radius RNEW which is
 C     the distance from the Z axis to the point on the spline such
@@ -261,7 +261,7 @@ C     that the arc length from R=0 to R=RAD is the distance RNEW.
 C     The new X and Y coordinates corresponding to RNEW are calculated
 C     as the proportion of RNEW / RAD.  FIXR is added to RAD in case
 C     RAD is 0; FIXR = 1 iff RAD = 0, else FIXR = 0
-         
+
          IF (RAD .EQ. 0.0) THEN
             FIXR = 1.0
          ELSE
@@ -273,65 +273,65 @@ C         FIXR  = SIGN(0.5, RAD) + SIGN(0.5, -RAD)
          RNEWA = RSA(KLOA) + PROP * (RSA(KLOA+1) - RSA(KLOA))
          PROP  = (RADB - DISTB(KLOB)) / (DISTB(KLOB+1) - DISTB(KLOB))
          RNEWB = RSB(KLOB) + PROP * (RSB(KLOB+1) - RSB(KLOB))
-         
+
          H  = RSA(KLOA+1) - RSA(KLOA)
          A  = (RSA(KLOA+1)-RNEWA) / H
          B  = (RNEWA-RSA(KLOA)) / H
-         
+
          ZT = A * ZSA(KLOA) + B * ZSA(KLOA+1) +
      *       ((A**3-A) * ZS2A(KLOA)+(B**3-B) * ZS2A(KLOA+1)) * (H**2)/6.
-         
+
          H  = RSB(KLOB+1) - RSB(KLOB)
          A  = (RSB(KLOB+1)-RNEWB) / H
          B  = (RNEWB-RSB(KLOB)) / H
-         
+
          ZB = A * ZSB(KLOB) + B * ZSB(KLOB+1) +
      *       ((A**3-A) * ZS2B(KLOB)+(B**3-B) * ZS2B(KLOB+1)) * (H**2)/6.
-         
+
          IF (RDTHET) THEN
             RSAV  = RNEWA
             ZSAV  = ZT
             ZT    = ZSAV * COS(RSAV)
             RNEWA = ZSAV * SIN(RSAV)
-            
+
             RSAV  = RNEWB
             ZSAV  = ZB
             ZB    = ZSAV * COS(RSAV)
             RNEWB = ZSAV * SIN(RSAV)
          END IF
-         
+
          IF (SWEEP .EQ. SPHERI) THEN
 C ... Spherical Sweep of Spline Surface
             XT = RNEWA * DX / (RAD + FIXR)
             YT = RNEWA * DY / (RAD + FIXR)
             XB = RNEWB * DX / (RAD + FIXR)
             YB = RNEWB * DY / (RAD + FIXR)
-         
+
          ELSE IF (SWEEP .EQ. XSWEEP) THEN
 C ... Sweep spline along the X axis
-            XT = DX 
+            XT = DX
             YT = RNEWA * DY / (RAD + FIXR)
-            XB = DX 
+            XB = DX
             YB = RNEWB * DY / (RAD + FIXR)
-         
+
          ELSE IF (SWEEP .EQ. YSWEEP) THEN
 C ... Sweep spline along the X axis
             XT = RNEWA * DX / (RAD + FIXR)
-            YT = DY 
+            YT = DY
             XB = RNEWB * DX / (RAD + FIXR)
-            YB = DY 
-         
+            YB = DY
+
          END IF
          DELZ = ZT - ZB
          DELX = XT - XB
          DELY = YT - YB
-         
+
          DO 90 NR = 1, NRNP(INP)
             ZN3(JNP0+NR) = ZT - DELZ * ZCORD(NR)
             YN3(JNP0+NR) = YT - DELY * ZCORD(NR)
             XN3(JNP0+NR) = XT - DELX * ZCORD(NR)
    90    CONTINUE
   100 CONTINUE
-      
+
       RETURN
       END

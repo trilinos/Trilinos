@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -118,7 +118,7 @@ C         --Store the range selected
 C ... See if a node/element with id 'I' exists in map.
 C     Store the index of where this occurs.
               I = LOCINT(ID, MAXSEL, MAP)
-              
+
               if (I .eq. 0) then
                 call intstr(1, -1, ID, ISTR, LSTR);
                 ERRMSG = 'No ' // SELMSG // ' with id equal '
@@ -131,7 +131,7 @@ C     Store the index of where this occurs.
                     CALL PRTERR ('CMDERR', ERRMSG(:LENSTR(ERRMSG)))
                     GOTO 130
                   END IF
-                  
+
                   NUMSEL = NUMSEL + 1
                   IXSEL(NUMSEL) = I
                 END IF

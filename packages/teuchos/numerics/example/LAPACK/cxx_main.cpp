@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 		ipiv, My_Vector.values(), My_Vector.stride(), &info );
 
   // Print out the solution.
-  My_Vector.print(std::cout); std::cout << std::endl;
+  std::cout << My_Vector << std::endl;
 
   return 0;
 }

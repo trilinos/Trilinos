@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -103,7 +103,7 @@ C   --   Uses ROT3D, ROTMAT of /XYZROT/
       CHARACTER*32 NAMELB(*)
       INTEGER NUMLNK(*)
       REAL    ELATTR(7,*)
-      
+
       CHARACTER*8 SHOTYP
       CHARACTER*80 STRING
       REAL RNUM(9)
@@ -138,7 +138,7 @@ C   --Determine the show option
      &   .OR. (SHOTYP .EQ. 'SPLINE')
      &   .OR. (SHOTYP .EQ. 'CPOINT')) THEN
 
-         IF (ITRANT .NE. 2) THEN 
+         IF (ITRANT .NE. 2) THEN
             CALL SHWINT (ITRANT, DIM3)
          END IF
 
@@ -212,7 +212,7 @@ C   --Determine the show option
          CALL NUMSTR (3, 4, RNUM, RSTR, LR)
          WRITE (*, 130)
      &      'Coordinate random factors =', (' ', RSTR(I)(:LR),I=1,3)
-         
+
       ELSE IF (SHOTYP .EQ. 'REVOLVE') THEN
          IF (ROT3D) THEN
             WRITE (*, 130) 'Rotation matrix for generated mesh:'
@@ -252,7 +252,7 @@ C   --Determine the show option
  60        FORMAT (1X, 'Block', I6, ':',
      &       I6, ' elements', I4, '-node ', A)
  70      CONTINUE
-         
+
       ELSE IF (SHOTYP .EQ. 'ATTRIBUT') THEN
          DO 90 IELB = 1, NELBLK
            WRITE (*, 80, IOSTAT=IDUM)
@@ -260,7 +260,7 @@ C   --Determine the show option
  80        FORMAT (1X, 'Block', I6, ':',
      &       7(1pE10.3))
  90      CONTINUE
-         
+
       ELSE IF ((SHOTYP .EQ. 'NSETS') .OR. (SHOTYP .EQ. 'NODESETS')) THEN
          WRITE (*, 140, IOSTAT=IDUM)
      &      'IDs for INPUT node sets',

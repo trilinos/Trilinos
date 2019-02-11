@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 c      external cgit07
 c      external cgimet
@@ -75,7 +75,7 @@ c      call xcoon(mf2id)
 c      call cesc(-28372,1,met2)
 c      call xcoon(tk1id)
 c      call xcoon(mf1id)
-  
+
 c initialize cgi
 c      call cesc(-28372,1,met1)
       call ci(1)
@@ -181,32 +181,32 @@ c     endif
       call ctx( xconc,yconc,1,text(1:4))
 
       call cchh(3270.)
-      text = "A" 
-      call ctx( 16500.,10000.,1,text(1:1)) 
+      text = "A"
+      call ctx( 16500.,10000.,1,text(1:1))
       call cgtxx(16500.,10000.,text(1:1),ivstat,ivconc, xconc,yconc,
      *  p1,q1,p2,q2,p3,q3,p4,q4)
-      text = "B" 
-      call ctx( xconc,yconc,1,text(1:1)) 
+      text = "B"
+      call ctx( xconc,yconc,1,text(1:1))
       call cgtxx(xconc,yconc,text(1:1),ivstat,ivconc, xconc,yconc,
      *  p1,q1,p2,q2,p3,q3,p4,q4)
-      text = "C" 
-      call ctx( xconc,yconc,1,text(1:1)) 
+      text = "C"
+      call ctx( xconc,yconc,1,text(1:1))
       call cgtxx(xconc,yconc,text(1:1),ivstat,ivconc, xconc,yconc,
      *  p1,q1,p2,q2,p3,q3,p4,q4)
-      text = "ABC" 
-      call ctx( xconc, yconc,1,text(1:3)) 
+      text = "ABC"
+      call ctx( xconc, yconc,1,text(1:3))
       call cgtxx(xconc,yconc,text(1:3),ivstat,ivconc, xconc,yconc,
      *  p1,q1,p2,q2,p3,q3,p4,q4)
       x(1) = p1
-      y(1) = q1 
+      y(1) = q1
       x(2) = p2
-      y(2) = q2 
+      y(2) = q2
       x(3) = p3
-      y(3) = q3 
+      y(3) = q3
       x(4) = p4
-      y(4) = q4 
+      y(4) = q4
       x(5) = p1
-      y(5) = q1 
+      y(5) = q1
       call clnt(1)
       call cpl(5,x,y)
 
@@ -220,7 +220,7 @@ c      call xcoon( tk1id )
 c      call xcoon( mf1id )
 c      call xcoon( mf2id )
 
-c change colors 
+c change colors
       if(i.eq.1) then
 
 c does the device support direct color
@@ -233,7 +233,7 @@ c          call xcsol( mf1id )
           call cqc( idum, idum, idum, idum, icmode, idum, idum, idum )
         endif
 
-c set direct color mode if supported, otherwise use indexed 
+c set direct color mode if supported, otherwise use indexed
 c only set the color table for indexed color
         if( icmode .eq. CCLRID ) then
           call ccsm( CDRECT )
@@ -252,7 +252,7 @@ c  ...make polylines red
         endif
         call clnc(clr)
         call cqlna(istat,lnbi,lntyp,lwmod,lnwid,csmod,lnclr,lcmod)
- 
+
 c  ...make polygons green
         if( icmode .eq. CCLRID ) then
           clr(1) = 0
@@ -262,7 +262,7 @@ c  ...make polygons green
           clr(1) = 2
         endif
         call cflc(clr)
- 
+
 c  ...make polymarkers yellow
         if( icmode .eq. CCLRID ) then
           clr(1) = 255
@@ -272,7 +272,7 @@ c  ...make polymarkers yellow
           clr(1) = 3
         endif
         call cmkc(clr)
- 
+
 c  ...make text blue
         if( icmode .eq. CCLRID ) then
           clr(1) = 0

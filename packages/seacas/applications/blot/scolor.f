@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -144,11 +144,11 @@ C              Check for RESET flag.
              ISHDCL(2,I) =  0
              ISHDCL(3,I) =  0
  130       CONTINUE
-           
+
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'SHOW', 2)) THEN
            CALL FFADDC ('SHOW', INLINE(1))
            CALL SHOCMD ('Valid predefined colors', SHDLST)
-           
+
          ELSE
 
            ibeg = 0
@@ -158,7 +158,7 @@ C              Check for RESET flag.
              CALL FFADDC ('ALL', INLINE(1))
              IBEG = 1
              IEND = NELBLK
-             
+
            ELSE IF (FFEXST (IFLD, INTYP)) THEN
 
              CALL FFINTG (IFLD, INTYP, IFIELD,
@@ -177,7 +177,7 @@ C              Check for RESET flag.
 
 C                 Get color to assign to the specified blocks.
 C                    Check that next field has characters in it.
-             
+
            if (ibeg .ne. 0  .and. iend .ne. 0) then
              IF (INTYP(IFLD) .EQ. 0) THEN
                COLA = CFIELD(IFLD)
@@ -227,7 +227,7 @@ C ... Get diffuse and specular values.
            CALL FFREAL (IFLD, INTYP, RFIELD,
      *       'Specular Exponent', 0.0, SPEXP, *170)
            CALL FFADDR (SPEXP, INLINE(1))
-           
+
            do 140 iblk = ibeg, iend
              ISHDCL(1, IBLK) = 1
              ISHDCL(2, IBLK) = NCOL
@@ -241,7 +241,7 @@ C ... Diffuse and Specular Values, Specular Exponent.
              SHDCOL(6, iblk) = SPEXP
  140       continue
          ENDIF
-         
+
        ENDIF
 
  170  CONTINUE

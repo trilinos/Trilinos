@@ -1,23 +1,23 @@
 C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.  
-C    
+C          with the distribution.
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
       program testwtd
 c
@@ -37,10 +37,10 @@ c This is a test program for the Fortran binding of the EXODUS II
 c database write routines using double precision reals.
 c
 
-c	history - 
+c	history -
 c	Original L.A. Schoof
 c	02/25/93 V.R. Yarberry - Added error checks for file creation.
-c	03/04/93 V.R. Yarberry - Fixed bug in expvtt test, ebids was not passed 
+c	03/04/93 V.R. Yarberry - Fixed bug in expvtt test, ebids was not passed
 c	08/31/93 VRY - updated to match API version 2.00
 c
       include 'exodusII.inc'
@@ -49,7 +49,7 @@ c
       integer exoid, num_dim, num_nodes, num_elem, num_elem_blk
       integer num_elem_in_block(2), num_node_sets
       integer num_side_sets
-      integer i, j, k, m, elem_map(2), connect(4) 
+      integer i, j, k, m, elem_map(2), connect(4)
       integer node_list(10), elem_list(10), side_list(10)
       integer ebids(2),ids(2), num_nodes_per_set(2), num_elem_per_set(2)
       integer num_df_per_set(2)
@@ -60,7 +60,7 @@ c
       integer cpu_word_size, io_word_size
       integer prop_array(2)
 
-      real*8 glob_var_vals(10), nodal_var_vals(8) 
+      real*8 glob_var_vals(10), nodal_var_vals(8)
       real*8 time_value, elem_var_vals(20)
       real*8 x(8), y(8), dummy(1)
       real*8 attrib(1), dist_fact(8)
@@ -79,7 +79,7 @@ c
       cpu_word_size = 8
       io_word_size = 8
 c
-c  create EXODUS II files 
+c  create EXODUS II files
 c
       exoid = excre ("test.exo",
      1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
@@ -99,8 +99,8 @@ c
       num_node_sets = 2
       num_side_sets = 2
 
-      call expini (exoid, "This is a test", num_dim, num_nodes, 
-     1             num_elem, num_elem_blk, num_node_sets, 
+      call expini (exoid, "This is a test", num_dim, num_nodes,
+     1             num_elem, num_elem_blk, num_node_sets,
      2             num_side_sets, ierr)
 
       write (iout, '("after expini, error = ", i4)' ) ierr
@@ -109,21 +109,21 @@ c
 c  write nodal coordinates values and names to database
 c
 
-      x(1) = 0.0 
-      x(2) = 1.0 
-      x(3) = 1.0 
-      x(4) = 0.0 
-      x(5) = 1.0 
-      x(6) = 2.0 
-      x(7) = 2.0 
+      x(1) = 0.0
+      x(2) = 1.0
+      x(3) = 1.0
+      x(4) = 0.0
+      x(5) = 1.0
+      x(6) = 2.0
+      x(7) = 2.0
       x(8) = 1.0
-      y(1) = 0.0 
-      y(2) = 0.0 
-      y(3) = 1.0 
-      y(4) = 1.0 
-      y(5) = 0.0 
-      y(6) = 0.0 
-      y(7) = 1.0 
+      y(1) = 0.0
+      y(2) = 0.0
+      y(3) = 1.0
+      y(4) = 1.0
+      y(5) = 0.0
+      y(6) = 0.0
+      y(7) = 1.0
       y(8) = 1.0
 
       call expcor (exoid, x, y, dummy, ierr)
@@ -182,16 +182,16 @@ c write element connectivity
 c
 
       connect(1) = 1
-      connect(2) = 2 
-      connect(3) = 3 
+      connect(2) = 2
+      connect(3) = 3
       connect(4) = 4
 
       call expelc (exoid, ebids(1), connect, ierr)
       write (iout, '("after expelc, error = ", i4)' ) ierr
 
       connect(1) = 5
-      connect(2) = 6 
-      connect(3) = 7 
+      connect(2) = 6
+      connect(3) = 7
       connect(4) = 8
 
       call expelc (exoid, ebids(2), connect, ierr)
@@ -213,16 +213,16 @@ c
 c write individual node sets
 c
 
-      node_list(1) = 100 
-      node_list(2) = 101 
-      node_list(3) = 102 
-      node_list(4) = 103 
-      node_list(5) = 104 
+      node_list(1) = 100
+      node_list(2) = 101
+      node_list(3) = 102
+      node_list(4) = 103
+      node_list(5) = 104
 
-      dist_fact(1) = 1.0 
-      dist_fact(2) = 2.0 
+      dist_fact(1) = 1.0
+      dist_fact(2) = 2.0
       dist_fact(3) = 3.0
-      dist_fact(4) = 4.0 
+      dist_fact(4) = 4.0
       dist_fact(5) = 5.0
 
 c     call expnp (exoid, 20, 5, 5, ierr)
@@ -232,12 +232,12 @@ c     write (iout, '("after expns, error = ", i4)' ) ierr
 c     call expnsd (exoid, 20, dist_fact, ierr)
 c     write (iout, '("after expnsd, error = ", i4)' ) ierr
 
-      node_list(1) = 200 
-      node_list(2) = 201 
-      node_list(3) = 202 
-   
-      dist_fact(1) = 1.1 
-      dist_fact(2) = 2.1 
+      node_list(1) = 200
+      node_list(2) = 201
+      node_list(3) = 202
+
+      dist_fact(1) = 1.1
+      dist_fact(2) = 2.1
       dist_fact(3) = 3.1
 
 c     call expnp (exoid, 21, 3, 3, ierr)
@@ -252,37 +252,37 @@ c write concatenated node sets; this produces the same information as
 c the above code which writes individual node sets
 c
 
-      ids(1) = 20 
+      ids(1) = 20
       ids(2) = 21
 
-      num_nodes_per_set(1) = 5 
+      num_nodes_per_set(1) = 5
       num_nodes_per_set(2) = 3
 
-      num_df_per_set(1) = 5 
+      num_df_per_set(1) = 5
       num_df_per_set(2) = 3
 
-      node_ind(1) = 1 
+      node_ind(1) = 1
       node_ind(2) = 6
 
-      df_ind(1) = 1 
+      df_ind(1) = 1
       df_ind(2) = 6
 
-      node_list(1) = 100 
-      node_list(2) = 101 
-      node_list(3) = 102 
-      node_list(4) = 103 
-      node_list(5) = 104 
-      node_list(6) = 200 
-      node_list(7) = 201 
+      node_list(1) = 100
+      node_list(2) = 101
+      node_list(3) = 102
+      node_list(4) = 103
+      node_list(5) = 104
+      node_list(6) = 200
+      node_list(7) = 201
       node_list(8) = 202
 
-      dist_fact(1) = 1.0 
-      dist_fact(2) = 2.0 
-      dist_fact(3) = 3.0 
-      dist_fact(4) = 4.0 
-      dist_fact(5) = 5.0 
-      dist_fact(6) = 1.1 
-      dist_fact(7) = 2.1 
+      dist_fact(1) = 1.0
+      dist_fact(2) = 2.0
+      dist_fact(3) = 3.0
+      dist_fact(4) = 4.0
+      dist_fact(5) = 5.0
+      dist_fact(6) = 1.1
+      dist_fact(7) = 2.1
       dist_fact(8) = 3.1
 
       call expcns (exoid, ids, num_nodes_per_set, num_df_per_set,
@@ -312,11 +312,11 @@ c
       elem_list(1) = 11
       elem_list(2) = 12
 
-      side_list(1) = 1 
-      side_list(2) = 2 
+      side_list(1) = 1
+      side_list(2) = 2
 
-      dist_fact(1) = 30.0 
-      dist_fact(2) = 30.1 
+      dist_fact(1) = 30.0
+      dist_fact(2) = 30.1
       dist_fact(3) = 30.2
       dist_fact(4) = 30.3
 
@@ -367,7 +367,7 @@ c
 
       df_ind(1) = 1
       df_ind(2) = 5
-  
+
       elem_list(1) = 11
       elem_list(2) = 12
       elem_list(3) = 13
@@ -435,7 +435,7 @@ c
 c write results variables parameters and names
 
       num_glo_vars = 1
-  
+
       var_names(1) = "glo_vars"
 
       call expvp (exoid, "g", num_glo_vars, ierr)
@@ -454,7 +454,7 @@ c write results variables parameters and names
       call expvan (exoid, "n", num_nod_vars, var_names, ierr)
       write (iout, '("after expvan, error = ", i4)' ) ierr
 
-   
+
       num_ele_vars = 3
 
       var_names(1) = "ele_var0"
@@ -482,7 +482,7 @@ c
 
 c
 c for each time step, write the analysis results;
-c the code below fills the arrays hist_var_vals, glob_var_vals, 
+c the code below fills the arrays hist_var_vals, glob_var_vals,
 c nodal_var_vals, and elem_var_vals with values for debugging purposes;
 c obviously the analysis code will populate these arrays
 c
@@ -509,7 +509,7 @@ c
           glob_var_vals(j) = real(j+1) * time_value
 50      continue
 
-        call expgv (exoid, whole_time_step, num_glo_vars, 
+        call expgv (exoid, whole_time_step, num_glo_vars,
      1              glob_var_vals, ierr)
         write (iout, '("after expgv, error = ", i4)' ) ierr
 
@@ -524,7 +524,7 @@ c
 
 60        continue
 
-          call expnv (exoid, whole_time_step, k, num_nodes, 
+          call expnv (exoid, whole_time_step, k, num_nodes,
      1                nodal_var_vals, ierr)
           write (iout, '("after expnv, error = ", i4)' ) ierr
 
@@ -538,13 +538,13 @@ c
           do 90 j = 1, num_elem_blk
             do 80 m = 1, num_elem_in_block(j)
 
-              elem_var_vals(m) = real(k+1) + real(j+1) + 
+              elem_var_vals(m) = real(k+1) + real(j+1) +
      1                          (real(m)*time_value)
 c             write(iout,*)'elem_var_val(',m,'): ',elem_var_vals(m)
 
 80          continue
 
-            call expev (exoid, whole_time_step, k, ebids(j), 
+            call expev (exoid, whole_time_step, k, ebids(j),
      1                  num_elem_in_block(j), elem_var_vals, ierr)
             write (iout, '("after expev, error = ", i4)' ) ierr
 
@@ -554,7 +554,7 @@ c             write(iout,*)'elem_var_val(',m,'): ',elem_var_vals(m)
         whole_time_step = whole_time_step + 1
 
 c
-c update the data file; this should be done at the end of every time 
+c update the data file; this should be done at the end of every time
 c step to ensure that no data is lost if the analysis dies
 c
         call exupda (exoid, ierr)
