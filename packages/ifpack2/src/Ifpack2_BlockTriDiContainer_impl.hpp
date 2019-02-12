@@ -1418,14 +1418,18 @@ namespace Ifpack2 {
     
     template<>
     struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HostSpace> {
-      typedef KokkosBatched::Experimental::Mode::Serial          mode_type;
+      typedef KokkosBatched::Experimental::Mode::Serial mode_type;
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__) 
+      typedef KokkosBatched::Experimental::Algo::Level3::CompactMKL algo_type;
+#else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked algo_type;
+#endif
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
     template<>
     struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
-      typedef KokkosBatched::Experimental::Mode::Team              mode_type;
+      typedef KokkosBatched::Experimental::Mode::Team mode_type;
       typedef KokkosBatched::Experimental::Algo::Level3::Unblocked algo_type;
     };
 #endif
@@ -1920,15 +1924,19 @@ namespace Ifpack2 {
     
     template<>
     struct SolveTridiagsDefaultModeAndAlgo<Kokkos::HostSpace> {
-      typedef KokkosBatched::Experimental::Mode::Serial            mode_type;
+      typedef KokkosBatched::Experimental::Mode::Serial mode_type;
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
-      typedef KokkosBatched::Experimental::Algo::Level2::Blocked   multi_vector_algo_type;
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__) 
+      typedef KokkosBatched::Experimental::Algo::Level3::CompactMKL algo_type;
+#else
+      typedef KokkosBatched::Experimental::Algo::Level3::Blocked multi_vector_algo_type;
+#endif
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
     template<>
     struct SolveTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
-      typedef KokkosBatched::Experimental::Mode::Team              mode_type;
+      typedef KokkosBatched::Experimental::Mode::Team mode_type;
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KokkosBatched::Experimental::Algo::Level3::Unblocked multi_vector_algo_type;
     };
