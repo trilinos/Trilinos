@@ -1413,6 +1413,23 @@ namespace Ifpack2 {
     ///
     /// numeric phase, initialize the preconditioner
     ///
+    template<typename ArgActiveExecutionMemorySpace>
+    struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo;
+    
+    template<>
+    struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HostSpace> {
+      typedef KokkosBatched::Experimental::Mode::Serial          mode_type;
+      typedef KokkosBatched::Experimental::Algo::Level3::Blocked algo_type;
+    };
+    
+#if defined(KOKKOS_ENABLE_CUDA) 
+    template<>
+    struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
+      typedef KokkosBatched::Experimental::Mode::Team              mode_type;
+      typedef KokkosBatched::Experimental::Algo::Level3::Unblocked algo_type;
+    };
+#endif
+
     template<typename MatrixType>
     struct ExtractAndFactorizeTridiags {
     public:
@@ -1530,6 +1547,11 @@ namespace Ifpack2 {
                 const local_ordinal_type &v) const {
         namespace KB = KokkosBatched::Experimental;
 
+        typedef EtxtractAndFactorizeTridiagsDefaultModeAndAlgo
+          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
+        typedef default_mode_and_algo_type::mode_type default_mode_type;
+        typedef default_mode_and_algo_type::algo_type default_algo_type;
+
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
 
@@ -1537,25 +1559,31 @@ namespace Ifpack2 {
         auto A = Kokkos::subview(internal_vector_values, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
         A.assign_data( &internal_vector_values(i0,0,0,v) );
         KB::LU<member_type,
-               KB::Mode::Serial,KB::Algo::LU::Unblocked,
-               KB::Mode::Team,  KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
+               default_mode_type,KB::Algo::LU::Unblocked>
+          ::invoke(member, A , tiny);
         if (nrows > 1) {
           auto B = A;
           auto C = A;
           local_ordinal_type i = i0;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
             B.assign_data( &internal_vector_values(i+1,0,0,v) );
-            KB::Trsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit>
+            KB::Trsm<member_type,
+                     KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
+                     default_mode_type,default_algo_type>
               ::invoke(member, one, A, B);
             C.assign_data( &internal_vector_values(i+2,0,0,v) );
-            KB::Trsm<member_type,KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit>
+            KB::Trsm<member_type,
+                     KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
+                     default_mode_type,default_algo_type>
               ::invoke(member, one, A, C);
             A.assign_data( &internal_vector_values(i+3,0,0,v) );
-            KB::Gemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose>
+            KB::Gemm<member_type,
+                     KB::Trans::NoTranspose,KB::Trans::NoTranspose,
+                     default_mode_type,default_algo_type>
               ::invoke(member, -one, C, B, one, A);
             KB::LU<member_type,
-                   KB::Mode::Serial,KB::Algo::LU::Unblocked,
-                   KB::Mode::Team,  KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
+                   default_mode_type,KB::Algo::LU::Unblocked>
+              ::invoke(member, A, tiny);
           }
         }
       }
