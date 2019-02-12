@@ -88,8 +88,8 @@ namespace FROSch {
         UN itmp = 0;
         LOVecPtr2D partMappings;
         AssembledBasisMap_ = AssembleMaps(UnassembledBasesMaps_(),partMappings);
-        if (!AssembledBasisMap_.is_null()) {
-            if (AssembledBasisMap_->getGlobalNumElements()>0) { // AH 02/12/2019: Is this the right condition? Seems to work for now
+        if (!AssembledBasisMap_.is_null()&&!SerialRowMap_.is_null()) {
+            if (AssembledBasisMap_->getGlobalNumElements()>0) { // AH 02/12/2019: Is this the right condition? Seems to work for now...
                 AssembledBasis_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO >::Build(SerialRowMap_,AssembledBasisMap_->getNodeNumElements());
                 for (UN i=0; i<UnassembledBasesMaps_.size(); i++) {
                     for (UN j=0; j<UnassembledBasesMaps_[i]->getNodeNumElements(); j++) {
