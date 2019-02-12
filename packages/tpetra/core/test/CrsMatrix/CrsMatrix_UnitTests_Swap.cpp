@@ -57,17 +57,16 @@
 
 namespace Tpetra {
 
-template<class LO, class GO, class Node>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class crsMatrix_Swap_Tester
 {
-    using Scalar                   = int;
-    using comm_type                = Teuchos::RCP<const Teuchos::Comm<int>>;       // The comm type
-    using graph_type               = Tpetra::CrsGraph<LO, GO, Node>;               // Tpetra CrsGraph type
-    using pair_owner_type          = std::pair<GO, int>;                           // For row owners, pairs are (rowid, comm rank)
-    using vec_owners_type          = std::vector<pair_owner_type>;                 // For vectors of owners
-    using tuple_weighted_edge_type = std::tuple<GO, GO, Scalar>;                   // Weighted edges (u,v,w)
-    using vec_weighted_edge_type   = std::vector<tuple_weighted_edge_type>;        // Vector of weighted edges
-    using matrix_type              = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;      // Tpetra CrsMatrix type
+    using comm_type                = Teuchos::RCP<const Teuchos::Comm<int>>;                          // The comm type
+    using graph_type               = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;             // Tpetra CrsGraph type
+    using pair_owner_type          = std::pair<GlobalOrdinal, int>;                                   // For row owners, pairs are (rowid, comm rank)
+    using vec_owners_type          = std::vector<pair_owner_type>;                                    // For vectors of owners
+    using tuple_weighted_edge_type = std::tuple<GlobalOrdinal, GlobalOrdinal, Scalar>;                // Weighted edges (u,v,w)
+    using vec_weighted_edge_type   = std::vector<tuple_weighted_edge_type>;                           // Vector of weighted edges
+    using matrix_type              = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;    // Tpetra CrsMatrix type
 
   public:
     void execute(Teuchos::FancyOStream& out, bool& success)
@@ -302,21 +301,21 @@ class crsMatrix_Swap_Tester
     // gbl_num_columns: Max # of columns in the matrix-representation of the graph.
     //                  This should be >= the highest value of v from all edges (u,v) in edges.
     //                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
-    // template<class LO, class GO, class Node, class Scalar>
-    Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>> generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>>&        comm,
-                                                                   const std::vector<std::tuple<GO, GO, Scalar>>& gbl_wgt_edges,
-                                                                   const std::vector<std::pair<GO, int>>&         gbl_row_owners,
-                                                                   const size_t                                   gbl_num_columns,
-                                                                   const bool do_fillComplete = true)
+    Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>>&                              comm,
+                      const std::vector<std::tuple<GlobalOrdinal, GlobalOrdinal, Scalar>>& gbl_wgt_edges,
+                      const std::vector<std::pair<GlobalOrdinal, int>>&                    gbl_row_owners,
+                      const size_t                                                         gbl_num_columns,
+                      const bool do_fillComplete = true)
     {
         using Teuchos::Comm;
         using Teuchos::RCP;
 
-        using graph_type           = Tpetra::CrsGraph<LO, GO, Node>;      // Tpetra CrsGraph type
-        using map_type             = Tpetra::Map<LO, GO, Node>;           // Tpetra Map type
-        using map_rows_type        = std::map<GO, int>;                   // map rows to pid's
-        using vec_go_type          = std::vector<GO>;                     // vector of GlobalOrdinals
-        using map_row_to_cols_type = std::map<GO, vec_go_type>;           // Map rows to columns
+        using graph_type           = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;     // Tpetra CrsGraph type
+        using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;          // Tpetra Map type
+        using map_rows_type        = std::map<GlobalOrdinal, int>;                            // map rows to pid's
+        using vec_go_type          = std::vector<GlobalOrdinal>;                              // vector of GlobalOrdinals
+        using map_row_to_cols_type = std::map<GlobalOrdinal, vec_go_type>;                    // Map rows to columns
 
         const bool verbose   = Tpetra::Details::Behavior::verbose();
         const int  comm_rank = comm->getRank();
@@ -349,8 +348,8 @@ class crsMatrix_Swap_Tester
             for(auto& p: gbl_row2pid) std::cout << "p=0 | gbl_row2pid : " << p.first << " => " << p.second << std::endl;
         }
 
-        GO gbl_num_rows = gbl_rows.size();      // the number of global rows
-        LO lcl_num_rows = 0;                    // this will be updated later
+        GlobalOrdinal gbl_num_rows = gbl_rows.size();      // the number of global rows
+        LocalOrdinal lcl_num_rows = 0;                    // this will be updated later
 
         // How many local rows do I have?
         for(auto& r: gbl_row2pid)
@@ -366,7 +365,7 @@ class crsMatrix_Swap_Tester
                       << "lcl_num_rows = " << lcl_num_rows << std::endl;
 
         // Set up global ids
-        std::vector<GO> global_ids;
+        std::vector<GlobalOrdinal> global_ids;
         for(auto& r: gbl_row2pid)
         {
             if(comm_rank == r.second)
@@ -394,7 +393,7 @@ class crsMatrix_Swap_Tester
         size_t                    idx = 0;
         for(auto& r: gbl_rows)
         {
-            const GO  irow    = r.first;
+            const GlobalOrdinal  irow    = r.first;
             const int row_pid = gbl_row2pid.find(irow)->second;
             if(comm_rank == row_pid)
             {
@@ -416,11 +415,11 @@ class crsMatrix_Swap_Tester
 
         for(auto& r: gbl_rows)
         {
-            const GO  irow = r.first;
+            const GlobalOrdinal  irow = r.first;
             const int pid  = gbl_row2pid.find(irow)->second;
             if(comm_rank == pid)
             {
-                std::vector<GO> gbl_inds;
+                std::vector<GlobalOrdinal> gbl_inds;
                 for(auto& v: r.second) { gbl_inds.push_back(v); }
                 if(verbose)
                 {
@@ -440,7 +439,7 @@ class crsMatrix_Swap_Tester
 
         RCP<const map_type> range_map = row_map;
 
-        const GO            index_base = 0;
+        const GlobalOrdinal index_base = 0;
         RCP<const map_type> domain_map(new map_type(gbl_num_columns, index_base, comm));
 
         if(do_fillComplete)
@@ -459,29 +458,25 @@ class crsMatrix_Swap_Tester
     // gbl_num_columns: Max # of columns in the matrix-representation of the graph.
     //                  This should be >= the highest value of v from all edges (u,v) in edges.
     //                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
-    // template<class LO, class GO, class Node, class Scalar>
-    Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node>>
-    generate_crsmatrix(Teuchos::RCP<const Teuchos::Comm<int>>&             comm,
-                       const Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>& graph,
-                       const std::vector<std::tuple<GO, GO, Scalar>>&      gbl_wgt_edges,
-                       const std::vector<std::pair<GO, int>>&              gbl_row_owners,
-                       const size_t                                        gbl_num_columns,
-                       const bool                                          do_fillComplete = true)
+    Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    generate_crsmatrix(Teuchos::RCP<const Teuchos::Comm<int>>&                                  comm,
+                       const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& graph,
+                       const std::vector<std::tuple<GlobalOrdinal, GlobalOrdinal, Scalar>>&     gbl_wgt_edges,
+                       const std::vector<std::pair<GlobalOrdinal, int>>&                        gbl_row_owners,
+                       const size_t                                                             gbl_num_columns,
+                       const bool                                                               do_fillComplete = true)
     {
         using Teuchos::Comm;
         using Teuchos::RCP;
 
-        using map_type             = Tpetra::Map<LO, GO, Node>;      // Tpetra Map type
-        using map_rows_type        = std::map<GO, int>;              // map rows to pid's
-        using vec_go_type          = std::vector<GO>;                // vector of GlobalOrdinals
-        using map_row_to_cols_type = std::map<GO, vec_go_type>;      // Map rows to columns
+        using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;                    // Tpetra Map type
+        using map_rows_type        = std::map<GlobalOrdinal, int>;                                      // map rows to pid's
+        using vec_go_type          = std::vector<GlobalOrdinal>;                                        // vector of GlobalOrdinals
+        using map_row_to_cols_type = std::map<GlobalOrdinal, vec_go_type>;                              // Map rows to columns
 
-        // using graph_type  = Tpetra::CrsGraph<LO, GO, Node>;                      // Tpetra CrsGraph type
-        // using map_type    = Tpetra::Map<LO, GO, Node>;                           // Tpetra Map type (comment out to prevent
-        // unused warning)
-        using matrix_type          = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;      // Tpetra CrsMatrix type
-        using vec_scalar_type      = std::vector<Scalar>;                          // Vector of Scalars
-        using map_row_to_vals_type = std::map<GO, vec_scalar_type>;
+        using matrix_type          = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;      // Tpetra CrsMatrix type
+        using vec_scalar_type      = std::vector<Scalar>;                                               // Vector of Scalars
+        using map_row_to_vals_type = std::map<GlobalOrdinal, vec_scalar_type>;
 
         // Get test verbosity from the settings
         const bool verbose = Tpetra::Details::Behavior::verbose();
@@ -533,8 +528,8 @@ class crsMatrix_Swap_Tester
             { std::cout << "p=" << comm_rank << " | gbl_row2pid : " << p.first << " => " << p.second << std::endl; }
         }
 
-        GO gbl_num_rows = gbl_vals.size();      // the number of global rows
-        LO lcl_num_rows = 0;                    // this will be updated later
+        GlobalOrdinal gbl_num_rows = gbl_vals.size();      // the number of global rows
+        LocalOrdinal lcl_num_rows = 0;                     // this will be updated later
 
         // How many local rows do I have?
         for(auto& r: gbl_row2pid)
@@ -550,7 +545,7 @@ class crsMatrix_Swap_Tester
                       << "lcl_num_rows = " << lcl_num_rows << std::endl;
 
         // Set up global ids
-        std::vector<GO> global_ids;
+        std::vector<GlobalOrdinal> global_ids;
         for(auto& r: gbl_row2pid)
         {
             if(comm_rank == r.second)
@@ -578,8 +573,8 @@ class crsMatrix_Swap_Tester
         size_t                    idx = 0;
         for(auto& r: gbl_vals)
         {
-            const GO  irow    = r.first;
-            const int row_pid = gbl_row2pid.find(irow)->second;
+            const GlobalOrdinal  irow = r.first;
+            const int row_pid         = gbl_row2pid.find(irow)->second;
             if(comm_rank == row_pid)
             {
                 num_ent_per_row[ idx++ ] = r.second.size();
@@ -609,8 +604,8 @@ class crsMatrix_Swap_Tester
                 const auto* ptr_vec_col_entries    = &gbl_rows.at(row_id);
                 const auto* ptr_vec_scalar_entries = &gbl_vals.at(row_id);
 
-                Teuchos::Array<GO>     cols(gbl_rows.size());
-                Teuchos::Array<Scalar> vals(gbl_vals.size());
+                Teuchos::Array<GlobalOrdinal> cols(gbl_rows.size());
+                Teuchos::Array<Scalar>        vals(gbl_vals.size());
                 for(size_t i = 0; i < num_row_entries; i++)
                 {
                     cols[ i ] = ptr_vec_col_entries->at(i);
@@ -629,11 +624,10 @@ class crsMatrix_Swap_Tester
 
 
 
-    // template<class LO, class GO, class Node, class Scalar>
-    void print_crsmatrix(const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
-                         Teuchos::FancyOStream&                         out,
-                         const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& m,
-                         const std::string                              label)
+    void print_crsmatrix(const Teuchos::RCP<const Teuchos::Comm<int>>&                        comm,
+                         Teuchos::FancyOStream&                                               out,
+                         const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&  m,
+                         const std::string                                                    label)
     {
         using Teuchos::Comm;
 
@@ -660,11 +654,10 @@ class crsMatrix_Swap_Tester
 
 
 
-    // template<class LO, class GO, class Node, class Scalar>
     bool compare_crsmatrix(const Teuchos::RCP<const Teuchos::Comm<int>>&  comm,
                            Teuchos::FancyOStream&                         out,
-                           const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& matrix1,
-                           const Tpetra::CrsMatrix<Scalar, LO, GO, Node>& matrix2)
+                           const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix1,
+                           const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix2)
     {
         using Teuchos::Comm;
 
@@ -842,9 +835,9 @@ TEUCHOS_STATIC_SETUP()
 //
 // UNIT TESTS
 //
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsGraph, Swap, LO, GO, Scalar, Node)
 {
-    auto crsMatrixTester = Tpetra::crsMatrix_Swap_Tester<LO, GO, Node>();
+    auto crsMatrixTester = Tpetra::crsMatrix_Swap_Tester<Scalar, LO, GO, Node>();
     crsMatrixTester.execute(out, success);
 }
 
@@ -858,10 +851,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 // Tests to build and run in both debug and release modes.  We will
 // instantiate them over all enabled local ordinal (LO), global
 // ordinal (GO), and Kokkos Node (NODE) types.
-#define UNIT_TEST_GROUP_DEBUG_AND_RELEASE(LO, GO, NODE) TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, Swap, LO, GO, NODE)
+#define UNIT_TEST_GROUP_DEBUG_AND_RELEASE(SCALAR, LO, GO, NODE) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsGraph, Swap, LO, GO, SCALAR, NODE)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_LGN(UNIT_TEST_GROUP_DEBUG_AND_RELEASE)
+TPETRA_INSTANTIATE_SLGN(UNIT_TEST_GROUP_DEBUG_AND_RELEASE)
 
 }      // namespace

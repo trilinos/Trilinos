@@ -73,7 +73,7 @@ namespace Tpetra {
 
 
   // Forward declaration for CrsGraph::swap() test
-  template<class LO, class GO, class Node> class crsGraph_Swap_Tester;
+  template<class LocalOrdinal, class GlobalOrdinal, class Node> class crsGraph_Swap_Tester;
 
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -2144,7 +2144,7 @@ namespace Tpetra {
     void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
 
     // Friend the tester for CrsGraph::swap
-    template <class LO, class GO, class N> friend class Tpetra::crsGraph_Swap_Tester;
+    friend class Tpetra::crsGraph_Swap_Tester<LocalOrdinal, GlobalOrdinal, Node>;
 
 
     //! The Map describing the distribution of rows of the graph.

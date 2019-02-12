@@ -71,7 +71,7 @@
 namespace Tpetra {
 
   // Forward declaration for CrsMatrix::swap() test
-  template<class LO, class GO, class Node> class crsMatrix_Swap_Tester;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class crsMatrix_Swap_Tester;
 
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
   /// \relatesalso CrsMatrix
@@ -4790,7 +4790,7 @@ namespace Tpetra {
   protected:
 
     // Friend the tester for CrsMatrix::swap
-    template <class LO, class GO, class N> friend class Tpetra::crsMatrix_Swap_Tester;
+    friend class Tpetra::crsMatrix_Swap_Tester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     /// \brief Swaps the data from *this with the data and maps from crsMatrix
     ///
