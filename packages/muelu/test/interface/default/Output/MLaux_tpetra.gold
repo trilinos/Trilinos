@@ -33,6 +33,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "distance laplacian": threshold = 0.01, blocksize = 1
 aggregation: drop tol = 0.01
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1   [default]
