@@ -70,6 +70,9 @@
 
 namespace Tpetra {
 
+  // Forward declaration for CrsMatrix::swap() test
+  template<class LO, class GO, class Node> class crsMatrix_Swap_Tester;
+
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
   /// \relatesalso CrsMatrix
   /// \tparam CrsMatrixType A specialization of CrsMatrix.
@@ -1020,19 +1023,6 @@ namespace Tpetra {
 
     //! Destructor.
     virtual ~CrsMatrix ();
-
-
-    template <class LO, class GO, class N> friend class Tpetra::TestingUtilities::crsMatrix_Swap_Tester;
-    // template <class LocalOrdinal, class GlobalOrdinal, class Node> friend class crsMatrix_Swap_Tester; // SCAFFOLDING (fails due to shadow declaration errors)
-    // template <class LO, class GO, class N> friend class tpetra_crsmatrix_swap_test::crsMatrix_Swap_Tester; // SCAFFOLDING
-
-
-  protected:      // SCAFFOLDING - We need to make this protected
-    /// \brief Swaps the data from *this with the data and maps from crsMatrix
-    ///
-    /// \param matrix [in/out] a crsMatrix
-    void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
-
 
 
   public:
@@ -4788,6 +4778,18 @@ namespace Tpetra {
     /// between <tt>const double*</tt> and <tt>double* const</tt>.
     Kokkos::View<impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
     getRowViewNonConst (const RowInfo& rowInfo) const;
+
+
+  protected:
+
+    // Friend the tester for CrsMatrix::swap
+    template <class LO, class GO, class N> friend class Tpetra::crsMatrix_Swap_Tester;
+
+    /// \brief Swaps the data from *this with the data and maps from crsMatrix
+    ///
+    /// \param matrix [in/out] a crsMatrix
+    void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
+
 
   protected:
 
