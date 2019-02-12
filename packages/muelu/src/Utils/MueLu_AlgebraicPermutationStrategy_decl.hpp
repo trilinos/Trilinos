@@ -90,9 +90,12 @@ void sortingPermutation(const std::vector<Scalar> & values, std::vector<LocalOrd
      * \param A: input matrix (input)
      * \param permRowMap: Dof row map permutation shall be restricted on (input)
      * \param currentLevel: only for output of variables
-     * \param genFactory: const pointer to generating (calling) PermutationFactory // TODO avoid this, not very elegant. Decide which variables have to be generated, give them back per reference to the PermutationFactory.
+     * \param genFactory: const pointer to generating (calling) PermutationFactory
+     // TODO avoid this, not very elegant.
+     // Decide which variables have to be generated, give them back per reference to the PermutationFactory.
      */
-    void BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const;
+    void BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map>& permRowMap,
+                          Level & currentLevel, const FactoryBase* genFactory) const;
 
     //@}
 
