@@ -53,7 +53,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Galeri_iohb.h"
+#include "Trilinos_Util_iohb.h"
 
 namespace Belos {
   namespace Tpetra {
