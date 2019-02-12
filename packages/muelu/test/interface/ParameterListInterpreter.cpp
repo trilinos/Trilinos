@@ -120,6 +120,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<Vector> materialCoordinates =  VectorFactory::Build(A->getRowMap());
+  materialCoordinates->putScalar(Teuchos::ScalarTraits<SC>::one());
 
   std::string prefix;
   if (useKokkos) {
@@ -284,6 +286,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         H->GetLevel(0)->Set("Coordinates", coordinates);
+        H->GetLevel(0)->Set("Material Coordinates", materialCoordinates);
 
         mueluFactory->SetupHierarchy(*H);
 
