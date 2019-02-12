@@ -118,6 +118,9 @@ private:
 
     void copy_device_to_host() { };
 #ifndef STK_HIDE_DEPRECATED_CODE
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
 private:
 #endif
 
@@ -187,6 +190,9 @@ private:
 
     void copy_device_to_host() { };
 #ifndef STK_HIDE_DEPRECATED_CODE
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
 private:
 #endif
 
@@ -369,6 +375,9 @@ private:
     }
 
 #ifndef STK_HIDE_DEPRECATED_CODE
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { copy_host_to_device(); };
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { copy_device_to_host(); };
 private:
 #endif
     bool need_sync_to_host() const
@@ -556,6 +565,9 @@ private:
         staticField.copy_host_to_device();
     }
 #ifndef STK_HIDE_DEPRECATED_CODE
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { copy_host_to_device(); };
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { copy_device_to_host(); };
 private:
 #endif
 
