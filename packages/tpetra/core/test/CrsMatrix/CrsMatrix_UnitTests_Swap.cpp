@@ -115,22 +115,16 @@ class crsMatrix_Swap_Tester
 
             // Create weighted edge pairs for graph/matrix type 1
             vec_weighted_edge_type vec_edges_wgt = {
-              std::make_tuple(0, 0, 0),
-              std::make_tuple(0, 11, 11),      // row 0
-              std::make_tuple(1, 3, 103),
-              std::make_tuple(1, 4, 104),      // row 1
-              std::make_tuple(3, 2, 302),      // row 3
-              std::make_tuple(7, 5, 705),
-              std::make_tuple(7, 7, 707),       // row 7
-              std::make_tuple(10, 6, 1006)      // row 10
+              std::make_tuple(0, 0, 0),     std::make_tuple(0, 11, 11),      // row 0
+              std::make_tuple(1, 3, 103),   std::make_tuple(1, 4, 104),      // row 1
+              std::make_tuple(3, 2, 302),                                    // row 3
+              std::make_tuple(7, 5, 705),   std::make_tuple(7, 7, 707),      // row 7
+              std::make_tuple(10, 6, 1006)                                   // row 10
             };
 
             vec_owners_type vec_owners = {
-              pair_owner_type(0, 0),
-              pair_owner_type(1, 0),
-              pair_owner_type(3, 0),      // p0
-              pair_owner_type(7, 1),
-              pair_owner_type(10, 1)      // p1
+              pair_owner_type(0, 0),   pair_owner_type(1, 0),   pair_owner_type(3, 0),      // p0
+              pair_owner_type(7, 1),   pair_owner_type(10, 1)                               // p1
             };
 
             if(verbose)
@@ -168,21 +162,16 @@ class crsMatrix_Swap_Tester
             vec_owners.clear();
 
             vec_edges_wgt = {
-              std::make_tuple(0, 0, 0),
-              std::make_tuple(0, 11, 11),      // row 0
-              std::make_tuple(1, 7, 107),
-              std::make_tuple(1, 8, 108),       // row 1
-              std::make_tuple(3, 1, 301),       // row 3
-              std::make_tuple(7, 5, 705),       // row 7
-              std::make_tuple(10, 4, 1004)      // row 10
+              std::make_tuple(0, 0, 0),    std::make_tuple(0, 11, 11),      // row 0
+              std::make_tuple(1, 7, 107),  std::make_tuple(1, 8, 108),      // row 1
+              std::make_tuple(3, 1, 301),                                   // row 3
+              std::make_tuple(7, 5, 705),                                   // row 7
+              std::make_tuple(10, 4, 1004)                                  // row 10
             };
 
             vec_owners = {
-              pair_owner_type(0, 0),
-              pair_owner_type(1, 0),      // p0
-              pair_owner_type(3, 1),
-              pair_owner_type(7, 1),
-              pair_owner_type(10, 1)      // p1
+              pair_owner_type(0, 0),   pair_owner_type(1, 0),                             // p0
+              pair_owner_type(3, 1),   pair_owner_type(7, 1),   pair_owner_type(10, 1)    // p1
             };
 
             if(my_rank == 0)
@@ -208,51 +197,6 @@ class crsMatrix_Swap_Tester
             RCP<matrix_type> matrix_d = generate_crsmatrix(comm, graph_d, vec_edges_wgt, vec_owners, 12);
             if(verbose)
                 matrix_d->describe(out, Teuchos::VERB_DEFAULT);
-
-            //--------------------------------------------------------------------
-            //
-            // Test CrsGraph::swap()
-            //
-            //--------------------------------------------------------------------
-            out << std::endl
-                << ">>> ----------------------------------------------------------" << std::endl
-                << ">>> -" << std::endl
-                << ">>> - Test CrsGraph::swap()" << std::endl
-                << ">>> -" << std::endl
-                << ">>> ----------------------------------------------------------" << std::endl
-                << std::endl;
-
-            // Verify the initial matching state of the graphs and matrices.
-            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), true);       // graph_a and graph_b should be the same
-            TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), true);       // graph_c and graph_d should be the same
-            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), false);      // graph_a and graph_c should be different
-            TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
-
-            //
-            // Swap graph b and c
-            //
-            out << std::endl << ">>> swap B and C so that A!=B, B!=C, A==C, B==D" << std::endl;
-            out << ">>> swap graph_b and graph_c" << std::endl;
-            graph_b->swap(*graph_c);
-
-            // Verify that the graph and matrices were swapped correctly.
-            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), false);      // graph_a and graph_b should be different
-            TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), false);      // graph_c and graph_d should be different
-            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), true);       // graph_a and graph_c should be the same
-            TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), true);       // graph_b and graph_d should be the same
-
-            //
-            // Swap graph b and c again.
-            //
-            out << std::endl << ">>> swap B and C back to original state." << std::endl;
-            out << ">>> swap graph_b and graph_c" << std::endl;
-            graph_b->swap(*graph_c);
-
-            // Verify the initial identical-to state of the graphs (they should be back to the original state)
-            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), true);       // graph_a and graph_b should be the same
-            TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), true);       // graph_c and graph_d should be the same
-            TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), false);      // graph_a and graph_c should be different
-            TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
 
             //--------------------------------------------------------------------
             //
@@ -900,7 +844,7 @@ TEUCHOS_STATIC_SETUP()
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 {
-    Tpetra::crsMatrix_Swap_Tester<LO, GO, Node> crsMatrixTester = Tpetra::crsMatrix_Swap_Tester<LO, GO, Node>();
+    auto crsMatrixTester = Tpetra::crsMatrix_Swap_Tester<LO, GO, Node>();
     crsMatrixTester.execute(out, success);
 }
 
