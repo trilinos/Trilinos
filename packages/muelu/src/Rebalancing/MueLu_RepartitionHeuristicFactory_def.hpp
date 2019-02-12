@@ -165,7 +165,7 @@ namespace MueLu {
 
     // Test0: Should we do node repartitioning? 
     if (currentLevel.GetLevelID() == nodeRepartLevel) {
-      RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<Teuchos::Comm<int> > >(currentLevel, "Node Comm");
+      RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");
       TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
       GetOStream(Statistics1) << "Repartitioning?  YES: Within node only"<<std::endl;
       int nodeRank = NodeComm->getRank();

@@ -107,7 +107,7 @@ namespace MueLu {
     }
 
     // Let us repartition nodally
-    RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<Teuchos::Comm<int> > >(level, "Node Comm");
+    RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(level, "Node Comm");
     TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::NodePartitionInterface::Build(): NodeComm is null.");
 
     // Get the rank (in current comm) of rank 0 in my NodeComm
