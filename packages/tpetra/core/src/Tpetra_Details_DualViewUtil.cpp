@@ -44,15 +44,6 @@
 
 namespace Tpetra {
 namespace Details {
-namespace Impl {
-
-void
-throw_if_false (const bool cond, const char msg[])
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(! cond, std::logic_error, msg);
-}
-
-} // namespace Impl
 
 auto view_alloc_no_init (const std::string& label) ->
   decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing))

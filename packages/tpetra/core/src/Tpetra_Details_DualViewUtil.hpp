@@ -55,19 +55,16 @@ namespace Tpetra {
 /// \warning Do NOT rely on the contents of this namespace.
 namespace Details {
 
-/// \brief Namespace for implementation details of Tpetra
-///   implementation details.
-/// \warning Do NOT rely on the contents of this namespace.
-namespace Impl {
-
-void throw_if_false (const bool cond, const char msg[]);
-
-} // namespace Impl
-
-
+/// \brief Use in place of the string label as the first argument of
+///   Kokkos::View's constructor, in case you want to allocate without
+///   initializing.
 auto view_alloc_no_init (const std::string& label) ->
   decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing));
 
+/// \brief Initialize \c dv such that its host View is \c hostView.
+///
+/// This shallow copies the host View into the output DualView,
+/// and syncs the output DualView to device.
 template<class ElementType, class DeviceType>
 void
 makeDualViewFromOwningHostView
@@ -78,21 +75,18 @@ makeDualViewFromOwningHostView
   using dev_view_type = typename dual_view_type::t_dev;
   using host_view_type = typename dual_view_type::t_host;
 
-  const auto size = hostView.size ();
-  auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
-
-#if defined(KOKKOS_ENABLE_CUDA)
-  constexpr bool is_cuda = std::is_same<typename DeviceType::execution_space, Kokkos::Cuda>::value;
-#else
-  constexpr bool is_cuda = false;
-#endif
-  using Impl::throw_if_false;
-  throw_if_false (! is_cuda || devView.data () != hostView.data (),
-                  "If running with CUDA, then create_mirror_view needs to "
-                  "return a View with a different pointer.  Please report "
-                  "this bug to the Tpetra developers." );
-  Kokkos::deep_copy (devView, hostView);
-  dv = dual_view_type (devView, hostView);
+  if (dv.extent (0) == hostView.extent (0)) {
+    // We don't need to reallocate the device View.
+    dv.clear_sync_state ();
+    dv.modify_host ();
+    dv.h_view = hostView;
+    dv.sync_device ();
+  }
+  else {
+    auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
+    Kokkos::deep_copy (devView, hostView);
+    dv = dual_view_type (devView, hostView);
+  }
 }
 
 template<class ElementType, class DeviceType>
