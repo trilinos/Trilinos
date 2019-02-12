@@ -498,6 +498,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
           userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
           userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+#ifdef HAVE_MPI
+          if(provideNodeComm) {
+            userParamList.set("Node Comm",nodeComm);
+          }
+#endif
+
           H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
         }
       }
