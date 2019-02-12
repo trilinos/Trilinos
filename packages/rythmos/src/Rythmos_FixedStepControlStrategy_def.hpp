@@ -73,7 +73,7 @@ FixedStepControlStrategy<Scalar>::FixedStepControlStrategy()
 
 template<class Scalar>
 void FixedStepControlStrategy<Scalar>::initialize(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   stepControlState_ = UNINITIALIZED;
   // Any other initialization goes here.
@@ -83,7 +83,7 @@ void FixedStepControlStrategy<Scalar>::initialize(
 template<class Scalar>
 void FixedStepControlStrategy<Scalar>::setRequestedStepSize(
   const StepperBase<Scalar>& stepper,
-  const Scalar& stepSize,
+  const Scalar& /* stepSize */,
   const StepSizeType& stepSizeType)
 {
   // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
@@ -105,8 +105,8 @@ void FixedStepControlStrategy<Scalar>::setRequestedStepSize(
 
 template<class Scalar>
 void FixedStepControlStrategy<Scalar>::nextStepSize(
-  const StepperBase<Scalar>& stepper, Scalar* stepSize,
-  StepSizeType* stepSizeType, int* order)
+  const StepperBase<Scalar>& /* stepper */, Scalar* /* stepSize */,
+  StepSizeType* /* stepSizeType */, int* /* order */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!((stepControlState_ == BEFORE_FIRST_STEP) ||
                                (stepControlState_ == MID_STEP) ||
@@ -120,10 +120,10 @@ void FixedStepControlStrategy<Scalar>::nextStepSize(
 
 template<class Scalar>
 void FixedStepControlStrategy<Scalar>::setCorrection(
-     const StepperBase<Scalar>& stepper
-    ,const RCP<const Thyra::VectorBase<Scalar> >& soln
-    ,const RCP<const Thyra::VectorBase<Scalar> >& dx
-    ,int solveStatus)
+     const StepperBase<Scalar>& /* stepper */
+    ,const RCP<const Thyra::VectorBase<Scalar> >& /* soln */
+    ,const RCP<const Thyra::VectorBase<Scalar> >& /* dx */
+    ,int /* solveStatus */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != MID_STEP, std::logic_error,
      "Error: Invalid state (stepControlState_=" << toString(stepControlState_)
@@ -133,7 +133,7 @@ void FixedStepControlStrategy<Scalar>::setCorrection(
 
 template<class Scalar>
 bool FixedStepControlStrategy<Scalar>::acceptStep(
-  const StepperBase<Scalar>& stepper, Scalar* value)
+  const StepperBase<Scalar>& /* stepper */, Scalar* /* value */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
@@ -145,7 +145,7 @@ bool FixedStepControlStrategy<Scalar>::acceptStep(
 
 template<class Scalar>
 AttemptedStepStatusFlag FixedStepControlStrategy<Scalar>::rejectStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,
@@ -159,7 +159,7 @@ AttemptedStepStatusFlag FixedStepControlStrategy<Scalar>::rejectStep(
 
 template<class Scalar>
 void FixedStepControlStrategy<Scalar>::completeStep(
-  const StepperBase<Scalar>& stepper)
+  const StepperBase<Scalar>& /* stepper */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepControlState_ != AFTER_CORRECTION,
      std::logic_error,

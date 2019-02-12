@@ -112,6 +112,8 @@ void TOpLinearCombination<Scalar>::apply_op_impl(
 #ifdef TEUCHOS_DEBUG
   validate_apply_op<Scalar>(*this, as<int>(alpha_.size()), 1, false,
     sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
+#else
+  (void)reduct_obj_inout;
 #endif
 
   const int l_num_vecs = alpha_.size();

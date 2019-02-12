@@ -291,7 +291,7 @@ namespace Belos {
     Teuchos::RCP<Belos::MatOrthoManager<Scalar, MV, OP> >
     makeMatOrthoManager (const std::string& ortho, 
 			 const Teuchos::RCP<const OP>& M,
-			 const Teuchos::RCP<OutputManager<Scalar> >& outMan,
+			 const Teuchos::RCP<OutputManager<Scalar> >& /* outMan */,
 			 const std::string& label,
 			 const Teuchos::RCP<Teuchos::ParameterList>& params)
     {

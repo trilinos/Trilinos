@@ -45,7 +45,6 @@
 #include "Tpetra_Details_Transfer.hpp"
 #include "Tpetra_Import_fwd.hpp"
 #include "Tpetra_Export_fwd.hpp"
-#include "Tpetra_ImportExportData_fwd.hpp"
 
 namespace Tpetra {
 
@@ -117,12 +116,13 @@ namespace Tpetra {
   {
   private:
     friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
+    using base_type =
+      ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! The specialization of Map used by this class.
-    //typedef typename ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>::map_type map_type;
-    typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors, assignment, and destructor
     //@{
 
     /// \brief Construct an Import from the source and target Maps.
@@ -262,81 +262,16 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
-    //! Destructor.
-    virtual ~Import ();
-
-    /// \brief Set parameters.
-    ///
-    /// Please see the class documentation for a list of all accepted
-    /// parameters and their default values.
-    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
-
-    //@}
-    //! @name Import Attribute Methods
-    //@{
-
-    /// \brief Number of initial identical IDs.
-    ///
-    /// The number of IDs that are identical between the source and
-    /// target Maps, up to the first different ID.
-    size_t getNumSameIDs() const;
-
-    /// \brief Number of IDs to permute but not to communicate.
-    ///
-    /// The number of IDs that are local to the calling process, but
-    /// not part of the first getNumSameIDs() entries.  The Import
-    /// will permute these entries locally (without distributed-memory
-    /// communication).
-    size_t getNumPermuteIDs() const;
-
-    //! List of local IDs in the source Map that are permuted.
-    Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
-
-    //! List of local IDs in the target Map that are permuted.
-    Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
-
-    //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const;
-
-    //! List of entries in the target Map to receive from other processes.
-    Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const;
-
-    //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const;
-
-    //! List of entries in the source Map that will be sent to other processes.
-    Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const;
-
-    /// \brief List of processes to which entries will be sent.
-    ///
-    /// The entry with Local ID <tt>getExportLIDs()[i]</tt> will be
-    /// sent to process <tt>getExportPIDs()[i]</tt>.
-    Teuchos::ArrayView<const int> getExportPIDs() const;
-
-    //! The Source Map used to construct this Import object.
-    Teuchos::RCP<const map_type> getSourceMap () const;
-
-    //! The Target Map used to construct this Import object.
-    Teuchos::RCP<const map_type> getTargetMap () const;
-
-    //! The Distributor that this Import object uses to move data.
-    Distributor & getDistributor() const;
-
-    /// \brief Do all target Map indices on the calling process exist
-    ///   on at least one process (not necessarily this one) in the
-    ///   source Map?
-    ///
-    /// It's not necessarily an error for an Import not to be locally
-    /// complete on one or more processes.  For example, this may
-    /// happen in the common use case of "restriction" -- that is,
-    /// taking a subset of a large object.  Nevertheless, you may find
-    /// this predicate useful for figuring out whether you set up your
-    /// Maps in the way that you expect.
-    bool isLocallyComplete () const;
-
     //! Assignment operator.
     Import<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source);
+    operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source) = default;
+    
+    //! Destructor.
+    virtual ~Import () = default;
+
+    //@}
+    //! @name Special "constructors"
+    //@{
 
     /// \brief Find the union of the target IDs from two Import objects.
     ///
@@ -416,14 +351,12 @@ namespace Tpetra {
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion () const;
 
-
     /// \brief Returns an importer that contains only the remote entries of this
     ///
     /// Returns an importer that contains only the remote entries of this importer.
     /// It is expected that remoteTarget represents such a map.
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const;
-
 
     //@}
     //! @name I/O Methods
@@ -475,13 +408,6 @@ namespace Tpetra {
 
     //@}
   private:
-    //! All the data needed for executing the Import communication plan.
-    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
-    //! Output stream for debug output.
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
-    //! Whether to print copious debug output on each process.
-    bool debug_;
-
     //! @name Initialization helper functions (called by the constructor)
     //@{
 
@@ -510,7 +436,7 @@ namespace Tpetra {
 
     /// \brief Compute the necessary receives for the Import.
     ///
-    /// This routine fills in the following fields of ImportData_:
+    /// This routine fills in the following fields of TransferData_:
     ///
     ///   - numSameIDs_ (the number of consecutive initial GIDs owned
     ///     by both the source and target Maps)
@@ -568,7 +494,7 @@ namespace Tpetra {
     ///    GIDs.
     ///
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
-    /// <tt>ImportData_</tt>.
+    /// <tt>TransferData_</tt>.
     void
     setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, 
                  bool useRemotePIDs, Teuchos::Array<int> & remotePIDs,
@@ -617,11 +543,9 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
-      "Tpetra::createImport(): neither source nor target map may be null:"
-      << std::endl << "source: " << src << std::endl << "target: " << tgt
-      << std::endl);
+      "Tpetra::createImport: Neither source nor target Map may be null.");
 #endif // HAVE_TPETRA_DEBUG
-    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
     return Teuchos::rcp (new import_type (src, tgt));
   }
 

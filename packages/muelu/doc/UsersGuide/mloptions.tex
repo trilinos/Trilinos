@@ -1,6 +1,6 @@
- 
+
 \label{sec:ml_options}
-\muelu provides a basic compatibility layer for \ml parameter lists. This allows \ml users to quickly perform some experiments with \muelu. 
+\muelu provides a basic compatibility layer for \ml parameter lists. This allows \ml users to quickly perform some experiments with \muelu.
 
 \textbf{First and most important: } Long term, we would like to have users use the new \muelu interface, as that is where most of new features will be made accessible. One should make note of the fact that it may not be possible to make ML deck do exactly same things in \ml and \muelu, as internally \ml implicitly makes some decision that we have no control over and which could be different from \muelu.
 
@@ -19,15 +19,15 @@ The \texttt{MLParameterListInterpreter} directly accepts a \texttt{ParameterList
 \begin{lstlisting}[language=C++]
     Teuchos::RCP<Tpetra::CrsMatrix<> > A;
     // create A here ...
-    
+
     // XML file containing ML parameters
     std::string xmlFile = "mlParameters.xml"
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-       
+
     // use ParameterListInterpreter with MueLu parameters as input
     Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(*paramList));
-    
+
     RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
     H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
     H->GetLevel(0)->Set("Nullspace", nullspace);
@@ -35,7 +35,7 @@ The \texttt{MLParameterListInterpreter} directly accepts a \texttt{ParameterList
     mueluFactory->SetupHierarchy(*H);
 \end{lstlisting}
 
-Note that the \texttt{MLParameterListInterpreter} only supports a basic set of \ml parameters allowing to build smoothed aggregation transfer operaotrs (see \S\ref{sec:compatiblemlparameters} for a list of compatible \ml parameters).
+Note that the \texttt{MLParameterListInterpreter} only supports a basic set of \ml parameters allowing to build smoothed aggregation transfer operators (see \S\ref{sec:compatiblemlparameters} for a list of compatible \ml parameters).
 
 \subsection{ML2MueLuParameterTranslator}
 
@@ -44,7 +44,7 @@ The \texttt{Ml2MueLuParameterTranslator} class is a simple wrapper translating \
 \begin{lstlisting}[language=C++]
     Teuchos::RCP<Tpetra::CrsMatrix<> > A;
     // create A here ...
-    
+
     // XML file containing ML parameters
     std::string xmlFile = "mlParameters.xml"
     Teuchos::ParameterList paramList;
@@ -62,18 +62,18 @@ In a similar way, \ml input parameters can be used with the standard \muelu para
 \begin{lstlisting}[language=C++]
     Teuchos::RCP<Tpetra::CrsMatrix<> > A;
     // create A here ...
-    
+
     // XML file containing ML parameters
     std::string xmlFile = "mlParameters.xml"
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-    
+
     // translate ML parameters to MueLu parameters
     RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
-    
+
     // use ParameterListInterpreter with MueLu parameters as input
     Teuchos::RCP<HierarchyManager> mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
-    
+
     RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
     H->GetLevel(0)->Set<RCP<Matrix> >("A", A);
     H->GetLevel(0)->Set("Nullspace", nullspace);
@@ -109,3 +109,7 @@ Note that the set of supported \ml parameters is very limited. Please refer to \
 \subsection{Rebalancing options}
 \input{mloptions_rebalancing}
 
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "mueluguide"
+%%% End:

@@ -1,4 +1,4 @@
-C  The author of this software is Eric Grosse.  
+C  The author of this software is Eric Grosse.
 C  Permission to use, copy, modify, and distribute this software for any
 C  purpose without fee is hereby granted, provided that this entire notice
 C  is included in all copies of any software which is or includes a copy
@@ -8,14 +8,14 @@ C  documentation for such software.
 C  Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C  Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C  NTESS, the U.S. Government retains certain rights in this software.
-C  
+C
 C  Redistribution and use in source and binary forms, with or without
 C  modification, are permitted provided that the following conditions are
 C  met:
-C  
+C
 C      * Redistributions of source code must retain the above copyright
 C        notice, this list of conditions and the following disclaimer.
-C  
+C
 C      * Redistributions in binary form must reproduce the above
 C        copyright notice, this list of conditions and the following
 C        disclaimer in the documentation and/or other materials provided
@@ -23,7 +23,7 @@ C        with the distribution.
 C      * Neither the name of NTESS nor the names of its
 C        contributors may be used to endorse or promote products derived
 C        from this software without specific prior written permission.
-C  
+C
 C  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,13 +43,13 @@ C To convert for frame buffer, use   R = floor(255.999*pow(*r,1/gamma))  etc.
 C To get tables calibrated for other devices or to report complaints,
 C contact ehg@research.att.com.
 
-      subroutine rainbow(h, s, v, r, g, b) 
+      subroutine rainbow(h, s, v, r, g, b)
       real h, s, v
       real r, g, b
-      
+
       INTEGER i
       REAL huettab(0:60)
-      DATA huettab /0.0000, 0.0062, 0.0130, 0.0202, 0.0280, 
+      DATA huettab /0.0000, 0.0062, 0.0130, 0.0202, 0.0280,
      *              0.0365, 0.0457, 0.0559, 0.0671, 0.0796,
      *              0.0936, 0.1095, 0.1275, 0.1482, 0.1806,
      *              0.2113, 0.2393, 0.2652, 0.2892, 0.3119,
@@ -65,7 +65,7 @@ C contact ehg@research.att.com.
 C computed from the FMC-1 color difference formula
 C Barco monitor, max(r,g,b)=1, n=61 magenta,  2 Jan 1986
 
-      
+
       H = 60.0 * MOD(H / 1.5, 1.)
       I = INT(H)
       H = huettab(i) + (huettab(i+1) - huettab(i)) * (h - i)
@@ -77,7 +77,7 @@ C Barco monitor, max(r,g,b)=1, n=61 magenta,  2 Jan 1986
 C...hexcone model...
       REAL h, s, v
       REAL r, g, b
-C...all variables in range [0,1[ 
+C...all variables in range [0,1[
 C...here, h=.667 gives blue, h=0 or 1 gives red.
 C...see Alvy Ray Smith, Color Gamut Transform Pairs, SIGGRAPH '78
 
@@ -92,35 +92,35 @@ C...see Alvy Ray Smith, Color Gamut Transform Pairs, SIGGRAPH '78
       k = (1 - (s * (1 - f)))
 
       if (i .eq. 0) then
-         r = 1 
-         g = k 
-         b = m 
+         r = 1
+         g = k
+         b = m
       else if (i .eq. 1) then
-         r = n 
-         g = 1 
-         b = m 
+         r = n
+         g = 1
+         b = m
       else if (i .eq. 2) then
-         r = m 
-         g = 1 
-         b = k 
+         r = m
+         g = 1
+         b = k
       else if (i .eq. 3) then
-         r = m 
-         g = n 
-         b = 1 
+         r = m
+         g = n
+         b = 1
       else if (i .eq. 4) then
-         r = k 
-         g = m 
-         b = 1 
+         r = k
+         g = m
+         b = 1
       else if (i .eq. 5) then
-         r = 1 
-         g = m 
-         b = n 
+         r = 1
+         g = m
+         b = n
       end if
       f = max(r, g, b)
       f = v / f
       r = r * f
       g = g * f
       b = b * f
-        
+
       return
       end

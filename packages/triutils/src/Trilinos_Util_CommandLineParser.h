@@ -91,7 +91,7 @@ public:
     return true;
   }
 
-  inline std::string GetLabel(std::string Label) {
+  inline std::string GetLabel(std::string /* Label */) {
     return( Label_ );
   }
 

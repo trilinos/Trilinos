@@ -351,7 +351,7 @@ template<class T>
 void NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   RCP<const VisualDependency> dependency,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const
+  const XMLParameterListWriter::EntryIDsMap& /* entryIDsMap */) const
 {
   RCP<const NumberVisualDependency<T> > castedDependency =
     rcp_dynamic_cast<const NumberVisualDependency<T> >(dependency);
@@ -373,7 +373,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
   bool showIf,
-  const XMLParameterListReader::EntryIDsMap& entryIDsMap) const
+  const XMLParameterListReader::EntryIDsMap& /* entryIDsMap */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
@@ -834,8 +834,8 @@ ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertXML(
   const XMLObject& xmlObj,
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
-  const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-  const IDtoValidatorMap& validatorIDsMap) const
+  const XMLParameterListReader::EntryIDsMap& /* entryIDsMap */,
+  const IDtoValidatorMap& /* validatorIDsMap */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
@@ -856,8 +856,8 @@ void
 ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDependency(
     const RCP<const Dependency> dependency,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    ValidatortoIDMap& validatorIDsMap) const
+    const XMLParameterListWriter::EntryIDsMap& /* entryIDsMap */,
+    ValidatortoIDMap& /* validatorIDsMap */) const
 {
   RCP<const ArrayModifierDependency<DependeeType, DependentType> > castedDep =
     rcp_dynamic_cast<const ArrayModifierDependency<DependeeType, DependentType> >(

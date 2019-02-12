@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -110,12 +110,12 @@ C=======================================================================
       if (ierr .eq. 0) then
          continue
       else if (ierr .eq. EXBFID) then
-         write (string, '(A,A)') 
+         write (string, '(A,A)')
      $        'The EXODUS file ID is incorrect in ', path(:lp)
          call prterr ('FATAL', string)
          stop 'EXBFID'
       else if (ierr .eq. EXWARN) then
-         write (string, '(A,A)') 
+         write (string, '(A,A)')
      $        'A non-fatal error occurred in ', path(:lp)
          call prterr ('WARNING', string)
       else

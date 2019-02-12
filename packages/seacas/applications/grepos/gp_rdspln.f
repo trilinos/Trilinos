@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,27 +34,27 @@ C=======================================================================
       SUBROUTINE RDSPLN (STORE, NDB, SLTOP, SLBOT, NSPL,
      *     ZS, XS, YS)
 C=======================================================================
-      
+
       LOGICAL STORE, MATSTR
       REAL    ZS(*), XS(*), YS(*)
       INTEGER NSPL
       REAL    SLTOP(2), SLBOT(2)
       INTEGER NDB
-      
+
       PARAMETER (BINGO = 1.0E38)
-      
+
       PARAMETER (MXFLD = 4)
       REAL RVAL(MXFLD)
       INTEGER KVAL(MXFLD), IVAL(MXFLD)
       CHARACTER*8  CVAL(MXFLD)
-      
+
       REWIND (NDB)
       IPTA = 0
       SLTOP(1) = BINGO
       SLBOT(1) = BINGO
       SLTOP(2) = BINGO
       SLBOT(2) = BINGO
-      
+
    10 CONTINUE
       CALL FREFLD ( NDB, 0, 'AUTO', MXFLD, IERR,
      *     NFLD, KVAL, CVAL, IVAL, RVAL)
@@ -70,14 +70,14 @@ C=======================================================================
                   IF (STORE) THEN
                      SLTOP(1) = RVAL(3)
                      SLTOP(2) = RVAL(4)
-                  END IF 
+                  END IF
                ELSE IF (MATSTR(CVAL(2), 'BACK', 1) .OR.
      &                 MATSTR(CVAL(2), 'BOTTOM', 1)) THEN
                   IF (STORE) THEN
                      SLBOT(1) = RVAL(3)
                      SLBOT(2) = RVAL(4)
-                  END IF 
-               END IF 
+                  END IF
+               END IF
             END IF
          ELSE IF (NFLD .GE. 2) THEN
             IPTA = IPTA + 1
@@ -89,10 +89,10 @@ C=======================================================================
          END IF
          GO TO 10
       END IF
-      
+
       IF (.NOT. STORE) THEN
          NSPL = IPTA
       END IF
-      
+
       RETURN
       END

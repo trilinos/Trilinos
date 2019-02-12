@@ -145,8 +145,8 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined convergence status test.
   virtual void setUserConvStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest,
-    const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &comboType =
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* userConvStatusTest */,
+    const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &/* comboType */ =
         StatusTestCombo<ScalarType,MV,OP>::SEQ
     )
     {
@@ -156,7 +156,7 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined debug status test.
   virtual void setDebugStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* debugStatusTest */
     )
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setDebugStatusTest() has not been"

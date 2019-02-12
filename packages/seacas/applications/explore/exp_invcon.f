@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE INVCON (ia, NELBLK, IDELB, NUMELB, NUMLNK, LINK, NUMNP,
      *  ICON, ICSCR, NODIND, lisnp, nout, mapn, mape, domapn, domape,
@@ -63,7 +63,7 @@ C   --   LINK - IN - the connectivity array
       CHARACTER*(MXSTLN) EBTYPE(*)
       DATA FIRST /.TRUE./
       SAVE index, ndcon
-      
+
       if (first) then
         first = .false.
         call iniint (numnp*nelblk, 0, icon)
@@ -73,11 +73,11 @@ C   --   LINK - IN - the connectivity array
         DO IELB = 1, NELBLK
           if (ebtype(ielb) .eq. 'nsided' .or.
      *      ebtype(ielb) .eq. 'NSIDED') THEN
-           CALL invcn1 (IELB, 1, NUMLNK(IELB), 
+           CALL invcn1 (IELB, 1, NUMLNK(IELB),
      &          LINK(ISLNK), icon, nelblk)
-           ISLNK = ISLNK + NUMLNK(IELB) 
+           ISLNK = ISLNK + NUMLNK(IELB)
           ELSE
-           CALL invcn1 (IELB, NUMELB(IELB), NUMLNK(IELB), 
+           CALL invcn1 (IELB, NUMELB(IELB), NUMLNK(IELB),
      &          LINK(ISLNK), icon, nelblk)
            ISLNK = ISLNK + NUMLNK(IELB) * NUMELB(IELB)
          END IF
@@ -103,13 +103,13 @@ C     -element connectivity in a linear array.
      *      ebtype(ielb) .eq. 'NSIDED') THEN
             call mdrsrv('NNPE', nnpe, numelb(ielb))
             CALL EXGECPP(NDB, EXEBLK, IDELB(ielb), ia(nnpe), IERR)
-            call invcn2n(IELST, numelb(ielb), ia(nnpe), 
+            call invcn2n(IELST, numelb(ielb), ia(nnpe),
      &        LINK(ISLNK), nodind, numnp, ia(ndcon))
             call mddel('NNPE')
             ISLNK = ISLNK + NUMLNK(IELB)
             IELST = IELST + NUMELB(IELB)
          ELSE
-           call invcn2(IELST, NUMELB(IELB), NUMLNK(IELB), 
+           call invcn2(IELST, NUMELB(IELB), NUMLNK(IELB),
      &          LINK(ISLNK), nodind, numnp, ia(ndcon))
            ISLNK = ISLNK + NUMLNK(IELB) * NUMELB(IELB)
            IELST = IELST + NUMELB(IELB)
@@ -122,11 +122,11 @@ C     -element connectivity in a linear array.
            end do
         end if
       end if
-      
+
 C=======================================================================
 C ... OUTPUT
 C=======================================================================
-      
+
       if (nout .gt. 0) then
         if (domapn) write (nout, 10005) 'Node'
       else
@@ -139,16 +139,16 @@ C=======================================================================
         if (domape) write (*, 10005) 'Element'
       end if
 
-C ... Node/Block inverse connectivity      
+C ... Node/Block inverse connectivity
       if (doblk) then
          if (nout .gt. 0) then
             WRITE (nout, 10000)
          else
             WRITE (*, 10000)
-         end if            
+         end if
          do i = 1, lisnp(0)
             INP = LISNP(I)
-            
+
 C     ... Get nonzero blocks for this node.
             icnt = 0
             do j=1, nelblk
@@ -158,7 +158,7 @@ C     ... Get nonzero blocks for this node.
                   icscr(2,icnt) = icon(j,inp)
                end if
             end do
-            
+
             if (domapn) then
                id = mapn(inp)
             else
@@ -172,16 +172,16 @@ C     ... Get nonzero blocks for this node.
          end do
       end if
 
-C ... Node/Element inverse connectivity      
+C ... Node/Element inverse connectivity
       if (doele) then
          if (nout .gt. 0) then
             WRITE (nout, 10010)
          else
             WRITE (*, 10010)
-         end if            
+         end if
          do i = 1, lisnp(0)
             INP = LISNP(I)
-            
+
             ibeg = ndcon + nodind(1,inp) - 2
             icnt = nodind(2,inp)
             if (domapn) then
@@ -208,12 +208,12 @@ C ... Node/Element inverse connectivity
      &  (17X, 8(1X, i10)))
       RETURN
       END
-      
+
       subroutine invcn1(ielb, numelb, numlnk, link, icon, nelblk)
 
       integer link(numlnk,*)
       integer icon(nelblk,*)
-      
+
       do i=1, numelb
          do j = 1, numlnk
             node = link(j,i)
@@ -222,13 +222,13 @@ C ... Node/Element inverse connectivity
       end do
       return
       end
-      
-      subroutine invcn2(ielst, numelb, numlnk, link, 
+
+      subroutine invcn2(ielst, numelb, numlnk, link,
      $     nodind, numnp, nodcon)
       integer link(numlnk,*)
       integer nodind(2,numnp)
       integer nodcon(*)
-      
+
       do i=1, numelb
         do j = 1, numlnk
           node = link(j,i)
@@ -241,12 +241,12 @@ C ... Node/Element inverse connectivity
       return
       end
 
-      subroutine invcn2n(ielst, numelb, nnpe, link, 
+      subroutine invcn2n(ielst, numelb, nnpe, link,
      $     nodind, numnp, nodcon)
       integer nnpe(*), link(*)
       integer nodind(2,numnp)
       integer nodcon(*)
-      
+
       ind = 0
       do i=1, numelb
         numlnk = nnpe(i)

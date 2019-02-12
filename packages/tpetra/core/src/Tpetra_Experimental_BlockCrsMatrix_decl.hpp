@@ -736,28 +736,47 @@ protected:
   //@{
 
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
+  //! Whether this class implements the old or new interface of DistObject.
+  virtual bool useNewInterface () {
+    return true;
+  }
+
+  /// \typedef buffer_device_type
+  /// \brief Kokkos::Device specialization for communication buffers.
+  ///
+  /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+  using buffer_device_type = typename DistObject<Scalar, LO, GO,
+                                                 Node>::buffer_device_type;
 
   virtual void
-  copyAndPermute (const ::Tpetra::SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
+  copyAndPermuteNew (const SrcDistObject& sourceObj,
+                     const size_t numSameIDs,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteFromLIDs);
 
   virtual void
-  packAndPrepare (const ::Tpetra::SrcDistObject& source,
-                  const Teuchos::ArrayView<const LO>& exportLIDs,
-                  Teuchos::Array<packet_type>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  ::Tpetra::Distributor& distor);
+  packAndPrepareNew (const SrcDistObject& sourceObj,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& exportLIDs,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type>& exports,
+                     const Kokkos::DualView<size_t*,
+                       buffer_device_type>& numPacketsPerLID,
+                     size_t& constantNumPackets,
+                     Distributor& /* distor */);
 
   virtual void
-  unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-                    const Teuchos::ArrayView<const packet_type> &imports,
-                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
-                    ::Tpetra::Distributor& distor,
-                    ::Tpetra::CombineMode CM);
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& importLIDs,
+                       const Kokkos::DualView<const packet_type*,
+                         buffer_device_type>& imports,
+                       const Kokkos::DualView<const size_t*,
+                         buffer_device_type>& numPacketsPerLID,
+                       const size_t constantNumPackets,
+                       Distributor& /* distor */,
+                       const CombineMode combineMode);
   //@}
 
 private:

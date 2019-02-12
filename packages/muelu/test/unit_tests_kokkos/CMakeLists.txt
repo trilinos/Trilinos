@@ -19,8 +19,10 @@ APPEND_SET(SOURCES
   Aggregates_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
+  IndexManager_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
+  StructuredAggregation_kokkos.cpp
   #SaPFactory_kokkos.cpp
   TentativePFactory_kokkos.cpp
 )

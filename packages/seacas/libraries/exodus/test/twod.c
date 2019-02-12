@@ -243,18 +243,18 @@ int main(int argc, char **argv)
 
    {
      num_nset_vars = 3;
-     
+
      var_names[0] = "ns_var0";
      var_names[1] = "ns_var1";
      var_names[2] = "ns_var2";
-     
+
      ex_put_variable_param (exoid, "m", num_nset_vars);
      printf ("after ex_put_variable_param, %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
      }
-     
+
      ex_put_variable_names (exoid, "m", num_nset_vars, var_names);
      printf ("after ex_put_variable_names, %d\n", error);
      if (error) {
@@ -262,21 +262,21 @@ int main(int argc, char **argv)
        exit(-1);
      }
    }
-   
+
    {
      num_sset_vars = 3;
 
      var_names[0] = "ss_var0";
      var_names[1] = "ss_var1";
      var_names[2] = "ss_var2";
-     
+
      ex_put_variable_param (exoid, EX_SIDE_SET, num_sset_vars);
      printf ("after ex_put_variable_param, %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
      }
-     
+
      ex_put_variable_names (exoid, EX_SIDE_SET, num_sset_vars, var_names);
      printf ("after ex_put_variable_names, %d\n", error);
      if (error) {
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
        {
          for (m=0; m<num_elem_in_block[j]; m++)
          {
-           elem_var_vals[m] = (float)(k+1) + (float)(j+2) + 
+           elem_var_vals[m] = (float)(k+1) + (float)(j+2) +
                               ((float)(m+1)*time_value);
            /* printf("elem_var_vals[%d]: %f\n",m,elem_var_vals[m]); */
          }
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
        {
          for (m=0; m<num_face_in_sset[j]; m++)
          {
-           sset_var_vals[m] = (float)(k+2) + (float)(j+3) + 
+           sset_var_vals[m] = (float)(k+2) + (float)(j+3) +
                               ((float)(m+1)*time_value);
            /* printf("sset_var_vals[%d]: %f\n",m,sset_var_vals[m]); */
          }
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
        {
          for (m=0; m<num_nodes_in_nset[j]; m++)
          {
-           nset_var_vals[m] = (float)(k+3) + (float)(j+4) + 
+           nset_var_vals[m] = (float)(k+3) + (float)(j+4) +
                               ((float)(m+1)*time_value);
            /* printf("nset_var_vals[%d]: %f\n",m,nset_var_vals[m]); */
          }

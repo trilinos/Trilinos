@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -160,7 +160,7 @@ C      --These parameters define the mesh display (see MSHLIN of /MSHOPT/)
       include 'legopt.blk'
 
       include 'argparse.inc'
-      
+
       common /debugc/ cdebug
       common /debugn/ idebug
       character*8 cdebug
@@ -176,7 +176,7 @@ C      --A - the dynamic memory base array
 
       character*2048 scratch
       character*256  option, value
-      
+
       LOGICAL MESHOK, DTOK, LNOK, SPOK, TPOK
       LOGICAL MAPND, MAPEL
       CHARACTER*(MXSTLN) CURPRO
@@ -196,8 +196,8 @@ C     --The compute word size and I/O word size
 C ... Initialize Rainbow and Light (ICRNBW and LIGHT common blocks)
 C     Block Data doesn't seem to work reliably on all systems
 
-C ... Lights are stored as x, y, z, brightness, Vector is normalized in 
-C     shade.f.  NLIT is the number of lights.  
+C ... Lights are stored as x, y, z, brightness, Vector is normalized in
+C     shade.f.  NLIT is the number of lights.
       RMULT = 1.0
       GMULT = 1.0
       BMULT = 1.0
@@ -217,7 +217,7 @@ C     shade.f.  NLIT is the number of lights.
       CMPSIZ = 0
       IOWS   = 0
       NEUTRL = 0
-      
+
       NDB = 11
       NEU = 20
       NEUOPN = .FALSE.
@@ -289,8 +289,8 @@ C   --Open database file
       call exmxnm(ndb, namlen, ierr)
 
 C ... Get basename of the database file to use for csv, neu and other output files
-C     Assume first that the basename is from the database name.  It may be replaced 
-C     later if the user added a -hardcopy or -basename argument.      
+C     Assume first that the basename is from the database name.  It may be replaced
+C     later if the user added a -hardcopy or -basename argument.
       last = indexr(dbname(:lfil), '.')
       if (last .gt. 2) then
         basenam = dbname(:last-1)
@@ -348,7 +348,7 @@ C ... By default, map both nodes and elements
           if (i .gt. narg) exit
         end do
       end if
-      
+
 C   --Set error reporting level
       CALL EXOPTS(EXABRT,IERR)
 
@@ -376,7 +376,7 @@ C   --Read and print database header
         lessel = 0
         lessdf = 0
       end if
-      
+
       NUMNPF = NUMNP
 
       CALL PRINIT ('NTIS', -1, NDB, DBNAME, TITLE,
@@ -447,13 +447,13 @@ C     Initialize element block integer arrays
       CALL INIINT(NELBLK, 0, IA(KNLNKE))
       CALL INIINT(NELBLK, 0, IA(KNATR))
 
-      
+
       CALL INISTR (NELBLK, ' ', C(KNMLB))
-      
+
       CALL EXGEBI (NDB, IA(KIDELB), IERR)
 C   --Read element block connectivity
       CALL DBIELB (NDB, '*', 1, NELBLK, IA(KIDELB), IA(KNELB),
-     &  IA(KNLNKE), IA(KNATR), A, IA, KLINKE, KATRIB, C(KNMLB), 
+     &  IA(KNLNKE), IA(KNATR), A, IA, KLINKE, KATRIB, C(KNMLB),
      &  C(KNMEB), IA(KLPTR), NAMLEN, *170)
 
 C     Count the number of element blocks that contain HEXSHELLs. Store
@@ -461,7 +461,7 @@ C     the element block ID of HEXSHELL element blocks.
       ISHEX = 0
       CALL RDTYPE (NELBLK, C(KNMLB), IA(KIDELB), IA(KNELB),
      $  ISHEX, IA(KHEXID), NSHL)
-      
+
       if (ishex .gt. 0) then
         nebsiz = nelblk + ishex
         CALL MDLONG ('IDELB', KIDELB, NEBSIZ)
@@ -475,21 +475,21 @@ C     Number of attributes in element block
         CALL MDLONG ('NUMATR', KNATR, NEBSIZ)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
-        
+
 C     Initialize element block integer arrays
         CALL INIINT(ISHEX, 0, IA(KIDELB+NELBLK))
         CALL INIINT(ISHEX, 0, IA(KNELB+NELBLK))
         CALL INIINT(ISHEX, 0, IA(KNLNKE+NELBLK))
         CALL INIINT(ISHEX, 0, IA(KNATR+NELBLK))
-        
+
 C     Check for HEXSHELL - split HEXSHELL element block into a 'HEX'
 C     element block and a 'SHELL' element block.
         CALL MDRSRV ('IDSCR', KIDSCR, NELBLK)
         do 350 j = 1, nelblk
           IA(KIDSCR+j-1) = IA(KIDELB+j-1)
  350    continue
-        
-        CALL PROCHS(A, IA, NELBLK, IA(KIDELB), IA(KIDSCR), IA(KNELB), 
+
+        CALL PROCHS(A, IA, NELBLK, IA(KIDELB), IA(KIDSCR), IA(KNELB),
      &    IA(KNLNKE), IA(KNATR), KLINKE, KATRIB, C(KNMLB),
      &    IA(KLPTR), ISHEX, IA(KHEXID), *170)
 
@@ -523,9 +523,9 @@ C   --Read node number map (global id)
       else
         call iniseq(numnp, ia(kmapnd))
       end if
-      
+
 C   --Change number of elements per element block to block index
-      
+
 C   --SCALER and MSMEMY and MSGEOM use MDFIND to find LENE
       CALL MDRSRV ('LENE', KLENE, 1+NELBLK)
       CALL MDSTAT (NERR, MEM)
@@ -610,7 +610,7 @@ C ... Wrapper to get info record the right length
 
       CALL INISTR (4, ' ', CREATE)
       CALL INISTR (4, ' ', MODIFY)
-C ... NOTE: cpyst8 must be called since cpystr knows that c() is only 
+C ... NOTE: cpyst8 must be called since cpystr knows that c() is only
 C           a single character array.
       IF (NQAREC .GT. 0) CALL CPYST8 (4, C(KQAREC), CREATE)
       IF (NQAREC .GT. 1) THEN
@@ -625,16 +625,16 @@ C   --Initialize (for GENESIS) and read database names
 
       call exinq(ndb, EXTIMS, NTIMST, RDUM, CDUM, IERR)
       exodus = (ntimst .gt. 0)
-      
+
       IF (EXODUS) THEN
 C      --MSGEOM uses MDFIND to find ISEVOK (reserved in DBINAM)
         CALL DBINAM (NDB, 'CBVT', NDIM, NELBLK, NNDIM, NNELB,
-     &    NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS, 
+     &    NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
      &    NAMECO, KNAMHV,
      &    KNAMGV, KNAMNV, KNAMEV, KNAMNS, KNAMSS,
-     &    A, IA, KIEVOK, C, KNAMES, 
+     &    A, IA, KIEVOK, C, KNAMES,
      &    EXODUS, IA(KIDELB), ISHEX, KHEXID, NAMLEN, *110)
-        
+
         GOTO 120
 
 C      --Handle error reading variable names
@@ -661,7 +661,7 @@ C      --Handle error reading variable names
       NVARSS = MAX (0, NVARSS)
 
       IF (EXODUS) THEN
-        CALL PRNAME (-1, namlen, 
+        CALL PRNAME (-1, namlen,
      *    NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
      &    C(KNAMES+NAMLEN*(KNAMGV-1)),
      &    C(KNAMES+NAMLEN*(KNAMNV-1)), C(KNAMES+NAMLEN*(KNAMEV-1)),
@@ -679,7 +679,7 @@ C   --SCALER uses MDFIND to find TIMES and WHOTIM
      &    NSTEPS, A(KTIMES), A(KWHOLE))
       else
 C ... The 'TIMES' and 'WHOTIM' arrays are accessed even if there are
-C     no timesteps on the model (See plcomd.f).         
+C     no timesteps on the model (See plcomd.f).
         call mdrsrv('TIMES', KTIMES, 1)
         call mdrsrv('WHOTIM', KWHOLE, 1)
       end if
@@ -701,12 +701,12 @@ C      --SCALER uses MDFIND to find XE, YE, ZE
       END IF
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 160
-      
+
       CALL ELECOR (NDIM, NELBLK, A(KLENE), A(KNLNKE), A(KLINKE),
      &  A(KXN), A(KYN), A(KZN), A(KXE), A(KYE), A(KZE))
-      
+
 C   --Break 3D elements into faces, and sort faces by element block
-      
+
       IF (MESHOK) THEN
         IF (IS3DIM) THEN
           WRITE (*, 10010)
@@ -762,7 +762,7 @@ C   --Calculate (and initialize) the deformed mesh limits
       RDMESH(2) = 0.0
       RDMESH(3) = 0.0
       RDMESH(4) = 0.0
-      
+
       IF (MESHOK) THEN
 
 C      --Compute NPSURF nodes that determine the mesh limits
@@ -937,7 +937,7 @@ C        Initialize line thicknesses for mesh plots
      *    10x,'      To disable the maps and use local ids, restart',
      *    ' blot with "-nomap node|element|all"',//,
      *    10x,'      Notify gdsjaar@sandia.gov if bugs found')
-        
+
         if (mapel .and. mapnd) then
           WRITE (*, 10010) 'Nodes and Elements using Global Ids'
         else if (mapel) then
@@ -946,8 +946,8 @@ C        Initialize line thicknesses for mesh plots
           WRITE (*, 10010) 'Element use Local Ids, Node Ids are Global'
         else
           WRITE (*, 10010) 'Nodes and Elements using Local Ids'
-        end if        
-        
+        end if
+
  130  CONTINUE
       IF (.TRUE.) THEN
         CALL MDLONG ('IPTIMS', KPTIMS, MAX (NSTEPS, 1))
@@ -959,7 +959,7 @@ C        Initialize line thicknesses for mesh plots
 
         CALL COMAND (A, CURPRO, C(KQAREC), C(KINFO),
      &    NAMECO, C(KNMLB), C(KNAMES), A(KTIMES), A(KWHOLE),
-     *    A(KPTIMS), A(KMAPEL), A(KMAPND), 
+     *    A(KPTIMS), A(KMAPEL), A(KMAPND),
      &    A(KIDELB), NEWELB, A(KELBST), A(KE2ELB),
      &    A(KLENE), A(KNLNKE), A(KLINKE),
      &    A(KXN), A(KYN), A(KZN), A(KXE), A(KYE), A(KZE),
@@ -1117,7 +1117,7 @@ C     Mark HEXID array with corresponding element blocks that have HEXSHELLs
 C        Check if element block contains HEXSHELLs
          IF (NAMELB(I)(1:8) .EQ. 'HEXSHELL') THEN
 C           ISHEX - counter: how many HEXSHELL element blocks
-C           index - HEXID(ISHEX) - stores HEXSHELL element block id 
+C           index - HEXID(ISHEX) - stores HEXSHELL element block id
             ISHEX = ISHEX + 1
             HEXID(ISHEX) = IDELB(I)
          ELSE IF (NAMELB(I)(1:5) .EQ. 'SHELL') THEN
@@ -1133,7 +1133,7 @@ C=======================================================================
 C=======================================================================
 
       CHARACTER*(NAMLEN) NAMES(*)
-      CALL EXGNAMS(NDB, ITYPE, NUM, names, ierr) 
+      CALL EXGNAMS(NDB, ITYPE, NUM, names, ierr)
       RETURN
       END
 

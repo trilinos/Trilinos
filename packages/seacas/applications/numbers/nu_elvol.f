@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,19 +35,19 @@ C     $Log: elvol.f,v $
 C     Revision 1.1  1991/11/06 20:02:49  gdsjaar
 C     Initial revision
 C
-      
+
       SUBROUTINE ELVOL (NDIM, CRD, DISP, IX, NUMNP, NUMEL, NNODE,
      &     VOLUME)
-C     
+C
 C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
-C     
+C
       DIMENSION CRD(NUMNP, *), DISP(numnp, *), IX(NNODE,*)
       DIMENSION GRADOP(8,8)
       REAL volume(*)
-      
+
       IF (NDIM .EQ. 3) THEN
          DO 20 IEL = 1, numel
-            x1 = crd(ix(1,iel),1) + disp(ix(1,iel),1) 
+            x1 = crd(ix(1,iel),1) + disp(ix(1,iel),1)
             x2 = crd(ix(2,iel),1) + disp(ix(2,iel),1)
             x3 = crd(ix(3,iel),1) + disp(ix(3,iel),1)
             x4 = crd(ix(4,iel),1) + disp(ix(4,iel),1)
@@ -55,7 +55,7 @@ C
             x6 = crd(ix(6,iel),1) + disp(ix(6,iel),1)
             x7 = crd(ix(7,iel),1) + disp(ix(7,iel),1)
             x8 = crd(ix(8,iel),1) + disp(ix(8,iel),1)
-            
+
             y1 = crd(ix(1,iel),2) + disp(ix(1,iel),2)
             y2 = crd(ix(2,iel),2) + disp(ix(2,iel),2)
             y3 = crd(ix(3,iel),2) + disp(ix(3,iel),2)
@@ -64,7 +64,7 @@ C
             y6 = crd(ix(6,iel),2) + disp(ix(6,iel),2)
             y7 = crd(ix(7,iel),2) + disp(ix(7,iel),2)
             y8 = crd(ix(8,iel),2) + disp(ix(8,iel),2)
-            
+
             Z1 = crd(ix(1,iel),3) + disp(ix(1,iel),3)
             Z2 = crd(ix(2,iel),3) + disp(ix(2,iel),3)
             Z3 = crd(ix(3,iel),3) + disp(ix(3,iel),3)
@@ -73,7 +73,7 @@ C
             Z6 = crd(ix(6,iel),3) + disp(ix(6,iel),3)
             Z7 = crd(ix(7,iel),3) + disp(ix(7,iel),3)
             Z8 = crd(ix(8,iel),3) + disp(ix(8,iel),3)
-            
+
             Z24 = Z2 - Z4
             Z52 = Z5 - Z2
             Z45 = Z4 - Z5
@@ -194,10 +194,10 @@ C
             Y54 = Y5 - Y4
             GRADOP(8,3) = ( X7*(Y3-Y6-Y54) + X6*Y75 + X5*(Y6-Y1-Y47)
      *           + X4*(Y1-Y3-Y75) + X3*Y47 + X1*Y54 ) / 12.
-            
+
 C     Calculate element volume and characteristic element aspect ratio
 C     (used in time step and hourglass control) -
-            
+
             VOLUME(iel) = crd(ix(1,iel),1) * GRADOP(1,1)
      *           + crd(ix(2,iel),1) * GRADOP(2,1)
      *           + crd(ix(3,iel),1) * GRADOP(3,1)

@@ -193,6 +193,45 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME chacoGraphMetricsTest
+    COMM serial mpi
+    ARGS
+    "./driverinputs/chacoGraphMetricsTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME chacoGraphMetricsTestNoDistribute
+    COMM serial mpi
+    ARGS
+    "./driverinputs/chacoGraphMetricsTestNoDistribute.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME chacoGraphMetricsTestNoGraph
+    COMM serial mpi
+    ARGS
+    "./driverinputs/chacoGraphMetricsTestNoGraph.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME chacoGraphMetricsTestNoGraphNoDistribute
+    COMM serial mpi
+    ARGS
+    "./driverinputs/chacoGraphMetricsTestNoGraphNoDistribute.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
 
 IF (${PROJECT_NAME}_ENABLE_Pamgen)
   TRIBITS_ADD_TEST(
@@ -243,6 +282,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_ewgt_for_driver_tests_
     ewgt.coords
     ewgt.graph
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_ewgt
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_nograph_for_driver_tests_
+  SOURCE_FILES
+    nograph.coords
+    nograph.graph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_nograph
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 

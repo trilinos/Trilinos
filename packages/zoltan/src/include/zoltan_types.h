@@ -171,7 +171,7 @@ typedef unsigned long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG_INT
 #define zoltan_mpi_id_datatype_name "MPI_LONG_LONG_INT"
 #define zoltan_id_datatype_name "unsigned long long"
-#define ZOLTAN_ID_SPEC  "%Lu"
+#define ZOLTAN_ID_SPEC  "%llu"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
 #define ZOLTAN_ID_INVALID  ULLONG_MAX
 

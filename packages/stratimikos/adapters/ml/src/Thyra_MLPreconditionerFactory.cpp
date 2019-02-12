@@ -150,13 +150,13 @@ bool MLPreconditionerFactory::isCompatible(
 }
 
 
-bool MLPreconditionerFactory::applySupportsConj(EConj conj) const
+bool MLPreconditionerFactory::applySupportsConj(EConj /* conj */) const
 {
   return true;
 }
 
 
-bool MLPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
+bool MLPreconditionerFactory::applyTransposeSupportsConj(EConj /* conj */) const
 {
   return false; // See comment below
 }
@@ -172,7 +172,7 @@ MLPreconditionerFactory::createPrec() const
 void MLPreconditionerFactory::initializePrec(
   const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
   PreconditionerBase<double> *prec,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   using Teuchos::outArg;
@@ -370,9 +370,9 @@ void MLPreconditionerFactory::initializePrec(
 
 
 void MLPreconditionerFactory::uninitializePrec(
-  PreconditionerBase<double> *prec,
-  Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOp,
-  ESupportSolveUse *supportSolveUse
+  PreconditionerBase<double> * /* prec */,
+  Teuchos::RCP<const LinearOpSourceBase<double> > * /* fwdOp */,
+  ESupportSolveUse * /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);

@@ -127,7 +127,7 @@ struct GEMV {
                    "XViewType must have rank 1.");
     static_assert (static_cast<int> (YViewType::rank) == 1,
                    "YViewType must have rank 1.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::gemv[ETI]":"KokkosBlas::gemv[noETI]");
     typedef typename AViewType::size_type size_type;
     const size_type numRows = A.extent(0);
     const size_type numCols = A.extent(1);
@@ -142,6 +142,7 @@ struct GEMV {
       singleLevelGemv<AViewType, XViewType, YViewType, int64_t>
          (trans, alpha, A, x, beta, y);
     }
+    Kokkos::Profiling::popRegion();
   }
   #else
   ;

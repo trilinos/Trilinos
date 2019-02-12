@@ -120,7 +120,8 @@ namespace KokkosBatched {
                         const ValueType *__restrict__ AA,
                         const ValueType *__restrict__ BB,
                         /**/  ValueType *__restrict__ CC) {
-          const int              
+          // Made this non-const in order to WORKAROUND issue #349
+          int              
           mb = mbAlgo, mp = (ib%mb), mq = (ib/mb) + (mp>0),
           nb = nbAlgo, np = (jb%nb), nq = (jb/nb) + (np>0);
               

@@ -356,26 +356,21 @@ namespace Tpetra {
     ///
     /// Note that this type does not always correspond to the
     /// <tt>Scalar</tt> template parameter of subclasses.
-    typedef typename ::Kokkos::Details::ArithTraits<Packet>::val_type packet_type;
+    using packet_type = typename ::Kokkos::Details::ArithTraits<Packet>::val_type;
     //! The type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
+    using local_ordinal_type = LocalOrdinal;
     //! The type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! The Kokkos Node type.
-    typedef Node node_type;
+    using global_ordinal_type = GlobalOrdinal;
+    //! The Node type.  If you don't know what this is, don't use it.
+    using node_type = Node;
 
     //! The Kokkos Device type.
-    typedef typename Node::device_type device_type;
+    using device_type = typename Node::device_type;
     //! The Kokkos execution space.
-    typedef typename device_type::execution_space execution_space;
+    using execution_space = typename device_type::execution_space;
 
-  private:
-    typedef typename Kokkos::View<packet_type*, device_type>::size_type view_size_type;
-    typedef DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node> this_type;
-
-  public:
     //! The type of the Map specialization to use with this class.
-    typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+    using map_type = Map<local_ordinal_type, global_ordinal_type, node_type>;
 
     //@}
     //! @name Constructors and destructor
@@ -385,10 +380,10 @@ namespace Tpetra {
     explicit DistObject (const Teuchos::RCP<const map_type>& map);
 
     //! Copy constructor.
-    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs);
+    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs) = default;
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~DistObject ();
+    virtual ~DistObject () = default;
 
     //@}
     //! @name Public methods for redistributing data
@@ -515,7 +510,7 @@ namespace Tpetra {
     ///
     /// We generally assume that all MPI processes can print to the
     /// given stream.
-    void print (std::ostream &os) const;
+    void print (std::ostream& os) const;
 
     //@}
     //! @name Implementation of Teuchos::Describable
@@ -623,7 +618,7 @@ namespace Tpetra {
     /// resizing of arrays.
     virtual size_t constantNumberOfPackets () const;
 
-    /// \brief Redistribute data across memory images.
+    /// \brief Redistribute data across (MPI) processes.
     ///
     /// \param src [in] The source object, to redistribute into
     ///   the target object, which is <tt>*this</tt> object.
@@ -667,15 +662,20 @@ namespace Tpetra {
     reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
                                       const size_t numImportLIDs);
 
+    /// \brief Implementation of doTransfer for when useNewInterface()
+    ///   is false.
+    ///
+    /// LID arrays come from the Transfer object given to doTransfer.
+    /// They <i>always</i> point to host memory.
     virtual void
     doTransferOld (const SrcDistObject& src,
                    CombineMode CM,
                    size_t numSameIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
-                   Distributor &distor,
+                   const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type>& remoteLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
+                   Distributor& distor,
                    ReverseOption revOp);
 
     /// \typedef buffer_memory_space
@@ -683,16 +683,15 @@ namespace Tpetra {
     ///
     /// See #1088 for why this is not just <tt>device_type::memory_space</tt>.
 #ifdef KOKKOS_ENABLE_CUDA
-    typedef typename std::conditional<
+    using buffer_memory_space = typename std::conditional<
       std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
       Kokkos::CudaSpace,
-      typename device_type::memory_space>::type buffer_memory_space;
+      typename device_type::memory_space>::type;
 #else
-    typedef typename device_type::memory_space buffer_memory_space;
+    using buffer_memory_space = typename device_type::memory_space;
 #endif // KOKKOS_ENABLE_CUDA
 
   public:
-
     /// \typedef buffer_device_type
     /// \brief Kokkos::Device specialization for communication buffers.
     ///
@@ -703,24 +702,28 @@ namespace Tpetra {
     ///
     /// \warning This is an implementation detail.  DO NOT DEPEND ON
     ///   IT.  It may disappear or change at any time.
-    typedef Kokkos::Device<
-      typename device_type::execution_space,
-      buffer_memory_space> buffer_device_type;
-
+    using buffer_device_type =
+      Kokkos::Device<typename device_type::execution_space,
+                     buffer_memory_space>;
   protected:
-
+    /// \brief Implementation of doTransfer for when useNewInterface()
+    ///   is true.
+    ///
+    /// LID DualViews come from the Transfer object given to
+    /// doTransfer.  They are <i>always</i> sync'd on both host and
+    /// device.  Users must never attempt to modify or sync them.
     virtual void
     doTransferNew (const SrcDistObject& src,
                    const CombineMode CM,
                    const size_t numSameIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& permuteToLIDs,
+                     buffer_device_type>& permuteToLIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& permuteFromLIDs,
+                     buffer_device_type>& permuteFromLIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& remoteLIDs,
+                     buffer_device_type>& remoteLIDs,
                    const Kokkos::DualView<const local_ordinal_type*,
-                     device_type>& exportLIDs,
+                     buffer_device_type>& exportLIDs,
                    Distributor& distor,
                    const ReverseOption revOp,
                    const bool commOnHost);
@@ -749,13 +752,9 @@ namespace Tpetra {
     /// The "old" interface consists of copyAndPermute,
     /// packAndPrepare, and unpackAndCombine.  The "new" interface
     /// consists of copyAndPermuteNew, packAndPrepareNew, and
-    /// unpackAndCombineNew.  We prefer the new interface, because it
-    /// facilitates thread parallelization using Kokkos data
-    /// structures.
-    ///
-    /// At some point, we will remove the old interface, and rename
-    /// the "new" interface (by removing "New" from the methods'
-    /// names), so that it becomes the only interface.
+    /// unpackAndCombineNew.  The old interface is deprecated; new
+    /// subclasses of DistObject must always implement the new
+    /// interface.
     virtual bool useNewInterface () { return false; }
 
     /// \brief Perform copies and permutations that are local to this process.
@@ -776,16 +775,21 @@ namespace Tpetra {
     ///   permuted.  They are listed by their LID in the source
     ///   object.
     virtual void
-    copyAndPermute (const SrcDistObject& source,
-                    size_t numSameIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs)
+    copyAndPermute (const SrcDistObject& /* source */,
+                    size_t /* numSameIDs */,
+                    const Teuchos::ArrayView<const local_ordinal_type>& /* permuteToLIDs */,
+                    const Teuchos::ArrayView<const local_ordinal_type>& /* permuteFromLIDs */)
     {}
+
+    /// \brief Kokkos ("new") version of copyAndPermute.
+    ///
+    /// Implementations may assume that permuteToLIDs and permuteFrom
+    /// LIDs are sync'd on both host and device.
     virtual void
-    copyAndPermuteNew (const SrcDistObject& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+    copyAndPermuteNew (const SrcDistObject& /* source */,
+                       const size_t /* numSameIDs */,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* permuteToLIDs */,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* permuteFromLIDs */)
     {}
 
     /// \brief Perform any packing or preparation required for communication.
@@ -811,21 +815,29 @@ namespace Tpetra {
     ///
     /// \param distor [in] The Distributor object we are using.
     virtual void
-    packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
-                    Teuchos::Array<packet_type>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor &distor)
+    packAndPrepare (const SrcDistObject& /* source */,
+                    const Teuchos::ArrayView<const local_ordinal_type>& /* exportLIDs */,
+                    Teuchos::Array<packet_type>& /* exports */,
+                    const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                    size_t& /* constantNumPackets */,
+                    Distributor &/* distor */)
     {}
 
+    /// \brief Kokkos ("new") version of packAndPrepare.
+    ///
+    /// Implementations may assume that exportLIDs are sync'd on both
+    /// host and device.  The target object <tt>*this</tt> gets to
+    /// decide where to pack and sync the output \c exports.
     virtual void
-    packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
-                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor)
+    packAndPrepareNew (const SrcDistObject& /* source */,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* exportLIDs */,
+                       Kokkos::DualView<packet_type*, buffer_device_type>& /* exports */,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                       /// Kyungjoo: numPacketsPerLID is better remove const. its content is modified and
+                       ///     a modify flag should be raised. It is also possible to use
+                       ///     const_cast in the function. IMO, remove const is a more clean way.
+                       size_t& /* constantNumPackets */,
+                       Distributor& /* distor */)
     {}
 
     /// \brief Perform any unpacking and combining after communication
@@ -833,7 +845,7 @@ namespace Tpetra {
     ///   hold data).
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
-    ///   destination object) we received from other images.
+    ///   destination object) we received from other processes.
     ///
     /// \param imports [in] Buffer containing data we received.
     ///
@@ -852,12 +864,12 @@ namespace Tpetra {
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
-                      const Teuchos::ArrayView<const packet_type>& imports,
-                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor &distor,
-                      CombineMode CM)
+    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& /* importLIDs */,
+                      const Teuchos::ArrayView<const packet_type>& /* imports */,
+                      const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                      size_t /* constantNumPackets */,
+                      Distributor &/* distor */,
+                      CombineMode /* CM */)
     {}
 
     /// \brief Perform any unpacking and combining after communication
@@ -867,9 +879,13 @@ namespace Tpetra {
     /// should unpack on host or unpack on device.
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
-    ///   destination object) we received from other images.
+    ///   destination object) we received from other processes.  This
+    ///   is always sync'd to both host and device on input.
     ///
     /// \param imports [in] Buffer containing data we received.
+    ///   DistObject may sync this wherever it likes; subclasses must
+    ///   deal with that, though the subclass may ultimately store its
+    ///   data wherever it likes.
     ///
     /// \param numPacketsPerLID [in] If constantNumPackets is zero,
     ///   then numPacketsPerLID[i] contains the number of packets
@@ -886,12 +902,12 @@ namespace Tpetra {
     /// \param CM [in] The combine mode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                         const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
-                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
-                         const size_t constantNumPackets,
-                         Distributor& distor,
-                         const CombineMode CM)
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* importLIDs */,
+                         const Kokkos::DualView<const packet_type*, buffer_device_type>& /* imports */,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                         const size_t /* constantNumPackets */,
+                         Distributor& /* distor */,
+                         const CombineMode /* CM */)
     {}
     //@}
 
@@ -954,7 +970,11 @@ namespace Tpetra {
     /// reason that imports_ is declared protected.
     ///
     /// \param newSize [in] New size of imports_.
-    /// \param debug [in] Whether to print (copious) debug output to stderr.
+    /// \param verbose [in] Whether to print verbose debugging output
+    ///   to stderr on every (MPI) process in the communicator.
+    /// \param prefix [in] If <tt>verbose</tt> is <tt>true</tt>, then
+    ///   this is a nonnull prefix to print at the beginning of each
+    ///   line of verbose debugging output.  Otherwise, not used.
     ///
     /// \return Whether we actually reallocated.
     ///
@@ -963,7 +983,9 @@ namespace Tpetra {
     /// by nonconst reference.  Thus, that method can resize the
     /// DualView without needing to call other DistObject methods.
     bool
-    reallocImportsIfNeeded (const size_t newSize, const bool debug = false);
+    reallocImportsIfNeeded (const size_t newSize,
+                            const bool verbose,
+                            const std::string* prefix);
 
     /// \brief Number of packets to receive for each receive operation.
     ///
@@ -1002,17 +1024,17 @@ namespace Tpetra {
     /// CrsMatrix uses them at one point.  Please, nobody else use it.
     Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID_;
 
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:
+    using this_type = DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>;
+
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
     Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
     Teuchos::RCP<Teuchos::Time> packAndPrepareTimer_;
     Teuchos::RCP<Teuchos::Time> doPostsAndWaitsTimer_;
     Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
   }; // class DistObject
-
 } // namespace Tpetra
 
 #endif // TPETRA_DISTOBJECT_DECL_HPP

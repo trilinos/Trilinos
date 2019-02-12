@@ -1466,7 +1466,6 @@ template<typename Double> void ADcontext<Double>::do_init()
 
 template<typename Double> void ADcontext<Double>::free_all()
 {
-        typedef ADvari<Double> ADVari;
         typedef ConstADvari<Double> ConstADVari;
         ADMemblock *mb, *mb1;
 
@@ -1505,7 +1504,6 @@ template<typename Double> void ADcontext<Double>::free_all()
 
 template<typename Double> void ADcontext<Double>::re_init()
 {
-        typedef ADvari<Double> ADVari;
         typedef ConstADvari<Double> ConstADVari;
 
         if (ConstADVari::cadc.Busy || ADVari::adc.Busy || ADVari::adc.Free

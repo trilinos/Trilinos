@@ -127,7 +127,7 @@ struct Reciprocal<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "RMV is not rank 1.");
     static_assert (XMV::rank == 1, "KokkosBlas::Impl::Reciprocal<1-D>: "
                    "XMV is not rank 1.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::reciprocal[ETI]":"KokkosBlas::reciprocal[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::reciprocal<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
@@ -145,6 +145,7 @@ struct Reciprocal<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       typedef std::int64_t index_type;
       V_Reciprocal_Generic<RMV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -162,7 +163,7 @@ struct Reciprocal<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    "RMV is not rank 2.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::Reciprocal<2-D>: "
                    "XMV is not rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::reciprocal[ETI]":"KokkosBlas::reciprocal[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::reciprocal<> ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
@@ -182,6 +183,7 @@ struct Reciprocal<RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       typedef std::int64_t index_type;
       MV_Reciprocal_Generic<RMV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif

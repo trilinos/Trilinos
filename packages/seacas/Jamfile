@@ -76,127 +76,87 @@ project votd
   : build-dir $(seacas-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  algebra
+  aprepro
+  aprepro_lib_test
+  blot_x11
+  blot_pst
+  blot_xcps
+  blot_cps
+  blot_met
+  fastq_x11
+  fastq_pst
+  fastq_xcps
+  fastq_cps
+  fastq_met
+  conjoin
+  ejoin
+  epu
+  exodiff
+  exomatlab
+  exo_format
+  exotxt
+  ex1ex2v2
+  ex2ex1v2
+  exo2mat
+  mat2exo
+  gen3d
+  genshell
+  grepos
+  gjoin
+  explore
+  mapvar
+  mapvar_kd
+  nem_slice
+  nem_spread
+  numbers
+  txtexo
+  io_shell
+  io_info
+  shell_to_hex
+  cth_pressure_map
+  struc_to_unstruc
+  $(seacas-root)/scripts/blot
+  $(seacas-root)/scripts/decomp
+  $(seacas-root)/scripts/grope
+  $(seacas-root)/scripts/fastq
+  /tpl/netcdf//ncdump
+  /tpl/netcdf//ncgen
+  /tpl/matio//matdump
+  /tpl/hdf5//h5diff
+  /tpl/hdf5//h5dump
+  /tpl/hdf5//h5debug
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  Utst_ioel
+  Utst_superelement
+  Utst_database_io
+  Utst_sort
+  Utst_map
+  Utst_structured_decomp
+  ;
+
 #
 # SECTION 2: Development install
 #
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
-
 alias install-targets
-  : algebra
-    aprepro
-    aprepro_lib_test
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    Utst_ioel
-    Utst_superelement
-    Utst_database_io
-    Utst_sort
-    Utst_map
-    Utst_structured_decomp
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
-  : <target-os>bgq
-  :
-  : <target-os>bgq
-  ;
-
-alias install-targets
-  : algebra
-    aprepro
-    aprepro_lib_test
-    blot_x11
-    blot_pst
-    blot_xcps
-    blot_cps
-    blot_met
-    fastq_x11
-    fastq_pst
-    fastq_xcps
-    fastq_cps
-    fastq_met
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    Utst_ioel
-    Utst_superelement
-    Utst_database_io
-    Utst_sort
-    Utst_map
-    Utst_structured_decomp
-    $(seacas-root)/scripts/blot
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    $(seacas-root)/scripts/fastq
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
 
 #
@@ -205,7 +165,13 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include2b install-user-include3 install-user-include4 install-user-include5 ;
+alias install-user-include : install-user-include0
+                             install-user-include1
+                             install-user-include2
+                             install-user-include2b
+                             install-user-include3
+                             install-user-include4
+                             install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -287,35 +253,6 @@ install install-user-lib
     nemesis
     exodus_for
     exoIIv2for32
-    mapvarlib
-    aprepro_lib
-    ioex
-    ioex_fac
-    iopx
-    iofx
-    io_info_lib
-    iocgns
-    iopg
-    iohb
-    iogn
-    iogs
-    ioinit
-    ioss
-    iotr
-    iovs
-  : <target-os>bgq <location>$(install-root)/seacas/lib
-  ;
-
-install install-user-lib
-  : suplib
-    suplib_c
-    suplib_cpp
-    plt
-    chaco
-    exodus
-    nemesis
-    exodus_for
-    exoIIv2for32
     blotlib
     fastqlib
     mapvarlib
@@ -338,110 +275,21 @@ install install-user-lib
   ;
 
 
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
 explicit install-user-bin ;
-
 install install-user-bin
-  : algebra
-    aprepro
-    aprepro_lib_test
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    $(seacas-root)/scripts/blot
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    $(seacas-root)/scripts/fastq
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
-  : <target-os>bgq <location>$(install-bin-dir)
-  ;
-
-install install-user-bin
-  : algebra
-    aprepro
-    aprepro_lib_test
-    blot_x11
-    blot_pst
-    blot_xcps
-    blot_cps
-    blot_met
-    fastq_x11
-    fastq_pst
-    fastq_xcps
-    fastq_cps
-    fastq_met
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    $(seacas-root)/scripts/blot
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    $(seacas-root)/scripts/fastq
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
-  : <location>$(install-bin-dir)
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Executables listed here will only installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittest to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
   ;
 
 explicit install-exe-targets ;
@@ -540,14 +388,12 @@ lib io_info_lib
     ioinit
     iocgns
     /mpi//mpi
-  : <define>USE_CGNS
+  : 
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libio_info_lib.a
     ]
-  :
-  : <define>USE_CGNS
   ;
 
 lib iopg
@@ -1840,7 +1686,7 @@ exe io_shell
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
     ioinit
     /mpi//mpi
-  : <define>USE_CGNS
+  : 
     <tag>@sierra-exec-tag
   ;
 
@@ -1849,7 +1695,7 @@ exe io_info
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
     io_info_lib
     /mpi//mpi
-  : <define>USE_CGNS
+  : 
     <tag>@sierra-exec-tag
   ;
 

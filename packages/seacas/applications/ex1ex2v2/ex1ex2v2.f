@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
       PROGRAM EX1EX2V2
@@ -37,7 +37,7 @@ C=======================================================================
 
 C   --*** EX1EX2V2 *** EXODUS I to EXODUS II translator
 C   --
-C   --EX1EX2V2 reads EXODUS I database and writes an EXODUS II V2.03 database 
+C   --EX1EX2V2 reads EXODUS I database and writes an EXODUS II V2.03 database
 C   --
 
       include 'exodusII.inc'
@@ -87,8 +87,8 @@ C   --Open the input and output files
 
       NDB = 11
       NET = 20
-       
-c 
+
+c
 c	make netCDF and exodus errors not show up
 c
       call exopts(0,ierr)
@@ -110,7 +110,7 @@ C .. Get filename from command line.  If not specified, emit error message
       CALL get_argument(1,exofil, lnam)
       write(*,*)'Input filename: ',exofil(1:lnam)
       open(unit=ndb, file=exofil(:lnam), form='unformatted',
-     *     status='old', iostat=ierr)      
+     *     status='old', iostat=ierr)
        IF (IERR .NE. 0) THEN
          SCRATCH = 'Database "'//exofil(:lnam)//'" does not exist.'
          CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
@@ -275,7 +275,7 @@ C ... Exodus set to .FALSE. if end of file during this read
      &    A, KIEVOK, EXODUS, *150)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 130
-        
+
         if (.not. exodus) then
           nvarhi = 0
           nvargl = 0
@@ -330,7 +330,7 @@ c          write element block parameters to the netcdf file
 c
          call expelb (IDEXO, IA(KIDELB+IELB-1), namelb(IELB),
      1      IA(KNELB+IELB-1),
-     2      IA(KNMLNK+IELB-1), IA(KNMATR+IELB-1), IERR) 
+     2      IA(KNMLNK+IELB-1), IA(KNMATR+IELB-1), IERR)
          IF (IERR .lt. 0) THEN
       		CALL exerr('ex1ex2v2','Error from expelb',EXLMSG)
          ENDIF
@@ -338,7 +338,7 @@ c
 c          write block attributes to the netcdf file
 c
          IF (IA(KNMATR+IELB-1) .GT. 0) THEN
-           call expeat (IDEXO, IA(KIDELB+IELB-1), A(KATRIB+ioff), IERR) 
+           call expeat (IDEXO, IA(KIDELB+IELB-1), A(KATRIB+ioff), IERR)
            IF (IERR .lt. 0) THEN
       		CALL exerr ('rdelb','Error from expeat', EXLMSG)
            ENDIF
@@ -498,7 +498,7 @@ c
 c
 c       write the number of element variables
 c
-      if (nvarel .gt. 0) then 
+      if (nvarel .gt. 0) then
         call expvp (idexo, 'E', nvarel, ierr)
         if (ierr .lt. 0) then
           call exerr ('ex1ex2v2','Error from expvp', exlmsg)
@@ -553,7 +553,7 @@ C   --Read the database time steps
 
          CALL DBISTE (NDB, '*', NhSTEP+1,
      &      NVARHI, NVARGL, NVARNP, NUMNP, NVAREL, NELBLK,
-     &      ia(knelb), IA(KIEVOK), TIME, WHOTIM, A(KVARHI), 
+     &      ia(knelb), IA(KIEVOK), TIME, WHOTIM, A(KVARHI),
      &      A(KVARGL), A(KVARNP), A(KVAREL), *120)
 
          nhstep = nhstep + 1
@@ -574,8 +574,8 @@ c
 c            write nodal variable values
 c
            if (nvarnp .gt. 0) then
-             do 111 i= 1,nvarnp  
-               call expnv (idexo, nwstep, i, numnp, 
+             do 111 i= 1,nvarnp
+               call expnv (idexo, nwstep, i, numnp,
      &           a(kvarnp+(i-1)*numnp), ierr)
                if (ierr .lt. 0) then
                  call exerr ('ex1ex2v2','Error from expnv', exlmsg)
@@ -587,7 +587,7 @@ c
 c            write element variable values
 c
            if (nvarel .gt. 0) then
-             call putev (idexo, nwstep, nelblk, nvarel, 
+             call putev (idexo, nwstep, nelblk, nvarel,
      &         ia(knelb), a(kvarel), ia(kidelb), ia(kievok), ierr)
                if (ierr .lt. 0) then
                  call exerr ('ex1ex2v2','Error from putev', exlmsg)

@@ -184,7 +184,7 @@ optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
 checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE_RELEASE`)
+* `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE-DEBUG`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build runs runtime checks to catch developer and user mistakes
@@ -260,39 +260,66 @@ using `INCLUDE()` to process the extra options contained within it.
 
 ## Installation and usage
 
-When including the `ATDMDevEnv.cmake` file (or `ATDMDevEnvSettings.cmake`) at
-configure time as described above, the cmake configure automatically sets up
-to install an environment script:
+When including the file `ATDMDevEnv.cmake` (or `ATDMDevEnvSettings.cmake`) in
+the CMake configuration as described above, the cmake configure automatically
+sets up to install a script:
 
 ```
-  <install-prefix>/<load-matching-env-sh>
+  <install-prefix>/load_matching_env.sh
 ```
 
-where `<install-prefix>` and `<load-matching-env-sh>` are set at
-configure-time using:
+which after installation can then be sourced by clients using:
+
+```
+$ source <install-prefix>/load_matching_env.sh
+``` 
+
+Sourcing this file loads the compilers, MPI, and TPLs and sets up the various
+`ATDM_CONG_` environment variables described above.  It also sets the
+environment variable:
+
+```
+$ export ATDM_TRILINOS_INSTALL_PREFIX=<install-prefix>
+```
+
+that clients can use to point back to the Trilinos installation directory.
+
+The install location `<install-prefix>` can be set using the CMake cache
+variable:
 
 ```
   -D CMAKE_INSTALL_PREFIX=<install-prefix> \
+```
+
+or by setting the environment variable:
+
+```
+$ export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=<install-prefix>
+```
+
+If the environment variable `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX` is set,
+then it will be used to set `CMAKE_INSTALL_PREFIX` internally and override any
+value that might be passed in or set otherwise.  (This is a `FORCE`D cache
+variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
+`CMakeCache.txt` file.)
+
+The name of the installed script `load_matching_env.sh` and the environment
+variable `ATDM_TRILINOS_INSTALL_PREFIX` that it exports can be changed at
+configure-time using the CMake cache variables:
+
+```
   -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
   -D ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME=<trilinos-install-prefix-var-name> \
 ```
 
-* If `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not specified then it is given the
-name `load_matching_env.sh` by default.
+where
 
-* If `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is not specified then it is
-given the name `ATDM_TRILINOS_INSTALL_PREFIX` by default.
+* If the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
+  specified, then it is given the name `load_matching_env.sh` by default.
 
-After installation with `make install`, a client can load the environment to
-use this ATDM configuration of Trilinos by running:
-
-```
-$ source <install-prefix>/<load-matching-env-sh>
-```
-
-Sourcing this file sets all of the various `ATDM_CONG_` environment variables
-described above and also sets the environment variable
-`<trilinos-install-prefix-var-name>` to `<install-prefix>`.
+* If the CMake cache variable `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is
+  not specified, then it is given the name `ATDM_TRILINOS_INSTALL_PREFIX` by
+  default.
 
 
 ## checkin-test-atdm.sh
@@ -465,7 +492,7 @@ example, skip configure, skip the build, skip running tests, etc.
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano</a>
+* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
@@ -566,12 +593,13 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 
 ### chama/serrano
 
-Once logged on to 'chama' or 'serrano', one can directly configure and build
-on the login node (being careful not to overload the node) using the `chama`
-and `serrano` envs, respectively.  But to run the tests, one must run on the
-compute nodes using the `srun` command.  For example, to configure, build and
-run the tests for say `MueLu` on 'serrano' or 'chama', (after cloning Trilinos
-on the `develop` branch) one would do:
+Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
+or 'ghost' machines, one can directly configure and build on the login node
+(being careful not to overload the node) using the `chama` and `serrano` envs,
+respectively.  But to run the tests, one must run on the compute nodes using
+the `srun` command.  For example, to configure, build and run the tests for
+say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
+would do:
 
 
 ```
@@ -987,8 +1015,8 @@ contents:
     all_supported_builds.sh  # [Optional] List of all supported builds
     custom_bulds.sh  # [Optional] Special logic for compiler keywords, etc.
     tweaks/
-       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>-<KOKKOS_ARCH0>.cmake  # [Optional]
-       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>-<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
 ```
 
@@ -1027,7 +1055,7 @@ directory contain special settings for specific builds for a specific system.
 Typically, this file contains (temporary) disables for tests for that given
 build.  When a configure is performed, the internal CMake variable
 `ATDM_BUILD_NAME_KEYS_STR` set to
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT) is
+`<COMPILER>_<BUILD_TYPE>_<NODE_TYPE>_<KOKKOS_ARCH>` (printed to STDOUT) is
 used to define a default file name:
 
 ```
@@ -1041,9 +1069,9 @@ its options are read.  For example, this is what the output looks like on
 
 ```
 -- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
--- ATDM_BUILD_NAME_KEYS_STR='GNU-RELEASE-OPENMP-POWER9'
--- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake'
--- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake ...
+-- ATDM_BUILD_NAME_KEYS_STR='GNU_RELEASE_OPENMP_POWER9'
+-- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake'
+-- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake ...
 ```
 
 
@@ -1126,7 +1154,7 @@ For example, for the `intel-debug-openmp-KNL` build on 'mutrino', the printout
 would be:
 
 ```
--- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL-DEBUG-OPENMP-KNL.cmake'
+-- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL_DEBUG_OPENMP_KNL.cmake'
 ```
 
 For example, Trilinos commit
@@ -1138,8 +1166,8 @@ shows the disable of the test:
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
-in both the files `cmake/std/atdm/shiller/tweaks/GNU-DEBUG-SERIAL.cmake` and
-`cmake/std/atdm/shiller/tweaks/GNU-RELEASE-SERIAL.cmake` (before `-HSW` was
+in both the files `cmake/std/atdm/shiller/tweaks/GNU_DEBUG_SERIAL.cmake` and
+`cmake/std/atdm/shiller/tweaks/GNU_RELEASE_SERIAL.cmake` (before `-HSW` was
 added to the names).
 
 NOTE: Adding a comment with the Trilinos GitHub Issue ID (`#2925` in this
@@ -1172,8 +1200,8 @@ and then the inclusion of that file in the specific tweak files for each CUDA
 build:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-DEBUG-CUDA.cmake
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-RELEASE-CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_DEBUG_CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_RELEASE_CUDA.cmake
 ```
 
 (before `-POWER8-KEPLER37` was added to the names) using the inserted CMake
@@ -1238,20 +1266,21 @@ they support are:
 
 * `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
 
-* `chama/`: Supports SNL HPC machine `chama`.
+* `chama/`: Supports SNL HPC TLCC-2 machine 'chama'.
 
-* `mutrino/`: Supports SNL HPC machine `mutrino`.
+* `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
-* `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
-  mirror SON machine `white`.
+* `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
+  mirror SON machine 'white'.
 
 * `sems-rhel6/`: SNL COE RHEL6 systems with the SEMS NFS environment
 
 * `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
 
-* `serrano/`: Supports SNL HPC machine `serrano`.
+* `serrano/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
+  'ghost'.
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
-  `shiller` and the mirror SON machine `hansen`.
+  'shiller' and the mirror SON machine 'hansen'.
 
-* `waterman/`: Supports GNU and CUDA builds on the SRN machine `waterman`.
+* `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.

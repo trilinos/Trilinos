@@ -8,7 +8,7 @@
 
 #
 # Functions
-# 
+#
 
 # Test the branch constraints for a Pull Request:
 # - Only pull requests from trilinos/Trilnos::develop are allowed
@@ -146,17 +146,27 @@ echo -e ""
 : ${TRILINOS_TARGET_BRANCH:?}
 : ${TRILINOS_SOURCE_SHA:?}
 : ${PULLREQUESTNUM:?}
+: ${NODE_NAME:?}
 : ${JOB_BASE_NAME:?}
 : ${BUILD_NUMBER:?}
 : ${WORKSPACE:?}
 
-source /projects/sems/modulefiles/utils/sems-modules-init.sh
-
 declare -i ierror=0
 #Have to keep loading git
-module load sems-git/2.10.1
-
-
+cuda_regex=".*(_cuda_).*"
+ride_regex=".*(ride).*"
+if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        module load git/2.10.1
+    else
+        echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
+        exit -1
+    fi
+else
+    source /projects/sems/modulefiles/utils/sems-modules-init.sh
+    module load sems-git/2.10.1
+fi
 
 #--------------------------------------------
 # Apply Guards
@@ -222,7 +232,7 @@ elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ] ; then
     fi
 elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ] ; then
     # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
-    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC4.9.3TestingEnvSERIAL.sh 
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC4.9.3TestingEnvSERIAL.sh
     ierror=$?
     if [[ $ierror != 0 ]]; then
         echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
@@ -240,6 +250,13 @@ elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ] ; then
     ierror=$?
     if [[ $ierror != 0 ]]; then
         echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
+        exit $ierror
+    fi
+elif [ "Trilinos_pullrequest_cuda_9.2" == "${JOB_BASE_NAME:?}" ] ; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestCuda9.2TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the cuda environment. The error code was: $ierror"
         exit $ierror
     fi
 elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
@@ -264,11 +281,18 @@ module list
 # This crashes for the serial case since MPI variables are not set
 # - See Issue #3625
 # - wcm: bugfix #3673
-regex=".*(_SERIAL)$"
-if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
-    echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
-else
+serial_regex=".*(_SERIAL)$"
+if [[ ${JOB_BASE_NAME:?} =~ ${serial_regex} ]]; then
     echo -e "Job is SERIAL"
+elif [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        echo -e "MPI type = sems-${MPI_VENDOR:?}/${MPI_VERSION:?}"
+    else
+        echo -e "MPI Vendor and Versions may not be set correctly for CUDA job not on Ride."
+    fi
+else
+    echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
 
 CDASH_TRACK="Pull Request"
@@ -310,8 +334,21 @@ echo -e "Enabled packages:"
 cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
+weight=29
+n_cpu=$(lscpu | grep "^CPU(s):" | cut -d" " -f17)
+n_K=$(cat /proc/meminfo | grep MemTotal | cut -d" " -f8)
+let n_G=$n_K/1024000
+# this is aimed at keeping approximately 1.7G per core so we don't bottleneck
+## weight 29 - the next bit works because the shell is only doing integer arithmetic
+let n_jobs=${n_cpu}/${weight}
+# using bc to get floating point input and integer output
+parallel_level=$(echo "$n_G/( 1.7*$n_jobs )" | bc )
 
-#This should be runnable from anywhere, but all the tests so far have been from the 
+if [ ${parallel_level} -gt ${weight} ]; then
+    parallel_level=${weight}
+fi
+
+#This should be runnable from anywhere, but all the tests so far have been from the
 #same dir the simple_testing.cmake file was in.
 cd TFW_testing_single_configure_prototype &> /dev/null
 echo -e "Set CWD = `pwd`"
@@ -330,6 +367,8 @@ else
         CONFIG_SCRIPT=PullRequestLinuxGCC7.2.0TestingSettings.cmake
     elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ]; then
         CONFIG_SCRIPT=PullRequestLinuxGCC7.3.0TestingSettings.cmake
+    elif [ "Trilinos_pullrequest_cuda_9.2" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxCuda9.2TestingSettings.cmake
     fi
 fi
 
@@ -339,7 +378,7 @@ ctest -S simple_testing.cmake \
     -Dskip_update_step=ON \
     -Ddashboard_model=Experimental \
     -Ddashboard_track="${CDASH_TRACK:?}" \
-    -DPARALLEL_LEVEL=18 \
+    -DPARALLEL_LEVEL=${parallel_level} \
     -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
     -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
     -Dpackage_enables=../packageEnables.cmake \
@@ -354,6 +393,3 @@ fi
 # Reset to known directory location.
 # - ${WORKSPACE} is set by Jenkins and points to the root workspace directory.
 cd ${WORKSPACE:?}
-
-
-

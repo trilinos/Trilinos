@@ -24,7 +24,7 @@
       <ParameterList name="myAggregationFact">
         <!-- <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/> -->
         <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/>
-        <Parameter name="aggregation: coupling"               type="string" value="uncoupled"/>
+        <Parameter name="aggregation: mode"               type="string" value="uncoupled"/>
         <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       </ParameterList>
 
@@ -40,10 +40,10 @@
         <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
       </ParameterList>
 
-      <ParameterList name="myNullspaceFact">
-        <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
-        <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
-      </ParameterList>
+      <!-- <ParameterList name="myNullspaceFact"> -->
+      <!--   <Parameter name="factory"                             type="string" value="NullspaceFactory"/> -->
+      <!--   <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/> -->
+      <!-- </ParameterList> -->
 
       <ParameterList name="myRestrictorFact">
         <Parameter name="factory"                             type="string" value="TransPFactory"/>

@@ -66,7 +66,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
                       const std::vector<LO> & owned_parent_cells,
                       panzer::LocalMeshInfoBase<LO,GO> & sub_info)
 {
-
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::partitioning_utilities::setupSubLocalMeshInfo",setupSLMI);
   // The goal of this function is to fill a LocalMeshInfoBase (sub_info) with
   // a subset of cells from a given parent LocalMeshInfoBase (parent_info)
 
@@ -99,7 +99,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   std::vector<LO> ghstd_parent_cells;
   std::vector<LO> virtual_parent_cells;
   {
-
+    PANZER_FUNC_TIME_MONITOR_DIFF("Construct parent cell vector",ParentCell);
     // We grab all of the owned cells and put their global indexes into sub_info
     // We also put all of the owned cell indexes in the parent's indexing scheme into a set to use for lookups
     std::unordered_set<LO> owned_parent_cells_set(owned_parent_cells.begin(), owned_parent_cells.end());
@@ -163,10 +163,19 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   const int num_real_cells = num_owned_cells + num_ghstd_cells;
   const int num_total_cells = num_real_cells + num_virtual_cells;
 
-  std::vector<LO> all_parent_cells;
-  all_parent_cells.insert(all_parent_cells.end(), owned_parent_cells.begin(), owned_parent_cells.end());
-  all_parent_cells.insert(all_parent_cells.end(), ghstd_parent_cells.begin(), ghstd_parent_cells.end());
-  all_parent_cells.insert(all_parent_cells.end(), virtual_parent_cells.begin(), virtual_parent_cells.end());
+  std::vector<std::pair<LO, LO> > all_parent_cells(num_total_cells);
+  for (std::size_t i=0; i< owned_parent_cells.size(); ++i)
+    all_parent_cells[i] = std::pair<LO, LO>(owned_parent_cells[i], i);
+
+  for (std::size_t i=0; i< ghstd_parent_cells.size(); ++i) {
+    LO insert = owned_parent_cells.size()+i;
+    all_parent_cells[insert] = std::pair<LO, LO>(ghstd_parent_cells[i], insert);
+  }
+
+  for (std::size_t i=0; i< virtual_parent_cells.size(); ++i) {
+    LO insert = owned_parent_cells.size()+ ghstd_parent_cells.size()+i;
+    all_parent_cells[insert] = std::pair<LO, LO>(virtual_parent_cells[i], insert);
+  }
 
   sub_info.num_owned_cells = owned_parent_cells.size();
   sub_info.num_ghstd_cells = ghstd_parent_cells.size();
@@ -187,7 +196,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   sub_info.local_cells = Kokkos::View<LO*>("local_cells", num_total_cells);
   sub_info.cell_vertices = Kokkos::View<double***, PHX::Device>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
   for(int cell=0;cell<num_total_cells;++cell){
-    const LO parent_cell = all_parent_cells[cell];
+    const LO parent_cell = all_parent_cells[cell].first;
     sub_info.global_cells(cell) = parent_info.global_cells(parent_cell);
     sub_info.local_cells(cell) = parent_info.local_cells(parent_cell);
     for(int vertex=0;vertex<num_vertices_per_cell;++vertex){
@@ -221,9 +230,12 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   // First create the faces
   std::vector<face_t> faces;
   {
-
+    PANZER_FUNC_TIME_MONITOR_DIFF("Create faces",CreateFaces);
     // faces_set: cell_0, subcell_index_0, cell_1, subcell_index_1
     std::unordered_map<LO,std::unordered_map<LO, std::pair<LO,LO> > > faces_set;
+
+    std::sort(all_parent_cells.begin(), all_parent_cells.end());
+
     for(int owned_cell=0;owned_cell<num_owned_cells;++owned_cell){
       const LO owned_parent_cell = owned_parent_cells[owned_cell];
       for(int local_face=0;local_face<num_faces_per_cell;++local_face){
@@ -240,10 +252,12 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
         const LO neighbor_subcell_index = parent_info.face_to_lidx(parent_face, neighbor_side);
 
         // Convert parent cell index into sub cell index
-        auto itr = std::find(all_parent_cells.begin(), all_parent_cells.end(), neighbor_parent_cell);
+        std::pair<LO, LO> search_point(neighbor_parent_cell, 0);
+        auto itr = std::lower_bound(all_parent_cells.begin(), all_parent_cells.end(), search_point);
+
         TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == all_parent_cells.end(), "panzer_stk::setupSubLocalMeshInfo : Neighbor cell was not found in owned, ghosted, or virtual cells");
 
-        const LO neighbor_cell = std::distance(all_parent_cells.begin(), itr);
+        const LO neighbor_cell = itr->second;
 
         LO cell_0, cell_1, subcell_index_0, subcell_index_1;
         if(owned_cell < neighbor_cell){

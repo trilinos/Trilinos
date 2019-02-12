@@ -6556,10 +6556,9 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteNew (const SrcDistObject& srcObj,
                      const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
-    using Tpetra::Details::castAwayConstDualView;
     using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
@@ -6569,13 +6568,10 @@ namespace Tpetra {
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
 
-    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
-    // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbers of MPI processes.
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      int myRank = 0;
+      int myRank = -1;
       auto map = this->getMap ();
       if (! map.is_null ()) {
         auto comm = map->getComm ();
@@ -6583,15 +6579,13 @@ namespace Tpetra {
           myRank = comm->getRank ();
         }
       }
-
-      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::copyAndPermuteNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::copyAndPermuteNew: " << endl
+      os << *prefix << endl
          << *prefix << "  "
          << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
          << *prefix << "  "
@@ -6606,62 +6600,30 @@ namespace Tpetra {
        << numPermute << "!= permuteFromLIDs.extent(0) = "
        << permuteFromLIDs.extent (0) << ".");
 
-    // We want to keep permuteToLIDs and permuteFromLIDs on device, if
-    // possible, but respect their current placement.  This is because
-    // DistObject might use their placement to decide where to pack
-    // and/or unpack.
-    const bool permuteToLIDs_sync_back =
-      !permuteToLIDs.need_sync_host ();
-    auto permuteToLIDs_nc = castAwayConstDualView (permuteToLIDs);
-    permuteToLIDs_nc.sync_host ();
-    auto permuteToLIDs_h = permuteToLIDs.view_host();
-
-    const bool permuteFromLIDs_sync_back =
-      !permuteFromLIDs.need_sync_host ();
-    auto permuteFromLIDs_nc = castAwayConstDualView (permuteFromLIDs);
-    permuteFromLIDs_nc.sync_host ();
+    TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
+    auto permuteToLIDs_h = permuteToLIDs.view_host ();
+    TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
     auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "permuteToLIDs_sync_back: "
-         << (permuteToLIDs_sync_back ? "true" : "false") << ", "
-         << "permuteFromLIDs_sync_back: "
-         << (permuteFromLIDs_sync_back ? "true" : "false") << endl;
-      std::cerr << os.str ();
-    }
 
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
-    typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RMT;
+    using RMT = ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
-
-    this->copyAndPermuteImpl (srcMat, numSameIDs, permuteToLIDs_h.data (),
-                              permuteFromLIDs_h.data (), numPermute);
-
-    if (permuteToLIDs_sync_back) {
-      permuteToLIDs_nc.template sync<dev_mem_space> ();
-    }
-    if (permuteFromLIDs_sync_back) {
-      permuteFromLIDs_nc.template sync<dev_mem_space> ();
-    }
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "copyAndPermuteNew: after:" << endl
-         << *prefix << "  "
-         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
-         << *prefix << "  "
-         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+      os << *prefix << "Call copyAndPermuteImpl" << endl;
       std::cerr << os.str ();
     }
+    this->copyAndPermuteImpl (srcMat, numSameIDs, permuteToLIDs_h.data (),
+                              permuteFromLIDs_h.data (), numPermute);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packAndPrepareNew (const SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<char*, buffer_device_type>& exports,
                      const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                      size_t& constantNumPackets,
@@ -6691,15 +6653,13 @@ namespace Tpetra {
 
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::packAndPrepareNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
-
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::packAndPrepareNew: " << endl
+      os << *prefix << "Start" << endl
          << *prefix << "  "
          << dualViewStatusToString (exportLIDs, "exportLIDs")
          << endl
@@ -6735,10 +6695,10 @@ namespace Tpetra {
     std::ostringstream msg; // for collecting error messages
     int lclBad = 0; // to be set below
 
-    typedef CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+    using crs_matrix_type = CrsMatrix<Scalar, LO, GO, Node>;
     const crs_matrix_type* srcCrsMat =
       dynamic_cast<const crs_matrix_type*> (&source);
-    if (srcCrsMat != NULL) {
+    if (srcCrsMat != nullptr) {
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Source matrix same (CrsMatrix) type as target; "
@@ -6755,11 +6715,10 @@ namespace Tpetra {
       }
     }
     else {
-      using Tpetra::Details::castAwayConstDualView;
       using Kokkos::HostSpace;
       using Kokkos::subview;
-      typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
-      typedef Kokkos::pair<size_t, size_t> range_type;
+      using exports_type = Kokkos::DualView<char*, buffer_device_type>;
+      using range_type = Kokkos::pair<size_t, size_t>;
 
       if (verbose) {
         std::ostringstream os;
@@ -6768,11 +6727,11 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+      using row_matrix_type = RowMatrix<Scalar, LO, GO, Node>;
       const row_matrix_type* srcRowMat =
         dynamic_cast<const row_matrix_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (srcRowMat == NULL, std::invalid_argument,
+        (srcRowMat == nullptr, std::invalid_argument,
          "The source object of the Import or Export operation is neither a "
          "CrsMatrix (with the same template parameters as the target object), "
          "nor a RowMatrix (with the same first four template parameters as the "
@@ -6785,11 +6744,8 @@ namespace Tpetra {
       // critical case.  Thus, we may allocate Teuchos::Array objects
       // here and copy to and from Kokkos::*View.
 
-      // Sync exportLIDs to host, and view its host data as a Teuchos::ArrayView.
-      {
-        auto exportLIDs_nc = castAwayConstDualView (exportLIDs);
-        exportLIDs_nc.sync_host ();
-      }
+      // View exportLIDs's host data as a Teuchos::ArrayView.
+      TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
       auto exportLIDs_h = exportLIDs.view_host ();
       Teuchos::ArrayView<const LO> exportLIDs_av (exportLIDs_h.data (),
                                                   exportLIDs_h.size ());
@@ -7060,7 +7016,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
                         size_t& totalNumEntries,
-                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const
+                        const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs) const
   {
     using Tpetra::Details::dualViewStatusToString;
     using std::endl;
@@ -7086,12 +7042,12 @@ namespace Tpetra {
       // Restrict pfxStrm to inner scope to reduce high-water memory usage.
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::allocatePackSpaceNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
 
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: Before:"
+      os << *prefix << "Before:"
          << endl
          << *prefix << "  "
          << dualViewStatusToString (exports, "exports")
@@ -7106,14 +7062,7 @@ namespace Tpetra {
     // that the LIDs are distinct and valid on the calling process.
     const LO numExportLIDs = static_cast<LO> (exportLIDs.extent (0));
 
-    // We need to access exportLIDs on host, but Kokkos forbids
-    // sync'ing of a DualView of const.  We won't modify the entries,
-    // so it's fair to leave it const, except for sync'ing it.
-    {
-      Kokkos::DualView<local_ordinal_type*, device_type> exportLIDs_nc =
-        Tpetra::Details::castAwayConstDualView (exportLIDs);
-      exportLIDs_nc.sync_host ();
-    }
+    TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
     auto exportLIDs_h = exportLIDs.view_host ();
 
     // Count the total number of matrix entries to send.
@@ -7141,7 +7090,7 @@ namespace Tpetra {
       static_cast<size_t> (numExportLIDs) * sizeof (LO) +
       totalNumEntries * (sizeof (IST) + sizeof (GO));
     if (static_cast<size_t> (exports.extent (0)) < allocSize) {
-      typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
+      using exports_type = Kokkos::DualView<char*, buffer_device_type>;
 
       const std::string oldLabel = exports.d_view.label ();
       const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
@@ -7150,7 +7099,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: After:"
+      os << *prefix << "After:"
          << endl
          << *prefix << "  "
          << dualViewStatusToString (exports, "exports")
@@ -7165,7 +7114,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+  packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
            Kokkos::DualView<char*, buffer_device_type>& exports,
            const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
            size_t& constantNumPackets,
@@ -7186,11 +7135,11 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+  packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                     Kokkos::DualView<char*, buffer_device_type>& exports,
                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor& distor) const
+                    Distributor& /* distor */) const
   {
     using Kokkos::View;
     using Tpetra::Details::dualViewStatusToString;
@@ -7478,7 +7427,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
                        const Kokkos::DualView<const char*, buffer_device_type>& imports,
                        const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                        const size_t constantNumPackets,
@@ -7511,12 +7460,11 @@ namespace Tpetra {
       }
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::unpackAndCombineNew: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
-
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNew: " << endl
+      os << *prefix << "Start:" << endl
          << *prefix << "  "
          << dualViewStatusToString (importLIDs, "importLIDs")
          << endl
@@ -7591,7 +7539,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "unpackAndCombineNew: Done!" << endl
+      os << *prefix << "Done!" << endl
          << *prefix << "  "
          << dualViewStatusToString (importLIDs, "importLIDs")
          << endl
@@ -7608,9 +7556,12 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                           const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                           const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+  unpackAndCombineNewImpl (const Kokkos::DualView<const local_ordinal_type*,
+                             buffer_device_type>& importLIDs,
+                           const Kokkos::DualView<const char*,
+                             buffer_device_type>& imports,
+                           const Kokkos::DualView<const size_t*,
+                             buffer_device_type>& numPacketsPerLID,
                            const size_t constantNumPackets,
                            Distributor & distor,
                            const CombineMode combineMode,
@@ -7635,11 +7586,14 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                                    const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                                    const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
-                                    const size_t constantNumPackets,
-                                    Distributor& distor,
+  unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
+                                      buffer_device_type>& importLIDs,
+                                    const Kokkos::DualView<const char*,
+                                      buffer_device_type>& imports,
+                                    const Kokkos::DualView<const size_t*,
+                                      buffer_device_type>& numPacketsPerLID,
+                                    const size_t /* constantNumPackets */,
+                                    Distributor& /* distor */,
                                     const CombineMode combineMode)
   {
     using Kokkos::View;
@@ -7677,13 +7631,13 @@ namespace Tpetra {
       // Restrict pfxStrm to inner scope to reduce high-water memory usage.
       prefix = [myRank] () {
         std::ostringstream pfxStrm;
-        pfxStrm << "(Proc " << myRank << ") ";
+        pfxStrm << "Proc " << myRank << ": Tpetra::CrsMatrix::"
+        "unpackAndCombineNewImplNonStatic: ";
         return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
       } ();
 
       std::ostringstream os;
-      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNewImplNonStatic:"
-         << endl; // we've already printed statuses of DualViews
+      os << *prefix << endl; // we've already printed DualViews' statuses
       std::cerr << os.str ();
     }
 
@@ -7716,11 +7670,7 @@ namespace Tpetra {
     }
     auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
 
-    // Read-only host access.
-    {
-      auto importLIDs_nc = castAwayConstDualView (importLIDs);
-      importLIDs_nc.sync_host ();
-    }
+    TEUCHOS_ASSERT( ! importLIDs.need_sync_host () );
     auto importLIDs_h = importLIDs.view_host ();
 
     size_t numBytesPerValue;
@@ -8238,7 +8188,20 @@ namespace Tpetra {
     //const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();  // wcm: unused
     using Teuchos::as;
 
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     int MyPID = getComm ()->getRank ();
+
+    std::unique_ptr<std::string> verbosePrefix;
+    if (verbose) {
+      std::ostringstream os;
+      os << "Proc " << MyPID << ": transferAndFillComplete: ";
+      verbosePrefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+
+      os << "start" << std::endl;
+      std::cerr << os.str ();
+    }
+
     //
     // Get the caller's parameters
     //
@@ -8630,12 +8593,11 @@ namespace Tpetra {
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
       const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
-      destMat->reallocImportsIfNeeded (rbufLen);
+      destMat->reallocImportsIfNeeded (rbufLen, false, nullptr);
     }
 
     // Pack & Prepare w/ owning PIDs
-#ifdef HAVE_TPETRA_DEBUG
-    {
+    if (debug) {
       using Teuchos::outArg;
       using Teuchos::REDUCE_MAX;
       using Teuchos::reduceAll;
@@ -8643,15 +8605,46 @@ namespace Tpetra {
       using std::endl;
       RCP<const Teuchos::Comm<int> > comm = this->getComm ();
       const int myRank = comm->getRank ();
-      const int numProcs = comm->getSize ();
 
-      std::ostringstream os;
+      std::ostringstream errStrm;
       int lclErr = 0;
+      int gblErr = 0;
+
+      Teuchos::ArrayView<size_t> numExportPacketsPerLID;
       try {
         // packAndPrepare* methods modify numExportPacketsPerLID_.
         destMat->numExportPacketsPerLID_.modify_host ();
-        Teuchos::ArrayView<size_t> numExportPacketsPerLID =
+        numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
+      }
+      catch (std::exception& e) {
+        errStrm << "Proc " << myRank << ": getArrayViewFromDualView threw: "
+                << e.what () << std::endl;
+        lclErr = 1;
+      }
+      catch (...) {
+        errStrm << "Proc " << myRank << ": getArrayViewFromDualView threw "
+          "an exception not a subclass of std::exception" << std::endl;
+        lclErr = 1;
+      }
+
+      if (! comm.is_null ()) {
+        reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+      }
+      if (gblErr != 0) {
+        ::Tpetra::Details::gathervPrint (cerr, errStrm.str (), *comm);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::runtime_error, "getArrayViewFromDualView threw an "
+          "exception on at least one process.");
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling packCrsMatrixWithOwningPIDs"
+           << std::endl;
+        std::cerr << os.str ();
+      }
+      try {
         packCrsMatrixWithOwningPIDs (*this,
                                      destMat->exports_,
                                      numExportPacketsPerLID,
@@ -8661,53 +8654,76 @@ namespace Tpetra {
                                      Distor);
       }
       catch (std::exception& e) {
-        os << "Proc " << myRank << ": " << e.what ();
+        errStrm << "Proc " << myRank << ": packCrsMatrixWithOwningPIDs threw: "
+           << e.what () << std::endl;
         lclErr = 1;
       }
-      int gblErr = 0;
+      catch (...) {
+        errStrm << "Proc " << myRank << ": packCrsMatrixWithOwningPIDs threw "
+          "an exception not a subclass of std::exception" << std::endl;
+        lclErr = 1;
+      }
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Done with packCrsMatrixWithOwningPIDs"
+           << std::endl;
+        std::cerr << os.str ();
+      }
+
       if (! comm.is_null ()) {
         reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
       }
       if (gblErr != 0) {
-        if (myRank == 0) {
-          cerr << "packCrsMatrixWithOwningPIDs threw an exception: " << endl;
-        }
-        std::ostringstream err;
-        for (int r = 0; r < numProcs; ++r) {
-          if (r == myRank && lclErr != 0) {
-            cerr << os.str () << endl;
-          }
-          comm->barrier ();
-          comm->barrier ();
-          comm->barrier ();
-        }
-
+        ::Tpetra::Details::gathervPrint (cerr, errStrm.str (), *comm);
         TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::logic_error, "packCrsMatrixWithOwningPIDs threw an "
-          "exception.");
+          true, std::runtime_error, "packCrsMatrixWithOwningPIDs threw an "
+          "exception on at least one process.");
+      }
+    }
+    else {
+      // packAndPrepare* methods modify numExportPacketsPerLID_.
+      destMat->numExportPacketsPerLID_.modify_host ();
+      Teuchos::ArrayView<size_t> numExportPacketsPerLID =
+        getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling packCrsMatrixWithOwningPIDs"
+           << std::endl;
+        std::cerr << os.str ();
+      }
+      packCrsMatrixWithOwningPIDs (*this,
+                                   destMat->exports_,
+                                   numExportPacketsPerLID,
+                                   ExportLIDs,
+                                   SourcePids,
+                                   constantNumPackets,
+                                   Distor);
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Done with packCrsMatrixWithOwningPIDs"
+           << std::endl;
+        std::cerr << os.str ();
       }
     }
 
-#else
-    {
-        // packAndPrepare* methods modify numExportPacketsPerLID_.
-        destMat->numExportPacketsPerLID_.modify_host ();
-        Teuchos::ArrayView<size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-        packCrsMatrixWithOwningPIDs (*this,
-                                     destMat->exports_,
-                                     numExportPacketsPerLID,
-                                     ExportLIDs,
-                                     SourcePids,
-                                     constantNumPackets,
-                                     Distor);
-    }
-#endif // HAVE_TPETRA_DEBUG
-
     // Do the exchange of remote data.
-    if (communication_needed) {
+    if (! communication_needed) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Communication not needed" << std::endl;
+        std::cerr << os.str ();
+      }
+    }
+    else {
       if (reverseMode) {
         if (constantNumPackets == 0) { // variable number of packets per LID
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Reverse mode, variable # packets / LID"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           // Make sure that host has the latest version, since we're
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
@@ -8717,8 +8733,22 @@ namespace Tpetra {
           destMat->numImportPacketsPerLID_.sync_host ();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Calling 3-arg doReversePostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           Distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
                                          numImportPacketsPerLID);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Finished 3-arg doReversePostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
+
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
@@ -8726,7 +8756,8 @@ namespace Tpetra {
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
-          destMat->reallocImportsIfNeeded (totalImportPackets);
+          destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                           verbosePrefix.get ());
           destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
@@ -8735,12 +8766,30 @@ namespace Tpetra {
           destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Calling 4-arg doReversePostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           Distor.doReversePostsAndWaits (hostExports,
                                          numExportPacketsPerLID,
                                          hostImports,
                                          numImportPacketsPerLID);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Finished 4-arg doReversePostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
         }
-        else { // constant number of packets per LI
+        else { // constant number of packets per LID
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Reverse mode, constant # packets / LID"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
@@ -8749,13 +8798,31 @@ namespace Tpetra {
           destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Calling 3-arg doReversePostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           Distor.doReversePostsAndWaits (hostExports,
                                          constantNumPackets,
                                          hostImports);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Finished 3-arg doReversePostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
         }
       }
       else { // forward mode (the default)
         if (constantNumPackets == 0) { // variable number of packets per LID
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Forward mode, variable # packets / LID"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           // Make sure that host has the latest version, since we're
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
@@ -8765,8 +8832,21 @@ namespace Tpetra {
           destMat->numImportPacketsPerLID_.sync_host ();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Calling 3-arg doPostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           Distor.doPostsAndWaits (numExportPacketsPerLID, 1,
                                   numImportPacketsPerLID);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Finished 3-arg doPostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
+
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
@@ -8774,7 +8854,8 @@ namespace Tpetra {
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
-          destMat->reallocImportsIfNeeded (totalImportPackets);
+          destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
+                                           verbosePrefix.get ());
           destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
@@ -8783,12 +8864,30 @@ namespace Tpetra {
           destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Calling 4-arg doPostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           Distor.doPostsAndWaits (hostExports,
                                   numExportPacketsPerLID,
                                   hostImports,
                                   numImportPacketsPerLID);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Finished 4-arg doPostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
         }
         else { // constant number of packets per LID
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Forward mode, constant # packets / LID"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
@@ -8797,9 +8896,21 @@ namespace Tpetra {
           destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Calling 3-arg doPostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
           Distor.doPostsAndWaits (hostExports,
                                   constantNumPackets,
                                   hostImports);
+          if (verbose) {
+            std::ostringstream os;
+            os << *verbosePrefix << "Finished 3-arg doPostsAndWaits"
+               << std::endl;
+            std::cerr << os.str ();
+          }
         }
       }
     }
@@ -8816,6 +8927,12 @@ namespace Tpetra {
     Teuchos::ArrayView<const char> hostImports =
       getArrayViewFromDualView (destMat->imports_);
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling unpackAndCombineWithOwningPIDsCount"
+         << std::endl;
+      std::cerr << os.str ();
+    }
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount (*this,
                                            RemoteLIDs,
@@ -8827,6 +8944,12 @@ namespace Tpetra {
                                            NumSameIDs,
                                            PermuteToLIDs,
                                            PermuteFromLIDs);
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "unpackAndCombineWithOwningPIDsCount returned "
+         << mynnz << std::endl;
+      std::cerr << os.str ();
+    }
     size_t N = BaseRowMap->getNodeNumElements ();
 
     // Allocations
@@ -8846,6 +8969,12 @@ namespace Tpetra {
       CSR_colind_LID.resize (mynnz);
     }
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling unpackAndCombineIntoCrsArrays"
+         << std::endl;
+      std::cerr << os.str ();
+    }
     // FIXME (mfh 15 May 2014) Why can't we abstract this out as an
     // unpackAndCombine method on a "CrsArrays" object?  This passing
     // in a huge list of arrays is icky.  Can't we have a bit of an
@@ -8877,6 +9006,12 @@ namespace Tpetra {
     // Directory lookups (since the Import object knows who owns all
     // the GIDs).
     Teuchos::Array<int> RemotePids;
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling lowCommunicationMakeColMapAndReindex"
+         << std::endl;
+      std::cerr << os.str ();
+    }
     Import_Util::lowCommunicationMakeColMapAndReindex (CSR_rowptr (),
                                                        CSR_colind_LID (),
                                                        CSR_colind_GID (),
@@ -8884,6 +9019,13 @@ namespace Tpetra {
                                                        TargetPids,
                                                        RemotePids,
                                                        MyColMap);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "restrictComm="
+         << (restrictComm ? "true" : "false") << std::endl;
+      std::cerr << os.str ();
+    }
 
     /*******************************************************/
     /**** 4) Second communicator restriction phase      ****/
@@ -8896,6 +9038,11 @@ namespace Tpetra {
     }
 
     // Replace the col map
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling replaceColMap" << std::endl;
+      std::cerr << os.str ();
+    }
     destMat->replaceColMap (MyColMap);
 
     // Short circuit if the processor is no longer in the communicator
@@ -8904,6 +9051,12 @@ namespace Tpetra {
     // have a dummy (serial) Map that doesn't touch the original
     // communicator.  Duplicating that here might be a good idea.
     if (ReducedComm.is_null ()) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "I am no longer in the communicator; "
+          "returning" << std::endl;
+        std::cerr << os.str ();
+      }
       return;
     }
 
@@ -8912,12 +9065,22 @@ namespace Tpetra {
     /***************************************************/
     if ((! reverseMode && xferAsImport != NULL) ||
         (reverseMode && xferAsExport != NULL)) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling sortCrsEntries" << std::endl;
+        std::cerr << os.str ();
+      }
       Import_Util::sortCrsEntries (CSR_rowptr (),
                                    CSR_colind_LID (),
                                    CSR_vals ());
     }
     else if ((! reverseMode && xferAsExport != NULL) ||
              (reverseMode && xferAsImport != NULL)) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling sortAndMergeCrsEntries" << std::endl;
+        std::cerr << os.str ();
+      }
       Import_Util::sortAndMergeCrsEntries (CSR_rowptr (),
                                            CSR_colind_LID (),
                                            CSR_vals ());
@@ -8936,6 +9099,12 @@ namespace Tpetra {
     /**** 6) Reset the colmap and the arrays        ****/
     /***************************************************/
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Calling destMat->setAllValues" << std::endl;
+      std::cerr << os.str ();
+    }
+
     // Call constructor for the new matrix (restricted as needed)
     //
     // NOTE (mfh 15 May 2014) This should work fine for the Kokkos
@@ -8953,6 +9122,11 @@ namespace Tpetra {
 
     // Fulfull the non-blocking allreduce on reduced_mismatch.
     if (iallreduceRequest.get () != nullptr) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Calling iallreduceRequest->wait()" << std::endl;
+        std::cerr << os.str ();
+      }
       iallreduceRequest->wait ();
       if (reduced_mismatch != 0) {
         isMM = false;
@@ -8965,6 +9139,12 @@ namespace Tpetra {
 #endif
         // Combine all type1/2/3 lists, [filter them], then call the expert import constructor.
 
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Calling getAllValues" << std::endl;
+          std::cerr << os.str ();
+        }
+
         Teuchos::ArrayRCP<LocalOrdinal> type3LIDs;
         Teuchos::ArrayRCP<int>          type3PIDs;
         Teuchos::ArrayRCP<const size_t> rowptr;
@@ -8975,6 +9155,12 @@ namespace Tpetra {
             TimeMonitor tm_getAllValues (*TimeMonitor::getNewTimer(prefix + std::string("isMMgetAllValues")));
 #endif
             getAllValues(rowptr,colind,vals);
+        }
+
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Calling reverseNeighborDiscovery" << std::endl;
+          std::cerr << os.str ();
         }
 
         {
@@ -8991,6 +9177,13 @@ namespace Tpetra {
                                                   type3LIDs,
                                                   ReducedComm);
         }
+
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Done with reverseNeighborDiscovery" << std::endl;
+          std::cerr << os.str ();
+        }
+
         Teuchos::ArrayView<const int>  EPID1 =  MyImporter->getExportPIDs();// SourceMatrix->graph->importer
         Teuchos::ArrayView<const LO>   ELID1 =  MyImporter->getExportLIDs();
 
@@ -9025,11 +9218,24 @@ namespace Tpetra {
             }
           }
         }
+
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "sort, unique, & erase usrtg" << std::endl;
+          std::cerr << os.str ();
+        }
+
 // This sort can _not_ be omitted.[
         std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order
         auto eopg = std ::unique(usrtg.begin(),usrtg.end());
         // 25 Jul 2018: Could just ignore the entries at and after eopg.
         usrtg.erase(eopg,usrtg.end());
+
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Done with sort, unique, & erase" << std::endl;
+          std::cerr << os.str ();
+        }
 
         const Array_size_type type2_us_size = usrtg.size();
         Teuchos::ArrayRCP<int>  EPID2=Teuchos::arcp(new int[type2_us_size],0,type2_us_size,true);
@@ -9102,6 +9308,12 @@ namespace Tpetra {
             }
         }
 
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Create Import" << std::endl;
+          std::cerr << os.str ();
+        }
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         auto ismmIctor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor")));
 #endif
@@ -9115,6 +9327,11 @@ namespace Tpetra {
                                           plist)
             );
 
+        if (verbose) {
+          std::ostringstream os;
+          os << *verbosePrefix << "Call expertStaticFillComplete" << std::endl;
+          std::cerr << os.str ();
+        }
 
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -9130,29 +9347,47 @@ namespace Tpetra {
     }  // if(isMM)
     else {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        TimeMonitor MMnotMMblock (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMblock")));
+      TimeMonitor MMnotMMblock (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMblock")));
 #endif
-
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Create Import" << std::endl;
+        std::cerr << os.str ();
+      }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        TimeMonitor  notMMIcTor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
+      TimeMonitor  notMMIcTor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
 #endif
-        Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
-        mypars->set("Timer Label","notMMFrom_tAFC");
-        MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
+      Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
+      mypars->set("Timer Label","notMMFrom_tAFC");
+      MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
 
+      if (verbose) {
+        std::ostringstream os;
+        os << *verbosePrefix << "Call expertStaticFillComplete" << std::endl;
+        std::cerr << os.str ();
+      }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
-        esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
+      TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
+      esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
 #else
-        esfc_params.set("Timer Label",std::string("notMM eSFC"));
+      esfc_params.set("Timer Label",std::string("notMM eSFC"));
 #endif
 
-        if(!params.is_null())
-            esfc_params.set("compute global constants",params->get("compute global constants",true));
-        destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
+      if (!params.is_null ()) {
+        esfc_params.set ("compute global constants",
+                         params->get ("compute global constants", true));
+      }
+      destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap,
+                                         MyImport, Teuchos::null,
+                                         rcp (new Teuchos::ParameterList (esfc_params)));
+    }
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *verbosePrefix << "Done!" << std::endl;
+      std::cerr << os.str ();
     }
   }
 

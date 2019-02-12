@@ -337,11 +337,11 @@ namespace MueLu {
       // smoothed aggregation (SA-AMG)
       RCP<Factory> SaPFact;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    if(useKokkosRefactor)
-      SaPFact = rcp( new SaPFactory_kokkos() );
-    else
+      if(useKokkosRefactor)
+        SaPFact = rcp( new SaPFactory_kokkos() );
+      else
 #endif
-      SaPFact = rcp( new SaPFactory() );
+        SaPFact = rcp( new SaPFactory() );
       SaPFact->SetParameter("sa: damping factor", ParameterEntry(agg_damping));
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );

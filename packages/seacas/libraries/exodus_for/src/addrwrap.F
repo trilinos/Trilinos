@@ -1,23 +1,23 @@
 C Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,14 +29,14 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
         SUBROUTINE ADRDUM
         END
 
 #ifdef Build64
         SUBROUTINE EXCLOS (IDEXO, IERR)
-C> \sa ex_close()        
+C> \sa ex_close()
 C
 C       CLOSE EXODUS II FILE
 C
@@ -103,7 +103,7 @@ C
         INTEGER*4 IFLAG4
 
 C ... This is hardwired instead of getting from exodusII.inc due to compiler errors about
-C     exopen/excre already having a type...        
+C     exopen/excre already having a type...
         integer EX_MAPS_INT64_API
         integer EX_BULK_INT64_API
         integer EX_IDS_INT64_API
@@ -113,7 +113,7 @@ C     exopen/excre already having a type...
         parameter (EX_BULK_INT64_API=  32768) ! All integer bulk data
         parameter (EX_INQ_INT64_API =  65536) ! All integer inquire arguments
 
-C ... All wrapper routines are passing INTEGER*8, but at this 
+C ... All wrapper routines are passing INTEGER*8, but at this
 C     time, only the maps are supported...
         ICMODE4 = ICMODE
         IFLAG4 = EX_MAPS_INT64_API+EX_IDS_INT64_API+EX_BULK_INT64_API+
@@ -235,7 +235,7 @@ C
 
         SUBROUTINE EXPFRM (IDEXO, NFRAME, IDSCF, COORD, ITAGS, IERR)
 C> \sa ex_put_coordinate_frames()
-        
+
 C
 C       DEFINE/WRITE COORDINATE FRAMES
 C
@@ -271,7 +271,7 @@ C
 
         SUBROUTINE EXGCON (IDEXO, NAMECO, IERR)
 C> \sa ex_get_coord_names()
-        
+
 C
 C       READ COORDINATE NAMES
 C
@@ -501,7 +501,7 @@ C
         INTEGER NUMELB
         INTEGER NUMATR
         INTEGER NUMLNK
-        
+
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
         CALL EXGELB4 (IDEXO4, IDELB, NAMELB, NUMELB, NUMLNK,
@@ -1573,7 +1573,7 @@ C
         INTEGER*4 IFLAG4
 
 C ... This is hardwired instead of getting from exodusII.inc due to compiler errors about
-C     exopen/excre already having a type...        
+C     exopen/excre already having a type...
         integer EX_MAPS_INT64_API
         integer EX_BULK_INT64_API
         integer EX_IDS_INT64_API
@@ -1590,7 +1590,7 @@ C     are passing REAL*8 and the exo_jack.c routines all take double*
         ICOMPWS4 = 8
         IOWS4 = IOWS
 
-C ... All wrapper routines are passing INTEGER*8, but at this 
+C ... All wrapper routines are passing INTEGER*8, but at this
 C     time, only the maps are supported...
         IFLAG4 = EX_MAPS_INT64_API+EX_IDS_INT64_API+EX_BULK_INT64_API+
      *    EX_INQ_INT64_API
@@ -1941,7 +1941,7 @@ C
         INTEGER   NUMELB
         INTEGER   NUMLNK
         INTEGER   NUMATR
-        
+
         IDEXO4 = IDEXO
         ITYPE4 = ITYPE
 
@@ -2772,15 +2772,15 @@ C
       subroutine exgii (idexo, nproc, nproc_in_f, ftype, ierr)
 C> ex_get_init_info()
       implicit none
-      integer idexo 
-      integer nproc 
-      integer nproc_in_f 
-      character*(*) ftype 
+      integer idexo
+      integer nproc
+      integer nproc_in_f
+      character*(*) ftype
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 nproc4 
-      integer*4 nproc_in_f4 
+      integer*4 idexo4
+      integer*4 nproc4
+      integer*4 nproc_in_f4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2788,9 +2788,9 @@ C
       nproc = nproc4
       nproc_in_f = nproc_in_f4
       ierr = ierr4
-C       
+C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C   Write initial information from nemesis file
@@ -2798,15 +2798,15 @@ C
       subroutine expii (idexo, nproc, nproc_in_f, ftype, ierr)
 C> ex_put_init_info()
       implicit none
-      integer idexo 
-      integer nproc 
-      integer nproc_in_f 
-      character*(*) ftype 
+      integer idexo
+      integer nproc
+      integer nproc_in_f
+      character*(*) ftype
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 nproc4 
-      integer*4 nproc_in_f4 
+      integer*4 idexo4
+      integer*4 nproc4
+      integer*4 nproc_in_f4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2816,7 +2816,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read initial global information
@@ -2825,15 +2825,15 @@ C
      $  nnode_sets_g, nside_sets_g, ierr)
 C> ex_get_init_global()
       implicit none
-      integer idexo 
-      integer nnodes_g 
-      integer nelems_g 
-      integer nelem_blks_g 
-      integer nnode_sets_g 
-      integer nside_sets_g 
+      integer idexo
+      integer nnodes_g
+      integer nelems_g
+      integer nelem_blks_g
+      integer nnode_sets_g
+      integer nside_sets_g
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2842,7 +2842,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write initial global information
@@ -2851,15 +2851,15 @@ C
      $  nnode_sets_g, nside_sets_g, ierr)
 C> ex_put_init_global()
       implicit none
-      integer idexo 
-      integer nnodes_g 
-      integer nelems_g 
-      integer nelem_blks_g 
-      integer nnode_sets_g 
-      integer nside_sets_g 
+      integer idexo
+      integer nnodes_g
+      integer nelems_g
+      integer nelem_blks_g
+      integer nnode_sets_g
+      integer nside_sets_g
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2868,7 +2868,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read load balance parameters
@@ -2878,19 +2878,19 @@ C
      $  processor, ierr)
 C> ex_get_loadbal_param()
       implicit none
-      integer idexo 
-      integer nint_nodes 
-      integer nbor_nodes 
-      integer next_nodes 
-      integer nint_elems 
-      integer nbor_elems 
-      integer nnode_cmaps 
-      integer nelem_cmaps 
-      integer processor 
+      integer idexo
+      integer nint_nodes
+      integer nbor_nodes
+      integer next_nodes
+      integer nint_elems
+      integer nbor_elems
+      integer nnode_cmaps
+      integer nelem_cmaps
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2901,7 +2901,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write load balance parameters
@@ -2911,19 +2911,19 @@ C
      $  processor, ierr)
 C> ex_put_loadbal_param()
       implicit none
-      integer idexo 
-      integer nint_nodes 
-      integer nbor_nodes 
-      integer next_nodes 
-      integer nint_elems 
-      integer nbor_elems 
-      integer nnode_cmaps 
-      integer nelem_cmaps 
-      integer processor 
+      integer idexo
+      integer nint_nodes
+      integer nbor_nodes
+      integer next_nodes
+      integer nint_elems
+      integer nbor_elems
+      integer nnode_cmaps
+      integer nelem_cmaps
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2934,7 +2934,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write concatenated load balance parameters
@@ -2943,17 +2943,17 @@ C
      $  nint_elems, nbor_elems, nnode_cmaps, nelem_cmaps, ierr)
 C> ex_put_loadbal_param_cc()
       implicit none
-      integer idexo 
-      integer nint_nodes(*) 
-      integer nbor_nodes(*) 
-      integer next_nodes(*) 
-      integer nint_elems(*) 
-      integer nbor_elems(*) 
-      integer nnode_cmaps(*) 
-      integer nelem_cmaps(*) 
+      integer idexo
+      integer nint_nodes(*)
+      integer nbor_nodes(*)
+      integer next_nodes(*)
+      integer nint_elems(*)
+      integer nbor_elems(*)
+      integer nnode_cmaps(*)
+      integer nelem_cmaps(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2963,7 +2963,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read global node set parameters
@@ -2972,13 +2972,13 @@ C
      $  ns_df_cnt_glob, ierr)
 C> ex_get_ns_param_global()
       implicit none
-      integer idexo 
-      integer ns_ids_glob(*) 
-      integer ns_n_cnt_glob(*) 
-      integer ns_df_cnt_glob(*) 
+      integer idexo
+      integer ns_ids_glob(*)
+      integer ns_n_cnt_glob(*)
+      integer ns_df_cnt_glob(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -2987,7 +2987,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write global node set parameters
@@ -2995,13 +2995,13 @@ C
       subroutine expnspg (idexo, global_ids, global_n_cnts,
      $  global_df_cnts, ierr)
 C> ex_put_ns_param_global()
-      integer idexo 
-      integer global_ids(*) 
-      integer global_n_cnts(*) 
-      integer global_df_cnts(*) 
+      integer idexo
+      integer global_ids(*)
+      integer global_n_cnts(*)
+      integer global_df_cnts(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3010,7 +3010,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read global side set parameters
@@ -3019,13 +3019,13 @@ C
      $  ss_df_cnt_glob, ierr)
 C> ex_get_ss_param_global()
       implicit none
-      integer idexo 
-      integer ss_ids_glob(*) 
-      integer ss_n_cnt_glob(*) 
-      integer ss_df_cnt_glob(*) 
+      integer idexo
+      integer ss_ids_glob(*)
+      integer ss_n_cnt_glob(*)
+      integer ss_df_cnt_glob(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3034,7 +3034,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write global side set parameters
@@ -3043,13 +3043,13 @@ C
      $  global_df_cnts, ierr)
 C> ex_put_ss_param_global()
       implicit none
-      integer idexo 
-      integer global_ids(*) 
-      integer global_el_cnts(*) 
-      integer global_df_cnts(*) 
+      integer idexo
+      integer global_ids(*)
+      integer global_el_cnts(*)
+      integer global_df_cnts(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3058,7 +3058,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read global element block information
@@ -3066,12 +3066,12 @@ C
       subroutine exgebig (idexo, el_blk_ids, el_blk_cnts, ierr)
 C> ex_get_eb_info_global()
       implicit none
-      integer idexo 
-      integer el_blk_ids(*) 
-      integer el_blk_cnts(*) 
+      integer idexo
+      integer el_blk_ids(*)
+      integer el_blk_cnts(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3079,7 +3079,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write global element block information
@@ -3087,12 +3087,12 @@ C
       subroutine expebig (idexo, el_blk_ids, el_blk_cnts, ierr)
 C> ex_put_eb_info_global()
       implicit none
-      integer idexo 
-      integer el_blk_ids(*) 
-      integer el_blk_cnts(*) 
+      integer idexo
+      integer el_blk_ids(*)
+      integer el_blk_cnts(*)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3100,7 +3100,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read side set element list and side set side list
@@ -3109,15 +3109,15 @@ C
      $  ss_elem_list, ss_side_list, ierr)
 C> ex_get_n_side_set()
       implicit none
-      integer idexo 
-      integer ss_id 
-      integer start_side_num 
-      integer num_sides 
-      integer ss_elem_list(num_sides) 
-      integer ss_side_list(num_sides) 
+      integer idexo
+      integer ss_id
+      integer start_side_num
+      integer num_sides
+      integer ss_elem_list(num_sides)
+      integer ss_side_list(num_sides)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3126,7 +3126,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write side set element list and side set side list
@@ -3135,15 +3135,15 @@ C
      $  ss_elem_list, ss_side_list, ierr)
 C> ex_put_n_side_set()
       implicit none
-      integer idexo 
-      integer ss_id 
-      integer start_side_num 
-      integer num_sides 
-      integer ss_elem_list(num_sides) 
-      integer ss_side_list(num_sides) 
+      integer idexo
+      integer ss_id
+      integer start_side_num
+      integer num_sides
+      integer ss_elem_list(num_sides)
+      integer ss_side_list(num_sides)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3152,7 +3152,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read side set distribution factor
@@ -3161,14 +3161,14 @@ C
      $  ss_df, ierr)
 C> ex_get_n_side_set_df()
       implicit none
-      integer idexo 
-      integer ss_id 
-      integer start_num 
-      integer num_df_to_get 
-      real ss_df(num_df_to_get) 
+      integer idexo
+      integer ss_id
+      integer start_num
+      integer num_df_to_get
+      real ss_df(num_df_to_get)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3177,7 +3177,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write side set distribution factor
@@ -3186,14 +3186,14 @@ C
      $  ss_df, ierr)
 C> ex_put_n_side_set_df()
       implicit none
-      integer idexo 
-      integer ss_id 
-      integer start_num 
-      integer num_df_to_get 
-      real ss_df(num_df_to_get) 
+      integer idexo
+      integer ss_id
+      integer start_num
+      integer num_df_to_get
+      real ss_df(num_df_to_get)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3202,7 +3202,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read node set list for a single node set
@@ -3211,14 +3211,14 @@ C
      $  ns_node_list, ierr)
 C> ex_get_n_node_set()
       implicit none
-      integer idexo 
-      integer ns_id 
-      integer start_node_num 
-      integer num_node 
-      integer ns_node_list(num_node) 
+      integer idexo
+      integer ns_id
+      integer start_node_num
+      integer num_node
+      integer ns_node_list(num_node)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3227,7 +3227,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write node set list for a single node set
@@ -3236,14 +3236,14 @@ C
      $  ns_node_list, ierr)
 C> ex_put_n_node_set()
       implicit none
-      integer idexo 
-      integer ns_id 
-      integer start_node_num 
-      integer num_node 
-      integer ns_node_list(num_node) 
+      integer idexo
+      integer ns_id
+      integer start_node_num
+      integer num_node
+      integer ns_node_list(num_node)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3252,7 +3252,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read node set distribution factor
@@ -3261,14 +3261,14 @@ C
      $  ns_df, ierr)
 C> ex_get_n_node_set_df()
       implicit none
-      integer idexo 
-      integer ns_id 
-      integer start_num 
-      integer num_df_to_get 
-      real ns_df(num_df_to_get) 
+      integer idexo
+      integer ns_id
+      integer start_num
+      integer num_df_to_get
+      real ns_df(num_df_to_get)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3277,7 +3277,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write node set distribution factor
@@ -3286,14 +3286,14 @@ C
      $  ns_df, ierr)
 C> ex_put_n_node_set_df()
       implicit none
-      integer idexo 
-      integer ns_id 
-      integer start_num 
-      integer num_df_to_get 
-      real ns_df(num_df_to_get) 
+      integer idexo
+      integer ns_id
+      integer start_num
+      integer num_df_to_get
+      real ns_df(num_df_to_get)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3302,7 +3302,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read coordinates of the nodes
@@ -3311,15 +3311,15 @@ C
      $  y_coor, z_coor, ierr)
 C> ex_get_n_coord()
       implicit none
-      integer idexo 
-      integer start_node_num 
-      integer num_nodes 
-      real x_coor(num_nodes) 
-      real y_coor(num_nodes) 
-      real z_coor(num_nodes) 
+      integer idexo
+      integer start_node_num
+      integer num_nodes
+      real x_coor(num_nodes)
+      real y_coor(num_nodes)
+      real z_coor(num_nodes)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3328,7 +3328,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write coordinates of the nodes
@@ -3337,15 +3337,15 @@ C
      $  y_coor, z_coor, ierr)
 C> ex_put_n_coord()
       implicit none
-      integer idexo 
-      integer start_node_num 
-      integer num_nodes 
-      real x_coor(num_nodes) 
-      real y_coor(num_nodes) 
-      real z_coor(num_nodes) 
+      integer idexo
+      integer start_node_num
+      integer num_nodes
+      real x_coor(num_nodes)
+      real y_coor(num_nodes)
+      real z_coor(num_nodes)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3354,7 +3354,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read an element blocks connectivity list
@@ -3363,14 +3363,14 @@ C
      $  num_elems, connect, ierr)
 C> ex_get_n_elem_conn()
       implicit none
-      integer idexo 
-      integer elem_blk_id 
-      integer start_elem_num 
-      integer num_elems 
-      integer connect(num_elems) 
+      integer idexo
+      integer elem_blk_id
+      integer start_elem_num
+      integer num_elems
+      integer connect(num_elems)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3379,7 +3379,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write an element blocks connectivity list
@@ -3388,14 +3388,14 @@ C
      $  num_elems, connect, ierr)
 C> ex_put_n_elem_conn()
       implicit none
-      integer idexo 
-      integer elem_blk_id 
-      integer start_elem_num 
-      integer num_elems 
-      integer connect(num_elems) 
+      integer idexo
+      integer elem_blk_id
+      integer start_elem_num
+      integer num_elems
+      integer connect(num_elems)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3404,7 +3404,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read an element blocks attributes
@@ -3413,14 +3413,14 @@ C
      $  num_elems, attrib, ierr)
 C> ex_get_n_elem_attr()
       implicit none
-      integer idexo 
-      integer elem_blk_id 
-      integer start_elem_num 
-      integer num_elems 
-      real attrib(num_elems) 
+      integer idexo
+      integer elem_blk_id
+      integer start_elem_num
+      integer num_elems
+      real attrib(num_elems)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3429,7 +3429,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write an element blocks attributes
@@ -3438,14 +3438,14 @@ C
      $  num_elems, attrib, ierr)
 C> ex_put_n_elem_attr()
       implicit none
-      integer idexo 
-      integer elem_blk_id 
-      integer start_elem_num 
-      integer num_elems 
-      real attrib(num_elems) 
+      integer idexo
+      integer elem_blk_id
+      integer start_elem_num
+      integer num_elems
+      real attrib(num_elems)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3461,12 +3461,12 @@ C
       subroutine exgelt (idexo, elem_blk_id, elem_type, ierr)
 C> ex_get_elem_type()
       implicit none
-      integer idexo 
-      integer elem_blk_id 
-      character*(*) elem_type 
+      integer idexo
+      integer elem_blk_id
+      character*(*) elem_type
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3474,7 +3474,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read a variable for an element block
@@ -3484,19 +3484,19 @@ C
      $  num_elem, elem_var_vals, ierr)
 C> ex_get_n_var()
       implicit none
-      integer idexo 
-      integer time_step 
-      integer elem_var_index 
-      integer elem_blk_id 
-      integer num_elem_this_blk 
-      integer start_elem_num 
-      integer num_elem 
-      real elem_var_vals(num_elem) 
+      integer idexo
+      integer time_step
+      integer elem_var_index
+      integer elem_blk_id
+      integer num_elem_this_blk
+      integer start_elem_num
+      integer num_elem
+      real elem_var_vals(num_elem)
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 time_step4 
-      integer*4 elem_var_index4 
+      integer*4 idexo4
+      integer*4 time_step4
+      integer*4 elem_var_index4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3508,7 +3508,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write a variable slab for an element block
@@ -3518,18 +3518,18 @@ C
      $  ierr)
 C> ex_put_elem_var_slab()
       implicit none
-      integer idexo 
-      integer time_step 
-      integer elem_var_index 
-      integer elem_blk_id 
-      integer start_pos 
-      integer num_vals 
-      real elem_var_vals(num_vals) 
+      integer idexo
+      integer time_step
+      integer elem_var_index
+      integer elem_blk_id
+      integer start_pos
+      integer num_vals
+      real elem_var_vals(num_vals)
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 time_step4 
-      integer*4 elem_var_index4 
+      integer*4 idexo4
+      integer*4 time_step4
+      integer*4 elem_var_index4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3541,7 +3541,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the values of a single nodal variable for a single time step
@@ -3550,17 +3550,17 @@ C
      $  start_node_num, num_nodes, nodal_vars, ierr)
 C> ex_get_n_var()
       implicit none
-      integer idexo 
-      integer time_step 
-      integer nodal_var_index 
-      integer start_node_num 
-      integer num_nodes 
-      real nodal_vars(num_nodes) 
+      integer idexo
+      integer time_step
+      integer nodal_var_index
+      integer start_node_num
+      integer num_nodes
+      real nodal_vars(num_nodes)
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 time_step4 
-      integer*4 nodal_var_index4 
+      integer*4 idexo4
+      integer*4 time_step4
+      integer*4 nodal_var_index4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3571,7 +3571,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write nodal variable slab
@@ -3580,17 +3580,17 @@ C
      $  start_pos, num_vals, nodal_var_vals, ierr)
 C> ex_put_nodal_var_slab()
       implicit none
-      integer idexo 
-      integer time_step 
-      integer nodal_var_index 
-      integer start_pos 
-      integer num_vals 
-      real nodal_var_vals(num_vals) 
+      integer idexo
+      integer time_step
+      integer nodal_var_index
+      integer start_pos
+      integer num_vals
+      real nodal_var_vals(num_vals)
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 time_step4 
-      integer*4 nodal_var_index4 
+      integer*4 idexo4
+      integer*4 time_step4
+      integer*4 nodal_var_index4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3601,7 +3601,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the element numbering map
@@ -3609,13 +3609,13 @@ C
       subroutine exgnenm (idexo, starte, num_ent, elem_map, ierr)
 C> ex_get_n_elem_num_map()
       implicit none
-      integer idexo 
-      integer starte 
-      integer num_ent 
-      integer elem_map(num_ent) 
+      integer idexo
+      integer starte
+      integer num_ent
+      integer elem_map(num_ent)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3623,7 +3623,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the element numbering map
@@ -3631,13 +3631,13 @@ C
       subroutine expnenm (idexo, starte, num_ent, elem_map, ierr)
 C> ex_put_partial_id_map()
       implicit none
-      integer idexo 
-      integer starte 
-      integer num_ent 
-      integer elem_map(num_ent) 
+      integer idexo
+      integer starte
+      integer num_ent
+      integer elem_map(num_ent)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3645,7 +3645,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the node numbering map
@@ -3653,13 +3653,13 @@ C
       subroutine exgnnnm (idexo, startn, num_ent, node_map, ierr)
 C> ex_get_n_node_num_map()
       implicit none
-      integer idexo 
-      integer startn 
-      integer num_ent 
-      integer node_map(num_ent) 
+      integer idexo
+      integer startn
+      integer num_ent
+      integer node_map(num_ent)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3667,7 +3667,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the node numbering map
@@ -3675,13 +3675,13 @@ C
       subroutine expnnnm (idexo, startn, num_ent, node_map, ierr)
 C> ex_put_partial_id_map()
       implicit none
-      integer idexo 
-      integer startn 
-      integer num_ent 
-      integer node_map(num_ent) 
+      integer idexo
+      integer startn
+      integer num_ent
+      integer node_map(num_ent)
       integer ierr
 C
-      integer*4 idexo4 
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3689,7 +3689,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the node map for a processor
@@ -3698,15 +3698,15 @@ C
      $  processor, ierr)
 C> ex_get_processor_node_maps()
       implicit none
-      integer idexo 
-      integer node_mapi(*) 
-      integer node_mapb(*) 
-      integer node_mape(*) 
-      integer processor 
+      integer idexo
+      integer node_mapi(*)
+      integer node_mapb(*)
+      integer node_mape(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3716,7 +3716,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write a node map for a processor
@@ -3725,15 +3725,15 @@ C
      $  processor, ierr)
 C> ex_put_processor_node_maps()
       implicit none
-      integer idexo 
-      integer node_mapi(*) 
-      integer node_mapb(*) 
-      integer node_mape(*) 
-      integer processor 
+      integer idexo
+      integer node_mapi(*)
+      integer node_mapb(*)
+      integer node_mape(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3743,7 +3743,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the element map for a processor
@@ -3751,14 +3751,14 @@ C
       subroutine exgemp (idexo, elem_mapi, elem_mapb, processor, ierr)
 C> ex_get_processor_elem_maps()
       implicit none
-      integer idexo 
-      integer elem_mapi(*) 
-      integer elem_mapb(*) 
-      integer processor 
+      integer idexo
+      integer elem_mapi(*)
+      integer elem_mapb(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3767,7 +3767,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the element map for a processor
@@ -3775,14 +3775,14 @@ C
       subroutine expemp (idexo, elem_mapi, elem_mapb, processor, ierr)
 C> ex_put_processor_elem_maps()
       implicit none
-      integer idexo 
-      integer elem_mapi(*) 
-      integer elem_mapb(*) 
-      integer processor 
+      integer idexo
+      integer elem_mapi(*)
+      integer elem_mapb(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3791,7 +3791,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the communications map parameters for a single processor
@@ -3800,16 +3800,16 @@ C
      $  ecmap_ids, ecmap_elem_cnts, processor, ierr)
 C> ex_get_cmap_params()
       implicit none
-      integer idexo 
-      integer ncmap_ids(*) 
-      integer ncmap_node_cnts(*) 
-      integer ecmap_ids(*) 
-      integer ecmap_elem_cnts(*) 
-      integer processor 
+      integer idexo
+      integer ncmap_ids(*)
+      integer ncmap_node_cnts(*)
+      integer ecmap_ids(*)
+      integer ecmap_elem_cnts(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3819,7 +3819,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the communications map parameters for a single processor
@@ -3828,16 +3828,16 @@ C
      $  emap_elem_cnts, processor, ierr)
 C> ex_put_cmap_params()
       implicit none
-      integer idexo 
-      integer nmap_ids(*) 
-      integer nmap_node_cnts(*) 
-      integer emap_ids(*) 
-      integer emap_elem_cnts(*) 
-      integer processor 
+      integer idexo
+      integer nmap_ids(*)
+      integer nmap_node_cnts(*)
+      integer emap_ids(*)
+      integer emap_elem_cnts(*)
+      integer processor
       integer ierr
 
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3847,7 +3847,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the communications map parameters for all processors
@@ -3856,25 +3856,25 @@ C
      $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr)
 C> ex_put_cmap_params()
       implicit none
-      integer idexo 
-      integer nmap_ids(*) 
-      integer nmap_node_cnts(*) 
-      integer nproc_ptrs(*) 
-      integer emap_ids(*) 
-      integer emap_elem_cnts(*) 
-      integer eproc_ptrs(*) 
+      integer idexo
+      integer nmap_ids(*)
+      integer nmap_node_cnts(*)
+      integer nproc_ptrs(*)
+      integer emap_ids(*)
+      integer emap_elem_cnts(*)
+      integer eproc_ptrs(*)
       integer ierr
-      
-      integer*4 idexo4 
+
+      integer*4 idexo4
       integer*4 ierr4
 C
       idexo4 = idexo
       call expcmpc4 (idexo4, nmap_ids, nmap_node_cnts,
      $  nproc_ptrs, emap_ids, emap_elem_cnts, eproc_ptrs, ierr4)
       ierr = ierr4
-      
+
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the nodal communications map for a single processor
@@ -3883,15 +3883,15 @@ C
      $  processor, ierr)
 C> ex_get_node_cmap()
       implicit none
-      integer idexo 
-      integer map_id 
-      integer node_ids(*) 
-      integer proc_ids(*) 
-      integer processor 
+      integer idexo
+      integer map_id
+      integer node_ids(*)
+      integer proc_ids(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3901,7 +3901,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the nodal communications map for a single processor
@@ -3910,15 +3910,15 @@ C
      $  processor, ierr)
 C> ex_put_node_cmap()
       implicit none
-      integer idexo 
-      integer map_id 
-      integer node_ids(*) 
-      integer proc_ids(*) 
-      integer processor 
+      integer idexo
+      integer map_id
+      integer node_ids(*)
+      integer proc_ids(*)
+      integer processor
       integer ierr
 C
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3928,7 +3928,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Read the elemental communications map for a single processor
@@ -3937,16 +3937,16 @@ C
      $  proc_ids, processor, ierr)
 C> ex_get_elem_cmap()
       implicit none
-      integer idexo 
-      integer map_id 
-      integer elem_ids(*) 
-      integer side_ids(*) 
-      integer proc_ids(*) 
-      integer processor 
+      integer idexo
+      integer map_id
+      integer elem_ids(*)
+      integer side_ids(*)
+      integer proc_ids(*)
+      integer processor
       integer ierr
 
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 C
       idexo4 = idexo
@@ -3956,7 +3956,7 @@ C
       ierr = ierr4
 C
       end
-      
+
 C-----------------------------------------------------------------------
 C
 C  Write the elemental communications map for a single processor
@@ -3965,16 +3965,16 @@ C
      $  proc_ids, processor, ierr)
 C> ex_put_elem_cmap()
       implicit none
-      integer idexo 
-      integer map_id 
-      integer elem_ids(*) 
-      integer side_ids(*) 
-      integer proc_ids(*) 
-      integer processor 
+      integer idexo
+      integer map_id
+      integer elem_ids(*)
+      integer side_ids(*)
+      integer proc_ids(*)
+      integer processor
       integer ierr
 
-      integer*4 idexo4 
-      integer*4 processor4 
+      integer*4 idexo4
+      integer*4 processor4
       integer*4 ierr4
 
       idexo4 = idexo

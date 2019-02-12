@@ -118,12 +118,12 @@ bool IfpackPreconditionerFactory::isCompatible(
   return true;
 }
 
-bool IfpackPreconditionerFactory::applySupportsConj(EConj conj) const
+bool IfpackPreconditionerFactory::applySupportsConj(EConj /* conj */) const
 {
   return true;
 }
 
-bool IfpackPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
+bool IfpackPreconditionerFactory::applyTransposeSupportsConj(EConj /* conj */) const
 {
   return false; // See comment below
 }
@@ -137,7 +137,7 @@ IfpackPreconditionerFactory::createPrec() const
 void IfpackPreconditionerFactory::initializePrec(
   const Teuchos::RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
   ,PreconditionerBase<double>                                      *prec
-  ,const ESupportSolveUse                                           supportSolveUse
+  ,const ESupportSolveUse                                           /* supportSolveUse */
   ) const
 {
   using Teuchos::outArg;
@@ -318,9 +318,9 @@ void IfpackPreconditionerFactory::initializePrec(
 }
 
 void IfpackPreconditionerFactory::uninitializePrec(
-  PreconditionerBase<double>                                *prec
-  ,Teuchos::RCP<const LinearOpSourceBase<double> >  *fwdOpSrc
-  ,ESupportSolveUse                                         *supportSolveUse
+  PreconditionerBase<double>                                * /* prec */
+  ,Teuchos::RCP<const LinearOpSourceBase<double> >  * /* fwdOpSrc */
+  ,ESupportSolveUse                                         * /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement when needed!

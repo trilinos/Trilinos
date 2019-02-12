@@ -75,7 +75,7 @@ namespace Teuchos {
     }
 
     std::string
-    Banner::validateMatrixType (const std::string& matrixType, const bool tolerant)
+    Banner::validateMatrixType (const std::string& matrixType, const bool /* tolerant */)
     {
       // Canonical representation is lowercase
       std::string out = trim_and_lowercase (matrixType);
@@ -89,7 +89,7 @@ namespace Teuchos {
     }
 
     std::string
-    Banner::validateDataType (const std::string& dataType, const bool tolerant)
+    Banner::validateDataType (const std::string& dataType, const bool /* tolerant */)
     {
       // Canonical representation is lowercase
       std::string out = trim_and_lowercase (dataType);

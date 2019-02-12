@@ -90,6 +90,9 @@
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
 #endif
+#ifdef HAVE_MUELU_EPETRA
+#include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
+#endif
 #endif
 
 
@@ -143,6 +146,11 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
     Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
     Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
+#if defined(HAVE_MUELU_BELOS)
+    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
+    mlop = Teuchos::rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
+#endif
+
     mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
   }
 };
@@ -231,7 +239,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Convenient definitions
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero(), one = STS::one();
+  SC zero = STS::zero();//, one = STS::one();
   typedef typename STS::magnitudeType real_type;
   typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
@@ -242,36 +250,41 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
-  std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
-  std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
-  bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
-  std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
-  int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
-  std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone | matvec)");
-  double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
-  bool        binaryFormat      = false;             clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
+  std::string xmlFileName       = "";                 clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
+  std::string yamlFileName      = "";                 clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  bool        printTimings      = true;               clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+  std::string timingsFormat     = "table-fixed";      clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
+  int         writeMatricesOPT  = -2;                 clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
+  std::string dsolveType        = "belos", solveType; clp.setOption("solver",                &dsolveType,        "solve type: (none | cg | gmres | standalone | matvec)");
+  std::string belosType         = "cg";               clp.setOption("belosType",             &belosType,         "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
+  double      dtol              = 1e-12, tol;         clp.setOption("tol",                   &dtol,              "solver convergence tolerance");
+  bool        binaryFormat      = false;              clp.setOption("binary", "ascii",       &binaryFormat,      "print timings to screen");
 
-  std::string rowMapFile;                            clp.setOption("rowmap",                &rowMapFile,        "map data file");
-  std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
-  std::string domainMapFile;                         clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
-  std::string rangeMapFile;                          clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
-  std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
-  std::string rhsFile;                               clp.setOption("rhs",                   &rhsFile,           "rhs data file");
-  std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
-  std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
-  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
-  int         numResolves       = 0;                 clp.setOption("resolve",               &numResolves,       "#times to redo solve");
-  int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
-  bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  std::string rowMapFile;                             clp.setOption("rowmap",                &rowMapFile,        "map data file");
+  std::string colMapFile;                             clp.setOption("colmap",                &colMapFile,        "colmap data file");
+  std::string domainMapFile;                          clp.setOption("domainmap",             &domainMapFile,     "domainmap data file");
+  std::string rangeMapFile;                           clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
+  std::string matrixFile;                             clp.setOption("matrix",                &matrixFile,        "matrix data file");
+  std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
+  std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
+  std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
+  int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
+  int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
+  int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
+  int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
+  bool        scaleResidualHist = true;               clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+  bool        solvePreconditioned = true;             clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
 #ifdef HAVE_MUELU_TPETRA
-  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
+  std::string equilibrate = "no" ;                    clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
 #ifdef HAVE_MUELU_CUDA
-  bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
-  bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+  bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-  int  cacheSize = 0;                                clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+  int  cacheSize = 0;                                 clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
+#ifdef HAVE_MPI
+  bool provideNodeComm = false;                       clp.setOption("nodecomm","nonodecomm",    &provideNodeComm,  "make the nodal communicator available");
+#endif
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -288,10 +301,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
   out.setOutputToRootOnly(0);
- 
+
   ParameterList paramList;
   auto inst = xpetraParameters.GetInstantiation();
-  
+
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   } else {
@@ -302,8 +315,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   }
 
-  if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "cg") { 
-    dsolveType = "gmres";
+  if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "belos") {
+    belosType = "gmres";
     out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES"<<std::endl;
   }
 
@@ -318,6 +331,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         realParams.setEntry(name, paramList.getEntry(name));
     }
   }
+
+#ifdef HAVE_MPI
+  // Generate the node-level communicator, if we want one
+  Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
+  int NodeId = comm->getRank();
+  if(provideNodeComm) {
+    nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
+    //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
+  }
+#endif
 
   // Retrieve matrix parameters (they may have been changed on the command line)
   // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
@@ -343,15 +366,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Matrix>      A;
   RCP<const Map>   map;
   RCP<RealValuedMultiVector> coordinates;
-  typedef typename RealValuedMultiVector::scalar_type Real;
   RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
+  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
-  
+
   // Do equilibration if requested
 #ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
@@ -461,16 +483,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
           if(!coordinates.is_null()) {
-            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(coordinates);
+            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<real_type,LO,GO,NO>::MV2EpetraMV(coordinates);
             if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
             if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
-            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);            
+            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);
           }
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
 #endif
         }
         else {
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates, nullspace);
+          const std::string userName = "user data";
+          Teuchos::Array<LO> lNodesPerDim(3, 10);
+          Teuchos::ParameterList& userParamList = mueluList.sublist(userName);
+          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+          userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
+          userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
         }
       }
 #ifdef HAVE_MUELU_CUDA
@@ -551,7 +579,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MUELU_CUDA
           if(profileSolve) cudaProfilerStop();
 #endif
-        } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
+        } else if (solveType == "belos") {
 #ifdef HAVE_MUELU_BELOS
           tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
 #ifdef HAVE_MUELU_CUDA
@@ -595,24 +623,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           }
 
           // Belos parameter list
-          Teuchos::ParameterList belosList;
-          belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-          belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-          belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-          belosList.set("Output Frequency",      1);
-          belosList.set("Output Style",          Belos::Brief);
+          RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
+          belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+          belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+          belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+          belosList->set("Output Frequency",      1);
+          belosList->set("Output Style",          Belos::Brief);
           if (!scaleResidualHist)
-            belosList.set("Implicit Residual Scaling", "None");
+            belosList->set("Implicit Residual Scaling", "None");
 
           // Create an iterative solver manager
-          RCP< Belos::SolverManager<SC, MV, OP> > solver;
-          if (solveType == "cg") {
-            solver = rcp(new Belos::PseudoBlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-          } else if (solveType == "gmres") {
-            solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-          } else if (solveType == "bicgstab") {
-            solver = rcp(new Belos::BiCGStabSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-          }
+          Belos::SolverFactory<SC, MV, OP> solverFactory;
+          RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
+          solver->setProblem(belosProblem);
 
           // Perform solve
           Belos::ReturnType ret = Belos::Unconverged;

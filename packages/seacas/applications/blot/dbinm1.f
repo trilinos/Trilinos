@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -99,19 +99,19 @@ C           Reserve scratch space to create new element variable truth table
          ENDIF
 
       END IF
-      
+
       RETURN
-      
+
       END
 
       SUBROUTINE MODEVTT(NELBLK, NVAREL, ISHEX, IDELB, HEXID, IEVTT,
      &                   TTSCR)
-C     Add rows to element variable truth table for the SHELL 
+C     Add rows to element variable truth table for the SHELL
 C     element blocks of the HEXSHELL.  IEVTT contains the element variable
 C     truth table from the exodusII file.  HEXID contains the ID of
 C     the HEXSHELL element blocks. TTSCR is a scratch array for the
 C     element variable truth table.
-C     Design - loop over the number of element blocks. If the element 
+C     Design - loop over the number of element blocks. If the element
 C     block id in the IDELB matches the element block id in HEXID, copy the
 C     row from the IEVTT array to the TTSCR array and then add a
 C     row of zeros into the TTSCR array for the next element block
@@ -125,16 +125,16 @@ C     block created from hexshell, then no variables)
 C ... The IDELB has both hexshell-shell and hex ids already in it
 C     so it's rows don't necessarily correspond to the truth table
 C     rows.
-      
+
       INTEGER NELBLK, NVAREL, ISHEX
-      INTEGER IDELB(*), HEXID(*) 
+      INTEGER IDELB(*), HEXID(*)
       INTEGER IEVTT(NVAREL,NELBLK), TTSCR(NVAREL,NELBLK)
 
 C     Index into HEXID array
       IHEX  = 1
 C     Index into truth table array (IEVTT), max value = NELBLK-ISHEX
       IFROM = 1
-C     Index into block id array (IDELB)      
+C     Index into block id array (IDELB)
       IID   = 1
 C     Index into TTSCR array
       ITO   = 1

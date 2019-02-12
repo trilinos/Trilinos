@@ -52,6 +52,7 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
+#include <utility>
 #include <vector>
 
 /*! \class Teuchos::SerialSymDenseMatrix
@@ -271,6 +272,12 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
     \return Integer error code, set to 0 if successful.
   */
   int putScalar( const ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero(), bool fullMatrix = false );
+
+  //! Swap values between this matrix and incoming matrix.
+  /*!
+    Swaps pointers and associated state without copying the matrix data.
+  */
+  void swap (SerialSymDenseMatrix<OrdinalType, ScalarType> &B);
 
   //! Set all values in the active area (upper/lower triangle) of this matrix to be random numbers.
   /*! \note The diagonal will be the sum of the off diagonal elements, plus a bias, so the matrix is SPD.
@@ -629,6 +636,18 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType v
     }
   }
   return 0;
+}
+
+template<typename OrdinalType, typename ScalarType> void
+SerialSymDenseMatrix<OrdinalType, ScalarType>::swap(
+  SerialSymDenseMatrix<OrdinalType, ScalarType> &B)
+{
+  std::swap(values_ ,      B.values_);
+  std::swap(numRowCols_,   B.numRowCols_);
+  std::swap(stride_,       B.stride_);
+  std::swap(valuesCopied_, B.valuesCopied_);
+  std::swap(upper_,        B.upper_);
+  std::swap(UPLO_,         B.UPLO_);
 }
 
 template<typename OrdinalType, typename ScalarType>

@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 
       PROGRAM EX2EX1V2
@@ -37,7 +37,7 @@ C=======================================================================
 
 C   --*** EX2EX1V2 *** EXODUS II to EXODUS I translator
 C   --
-C   --EX2EX1V2 reads the EXODUS II V2.02 and V2.03 
+C   --EX2EX1V2 reads the EXODUS II V2.02 and V2.03
 C   --regular and history files and writes an EXODUS I database file.
 C   --
 C   --Expects the output database on unit 11.
@@ -50,7 +50,7 @@ C   --Expects the output database on unit 11.
 c      CHARACTER*32 QAREC(4,MAXQA)
 c      CHARACTER*80 INFO(MAXINF)
 
-C ... Names read in are 32-characters long      
+C ... Names read in are 32-characters long
       CHARACTER*(mxstln) MAMECO(6)
       CHARACTER*(mxstln) MAMES(256)
 C ... Names written out are 8-characters long, truncate with no warning
@@ -127,7 +127,7 @@ c
         errmsg = 'Database "'//netfil(:lnam)//'" does not exist.'
         CALL PRTERR ('FATAL', errmsg(:lenstr(errmsg)))
         call exerr('ex2ex1v2', errmsg, exlmsg)
-        goto 140 
+        goto 140
       endif
 
       write(*,*) 'Input file name: ',netfil(1:lnam)
@@ -140,7 +140,7 @@ C       open the output database and write the initial variables
       NDB = 20
       CALL get_argument(2,ndbfil, lnam)
       open(unit=ndb, file=ndbfil(:lnam), form='unformatted',
-     *     status='unknown', iostat=ierr)      
+     *     status='unknown', iostat=ierr)
        IF (IERR .NE. 0) THEN
          errmsg = 'Error opening output file "'//ndbfil(:lnam)//'".'
          CALL PRTERR ('FATAL', errmsg(:LENSTR(errmsg)))
@@ -150,7 +150,7 @@ C       open the output database and write the initial variables
 c
 c	get initialization parameters from regular netcdf file
 c
-      CALL EXGINI (netid, title, ndim, numnp, numel, 
+      CALL EXGINI (netid, title, ndim, numnp, numel,
      &       nelblk, numnps, numess, nerr)
       if (nerr .lt. 0) then
         call exerr('ex2ex1v2', 'Error from exgini', exlmsg)
@@ -296,7 +296,7 @@ C   --Read the element blocks
          call getin (ia(knelb+ielb-1),num)
          if (numlnk .gt. 0) then
            CALL MDLONG ('LINK', KLINK, num*numlnk)
-           CALL EXGELC (netid, a(kidelb+ielb-1), 
+           CALL EXGELC (netid, a(kidelb+ielb-1),
      &         a(klink), nerr)
            if (nerr .lt. 0) then
               call exerr('ex2ex1v2', 'Error from exgelc', exlmsg)
@@ -374,7 +374,7 @@ C
 62	  continue
 	endif
 64	continue
-         
+
       CALL DBONPS (NDB, NUMNPS, LNPSNL,
      &   A(KIDNS), A(KNNNS), A(KIXNNS), A(KLSTNS), A(KXFACN))
 
@@ -477,7 +477,7 @@ C
 108	  continue
 	endif
 110	continue
-         
+
       CALL DBOESS (NDB, NUMESS, LESSEL, LESSNL,
      &   A(KIDSS), A(KNESS), A(KNNSS), A(KIXESS), A(KIXNSS),
      &   A(KLTESS), A(KLTNSS), A(KXFACS))
@@ -533,7 +533,7 @@ C   --Read the QA records
 
       call rdqain (netid, nqarec, c(kqatmp), ninfo, c(kinfo))
 
-      if (nqarec .gt. 0) 
+      if (nqarec .gt. 0)
      &    call resize (nqarec, c(kqarec), c(kqatmp))
 
       IF (NQAREC .GE. 0) THEN
@@ -575,9 +575,9 @@ c
         endif
       else
         nvarhi = 0
-      end if 
- 
-      call mdrsrv ('ISEVOK', kievok, nvarel*nelblk) 
+      end if
+
+      call mdrsrv ('ISEVOK', kievok, nvarel*nelblk)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 130
 c
@@ -674,7 +674,7 @@ c
       CALL MDRSRV ('VAREL', KVAREL, NVAREL * NUMEL)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 130
-      
+
 c
 c       read in the number of history time steps and the number of
 C       whole time steps
@@ -698,7 +698,7 @@ c
       endif
 
 c
-c       read the time step information 
+c       read the time step information
 c
 
       istep = 0
@@ -707,7 +707,7 @@ c
          call exerr('ex2ex1v2', 'Error from exgtim', exlmsg)
          goto 140
       endif
-     
+
       do 300 ihstep=1,numstp
 
         write (*,'(4x,"processing time step ", i4)') ihstep
@@ -746,7 +746,7 @@ c
           istep = istep + 1
 
 c
-c           get the global variable values 
+c           get the global variable values
 c
           if( nvargl .gt. 0) then
             call exggv (netid, istep, nvargl, a(kvargl), nerr)
@@ -755,11 +755,11 @@ c
                goto 140
             endif
           end if
-c                
+c
 c           get the nodal variable values
 c
           do 210 j=1, nvarnp
-            call exgnv (netid, istep, j, numnp, 
+            call exgnv (netid, istep, j, numnp,
      &         a(kvarnp+(j-1)*numnp), nerr)
             if (nerr .lt. 0) then
                call exerr('ex2ex1v2', 'Error from exgnv', exlmsg)
@@ -777,11 +777,11 @@ c
               do 240 j=1, nvarel
 c
 c                If truth table indicates element values are available
-c                for the element variable, get the values for the 
+c                for the element variable, get the values for the
 c                element variable.
 c
                 if(a(kievok+l +j-1) .ne. 0) then
-                  call exgev (netid, istep, j, a(kidelb+k-1), 
+                  call exgev (netid, istep, j, a(kidelb+k-1),
      &                 a(knelb+k-1), a(kvarel+ielo), nerr)
                   if (nerr .lt. 0) then
                      call exerr('ex2ex1v2', 'Error from exgev', exlmsg)
@@ -835,7 +835,7 @@ c
       endif
 
 999   if (netid .ge. 0 ) call exclos (netid, ierr)
-      
+
 
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
@@ -892,7 +892,7 @@ C   --   QATMP  - IN - the QA records containing size = 32
  75         CONTINUE
  50      CONTINUE
       END IF
-            
+
       RETURN
       END
 

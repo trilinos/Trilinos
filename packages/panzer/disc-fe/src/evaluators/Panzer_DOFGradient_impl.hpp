@@ -55,9 +55,8 @@ namespace {
 
   template <typename ScalarT,typename ArrayT>
   struct evaluateGrad_withSens {
-    using exec_space = typename PHX::exec_space;
-    using scratch_view = Kokkos::View<ScalarT*,typename exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
-    using team_policy = Kokkos::TeamPolicy<exec_space>::member_type;
+    using scratch_view = Kokkos::View<ScalarT*,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+    using team_policy = Kokkos::TeamPolicy<PHX::exec_space>::member_type;
 
     PHX::MDField<ScalarT>  dof_grad_;
     PHX::MDField<const ScalarT,Cell,Point>  dof_value_;
@@ -97,8 +96,16 @@ namespace {
 	  }
 	});
       } else {
-	scratch_view dof_values(team.team_shmem(),num_fields_,fad_size_);
-	scratch_view point_values(team.team_shmem(),num_points_,fad_size_);
+        scratch_view dof_values;
+        scratch_view point_values;
+        if (Sacado::IsADType<ScalarT>::value) {
+          dof_values = scratch_view(team.team_shmem(),num_fields_,fad_size_);
+          point_values = scratch_view(team.team_shmem(),num_points_,fad_size_);
+        }
+        else {
+          dof_values = scratch_view(team.team_shmem(),num_fields_);
+          point_values = scratch_view(team.team_shmem(),num_points_);
+        }
 
 	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_fields_), [&] (const int& dof) {
 	  dof_values(dof) = dof_value_(cell,dof);
@@ -123,7 +130,7 @@ namespace {
       }
     }
 
-    size_t team_shmem_size(int team_size ) const
+    size_t team_shmem_size(int /* team_size */ ) const
     {
       if (not use_shared_memory_)
 	return 0;
@@ -195,7 +202,7 @@ void
 DOFGradient<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
   if(not use_descriptors_)
     basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);

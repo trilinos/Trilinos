@@ -182,6 +182,9 @@ Piro::PerformMoochoAnalysis(
 
   return (int) solution_status;
 #else
+  (void)piroModel;
+  (void)moochoParams;
+  (void)p;
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include MOOCHO analysis."
       << endl;
@@ -236,6 +239,9 @@ Piro::PerformDakotaAnalysis(
 
   return 0;
 #else
+  (void)piroModel;
+  (void)dakotaParams;
+  (void)p;
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include Dakota analysis."
       << "\nYou must enable TriKota." << endl;
@@ -289,6 +295,10 @@ Piro::PerformOptiPackAnalysis(
 
   return (int) solveResult;
 #else
+  (void)piroModel;
+  (void)optipackParams;
+  (void)globipackParams;
+  (void)p;
  *out << "ERROR: Trilinos/Piro was not configured to include OptiPack analysis."
       << endl;
  return 0;  // should not fail tests
@@ -468,6 +478,8 @@ Piro::PerformROLAnalysis(
 
   return 0;
 #else
+  (void)piroModel;
+  (void)p;
  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
  *out << "ERROR: Trilinos/Piro was not configured to include ROL analysis."
       << "\nYou must enable ROL." << endl;

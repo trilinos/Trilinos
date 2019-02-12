@@ -182,7 +182,7 @@ deep_copy (Epetra_Vector& X_e,
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
   if (X_t.template need_sync<memory_space> ()) {
-    auto X_t_lcl_2d = X_t.template getLocalView<host_memory_space> ();
+    auto X_t_lcl_2d = X_t.getLocalViewHost ();
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_e_lcl, X_t_lcl);
   }
@@ -247,8 +247,8 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
   if (X_t.template need_sync<memory_space> ()) {
-    X_t.template modify<host_memory_space> ();
-    auto X_t_lcl_2d = X_t.template getLocalView<host_memory_space> ();
+    X_t.modify_host ();
+    auto X_t_lcl_2d = X_t.getLocalViewHost ();
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }
@@ -565,11 +565,11 @@ typename MV::dot_type accurate_dot (const MV& X, const MV& Y)
   using dot_type = typename MV::dot_type;
 
   const LO lclNumRows = X.getLocalLength ();
-  const_cast<MV&> (X).template sync<Kokkos::HostSpace> ();
-  auto X_lcl_2d = X.template getLocalView<Kokkos::HostSpace> ();
+  const_cast<MV&> (X).sync_host ();
+  auto X_lcl_2d = X.getLocalViewHost();
   auto X_lcl = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
-  const_cast<MV&> (Y).template sync<Kokkos::HostSpace> ();
-  auto Y_lcl_2d = Y.template getLocalView<Kokkos::HostSpace> ();
+  const_cast<MV&> (Y).sync_host ();
+  auto Y_lcl_2d = Y.getLocalViewHost();
   auto Y_lcl = Kokkos::subview (Y_lcl_2d, Kokkos::ALL (), 0);
 
   long double sum = 0.0;
@@ -973,8 +973,8 @@ copyGatheredMultiVector (Tpetra::MultiVector<SC, LO, GO, NT>& X,
   using dense_matrix_type = HostDenseMatrix<SC, LO, GO, NT>;
   using dev_memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;
 
-  X.template sync<Kokkos::HostSpace> ();
-  auto X_lcl = X.template getLocalView<Kokkos::HostSpace> ();
+  X.sync_host ();
+  auto X_lcl = X.getLocalViewHost ();
   dense_matrix_type X_copy (label, X.getLocalLength (), X.getNumVectors ());
   Kokkos::deep_copy (X_copy, X_lcl);
 

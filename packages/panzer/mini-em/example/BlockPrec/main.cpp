@@ -694,6 +694,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
   // Output timer data
   if (use_stacked_timer) {
+    stacked_timer->stop("Mini-EM");
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
@@ -787,8 +788,8 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
         mesh->addCellField(fieldItr->first,pb->elementBlockID());
       else if(basis->getElementSpace()==panzer::PureBasis::HCURL ||
           basis->getElementSpace()==panzer::PureBasis::HDIV    ) {
-        for(int i=0;i<basis->dimension();i++)
-          mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+        for(int dim=0;dim<basis->dimension();++dim)
+          mesh->addCellField(fieldItr->first+dimenStr[dim],pb->elementBlockID());
       }
     }
 

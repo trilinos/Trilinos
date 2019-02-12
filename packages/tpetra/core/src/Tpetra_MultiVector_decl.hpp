@@ -2410,19 +2410,19 @@ namespace Tpetra {
     virtual void
     copyAndPermuteNew (const SrcDistObject& sourceObj,
                        const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs);
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
 
     virtual void
     packAndPrepareNew (const SrcDistObject& sourceObj,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                        Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
                        const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
                        size_t& constantNumPackets,
                        Distributor& /* distor */);
 
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+    unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& importLIDs,
                          const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
                          const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
                          const size_t constantNumPackets,

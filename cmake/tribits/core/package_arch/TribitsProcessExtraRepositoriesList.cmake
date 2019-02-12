@@ -646,7 +646,7 @@ FUNCTION(TRIBITS_FILTER_OR_ASSERT_EXTRA_REPOS)
         SET(ADD_EXTRAREPO  FALSE)
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE("-- "
-            "WARNING: Ignoring missing extra repo '${EXTRAREPO_NAME}'"
+            "NOTE: Ignoring missing extra repo '${EXTRAREPO_NAME}'"
             " as requested since ${EXTRAREPO_SOURCE_DIR} does not exist" )
         ELSE()
           MESSAGE( FATAL_ERROR

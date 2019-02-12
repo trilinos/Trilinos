@@ -1,23 +1,23 @@
 C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C -*- Mode: fortran -*-
 C=======================================================================
@@ -112,25 +112,25 @@ C   --changing the table.
           CALL PRTERR ('CMDERR', 'Invalid block/set number')
           GOTO 150
         END IF
-        
+
         CALL FFINTG (IFLD, INTYP, IFIELD,
      &    'new ID', 0, ID, *150)
         IDS(ITEM) = ID
-        
+
         RETURN 1
-        
+
       ELSE IF (VERB .EQ. 'CHANGE') THEN
         MATCH = 3
  98     CONTINUE
         FOUND = .FALSE.
-        
+
         CALL FFINTG (IFLD, INTYP, IFIELD,
      &    'block/set ID', 0, ID, *150)
         IF (ID .LE. 0) RETURN 1
-        
+
         CALL FFINTG (IFLD, INTYP, IFIELD,
      &    'new ID', 0, IDNEW, *150)
-        
+
         IF (FFEXST (IFLD, INTYP)) THEN
           CALL FFCHAR (IFLD, INTYP, CFIELD, 'ALL', WORD)
           IF (MATSTR(WORD, 'FIRST', 1)) THEN
@@ -142,12 +142,12 @@ C   --changing the table.
           ELSE IF (MATSTR(WORD, 'ALL', 1)) THEN
             MATCH = 3
           ELSE
-            CALL PRTERR ('CMDERR', 
+            CALL PRTERR ('CMDERR',
      *        'Invalid CHANGE identifier: ' // WORD)
             GOTO 98
           END IF
         END IF
-        
+
         if (match .eq. 1 .or. match .eq. 3) then
           ITEM = LOCINT (ID, NITEM1, IDS)
           IF ((ITEM .GT. 0) .AND. (ITEM .LE. NITEM1)) THEN
@@ -155,8 +155,8 @@ C   --changing the table.
             IDS(ITEM) = IDNEW
           END IF
         end if
-        
-        
+
+
 C ... Check for same ID in second set of IDs
         if (match .eq. 2 .or. match .eq. 3) then
           IF (NITEM2 .GT. 0) THEN
@@ -167,16 +167,16 @@ C ... Check for same ID in second set of IDs
             END IF
           END IF
         end if
-        
+
         if (FOUND .EQV. .FALSE.) then
           WRITE (STRA, '(I5)') ID
           CALL SQZSTR (STRA, LSTRA)
-          CALL PRTERR ('CMDERR', 
+          CALL PRTERR ('CMDERR',
      *      'Invalid block/set ID ' // STRA(:LSTRA))
         end if
 
         GO TO 98
-        
+
       ELSE IF (VERB .EQ. 'DELETE') THEN
  99     CONTINUE
         CALL FFINTG (IFLD, INTYP, IFIELD,
@@ -186,16 +186,16 @@ C ... Check for same ID in second set of IDs
          IF ((ITEM .LE. 0) .OR. (ITEM .GT. NITEMS)) THEN
            WRITE (STRA, '(I5)') ID
            CALL SQZSTR (STRA, LSTRA)
-           CALL PRTERR ('CMDERR', 
+           CALL PRTERR ('CMDERR',
      *       'Invalid block/set ID ' // STRA(:LSTRA))
            GOTO 99
          END IF
-         
+
          IOLD = ISTAT(ITEM)
          ISTAT(ITEM) = -1
-         
+
 C ... Check and Remove any combines with deleted ID
-         
+
          IF (IOLD .GT. 0) THEN
            NCOMB = INTCNT (IOLD, ISTAT, NITEMS)
            IF (NCOMB .EQ. 1) THEN
@@ -206,7 +206,7 @@ C ... Check and Remove any combines with deleted ID
              CALL CHGINT (IOLD, INEW, ISTAT, NITEMS)
            END IF
          END IF
-         
+
 C ... Check for same ID in second set of IDs
 
          IF (NITEM2 .GT. 0) THEN
@@ -233,9 +233,9 @@ C ... Check for same ID in second set of IDs
             CALL FFINTG (IFLD, INTYP, IFIELD,
      &         'block/set ID', 0, ID2, *120)
             if (id1 .eq. id2 .and. ifirst .le. nitem1) then
-C ... If the two ids match (combine 2 2) then user probably 
+C ... If the two ids match (combine 2 2) then user probably
 C     has done a reset and now wants to recombine items from
-C     each database.              
+C     each database.
               ITEM = LOCINT (ID2, NITEM2, IDS(NITEM1+1)) + NITEM1
             else
               ITEM = LOCINT (ID2, NITEMS, IDS)
@@ -314,7 +314,7 @@ C ... See if incrementing 'first', 'second', 'both', or 'all'
           ELSE IF (MATSTR(WORD, 'ALL', 1)) THEN
             MATCH = 3
           ELSE
-            CALL PRTERR ('CMDERR', 
+            CALL PRTERR ('CMDERR',
      *        'Invalid INCREMENT identifier: ' // WORD)
             GOTO 149
           END IF
@@ -328,7 +328,7 @@ C ... At this point, have type of match specified. Now get increment
            call prterr ('CMDERR', 'ID Increment not specified')
            go to 149
          END IF
-        
+
 C ... Do the increment
          if (match .eq. 1 .or. match .eq. 3) then
            do 143 item = 1, nitem1
@@ -340,7 +340,7 @@ C ... Do the increment
              ids(item) = ids(item) + inc
  144       continue
          end if
-         
+
 C ... Redo the combinations if any match
       DO 145 ITEM = 1, NITEMS
          I = LOCINT (IDS(ITEM), NITEMS, IDS)

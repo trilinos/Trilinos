@@ -597,10 +597,8 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
     invalidate_id_status(exoid, 0, VAR_FAM_PROP(1), model->num_face_maps, invalid_ids);
     invalidate_id_status(exoid, 0, VAR_EM_PROP(1), model->num_elem_maps, invalid_ids);
 
-    if (invalid_ids != NULL) {
-      free(invalid_ids);
-      invalid_ids = NULL;
-    }
+    free(invalid_ids);
+    invalid_ids = NULL;
   }
 
   /* Write dummy values to the names arrays to avoid corruption issues on some

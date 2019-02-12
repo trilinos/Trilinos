@@ -514,6 +514,7 @@ int main(int argc,char * argv[])
      }
 
      stackedTimer->stop("Mixed Poisson");
+     stackedTimer->stopBaseTimer();
      if (stacked_timer_output) {
        Teuchos::StackedTimer::OutputOptions options;
        options.output_fraction = true;

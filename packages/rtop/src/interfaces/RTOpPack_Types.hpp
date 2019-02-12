@@ -646,6 +646,10 @@ private:
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT( primitiveObjs.size()!=1 || indexObjs.size()!=0
         || charObjs.size()!=0 );
+#else
+      (void)primitiveObjs;
+      (void)indexObjs;
+      (void)charObjs;
 #endif
     }
 };

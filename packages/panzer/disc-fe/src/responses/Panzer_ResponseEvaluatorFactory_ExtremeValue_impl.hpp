@@ -70,7 +70,7 @@ void ResponseEvaluatorFactory_ExtremeValue<EvalT,LO,GO>::
 buildAndRegisterEvaluators(const std::string & responseName,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
-                           const Teuchos::ParameterList & user_data) const
+                           const Teuchos::ParameterList & /* user_data */) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;

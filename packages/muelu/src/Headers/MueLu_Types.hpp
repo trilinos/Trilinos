@@ -86,6 +86,18 @@ namespace MueLu {
                     // coarsening across the interface is required.
   };
 
+  // This is use by the structured aggregation index manager to keep track of the underlying mesh
+  // layout.
+  enum IndexingType {
+    UNCOUPLED  = 1, // indicates that the underlying mesh is treated independently from rank to rank
+
+    LOCALLEXI  = 2, // local lexicographic indexing of the mesh, this is similar to uncoupled but
+                    // extra data is used to compute indices accross ranks
+
+    GLOBALLEXI = 3  // global lexicographic indexing of the mesh means that the mesh is ordered
+                    // lexicographically accorss and subsequently split among ranks.
+  };
+
 }
 
 #endif //ifndef MUELU_TYPES_HPP

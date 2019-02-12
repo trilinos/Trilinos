@@ -447,9 +447,9 @@ namespace Tpetra {
     const IT1& first1,
     const IT1& last1,
     const IT2& first2,
-    const IT2& last2,
+    const IT2& /* last2 */,
     const IT3& first3,
-    const IT3& last3)
+    const IT3& /* last3 */)
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
@@ -484,7 +484,7 @@ namespace Tpetra {
     const IT1& first1,
     const IT1& last1,
     const IT2& first2,
-    const IT2& last2)
+    const IT2& /* last2 */)
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
@@ -632,7 +632,7 @@ namespace Tpetra {
   void
   merge2 (IT1& indResultOut, IT2& valResultOut,
           IT1 indBeg, IT1 indEnd,
-          IT2 valBeg, IT2 valEnd)
+          IT2 valBeg, IT2 /* valEnd */)
   {
     if (indBeg == indEnd) {
       indResultOut = indBeg; // It's allowed for indResultOut to alias indEnd
@@ -887,8 +887,12 @@ namespace Tpetra {
 
       auto x_host = x.view_host ();
       typedef typename DualViewType::t_dev::value_type value_type;
-      return Teuchos::ArrayView<value_type> (x_host.data (),
-                                             x_host.extent (0));
+      // mfh 15 Jan 2019: In debug mode, Teuchos::ArrayView's
+      // constructor throws if the pointer is nonnull but the length
+      // is nonpositive.
+      const auto len = x_host.extent (0);
+      return Teuchos::ArrayView<value_type> (len != 0 ? x_host.data () : nullptr,
+                                             len);
     }
 
     /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the

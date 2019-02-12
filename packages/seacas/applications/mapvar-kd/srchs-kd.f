@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C $Id: srchs.f,v 1.3 2007/10/17 18:43:50 gdsjaar Exp $
       SUBROUTINE SRCHS (
@@ -37,9 +37,9 @@ C $Id: srchs.f,v 1.3 2007/10/17 18:43:50 gdsjaar Exp $
      *  NPTS,    XYZPTS,  TOLSRCH,
      *  NISR,    NRSR,    NISS,    NRSS,    ISRCHR,  RSRCHR,
      *  LIST,    IERR )
-C     
+C
 C-----------------------------------------------------------------------
-C     
+C
 C DESCRIPTION:
 C
 C THIS SUBROUTINE CALCULATES THE CLOSEST POINT PROBLEM
@@ -47,7 +47,7 @@ C BETWEEN NPTS POINTS AND NFSRF SURFACES AND RETURNS RESULTS OF
 C SEARCH IN ISRCHR,RSRCHR
 C
 C USED HERE FOR FINDING LOCATION OF EITHER NODE OR ELEMENT CENTROID
-C FROM MESH-B IN SHELL ELEMENT OF MESH-A 
+C FROM MESH-B IN SHELL ELEMENT OF MESH-A
 C
 C-----------------------------------------------------------------------
 C
@@ -97,7 +97,7 @@ C
 C INPUT/OUTPUT ARRAYS
 C
 C ... Needed to interact with C routines on 64-bit systems which have
-C     8-byte integers in Fortran and 4-byte integers in C.      
+C     8-byte integers in Fortran and 4-byte integers in C.
       INTEGER*4 NPTS4, NDIM4, NLIST, LIST(*)
 
       DIMENSION
@@ -144,7 +144,7 @@ c ... Calculate min/max extents of all points...
         GXMAX(2) = MAX(GXMAX(2), XYZPTS(I,2))
         GXMAX(3) = MAX(GXMAX(3), XYZPTS(I,3))
  10   CONTINUE
-      
+
 C Build KD Tree
       if (idebug .ge. 2) then
         call excpus(t1)
@@ -203,7 +203,7 @@ C ... Build a list of points in the query region...
 C ... Skip past points that are outside search domain.
 C     This is much faster than the failed search in kdrectquery, but
 C     does add overhead if all points are in the domain....
-        
+
         if (xmax(1) .lt. gxmin(1) .or. xmin(1) .gt. gxmax(1) .or.
      *      xmax(2) .lt. gxmin(2) .or. xmin(2) .gt. gxmax(2) .or.
      *    xmax(3) .lt. gxmin(3) .or. xmin(3) .gt. gxmax(3)) then
@@ -235,7 +235,7 @@ C ... Debugging statistics.  Also give user an idea that calculation is progress
         DO 140 K = 1, NLIST
           lval = list(k)
           CALL SHLSRC(
-     *      NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,     
+     *      NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,
      *      NRSR,     NRSS,     XYZSRF,   XYZPTS,   LINKSRF,
      *      ISRCHR,   RSRCHR,   LVAL,     IFSRF,    TOLSRCH,  IERR   )
 C
@@ -250,12 +250,12 @@ C ... More debugging stats
         write(nout, *) '  Matches = ',nlistt,' Rate = ',nlistt/(t3-t2)
         write(ntpout, *) '  Matches = ',nlistt,' Rate = ',nlistt/(t3-t2)
       end if
-      
+
       call kdkilltree()
-      
+
  190  format(1x,i9,'/',i9,' T= ',1pe10.3,'/',1pe10.3,
      *  ', R= ',1pe10.3,'/',1pe10.3,' M = ',i10,'/',i10)
 
       RETURN
       END
-      
+

@@ -443,7 +443,7 @@ namespace {
       std::string token_string(tokens);
       StringVector var_list;
       var_list = SLIB::tokenize(token_string, ",");
-    
+
       // At this point, var_list is either a single string, or a string
       // separated from 1 or more block ids with ":" delimiter.
       // For example, sigxx:1:10:100 would indicate that the variable
@@ -483,7 +483,7 @@ namespace {
       std::string token_string(tokens);
       StringVector part_list;
       part_list = SLIB::tokenize(token_string, ",");
-    
+
       std::vector<std::string>::iterator I = part_list.begin();
       while (I != part_list.end()) {
 	int id = std::stoi(*I);
@@ -503,15 +503,15 @@ namespace {
     // Break into tokens separated by "," Each token will then be a
     // ":" separated list of blocks to be omitted for the specified
     // part.
-    
+
     // If "require_ids" is true, then there must be at least one id
     // following the part specification.  If false, then it is OK to
     // just specify a part number and all entities (typically nset or
     // sset) will be omitted on that part.
-    
+
     if (tokens == nullptr)
       return;
-    
+
     std::string token_string(tokens);
     StringVector part_block_list;
     part_block_list = SLIB::tokenize(token_string, ",");
@@ -537,7 +537,7 @@ namespace {
 		  << "       for part " << part_block[0] << "\n";
 	exit(EXIT_FAILURE);
       }
-      
+
       // Extract the part number...
       std::string part(part_block[0],1);
       int part_num = std::stoi(part) - 1;

@@ -87,7 +87,7 @@ namespace Test {
     char trans = mode[0];
 	
     //KokkosBlas::gemv(mode,a,A,x,b,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamGemm",  policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -98,7 +98,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
 
     //KokkosBlas::gemv(mode,a,A,c_x,b,y);    
-   Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamGemm", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -109,7 +109,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
 
     //KokkosBlas::gemv(mode,a,c_A,c_x,b,y);
-   Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamGemm", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(c_A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );

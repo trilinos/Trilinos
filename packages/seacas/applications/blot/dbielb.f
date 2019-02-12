@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -53,14 +53,14 @@ C   --                  'C' to store connectivity (+ NUMLNK + NUMELB)
 C   --                  'A' to store attributes (+ NUMATR + NUMELB)
 C   --   NELBS  - IN  - the number of the first element block to read
 C   --   NELBE  - IN  - the number of the last element block to read
-C   --   IDELB  - OUT - the element block IDs for each block 
-C   --   NUMELB - OUT - the number of elements in each block 
+C   --   IDELB  - OUT - the element block IDs for each block
+C   --   NUMELB - OUT - the number of elements in each block
 C   --   NUMLNK - OUT - the number of nodes per element in each block
-C   --   NUMATR - OUT - the number of attributes in each block 
+C   --   NUMATR - OUT - the number of attributes in each block
 C   --   A      - I/O - the dynamic memory base array for REALS
 C   --   IA     - I/O - the dynamic memory base array for INTEGERS
-C   --   KLINK  - OUT - pointer to the connectivity for each block 
-C   --   KATRIB - OUT - pointer to the attributes for each block 
+C   --   KLINK  - OUT - pointer to the connectivity for each block
+C   --   KATRIB - OUT - pointer to the attributes for each block
 C   --   NAMELB - OUT - the type of element in each block
 C   --   LPTR   - OUT - pointers to connectivity for each block
 C   --   *      - OUT - return statement if end of file or read error
@@ -119,9 +119,9 @@ C   --   *      - OUT - return statement if end of file or read error
        IF (NERR .GT. 0) GOTO 110
       END IF
 
-        
+
       IELNK = IESAV
-      IEATR = IASAV 
+      IEATR = IASAV
       DO 100 NELB = NELBS, NELBE
          IELB = NELB-NELBS+1
          IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'C') .GT. 0)) THEN
@@ -139,7 +139,7 @@ C   --   *      - OUT - return statement if end of file or read error
   100 CONTINUE
 
 C ... Read element block names (if they exist)
-      CALL EXGNAMS(NDB, EXEBLK, NELBE, ebname, ierr) 
+      CALL EXGNAMS(NDB, EXEBLK, NELBE, ebname, ierr)
 
 C     Store the first pointers for each element block link array
       INC = 0
@@ -149,7 +149,7 @@ C     Store the first pointers for each element block link array
          INC = ISIZE + 1
          ISIZE = ISIZE + NUMELB(IELB)*NUMLNK(IELB)
          LPTR(I) = KLINK + INC - 1
-  105 CONTINUE   
+  105 CONTINUE
   110 CONTINUE
       RETURN
 

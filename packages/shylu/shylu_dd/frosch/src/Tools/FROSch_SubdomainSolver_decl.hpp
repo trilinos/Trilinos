@@ -44,24 +44,33 @@
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
-#include "Epetra_LinearProblem.h"
+#include <ShyLU_DDFROSch_config.h>
 
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include "Epetra_LinearProblem.h"
+#endif
+
+#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
 #include "Amesos_ConfigDefs.h"
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
+#endif
 
 #include "Amesos2.hpp"
 
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
 #include <BelosXpetraAdapterOperator.hpp>
 #include <BelosOperatorT.hpp>
 #include <BelosXpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
+#endif
 
-
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
 //#include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
+#endif
 
 namespace FROSch {
     
@@ -89,30 +98,42 @@ namespace FROSch {
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         typedef Epetra_CrsMatrix EpetraCrsMatrix;
         typedef Teuchos::RCP<EpetraCrsMatrix> EpetraCrsMatrixPtr;
+#endif
         typedef Tpetra::CrsMatrix<SC,LO,GO,NO> TpetraCrsMatrix;
         typedef Teuchos::RCP<TpetraCrsMatrix> TpetraCrsMatrixPtr;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         typedef Teuchos::RCP<const MultiVector> ConstMultiVectorPtr;
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         typedef Epetra_MultiVector EpetraMultiVector;
         typedef Teuchos::RCP<EpetraMultiVector> EpetraMultiVectorPtr;
+#endif
         typedef Tpetra::MultiVector<SC,LO,GO,NO> TpetraMultiVector;
         typedef Teuchos::RCP<TpetraMultiVector> TpetraMultiVectorPtr;
         
         typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         typedef Teuchos::RCP<Epetra_LinearProblem> LinearProblemPtr;
-        
+#endif
+      
+#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         typedef Teuchos::RCP<Amesos_BaseSolver> AmesosSolverPtr;
+#endif
         
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         typedef Teuchos::RCP<Amesos2::Solver<EpetraCrsMatrix,EpetraMultiVector> > Amesos2SolverEpetraPtr;
+#endif
         typedef Teuchos::RCP<Amesos2::Solver<TpetraCrsMatrix,TpetraMultiVector> > Amesos2SolverTpetraPtr;
         
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
         typedef Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > MueLuFactoryPtr;
         typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
+#endif
         
         SubdomainSolver(CrsMatrixPtr k,
                         ParameterListPtr parameterList,
@@ -150,18 +171,28 @@ namespace FROSch {
         
         ParameterListPtr ParameterList_;
         
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         LinearProblemPtr EpetraLinearProblem_;
-        
+#endif
+      
+#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         AmesosSolverPtr AmesosSolver_;
-        
+#endif
+      
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         Amesos2SolverEpetraPtr Amesos2SolverEpetra_;
+#endif
         Amesos2SolverTpetraPtr Amesos2SolverTpetra_;
         
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
         MueLuFactoryPtr MueLuFactory_;
         MueLuHierarchyPtr MueLuHierarchy_;
+#endif
         
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
         Teuchos::RCP<Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > >  BelosLinearProblem_;
         Teuchos::RCP<Belos::SolverManager<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > > BelosSolverManager_;
+#endif
         
         bool IsInitialized_;
         bool IsComputed_;        
