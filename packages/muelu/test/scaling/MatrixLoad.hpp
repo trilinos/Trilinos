@@ -53,6 +53,7 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 
 // Xpetra
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Operator.hpp>
@@ -119,15 +120,16 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("1D", map, galeriList);
-
+      material = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(map); material->putScalar(one);
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("2D", map, galeriList);
-
+      material = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(map); material->putScalar(one);
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("3D", map, galeriList);
+      material = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(map); material->putScalar(one);
     }
 
     // Expand map to do multiple DOF per node for block problems

@@ -123,7 +123,9 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> xdMV;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
+
 
     const ParameterList& pL = GetParameterList();
 
@@ -133,7 +135,7 @@ namespace MueLu {
 
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "Coordinates")) {
       std::string fileName = "coordinates_level_0.m";
-      RCP<xdMV> fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates");
+      RCP<CoordinateMultiVector> fineCoords = fineLevel.Get< RCP<CoordinateMultiVector> >("Coordinates");
       if (fineCoords != Teuchos::null)
         Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *fineCoords);
     }
@@ -216,7 +218,7 @@ namespace MueLu {
 
         if (pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
           if (IsAvailable(coarseLevel, "Coordinates"))
-            Set(coarseLevel, "Coordinates", Get< RCP<xdMV> >(coarseLevel, "Coordinates"));
+            Set(coarseLevel, "Coordinates", Get< RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates"));
 
         return;
       }
@@ -224,7 +226,7 @@ namespace MueLu {
       if (pL.isParameter("Coordinates") &&
           pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
           IsAvailable(coarseLevel, "Coordinates")) {
-        RCP<xdMV> coords = Get<RCP<xdMV> >(coarseLevel, "Coordinates");
+        RCP<CoordinateMultiVector> coords = Get<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates");
 
         // This line must be after the Get call
         SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
@@ -258,7 +260,7 @@ namespace MueLu {
           coordImporter = ImportFactory::Build(origMap, targetMap);
         }
 
-        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        RCP<CoordinateMultiVector> permutedCoords  = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
         if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
