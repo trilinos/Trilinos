@@ -77,9 +77,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-
-  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+  typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
 
   // =========================================================================
   // MPI initialization using Teuchos
@@ -117,7 +116,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   matrixParameters.set("nx",         Teuchos::as<GO>(9999));
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<CoordinateMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("1D", A->getRowMap(), matrixParameters);
   RCP<Vector> materialCoordinates =  VectorFactory::Build(A->getRowMap());
   materialCoordinates->putScalar(Teuchos::ScalarTraits<SC>::one());
 
