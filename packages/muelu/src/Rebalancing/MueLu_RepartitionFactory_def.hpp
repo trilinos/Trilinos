@@ -486,8 +486,8 @@ namespace MueLu {
     // Step 3: Construct mapping
 
     // Construct the set of triplets
-    std::vector<Triplet<int,int> > gEdges(numProcs * maxLocal);
-    std::vector<bool> procWillAcceptPartition(numProcs, allSubdomainsAcceptPartitions);
+    Teuchos::Array<Triplet<int,int> > gEdges(numProcs * maxLocal);
+    Teuchos::Array<bool> procWillAcceptPartition(numProcs, allSubdomainsAcceptPartitions);
     size_t k = 0;
     for (LO i = 0; i < gData.size(); i += 2) {
       int procNo = i/dataSize;              // determine the processor by its offset (since every processor sends the same amount)
@@ -509,9 +509,9 @@ namespace MueLu {
 
     // Do matching
     std::map<int,int> match;
-    std::vector<char> matchedRanks(numProcs, 0), matchedParts(numProcs, 0);
+    Teuchos::Array<char> matchedRanks(numProcs, 0), matchedParts(numPartitions, 0);
     int numMatched = 0;
-    for (typename std::vector<Triplet<int,int> >::const_iterator it = gEdges.begin(); it != gEdges.end(); it++) {
+    for (typename Teuchos::Array<Triplet<int,int> >::const_iterator it = gEdges.begin(); it != gEdges.end(); it++) {
       GO rank = it->i;
       GO part = it->j;
       if (matchedRanks[rank] == 0 && matchedParts[part] == 0) {
@@ -524,21 +524,27 @@ namespace MueLu {
     GetOStream(Statistics1) << "Number of unassigned partitions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4: Assign unassigned partitions if necessary.
-    // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a
-    // subset of [0, numProcs).  The reason it is done this way is that we don't need any extra communication, as we don't
+    // We do that through desperate matching for remaining partitions:
+    // We select the lowest rank that can still take a partition.
+    // The reason it is done this way is that we don't need any extra communication, as we don't
     // need to know which parts are valid.
-    // TODO The cost of this loop is numprocs*log(numprocs), as match is a std::set().  Can this cost be reduced?
     if (numPartitions - numMatched > 0) {
-      for (int part = 0, matcher = 0; part < numProcs; part++) {
-        if (match.count(part) == 0) {
+      Teuchos::Array<char> partitionCounts(numPartitions, 0);
+      for (typename std::map<int,int>::const_iterator it = match.begin(); it != match.end(); it++)
+        partitionCounts[it->first] += 1;
+      for (int part = 0, matcher = 0; part < numPartitions; part++) {
+        if (partitionCounts[part] == 0) {
           // Find first non-matched rank that accepts partitions
           while (matchedRanks[matcher] || !procWillAcceptPartition[matcher])
             matcher++;
 
           match[part] = matcher++;
+          numMatched++;
         }
       }
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(numMatched != numPartitions, Exceptions::RuntimeError, "MueLu::RepartitionFactory::DeterminePartitionPlacement: Only " << numMatched << " partitions out of " << numPartitions << " got assigned to ranks.");
 
     // Step 5: Permute entries in the decomposition vector
     for (LO i = 0; i < decompEntries.size(); i++)
