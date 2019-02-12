@@ -1367,8 +1367,8 @@ namespace Tpetra {
     std::string label;
     if(!plist.is_null())
       label = plist->get("Timer Label",label);
-    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
-    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+    std::string prefix2 = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
 #endif
 
     if (this->verbose ()) {
@@ -1385,9 +1385,9 @@ namespace Tpetra {
     // calling process how to index into the source vector to get the
     // elements which it needs to send.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
+    prefix2 = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
     MM.release();
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
 #endif
 
     // NOTE (mfh 03 Mar 2014) This is now a candidate for a
