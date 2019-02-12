@@ -177,14 +177,15 @@ int main(int argc, char *argv[]) {
     RealT dt       = T/static_cast<RealT>(nt);
 
     // Add MGRIT parameter list stuff
-    int sweeps        = parlist->get("MGRIT Sweeps", 1);
-    RealT omega       = parlist->get("MGRIT Relaxation",2.0/3.0);
-    int coarseSweeps  = parlist->get("MGRIT Coarse Sweeps", 1);
-    RealT coarseOmega = parlist->get("MGRIT Coarse Relaxation",1.0);
-    int numLevels     = parlist->get("MGRIT Levels",3);
-    double relTol     = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
-    double absTol     = parlist->get("MGRIT Krylov Absolute Tolerance",1e-4);
-    int spaceProc     = parlist->get("MGRIT Spatial Procs",1);
+    int sweeps         = parlist->get("MGRIT Sweeps", 1);
+    RealT omega        = parlist->get("MGRIT Relaxation",2.0/3.0);
+    int coarseSweeps   = parlist->get("MGRIT Coarse Sweeps", 1);
+    RealT coarseOmega  = parlist->get("MGRIT Coarse Relaxation",1.0);
+    int numLevels      = parlist->get("MGRIT Levels",3);
+    double relTol      = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
+    double absTol      = parlist->get("MGRIT Krylov Absolute Tolerance",1e-4);
+    int spaceProc      = parlist->get("MGRIT Spatial Procs",1);
+    double globalScale = parlist->get("MGRIT Global Scale",1.0);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
     ROL::Ptr<const Teuchos::Comm<int>> mpiSpaceComm = ROL::makePtr<Teuchos::MpiComm<int>>(communicators->getSpaceCommunicator());
@@ -251,6 +252,7 @@ int main(int argc, char *argv[]) {
       (*outStream) << "Levels = " << numLevels    << std::endl;
       (*outStream) << "Sweeps = " << coarseSweeps << std::endl;
       (*outStream) << "Omega = "  << coarseOmega  << std::endl;
+      (*outStream) << "Global Scale = "  << globalScale  << std::endl;
     }
 
     // build the parallel in time constraint from the user constraint
@@ -260,38 +262,26 @@ int main(int argc, char *argv[]) {
     pint_con->setRelaxation(omega);
     pint_con->setCoarseSweeps(coarseSweeps);
     pint_con->setCoarseRelaxation(coarseOmega);
+    pint_con->setGlobalScale(globalScale);
     // pint_con->buildLevels(*state);
 
     /*************************************************************************/
     /***************** Run KKT Solver ***************************************/
     /*************************************************************************/
 
-    double tol = 1e-12;
-    auto kkt_x_in  = kkt_vector->clone();
-    auto kkt_b     = kkt_vector->clone();
-
-    ROL::RandomizeVector(*kkt_x_in);
-    kkt_b->zero();
-
-    if(myRank==0) {
-      (*outStream) << "Applying augmented KKT system" << std::endl;
-    }
-
-    pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol); // b = A * x
-
-    if(myRank==0) {
-      (*outStream) << "Applying augmented KKT system - complete" << std::endl;
-      (*outStream) << std::endl;
-    }
-
     auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    double tol = 1e-12;
+
+    auto kkt_b     = kkt_vector->clone();
+    //ROL::RandomizeVector(*kkt_b);
+    kkt_b->setScalar(1.0);
 
     {
       RealT res0 = kkt_b->norm();
       kkt_b->scale(1.0/res0);
       res0 = kkt_b->norm();
 
-      assert(std::fabs(res0-1.0) <= 1.0e-14);
+      // assert(std::fabs(res0-1.0) <= 1.0e-14);
 
       auto kkt_x_out = kkt_vector->clone();
       kkt_x_out->zero();
@@ -335,8 +325,8 @@ int main(int argc, char *argv[]) {
       if(myRank==0)
         (*outStream) << "RELATIVE TOLERANCE = " << relTol << std::endl;
 
-      //ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
-      ROL::MINRES<RealT> krylov(1e0, 1e-6, 200); // TODO: Do Belos
+      ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
+      // ROL::MINRES<RealT> krylov(1e0, 1e-6, 200); // TODO: Do Belos
 
       int flag = 0, iter = 0;
 
@@ -382,40 +372,116 @@ int main(int argc, char *argv[]) {
         (*outStream) << ss.str();
       }
 
-    /*************************************************************************/
-    /***************** BUILD SERIAL-IN-TIME CONSTRAINT ***********************/
-    /*************************************************************************/
-    auto serial_con = ROL::make_SerialConstraint(dyn_con, *u0, timeStamp);
+      (*outStream) << std::setprecision(10);
 
-    /*************************************************************************/
-    /******************* BUILD SERIAL-IN-TIME VECTORS ************************/
-    /*************************************************************************/
-    auto U  = ROL::PartitionedVector<RealT>::create(*uo, nt);
-    auto Z  = ROL::PartitionedVector<RealT>::create(*zk, nt);
-    auto C  = ROL::PartitionedVector<RealT>::create(*ck, nt);
+      #if 0
+      // This was useful for debugging, maintaing it so that we can recreate it if required.
+      // However, its not consistent right now so I don't want to mislead.
+ 
+      ROL::Ptr<ROL::Vector<RealT>> scratch;
+      {
+        /*************************************************************************/
+        /***************** BUILD SERIAL-IN-TIME CONSTRAINT ***********************/
+        /*************************************************************************/
+        auto serial_con = ROL::make_SerialConstraint(dyn_con, *u0, timeStamp);
 
-    auto UZ    = ROL::make_Vector_SimOpt(U, Z);
-    auto X     = UZ->clone();
-    auto V_x   = X->clone();
-    auto V_c   = C->clone();
-    auto V_l   = C->dual().clone();
-    auto ajv   = X->dual().clone();
-    auto ajvpx = X->dual().clone();
-    auto jv    = C->clone();
+        /*************************************************************************/
+        /******************* BUILD SERIAL-IN-TIME VECTORS ************************/
+        /*************************************************************************/
+        auto U  = ROL::PartitionedVector<RealT>::create(*uo, nt);
+        auto Z  = ROL::PartitionedVector<RealT>::create(*zk, nt);
+        auto C  = ROL::PartitionedVector<RealT>::create(*ck, nt);
 
-    /*************************************************************************/
-    /******************* APPLY AUGMENTED SYSTEM TO 1's ***********************/
-    /*************************************************************************/
-    X->zero();
-    V_x->setScalar(1.0);
-    V_l->setScalar(1.0);
-    ajvpx->set(V_x->dual());
-    serial_con->applyAdjointJacobian(*ajv, *V_l, *X, dummytol);
-    ajvpx->plus(*ajv);
-    serial_con->applyJacobian(*jv, *V_x, *X, dummytol);
-    (*outStream) << "Norm of Aug*1 1st component = " << ajvpx->norm() << "\n";
-    (*outStream) << "Norm of Aug*1 2nd component = " << jv->norm() << "\n";
+        scratch = U->clone(); // this will be used for testing in the PINT vector
 
+        auto UZ    = ROL::make_Vector_SimOpt(U, Z);
+        auto X     = UZ->clone();
+        auto V_x   = X->clone();
+        auto V_c   = C->clone();
+        auto V_l   = C->dual().clone();
+        auto ajv   = X->dual().clone();
+        auto ajvpx = X->dual().clone();
+        auto jv    = C->clone();
+
+        /*************************************************************************/
+        /******************* APPLY AUGMENTED SYSTEM TO 1's ***********************/
+        /*************************************************************************/
+        X->zero();
+        ROL::dynamicPtrCast<ROL::Vector_SimOpt<RealT>>(V_x)->get_1()->setScalar(1.0);
+        ROL::dynamicPtrCast<ROL::Vector_SimOpt<RealT>>(V_x)->get_2()->setScalar(2.0);
+        V_l->setScalar(3.0);
+        ajvpx->set(V_x->dual());
+        serial_con->applyAdjointJacobian(*ajv, *V_l, *X, dummytol);
+        ajvpx->plus(*ajv);
+
+        auto ajv_u = ROL::dynamicPtrCast<ROL::Vector_SimOpt<RealT>>(ajv)->get_1();
+        auto ajv_z = ROL::dynamicPtrCast<ROL::Vector_SimOpt<RealT>>(ajv)->get_2();
+
+        serial_con->applyJacobian(*jv, *V_x, *X, dummytol);
+
+        (*outStream) << "\nSerial components of augmented system:\n";
+        (*outStream) << "  Norm of Aug*1 1st component = " << ajvpx->norm() << "\n";
+        (*outStream) << "  Norm of Aug*1 2nd component = " << jv->norm() << "\n";
+
+        auto Hv_u = ROL::dynamicPtrCast<ROL::Vector_SimOpt<RealT>>(ajvpx)->get_1();
+        auto Hv_z = ROL::dynamicPtrCast<ROL::Vector_SimOpt<RealT>>(ajvpx)->get_2();
+        auto Hv_l = jv;
+
+        (*outStream) << "  Norm of Aug*1_u = " << Hv_u->norm() << "\n";
+        (*outStream) << "  Norm of Aug*1_z = " << Hv_z->norm() << "\n";
+        (*outStream) << "  Norm of Aug*1_l = " << Hv_l->norm() << "\n";
+
+      }
+      {
+        /*************************************************************************/
+        /************************* TEST THE PINT SYSTEM  *************************/
+        /*************************************************************************/
+
+        /*************************************************************************/
+        /******************* BUILD PARALLEL-IN-TIME VECTORS **********************/
+        /*************************************************************************/
+        auto U = ROL::buildStatePinTVector<RealT>(  communicators, vectorComm, nt, uo); // for Euler, Crank-Nicolson, stencil = [-1,0]
+        auto Z = ROL::buildControlPinTVector<RealT>(communicators, vectorComm, nt, zk); // time discontinous, stencil = [0]
+        auto C = ROL::buildStatePinTVector<RealT>(  communicators, vectorComm, nt, ck); // for Euler, Crank-Nicolson, stencil = [-1,0]
+
+        auto triple = ROL::makePtr<ROL::PartitionedVector<RealT>>({U->clone(),Z->clone(),C->clone()});
+        auto V      = triple->clone();
+        auto Hv     = triple->dual().clone();
+
+        /*************************************************************************/
+        /******************* APPLY AUGMENTED SYSTEM TO 1's ***********************/
+        /*************************************************************************/
+
+        U->zero();
+        Z->zero();
+        ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(V)->get(0)->setScalar(1.0);
+        ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(V)->get(1)->setScalar(2.0);
+        ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(V)->get(2)->setScalar(3.0);
+        Hv->setScalar(0.0);
+
+        pint_con->applyAugmentedKKT(*Hv,*V,*U,*Z,tol);
+
+        auto Hv_u = ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(Hv)->get(0);
+        auto Hv_z = ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(Hv)->get(1);
+        auto Hv_l = ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(Hv)->get(2);
+
+        (*outStream) << "\nParallel compnents of augmented system:\n";
+        (*outStream) << "  Norm of Aug*1_u = " << Hv_u->norm() << "\n";
+        (*outStream) << "  Norm of Aug*1_z = " << Hv_z->norm() << "\n";
+        (*outStream) << "  Norm of Aug*1_l = " << Hv_l->norm() << "\n";
+
+        auto pint_Hv_u = ROL::dynamicPtrCast<ROL::PinTVector<RealT>>(Hv_u);
+        auto part_scratch = ROL::dynamicPtrCast<ROL::PartitionedVector<RealT>>(scratch);
+        for(int i=0;i<pint_Hv_u->numOwnedSteps();i++) {
+          
+          part_scratch->get(i)->setScalar(-1.0);  
+          part_scratch->get(i)->axpy(1.0,*pint_Hv_u->getVectorPtr(2*i));
+          part_scratch->get(i)->axpy(1.0,*pint_Hv_u->getVectorPtr(2*i+1));
+        }
+
+        (*outStream) << "  Norm of Aug*1_u modified = " << scratch->norm() << "\n";
+      }
+      #endif
     }
   }
   catch (std::logic_error& err) {
