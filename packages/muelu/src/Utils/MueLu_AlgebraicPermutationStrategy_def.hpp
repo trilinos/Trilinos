@@ -32,15 +32,15 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AlgebraicPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap,
+  BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map>& permRowMap,
                    Level & currentLevel, const FactoryBase* genFactory) const {
 
-    Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-    Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar SC_ONE  = Teuchos::ScalarTraits<Scalar>::one();
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-    MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero();
-    MT MT_ONE  = Teuchos::ScalarTraits<MT>::one();
+    const MT MT_ZERO = Teuchos::ScalarTraits<MT>::zero();
+    const MT MT_ONE  = Teuchos::ScalarTraits<MT>::one();
 
     const Teuchos::RCP< const Teuchos::Comm< int > > comm = A->getRowMap()->getComm();
     int numProcs = comm->getSize();
@@ -70,7 +70,8 @@ namespace MueLu {
       Teuchos::ArrayView<const Scalar> vals;
       A->getLocalRowView(row, indices, vals);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PermutationFactory::Build: number of nonzeros not equal to number of indices? Error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError,
+                                 "MueLu::PermutationFactory::Build: number of nonzeros not equal to number of indices? Error.");
 
       // find column entry with max absolute value
       GlobalOrdinal gMaxValIdx = 0;
@@ -100,7 +101,8 @@ namespace MueLu {
       Teuchos::ArrayView<const Scalar> vals;
       A->getLocalRowView(lArow, indices, vals);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::PermutationFactory::Build: number of nonzeros not equal to number of indices? Error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError,
+                                 "MueLu::PermutationFactory::Build: number of nonzeros not equal to number of indices? Error.");
 
       // find column entry with max absolute value
       GlobalOrdinal gMaxValIdx = 0;
@@ -116,7 +118,7 @@ namespace MueLu {
 
       if(maxVal > Teuchos::ScalarTraits<MT>::zero ()) { // keep only max Entries \neq 0.0
         permutedDiagCandidates.push_back(std::make_pair(grow,gMaxValIdx));
-        Weights.push_back(maxVal/(norm1*Teuchos::ScalarTraits<Scalar>::magnitude(nnz)));
+        Weights.push_back(maxVal/(norm1*Teuchos::as<MT>(nnz)));
       } else {
         std::cout << "ATTENTION: row " << grow << " has only zero entries -> singular matrix!" << std::endl;
       }
@@ -215,21 +217,21 @@ namespace MueLu {
 
       // distribute number of multipleColRequests to all processors
       // each processor stores how many column ids for exchange are handled by the cur proc
-      std::vector<GlobalOrdinal> numMyMultColRequests(numProcs,0);
-      std::vector<GlobalOrdinal> numGlobalMultColRequests(numProcs,0);
+      std::vector<GlobalOrdinal> numMyMultColRequests(numProcs, 0);
+      std::vector<GlobalOrdinal> numGlobalMultColRequests(numProcs, 0);
       numMyMultColRequests[myRank] = localMultColRequests;
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs,
-                         &numMyMultColRequests[0],
-                         &numGlobalMultColRequests[0]);
+                         numMyMultColRequests.data(),
+                         numGlobalMultColRequests.data());
 
       // communicate multipleColRequests entries to all processors
       int nMyOffset = 0;
       for (int i=0; i<myRank-1; i++)
         nMyOffset += numGlobalMultColRequests[i]; // calculate offset to store the weights on the corresponding place in procOverlappingWeights
 
-      GlobalOrdinal zero = 0;
-      std::vector<GlobalOrdinal> procMultRequestedColIds(globalMultColRequests,zero);
-      std::vector<GlobalOrdinal> global_procMultRequestedColIds(globalMultColRequests,zero);
+      const GlobalOrdinal zero = 0;
+      std::vector<GlobalOrdinal> procMultRequestedColIds(globalMultColRequests, zero);
+      std::vector<GlobalOrdinal> global_procMultRequestedColIds(globalMultColRequests, zero);
 
       // loop over all local column GIDs that are also requested by other procs
       for(size_t i = 0; i < multipleColRequests.size(); i++) {
@@ -238,15 +240,15 @@ namespace MueLu {
 
       // template ordinal, package (double)
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, Teuchos::as<int>(globalMultColRequests),
-                         &procMultRequestedColIds[0],
-                         &global_procMultRequestedColIds[0]);
+                         procMultRequestedColIds.data(),
+                         global_procMultRequestedColIds.data());
 
       // loop over global_procOverlappingWeights and eliminate wrong entries...
       for (size_t k = 0; k<global_procMultRequestedColIds.size(); k++) {
         GlobalOrdinal globColId = global_procMultRequestedColIds[k];
 
-        std::vector<MT> MyWeightForColId(numProcs, 0);
-        std::vector<MT> GlobalWeightForColId(numProcs, 0);
+        std::vector<MT> MyWeightForColId(numProcs, MT_ZERO);
+        std::vector<MT> GlobalWeightForColId(numProcs, MT_ZERO);
 
         if(gColVec->getMap()->isNodeGlobalElement(globColId)) {
           MyWeightForColId[myRank] = gColId2Weight[globColId];
@@ -255,8 +257,8 @@ namespace MueLu {
         }
 
         Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs,
-                           &MyWeightForColId[0],
-                           &GlobalWeightForColId[0]);
+                           MyWeightForColId.data(),
+                           GlobalWeightForColId.data());
 
         if(gColVec->getMap()->isNodeGlobalElement(globColId)) {
           // note: 2 procs could have the same weight for a column index.
@@ -411,8 +413,8 @@ namespace MueLu {
       }
 
     // communicate column map -> domain map
-    Qperm->doExport(*lQperm,*QpermExporter,Xpetra::ABSMAX);
-    ColIdStatus->doExport(*lColIdStatus,*QpermExporter,Xpetra::ABSMAX);
+    Qperm->doExport(*lQperm, *QpermExporter, Xpetra::ABSMAX);
+    ColIdStatus->doExport(*lColIdStatus, *QpermExporter, Xpetra::ABSMAX);
 
     // plausibility check
     if(RowColPairs.size()>0) GetOStream(Warnings0) << "MueLu::PermutationFactory: There are Row/Col pairs left!!!" << std::endl; // TODO fix me
@@ -515,8 +517,8 @@ namespace MueLu {
       std::vector<LocalOrdinal> global_UnusedColIdxOnProc(numProcs);
       local_UnusedColIdxOnProc[myRank] = local_cntUnusedColIdx;
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs,
-                         &local_UnusedColIdxOnProc[0],
-                         &global_UnusedColIdxOnProc[0]);
+                         local_UnusedColIdxOnProc.data(),
+                         global_UnusedColIdxOnProc.data());
 
 #ifdef DEBUG_OUTPUT
       std::cout << "PROC " << myRank << " global num unused indices per proc: ";
@@ -538,8 +540,8 @@ namespace MueLu {
         qUnusedGColIdx.pop();
       }
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, Teuchos::as<int>(global_cntUnusedColIdx),
-                         &local_UnusedColIdxVector[0],
-                         &global_UnusedColIdxVector[0]);
+                         local_UnusedColIdxVector.data(),
+                         global_UnusedColIdxVector.data());
 #ifdef DEBUG_OUTPUT
       std::cout << "PROC " << myRank << " global UnusedGColIdx: ";
       for (size_t ljk = 0; ljk < global_UnusedColIdxVector.size(); ++ljk) {
@@ -556,8 +558,8 @@ namespace MueLu {
       std::vector<LocalOrdinal> global_EmptyColIdxOnProc(numProcs);
       local_EmptyColIdxOnProc[myRank] = local_cntFreeColIdx;
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numProcs,
-                         &local_EmptyColIdxOnProc[0],
-                         &global_EmptyColIdxOnProc[0]);
+                         local_EmptyColIdxOnProc.data(),
+                         global_EmptyColIdxOnProc.data());
 
 #ifdef DEBUG_OUTPUT
       std::cout << "PROC " << myRank << " global num of needed column indices: ";
