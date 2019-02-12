@@ -137,7 +137,7 @@ namespace MueLu {
       std::string fileName = "coordinates_level_0.m";
       RCP<CoordinateMultiVector> fineCoords = fineLevel.Get< RCP<CoordinateMultiVector> >("Coordinates");
       if (fineCoords != Teuchos::null)
-        Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *fineCoords);
+        Xpetra::IO<coordinate_type,LO,GO,NO>::Write(fileName, *fineCoords);
     }
 
     RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
@@ -273,7 +273,7 @@ namespace MueLu {
 
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
-          Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *permutedCoords);
+          Xpetra::IO<coordinate_type,LO,GO,NO>::Write(fileName, *permutedCoords);
       }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {
