@@ -2122,7 +2122,10 @@ namespace Ifpack2 {
                        const local_ordinal_type &nrows,
                        const local_ordinal_type &v) const {
         namespace KB = KokkosBatched::Experimental;
-        using AlgoType = KB::Algo::Level3::Blocked;
+        typedef SolveTridiagsDefaultModeAndAlgo
+          <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
+        typedef default_mode_and_algo_type::mode_type default_mode_type;
+        typedef default_mode_and_algo_type::multi_vector_algo_type default_algo_type;
         
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
@@ -2137,30 +2140,42 @@ namespace Ifpack2 {
         // solve Lx = x
         A.assign_data( &D_internal_vector_values(i,0,0,v) );
         X1.assign_data( &X_internal_vector_values(r,0,0,v) );
-        KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
+        KB::Trsm<member_type,
+                 KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
+                 default_mode_type,default_algo_type>
           ::invoke(member, one, A, X1);
         for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
           A.assign_data( &D_internal_vector_values(i+2,0,0,v) );
           X2.assign_data( &X_internal_vector_values(++r,0,0,v) );
-          KB::TeamGemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
+          KB::Gemm<member_type,
+                   KB::Trans::NoTranspose,KB::Trans::NoTranspose,
+                   default_mode_type,default_algo_type>
             ::invoke(member, -one, A, X1, one, X2);
           A.assign_data( &D_internal_vector_values(i+3,0,0,v) );
-          KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>          
+          KB::Trsm<member_type,
+                   KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
+                   default_mode_type,default_algo_type>
             ::invoke(member, one, A, X2);
           X1.assign_data( X2.data() );
         }
         
         // solve Ux = x
-        KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>          
+        KB::Trsm<member_type,
+                 KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
+                 default_mode_type,default_algo_type>
           ::invoke(member, one, A, X1);
         for (local_ordinal_type tr=nrows;tr>1;--tr) {
           i -= 3;
           A.assign_data( &D_internal_vector_values(i+1,0,0,v) );
           X2.assign_data( &X_internal_vector_values(--r,0,0,v) );          
-          KB::TeamGemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
+          KB::Gemm<member_type,
+                   KB::Trans::NoTranspose,KB::Trans::NoTranspose,
+                   default_mode_type,default_algo_type>                   
             ::invoke(member, -one, A, X1, one, X2); 
           A.assign_data( &D_internal_vector_values(i,0,0,v) );          
-          KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>          
+          KB::Trsm<member_type,
+                   KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
+                   default_mode_type,default_algo_type>
             ::invoke(member, one, A, X2);
           X1.assign_data( X2.data() );
         }
