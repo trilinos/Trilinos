@@ -80,7 +80,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
                 const std::string & coordFile, const std::string &nullFile, const std::string &materialFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >          & map, 
                 Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      & A, 
-                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > & coordinates,
+                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node> > & coordinates,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace,
                 Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & material,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & X, 
@@ -93,8 +93,9 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
   using Teuchos::rcp;
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
-  typedef typename STS::magnitudeType real_type;
-  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  typedef typename STS::coordinateType coordinate_type;
+  typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
+
 
 
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
@@ -117,16 +118,16 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,CoordinateMultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
