@@ -1420,7 +1420,7 @@ namespace Ifpack2 {
       // a functor cannot have both device_type and execution_space; specialization error in kokkos
       using execution_space = typename impl_type::execution_space;
       using memory_space = typename impl_type::memory_space;
-
+      /// scalar types
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using size_type = typename impl_type::size_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
@@ -1433,12 +1433,17 @@ namespace Ifpack2 {
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
       /// vectorization 
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
+      using internal_vector_type_4d_view = typename impl_type::internal_vector_type_4d_view;
       using impl_scalar_type_4d_view = typename impl_type::impl_scalar_type_4d_view;
+
+      using internal_vector_type = typename impl_type::internal_vector_type;
       static constexpr int vector_length = impl_type::vector_length;
+      static constexpr int internal_vector_length = impl_type::internal_vector_length;
 
-      /// team policy member type (used in cuda)
-      using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;      
-
+      /// team policy member type
+      using team_policy_type = Kokkos::TeamPolicy<execution_space>;
+      using member_type = typename team_policy_type::member_type;      
+      
     private:
       // part interface
       const ConstUnmanaged<local_ordinal_type_1d_view> partptr, lclrow, packptr;
@@ -1449,13 +1454,13 @@ namespace Ifpack2 {
       // block tridiags 
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr, flat_td_ptr;
       const ConstUnmanaged<local_ordinal_type_1d_view> A_colindsub;
-      const Unmanaged<vector_type_3d_view> vector_values;
+      const Unmanaged<internal_vector_type_4d_view> internal_vector_values;
       const Unmanaged<impl_scalar_type_4d_view> scalar_values;
       // shared information
       const local_ordinal_type blocksize, blocksize_square;
       // diagonal safety
       const magnitude_type tiny;
-      const local_ordinal_type vector_length_value;
+      const local_ordinal_type vector_loop_size;
 
     public:
       ExtractAndFactorizeTridiags(const BlockTridiags<MatrixType> &btdm_, 
@@ -1473,100 +1478,23 @@ namespace Ifpack2 {
         pack_td_ptr(btdm_.pack_td_ptr), 
         flat_td_ptr(btdm_.flat_td_ptr), 
         A_colindsub(btdm_.A_colindsub),
-        vector_values(btdm_.values),
-        scalar_values((impl_scalar_type*)vector_values.data(),
-                      vector_values.extent(0),
-                      vector_values.extent(1),
-                      vector_values.extent(2),
+        internal_vector_values((internal_vector_type*)btdm_.values.data(),
+                               btdm_.values.extent(0),
+                               btdm_.values.extent(1),
+                               btdm_.values.extent(2),
+                               vector_length/internal_vector_length),
+        scalar_values((impl_scalar_type*)btdm_.values.data(),
+                      btdm_.values.extent(0),
+                      btdm_.values.extent(1),
+                      btdm_.values.extent(2),
                       vector_length),
         blocksize(btdm_.values.extent(1)),
         blocksize_square(blocksize*blocksize),
         // diagonal weight to avoid zero pivots
         tiny(tiny_),
-	vector_length_value(vector_length) {}
+	vector_loop_size(vector_length/internal_vector_length) {}
 
     private:
-
-      inline
-      void 
-      extract(const local_ordinal_type &packidx) const {
-        local_ordinal_type partidx = packptr(packidx);
-        local_ordinal_type npacks = packptr(packidx+1) - partidx;
-
-        const size_type kps = pack_td_ptr(partidx);
-        local_ordinal_type kfs[vector_length] = {};
-        local_ordinal_type ri0[vector_length] = {};
-        local_ordinal_type nrows[vector_length] = {};
-
-        for (local_ordinal_type vi=0;vi<npacks;++vi,++partidx) {
-          kfs[vi] = flat_td_ptr(partidx);
-          ri0[vi] = partptr(partidx);
-          nrows[vi] = partptr(partidx+1) - ri0[vi];
-        }
-        for (local_ordinal_type tr=0,j=0;tr<nrows[0];++tr) {
-          for (local_ordinal_type e=0;e<3;++e) {
-            const impl_scalar_type* block[vector_length] = {};
-            for (local_ordinal_type vi=0;vi<npacks;++vi) {
-              const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
-              block[vi] = &A_values(Aj*blocksize_square);
-            }
-            const size_type pi = kps + j;
-            ++j;
-            for (local_ordinal_type ii=0;ii<blocksize;++ii) {
-              for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                const auto idx = ii*blocksize + jj;
-                auto& v = vector_values(pi, ii, jj);
-                for (local_ordinal_type vi=0;vi<npacks;++vi) 
-                  v[vi] = block[vi][idx];
-              }
-            }
-
-            if (nrows[0] == 1) break;
-            if (e == 1 && (tr == 0 || tr+1 == nrows[0])) break;
-            for (local_ordinal_type vi=1;vi<npacks;++vi) {
-              if ((e == 0 && nrows[vi] == 1) || (e == 1 && tr+1 == nrows[vi])) {
-                npacks = vi;
-                break;
-              }
-            }
-          }
-        }
-      }
-      
-      inline
-      void 
-      factorize (const local_ordinal_type& packidx) const {
-        namespace KB = KokkosBatched::Experimental;
-        using AlgoType = KB::Algo::Level3::Blocked;
-        
-        // constant
-        const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-                
-        auto i0 = pack_td_ptr(packptr(packidx));
-        const local_ordinal_type nrows 
-          = BlockTridiags<MatrixType>::IndexToRow(pack_td_ptr(packptr(packidx+1)) - i0 - 1) + 1;
-
-        // subview pattern
-        auto A = Kokkos::subview(vector_values, i0, Kokkos::ALL(), Kokkos::ALL());
-        KB::SerialLU<KB::Algo::LU::Unblocked>::invoke(A, tiny);
-
-        if (nrows > 1) {
-          auto B = A;
-          auto C = A;
-          for (local_ordinal_type i=1;i<nrows;++i,i0+=3) {
-            B.assign_data( &vector_values(i0+1,0,0) );
-            KB::SerialTrsm<KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
-              ::invoke(one, A, B);
-            C.assign_data( &vector_values(i0+2,0,0) );
-            KB::SerialTrsm<KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>
-              ::invoke(one, A, C);
-            A.assign_data( &vector_values(i0+3,0,0) );
-            KB::SerialGemm<KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
-              ::invoke(-one, C, B, one, A);
-            KB::SerialLU<KB::Algo::LU::Unblocked>::invoke(A, tiny);
-          }
-        }
-      }
 
       KOKKOS_INLINE_FUNCTION 
       void 
@@ -1601,69 +1529,57 @@ namespace Ifpack2 {
 		const local_ordinal_type &nrows,
                 const local_ordinal_type &v) const {
         namespace KB = KokkosBatched::Experimental;
-        using AlgoType = KB::Algo::Level3::Unblocked;
 
         // constant
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
 
         // subview pattern
-        auto A = Kokkos::subview(scalar_values, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
-        A.assign_data( &scalar_values(i0,0,0,v) );
-        KB::TeamLU<member_type,KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
+        auto A = Kokkos::subview(internal_vector_values, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
+        A.assign_data( &internal_vector_values(i0,0,0,v) );
+        KB::LU<member_type,
+               KB::Mode::Serial,KB::Algo::LU::Unblocked,
+               KB::Mode::Team,  KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
         if (nrows > 1) {
           auto B = A;
           auto C = A;
           local_ordinal_type i = i0;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
-            B.assign_data( &scalar_values(i+1,0,0,v) );
-            KB::TeamTrsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,AlgoType>
+            B.assign_data( &internal_vector_values(i+1,0,0,v) );
+            KB::Trsm<member_type,KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit>
               ::invoke(member, one, A, B);
-            C.assign_data( &scalar_values(i+2,0,0,v) );
-            KB::TeamTrsm<member_type,KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,AlgoType>
+            C.assign_data( &internal_vector_values(i+2,0,0,v) );
+            KB::Trsm<member_type,KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit>
               ::invoke(member, one, A, C);
-            A.assign_data( &scalar_values(i+3,0,0,v) );
-            KB::TeamGemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose,AlgoType>
+            A.assign_data( &internal_vector_values(i+3,0,0,v) );
+            KB::Gemm<member_type,KB::Trans::NoTranspose,KB::Trans::NoTranspose>
               ::invoke(member, -one, C, B, one, A);
-            KB::TeamLU<member_type,KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
+            KB::LU<member_type,
+                   KB::Mode::Serial,KB::Algo::LU::Unblocked,
+                   KB::Mode::Team,  KB::Algo::LU::Unblocked>::invoke(member, A, tiny);
           }
         }
       }
 
     public:
-      ///
-      /// host serial (vector intrinsic) vectorization
-      ///
-      inline
-      void 
-      operator() (const local_ordinal_type& packidx) const {
-        extract(packidx);
-        factorize(packidx);
-      }
       
-      ///
-      /// cuda team parallel vectorization
-      ///
       KOKKOS_INLINE_FUNCTION 
       void 
       operator() (const member_type &member) const {
 	// btdm is packed and sorted from largest one 
 	const local_ordinal_type packidx = member.league_rank();
+
 	const local_ordinal_type partidx = packptr(packidx);
 	const local_ordinal_type npacks = packptr(packidx+1) - partidx;
 	const local_ordinal_type i0 = pack_td_ptr(partidx);
 	const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
-	
-	// every cuda threads should participate in computation (do not reduce by npacks)
-	// Kyungjoo Why NVCC does not understand "constexpr"
-	//   if I do set enum, some compilers take the enum value as ZERO and creates silent erros
-	//   for other compilers, simply it generates constexpr is undefined on device. 
-	//   seriously, better compiler support is necessary from NVIDIA
+
 	Kokkos::parallel_for
-	  (Kokkos::ThreadVectorRange(member, vector_length_value), [&](const local_ordinal_type &v) {
-	    // extract team should not include any team barrier as it is masked out by npacks
-	    if (v < npacks) extract(member, partidx + v, v);
+	  (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
+            const local_ordinal_type vbeg = v*internal_vector_length;
+            const local_ordinal_type vend = vbeg + internal_vector_length;
+            for (local_ordinal_type vv=vbeg;vv<vend;++vv)
+              if (vv < npacks) extract(member, partidx+vv, vv);
 	    member.team_barrier();
-	    // factorize should be invoked by all threads as team kernels invokes barrier inside
 	    factorize(member, i0, nrows, v);
 	  });
       }
@@ -1673,20 +1589,13 @@ namespace Ifpack2 {
         cudaProfilerStart();
 #endif
 
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
-	  const local_ordinal_type vl = vector_length;
-          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-          Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run", policy, *this);
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size); 
+#else // Host architecture: team size is always one
+        const team_policy_type policy(packptr.extent(0)-1, 1, 1); 
 #endif
-        } else {
-#if defined(__CUDA_ARCH__)        
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
-#else          
-          const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
-          Kokkos::parallel_for("ExtractAndFactorize::RangePolicy::run", policy, *this);
-#endif
-        }
+        Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run", policy, *this);
+        
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
