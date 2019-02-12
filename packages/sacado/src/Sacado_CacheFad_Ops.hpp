@@ -1818,7 +1818,7 @@ namespace Sacado {
           a = value_type(0);
         }
         else {
-          a = v*v2/v1;
+          a = v2*std::pow(v1,v2-value_type(1.0));
         }
       }
 
