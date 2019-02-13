@@ -60,7 +60,12 @@ namespace Tpetra {
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 class crsGraph_Swap_Tester
 {
-    using Scalar                   = int;                                                   // Not used here, kept for consistency.
+    using Scalar                   = int;                                                   // Not really used for CrsGraph construction but
+                                                                                            // we keep this around since the CrsMatrix::swap
+                                                                                            // test is constructing its graphs the same way 
+                                                                                            // so hanging onto this to keep the structs in 
+                                                                                            // this file happy (this does not get passed to 
+                                                                                            // anything in Tpetra in this test).
     using comm_type                = Teuchos::RCP<const Teuchos::Comm<int>>;                // The comm type
     using graph_type               = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;   // Tpetra CrsGraph type
     using pair_owner_type          = std::pair<GlobalOrdinal, int>;                         // For row owners, pairs are (rowid, comm rank)

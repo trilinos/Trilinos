@@ -73,7 +73,6 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
-#include "Teuchos_FancyOStream.hpp"
 #include <memory>
 #include <sstream>
 #include <typeinfo>
