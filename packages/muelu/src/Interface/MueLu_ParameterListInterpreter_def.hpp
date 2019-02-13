@@ -630,6 +630,7 @@ namespace MueLu {
 
     // === Coordinates ===
     UpdateFactoryManager_Coordinates(paramList, defaultList, manager, levelID, keeps);
+    UpdateFactoryManager_MaterialCoordinates(paramList, defaultList, manager, levelID, keeps);
 
     // === Pre-Repartition Keeps for Reuse ===
     if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
