@@ -50,7 +50,7 @@ SET(SOURCES ${SOURCES}
   Galeri_Utils.cpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_TriUtils)
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
   SET(HEADERS ${SOURCES}
     Galeri_ReadHB.h
     )
