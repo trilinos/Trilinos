@@ -42,47 +42,19 @@
 #ifndef TPETRA_EXPORT_DEF_HPP
 #define TPETRA_EXPORT_DEF_HPP
 
+
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_ImportExportData.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Details_DualViewUtil.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ParameterList.hpp"
-
-namespace {
-  auto view_alloc_no_init (const std::string& label) ->
-    decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing))
-  {
-    return Kokkos::view_alloc (label, Kokkos::WithoutInitializing);
-  }
-
-  template<class ElementType, class DeviceType>
-  void
-  makeDualViewFromOwningHostView (Kokkos::DualView<ElementType*, DeviceType>& dv,
-                                  const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
-  {
-    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-    using dev_view_type = typename dual_view_type::t_dev;
-    using host_view_type = typename dual_view_type::t_host;
-
-    const auto size = hostView.size ();
-    auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
-
-#if defined(KOKKOS_ENABLE_CUDA)
-    constexpr bool is_cuda = std::is_same<typename DeviceType::execution_space, Kokkos::Cuda>::value;
-#else
-    constexpr bool is_cuda = false;
-#endif
-    TEUCHOS_ASSERT( is_cuda || devView.data () == hostView.data () );
-
-    Kokkos::deep_copy (devView, hostView);
-    dv = dual_view_type (devView, hostView);
-  }
-
-} // namespace (anonymous)
+#include <memory>
 
 namespace Tpetra {
 
@@ -96,6 +68,8 @@ namespace Tpetra {
   {
     using Teuchos::rcp;
     using std::endl;
+    using ::Tpetra::Details::ProfilingRegion;
+    ProfilingRegion regionExport ("Tpetra::Export::Export");
 
     if (this->verbose ()) {
       std::ostringstream os;
@@ -185,7 +159,9 @@ namespace Tpetra {
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   setupSamePermuteExport (Teuchos::Array<GlobalOrdinal>& exportGIDs)
   {
-    using ::Tpetra::Details::Behavior;
+    using ::Tpetra::Details::makeDualViewFromOwningHostView;
+    using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::view_alloc_no_init;
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -197,6 +173,7 @@ namespace Tpetra {
     using GO = GlobalOrdinal;
     using size_type = typename ArrayView<const GO>::size_type;
     const char tfecfFuncName[] = "setupSamePermuteExport: ";
+    ProfilingRegion regionExport ("Tpetra::Export::setupSamePermuteExport");
 
     std::unique_ptr<std::string> prefix;
     if (this->verbose ()) {
@@ -454,7 +431,8 @@ namespace Tpetra {
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   setupRemote (Teuchos::Array<GlobalOrdinal>& exportGIDs)
   {
-    using ::Tpetra::Details::Behavior;
+    using ::Tpetra::Details::view_alloc_no_init;
+    using ::Tpetra::Details::makeDualViewFromOwningHostView;
     using Teuchos::Array;
     using std::endl;
     using LO = LocalOrdinal;

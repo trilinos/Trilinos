@@ -6604,7 +6604,7 @@ namespace Tpetra {
   packAndPrepareNew (const SrcDistObject& source,
                      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<char*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                      size_t& constantNumPackets,
                      Distributor& distor)
   {
@@ -6736,11 +6736,9 @@ namespace Tpetra {
       // View exportLIDs' host data as a Teuchos::ArrayView.  We don't
       // need to sync, since we're doing write-only access, but we do
       // need to mark the DualView as modified on host.
-      {
-        auto numPacketsPerLID_nc = numPacketsPerLID; // const DV& -> DV
-        numPacketsPerLID_nc.clear_sync_state(); // write only access
-        numPacketsPerLID_nc.modify_host();
-      }
+
+      numPacketsPerLID.clear_sync_state (); // write-only access
+      numPacketsPerLID.modify_host ();
       auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
       Teuchos::ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
                                                       numPacketsPerLID_h.size ());
@@ -7407,8 +7405,8 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                       Kokkos::DualView<char*, buffer_device_type> imports,
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                        const size_t constantNumPackets,
                        Distributor& distor,
                        const CombineMode combineMode)
