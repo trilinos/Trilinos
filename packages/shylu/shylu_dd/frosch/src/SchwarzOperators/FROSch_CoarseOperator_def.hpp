@@ -533,7 +533,7 @@ namespace FROSch {
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
             if(DistributionList_->get("Use RepMap",false)){
-                //if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
+                if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
                     GOVec RowsCoarseSolve;
@@ -619,7 +619,7 @@ namespace FROSch {
                         CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
                         //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                     }
-                //}
+                }
             }
 #endif
         } else {
