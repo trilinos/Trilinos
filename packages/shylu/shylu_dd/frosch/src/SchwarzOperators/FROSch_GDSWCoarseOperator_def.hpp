@@ -514,7 +514,7 @@ namespace FROSch {
                     --------------------------------------------\n";
                 }
                 
-                if (this->ParameterList_->get("Use RepMap",true)) {
+                if(this->ParameterList_->get("Use RepMap",true)) {
                     if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;
@@ -534,7 +534,6 @@ namespace FROSch {
                                 entries.push_back(x.first);
                             }
                         }
-                        Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,entries.size(),entries.size(),0,this->K_->getMap()->getComm());
                         MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
                         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
                         std::vector<GO> col_vec(entries.size());
