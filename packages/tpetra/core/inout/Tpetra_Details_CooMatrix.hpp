@@ -1214,8 +1214,8 @@ protected:
                        buffer_device_type>& exportLIDs,
                      Kokkos::DualView<packet_type*,
                        buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*,
-                       buffer_device_type>& numPacketsPerLID,
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type> numPacketsPerLID,
                      size_t& constantNumPackets,
                      ::Tpetra::Distributor& /* distor */)
   {
@@ -1287,12 +1287,8 @@ protected:
       return;
     }
 
-    // Trick to get around const DualView& being const.
-    {
-      auto numPacketsPerLID_tmp = numPacketsPerLID;
-      numPacketsPerLID_tmp.sync_host ();
-      numPacketsPerLID_tmp.modify_host ();
-    }
+    numPacketsPerLID.sync_host ();
+    numPacketsPerLID.modify_host ();
 
     TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
     auto exportLIDs_h = exportLIDs.view_host ();
@@ -1413,13 +1409,13 @@ protected:
   virtual void
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
                          buffer_device_type>& importLIDs,
-                       const Kokkos::DualView<const packet_type*,
-                         buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*,
-                         buffer_device_type>& numPacketsPerLID,
-                       const size_t /* constantNumPackets */, // should always be 0
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type> imports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
+                       const size_t /* constantNumPackets */,
                        ::Tpetra::Distributor& /* distor */,
-                       const ::Tpetra::CombineMode /* CM */)
+                       const ::Tpetra::CombineMode /* combineMode */)
   {
     using Teuchos::Comm;
     using Teuchos::RCP;
@@ -1480,40 +1476,14 @@ protected:
     }
     const int inBufSize = static_cast<int> (imports.extent (0));
 
-    // It's forbidden to sync a DualView<const T>, so if the input
-    // DualView are not in sync on host, we must make copies.
-
-    typename Kokkos::DualView<const packet_type*, buffer_device_type>::t_host
-      imports_h;
-    typename Kokkos::DualView<const size_t*, buffer_device_type>::t_host
-      numPacketsPerLID_h;
-    {
-      if (imports.need_sync_host ()) {
-        // Device version of the DualView is the most recently updated.
-        auto imports_d = imports.view_device ();
-        using HVNC = typename decltype (imports_h)::non_const_type;
-        HVNC imports_h_nc (imports_d.label (),
-                           imports.extent (0));
-        Kokkos::deep_copy (imports_h_nc, imports_d);
-        imports_h = imports_h_nc;
-      }
-      else { // host version of the DualView is up-to-date
-        imports_h = imports.view_host ();
-      }
-
-      if (numPacketsPerLID.need_sync_host ()) {
-        // Device version of the DualView is the most recently updated.
-        auto numPacketsPerLID_d = numPacketsPerLID.view_device ();
-        using HVNC = typename decltype (numPacketsPerLID_h)::non_const_type;
-        HVNC numPacketsPerLID_h_nc (numPacketsPerLID_d.label (),
-                                    numPacketsPerLID.extent (0));
-        Kokkos::deep_copy (numPacketsPerLID_h_nc, numPacketsPerLID_d);
-        numPacketsPerLID_h = numPacketsPerLID_h_nc;
-      }
-      else { // host version of the DualView is up-to-date
-        numPacketsPerLID_h = numPacketsPerLID.view_host ();
-      }
+    if (imports.need_sync_host ()) {
+      imports.sync_host ();
     }
+    if (numPacketsPerLID.need_sync_host ()) {
+      numPacketsPerLID.sync_host ();
+    }
+    auto imports_h = imports.view_host ();
+    auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
 
     // FIXME (mfh 17,24 Jan 2017) packTriples wants three arrays, not a
     // single array of structs.  For now, we just copy.

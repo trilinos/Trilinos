@@ -664,6 +664,100 @@ namespace MueLuTests {
     }
   } // DeterminePartitionPlacement4
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, DeterminePartitionPlacement5, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests the algorithm for assigning partitions to PIDs." << std::endl;
+    out << "Matrix is distributed across all four processors, but there are only 3 partitions." << std::endl;
+    out << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    int numProcs = comm->getSize();
+    int myRank   = comm->getRank();
+
+    if (numProcs != 4) {
+      std::cout << "\nThis test must be run on 4 processors!\n" << std::endl;
+      return;
+    }
+
+    const GlobalOrdinal nx = 5, ny = 3;
+
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",      nx);
+    matrixList.set("ny",      ny);
+    matrixList.set("keepBCs", false);
+
+    // Describes the initial layout of matrix rows across processors.
+    const GlobalOrdinal     numGlobalElements = nx*ny; // 24
+    const GlobalOrdinal     indexBase     = 0;
+    size_t numMyElements = 0;
+    switch (myRank) {
+      case 0:  numMyElements = 3; break;
+      case 1:  numMyElements = 4; break;
+      case 2:  numMyElements = 3; break;
+      case 3:  numMyElements = 5; break;
+    }
+
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+
+    RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > decomposition = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(map, false);
+    Teuchos::ArrayRCP<GlobalOrdinal> partitionThisDofBelongsTo;
+    if (decomposition->getLocalLength())
+      partitionThisDofBelongsTo = decomposition->getDataNonConst(0);
+
+    // Assign the partition that each unknown belongs to. In this case: part0 has 6, part1 has 6, part2 has 3
+    const int numPartitions = 2;
+    switch (myRank)  {
+      case 0:                                       //  nnz by row    nnz by partition
+        partitionThisDofBelongsTo[0] = 0;           //      3             3
+        partitionThisDofBelongsTo[1] = 1;           //      4
+        partitionThisDofBelongsTo[2] = 1;           //      4             8
+        break;
+      case 1:
+        partitionThisDofBelongsTo[0] = 0;           //      4
+        partitionThisDofBelongsTo[1] = 1;           //      3
+        partitionThisDofBelongsTo[2] = 0;           //      4             8
+        partitionThisDofBelongsTo[3] = 1;           //      5             8
+        break;
+      case 2:
+        partitionThisDofBelongsTo[0] = 0;           //      5             5
+        partitionThisDofBelongsTo[1] = 1;           //      5
+        partitionThisDofBelongsTo[2] = 1;           //      4             9
+        break;
+      case 3:
+        partitionThisDofBelongsTo[0] = 0;           //      3
+        partitionThisDofBelongsTo[1] = 0;           //      4
+        partitionThisDofBelongsTo[2] = 0;           //      4
+        partitionThisDofBelongsTo[3] = 0;           //      4            15
+        partitionThisDofBelongsTo[4] = 1;           //      3             3
+        break;
+    }
+    partitionThisDofBelongsTo = Teuchos::null;
+
+    RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+    Teuchos::ParameterList paramList;
+    paramList.set("repartition: remap num values",       1);
+    repart->SetParameterList(paramList);
+
+    bool willAcceptPartition;
+    // force rebalancing onto ranks 2 and 3.
+    if (myRank == 1 || myRank == 2)
+      willAcceptPartition = true;
+    else
+      willAcceptPartition = false;
+    const bool allSubdomainsAcceptPartitions = false;
+
+    repart->DeterminePartitionPlacement(*A, *decomposition, numPartitions, willAcceptPartition, allSubdomainsAcceptPartitions);
+
+  } // DeterminePartitionPlacement5
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, Correctness, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -920,6 +1014,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement2,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement3,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement4,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement5,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,Correctness,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,CoordinateMap,Scalar,LO,GO,Node)
 

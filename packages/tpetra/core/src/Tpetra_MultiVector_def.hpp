@@ -53,7 +53,6 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
@@ -1172,7 +1171,7 @@ namespace Tpetra {
   packAndPrepareNew (const SrcDistObject& sourceObj,
                      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& /* numExportPacketsPerLID */,
+                     Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID,
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
@@ -1414,8 +1413,8 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                       Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
+                       Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
                        const size_t constantNumPackets,
                        Distributor& /* distor */,
                        const CombineMode CM)
