@@ -246,7 +246,7 @@ struct BlockTriDiContainerTester {
           auto input = T_bare->createDefaultApplyParameters();
           input.zeroStartingSolution = zero_starting;
           input.maxNumSweeps = num_sweeps;
-          input.tolerance = norm_based > 1 ? tol : 0;
+          input.tolerance = norm_based ? tol : 0;
           return T_bare->applyInverseJacobi(B, X, input);
         }
       };
