@@ -13,13 +13,13 @@ namespace ngp_testing {
 class TruncatedString {
  public:
   static constexpr int maxNumChar = 63;
-  NGP_TEST_FUNCTION TruncatedString() : string("") {}
+  NGP_TEST_FUNCTION TruncatedString() {}
   NGP_TEST_FUNCTION TruncatedString(const char* str);
 
   operator const char*() const { return string; }
 
  private:
-  char string[maxNumChar + 1];
+  char string[maxNumChar + 1] = {0};
 
   NGP_TEST_FUNCTION int get_string_length(const char* str) const;
   NGP_TEST_FUNCTION bool should_truncate(const int strLen) const;
