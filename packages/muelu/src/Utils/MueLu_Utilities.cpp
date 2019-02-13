@@ -259,7 +259,7 @@ bool IsParamValidVariable(const std::string& name)
 
 
    // Generates a communicator whose only members are other ranks of the baseComm on my node
-    Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId) {
+  Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor) {
 #ifdef HAVE_MPI
        int numRanks = baseComm->getSize();       
        if(numRanks == 1) {NodeId = baseComm->getRank(); return baseComm;}
@@ -278,17 +278,40 @@ bool IsParamValidVariable(const std::string& name)
        // Sort!
        std::sort(addressList.begin(),addressList.end());
 
+
+
+
        // Find which node I'm on (and stop when I've done that)
        int numNodes = 0;
+       int lastI = 0;
+       int coresPerNode = 0;
        for(int i=0, prev=addressList[0]; i<numRanks && prev != myaddr; i++) {
          if(prev != addressList[i]) {
            prev = addressList[i];
            numNodes++;
+           coresPerNode = std::max(i - lastI, coresPerNode);
+           lastI = i;
+
          }
        }
        NodeId = numNodes;
+       
        // Generate nodal communicator
-       return baseComm->split(NodeId,baseComm->getRank());   
+       Teuchos::RCP<const Teuchos::Comm<int> > newComm =  baseComm->split(NodeId,baseComm->getRank());   
+
+       // If we want to divide nodes up (for really beefy ones), we do so here
+       if(reductionFactor != 1) {
+         // Can we chop that up? 
+         if(coresPerNode % reductionFactor != 0)
+           throw std::runtime_error("Reduction factor does not evently divide # cores per node");
+         int reducedCPN = coresPerNode / reductionFactor;        
+         int nodeDivision = newComm->getRank() / reducedCPN;
+         
+         int ReducedNodeId = numNodes * reductionFactor + nodeDivision;
+         newComm =  baseComm->split(ReducedNodeId,baseComm->getRank());  
+       }
+
+       return newComm;       
 #else
        NodeId = baseComm->getRank();
        return baseComm;
