@@ -168,18 +168,18 @@ namespace MueLu {
       RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");
       TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
 
-      // If we only have one node, then we don't necessarily want to pop down to one rank
-      if(NodeComm()->getSize() == A->getMap()->getComm()->getSize()) break;
-
-      GetOStream(Statistics1) << "Repartitioning?  YES: \n  Within node only"<<std::endl;
-      int nodeRank = NodeComm->getRank();
-
-      // Do a reduction to get the total number of nodes
-      int isZero = (nodeRank == 0);
-      int numNodes=0;
-      Teuchos::reduceAll(*A->getMap()->getComm(), Teuchos::REDUCE_SUM, isZero, Teuchos::outArg(numNodes));
-      Set(currentLevel, "number of partitions", numNodes);
-      return;
+      // If we only have one node, then we don't want to pop down to one rank
+      if(NodeComm()->getSize() != A->getMap()->getComm()->getSize()) {
+        GetOStream(Statistics1) << "Repartitioning?  YES: \n  Within node only"<<std::endl;
+        int nodeRank = NodeComm->getRank();
+        
+        // Do a reduction to get the total number of nodes
+        int isZero = (nodeRank == 0);
+        int numNodes=0;
+        Teuchos::reduceAll(*A->getMap()->getComm(), Teuchos::REDUCE_SUM, isZero, Teuchos::outArg(numNodes));
+        Set(currentLevel, "number of partitions", numNodes);
+        return;
+      }
     }  
 
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning     
