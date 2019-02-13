@@ -287,7 +287,7 @@ struct BlockTriDiContainerTester {
         else
           TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R) " << details << " rd " << rd);
         if ( ! T_bare.is_null()) {
-          { // Test norm-based termination.
+          if ( ! seq_method) { // Test norm-based termination.
             const int nits = apply(*B, *X_solve, true);
             if (nits < num_sweeps) {
               const auto n0 = T_bare->getNorms0();
