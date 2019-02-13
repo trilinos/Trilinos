@@ -172,7 +172,7 @@ namespace MueLu {
       if(fineLevel.IsAvailable("Material Coordinates")) {
         RCP<Vector> fineMatCoords    = Get<RCP<Vector> >(fineLevel,"Material Coordinates");
         RCP<Vector> coarseMatCoords  = TransferCoords<Vector,VectorFactory>(fineLevel,fineMatCoords);
-        Set<RCP<Vector> >(coarseLevel, "Coordinates", coarseMatCoords);
+        Set<RCP<Vector> >(coarseLevel, "Material Coordinates", coarseMatCoords);
       }
 
     } // else
