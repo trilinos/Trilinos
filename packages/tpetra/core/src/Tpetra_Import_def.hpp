@@ -42,134 +42,22 @@
 #ifndef TPETRA_IMPORT_DEF_HPP
 #define TPETRA_IMPORT_DEF_HPP
 
-#include <Tpetra_Import_decl.hpp>
-#include <Tpetra_Distributor.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_ImportExportData.hpp>
-#include <Tpetra_Util.hpp>
-#include <Tpetra_Import_Util.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Details_Behavior.hpp>
-#include <Tpetra_Details_gathervPrint.hpp>
-#include <Tpetra_Details_Profiling.hpp>
-#include <Teuchos_as.hpp>
+#include "Tpetra_Distributor.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_ImportExportData.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Import_Util.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_DualViewUtil.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_Profiling.hpp"
+#include "Teuchos_as.hpp"
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-#include <Teuchos_TimeMonitor.hpp>
+#include "Teuchos_TimeMonitor.hpp"
 #endif
 #include <array>
 #include <memory>
-
-
-namespace {
-  bool
-  getBoolParameter (Teuchos::ParameterList* plist,
-                    const char paramName[],
-                    const bool defaultValue)
-  {
-    if (plist == nullptr) {
-      return defaultValue;
-    }
-    else if (plist->isType<bool> (paramName)) {
-      return plist->get<bool> (paramName);
-    }
-    else if (plist->isType<int> (paramName)) {
-      const int val_int = plist->get<int> (paramName);
-      return val_int != 0;
-    }
-    else {
-      return defaultValue;
-    }
-  }
-
-  auto view_alloc_no_init (const std::string& label) ->
-    decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing))
-  {
-    return Kokkos::view_alloc (label, Kokkos::WithoutInitializing);
-  }
-
-  template<class ElementType, class DeviceType>
-  void
-  makeDualViewFromOwningHostView (Kokkos::DualView<ElementType*, DeviceType>& dv, const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
-  {
-    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-    using dev_view_type = typename dual_view_type::t_dev;
-    using host_view_type = typename dual_view_type::t_host;
-
-    const auto size = hostView.size ();
-    auto devView = Kokkos::create_mirror_view (DeviceType (), hostView);
-
-#if defined(KOKKOS_ENABLE_CUDA)
-    constexpr bool is_cuda = std::is_same<typename DeviceType::execution_space, Kokkos::Cuda>::value;
-#else
-    constexpr bool is_cuda = false;
-#endif
-    TEUCHOS_ASSERT( is_cuda || devView.data () == hostView.data () );
-    
-    Kokkos::deep_copy (devView, hostView);
-    dv = dual_view_type (devView, hostView);
-  }
-
-  template<class ElementType, class DeviceType>
-  void
-  makeDualViewFromArrayView (Kokkos::DualView<ElementType*, DeviceType>& dv,
-			     const Teuchos::ArrayView<const ElementType>& av,
-			     const std::string& label)
-  {
-    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-    using dev_view_type = typename dual_view_type::t_dev;
-    using host_view_type = typename dual_view_type::t_host;
-    using const_host_view_type = typename host_view_type::const_type;
-
-    const auto size = av.size ();
-    const ElementType* ptr = (size == 0) ? nullptr : av.getRawPtr ();
-    const_host_view_type inView (ptr, size);
-    host_view_type hostView (view_alloc_no_init (label), size);
-    Kokkos::deep_copy (hostView, inView);
-
-    makeDualViewFromOwningHostView (dv, hostView);
-  }
-
-  template<class ElementType, class DeviceType>
-  void
-  makeDualViewFromVector (Kokkos::DualView<ElementType*, DeviceType>& dv,
-			  const std::vector<ElementType>& vec,
-			  const std::string& label)
-  {
-    using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-    using dev_view_type = typename dual_view_type::t_dev;
-    using host_view_type = typename dual_view_type::t_host;
-    using const_host_view_type = typename host_view_type::const_type;
-
-    const auto size = vec.size ();
-    const ElementType* ptr = (size == 0) ? nullptr : vec.data ();
-    const_host_view_type inView (ptr, size);
-    host_view_type hostView (view_alloc_no_init (label), size);
-    Kokkos::deep_copy (hostView, inView);
-
-    makeDualViewFromOwningHostView (dv, hostView);
-  }
-
-  template<class ElementType, class DeviceType>
-  void
-  printDualView (std::ostream& out,
-		 const Kokkos::DualView<ElementType*, DeviceType>& dv,
-		 const std::string& name)
-  {
-    out << name << ": ";
-    const size_t size = size_t (dv.extent (0));
-    const auto hostView = dv.view_host ();
-
-    out << "[";
-    for (size_t k = 0; k < size; ++k) {
-      out << hostView[k];
-      if (k + size_t (1) < size) {
-	out << ",";
-      }
-    }
-    out << "]";
-  }
-
-} // namespace (anonymous)
 
 namespace Teuchos {
   template<class T>
@@ -251,9 +139,9 @@ namespace Tpetra {
       auto MM(*TimeMonitor::getNewTimer(prefix));
 #endif
       if (this->verbose ()) {
-	std::ostringstream os;
-	os << *verbPrefix << "Call setupSamePermuteRemote" << endl;
-	this->verboseOutputStream () << os.str ();
+        std::ostringstream os;
+        os << *verbPrefix << "Call setupSamePermuteRemote" << endl;
+        this->verboseOutputStream () << os.str ();
       }
       setupSamePermuteRemote (remoteGIDs);
     }
@@ -263,30 +151,30 @@ namespace Tpetra {
       auto MM2(*TimeMonitor::getNewTimer(prefix));
 #endif
       if (source->isDistributed ()) {
-	if (this->verbose ()) {
-	  std::ostringstream os;
-	  os << *verbPrefix << "Call setupExport" << endl;
-	  this->verboseOutputStream () << os.str ();
-	}
-	setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
+        if (this->verbose ()) {
+          std::ostringstream os;
+          os << *verbPrefix << "Call setupExport" << endl;
+          this->verboseOutputStream () << os.str ();
+        }
+        setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
       }
       else if (this->verbose ()) {
-	std::ostringstream os;
-	os << *verbPrefix << "Source Map not distributed; skip setupExport"
-	   << endl;
-	this->verboseOutputStream () << os.str ();
+        std::ostringstream os;
+        os << *verbPrefix << "Source Map not distributed; skip setupExport"
+           << endl;
+        this->verboseOutputStream () << os.str ();
       }
     }
 
     TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );    
-    
+    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
+
     if (this->verbose ()) {
       std::ostringstream os;
       os << *verbPrefix << "Done!" << endl;
@@ -348,8 +236,8 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Teuchos::RCP<const map_type>& source,
           const Teuchos::RCP<const map_type>& target,
-	  Teuchos::Array<int>& remotePIDs,
-	  const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+          Teuchos::Array<int>& remotePIDs,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     base_type (source, target, Teuchos::null, plist, "Import")
   {
     init (source, target, true, remotePIDs, plist);
@@ -373,14 +261,15 @@ namespace Tpetra {
    template <class LocalOrdinal, class GlobalOrdinal, class Node>
    Import<LocalOrdinal,GlobalOrdinal,Node>::
    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
-	   const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-	   const Teuchos::ArrayView<int> & userRemotePIDs,
-	   const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
-	   const Teuchos::ArrayView<const int>          & userExportPIDs,
-	   const Teuchos::RCP<Teuchos::ParameterList>& plist,
-	   const Teuchos::RCP<Teuchos::FancyOStream>& out) :
+           const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+           const Teuchos::ArrayView<int> & userRemotePIDs,
+           const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+           const Teuchos::ArrayView<const int>          & userExportPIDs,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist,
+           const Teuchos::RCP<Teuchos::FancyOStream>& out) :
      base_type (source, target, out, plist, "Import")
   {
+    using ::Tpetra::Details::makeDualViewFromArrayView;
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -403,7 +292,7 @@ namespace Tpetra {
       os << "Start" << endl;
       this->verboseOutputStream () << os.str ();
     }
-    
+
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
     const size_type numSrcGids = sourceGIDs.size ();
@@ -432,7 +321,7 @@ namespace Tpetra {
     if (this->verbose () && this->getNumRemoteIDs () > 0 && ! source->isDistributed ()) {
       std::ostringstream os;
       os << *prefix << "Target Map has remote LIDs but source Map is not "
-	"distributed.  Importing to a submap of the target Map." << endl;
+        "distributed.  Importing to a submap of the target Map." << endl;
       this->verboseOutputStream () << os.str ();
     }
     // FIXME (mfh 03 Feb 2019) I don't see this as "abuse"; it's
@@ -459,7 +348,7 @@ namespace Tpetra {
     size_type indexIntoRemotePIDs = tRemotePIDs.size ();
     for (size_type i = 0; i < indexIntoRemotePIDs; ++i) {
       if (tRemotePIDs[i] == -1) {
-	++cnt;
+        ++cnt;
       }
     }
 
@@ -482,21 +371,21 @@ namespace Tpetra {
         indexIntoRemotePIDs = cnt;
         tRemoteGIDs = newRemoteGIDs;
         tRemotePIDs = newRemotePIDs;
-	makeDualViewFromArrayView (this->TransferData_->remoteLIDs_,
-				   newRemoteLIDs ().getConst (),
-				   "remoteLIDs");
+        makeDualViewFromArrayView (this->TransferData_->remoteLIDs_,
+                                   newRemoteLIDs ().getConst (),
+                                   "remoteLIDs");
       }
       else { //valid RemoteIDs empty
         indexIntoRemotePIDs = 0;
         tRemoteGIDs.clear();
         tRemotePIDs.clear();
-	this->TransferData_->remoteLIDs_ = decltype (this->TransferData_->remoteLIDs_) ();
+        this->TransferData_->remoteLIDs_ = decltype (this->TransferData_->remoteLIDs_) ();
       }
     }
 
     this->TransferData_->exportPIDs_ = Teuchos::Array<int> (userExportPIDs);
     makeDualViewFromArrayView (this->TransferData_->exportLIDs_,
-			       userExportLIDs, "exportLIDs");
+                               userExportLIDs, "exportLIDs");
 
     bool locallyComplete = true;
     for (size_type i = 0; i < userExportPIDs.size () && locallyComplete; ++i) {
@@ -509,14 +398,14 @@ namespace Tpetra {
     if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "locallyComplete: "
-	 << (locallyComplete ? "true" : "false")
-	 << "; call createFromSendsAndRecvs" << endl;
+         << (locallyComplete ? "true" : "false")
+         << "; call createFromSendsAndRecvs" << endl;
       this->verboseOutputStream () << os.str ();
     }
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       std::string mmm_prefix =
-	std::string("Tpetra ") + std::string(":iport_ctor:cFSAR ");
+        std::string("Tpetra ") + std::string(":iport_ctor:cFSAR ");
 
       auto MM3(*Teuchos::TimeMonitor::getNewTimer(mmm_prefix));
 #endif
@@ -525,13 +414,13 @@ namespace Tpetra {
     }
 
     TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -549,6 +438,7 @@ namespace Tpetra {
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     base_type (source, target, out, plist, "Import")
   {
+    using ::Tpetra::Details::makeDualViewFromArrayView;
     using std::endl;
 
     std::unique_ptr<std::string> prefix;
@@ -571,7 +461,7 @@ namespace Tpetra {
     if (this->verbose ()) {
       std::ostringstream os;
       os << *prefix << "numSameIDs: " << numSameIDs << ", locallyComplete: "
-	 << (locallyComplete ? "true" : "false") << endl;
+         << (locallyComplete ? "true" : "false") << endl;
       this->verboseOutputStream () << os.str ();
     }
 
@@ -579,36 +469,36 @@ namespace Tpetra {
     this->TransferData_->numSameIDs_ = numSameIDs;
 
     makeDualViewFromArrayView (this->TransferData_->permuteToLIDs_,
-			       permuteToLIDs ().getConst (),
-			       "permuteToLIDs");
+                               permuteToLIDs ().getConst (),
+                               "permuteToLIDs");
     TEUCHOS_ASSERT( size_t (this->TransferData_->permuteToLIDs_.extent (0)) ==
-		    size_t (permuteToLIDs.size ()) );
+                    size_t (permuteToLIDs.size ()) );
     makeDualViewFromArrayView (this->TransferData_->permuteFromLIDs_,
-			       permuteFromLIDs ().getConst (),
-			       "permuteFromLIDs");
+                               permuteFromLIDs ().getConst (),
+                               "permuteFromLIDs");
     TEUCHOS_ASSERT( size_t (this->TransferData_->permuteFromLIDs_.extent (0)) ==
-		    size_t (permuteFromLIDs.size ()) );
+                    size_t (permuteFromLIDs.size ()) );
     makeDualViewFromArrayView (this->TransferData_->remoteLIDs_,
-			       remoteLIDs ().getConst (),
-			       "remoteLIDs");
+                               remoteLIDs ().getConst (),
+                               "remoteLIDs");
     TEUCHOS_ASSERT( size_t (this->TransferData_->remoteLIDs_.extent (0)) ==
-		    size_t (remoteLIDs.size ()) );
+                    size_t (remoteLIDs.size ()) );
     makeDualViewFromArrayView (this->TransferData_->exportLIDs_,
-			       exportLIDs ().getConst (),
-			       "exportLIDs");
+                               exportLIDs ().getConst (),
+                               "exportLIDs");
     TEUCHOS_ASSERT( size_t (this->TransferData_->exportLIDs_.extent (0)) ==
-		    size_t (exportLIDs.size ()) );
+                    size_t (exportLIDs.size ()) );
     this->TransferData_->exportPIDs_.swap (exportPIDs);
     this->TransferData_->distributor_.swap (distributor);
 
     TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteFromLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->permuteToLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->remoteLIDs_.need_sync_host () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
-    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );    
+    TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
   }
 
   namespace { // (anonymous)
@@ -814,11 +704,11 @@ namespace Tpetra {
         if (verbose) {
           std::ostringstream os;
           os << *verboseHeader << "- Remote GIDs: "
-	     << Teuchos::toString (result.remoteGIDs) << endl;
+             << Teuchos::toString (result.remoteGIDs) << endl;
           os << *verboseHeader << "- Remote PIDs: "
-	     << Teuchos::toString (result.remotePIDs) << endl;
+             << Teuchos::toString (result.remotePIDs) << endl;
           os << *verboseHeader << "- Remote LIDs: "
-	     << Teuchos::toString (result.remoteLIDs) << endl;
+             << Teuchos::toString (result.remoteLIDs) << endl;
           *out << os.str ();
         }
       }
@@ -851,7 +741,7 @@ namespace Tpetra {
         if (verbose) {
           std::ostringstream os;
           os << *verboseHeader << "- Sort remotes by PID, as Import always does"
-	     << endl
+             << endl
              << *verboseHeader << "-- remotePIDs before: "
              << Teuchos::toString (result.remotePIDs) << endl
              << *verboseHeader << "-- remoteGIDs before: "
@@ -915,11 +805,15 @@ namespace Tpetra {
     base_type (sourceMap, Teuchos::null, debugOutput, plist, "Import")
   {
     using ::Tpetra::Details::Behavior;
-    using Teuchos::ArrayView;    
+    using ::Tpetra::Details::makeDualViewFromOwningHostView;
+    using ::Tpetra::Details::makeDualViewFromVector;
+    using ::Tpetra::Details::printDualView;
+    using ::Tpetra::Details::view_alloc_no_init;
+    using Teuchos::ArrayView;
     using Teuchos::getFancyOStream;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using Teuchos::rcpFromRef;    
+    using Teuchos::rcpFromRef;
     using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -939,7 +833,7 @@ namespace Tpetra {
       this->verboseOutputStream () << os.str ();
     }
 
-    TEUCHOS_ASSERT( ! this->TransferData_.is_null () );    
+    TEUCHOS_ASSERT( ! this->TransferData_.is_null () );
     ImportLocalSetupResult<LO, GO, NT> localSetupResult =
       setupSamePermuteRemoteFromUserGlobalIndexList<LO, GO, NT>
       (*sourceMap,
@@ -958,15 +852,15 @@ namespace Tpetra {
     using data_type = ImportExportData<LO, GO, NT>;
     TEUCHOS_ASSERT( ! this->TransferData_.is_null () );
     this->TransferData_ = rcp (new data_type (sourceMap,
-					      localSetupResult.targetMap,
-					      this->TransferData_->out_,
-					      plist));
+                                              localSetupResult.targetMap,
+                                              this->TransferData_->out_,
+                                              plist));
     this->TransferData_->numSameIDs_ = localSetupResult.numSameIDs;
     // Skip permutes; they are user error, because they duplicate
     // non-remote indices.
-    makeDualViewFromVector (this->TransferData_->remoteLIDs_, 
-			    localSetupResult.remoteLIDs,
-			    "remoteLIDs");
+    makeDualViewFromVector (this->TransferData_->remoteLIDs_,
+                            localSetupResult.remoteLIDs,
+                            "remoteLIDs");
     // "Is locally complete" for an Import means that all target Map
     // indices on the calling process exist on at least one process
     // (not necessarily this one) in the source Map.  For this
@@ -984,18 +878,18 @@ namespace Tpetra {
         this->verboseOutputStream () << os.str ();
       }
       ArrayView<const GO> remoteGIDs (localSetupResult.remoteGIDs.data (),
-				      localSetupResult.remoteGIDs.size ());
+                                      localSetupResult.remoteGIDs.size ());
       ArrayView<const int> remotePIDs (localSetupResult.remotePIDs.data (),
-				       localSetupResult.remotePIDs.size ());
+                                       localSetupResult.remotePIDs.size ());
       // Call Distributor::createFromRecvs to turn the remote GIDs and
       // their owning PIDs into a send-and-receive communication plan.
       // remoteGIDs and remotePIDs are input; exportGIDs and
       // exportPIDs are output arrays that createFromRecvs allocates.
       Distributor& distributor = this->TransferData_->distributor_;
       distributor.createFromRecvs (remoteGIDs,
-				   remotePIDs,
-				   exportGIDs,
-				   this->TransferData_->exportPIDs_);
+                                   remotePIDs,
+                                   exportGIDs,
+                                   this->TransferData_->exportPIDs_);
       // Find the LIDs corresponding to the (outgoing) GIDs in
       // exportGIDs.  For sparse matrix-vector multiply, this tells
       // the calling process how to index into the source vector to
@@ -1013,7 +907,7 @@ namespace Tpetra {
       const size_type numExportIDs = exportGIDs.size ();
 
       typename decltype (this->TransferData_->exportLIDs_)::t_host
-	exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
+        exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
       for (size_type k = 0; k < numExportIDs; ++k) {
         exportLIDs[k] = sourceMap->getLocalElement (exportGIDs[k]);
       }
@@ -1024,7 +918,7 @@ namespace Tpetra {
       std::ostringstream os;
       os << *verbPfx;
       printDualView (os, this->TransferData_->remoteLIDs_,
-		     "ImportExportData::remoteLIDs_");
+                     "ImportExportData::remoteLIDs_");
       os << endl;
       this->verboseOutputStream () << os.str ();
     }
@@ -1059,6 +953,9 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   setupSamePermuteRemote (Teuchos::Array<GlobalOrdinal>& remoteGIDs)
   {
+    using ::Tpetra::Details::makeDualViewFromOwningHostView;
+    using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::view_alloc_no_init;
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -1068,6 +965,8 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const GO>::size_type size_type;
+    ProfilingRegion regionExport ("Tpetra::Import::setupSamePermuteRemote");
+
     const map_type& source = * (this->getSourceMap ());
     const map_type& target = * (this->getTargetMap ());
     ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
@@ -1129,33 +1028,33 @@ namespace Tpetra {
     host_perm_type permuteFromLIDs
       (view_alloc_no_init ("permuteFromLIDs"), numPermutes);
     typename decltype (this->TransferData_->remoteLIDs_)::t_host remoteLIDs
-      (view_alloc_no_init ("permuteFromLIDs"), numRemotes);      
+      (view_alloc_no_init ("permuteFromLIDs"), numRemotes);
 
     {
       LO numPermutes2 = 0;
       LO numRemotes2 = 0;
       for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
-	const GO curTargetGid = rawTgtGids[tgtLid];
-	const LO srcLid = source.getLocalElement (curTargetGid);
-	if (srcLid != LINVALID) {
-	  permuteToLIDs[numPermutes2] = tgtLid;
-	  permuteFromLIDs[numPermutes2] = srcLid;
-	  ++numPermutes2;
-	}
-	else {
-	  remoteGIDs.push_back (curTargetGid);
-	  remoteLIDs[numRemotes2] = tgtLid;
-	  ++numRemotes2;
-	}
+        const GO curTargetGid = rawTgtGids[tgtLid];
+        const LO srcLid = source.getLocalElement (curTargetGid);
+        if (srcLid != LINVALID) {
+          permuteToLIDs[numPermutes2] = tgtLid;
+          permuteFromLIDs[numPermutes2] = srcLid;
+          ++numPermutes2;
+        }
+        else {
+          remoteGIDs.push_back (curTargetGid);
+          remoteLIDs[numRemotes2] = tgtLid;
+          ++numRemotes2;
+        }
       }
       TEUCHOS_ASSERT( numPermutes == numPermutes2 );
-      TEUCHOS_ASSERT( numRemotes == numRemotes2 );      
+      TEUCHOS_ASSERT( numRemotes == numRemotes2 );
       TEUCHOS_ASSERT( size_t (numPermutes) + remoteGIDs.size () == size_t (numTgtLids - numSameGids) );
     }
 
     makeDualViewFromOwningHostView (this->TransferData_->permuteToLIDs_, permuteToLIDs);
     makeDualViewFromOwningHostView (this->TransferData_->permuteFromLIDs_, permuteFromLIDs);
-    makeDualViewFromOwningHostView (this->TransferData_->remoteLIDs_, remoteLIDs);    
+    makeDualViewFromOwningHostView (this->TransferData_->remoteLIDs_, remoteLIDs);
     if (remoteLIDs.extent (0) != 0 && ! source.isDistributed ()) {
       // This Import has remote LIDs, meaning that the target Map has
       // entries on this process that are not in the source Map on
@@ -1176,10 +1075,12 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Import<LocalOrdinal,GlobalOrdinal,Node>::
   setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs,
-	       bool useRemotePIDs,
-	       Teuchos::Array<int>& userRemotePIDs,
-	       const Teuchos::RCP<Teuchos::ParameterList>& plist)
+               bool useRemotePIDs,
+               Teuchos::Array<int>& userRemotePIDs,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    using ::Tpetra::Details::makeDualViewFromOwningHostView;
+    using ::Tpetra::Details::view_alloc_no_init;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
@@ -1200,7 +1101,7 @@ namespace Tpetra {
       os << "Start" << std::endl;
       this->verboseOutputStream () << os.str ();
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (this->getSourceMap ().is_null (), std::logic_error,
        "Source Map is null.  " << suffix);
@@ -1243,9 +1144,9 @@ namespace Tpetra {
     if (! useRemotePIDs) {
       newRemotePIDs.resize (remoteGIDsView.size ());
       if (this->verbose ()) {
-	std::ostringstream os;
-	os << *prefix << "Call sourceMap.getRemoteIndexList" << endl;
-	this->verboseOutputStream () << os.str ();
+        std::ostringstream os;
+        os << *prefix << "Call sourceMap.getRemoteIndexList" << endl;
+        this->verboseOutputStream () << os.str ();
       }
       lookup = source.getRemoteIndexList (remoteGIDsView, newRemotePIDs ());
     }
@@ -1260,31 +1161,31 @@ namespace Tpetra {
       // mfh 12 Sep 2016: I disagree that this is "abuse"; it may be
       // correct behavior, depending on the circumstances.
       TPETRA_ABUSE_WARNING
-	(true, std::runtime_error, "::setupExport(): the source Map wasn't "
-	 "able to figure out which process owns one or more of the GIDs in the "
-	 "list of remote GIDs.  This probably means that there is at least one "
-	 "GID owned by some process in the target Map which is not owned by any"
-	 " process in the source Map.  (That is, the source and target Maps do "
-	 "not contain the same set of GIDs globally.)");
+        (true, std::runtime_error, "::setupExport(): the source Map wasn't "
+         "able to figure out which process owns one or more of the GIDs in the "
+         "list of remote GIDs.  This probably means that there is at least one "
+         "GID owned by some process in the target Map which is not owned by any"
+         " process in the source Map.  (That is, the source and target Maps do "
+         "not contain the same set of GIDs globally.)");
 
       // Ignore remote GIDs that aren't owned by any process in the
       // source Map.  getRemoteIndexList() gives each of these a
       // process ID of -1.
 
       const size_type numInvalidRemote =
-	std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
-		       std::bind1st (std::equal_to<int> (), -1));
+        std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
+                       std::bind1st (std::equal_to<int> (), -1));
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-	(numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
-	 "on the source Map returned IDNotPresent, but none of the returned "
-	 "\"remote\" process ranks are -1.  Please report this bug to the "
-	 "Tpetra developers.");
+        (numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
+         "on the source Map returned IDNotPresent, but none of the returned "
+         "\"remote\" process ranks are -1.  Please report this bug to the "
+         "Tpetra developers.");
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       using Teuchos::TimeMonitor;
       std::string label;
       if(!plist.is_null())
-	label = plist->get("Timer Label",label);
+        label = plist->get("Timer Label",label);
       std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:1 ");
       auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
 #else
@@ -1294,48 +1195,48 @@ namespace Tpetra {
       // If all of them are invalid, we can delete the whole array.
       const size_type totalNumRemote = this->getNumRemoteIDs ();
       if (numInvalidRemote == totalNumRemote) {
-	// all remotes are invalid; we have no remotes; we can delete the remotes
-	remoteProcIDs.clear ();
-	remoteGIDs.clear (); // invalidates remoteGIDsView
-	this->TransferData_->remoteLIDs_ =
-	  decltype (this->TransferData_->remoteLIDs_) ();
+        // all remotes are invalid; we have no remotes; we can delete the remotes
+        remoteProcIDs.clear ();
+        remoteGIDs.clear (); // invalidates remoteGIDsView
+        this->TransferData_->remoteLIDs_ =
+          decltype (this->TransferData_->remoteLIDs_) ();
       }
       else {
-	// Some remotes are valid; we need to keep the valid ones.
-	// Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
-	size_type numValidRemote = 0;
+        // Some remotes are valid; we need to keep the valid ones.
+        // Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
+        size_type numValidRemote = 0;
 #ifdef HAVE_TPETRA_DEBUG
-	ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
+        ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
 #else
-	GO* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
+        GO* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
 #endif // HAVE_TPETRA_DEBUG
 
-	// Don't mark the DualView modified, since we'll reallocate it.
-	auto remoteLIDs = this->TransferData_->remoteLIDs_.view_host ();
-	
-	for (size_type r = 0; r < totalNumRemote; ++r) {
-	  // Pack in all the valid remote PIDs and GIDs.
-	  if (remoteProcIDs[r] != -1) {
-	    remoteProcIDs[numValidRemote] = remoteProcIDs[r];
-	    remoteGIDsPtr[numValidRemote] = remoteGIDsPtr[r];
-	    remoteLIDs[numValidRemote] = remoteLIDs[r];
-	    ++numValidRemote;
-	  }
-	}
-	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-	  (numValidRemote != totalNumRemote - numInvalidRemote,
-	   std::logic_error, "After removing invalid remote GIDs and packing "
-	   "the valid remote GIDs, numValidRemote = " << numValidRemote
-	   << " != totalNumRemote - numInvalidRemote = "
-	   << totalNumRemote - numInvalidRemote
-	   << ".  Please report this bug to the Tpetra developers.");
+        // Don't mark the DualView modified, since we'll reallocate it.
+        auto remoteLIDs = this->TransferData_->remoteLIDs_.view_host ();
 
-	remoteProcIDs.resize (numValidRemote);
-	remoteGIDs.resize (numValidRemote);
+        for (size_type r = 0; r < totalNumRemote; ++r) {
+          // Pack in all the valid remote PIDs and GIDs.
+          if (remoteProcIDs[r] != -1) {
+            remoteProcIDs[numValidRemote] = remoteProcIDs[r];
+            remoteGIDsPtr[numValidRemote] = remoteGIDsPtr[r];
+            remoteLIDs[numValidRemote] = remoteLIDs[r];
+            ++numValidRemote;
+          }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numValidRemote != totalNumRemote - numInvalidRemote,
+           std::logic_error, "After removing invalid remote GIDs and packing "
+           "the valid remote GIDs, numValidRemote = " << numValidRemote
+           << " != totalNumRemote - numInvalidRemote = "
+           << totalNumRemote - numInvalidRemote
+           << ".  Please report this bug to the Tpetra developers.");
 
-	Kokkos::resize (remoteLIDs, numValidRemote);
-	this->TransferData_->remoteLIDs_ = decltype (this->TransferData_->remoteLIDs_) ();	
-	makeDualViewFromOwningHostView (this->TransferData_->remoteLIDs_, remoteLIDs);
+        remoteProcIDs.resize (numValidRemote);
+        remoteGIDs.resize (numValidRemote);
+
+        Kokkos::resize (remoteLIDs, numValidRemote);
+        this->TransferData_->remoteLIDs_ = decltype (this->TransferData_->remoteLIDs_) ();
+        makeDualViewFromOwningHostView (this->TransferData_->remoteLIDs_, remoteLIDs);
       }
       // Revalidate the view after clear or resize.
       remoteGIDsView = remoteGIDs ();
@@ -1345,15 +1246,15 @@ namespace Tpetra {
     // permutation to remoteGIDs and remoteLIDs_.  This ensures that
     // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
     // to the same thing.
-    {    
+    {
       this->TransferData_->remoteLIDs_.modify_host ();
       auto remoteLIDs = this->TransferData_->remoteLIDs_.view_host ();
       sort3 (remoteProcIDs.begin (),
-	     remoteProcIDs.end (),
-	     remoteGIDsView.getRawPtr (),
-	     remoteLIDs.data ());
-      this->TransferData_->remoteLIDs_.sync_device ();      
-    }    
+             remoteProcIDs.end (),
+             remoteGIDsView.getRawPtr (),
+             remoteLIDs.data ());
+      this->TransferData_->remoteLIDs_.sync_device ();
+    }
 
     // Call the Distributor's createFromRecvs() method to turn the
     // remote GIDs and their owning processes into a send-and-receive
@@ -1367,8 +1268,8 @@ namespace Tpetra {
     std::string label;
     if(!plist.is_null())
       label = plist->get("Timer Label",label);
-    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
-    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+    std::string prefix2 = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:3 ");
+    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
 #endif
 
     if (this->verbose ()) {
@@ -1377,17 +1278,17 @@ namespace Tpetra {
       this->verboseOutputStream () << endl;
     }
     this->TransferData_->distributor_.createFromRecvs (remoteGIDsView ().getConst (),
-					       remoteProcIDs, exportGIDs,
-					       this->TransferData_->exportPIDs_);
+                                               remoteProcIDs, exportGIDs,
+                                               this->TransferData_->exportPIDs_);
 
     // Find the LIDs corresponding to the (outgoing) GIDs in
     // exportGIDs.  For sparse matrix-vector multiply, this tells the
     // calling process how to index into the source vector to get the
     // elements which it needs to send.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
+    prefix2 = std::string("Tpetra ")+ label + std::string(":iport_ctor:setupExport:4 ");
     MM.release();
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2)));
 #endif
 
     // NOTE (mfh 03 Mar 2014) This is now a candidate for a
@@ -1396,10 +1297,10 @@ namespace Tpetra {
     const size_type numExportIDs = exportGIDs.size ();
     if (numExportIDs > 0) {
       typename decltype (this->TransferData_->exportLIDs_)::t_host
-	exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
+        exportLIDs (view_alloc_no_init ("exportLIDs"), numExportIDs);
       ArrayView<const GO> expGIDs = exportGIDs ();
       for (size_type k = 0; k < numExportIDs; ++k) {
-	exportLIDs[k] = source.getLocalElement (expGIDs[k]);
+        exportLIDs[k] = source.getLocalElement (expGIDs[k]);
       }
       makeDualViewFromOwningHostView (this->TransferData_->exportLIDs_, exportLIDs);
     }
@@ -1553,9 +1454,9 @@ namespace Tpetra {
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION
-	(! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
-	 "Tpetra::Import::setUnion: The source Map of the input Import must be the "
-	 "same as (in the sense of Map::isSameAs) the source Map of this Import.");
+        (! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
+         "Tpetra::Import::setUnion: The source Map of the input Import must be the "
+         "same as (in the sense of Map::isSameAs) the source Map of this Import.");
       const Comm<int>& comm1 = * (tgtMap1->getComm ());
       const Comm<int>& comm2 = * (tgtMap2->getComm ());
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -1768,7 +1669,7 @@ namespace Tpetra {
                             permuteToLIDsUnion, permuteFromLIDsUnion,
                             remoteLIDsUnion, exportLIDsUnion,
                             exportPIDsUnion, distributor,
-			    this->TransferData_->out_));
+                            this->TransferData_->out_));
     return unionImport;
   }
 
@@ -1821,7 +1722,7 @@ namespace Tpetra {
     GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     RCP<const map_type> targetMapNew =
       rcp (new map_type (GO_INVALID, GIDs, tgtMap->getIndexBase (),
-			 tgtMap->getComm ()));
+                         tgtMap->getComm ()));
 
     // Exports are trivial (since the sourcemap doesn't change)
     Array<int> exportPIDsnew (this->getExportPIDs ());

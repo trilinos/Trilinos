@@ -1225,7 +1225,7 @@ namespace Tpetra {
 
     virtual void
     copyAndPermute (const SrcDistObject& source,
-                    size_t numSameIDs,
+                    const size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
 
@@ -2734,10 +2734,10 @@ namespace Tpetra {
         const int myRank = comm.getRank ();
 
         TEUCHOS_TEST_FOR_EXCEPTION
-	  (! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
-	   prefix << "You asked clone() to use local indices (by setting the "
-	   "\"Locally indexed clone\" parameter to true), but the source graph "
-	   "does not yet have a column Map, so this is impossible.");
+          (! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
+           prefix << "You asked clone() to use local indices (by setting the "
+           "\"Locally indexed clone\" parameter to true), but the source graph "
+           "does not yet have a column Map, so this is impossible.");
 
         if (debug) {
           std::ostringstream os;
@@ -3064,7 +3064,9 @@ namespace Tpetra {
         int lclSuccess = failed ? 0 : 1;
         int gblSuccess = 1;
         reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-        TEUCHOS_TEST_FOR_EXCEPTION (gblSuccess != 1, std::logic_error, prefix << "Clone failed on at least one process.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (gblSuccess != 1, std::logic_error,
+           prefix << "Clone failed on at least one process.");
 
         if (debug) {
           std::ostringstream os;
