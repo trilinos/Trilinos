@@ -204,6 +204,7 @@ public:
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {  }
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const { }
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const { }
+  void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) { }
   void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
   void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
 
@@ -863,6 +864,11 @@ public:
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
+  }
+
+  //! Replace the diagonal entries of the matrix
+  void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+    mtx_->ReplaceDiagonalValues (toEpetra<GlobalOrdinal,Node>(diag));
   }
 
   void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
@@ -1634,7 +1640,7 @@ public:
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
-  
+
   // Epetra always has global constants
   bool haveGlobalConstants() const  { return true;}
 
@@ -1841,6 +1847,11 @@ public:
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
+  }
+
+  //! Replace the diagonal entries of the matrix
+  void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+    mtx_->ReplaceDiagonalValues (toEpetra<GlobalOrdinal,Node>(diag));
   }
 
   void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {

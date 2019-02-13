@@ -55,13 +55,13 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_replaceDiagonalCrsMatrix.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_TpetraMap.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_TpetraVector.hpp"
 #include "Xpetra_TpetraCrsGraph.hpp"
-//#include "Xpetra_TpetraRowMatrix.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -290,9 +290,9 @@ namespace Xpetra {
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
     { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(rowptr,colind,values); }
 
-    bool haveGlobalConstants() const 
+    bool haveGlobalConstants() const
     { return mtx_->haveGlobalConstants();}
-    
+
 //@}
 
     //! @name Transformational Methods
@@ -440,12 +440,11 @@ namespace Xpetra {
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
       : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
 
-    //! Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
       XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
       mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector());
-      // mtx_->getLocalDiagCopy(toTpetra(diag));
     }
 
     //! Get offsets of the diagonal entries in the matrix.
@@ -457,9 +456,13 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
-      //XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
-      //mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector(), offsets);
       mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
+    }
+
+    //! Replace the diagonal entries of the matrix
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+      XPETRA_MONITOR("TpetraCrsMatrix::replaceDiag");
+      Tpetra::replaceDiagonalCrsMatrix(*mtx_, *(toTpetra(diag)));
     }
 
     //! Left scale operator with given vector values
@@ -757,7 +760,6 @@ namespace Xpetra {
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
 
     bool haveGlobalConstants() const  { return false;}
-    
 
     //@}
 
@@ -893,6 +895,9 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {  }
+
+    //! Replace the diagonal entries of the matrix
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {  }
 
     //! Left scale operator with given vector values
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
@@ -1278,6 +1283,9 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {  }
+
+    //! Replace the diagonal entries of the matrix
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {  }
 
     //! Left scale operator with given vector values
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
