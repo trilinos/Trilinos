@@ -338,7 +338,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int NodeId = comm->getRank();
   if(provideNodeComm) {
     nodeComm = MueLu::GenerateNodeComm(comm,NodeId,provideNodeComm);
-    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
+    //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
   }
 #endif
 

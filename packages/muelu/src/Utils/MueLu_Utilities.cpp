@@ -278,37 +278,41 @@ bool IsParamValidVariable(const std::string& name)
        // Sort!
        std::sort(addressList.begin(),addressList.end());
 
-
-
-
        // Find which node I'm on (and stop when I've done that)
        int numNodes = 0;
-       int lastI = 0;
-       int coresPerNode = 0;
        for(int i=0, prev=addressList[0]; i<numRanks && prev != myaddr; i++) {
          if(prev != addressList[i]) {
            prev = addressList[i];
            numNodes++;
-           coresPerNode = std::max(i - lastI, coresPerNode);
-           lastI = i;
-
          }
        }
        NodeId = numNodes;
-       
+
        // Generate nodal communicator
        Teuchos::RCP<const Teuchos::Comm<int> > newComm =  baseComm->split(NodeId,baseComm->getRank());   
 
-       // If we want to divide nodes up (for really beefy ones), we do so here
+       // If we want to divide nodes up (for really beefy nodes), we do so here
        if(reductionFactor != 1) {
+         // Find # cores per node
+         int lastI = 0;
+         int coresPerNode = 0;
+         for(int i=0, prev=addressList[0]; i<numRanks; i++) {
+           if(prev != addressList[i]) {
+             prev = addressList[i];
+             coresPerNode = std::max(i - lastI, coresPerNode);
+             lastI = i;
+           }
+         }
+         coresPerNode = std::max(numRanks - lastI, coresPerNode);
+
          // Can we chop that up? 
          if(coresPerNode % reductionFactor != 0)
            throw std::runtime_error("Reduction factor does not evently divide # cores per node");
          int reducedCPN = coresPerNode / reductionFactor;        
          int nodeDivision = newComm->getRank() / reducedCPN;
          
-         int ReducedNodeId = numNodes * reductionFactor + nodeDivision;
-         newComm =  baseComm->split(ReducedNodeId,baseComm->getRank());  
+         NodeId = numNodes * reductionFactor + nodeDivision;
+         newComm =  baseComm->split(NodeId,baseComm->getRank());  
        }
 
        return newComm;       
