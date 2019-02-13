@@ -1414,10 +1414,10 @@ namespace Ifpack2 {
     /// numeric phase, initialize the preconditioner
     ///
     template<typename ArgActiveExecutionMemorySpace>
-    struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo;
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo;
     
     template<>
-    struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HostSpace> {
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HostSpace> {
       typedef KokkosBatched::Experimental::Mode::Serial mode_type;
 #if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__) 
       typedef KokkosBatched::Experimental::Algo::Level3::CompactMKL algo_type;
@@ -1428,7 +1428,7 @@ namespace Ifpack2 {
     
 #if defined(KOKKOS_ENABLE_CUDA) 
     template<>
-    struct EtxtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
       typedef KokkosBatched::Experimental::Mode::Team mode_type;
       typedef KokkosBatched::Experimental::Algo::Level3::Unblocked algo_type;
     };
@@ -1551,7 +1551,7 @@ namespace Ifpack2 {
                 const local_ordinal_type &v) const {
         namespace KB = KokkosBatched::Experimental;
 
-        typedef EtxtractAndFactorizeTridiagsDefaultModeAndAlgo
+        typedef ExtractAndFactorizeTridiagsDefaultModeAndAlgo
           <Kokkos::Impl::ActiveExecutionMemorySpace> default_mode_and_algo_type;
         typedef default_mode_and_algo_type::mode_type default_mode_type;
         typedef default_mode_and_algo_type::algo_type default_algo_type;
