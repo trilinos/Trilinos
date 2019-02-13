@@ -123,9 +123,9 @@ int main(int narg, char *arg[]) {
   delete [] myIds;
   delete [] weights;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail) {
-    printFailureCode(comm, fail);   // will exit(1)
+    printFailureCode(*comm, fail);   // will exit(1)
   }
   if (rank == 0) {
     std::cout << "PASS" << std::endl;
