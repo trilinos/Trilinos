@@ -95,8 +95,12 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 #include <Thyra_TpetraMultiVector_decl.hpp>
 #include <Thyra_TpetraMultiVector_def.hpp>
-
-
+#include "Thyra_Amesos2LinearOpWithSolveFactory.hpp"
+#include "Thyra_TpetraVectorSpace.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_LinearOpTester.hpp"
+#include "Thyra_LinearOpWithSolveTester.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 //Stratimikos
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #endif
@@ -168,7 +172,7 @@ namespace FROSch {
 
         typedef typename Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> SolverBuilderPtr;
         typedef typename Teuchos::RCP<Thyra::LinearOpWithSolveBase<SC> > ThyraSolveBasePtr;
-         typedef Xpetra::ThyraUtils<SC,LO,GO,NO>       XpThyUtils;
+        typedef Xpetra::ThyraUtils<SC,LO,GO,NO>       XpThyUtils;
 #endif
         SubdomainSolver(CrsMatrixPtr k,
                         ParameterListPtr parameterList,

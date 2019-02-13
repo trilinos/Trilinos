@@ -535,7 +535,7 @@ namespace FROSch {
                             }
                         }
                         Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,entries.size(),entries.size(),0,this->K_->getMap()->getComm());
-                        MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
+                        MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
                         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
                         std::vector<GO> col_vec(entries.size());
                         for(int i = 0;i<entries.size();i++)
@@ -553,7 +553,8 @@ namespace FROSch {
                 for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                     this->BlockCoarseDimension_[blockId] += numEntitiesGlobal[i];
                 }
-            }
+            
+        }
         }
         return 0;
     }    

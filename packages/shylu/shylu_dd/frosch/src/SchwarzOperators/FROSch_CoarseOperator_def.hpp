@@ -421,8 +421,6 @@ namespace FROSch {
                         RowsCoarseSolve.resize(end-start);
                         for(int i = 0;i<end-start;i++) RowsCoarseSolve[i] = start+i;
                     }
-                   // std::cout<<RowsCoarseSolve<<std::endl;
-                   //  Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),nSubs, CoarseSolveComm_);
                     Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,nSubs,RowsCoarseSolve,0,this->MpiComm_);
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
                     Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > GraphEntries =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,10));
@@ -494,7 +492,7 @@ namespace FROSch {
                         }
                         SubdomainConnectGraph_->fillComplete();
                         CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
-                       //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
+                      // CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                     }
                 }
             }
@@ -535,7 +533,7 @@ namespace FROSch {
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
             if(DistributionList_->get("Use RepMap",false)){
-                if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
+                //if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
                     GOVec RowsCoarseSolve;
@@ -621,7 +619,7 @@ namespace FROSch {
                         CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
                         //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                     }
-                }
+                //}
             }
 #endif
         } else {
