@@ -1,23 +1,23 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C         
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,7 +31,7 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-      SUBROUTINE PLTONE (MD, TITLE, NTITLE, XX, YY, XLAB, YLAB, NP,     
+      SUBROUTINE PLTONE (MD, TITLE, NTITLE, XX, YY, XLAB, YLAB, NP,
      1   CURVE, TPLOT)
 C
 C        OUTPUT DATA IN GRAFAID NEUTRAL FILE FORMAT FOR ONE PLOT
@@ -58,7 +58,7 @@ C     YY       NP          real     Y-variable data
 C
 C     SUBROUTINES AND FUNCTIONS CALLED:
 C        PACKT -  Remove multiple blanks from a character string
-C                 The string:     "This   is    the    title" 
+C                 The string:     "This   is    the    title"
 C                 Is returned as: "This is the title"
 C
       CHARACTER*(*) TITLE(*)
@@ -118,7 +118,7 @@ C
       CALL PACKT (YLAB,lenstr(ylab))
       WRITE (MD, 70) XLAB
       WRITE (MD, 70) YLAB
-      WRITE (MD, 80) XMN,COMMA,XMX,COMMA,YMN,COMMA,YMX,COMMA,           
+      WRITE (MD, 80) XMN,COMMA,XMX,COMMA,YMN,COMMA,YMX,COMMA,
      1               NP,COMMA,AUX
       WRITE (MD, 90) AXTYP,COMMA,XTYP,COMMA
 C

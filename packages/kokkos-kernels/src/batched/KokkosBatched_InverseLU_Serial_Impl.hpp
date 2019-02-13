@@ -5,8 +5,8 @@
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Trsm_Decl.hpp"
-#include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_SolveLU_Decl.hpp"
+#include "KokkosBatched_SolveLU_Serial_Impl.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -88,7 +88,7 @@ namespace KokkosBatched {
         auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
         
         const ScalarType one(1.0);
-        
+
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -97,9 +97,8 @@ namespace KokkosBatched {
         }
         
         //First, compute L inverse by solving the system L*Linv = I for Linv
-        SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Unblocked>::invoke(one, A, B);
         //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
-        SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Unblocked>::invoke(one, A, B);
+        SerialSolveLU<Algo::SolveLU::Unblocked,Trans::NoTranspose>::invoke(A,B);
 		
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -140,9 +139,8 @@ namespace KokkosBatched {
         }
 
         //First, compute L inverse by solving the system L*Linv = I for Linv
-        SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Blocked>::invoke(one, A, B);
         //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
-        SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Blocked>::invoke(one, A, B);
+        SerialSolveLU<Algo::SolveLU::Blocked,Trans::NoTranspose>::invoke(A,B);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll

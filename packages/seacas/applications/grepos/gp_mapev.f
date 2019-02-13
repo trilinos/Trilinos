@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -38,17 +38,17 @@ C   --
 C   --MAPVAR reorders the data in VARS based on the map in MAP
 C   --
 C   --Parameters:
-C   --   NOLD - IN - number of old values, 
+C   --   NOLD - IN - number of old values,
 C   --   NNEW - IN - number of new values
 C   --   NVAR - IN - the number of variables
 C   --   NVARDM - IN - the row dimension of VARNP
 C   --   MAP  - IN - map from new value to old MAP(NEW) = OLD
-C                    size is 'nnew'      
+C                    size is 'nnew'
 C   --   VARS - IN/OUT - the values. On input in old order,
-C                        on output in new order      
+C                        on output in new order
 C   --   SCR  - TMP - temporary storage area
 
-      
+
       integer map(*)
       real vars(*)
 c      real vars(nold, nvar)
@@ -64,14 +64,14 @@ C     easier to transfer variables from old to new. We don't need to
 C     worry about the truth table in this routine; just transfer
 C     all variables from old to new and the output takes care
 C     of truth table handling.  This is a little extra work
-C     done in this routine, but permits modifying truth table or 
+C     done in this routine, but permits modifying truth table or
 C     combining element blocks with different truth tables.
 
       do 30 ivar = 1, nvar
         do 10 i = 1, nnew
           scr(i) = vars(map(i) + nold * (ivar-1))
  10     continue
-        
+
         do 20 i = 1, nnew
           vars(i + nnew * (ivar-1)) = scr(i)
  20     continue

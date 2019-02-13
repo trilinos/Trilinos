@@ -84,7 +84,6 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-    GO GOInvalid = Teuchos::OrdinalTraits<GO>::invalid();
 
     RCP<const Teuchos::Comm<int> > comm = MueLuTests::TestHelpers_kokkos::Parameters::getDefaultComm();
 

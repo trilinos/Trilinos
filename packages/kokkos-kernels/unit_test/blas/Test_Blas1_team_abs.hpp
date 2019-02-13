@@ -63,7 +63,7 @@ namespace Test {
       expected_result += AT::abs(h_x(i)) * AT::abs(h_x(i));
 
     //KokkosBlas::abs(y,x); 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAbs", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -74,7 +74,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
 
     //KokkosBlas::abs(y,c_x);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAbs", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -142,7 +142,7 @@ namespace Test {
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
     //KokkosBlas::abs(y,x);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAbs", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
@@ -159,7 +159,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
 
     //KokkosBlas::abs(y,c_x);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamAbs", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::abs(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );

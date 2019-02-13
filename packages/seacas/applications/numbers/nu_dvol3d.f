@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -52,7 +52,7 @@ C       NSEG    INTEGER   Number of segments in this boundary
 C       DELVOL  REAL      Change in volume of this cavity
 C       NDIM   INTEGER   Number of Nodes
 C
-C     CALLED BY: 
+C     CALLED BY:
 C
 C***********************************************************************
 C
@@ -66,21 +66,21 @@ C
          J = LSTSN(4*KSEG - 2)
          I = LSTSN(4*KSEG - 3)
 C
-         Y1 = COORD(I,2) 
-         Y2 = COORD(J,2) 
-         Y3 = COORD(K,2) 
-         Y4 = COORD(L,2) 
-C             
+         Y1 = COORD(I,2)
+         Y2 = COORD(J,2)
+         Y3 = COORD(K,2)
+         Y4 = COORD(L,2)
+C
          Y5 = COORD(I,2) + DISP(I,2)
          Y6 = COORD(J,2) + DISP(J,2)
          Y7 = COORD(K,2) + DISP(K,2)
          Y8 = COORD(L,2) + DISP(L,2)
 C
-         Z1 = COORD(I,3) 
-         Z2 = COORD(J,3) 
-         Z3 = COORD(K,3) 
-         Z4 = COORD(L,3) 
-C             
+         Z1 = COORD(I,3)
+         Z2 = COORD(J,3)
+         Z3 = COORD(K,3)
+         Z4 = COORD(L,3)
+C
          Z5 = COORD(I,3) + DISP(I,3)
          Z6 = COORD(J,3) + DISP(J,3)
          Z7 = COORD(K,3) + DISP(K,3)
@@ -127,7 +127,7 @@ C
          B81 = ( Y7*(Z3-Z6-Z54) + Y6*Z75 + Y5*(Z6-Z1-Z47)
      *         + Y4*(Z1-Z3-Z75) + Y3*Z47 + Y1*Z54 ) / 12.
 C
-C Calculate volume of displaced element face 
+C Calculate volume of displaced element face
 C
          VOL=  COORD(I,1)              * B11
      *      +  COORD(J,1)              * B21

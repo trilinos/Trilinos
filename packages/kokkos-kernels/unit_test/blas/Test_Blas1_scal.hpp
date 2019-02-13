@@ -268,45 +268,65 @@ int test_scal_mv() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, scal_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_float"); 
     test_scal<float,float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, scal_mv_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_float"); 
     test_scal_mv<float,float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, scal_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_double"); 
     test_scal<double,double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, scal_mv_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_double"); 
     test_scal_mv<double,double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, scal_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_complex_double"); 
     test_scal<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, scal_mv_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_complex_double"); 
     test_scal_mv<Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, scal_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_int"); 
     test_scal<int,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, scal_mv_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_int"); 
     test_scal_mv<int,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
 TEST_F( TestCategory, scal_double_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_double_int"); 
     test_scal<double,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
-TEST_F( TestCategory, scal_double_mv_int ) {
+TEST_F( TestCategory, scal_mv_double_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::scal_mv_double_int"); 
     test_scal_mv<double,int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif

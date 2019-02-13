@@ -1,23 +1,23 @@
 C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,12 +29,12 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C     -*- Mode: fortran -*-
 C=======================================================================
 C     $Id: expxyz.f,v 1.3 2002/06/24 16:09:28 gdsjaar Exp $
-c     
+c
       SUBROUTINE EXPXYZ (NDIM,
      $     MATNS1, MATNS2, NNNPS, IXNNPS, LTNNPS,
      $     NUMNP1, XN1, YN1, ZN1,
@@ -44,16 +44,16 @@ c
      $     nelbl2, id2, nelb2, nlnk2, link2,
      $     NMATCH, TOLER, CLOSE, MATMAT)
 C=======================================================================
-      
+
 C     --*** EXPXYZ *** (GJOIN) Find matching nodes
-C     --   Written by Greg Sjaardema, 8-25-92 - gdsjaar - 
+C     --   Written by Greg Sjaardema, 8-25-92 - gdsjaar -
 C     --   Modified from MATXYZ
 C     --
 C     --EXPXYZ matches nodes from the first and second database by comparing
 C     --the coordinates.  Since some slack is needed in the equality check,
 C     --the comparison may not work for all meshes.  The nodes to be matched
 C     --may be limited to nodes in two nodal point sets. Nodes are limited
-C     --by material blocks -- only match if the materials match.  Used to 
+C     --by material blocks -- only match if the materials match.  Used to
 C     --avoid matches across slidelines.
 C     --
 C     --Parameters:
@@ -78,8 +78,8 @@ C     --      negative if no match; reset if NMATCH = 0
 C     --   NMATCH - IN/OUT - the number of matching nodes
 C     --   CLOSE - IN/OUT - true if match closest node, false if match any
 C     --      node withing tolerance.
-C     --   MATMAT - IN/OUT - true if match by material 
-      
+C     --   MATMAT - IN/OUT - true if match by material
+
       include 'gj_filnum.blk'
       INTEGER NNNPS(*), IXNNPS(*), LTNNPS(*)
       REAL XN1(*), YN1(*), ZN1(*)
@@ -87,22 +87,22 @@ C     --   MATMAT - IN/OUT - true if match by material
       INTEGER IX1(*), IX2(*), nod1(*), nod2(*)
       INTEGER IXNP2(*)
       LOGICAL CLOSE, MATMAT
-      
+
       INTEGER ID1(*), NELB1(*), NLNK1(*), LINK1(*)
       INTEGER ID2(*), NELB2(*), NLNK2(*), LINK2(*)
-      
+
       PARAMETER (MXNAM = 1)
       DIMENSION KV(MXNAM), RV(MXNAM), IVAL(MXNAM)
       CHARACTER*8  CV(MXNAM)
-      
+
       CHARACTER*80 STRING
       LOGICAL INIT
       LOGICAL BYSET
       LOGICAL OK
-      
+
       NSVMAT = 0
       BYSET = (MATNS1 .GT. 0) .AND. (MATNS2 .GT. 0)
-      
+
 C     --Index nodes to match in the nodal point sets
       call prterr('WARNING',
      &     'EXPXYZ (By-material matching) is an experimental routine')
@@ -121,10 +121,10 @@ C     ... Fell through do loop - no matching material in mesh 2.
          write (*,*) 'Material ',id,' not present in mesh 2'
          go to 190
  30      continue
-         
+
 C     Now know that id1(iblk) == id2(iblk2).  Set flag in nod1 and nod2
 C     corresponding to whether node exists in these blocks
-         
+
          call iniint (numnp1, 0, nod1)
          call iniint (numnp2, 0, nod2)
          do 40 i = 1, (nelb1(iblk) * nlnk1(iblk))
@@ -133,7 +133,7 @@ C     corresponding to whether node exists in these blocks
          do 50 i = 1, (nelb2(iblk2) * nlnk2(iblk2))
             nod2(link2(i+ioff2)) = 1
  50      continue
-         
+
          IF (BYSET) THEN
             IN1 = 0
             IX0 = IXNNPS(MATNS1) - 1
@@ -143,7 +143,7 @@ C     corresponding to whether node exists in these blocks
                   IX1(IN1) = LTNNPS(IX0+N)
                end if
  60         CONTINUE
-            
+
             IN2 = 0
             IX0 = IXNNPS(MATNS2) - 1
             DO 70 N = 1, NNNPS(MATNS2)
@@ -161,7 +161,7 @@ C     ... Construct ix1 and ix2 from nod1 and nod2
                   ix1(in1) = n
                end if
  80         continue
-            
+
             in2 = 0
             do 90 n = 1, numnp2
                if (nod2(n) .eq. 1) then
@@ -169,15 +169,15 @@ C     ... Construct ix1 and ix2 from nod1 and nod2
                   ix2(in2) = n
                end if
  90         continue
-            
+
          END IF
-      
+
          time0 = 0.0
          time1 = 0.0
          time2 = 0.0
 
 C     --Find the limits of the overlapping area of the two databases
-         
+
          CALL MINMXS (IN1, IX1, XN1, X1MIN, X1MAX)
          CALL MINMXS (IN2, IX2, XN2, X2MIN, X2MAX)
          CALL MINMXS (IN1, IX1, YN1, Y1MIN, Y1MAX)
@@ -197,21 +197,21 @@ C     --Find the limits of the overlapping area of the two databases
             ZMIN = 0.0
             ZMAX = 0.0
          END IF
-         
+
          EPS = ((XMAX - XMIN) + (YMAX - YMIN) + (ZMAX - ZMIN)) / 1E3
          IF (EPS .LT. 0.0) THEN
             CALL PRTERR ('ERROR', 'Nodes do not overlap')
             GOTO 180
          END IF
-         
-         
+
+
          IF (TOLER .GE. 0.0) THEN
             EPS = TOLER
          ELSE
             WRITE (*, 10040) EPS
 10040       FORMAT (/' Default tolerance = ',1PE10.3)
             CALL FREFLD (0, 0,
-     *           'Enter new value for tolerance (<ret> for default): ', 
+     *           'Enter new value for tolerance (<ret> for default): ',
      *           MXNAM, IOS, NF, KV, CV, IVAL, RV)
             IF (IOS .NE. 0) RV(1) = 0.0
             IF (RV(1) .NE. 0.0) EPS = RV(1)
@@ -230,14 +230,14 @@ C     --Find the limits of the overlapping area of the two databases
             CALL PRTERR ('ERROR', 'Nodes do not overlap')
             GOTO 180
          END IF
-         
+
          XMIN = XMIN - EPS
          XMAX = XMAX + EPS
          YMIN = YMIN - EPS
          YMAX = YMAX + EPS
          ZMIN = ZMIN - EPS
          ZMAX = ZMAX + EPS
-         
+
          in1sv = in1
          IN1 = 0
          Z3D = 0.0
@@ -255,7 +255,7 @@ C     --Find the limits of the overlapping area of the two databases
              END IF
            end if
  120       CONTINUE
-         
+
            in2sv = in2
            IN2 = 0
            IF (NDIM .LT. 3) Z3D = 0.0
@@ -275,7 +275,7 @@ C     --Find the limits of the overlapping area of the two databases
  130     CONTINUE
 
 C     --Blank out the IXNP2 array
-         
+
          IF (INIT) THEN
             DO 140 INP = 1, NUMNP2
                IXNP2(INP) = -999
@@ -296,15 +296,15 @@ C     --Blank out the IXNP2 array
                END IF
  150        CONTINUE
          END IF
-         
+
 C     --Find all matching nodes by comparing coordinates of nodes in overlap area
-         
+
          call excpus(time0)
          call prterr('CMDSPEC', 'Entering Sorting Phase')
          call indexn(xn1, 1, 1, ix1, in1, .FALSE.)
          call indexn(xn2, 1, 1, ix2, in2, .FALSE.)
          call prterr('CMDSPEC', 'Entering Comparison Phase')
-         
+
          time2 = 0.0
          CALL EXCPUS(time1)
          DISMIN =  1.0E38
@@ -313,7 +313,7 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
          nout   = 0
          WRITE (*,'(A)') ' '
          WRITE (*,'(A)') ' '
-         
+
          NSVMAT = NMATCH
          Z3D = 0.0
          Z = 0.0
@@ -339,13 +339,13 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
                INP2 = IX2(I2)
                if (inp2 .le. 0) goto 160
                if (x-eps .gt. xn2(inp2)) i2beg = i2
-C     ... Since we are sorted on X, if set 2 X greater than set 1 X+eps, 
+C     ... Since we are sorted on X, if set 2 X greater than set 1 X+eps,
 C     go to next X1 coord.
                if (xn2(inp2)-eps .gt. x) goto 165
 
                IF (NDIM .GE. 3) Z3D = ZN2(INP2)
                DIS = MAX (ABS (XN2(INP2) - X), ABS(YN2(INP2) - Y),
-     &              ABS (Z3D - Z) ) 
+     &              ABS (Z3D - Z) )
                IF ( (DIS .LE. EPS .AND. .NOT. CLOSE) .OR.
      &              DIS .EQ. 0.0) THEN
                   DISMAX = MAX(DISMAX, DIS)
@@ -379,7 +379,7 @@ C     go to next X1 coord.
                END IF
             END IF
  170     CONTINUE
-         
+
          CALL EXCPUS(time2)
          IF (BYSET) THEN
             IF ((IN1 .GT. 0) .AND. (IN2 .GT. 0)) THEN
@@ -387,7 +387,7 @@ C     go to next X1 coord.
      &              'All nodes in nodal point set cannot be matched')
             END IF
          END IF
-         
+
          WRITE (*, 10050) NCOMP
          WRITE (*, 10021) EPS
          IF (DISMAX .GT. -1.0E37) THEN
@@ -419,7 +419,7 @@ C     go to next X1 coord.
  190     continue
          ioff1 = ioff1 + (nelb1(iblk) * nlnk1(iblk))
  200  continue
-      
+
       RETURN
 10010 FORMAT (/, 4X, A)
 10020 FORMAT (' Number of equivalence comparisons = ',T38,I15,T60,I15)

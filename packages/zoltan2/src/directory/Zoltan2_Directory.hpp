@@ -58,8 +58,7 @@
 #include <mpi.h>
 #endif
 
-// #include <Kokkos_UnorderedMap.hpp> // unordered map stores the local nodes
-#include <unordered_map>
+#include <Kokkos_UnorderedMap.hpp> // unordered map stores the local nodes
 
 namespace Zoltan2 {
 
@@ -195,21 +194,11 @@ class Zoltan2_Directory {
 
       // fill
       size_t cnt = 0;
-
-      for(auto itr = node_map.begin(); itr != node_map.end(); ++itr) {
-        if(itr->second.free == 0) {
-          local_gids[cnt++] = itr->first;
-        }
-      }
-
-      // TODO: Restore Kokkos unordered_map
-      /*
       for(size_t n = 0; n < node_map.capacity(); ++n) {
         if(node_map.value_at(n).free == 0) {
           local_gids[cnt++] = node_map.key_at(n);
         }
       }
-      */
 
       if(cnt != node_map.size()) {
         throw std::logic_error("Unexpected counts. Internal error with the"
@@ -261,10 +250,8 @@ class Zoltan2_Directory {
 
     // originally the nodes are stored in a hash but in the new Kokkos mode
     // they are stored using Kokkos::UnorderedMap
-    typedef std::unordered_map<gid_t,
-      Zoltan2_Directory_Node<gid_t,lid_t,user_t>> node_map_t;
-//    typedef Kokkos::UnorderedMap<gid_t,
-//      Zoltan2_Directory_Node<gid_t,lid_t,user_t>> node_map_t;
+    typedef Kokkos::UnorderedMap<gid_t,
+      Zoltan2_Directory_Node<gid_t,lid_t,user_t>, Kokkos::HostSpace> node_map_t;
     node_map_t node_map;
 
     // this method exists so constructor and copy constructor don't duplicate
@@ -636,11 +623,9 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
     // read the std::vector size (which is added to base length find_msg_size.
     virtual size_t get_local_find_msg_size(gid_t * gid,
       bool throw_if_missing = true) const {
-        if(this->node_map.find(*gid) != this->node_map.end()) {
-        // if(this->node_map.exists(*gid)) { // TODO switch to Kokkos map
+        if(this->node_map.exists(*gid)) {
           const Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
-            this->node_map.at(*gid);
-            // this->node_map.value_at(this->node_map.find(*gid)); // TODO: Switch to Kokkos map
+            this->node_map.value_at(this->node_map.find(*gid));
           return this->find_msg_size + node.userData.size() * sizeof(user_val_t);
         }
         else if(throw_if_missing) {

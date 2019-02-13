@@ -55,7 +55,18 @@ else
 fi
 # NOTE: Above, we use 1/2 as many executors as
 
-if [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]; then
+# Warning options requested by Gemma team (which should hopefully also take
+# care of warnings required by the other ATDM APPs as well).  See #3178 and
+# #4221
+ATDM_CONFIG_GNU_CXX_WARNINGS="-Wall -Wextra"
+ATDM_CONFIG_INTEL_CXX_WARNINGS="-Wall -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wreturn-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings"
+
+# For now, turn on warnings by default:
+if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
+  export ATDM_CONFIG_ENABLE_STRONG_WARNINGS=1
+fi
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
   module load sparc-dev/clang-5.0.1_openmpi-1.10.2
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
@@ -63,6 +74,9 @@ if [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
+  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
+  fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
   export OMPI_CXX=`which g++`
@@ -71,6 +85,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
+  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
+  fi
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core"
@@ -83,6 +100,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
+  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
+  fi
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
   # Still uses old 
   export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
@@ -95,6 +115,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
+  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
+  fi
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core" # Critical to perforamnce!
@@ -109,6 +132,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1_INTELMPI-5.1.2" ]; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
+  if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
+  fi
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp

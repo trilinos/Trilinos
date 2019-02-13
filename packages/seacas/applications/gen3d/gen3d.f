@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -270,35 +270,35 @@ C ... Don't warn about no map stored in file
            call inirea(lessnl, 1.0, a(kfacss))
          end if
 
-c     ... Now convert sides to nodes.... ia(kltsss), 
+c     ... Now convert sides to nodes.... ia(kltsss),
 C     ... This code stolen from ex2ex1v2, Vic Yarberry
 C     offset into element list for current side set
          isoff = 0
 C     node count for current side set
          nodcnt = 0
          do 104 i=0,numess-1
-C     update index array            
+C     update index array
            ia(kixnss+i)=nodcnt+1
-C     get num of sides & df            
+C     get num of sides & df
            call exgsp(ndbin,ia(kidss+i),nsess,ndess,nerr)
-           
+
 C     get side set nodes
            call exgssn(ndbin,ia(kidss+i),ia(kltnnn+isoff),
-     &          ia(kltnss+nodcnt),nerr) 
+     &          ia(kltnss+nodcnt),nerr)
            if (nerr .gt. 0) goto 40
            nness = 0
 C     sum node counts to calculate next index
-           do 102 ii=0,nsess-1 
+           do 102 ii=0,nsess-1
              nness=nness+ia(kltnnn+isoff+ii)
  102       continue
            ia(knnss+i)=nness
            nodcnt=nodcnt+nness
            isoff=isoff+nsess
  104     continue
-         
+
          if (ierr .ne. 0) go to 40
       end if
-      
+
       call exinq(ndbin, EXQA,   nqarec, rdum, cdum, ierr)
       call exinq(ndbin, EXINFO, ninfo,  rdum, cdum, ierr)
       call mcrsrv('QAREC', kqarec, (nqarec+1) * 4 * MXSTLN)
@@ -412,7 +412,7 @@ C   --Get the side sets, and the front and back side sets
      &     IA(KNSFRO), IA(KNSBCK),
      &     IA(KIDSS), IA(KNESS), IA(KNES3), IA(KNNSS), IA(KNNS3),
      &     IA(KIXESS), IA(KIXES3), IA(KIXNSS), IA(KIXNS3),
-     &     IA(KLTESS), IA(KLTES3), IA(KLTSSS), IA(KLTSS3), 
+     &     IA(KLTESS), IA(KLTES3), IA(KLTSSS), IA(KLTSS3),
      &     IA(KLTNSS), IA(KLTNS3), A(KFACSS), A(KFACS3),
      &     IA(KIXEL), IA(KINCEL), IA(KNREL), IA(KIECOL), IA(KIXNP),
      &     IA(KNRNP), IA(KROT))
@@ -460,7 +460,7 @@ C ... Compress the output
 C   --Write the QA records
       CALL DBOQA (NDBOUT, QAINFO, NQAREC, c(kqarec),
      &     NINFO, c(kinfo), ' Gen3D: ', FILIN)
-      
+
 C   --Write the initial variables
 
       CALL NEWINI (IDNSET(0,1)+IDNSET(0,2), IDESET(0,1)+IDESET(0,2),
@@ -473,7 +473,7 @@ C   --Write the initial variables
       endif
 
       CALL DBPINI ('NTIS', NDBOUT, TITLE, NDIM3, NUMNP3, NUMEL3, NELBL3,
-     &     NNPS3, LNPSN3, LNPSN3, NESS3, LESSE3, LESSN3, LESSN3, 
+     &     NNPS3, LNPSN3, LNPSN3, NESS3, LESSE3, LESSN3, LESSN3,
      &     IDUM, IDUM, IDUM, FILOUT)
 
 C   --Write the coordinates
@@ -521,7 +521,7 @@ C   --Write the coordinates
 
       CALL WRELB (A, IA, C(KBKTYP), C(KNMLB), IA(KIBPAR),
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
-     &     IA(KLINK), A(KATRIB), A(KELATT), 
+     &     IA(KLINK), A(KATRIB), A(KELATT),
      &     IA(KIXEL), IA(KINCEL), IA(KNREL), IA(KIECOL), IA(KIXNP),
      &     IA(KNRNP), IA(KNELB3))
 
@@ -558,7 +558,7 @@ C   --Fixup sides sets if mirrored
       END IF
       CALL MDDEL('NUMELB3')
 C     --Write the side sets
-      
+
       CALL WRESS (A, IA, IDESET(0,1), IDESET(0,2),
      &     IA(KISFRO), IA(KISBCK), NSSUR, NESUR, IA(KNSFRO), IA(KNSBCK),
      &     IA(KIDSS), IA(KNES3), IA(KNNS3),
@@ -640,7 +640,7 @@ C   This is currently used in the sideset mirroring code
       integer nelblk
       character*(MXSTLN) blktyp(nelblk)
       character*(MXSTLN) comtop
-      
+
       comtop = blktyp(1)(:3)
       do 10 i=2, nelblk
          if (blktyp(i)(:3) .ne. comtop(:3)) then

@@ -45,7 +45,6 @@
 #include "Tpetra_Details_Transfer.hpp"
 #include "Tpetra_Export_fwd.hpp"
 #include "Tpetra_Import_fwd.hpp"
-#include "Tpetra_ImportExportData_fwd.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -125,11 +124,13 @@ namespace Tpetra {
   {
   private:
     friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
+    using base_type =
+      ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! The specialization of Map used by this class.
-    typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors, assignment, and destructor
     //@{
 
     /// \brief Construct a Export object from the source and target Map.
@@ -206,79 +207,12 @@ namespace Tpetra {
     /// transpose of a sparse matrix.
     Export (const Import<LocalOrdinal,GlobalOrdinal,Node> & importer);
 
-    //! Destructor.
-    virtual ~Export ();
-
-    /// \brief Set parameters.
-    ///
-    /// Please see the class documentation for a list of all accepted
-    /// parameters and their default values.
-    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
-
-    //@}
-    //! @name Export Attribute Methods
-    //@{
-
-    /// \brief Number of initial identical IDs.
-    ///
-    /// The number of IDs that are identical between the source and
-    /// target Maps, up to the first different ID.
-    size_t getNumSameIDs() const;
-
-    /// \brief Number of IDs to permute but not to communicate.
-    ///
-    /// The number of IDs that are local to the calling process, but
-    /// not part of the first getNumSameIDs() entries.  The Import
-    /// will permute these entries locally (without distributed-memory
-    /// communication).
-    size_t getNumPermuteIDs() const;
-
-    //! List of local IDs in the source Map that are permuted.
-    Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
-
-    //! List of local IDs in the target Map that are permuted.
-    Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
-
-    //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const;
-
-    //! List of entries in the target Map to receive from other processes.
-    Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const;
-
-    //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const;
-
-    //! List of entries in the source Map that will be sent to other processes.
-    Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const;
-
-    /// \brief List of processes to which entries will be sent.
-    ///
-    /// The entry with local ID getExportLIDs()[i] will be sent to
-    /// process getExportPiDs()[i].
-    Teuchos::ArrayView<const int> getExportPIDs() const;
-
-    //! The source Map used to construct this Export.
-    Teuchos::RCP<const map_type> getSourceMap () const;
-
-    //! The target Map used to construct this Export.
-    Teuchos::RCP<const map_type> getTargetMap () const;
-
-    //! The Distributor that this Export object uses to move data.
-    Distributor & getDistributor() const;
-
-    /// \brief Do all source Map indices on the calling process exist
-    ///   on at least one process (not necessarily this one) in the
-    ///   target Map?
-    ///
-    /// It's not necessarily an error for an Export not to be locally
-    /// complete on one or more processes.  Nevertheless, you may find
-    /// this predicate useful for figuring out whether you set up your
-    /// Maps in the way that you expect.
-    bool isLocallyComplete () const;
-
     //! Assignment operator
     Export<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
+    operator= (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs) = default;
+
+    //! Destructor.
+    virtual ~Export () = default;
 
     //@}
     //! @name I/O Methods
@@ -327,39 +261,30 @@ namespace Tpetra {
     ///   barriers only improve the chances that output can complete
     ///   before the next process starts writing.)
     virtual void print (std::ostream& os) const;
-
     //@}
-
   private:
-    //! All the data needed for executing the Export communication plan.
-    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
-    //! Output stream for debugging output.
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
-    //! Whether to print copious debugging output on all processes.
-    bool debug_;
-
     //! @name Initialization helper functions (called by the constructor)
     //@{
-
-    //==============================================================================
-    // sets up numSameIDs_, numPermuteIDs_, and the export IDs
-    // these variables are already initialized to 0 by the ImportExportData ctr.
-    // also sets up permuteToLIDs_, permuteFromLIDs_, and exportLIDs_
+    //! Set up same, permute, and export IDs.
     void setupSamePermuteExport(Teuchos::Array<GlobalOrdinal> & exportGIDs);
+
+    //! Set up remote IDs.
     void setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs);
     //@}
   }; // class Export
 
-  /** \brief Non-member constructor for Export objects.
-
-      Creates a Export object from the given source and target maps.
-      \pre <tt>src != null</tt>
-      \pre <tt>tgt != null</tt>
-      \return The Export object. If <tt>src == tgt</tt>, returns \c null.
-        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
-
-      \relatesalso Export
-    */
+  /// \brief Nonmember "constructor" for Export objects.
+  ///
+  /// Create an Export object from the given source and target Maps.
+  ///
+  /// \pre <tt>src != null</tt>
+  /// \pre <tt>tgt != null</tt>
+  ///
+  /// \return The Export object. If <tt>src == tgt</tt>, returns \c null.
+  ///
+  /// (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+  ///
+  /// \relatesalso Export
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node> >
   createExport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
@@ -369,13 +294,12 @@ namespace Tpetra {
       return Teuchos::null;
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
-      "Tpetra::createExport(): neither source nor target map may be null:"
-      << std::endl << "source: " << src << std::endl << "target: " << tgt
-      << std::endl);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (src == Teuchos::null || tgt == Teuchos::null, std::runtime_error,
+       "Tpetra::createExport: Neither source nor target map may be null.");
 #endif // HAVE_TPETRA_DEBUG
-    return Teuchos::rcp (new Export<LocalOrdinal, GlobalOrdinal, Node> (src, tgt));
+    using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
+    return Teuchos::rcp (new export_type (src, tgt));
   }
 
 } // namespace Tpetra

@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
       SUBROUTINE FFISTR( LINE,MFIELD,IDCONT,NFIELD,KVALUE,CVALUE,IVALUE,
      *                   RVALUE )
       CHARACTER*(*) LINE,CVALUE(MFIELD)
@@ -141,7 +141,7 @@ C
             IRIGHT = 0
          ELSE
 C
-C           Find the end of this token.  
+C           Find the end of this token.
 C           Valid delimiters, are ' ', '*', ',', '=', '$'.
 C
             IBLNK = INDEX ( LINE(ILEFT:ISTOP), ' ' ) + ILEFT - 2
@@ -149,7 +149,7 @@ C
             ICOMA = INDEX ( LINE(ILEFT:ISTOP), ',' ) + ILEFT - 2
             IEQLS = INDEX ( LINE(ILEFT:ISTOP), '=' ) + ILEFT - 2
             IDOLR = INDEX ( LINE(ILEFT:ISTOP), '$' ) + ILEFT - 2
-            
+
             ITAB  = INDEX ( LINE(ILEFT:ISTOP), CHAR(TABC)) + ILEFT - 2
             IF ( IBLNK .LT. ILEFT ) IBLNK = ISTOP + 1
             IF ( IAST  .LT. ILEFT ) IAST  = ISTOP + 1
@@ -180,14 +180,14 @@ C              This is a null field; skip it -
 C
             ELSE IF ( LFIELD .GT. 32 ) THEN
 C
-C              This field exceeds the maximum allowable numeric 
+C              This field exceeds the maximum allowable numeric
 C              field size; define only the character value -
 C
                CVALUE(NFIELD) = LINE(ILEFT:IRIGHT)
                KVALUE(NFIELD) = 0
             ELSE
 C
-C              Define the character value for this field, 
+C              Define the character value for this field,
 C              then right-justify and attempt numeric translations -
 C
                CVALUE(NFIELD) = LINE(ILEFT:IRIGHT)
@@ -216,7 +216,7 @@ C ... One more check. If the field contains a digit, but starts with
 C     'D' or 'E', several systems will interpret this as a valid
 C      Integer and/or real number. This is not the desired behavior
                   IF (CFIELD(IJUST:IJUST) .NE. 'D' .AND.
-     &                CFIELD(IJUST:IJUST) .NE. 'E') THEN 
+     &                CFIELD(IJUST:IJUST) .NE. 'E') THEN
                      IDIG = 1
                   ELSE
                      IDIG = 0
@@ -244,11 +244,11 @@ C                 This field has a valid integer value -
 C
                   IVALUE(NFIELD) = IFIELD
                   KVALUE(NFIELD) = 2
-               ELSE IF ( KVALUE(NFIELD) .EQ. 1 .AND. 
+               ELSE IF ( KVALUE(NFIELD) .EQ. 1 .AND.
      *            ABS ( RVALUE(NFIELD) ) .LE. 1.E9 ) THEN
 C
 C                 This field has a valid real that did not automatically
-C                 Translate to an integer.  Try to convert the real to an 
+C                 Translate to an integer.  Try to convert the real to an
 C                 integer.
 C
                   IFIELD = RVALUE(NFIELD)
@@ -272,7 +272,7 @@ C
          ISTOP = ISTOP + ILEFT - 1
          ILEFT = IL + ILEFT - 1
          IF ( ILEFT .GT. ISTOP ) RETURN
-         IF ( INDEX ( ',=', LINE(ILEFT:ILEFT) ) .NE. 0 ) 
+         IF ( INDEX ( ',=', LINE(ILEFT:ILEFT) ) .NE. 0 )
      *      ILEFT = ILEFT + 1
          IF ( ILEFT .GT. ISTOP ) RETURN
  1       continue

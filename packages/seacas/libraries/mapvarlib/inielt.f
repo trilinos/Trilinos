@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,18 +29,18 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
       SUBROUTINE INIELT(SOLEB,IVAR,TIMES,ISTP,IDBLK,CENTER,DUME)
 C
 C *********************************************************************
 C
 C INIELT initializes element variable values based on TIME, ELEMENT
-C BLOCK, VARIABLE NAME, COORDINATE, etc. By default, element variable 
-C values are set  to zero. It is intended that the user rewrite this 
-C subroutine to provide values that are appropriate to the problem 
-C being solved. This is the preferred method to handle element variable 
-C assignment for recipient mesh nodes that lie outside the boundary 
+C BLOCK, VARIABLE NAME, COORDINATE, etc. By default, element variable
+C values are set  to zero. It is intended that the user rewrite this
+C subroutine to provide values that are appropriate to the problem
+C being solved. This is the preferred method to handle element variable
+C assignment for recipient mesh nodes that lie outside the boundary
 C of the donor mesh.
 C
 C
@@ -48,11 +48,11 @@ C Called by INTRPE, SINTPE, TRANAB, STRAN
 C
 C *********************************************************************
 C
-C SOLEB   REAL  Array of element variable values 
+C SOLEB   REAL  Array of element variable values
 C               (1:numebb,1:nvarel)
 C TIMES   REAL  Array of times (1:ntimes)
 C IDBLK   INT   The element block I. D.
-C CENTER  REAL  Array of element centroid coordinates 
+C CENTER  REAL  Array of element centroid coordinates
 C               (1;numebb,1:3)
 C
 C *********************************************************************
@@ -69,7 +69,7 @@ C
 C *********************************************************************
 C
 C Code to help you find some potentially useful stuff
-C The actual time (real number) 
+C The actual time (real number)
 C     TIME = TIMES(ISTP)
 C
 C The pointer into VARNAM to get the variable name being processed

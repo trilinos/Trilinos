@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,10 +29,10 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE COMAND (A, IA, EXODUS, DBNAME, QAREC, INFO,
-     &     NAMECO, EBTYPE, EBNAME, ATNAME, 
+     &     NAMECO, EBTYPE, EBNAME, ATNAME,
      $     NAMIGV, NAMINV, NAMIEV, NAMINS, NAMISS,
      &     NAMOGV, NAMONV, NAMOEV, NAMONS, NAMOSS,
      &     CORD, MAPEL, DBMAPEL, MAPND, DBMAPND, DOMAPN, DOMAPE,
@@ -175,7 +175,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
       CHARACTER MMTYP
       CHARACTER*80 DUMLIN
       character*2048 OUTPUT, LCOUTPUT
-      
+
       CHARACTER*(MXSTLN) CMDTBL(15), SELTBL(15), LISTBL(38)
       SAVE CMDTBL, SELTBL, LISTBL, KINVC, KINVS
 C      --CMDTBL - the valid commands table
@@ -187,12 +187,12 @@ C   --changing the table.
       DATA CMDTBL /
      1  'SELECT  ', 'LIST    ', 'PRINT   ', 'LIMITS  ',
      2  'MINMAX  ', 'CHECK   ', 'HELP    ', 'MAP     ',
-     3  'EXIT    ', 'MAXERRS ', 'END     ', 'QUIT    ', 
+     3  'EXIT    ', 'MAXERRS ', 'END     ', 'QUIT    ',
      4  'PRECISION','OUTPUT  ',
      5  '        ' /
       DATA SELTBL /
      1  'NODES   ', 'ELEMENTS', 'BLOCKS  ', 'MATERIAL',
-     2  'NSETS   ', 'SSETS   ', 
+     2  'NSETS   ', 'SSETS   ',
      3  'READ    ', 'STEP    ', 'TIME    ',
      4  'GVARS   ', 'NVARS   ', 'EVARS   ', 'NSVARS  ', 'SSVARS  ',
      5  '        ' /
@@ -264,7 +264,7 @@ C   --Initialize
 
       mmname = ' '
       mmvar  = 0
-      
+
 C   --Read first time step variables
 
       IF (EXODUS) THEN
@@ -292,7 +292,7 @@ C   --Read first time step variables
       else
         call PRTERR('CMDREQ',
      *    'Nodes and Elements using Local Ids')
-      end if        
+      end if
 
  200  CONTINUE
 
@@ -408,14 +408,14 @@ C *** GENESIS Print Commands ***
      *          numnps, lisnps, lnpsnl,
      *          idnps, nnnps, ixnnps, ltnnps, "nodes")
             end if
-            
+
           else if (FFMATC (IFLD, INTYP, CFIELD, 'BLOCK', 3) .OR.
      *        FFMATC (IFLD, INTYP, CFIELD, 'MATERIAL', 3)) THEN
             CALL MDRSRV ('SCRSEL', KLELB, 1+NELBLK)
             CALL MDRSRV ('SCR',    KSCR,  NUMNP)
             CALL MDSTAT (NERR, MEM)
             IF (NERR .GT. 0) GOTO 280
-            
+
             CALL RIXID (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
      &        'element block ID',
      &        NELBLK, IDELB, IA(KLELB), IA(KLELB+1), *205)
@@ -431,7 +431,7 @@ C *** GENESIS Print Commands ***
             CALL RMIXINT (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
      &        'node number', NUMNP, LISNP(0), LISNP(1), MAPND, *270)
           end if
-          
+
         ELSE IF ((VERB .NE. 'SELECT')
      &      .AND. (LISTYP .EQ. 'COORDINA')) THEN
           IF (VERB .EQ. '*') VERB = 'LIST'
@@ -721,7 +721,7 @@ C *** EXODUS Print Commands ***
           END IF
           CALL PRNPS (OPT, NOUT, NUMNPS, LISNPS, LNPSNL,
      &         IDNPS, NNNPS, NDNPS, IXNNPS, IXDNPS, LTNNPS, FACNPS,
-     *         NSNAME, nvarns, namins, isnsvok, a(kxlsnv), 
+     *         NSNAME, nvarns, namins, isnsvok, a(kxlsnv),
      $         MAPND, DOMAPN)
           IF (INDEX (OPT, 'V') .GT. 0) THEN
             CALL MDDEL ('XLISNV')
@@ -758,7 +758,7 @@ C *** EXODUS Print Commands ***
             CALL MDSTAT (NERR, MEM)
             IF (NERR .GT. 0) GOTO 280
           END IF
-            
+
           CALL PRESS (OPT, NOUT, NUMESS, LISESS, LESSEL, LESSNL,
      &         IDESS, NEESS, NNESS, IXEESS, IXNESS,
      &         LTEESS, LTSESS, FACESS, SSNAME,
@@ -780,7 +780,7 @@ C *** EXODUS Print Commands ***
               DOELE = .true.
            ELSE IF (MATSTR(WORD, 'BLOCKS', 1)) THEN
               DOBLK = .true.
-           ELSE 
+           ELSE
               DOELE = .true.
               DOBLK = .true.
            END IF
@@ -791,11 +791,11 @@ C *** EXODUS Print Commands ***
               CALL MDSTAT (NERR, MEM)
               IF (NERR .GT. 0) GOTO 280
            end if
-           
+
            call invcon(ia, nelblk, idelb, numelb, numlnk, link, numnp,
      *          ia(kinvc), ia(kinvs), ia(kndmp), lisnp, NOUT, MAPND,
      $          MAPEL, DOMAPN, DOMAPE, DOBLK, DOELE, ebtype)
-           
+
         ELSE IF (LISTYP .EQ. 'QA') THEN
 
           CALL PRQA ('*', NOUT, NQAREC, QAREC, NINFO, INFO)
@@ -866,7 +866,7 @@ C *** EXODUS Print Commands ***
           CALL PRSTEP ('*', NOUT, TIME, NCSTEP, NSTEPS)
 
           CALL PRNSV (NOUT, NCSTEP, NUMNPS, LISNPS, LNPSNL,
-     &         IDNPS, NNNPS, IXNNPS, LTNNPS, NSNAME, 
+     &         IDNPS, NNNPS, IXNNPS, LTNNPS, NSNAME,
      $         NVARNS, LISMV(0), NAMINS, ISNSVOK, VARNS, max(1,nvarns),
      *         MAPND, DOMAPN)
 
@@ -880,7 +880,7 @@ C *** EXODUS Print Commands ***
           CALL PRSTEP ('*', NOUT, TIME, NCSTEP, NSTEPS)
 
           CALL PRSSV (NOUT, NCSTEP, NUMESS, LISESS, LESSEL,
-     &         IDESS, NEESS, IXEESS, LTEESS, LTSESS, SSNAME, 
+     &         IDESS, NEESS, IXEESS, LTEESS, LTSESS, SSNAME,
      $         NVARSS, LISSV(0), NAMISS, ISSSVOK, VARSS, max(1,nvarss),
      *         MAPEL, DOMAPE)
 
@@ -906,7 +906,7 @@ C *** Miscellaneous Commmands ***
      *    // ' or -nomap option.')
 c$$$        CALL FFCHAR (IFLD, INTYP, CFIELD,'BOTH', WORD)
 c$$$        CALL FFONOF (IFLD, INTYP, CFIELD, MAPTMP, *270)
-c$$$        
+c$$$
 c$$$        IF (MATSTR(WORD, 'ELEMENTS', 1)) THEN
 c$$$          DOMAPE = MAPTMP
 c$$$        ELSE IF (MATSTR(WORD, 'NODES', 1)) THEN
@@ -915,7 +915,7 @@ c$$$        ELSE IF (MATSTR(WORD, 'BOTH', 1)) THEN
 c$$$          DOMAPE = MAPTMP
 c$$$          DOMAPN = MAPTMP
 c$$$        END IF
-        
+
       ELSE IF (VERB .EQ. 'MAXERRS') THEN
          CALL FFINTG (IFLD, INTYP, IFIELD,
      &        'maximum errors to print; 0 for all', 10, MAXERRS, *235)
@@ -937,7 +937,7 @@ C     didn't, need to rewrite frefld to return mixed case.
           GOTO 270
         END IF
         ANYPRT = .TRUE.
-        
+
       ELSE IF (VERB .EQ. 'CHECK') THEN
 
         call check(a, ia, exodus, idelb, ebtype, numelb, isevok, numlnk,

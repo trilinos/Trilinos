@@ -358,7 +358,7 @@ testBlockCrsMatrix ()
   result_view_type d_results("d_results");
   auto h_results = Kokkos::create_mirror_view( d_results );
 
-  Kokkos::parallel_for( Kokkos::RangePolicy<typename device::execution_space>(0, 1), Test::TestFunctor< block_crs_matrix_type, result_view_type>( A, d_results ) );
+  Kokkos::parallel_for( "KokkosSparse::Test::BlockCrsMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1), Test::TestFunctor< block_crs_matrix_type, result_view_type>( A, d_results ) );
 
   Kokkos::deep_copy( h_results, d_results );
 

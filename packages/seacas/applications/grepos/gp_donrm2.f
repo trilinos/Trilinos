@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -49,7 +49,7 @@ C
             nodes(link(ilnk, iel)) = 1
  20      continue
  30   continue
-      
+
       do 60 iel = 1, numel
          do 50 iseg=1,nlink
             if (iseg .eq. nlink) then
@@ -57,7 +57,7 @@ C
             else
                isegp1 = iseg + 1
             end if
-            
+
             XI = x( link(ISEG,iel) )
             YI = y( link(ISEG,iel) )
 C
@@ -79,17 +79,17 @@ C
      $           dx / rmag
  50      continue
  60   continue
-      
+
 C
       do 70 inod = 1, numnp
          if (nodes(inod) .ne. 0) then
-            if (abs(cosin(1, inod)) .gt. tol .or. 
+            if (abs(cosin(1, inod)) .gt. tol .or.
      $           abs(cosin(2, inod)) .gt. tol) then
                nodes(inod) = -1
                isbnd(inod) = .TRUE.
             end if
          end if
  70   continue
-      
+
       RETURN
       END

@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
       SUBROUTINE WRESS (NTXT, NUMESS, LESSEL, LESSNL, LESSDF,
@@ -51,9 +51,9 @@ C   --   LESSNL - IN - the length of the element side sets node list
 C   --   LESSDF - IN - the length of the side set dist factors list
 C   --   IDESS  - IN - array containing side set IDS
 C   --   NEESS  - IN - array containing the number of sides for each sets
-C   --   NDESS  - IN - array containing the number of dist 
+C   --   NDESS  - IN - array containing the number of dist
 C                      factors for each set
-C   --   IXEESS - IN - array containing the indices into the 
+C   --   IXEESS - IN - array containing the indices into the
 C                      LTEESS array which are the locations of the 1st
 C                      element of each set
 C   --   IXDESS - IN - array containing the indices into the
@@ -94,7 +94,7 @@ C   --   LTNNN  - IN - array of number of nodes for each side in a side set
         WRITE (NTXT, 10025) IDESS(IESS),
      &    NEESS(IESS), NNESS(IESS), NDESS(IESS),
      &    '! ID, #sides, #nodes, #dist fact'
-        
+
         WRITE (NTXT, '(A)') '! Elements and sides for side sets'
 C     Element in side set
       IS = IXEESS(IESS)
@@ -102,7 +102,7 @@ C     Element in side set
       if (is .le. ie)
      &   WRITE (NTXT, 10000) (LTEESS(NL), LTSESS(NL), NL=IS,IE)
 
-      WRITE (NTXT, '(A)') 
+      WRITE (NTXT, '(A)')
      &   '! Nodes and Distribution Factors for side sets'
 C     Nodes and Distribution Factors for each side set
       IS = IXDESS(IESS)

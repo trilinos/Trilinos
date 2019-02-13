@@ -56,7 +56,9 @@ namespace KokkosBatched {
         if (m <= 0 || n <= 0) return 0;
 
         for (int p=0;p<m;++p) {
-          const int iend = m-p-1, jend = n;
+          // Made this non-const in order to WORKAROUND issue #349
+          int iend = m-p-1;
+          int jend = n;
           
           const ValueType
             *__restrict__ a21 = iend ? A+(p+1)*as0+p*as1 : NULL;
@@ -123,18 +125,21 @@ namespace KokkosBatched {
                         /**/  ValueType *__restrict__ BB) {
           const int mb = mbAlgo;
           const int tsize = member.team_size();
-          const int nb = (jb/tsize + jb%tsize > 0);
-          const int np = jb%nb;
+          // Made this non-const in order to WORKAROUND issue #349
+          int nb = (jb/tsize + jb%tsize > 0);
+          int np = jb%nb;
           for (int p=0;p<ib;p+=mb) {
-            const int pb = ((p+mb) > ib ? (ib-p) : mb); 
+            // Made this non-const in order to WORKAROUND issue #349
+            int pb = ((p+mb) > ib ? (ib-p) : mb); 
                 
             // trsm update
             const ValueType *__restrict__ Ap = AA+p*as0+p*as1;
             /**/  ValueType *__restrict__ Bp = BB+p*bs0;
                 
             member.team_barrier();                  
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int &jj) {
-                const int j = jj*nb, qb = (j+nb) > jb ? np : nb;
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,(jb/nb)+(np>0)),[&](const int jj) {
+                // Made this non-const in order to WORKAROUND issue #349
+                int j = jj*nb, qb = (j+nb) > jb ? np : nb;
                 if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, qb, Bp+j*bs1);
                 else               trsm_n.serial_invoke(Ap, pb, qb, Bp+j*bs1);
               });
@@ -202,7 +207,9 @@ namespace KokkosBatched {
         
         ValueType *__restrict__ B0 = B;
         for (int p=(m-1);p>=0;--p) {
-          const int iend = p, jend = n;
+          // Made this non-const in order to WORKAROUND issue #349
+          int iend = p;
+          int jend = n;
 
           const ValueType *__restrict__ a01 = A+p*as1;
           /**/  ValueType *__restrict__ b1t = B+p*bs0;
@@ -266,8 +273,9 @@ namespace KokkosBatched {
                         /**/  ValueType *__restrict__ BB) {
           const int mb = mbAlgo; //(ib <=5 ? ib : mbAlgo);
           const int tsize = member.team_size();
-          const int nb = (jb/tsize + jb%tsize > 0);
-          const int np = jb%nb;
+          // Made this non-const in order to WORKAROUND issue #349
+          int nb = (jb/tsize + jb%tsize > 0);
+          int np = jb%nb;
           for (int pp=0;pp<ib;pp+=mb) {
             const int 
               ptmp = (ib - pp - mb), 

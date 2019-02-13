@@ -68,7 +68,7 @@ namespace Test {
     for(int i=0;i<N;i++)
     { expected_result += ScalarB(a*h_x(i)) * ScalarB(a*h_x(i)); }
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -82,7 +82,7 @@ namespace Test {
  
     Kokkos::deep_copy(b_y,b_org_y);
     
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -155,7 +155,7 @@ namespace Test {
 
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), a, Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
@@ -170,7 +170,7 @@ namespace Test {
 
     Kokkos::deep_copy(b_y,b_org_y);
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), a, Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );
@@ -197,7 +197,7 @@ namespace Test {
       { expected_result[j] += ScalarB((3.0+j)*h_x(i,j)) * ScalarB((3.0+j)*h_x(i,j)); }
     }
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), params(teamId), Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
@@ -212,7 +212,7 @@ namespace Test {
 
     Kokkos::deep_copy(b_y,b_org_y);
     
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), params(teamId), Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );

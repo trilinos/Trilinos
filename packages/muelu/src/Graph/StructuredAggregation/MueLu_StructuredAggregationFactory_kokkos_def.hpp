@@ -217,8 +217,8 @@ namespace MueLu {
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
     RCP<const Map> coarseCoordinatesFineMap, coarseCoordinatesMap;
-    RCP<MueLu::AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node> >
-      myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm_kokkos());
+    RCP<AggregationStructuredAlgorithm_kokkos> myStructuredAlgorithm
+      = rcp(new AggregationStructuredAlgorithm_kokkos());
 
     if(interpolationOrder == 0 && outputAggregates){
       RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(graph->GetDomainMap()));

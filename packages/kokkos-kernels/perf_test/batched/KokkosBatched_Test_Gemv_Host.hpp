@@ -114,8 +114,8 @@ namespace KokkosBatched {
               HostSpaceType::fence();
               timer.reset();
             
-              Kokkos::parallel_for
-                (policy, 
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemvHost::CblasOpenMP",
+                 policy, 
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   for (int j=0;j<NumVecs;++j) {
@@ -174,8 +174,8 @@ namespace KokkosBatched {
               HostSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for
-                (policy, 
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemvHost::SerialOpenMP",
+                 policy, 
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 
@@ -249,8 +249,8 @@ namespace KokkosBatched {
               HostSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for
-                (policy, 
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemvHost::SIMDSerialOpenMP",
+                 policy, 
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 

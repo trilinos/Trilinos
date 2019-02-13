@@ -1,23 +1,23 @@
 C    Copyright(C) 2009-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C            
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
 C          with the distribution.
-C    
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,15 +36,15 @@ C ... find jlo such that a(jlo) .le. x .and. a(jlo+1) .gt. x
 C     (if jlo .ne. n)
 C
 C     Start search at passed in 'jlo' position
-C         
+C
       DIMENSION a(n)
 
       integer jlo, low, high
 
       if (jlo .lt. 1 .or. jlo .gt. n) jlo = 1
-      
+
       if (a(jlo) .eq. x) then
-        return 
+        return
       else if (a(1) .ge. x) then
         jlo = 1
         return
@@ -67,5 +67,5 @@ C
         end if
       end do
 C ... should not get here since extremes checked above...
-      
+
       end

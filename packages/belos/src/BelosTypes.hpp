@@ -96,7 +96,8 @@ namespace Belos {
   ///   solver.
   enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
                     TwoNorm,       /*!< Compute the two-norm \f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2))\f$ for each vector. */
-                    InfNorm        /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
+                    InfNorm,       /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
+                    PreconditionerNorm /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
   };
 
   /// \enum ScaleType
@@ -221,6 +222,10 @@ namespace Belos {
   //! The StatusType enum value corresponding to the given string name.
   StatusType
   convertStringToStatusType (const std::string& status);
+
+  //! Convert the given string to its \c NormType enum value.
+  NormType
+  convertStringToNormType (const std::string& normType);
 
   //! Convert the given string to its \c ScaleType enum value.
   ScaleType

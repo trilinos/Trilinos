@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -54,7 +54,7 @@ C       DELVOL  REAL      Change in volume of this cavity
 C       NUMNP   INTEGER   Number of Nodes
 C       AXI     LOGICAL   TRUE if axisymmetric mesh
 C
-C     CALLED BY: 
+C     CALLED BY:
 C
 C***********************************************************************
 C
@@ -68,16 +68,16 @@ C
          J = LSTSN(2*KSEG)
          I = LSTSN(2*KSEG - 1)
 C
-         X1  = COORD(I,1) 
-         X2  = COORD(J,1) 
+         X1  = COORD(I,1)
+         X2  = COORD(J,1)
          DX1 = DISP(I,1)
          DX2 = DISP(J,1)
 C
-         Y1  = COORD(I,2) 
-         Y2  = COORD(J,2) 
+         Y1  = COORD(I,2)
+         Y2  = COORD(J,2)
          DY1 = DISP(I,2)
          DY2 = DISP(J,2)
-C             
+C
          X12 = X1 - X2
          Y12 = Y1 - Y2
 C

@@ -74,8 +74,7 @@ namespace KokkosBatched {
         void operator()(const TeamTagV1 &, const MemberType &member) const {
           const int kbeg = (member.league_rank()*(member.team_size()*VectorLength) +
                             member.team_rank()*VectorLength);
-          Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, VectorLength),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
               if (kk < int(_c.extent(0))) {
@@ -93,8 +92,7 @@ namespace KokkosBatched {
         KOKKOS_INLINE_FUNCTION
         void operator()(const TeamTagV2 &, const MemberType &member) const {
           const int kbeg = member.league_rank()*VectorLength;
-          Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, VectorLength),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
               if (kk < int(_c.extent(0))) {
@@ -116,8 +114,7 @@ namespace KokkosBatched {
           ScratchViewType<ViewType> sb(member.team_scratch(lvl), VectorLength, _b.extent(1), _b.extent(2));
 
           const int kbeg = member.league_rank()*VectorLength;
-          Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, VectorLength),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
               if (kk < int(_c.extent(0))) {                  
@@ -142,14 +139,12 @@ namespace KokkosBatched {
         KOKKOS_INLINE_FUNCTION
         void operator()(const TeamTagHandmade &, const MemberType &member) const {
           const int kbeg = member.league_rank()*VectorLength;
-          Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, VectorLength),
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, VectorLength),
              [&](const int &k) {
               const int kk = kbeg + k;
               if (kk < int(_c.extent(0))) {
                 const int m = _c.extent(1), n = _c.extent(2), q = _a.extent(2);
-                Kokkos::parallel_for
-                  (Kokkos::TeamThreadRange(member,0,m*n),
+                Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m*n),
                    [&](const int &ij) {
                     const int i = ij%m, j = ij/m;                              
                     typename ViewType::non_const_value_type cval = 0;
@@ -315,7 +310,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for("GEMM: RangePolicy version", policy, functor_type(a,b,c));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmCuda::RangeTag", policy, functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -382,7 +377,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for("GEMM: TeamPolicy version 1", policy,functor_type(a,b,c));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmCuda::TeamPolicyV1", policy,functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -455,7 +450,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for("GEMM: TeamPolicy version 2", policy, functor_type(a,b,c));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmCuda::TeamPolicyV2", policy, functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();
@@ -532,7 +527,7 @@ namespace KokkosBatched {
                 DeviceSpaceType::fence();
                 timer.reset();
 
-                Kokkos::parallel_for("GEMM: TeamPolicy version 3", policy, functor_type(a,b,c));
+                Kokkos::parallel_for("KokkosBatched::PerfTest::GemmCuda::TeamPolicyV3", policy, functor_type(a,b,c));
                 
                 DeviceSpaceType::fence();
                 const double t = timer.seconds();
@@ -604,7 +599,7 @@ namespace KokkosBatched {
               DeviceSpaceType::fence();
               timer.reset();
 
-              Kokkos::parallel_for("GEMM: TeamPolicy handmade", policy, functor_type(a,b,c));
+              Kokkos::parallel_for("KokkosBatched::PerfTest::GemmCuda::TeamPolicyHandmade", policy, functor_type(a,b,c));
                 
               DeviceSpaceType::fence();
               const double t = timer.seconds();

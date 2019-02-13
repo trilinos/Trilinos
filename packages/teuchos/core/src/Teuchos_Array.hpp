@@ -407,8 +407,18 @@ public:
   /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
   inline T* getRawPtr();
 
+  /// \brief Return a raw pointer to beginning of array.
+  ///
+  /// Same semantics as \c getRawPtr (which see).
+  inline T* data();
+
   /** \brief Return a const raw pointer to beginning of array or NULL if unsized. */
   inline const T* getRawPtr() const;
+
+  /// \brief Return a const raw pointer to beginning of array.
+  ///
+  /// Same semantics as \c getRawPtr (which see).
+  inline const T* data() const;
 
   //@}
   /** \name Conversions to and from std::vector. */
@@ -1364,16 +1374,26 @@ bool Array<T>::hasBoundsChecking()
 template<typename T> inline
 T* Array<T>::getRawPtr()
 {
-  return ( size() ? &(*this)[0] : 0 );
+  return ( size() ? &(*this)[0] : nullptr );
 }
 
+template<typename T> inline
+T* Array<T>::data()
+{
+  return ( size() ? &(*this)[0] : nullptr );
+}
 
 template<typename T> inline
 const T* Array<T>::getRawPtr() const
 {
-  return ( size() ? &(*this)[0] : 0 );
+  return ( size() ? &(*this)[0] : nullptr );
 }
 
+template<typename T> inline
+const T* Array<T>::data() const
+{
+  return ( size() ? &(*this)[0] : nullptr );
+}
 
 // Conversions to and from std::vector
 
