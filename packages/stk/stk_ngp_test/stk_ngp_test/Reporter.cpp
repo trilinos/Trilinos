@@ -51,9 +51,6 @@ void TruncatedString::prepend_truncation_indicator(char* dest) {
   dest[2] = '.';
 }
 
-NGP_TEST_FUNCTION
-Report::Report(const char* cond, const char* loc) : condition(cond), location(loc) {}
-
 }
 
 

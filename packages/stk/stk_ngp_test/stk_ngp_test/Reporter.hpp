@@ -28,8 +28,11 @@ class TruncatedString {
 };
 
 struct Report {
-  NGP_TEST_FUNCTION Report() = default;
-  NGP_TEST_FUNCTION Report(const char* cond, const char* loc);
+  NGP_TEST_FUNCTION Report()
+   : condition(), location() {}
+  NGP_TEST_FUNCTION Report(const char* cond, const char* loc)
+   : condition(cond), location(loc) {}
+
 
   TruncatedString condition;
   TruncatedString location;
