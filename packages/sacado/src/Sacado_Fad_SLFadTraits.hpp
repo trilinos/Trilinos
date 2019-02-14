@@ -71,10 +71,16 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to SLFad types
+  //! Specialization of %IsScalarType to SLFad types
   template <typename ValueT, int Num>
   struct IsScalarType< Fad::SLFad<ValueT,Num> > {
     static const bool value = false;
+  };
+
+  //! Specialization of %IsSimdType to SLFad types
+  template <typename ValueT, int Num>
+  struct IsSimdType< Fad::SLFad<ValueT,Num> > {
+    static const bool value = IsSimdType<ValueT>::value;
   };
 
   //! Specialization of %Value to SLFad types
