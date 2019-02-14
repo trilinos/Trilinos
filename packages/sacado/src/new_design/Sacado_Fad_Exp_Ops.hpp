@@ -34,8 +34,9 @@
 #include <type_traits>
 #include <ostream>
 
-#include "Sacado_Fad_Expression.hpp"
-#include "Sacado_Fad_ExpressionTraits.hpp"
+#include "Sacado_Fad_Exp_Expression.hpp"
+#include "Sacado_Fad_Exp_ExpressionTraits.hpp"
+#include "Sacado_Fad_Exp_Ops_Fwd.hpp"
 #include "Sacado_cmath.hpp"
 
 #if defined(HAVE_SACADO_KOKKOSCORE)
@@ -741,7 +742,8 @@ namespace Sacado {
         if (sz1 > 0 && sz2 > 0)
           return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
         else if (sz1 > 0)
-          return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-value_type(1.0))) );
+          // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
+          return if_then_else( expr2.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-value_type(1.0))) );
         else
           return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) );
       }
@@ -793,14 +795,18 @@ namespace Sacado {
 
       KOKKOS_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::pow; using std::log;
-        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-value_type(1.0))) );
+        using std::pow;
+        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
+        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::pow; using std::log;
-        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-value_type(1.0))) );
+        using std::pow;
+        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
+        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
       }
 
     protected:
@@ -844,13 +850,13 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       value_type dx(int i) const {
         using std::pow; using std::log;
-        return if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) );
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) );
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
-        return if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) );
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) );
       }
 
     protected:
@@ -910,7 +916,8 @@ namespace Sacado {
         if (sz1 > 0 && sz2 > 0)
           return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
         else if (sz1 > 0)
-          return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-value_type(1.0)));
+          // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
+          return expr2.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-value_type(1.0)));
         else
           return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val()));
       }
@@ -963,13 +970,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       value_type dx(int i) const {
         using std::pow;
-        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)*pow(expr1.val(),c-value_type(1.0)));
+        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
+        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0)));
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow;
-        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-value_type(1.0)));
+        // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
+        // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0)));
       }
 
     protected:
@@ -1013,13 +1024,13 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       value_type dx(int i) const {
         using std::pow; using std::log;
-        return c == value_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(c)*pow(c,expr2.val()));
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(c)*pow(c,expr2.val()));
       }
 
       KOKKOS_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
-        return c == value_type(0.0) ? value_type(0.0) : value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val()));
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val()));
       }
 
     protected:

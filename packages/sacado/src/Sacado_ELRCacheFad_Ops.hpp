@@ -2577,7 +2577,7 @@ namespace Sacado {
           a = scalar_type(0.0);
         }
         else {
-          a = v2*std::pow(v1,v2-value_type(1.0));
+          a = v2*std::pow(v1,v2-scalar_type(1.0));
         }
       }
 
