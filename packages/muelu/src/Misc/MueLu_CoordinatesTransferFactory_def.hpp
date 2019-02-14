@@ -121,14 +121,14 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
-    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
-    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> CoordinateMultiVectorFactory;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
     int numDimensions;
-    RCP<RealValuedMultiVector> coarseCoords;
-    RCP<RealValuedMultiVector> fineCoords;
+    RCP<CoordinateMultiVector> coarseCoords;
+    RCP<CoordinateMultiVector> fineCoords;
     Array<GO> gCoarseNodesPerDir;
     Array<LO> lCoarseNodesPerDir;
 
@@ -151,13 +151,13 @@ namespace MueLu {
       numDimensions = Get<int>(fineLevel, "numDimensions");
       Set<int>(coarseLevel, "numDimensions", numDimensions);
     } else if(pL.get<bool>("Geometric") == true) {
-      coarseCoords       = Get<RCP<RealValuedMultiVector> >(coarseLevel, "coarseCoordinates");
+      coarseCoords       = Get<RCP<CoordinateMultiVector> >(coarseLevel, "coarseCoordinates");
       gCoarseNodesPerDir = Get<Array<GO> >(coarseLevel, "gCoarseNodesPerDim");
       lCoarseNodesPerDir = Get<Array<LO> >(coarseLevel, "lCoarseNodesPerDim");
       Set<Array<GO> >(coarseLevel, "gNodesPerDim", gCoarseNodesPerDir);
       Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
 
-      Set<RCP<RealValuedMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
+      Set<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
 
     } else {
       if (coarseLevel.IsAvailable("Coordinates", this)) {
@@ -165,9 +165,9 @@ namespace MueLu {
         return;
       }
 
-      fineCoords      = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
-      coarseCoords    = TransferCoords<RealValuedMultiVector,RealValuedMultiVectorFactory>(fineLevel,fineCoords);
-      Set<RCP<RealValuedMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
+      fineCoords      = Get< RCP<CoordinateMultiVector> >(fineLevel, "Coordinates");
+      coarseCoords    = TransferCoords<CoordinateMultiVector,CoordinateMultiVectorFactory>(fineLevel,fineCoords);
+      Set<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
       
       if(fineLevel.IsAvailable("Material Coordinates")) {
         RCP<Vector> fineMatCoords    = Get<RCP<Vector> >(fineLevel,"Material Coordinates");
