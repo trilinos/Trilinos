@@ -90,6 +90,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("R",                   null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Interpolation)");
+    validParamList->set< RCP<const FactoryBase> >("Material Coordinates",null, "Factory of the material coordinates that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("Importer",            null, "Factory of the importer object used for the rebalancing");
     validParamList->set< int >                   ("write start",           -1, "First level at which coordinates should be written to file");
     validParamList->set< int >                   ("write end",             -1, "Last level at which coordinates should be written to file");
@@ -125,7 +126,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", coarseLevel);
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
     typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
-
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> CoordinateMultiVectorFactory;
 
     const ParameterList& pL = GetParameterList();
 
@@ -220,61 +221,32 @@ namespace MueLu {
           if (IsAvailable(coarseLevel, "Coordinates"))
             Set(coarseLevel, "Coordinates", Get< RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates"));
 
+        if (pL.isParameter("Material Coordinates") && pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null)
+          if (IsAvailable(coarseLevel, "Coordinates"))
+            Set(coarseLevel, "Material Coordinates", Get< RCP<Vector> >(coarseLevel, "Material Coordinates"));
+
         return;
       }
 
-      if (pL.isParameter("Coordinates") &&
-          pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null &&
-          IsAvailable(coarseLevel, "Coordinates")) {
+      if (pL.isParameter("Coordinates") && pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null && IsAvailable(coarseLevel, "Coordinates")) {
         RCP<CoordinateMultiVector> coords = Get<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates");
-
-        // This line must be after the Get call
-        SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
-
-        LO nodeNumElts = coords->getMap()->getNodeNumElements();
-
-        // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
-        LO myBlkSize = 0, blkSize = 0;
-        if (nodeNumElts > 0)
-          myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
-        MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
-
-        RCP<const Import> coordImporter;
-        if (blkSize == 1) {
-          coordImporter = importer;
-
-        } else {
-          // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
-          // Proper fix would require using decomposition similar to how we construct importer in the
-          // RepartitionFactory
-          RCP<const Map> origMap   = coords->getMap();
-          GO             indexBase = origMap->getIndexBase();
-
-          ArrayView<const GO> OEntries   = importer->getTargetMap()->getNodeElementList();
-          LO                  numEntries = OEntries.size()/blkSize;
-          ArrayRCP<GO> Entries(numEntries);
-          for (LO i = 0; i < numEntries; i++)
-            Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
-
-          RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
-          coordImporter = ImportFactory::Build(origMap, targetMap);
-        }
-
-        RCP<CoordinateMultiVector> permutedCoords  = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
-        permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
-
-        if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
-          permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
-
-        if (permutedCoords->getMap() == Teuchos::null)
-          permutedCoords = Teuchos::null;
-
+        RCP<CoordinateMultiVector> permutedCoords = RebalanceCoords<CoordinateMultiVector,CoordinateMultiVectorFactory>(coarseLevel,coords);
         Set(coarseLevel, "Coordinates", permutedCoords);
 
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
           Xpetra::IO<coordinate_type,LO,GO,NO>::Write(fileName, *permutedCoords);
       }
+
+     if (pL.isParameter("Material Coordinates") && pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null && IsAvailable(coarseLevel, "Material Coordinates")) {
+        RCP<Vector> coords = Get<RCP<CoordinateMultiVector> >(coarseLevel, "Material Coordinates");
+        RCP<Vector> permutedCoords = RebalanceCoords<Vector,VectorFactory>(coarseLevel,coords);
+        Set(coarseLevel, "Material Coordinates", permutedCoords);
+
+        std::string fileName = "rebalanced_mat_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
+        if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
+          Xpetra::IO<SC,LO,GO,NO>::Write(fileName, *permutedCoords);
+     }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {
         RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
@@ -330,6 +302,61 @@ namespace MueLu {
       }
     }
   }
+
+
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template<class CoordinatesType, typename CoordinatesFactoryType>
+RCP<CoordinatesType> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RebalanceCoords(Level& coarseLevel, RCP<CoordinatesType> coords) const {
+  // This line must be after the Get call
+  SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
+  RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");  
+
+  LO nodeNumElts = coords->getMap()->getNodeNumElements();
+  
+  // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+  LO myBlkSize = 0, blkSize = 0;
+  if (nodeNumElts > 0)
+    myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
+  MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
+  
+  RCP<const Import> coordImporter;
+  if (blkSize == 1) {
+    coordImporter = importer;
+    
+  } else {
+    // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
+    // Proper fix would require using decomposition similar to how we construct importer in the
+    // RepartitionFactory
+    RCP<const Map> origMap   = coords->getMap();
+    GO             indexBase = origMap->getIndexBase();
+    
+    ArrayView<const GO> OEntries   = importer->getTargetMap()->getNodeElementList();
+    LO                  numEntries = OEntries.size()/blkSize;
+    ArrayRCP<GO> Entries(numEntries);
+    for (LO i = 0; i < numEntries; i++)
+      Entries[i] = (OEntries[i*blkSize]-indexBase)/blkSize + indexBase;
+    
+    RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
+    // FIXME: This guy should get stashed
+    coordImporter = ImportFactory::Build(origMap, targetMap);
+  }
+  
+  RCP<CoordinatesType> permutedCoords = CoordinatesFactoryType::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+  permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
+  
+  if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
+    permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
+  
+  if (permutedCoords->getMap() == Teuchos::null)
+    permutedCoords = Teuchos::null;
+
+  return permutedCoords;
+}
+  
+
+
 
 } // namespace MueLu
 
