@@ -106,7 +106,7 @@ namespace MueLu {
 
         if (!rebalancedAc.is_null()) {
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-          rebalancedAc->setObjectLabel("A_" + std::string(coarseLevel.GetLevelID()));
+          std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); rebalancedAc->setObjectLabel(oss.str());
         }
         Set(coarseLevel, "A", rebalancedAc);
       }
