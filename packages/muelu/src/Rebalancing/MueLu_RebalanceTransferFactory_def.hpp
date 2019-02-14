@@ -239,7 +239,7 @@ namespace MueLu {
       }
 
      if (pL.isParameter("Material Coordinates") && pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null && IsAvailable(coarseLevel, "Material Coordinates")) {
-        RCP<Vector> coords = Get<RCP<CoordinateMultiVector> >(coarseLevel, "Material Coordinates");
+        RCP<Vector> coords = Get<RCP<Vector> >(coarseLevel, "Material Coordinates");
         RCP<Vector> permutedCoords = RebalanceCoords<Vector,VectorFactory>(coarseLevel,coords);
         Set(coarseLevel, "Material Coordinates", permutedCoords);
 
@@ -309,8 +309,8 @@ namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 template<class CoordinatesType, typename CoordinatesFactoryType>
 RCP<CoordinatesType> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RebalanceCoords(Level& coarseLevel, RCP<CoordinatesType> coords) const {
-  // This line must be after the Get call
   SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
+  const ParameterList& pL = GetParameterList();
   RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");  
 
   LO nodeNumElts = coords->getMap()->getNodeNumElements();
