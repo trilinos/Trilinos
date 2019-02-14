@@ -1068,7 +1068,7 @@ namespace MueLuTests {
     // Generate the node-level communicator
     Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
     int NodeId = comm->getRank();
-    nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
+    nodeComm = MueLu::GenerateNodeComm(comm,NodeId,1);
 
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast("testCoordinates.xml", Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
