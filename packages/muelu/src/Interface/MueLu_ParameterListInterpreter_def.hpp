@@ -1204,7 +1204,7 @@ namespace MueLu {
                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
   {
     bool have_userCO = false;
-    if (paramList.isParameter("Material Coordinates") && !paramList.get<RCP<MultiVector> >("Material Coordinates").is_null())
+    if (paramList.isParameter("Material Coordinates") && !paramList.get<RCP<Vector> >("Material Coordinates").is_null())
       have_userCO = true;
 
     if (useMaterialCoordinates_) {
