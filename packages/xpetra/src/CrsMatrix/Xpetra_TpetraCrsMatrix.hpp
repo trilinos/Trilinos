@@ -436,6 +436,13 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    virtual void setObjectLabel( const std::string &objectLabel ) { XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel"); mtx_->setObjectLabel(objectLabel);}
+    //@}
+
+
+
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
       : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
