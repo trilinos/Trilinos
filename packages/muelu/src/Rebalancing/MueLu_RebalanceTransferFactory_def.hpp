@@ -238,15 +238,15 @@ namespace MueLu {
           Xpetra::IO<coordinate_type,LO,GO,NO>::Write(fileName, *permutedCoords);
       }
 
-     if (pL.isParameter("Material Coordinates") && pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null && IsAvailable(coarseLevel, "Material Coordinates")) {
+      if (pL.isParameter("Material Coordinates") && pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null && IsAvailable(coarseLevel, "Material Coordinates")) {
         RCP<Vector> coords = Get<RCP<Vector> >(coarseLevel, "Material Coordinates");
         RCP<Vector> permutedCoords = RebalanceCoords<Vector,VectorFactory>(coarseLevel,coords);
         Set(coarseLevel, "Material Coordinates", permutedCoords);
-
+        
         std::string fileName = "rebalanced_mat_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
           Xpetra::IO<SC,LO,GO,NO>::Write(fileName, *permutedCoords);
-     }
+      }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {
         RCP<MultiVector> nullspace = Get< RCP<MultiVector> >(coarseLevel, "Nullspace");
