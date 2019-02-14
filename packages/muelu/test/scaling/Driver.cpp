@@ -93,9 +93,6 @@
 #ifdef HAVE_MUELU_EPETRA
 #include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
 #endif
-
-#else
-#error "Where the heck is BELOS?"
 #endif
 
 
