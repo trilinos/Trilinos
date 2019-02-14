@@ -212,9 +212,6 @@ namespace MueLu {
     else
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
 
-
-
-
     // If available, use striding information of fine level matrix A for range
     // map and coarseMap as domain map; otherwise use plain range map of
     // Ptent = plain range map of A for range map and coarseMap as domain map.
