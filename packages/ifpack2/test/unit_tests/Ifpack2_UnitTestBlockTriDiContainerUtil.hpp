@@ -246,7 +246,7 @@ struct BlockTriDiContainerTester {
           auto input = T_bare->createDefaultApplyParameters();
           input.zeroStartingSolution = zero_starting;
           input.maxNumSweeps = num_sweeps;
-          input.tolerance = norm_based ? tol : 0;
+          input.tolerance = norm_based > 1 ? tol : 0;
           return T_bare->applyInverseJacobi(B, X, input);
         }
       };
@@ -287,7 +287,7 @@ struct BlockTriDiContainerTester {
         else
           TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R) " << details << " rd " << rd);
         if ( ! T_bare.is_null()) {
-          if ( ! seq_method) { // Test norm-based termination.
+          { // Test norm-based termination.
             const int nits = apply(*B, *X_solve, true);
             if (nits < num_sweeps) {
               const auto n0 = T_bare->getNorms0();
