@@ -111,6 +111,11 @@ namespace MueLu {
 
     //@}
 
+  private:
+    template<class CoordinatesType, typename CoordinatesFactoryType>
+    RCP<CoordinatesType> RebalanceCoords(Level& coarseLevel, RCP<CoordinatesType> coords) const;
+
+
   }; // class RebalanceTransferFactory
 
 } // namespace MueLu
