@@ -272,7 +272,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         numResolves       = 0;                 clp.setOption("resolve",               &numResolves,       "#times to redo solve");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
+  int         numVectors        = 1;                 clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
 
@@ -506,8 +506,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             userParamList.set("Node Comm",nodeComm);
           }
 #endif
-
-          if(!material.is_null()) mueluList.sublist("user data").set("Material Coordinates",material);
+          if(!material.is_null()) mueluList.sublist("user data").set<RCP<Vector> >("Material Coordinates",material);
           H = MueLu::CreateXpetraPreconditioner(A, mueluList, nullspace);
         }
       }
