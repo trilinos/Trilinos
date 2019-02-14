@@ -137,18 +137,18 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
-    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
-    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> CoordinateMultiVectorFactory;
 
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
     RCP<AmalgamationInfo>      amalgInfo     = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
     RCP<MultiVector>           fineNullspace = Get< RCP<MultiVector> >          (fineLevel, "Nullspace");
     RCP<const Map>             coarseMap     = Get< RCP<const Map> >            (fineLevel, "CoarseMap");
-    RCP<RealValuedMultiVector> fineCoords;
+    RCP<CoordinateMultiVector> fineCoords;
     RCP<Vector>                fineMatCoords;
     if(bTransferCoordinates_) {
-      fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
+      fineCoords = Get< RCP<CoordinateMultiVector> >(fineLevel, "Coordinates");
     }
     if(bTransferMatCoordinates_) {
       fineMatCoords = Get< RCP<Vector> >(fineLevel, "Material Coordinates");
@@ -165,11 +165,11 @@ namespace MueLu {
 
     RCP<Matrix>                Ptentative;
     RCP<MultiVector>           coarseNullspace;
-    RCP<RealValuedMultiVector> coarseCoords;
+    RCP<CoordinateMultiVector> coarseCoords;
     RCP<Vector>                coarseMatCoords;
 
     if(bTransferCoordinates_) {
-      coarseCoords    = TransferCoords<RealValuedMultiVector,RealValuedMultiVectorFactory>(fineLevel,fineCoords);
+      coarseCoords    = TransferCoords<CoordinateMultiVector,CoordinateMultiVectorFactory>(fineLevel,fineCoords);
     }
     if(bTransferMatCoordinates_) {
       coarseMatCoords = TransferCoords<Vector,VectorFactory>(fineLevel,fineMatCoords);
