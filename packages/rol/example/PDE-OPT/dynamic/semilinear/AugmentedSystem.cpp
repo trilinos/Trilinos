@@ -176,6 +176,10 @@ int main(int argc, char *argv[]) {
     RealT T        = parlist->sublist("Time Discretization").get("End Time",             1.0);
     RealT dt       = T/static_cast<RealT>(nt);
 
+    const Teuchos::ParameterList & geomlist = parlist->sublist("Geometry");
+    RealT dx       = geomlist.get<double>("Width") / geomlist.get<int>("NX");
+    RealT dy       = geomlist.get<double>("Height") / geomlist.get<int>("NY");
+
     // Add MGRIT parameter list stuff
     int sweeps         = parlist->get("MGRIT Sweeps", 1);
     RealT omega        = parlist->get("MGRIT Relaxation",2.0/3.0);
@@ -192,6 +196,7 @@ int main(int argc, char *argv[]) {
 
     // for "serial" in time cases, use the wathen preconditioner
     bool useWathenPrec = communicators->getTimeSize()==spaceProc;
+    useWathenPrec = false;
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
@@ -244,7 +249,17 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************************* BUILD TIME STAMP ******************************/
     /*************************************************************************/
-    auto timeStamp = ROL::TimeStamp<RealT>::make_uniform(0,T,{0.0,1.0},control->numOwnedSteps());
+    auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(control->numOwnedSteps());
+
+    double myFinalTime = dt*timeStamp->size();
+    double timeOffset  = 0.0;
+    MPI_Exscan(&myFinalTime,&timeOffset,1,MPI_DOUBLE,MPI_SUM,communicators->getTimeCommunicator());
+    
+    for( uint k=0; k<timeStamp->size(); ++k ) {
+      timeStamp->at(k).t.resize(2);
+      timeStamp->at(k).t.at(0) = k*dt+timeOffset;
+      timeStamp->at(k).t.at(1) = (k+1)*dt+timeOffset;
+    }
 
     if(myRank==0) {
       (*outStream) << "Sweeps = " << sweeps       << std::endl;
@@ -275,6 +290,8 @@ int main(int argc, char *argv[]) {
     auto kkt_b     = kkt_vector->clone();
     //ROL::RandomizeVector(*kkt_b);
     kkt_b->setScalar(1.0);
+    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->scale(dx*dy);
+    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->scale(dx*dy);
 
     {
       RealT res0 = kkt_b->norm();
