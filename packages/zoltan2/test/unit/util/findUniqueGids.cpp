@@ -519,7 +519,7 @@ int main(int narg, char *arg[])
   test6<long>(comm);
 #else
   if (comm->getRank() == 0) 
-    std::cout << "Skipping long long tests because Tpetra is not build with "
+    std::cout << "Skipping long tests because Tpetra is not build with "
               << "GO == long " << std::endl;
 #endif
 
