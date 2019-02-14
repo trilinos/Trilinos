@@ -18,6 +18,10 @@ set (Kokkos_ENABLE_Cuda ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Cuda_UVM ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ARCH Power8 CACHE STRING "Set by default for CUDA PR testing")
 
+# Options set to match the ATDM build
+set (Trilinos_ENABLE_DEBUG OFF CACHE BOOL "Set by default for CUDA PR testing")
+set (Trilinos_ENABLE_DEBUG_SYMBOLS OFF CACHE BOOL "Set by default for CUDA PR testing")
+
 # TPL settings specific to CUDA build
 set (TPL_BLAS_LIBRARIES "-L${BLAS_ROOT}/lib -lblas -lgfortran -lgomp -lm" CACHE STRING "Set by default for CUDA PR testing")
 set (TPL_LAPACK_LIBRARIES "-L${LAPACK_ROOT}/lib -llapack -lgfortran -lgomp" CACHE STRING "Set by default for CUDA PR testing")
@@ -36,8 +40,6 @@ set (Trilinos_ENABLE_Komplex OFF CACHE BOOL "Disable for CUDA PR testing")
 
 # Temporary options to clean up build
 set (Trilinos_ENABLE_SEACAS OFF CACHE BOOL "Temporary disable for CUDA PR testing")
-set (Trilinos_ENABLE_DEBUG OFF CACHE BOOL "Temporary disable for CUDA PR testing")
-set (Trilinos_ENABLE_DEBUG_SYMBOLS OFF CACHE BOOL "Temporary disable for CUDA PR testing")
 set (STK_ENABLE_TESTS OFF CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_example_PDE-OPT_0ld_adv-diff-react_example_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_example_PDE-OPT_0ld_adv-diff-react_example_02_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
