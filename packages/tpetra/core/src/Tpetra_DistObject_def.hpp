@@ -1214,6 +1214,76 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  copyAndPermute (const SrcDistObject& /* source */,
+                  const size_t /* numSameIDs */,
+                  const Teuchos::ArrayView<const local_ordinal_type>& /* permuteToLIDs */,
+                  const Teuchos::ArrayView<const local_ordinal_type>& /* permuteFromLIDs */)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  copyAndPermuteNew (const SrcDistObject&,
+                     const size_t,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>&,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>&)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  packAndPrepare (const SrcDistObject& /* source */,
+                  const Teuchos::ArrayView<const local_ordinal_type>& /* exportLIDs */,
+                  Teuchos::Array<packet_type>& /* exports */,
+                  const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                  size_t& /* constantNumPackets */,
+                  Distributor& /* distor */)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  packAndPrepareNew (const SrcDistObject&,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>&,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type>&,
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type>,
+                     size_t&,
+                     Distributor&)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& /* importLIDs */,
+                    const Teuchos::ArrayView<const packet_type>& /* imports */,
+                    const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
+                    const size_t /* constantNumPackets */,
+                    Distributor& /* distor */,
+                    const CombineMode /* combineMode */)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& /* importLIDs */,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type> /* imports */,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> /* numPacketsPerLID */,
+                       const size_t /* constantNumPackets */,
+                       Distributor& /* distor */,
+                       const CombineMode /* combineMode */)
+  {}
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransferNew (const SrcDistObject& src,
                  const CombineMode CM,
                  const size_t numSameIDs,
