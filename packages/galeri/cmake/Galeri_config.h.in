@@ -46,3 +46,6 @@
 #ifndef __cplusplus
 #cmakedefine inline
 #endif
+
+/* Define if want to build with Triutils support enabled. */
+#cmakedefine HAVE_GALERI_TRIUTILS
