@@ -630,7 +630,6 @@ namespace MueLu {
 
     // === Coordinates ===
     UpdateFactoryManager_Coordinates(paramList, defaultList, manager, levelID, keeps);
-    UpdateFactoryManager_MaterialCoordinates(paramList, defaultList, manager, levelID, keeps);
 
     // === Pre-Repartition Keeps for Reuse ===
     if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
@@ -1170,59 +1169,33 @@ namespace MueLu {
                                    FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     bool have_userCO = false;
+    bool have_userMCO = false;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null())
       have_userCO = true;
-
-    if (useCoordinates_) {
-      if (have_userCO) {
-        manager.SetFactory("Coordinates", NoFactory::getRCP());
-
-      } else {
-        MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
-        coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-        coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-        manager.SetFactory("Coordinates", coords);
-
-        auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
-        if (!RAP.is_null()) {
-          RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
-        } else {
-          auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
-          RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
-        }
-      }
-    }
-  }
-
-
-  // =====================================================================================================
-  // ================================= Material Coordinates ==============================================
-  // =====================================================================================================
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_MaterialCoordinates(ParameterList& paramList, const ParameterList& defaultList,
-                                   FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
-  {
-    bool have_userCO = false;
     if (paramList.isParameter("Material Coordinates") && !paramList.get<RCP<Vector> >("Material Coordinates").is_null())
-      have_userCO = true;
+      have_userMCO = true;
 
-    if (useMaterialCoordinates_) {
-      if (have_userCO) {
+    if (useCoordinates_ || useMaterialCoordinates_) {
+      if (have_userCO)
+        manager.SetFactory("Coordinates", NoFactory::getRCP());
+      if (have_userMCO) 
         manager.SetFactory("Material Coordinates", NoFactory::getRCP());
 
-      } else {
+      if(!have_userCO && !have_userMCO) {
         MUELU_KOKKOS_FACTORY(coords, CoordinatesTransferFactory, CoordinatesTransferFactory_kokkos);
         coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-        manager.SetFactory("Material Coordinates", coords);
+        if(useCoordinates_)         manager.SetFactory("Coordinates", coords);
+        if(useMaterialCoordinates_) manager.SetFactory("Material Coordinates", coords);
 
         auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
         if (!RAP.is_null()) {
-          RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
+          if(useCoordinates_)         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+          if(useMaterialCoordinates_) RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
         } else {
           auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
-          RAPs->AddTransferFactory(manager.GetFactory("Material Coordinates"));
+          if(useCoordinates_)         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+          if(useMaterialCoordinates_) RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
         }
       }
     }
