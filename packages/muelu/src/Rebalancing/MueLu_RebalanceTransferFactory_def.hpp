@@ -46,6 +46,7 @@
 #ifndef MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 #define MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 
+#include <sstream>
 #include <Teuchos_Tuple.hpp>
 
 #include "Xpetra_MultiVector.hpp"
@@ -201,7 +202,7 @@ namespace MueLu {
           //   if (originalP->IsView("stridedMaps"))
           //     rebalancedP->CreateView("stridedMaps", originalP);
           ///////////////////////// EXPERIMENTAL
-          if(!rebalancedP.is_null()) rebalancedP->setObjectLabel("P" + std::string(coarseLevel.GetLevelID()));
+          if(!rebalancedP.is_null()) {std::ostringstream oss; oss << "P_" << coarseLevel.GetLevelID(); rebalancedP->setObjectLabel(oss.str());}
           Set(coarseLevel, "P", rebalancedP);
 
           if (IsPrint(Statistics2))
@@ -311,7 +312,7 @@ namespace MueLu {
             listLabel.set("Timer Label","MueLu::RebalanceR-" + Teuchos::toString(coarseLevel.GetLevelID()));
             rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap(),Teuchos::rcp(&listLabel,false));
           }
-          if(!rebalancedR.is_null()) rebalancedR->setObjectLabel("R" + std::string(coarseLevel.GetLevelID()));
+          if(!rebalancedR.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); rebalancedR->setObjectLabel(oss.str());}
           Set(coarseLevel, "R", rebalancedR);
 
           ///////////////////////// EXPERIMENTAL
