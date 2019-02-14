@@ -438,7 +438,7 @@ namespace Xpetra {
 
     //! @name Overridden from Teuchos::LabeledObject
     //@{
-    virtual void setObjectLabel( const std::string &objectLabel ) { XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel"); mtx_->setObjectLabel(objectLabel);}
+    void setObjectLabel( const std::string &objectLabel ) { XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel"); mtx_->setObjectLabel(objectLabel);}
     //@}
 
 

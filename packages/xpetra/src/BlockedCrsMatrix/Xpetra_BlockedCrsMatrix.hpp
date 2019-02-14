@@ -1246,6 +1246,20 @@ namespace Xpetra {
         }
     }
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { 
+      XPETRA_MONITOR("TpetraBlockedCrsMatrix::setObjectLabel"); 
+      for (size_t r = 0; r < Rows(); ++r)
+        for (size_t c = 0; c < Cols(); ++c) {
+          if(getMatrix(r,c)!=Teuchos::null) {
+            getMatrix(r,c)->setObjectLabel(objectLabel);
+          }
+        }   
+    }
+    //@}
+
+
     //! Supports the getCrsGraph() call
     bool hasCrsGraph() const {
       if (Rows() == 1 && Cols () == 1) return true;
