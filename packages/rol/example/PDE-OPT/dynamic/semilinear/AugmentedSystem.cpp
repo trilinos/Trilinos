@@ -196,7 +196,6 @@ int main(int argc, char *argv[]) {
 
     // for "serial" in time cases, use the wathen preconditioner
     bool useWathenPrec = communicators->getTimeSize()==spaceProc;
-    useWathenPrec = false;
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
