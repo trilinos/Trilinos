@@ -1419,10 +1419,16 @@ namespace MueLu {
       else
         newP->SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
       if (useCoordinates_)
-        newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+        newP->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      if (useMaterialCoordinates_)
+        newP->SetFactory("Material Coordinates", manager.GetFactory("Material Coordinates"));
+
       manager.SetFactory("P",           newP);
+
       if (useCoordinates_)
         manager.SetFactory("Coordinates", newP);
+      if (useMaterialCoordinates_)
+        manager.SetFactory("Material Coordinates", newP);
 
       // Rebalanced R
       auto newR = rcp(new RebalanceTransferFactory());
