@@ -186,8 +186,9 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // The factory is in prolongation mode
-      Set(coarseLevel, "P",             finalP);
-
+      if(!finalP.is_null()) finalP->setObjectLabel("P" + std::string(coarseLevel.GetLevelID()));
+      Set(coarseLevel, "P_",             finalP);
+    
       APparams->set("graph", finalP);
       Set(coarseLevel, "AP reuse data", APparams);
 
@@ -208,6 +209,7 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
         R = Utilities::Transpose(*finalP, true);
+        if(!R.is_null()) R->setObjectLabel("R_" + std::string(coarseLevel.GetLevelID()));
       }
 
       Set(coarseLevel, "R", R);

@@ -201,7 +201,7 @@ namespace MueLu {
           //   if (originalP->IsView("stridedMaps"))
           //     rebalancedP->CreateView("stridedMaps", originalP);
           ///////////////////////// EXPERIMENTAL
-
+          if(!rebalancedP.is_null()) rebalancedP->setObjectLabel("P" + std::string(coarseLevel.GetLevelID()));
           Set(coarseLevel, "P", rebalancedP);
 
           if (IsPrint(Statistics2))
@@ -311,6 +311,7 @@ namespace MueLu {
             listLabel.set("Timer Label","MueLu::RebalanceR-" + Teuchos::toString(coarseLevel.GetLevelID()));
             rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap(),Teuchos::rcp(&listLabel,false));
           }
+          if(!rebalancedR.is_null()) rebalancedR->setObjectLabel("R" + std::string(coarseLevel.GetLevelID()));
           Set(coarseLevel, "R", rebalancedR);
 
           ///////////////////////// EXPERIMENTAL

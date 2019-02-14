@@ -104,9 +104,10 @@ namespace MueLu {
         XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
 	rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
 
-        if (!rebalancedAc.is_null())
+        if (!rebalancedAc.is_null()) {
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-
+          rebalancedAc->setObjectLabel("A_" + std::string(coarseLevel.GetLevelID()));
+        }
         Set(coarseLevel, "A", rebalancedAc);
       }
       if (!rebalancedAc.is_null() && IsPrint(Statistics2)) {

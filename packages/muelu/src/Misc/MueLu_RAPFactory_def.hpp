@@ -208,6 +208,7 @@ namespace MueLu {
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
+        if(!Ac.is_null()) Ac->setObjectLabel("A_" + std::string(coarseLevel.GetLevelID()));
         Set(coarseLevel, "A",         Ac);
 
         APparams->set("graph", AP);
@@ -256,7 +257,7 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
-
+        if(!Ac.is_null()) Ac->setObjectLabel("A_" + std::string(coarseLevel.GetLevelID()));
         Set(coarseLevel, "A",         Ac);
 
         // RAPparams->set("graph", Ac);
