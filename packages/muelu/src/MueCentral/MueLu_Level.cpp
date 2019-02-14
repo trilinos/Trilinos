@@ -435,7 +435,8 @@ namespace MueLu {
             else if (strType.find("Xpetra::Import")             != npos) outputter.outputField("Import");
             else if (strType.find("Xpetra::Map")                != npos) outputter.outputField("Map");
             else if (strType.find("Xpetra::Matrix")             != npos) outputter.outputField("Matrix" );
-            else if (strType.find("Xpetra::MultiVector")        != npos) outputter.outputField("Vector");
+            else if (strType.find("Xpetra::MultiVector")        != npos) outputter.outputField("MultiVector");
+            else if (strType.find("Xpetra::Vector")             != npos) outputter.outputField("Vector");
             else if (strType.find("Xpetra::Operator")           != npos) outputter.outputField("Operator");
             else                                                         outputter.outputField(strType);
 
