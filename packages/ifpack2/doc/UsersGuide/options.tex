@@ -191,6 +191,23 @@ The following parameters are used in the block relaxation methods:
     {See~\ref{s:relaxation}.}
 \cccc{relaxation: backward mode}
     {See~\ref{s:relaxation}. Currently has no effect. }
+\ccc{block relaxation: decouple dofs}
+    {bool}
+    {false}
+    {Whether to separate blocks according to the different degrees of
+     freedom (PDEs) at each node. This assumes that dofs/node is constant
+     throughout the matrix. Each block will have the same sparsity
+     pattern as the mesh graph's corresponding diagonal block.
+     For example, when using a line partitioner this
+     enables the use of the tridiagonal container even if the matrix's
+     bandwidth is greater than 3.
+     Decoupling is the line smoothing behavior used in ML.}
+\ccc{block relaxation: dofs per node}
+    {int}
+    {1}
+    {How many matrix rows correspond to a mesh node. This is not required
+     if the problem uses a BlockCrsMatrix, since
+     the block size is included in the matrix.}
 \ccc{partitioner: type}
     {string}
     {``linear''}

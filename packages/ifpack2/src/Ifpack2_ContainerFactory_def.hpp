@@ -86,9 +86,11 @@ registerContainer(std::string containerType)
 template<typename MatrixType>
 Teuchos::RCP<typename ContainerFactory<MatrixType>::BaseContainer>
 ContainerFactory<MatrixType>::
-build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
-    const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& localRows, const Teuchos::RCP<const import_type> importer,
-    int OverlapLevel, scalar_type DampingFactor)
+build(std::string containerType,
+    const Teuchos::RCP<const MatrixType>& A,
+    const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& localRows,
+    const Teuchos::RCP<const import_type> importer,
+    bool pointIndexed)
 {
   if(!registeredDefaults)
   {
@@ -102,6 +104,10 @@ build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
                                 "Add the CMake option \"-D Trilinos_ENABLE_Amesos2=ON\" to enable it.");
   }
   #endif
+  if(containerType == "BlockTriDi" && pointIndexed)
+  {
+    throw std::runtime_error("Ifpack2::BlockTriDi does not support decoupled blocks or split rows.\n");
+  }
   auto it = table.find(containerType);
   if(it == table.end())
   {
@@ -118,7 +124,7 @@ build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
     str = str.substr(0, str.length() - 1);
     throw std::invalid_argument(str);
   }
-  return it->second->build(A, localRows, importer, OverlapLevel, DampingFactor);
+  return it->second->build(A, localRows, importer, pointIndexed);
 }
 
 template<typename MatrixType>

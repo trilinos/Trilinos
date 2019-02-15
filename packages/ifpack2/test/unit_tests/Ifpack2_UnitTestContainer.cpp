@@ -130,7 +130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, localRows);
+  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, localRows, false);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = Teuchos::rcp (new container_type (A, localRows));
+    MyContainer = Teuchos::rcp (new container_type (A, localRows, false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -396,9 +396,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   out << "BandedContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    const Teuchos::ParameterList params = Teuchos::ParameterList();
-    MyContainer = Teuchos::rcp (new container_type (A, localRows));
-    MyContainer->setParameters(params);
+    MyContainer = Teuchos::rcp (new container_type (A, localRows, false));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
@@ -408,7 +406,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                        localSuccess, outArg (globalSuccess));
   TEST_EQUALITY_CONST( globalSuccess, 1 );
 
-  out << "DenseContainer::setParameters" << endl;
+  out << "BandedContainer::setParameters" << endl;
   try {
     const Teuchos::ParameterList params = Teuchos::ParameterList();
     MyContainer->setParameters(params);
@@ -421,7 +419,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                        localSuccess, outArg (globalSuccess));
   TEST_EQUALITY_CONST( globalSuccess, 1 );
 
-  out << "DenseContainer::initialize" << endl;
+  out << "BandedContainer::initialize" << endl;
   try {
     MyContainer->initialize ();
     localSuccess = 1;
@@ -433,7 +431,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
                        localSuccess, outArg (globalSuccess));
   TEST_EQUALITY_CONST( globalSuccess, 1 );
 
-  out << "DenseContainer::compute" << endl;
+  out << "BandedContainer::compute" << endl;
   try {
     MyContainer->compute ();
     localSuccess = 1;
@@ -448,7 +446,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   // Apply the DenseContainer to solve the linear system Ax=b for x.
   vec_type x (rowMap);
   x.putScalar (0.0);
-  out << "DenseContainer::apply" << endl;
+  out << "BandedContainer::apply" << endl;
   try {
     MyContainer->applyMV(b, x);
     localSuccess = 1;

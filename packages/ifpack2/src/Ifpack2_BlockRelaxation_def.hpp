@@ -69,6 +69,8 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
       hasBlockCrsMatrix_ = !A_bcrs.is_null();
     }
     if (! Container_.is_null ()) {
+      //This just frees up the container's memory.
+      //The container will be fully re-constructed during initialize().
       Container_->clearBlocks();
     }
     NumLocalBlocks_ = 0;
@@ -129,6 +131,8 @@ getValidParameters () const
   validParams->set("relaxation: sweeps", (int)1);
   validParams->set("relaxation: damping factor", STS::one());
   validParams->set("relaxation: zero starting solution", true);
+  validParams->set("block relaxation: decouple dofs", false);
+  validParams->set("block relaxation: dofs per node", 1);
   validParams->set("schwarz: compute condest", false); // mfh 24 Mar 2015: for backwards compatibility ONLY
   validParams->set("schwarz: combine mode", "ZERO"); // use string mode for this
   validParams->set("schwarz: use reordering", true);
@@ -140,6 +144,10 @@ getValidParameters () const
   Teuchos::Array<Teuchos::ArrayRCP<int>> tmp0;
   validParams->set("partitioner: parts", tmp0);
   validParams->set("partitioner: maintain sparsity", false);
+  validParams->set("fact: ilut level-of-fill", (double)1.0);
+  validParams->set("fact: absolute threshold", (double)0.0);
+  validParams->set("fact: relative threshold", (double)1.0);
+  validParams->set("fact: relax value", (double)0.0);
 
   Teuchos::ParameterList dummyList;
   validParams->set("Amesos2",dummyList);
@@ -297,6 +305,11 @@ setParameters (const Teuchos::ParameterList& List)
   if (NumLocalBlocks_ < static_cast<local_ordinal_type> (0)) {
     NumLocalBlocks_ = A_->getNodeNumRows() / (-NumLocalBlocks_);
   }
+
+  decouple_ = false;
+  if(List.isParameter("block relaxation: decouple dofs"))
+    decouple_ = List.get<bool>("block relaxation: decouple dofs");
+
   // other checks are performed in Partitioner_
 
   // NTS: Sanity check to be removed at a later date when Backward mode is enabled
@@ -501,8 +514,9 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     ApplyInverseSGS(*X_copy,Y);
     break;
   case Ifpack2::Details::MTSPLITJACOBI:
-    Container_->applyInverseJacobi(*X_copy, Y, ZeroStartingSolution_, NumSweeps_);
-  break;
+    //note: for this method, the container is always BlockTriDi
+    Container_->applyInverseJacobi(*X_copy, Y, DampingFactor_, ZeroStartingSolution_, NumSweeps_);
+    break;
   default:
     TEUCHOS_TEST_FOR_EXCEPTION
       (true, std::logic_error, "Ifpack2::BlockRelaxation::apply: Invalid "
@@ -629,10 +643,8 @@ initialize ()
 
     for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
       for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
-        // FIXME (mfh 12 Sep 2014) Should this really be int?
-        // Perhaps it should be local_ordinal_type instead.
-        int LID = (*Partitioner_)(i,j);
-        w_ptr[LID]+= STS::one();
+        local_ordinal_type LID = (*Partitioner_)(i,j);
+        w_ptr[LID] += STS::one();
       }
     }
     W_->reciprocal (*W_);
@@ -683,7 +695,6 @@ ExtractSubmatricesStructure ()
     (Partitioner_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
      "ExtractSubmatricesStructure: Partitioner object is null.");
 
-  NumLocalBlocks_ = Partitioner_->numLocalParts ();
   std::string containerType = ContainerType::getName ();
   if (containerType == "Generic") {
     // ContainerType is Container<row_matrix_type>.  Thus, we need to
@@ -691,18 +702,79 @@ ExtractSubmatricesStructure ()
     // as the default container type.
     containerType = containerType_;
   }
-
-  Teuchos::Array<Teuchos::Array<local_ordinal_type> > localRows(NumLocalBlocks_);
-  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    const size_t numRows = Partitioner_->numRowsInPart (i);
-
-    localRows[i].resize(numRows);
-    // Extract a list of the indices of each partitioner row.
-    for (size_t j = 0; j < numRows; ++j) {
-      localRows[i][j] = (*Partitioner_) (i,j);
+  //Whether the Container will define blocks (partitions)
+  //in terms of individual DOFs, and not by nodes (blocks).
+  bool pointIndexed = decouple_ && hasBlockCrsMatrix_;
+  Teuchos::Array<Teuchos::Array<local_ordinal_type> > blockRows;
+  if(decouple_)
+  {
+    //dofs [per node] is how many blocks each partition will be split into
+    auto A_bcrs = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(A_);
+    local_ordinal_type dofs = hasBlockCrsMatrix_ ?
+      A_bcrs->getBlockSize() : List_.get<int>("block relaxation: dofs per node");
+    blockRows.resize(NumLocalBlocks_ * dofs);
+    if(hasBlockCrsMatrix_)
+    {
+      for(local_ordinal_type i = 0; i < NumLocalBlocks_; i++)
+      {
+        size_t blockSize = Partitioner_->numRowsInPart(i);
+        //block i will be split into j different blocks,
+        //each corresponding to a different dof
+        for(local_ordinal_type j = 0; j < dofs; j++)
+        {
+          local_ordinal_type blockIndex = i * dofs + j;
+          blockRows[blockIndex].resize(blockSize);
+          for(size_t k = 0; k < blockSize; k++)
+          {
+            //here, the row and dof are combined to get the point index
+            //(what the row would be if A were a CrsMatrix)
+            blockRows[blockIndex][k] = (*Partitioner_)(i, k) * dofs + j;
+          }
+        }
+      }
+    }
+    else
+    {
+      //Rows in each partition are distributed round-robin to the blocks -
+      //that's how MueLu stores DOFs in a non-block matrix
+      for(local_ordinal_type i = 0; i < NumLocalBlocks_; i++)
+      {
+        //#ifdef HAVE_IFPACK2_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION(Partitioner_->numRowsInPart(i) % dofs != 0, std::logic_error,
+          "Expected size of all blocks (partitions) to be divisible by MueLu dofs/node.");
+        size_t blockSize = Partitioner_->numRowsInPart(i) / dofs;
+        //#endif
+        //block i will be split into j different blocks,
+        //each corresponding to a different dof
+        for(local_ordinal_type j = 0; j < dofs; j++)
+        {
+          local_ordinal_type blockIndex = i * dofs + j;
+          blockRows[blockIndex].resize(blockSize);
+          for(size_t k = 0; k < blockSize; k++)
+          {
+            blockRows[blockIndex][k] = (*Partitioner_)(i, k * dofs + j);
+          }
+        }
+      }
     }
   }
-  Container_ = ContainerFactory<MatrixType>::build(containerType, A_, localRows, Importer_, OverlapLevel_, DampingFactor_);
+  else
+  {
+    //No decoupling - just get the rows directly from Partitioner
+    blockRows.resize(NumLocalBlocks_);
+    for(local_ordinal_type i = 0; i < NumLocalBlocks_; ++i)
+    {
+      const size_t numRows = Partitioner_->numRowsInPart (i);
+      blockRows[i].resize(numRows);
+      // Extract a list of the indices of each partitioner row.
+      for (size_t j = 0; j < numRows; ++j)
+      {
+        blockRows[i][j] = (*Partitioner_) (i,j);
+      }
+    }
+  }
+  //right before constructing the 
+  Container_ = ContainerFactory<MatrixType>::build(containerType, A_, blockRows, Importer_, pointIndexed);
   Container_->setParameters(List_);
   Container_->initialize();
 }
@@ -727,7 +799,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     //Overlapping jacobi, with view of W_
     auto WView = W_->getLocalViewHost ();
     if(ZeroStartingSolution_) {
-      Container_->DoOverlappingJacobi(XView, YView, WView, X.getStride());
+      Container_->DoOverlappingJacobi(XView, YView, WView, DampingFactor_);
       starting_iteration = 1;
     }
     const scalar_type ONE = STS::one();
@@ -735,7 +807,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     {
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
-      Container_->DoOverlappingJacobi (AYView, YView, WView, X.getStride());
+      Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
     }
   }
   else
@@ -743,7 +815,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     //Non-overlapping
     if(ZeroStartingSolution_)
     {
-      Container_->DoJacobi (XView, YView, X.getStride());
+      Container_->DoJacobi (XView, YView, DampingFactor_);
       starting_iteration = 1;
     }
     const scalar_type ONE = STS::one();
@@ -751,7 +823,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     {
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
-      Container_->DoJacobi (AYView, YView, X.getStride());
+      Container_->DoJacobi (AYView, YView, DampingFactor_);
     }
   }
 }
@@ -784,7 +856,7 @@ ApplyInverseGS (const MV& X, MV& Y) const
       //do import once per sweep
       Y2->doImport(Y, *Importer_, Tpetra::INSERT);
       auto Y2View = Y2->getLocalViewHost ();
-      Container_->DoGaussSeidel(XView, YView, Y2View, X.getStride());
+      Container_->DoGaussSeidel(XView, YView, Y2View, DampingFactor_);
     }
   }
   else
@@ -792,7 +864,7 @@ ApplyInverseGS (const MV& X, MV& Y) const
     auto Y2View = Y2->getLocalViewHost ();
     for(int j = 0; j < NumSweeps_; ++j)
     {
-      Container_->DoGaussSeidel(XView, YView, Y2View, X.getStride());
+      Container_->DoGaussSeidel(XView, YView, Y2View, DampingFactor_);
     }
   }
   if(deleteY2)
@@ -826,7 +898,7 @@ ApplyInverseSGS (const MV& X, MV& Y) const
       //do import once per sweep
       Y2->doImport(Y, *Importer_, Tpetra::INSERT);
       auto Y2View = Y2->getLocalViewHost ();
-      Container_->DoSGS(XView, YView, Y2View, X.getStride());
+      Container_->DoSGS(XView, YView, Y2View, DampingFactor_);
     }
   }
   else
@@ -834,7 +906,7 @@ ApplyInverseSGS (const MV& X, MV& Y) const
     auto Y2View = Y2->getLocalViewHost ();
     for(int j = 0; j < NumSweeps_; ++j)
     {
-      Container_->DoSGS(XView, YView, Y2View, X.getStride());
+      Container_->DoSGS(XView, YView, Y2View, DampingFactor_);
     }
   }
   if(deleteY2)

@@ -113,6 +113,7 @@ public:
 
   static_assert (std::is_same<MatrixType, row_matrix_type>::value,
                  "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
+
   static_assert (std::is_same<ContainerType, Container<row_matrix_type> >::value,
                  "Ifpack2::BlockRelaxation: Do NOT specify the (second) "
                  "ContainerType template parameter explicitly.  The default "
@@ -426,6 +427,9 @@ private:
 
   //! Damping factor.
   scalar_type DampingFactor_;
+
+  //! Whether to decouple DOFs
+  bool decouple_;
 
   //! If \c true, the preconditioner has been computed successfully.
   bool IsInitialized_;

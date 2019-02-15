@@ -131,7 +131,8 @@ namespace Ifpack2 {
 /// between local row and column indices, instead of just assuming
 /// that they are the same.
 template<typename MatrixType, typename InverseType>
-class SparseContainer : public Container<MatrixType> {
+class SparseContainer
+: public ContainerImpl<MatrixType, typename InverseType::scalar_type> {
   //! @name Internal typedefs (private)
   //@{
 private:
@@ -157,7 +158,6 @@ private:
   typedef typename Container<MatrixType>::mv_type mv_type;
   typedef typename Container<MatrixType>::map_type map_type;
   typedef typename Container<MatrixType>::vector_type vector_type;
-  typedef typename Container<MatrixType>::partitioner_type partitioner_type;
   typedef typename Container<MatrixType>::import_type import_type;
 
   typedef typename InverseType::scalar_type InverseScalar;
@@ -200,24 +200,18 @@ public:
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                    const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                    const Teuchos::RCP<const import_type>& importer,
-                   int OverlapLevel,
-                   scalar_type DampingFactor);
+                   bool pointIndexed);
 
   SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<local_ordinal_type>& localRows);
+                   const Teuchos::Array<local_ordinal_type>& localRows,
+                   bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~SparseContainer();
+  virtual ~SparseContainer() {}
 
   //@}
   //! \name Get and set methods
   //@{
-
-  //! Whether the container has been successfully initialized.
-  virtual bool isInitialized() const;
-
-  //! Whether the container has been successfully computed.
-  virtual bool isComputed() const;
 
   //! Set all necessary parameters.
   virtual void setParameters(const Teuchos::ParameterList& List);
@@ -231,6 +225,10 @@ public:
 
   //! Initialize and compute all blocks.
   virtual void compute ();
+  
+  //! Populate the diagonal block CrsMatrices
+  //! (SparseContainer can't use Container::extract(), at least not efficiently)
+  void extractSparse();
 
   //! Free all per-block resources: <tt>Inverses_</tt>, and <tt>diagBlocks_</tt>. 
   //! Called by \c BlockRelaxation when the input matrix is changed. Also calls
@@ -242,7 +240,6 @@ public:
   apply (HostView& X,
          HostView& Y,
          int blockIndex,
-         int stride,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
          scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
          scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
@@ -253,7 +250,6 @@ public:
                  HostView& Y,
                  HostView& W,
                  int blockIndex,
-                 int stride,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
                  scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
                  scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
@@ -289,27 +285,6 @@ private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
 
-  /// \brief For a row of a block, identify entries to be inserted to diagBlocks_
-  //  Pulled into a separate function to allow separate counting and identification
-  ///  \param blockIndex,         [in]  block being processed
-  ///  \param rowIndex,           [in]  row being processed in this block
-  ///  \param localRows,          [in]  rows of the block
-  ///  \param Indices,            [in]  Storage for row indices of inputMatrix
-  ///  \param Values,             [in]  Storage for row values of inputMatrix
-  ///  \param Indices_insert,     [out] Indices to be inserted for this row
-  ///  \param Values_insert,      [out] Value associated with the index
-  ///  \param num_entries_found   [out] number of Indices to be inserted
-  void findRowIndicesAndCounts(
-    int blockIndex,
-    local_ordinal_type rowIndex,
-    const Teuchos::ArrayView<const local_ordinal_type> &localRows,
-    const Teuchos::ArrayView<local_ordinal_type> &Indices,
-    const Teuchos::ArrayView<scalar_type> &Values,
-    Teuchos::Array<InverseGlobalOrdinal> &Indices_insert,
-    Teuchos::Array<InverseScalar> &Values_insert,
-    size_t &num_entries_found
-  ) const;
-
   //! Extract the submatrices identified by the local indices set by the constructor.
   void extract ();
 
@@ -325,20 +300,19 @@ private:
   /// \param Y [in] Subset permutation of the input/output Y of apply(),
   ///   suitable for the second argument of Inverse_->apply().
   void
-  applyImpl (inverse_mv_type& X,
-             inverse_mv_type& Y,
-             int blockIndex,
-             int stride,
-             Teuchos::ETransp mode,
-             InverseScalar alpha,
-             InverseScalar beta) const;
+  solveBlockMV(inverse_mv_type& X,
+               inverse_mv_type& Y,
+               int blockIndex,
+               Teuchos::ETransp mode,
+               InverseScalar alpha,
+               InverseScalar beta) const;
 
   //! The local diagonal block, which compute() extracts.
   std::vector<Teuchos::RCP<InverseCrs>> diagBlocks_;
 
-  //! Scratch copy of X, used in applyImpl, # of rows is size of corresponding block
+  //! Scratch copy of X, used in solveBlock, # of rows is size of corresponding block
   mutable std::vector<inverse_mv_type> invX;
-  //! Scratch copy of Y, used in applyImpl, # of rows is size of corresponding block
+  //! Scratch copy of Y, used in solveBlock, # of rows is size of corresponding block
   mutable std::vector<inverse_mv_type> invY;
 
   /// \brief Local operators.
@@ -348,12 +322,7 @@ private:
   /// of \c diagBlocks_ above.  Its apply() method defines the action
   /// of the inverse of the local matrix.  See the class documentation
   /// for more details.
-  mutable std::vector<Teuchos::Ptr<InverseType>> Inverses_;
-  mutable std::vector<map_type> localMaps_;
-  //! If \c true, the container has been successfully initialized.
-  bool IsInitialized_;
-  //! If \c true, the container has been successfully computed.
-  bool IsComputed_;
+  mutable Teuchos::Array<Teuchos::RCP<InverseType>> Inverses_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
   Teuchos::RCP<Teuchos::Comm<int>> localComm_;
 
