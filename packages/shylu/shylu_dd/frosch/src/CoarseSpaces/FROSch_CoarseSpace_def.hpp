@@ -88,11 +88,15 @@ namespace FROSch {
         UN itmp = 0;
         LOVecPtr2D partMappings;
         AssembledBasisMap_ = AssembleMaps(UnassembledBasesMaps_(),partMappings);
-        AssembledBasis_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO >::Build(SerialRowMap_,AssembledBasisMap_->getNodeNumElements());
-        for (UN i=0; i<UnassembledBasesMaps_.size(); i++) {
-            for (UN j=0; j<UnassembledBasesMaps_[i]->getNodeNumElements(); j++) {
-                AssembledBasis_->getDataNonConst(itmp).deepCopy(UnassembledSubspaceBases_[i]->getData(j)()); // Here, we copy data. Do we need to do this?
-                itmp++;
+        if (!AssembledBasisMap_.is_null()&&!SerialRowMap_.is_null()) {
+            if (AssembledBasisMap_->getGlobalNumElements()>0) { // AH 02/12/2019: Is this the right condition? Seems to work for now...
+                AssembledBasis_ = Xpetra::MultiVectorFactory<SC,LO,GO,NO >::Build(SerialRowMap_,AssembledBasisMap_->getNodeNumElements());
+                for (UN i=0; i<UnassembledBasesMaps_.size(); i++) {
+                    for (UN j=0; j<UnassembledBasesMaps_[i]->getNodeNumElements(); j++) {
+                        AssembledBasis_->getDataNonConst(itmp).deepCopy(UnassembledSubspaceBases_[i]->getData(j)()); // Here, we copy data. Do we need to do this?
+                        itmp++;
+                    }
+                }
             }
         }
         
@@ -165,6 +169,12 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
+    bool CoarseSpace<SC,LO,GO,NO>::hasBasisMap() const
+    {
+        return !AssembledBasisMap_.is_null();
+    }
+    
+    template <class SC,class LO,class GO,class NO>
     typename CoarseSpace<SC,LO,GO,NO>::MapPtr CoarseSpace<SC,LO,GO,NO>::getBasisMap() const
     {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"AssembledBasisMap_.is_null().");
@@ -172,10 +182,22 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename CoarseSpace<SC,LO,GO,NO>::MultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getLocalBasis() const
+    bool CoarseSpace<SC,LO,GO,NO>::hasAssembledBasis() const
+    {
+        return !AssembledBasis_.is_null();
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename CoarseSpace<SC,LO,GO,NO>::MultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getAssembledBasis() const
     {
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"AssembledBasis_.is_null().");
         return AssembledBasis_;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    bool CoarseSpace<SC,LO,GO,NO>::hasGlobalBasisMatrix() const
+    {
+        return !GlobalBasisMatrix_.is_null();
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -183,12 +205,6 @@ namespace FROSch {
     {
         FROSCH_ASSERT(!GlobalBasisMatrix_.is_null(),"GlobalBasisMatrix_.is_null().");
         return GlobalBasisMatrix_;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    bool CoarseSpace<SC,LO,GO,NO>::hasAssembledBasis() const
-    {
-        return !AssembledBasis_.is_null();
     }
 }
 
