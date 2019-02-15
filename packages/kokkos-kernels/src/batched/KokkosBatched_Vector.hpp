@@ -19,7 +19,7 @@ namespace KokkosBatched {
     struct DefaultVectorLength {
       enum : int { value = 1 };
     };
-    
+
     template<>
     struct DefaultVectorLength<float,Kokkos::HostSpace> {
 #if   defined(__AVX512F__)
@@ -96,6 +96,50 @@ namespace KokkosBatched {
     };
 #endif
 
+    template<typename ValueType, typename MemorySpace>
+    struct DefaultInternalVectorLength {
+      enum : int { value = 1 };
+    };
+    template<typename ValueType>
+    struct DefaultInternalVectorLength<ValueType,Kokkos::HostSpace> {
+      enum : int { value = DefaultVectorLength<ValueType,Kokkos::HostSpace>::value };      
+    };
+    
+#if defined(KOKKOS_ENABLE_CUDA)
+    template<>
+    struct DefaultInternalVectorLength<float,Kokkos::CudaSpace> {
+      enum : int { value = 4 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<double,Kokkos::CudaSpace> {
+      enum : int { value = 2 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<Kokkos::complex<float>,Kokkos::CudaSpace> {
+      enum : int { value = 2 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<Kokkos::complex<double>,Kokkos::CudaSpace> {
+      enum : int { value = 1 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<float,Kokkos::CudaUVMSpace> {
+      enum : int { value = 4 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<double,Kokkos::CudaUVMSpace> {
+      enum : int { value = 2 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<Kokkos::complex<float>,Kokkos::CudaUVMSpace> {
+      enum : int { value = 2 };
+    };
+    template<>
+    struct DefaultInternalVectorLength<Kokkos::complex<double>,Kokkos::CudaUVMSpace> {
+      enum : int { value = 1 };
+    };
+#endif
+    
     template<typename T>
     struct MagnitudeScalarType;
 
