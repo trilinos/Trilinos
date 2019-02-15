@@ -71,6 +71,12 @@ namespace Details {
 
   TPETRA_INSTANTIATE_L( TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_OPENMP_INT )
 
+  // Make sure that KeyType = long, ValueType = int and
+  // KeyType = long long, ValueType = int both get instantiated -
+  // whenever Tpetra is enabled, Xpetra::Epetra_Map depends on both
+  TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(long, int, openmp_device_type)
+  TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(long long, int, openmp_device_type)
+
   // FIXME (mfh 26 Sep 2015) Once it becomes possible to disable LO =
   // int, add an instantiation here for {KeyType = LO, ValueType =
   // LO}.  However, this case has likely already been covered above,
