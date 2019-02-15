@@ -289,8 +289,9 @@ int main(int argc, char *argv[]) {
     auto kkt_b     = kkt_vector->clone();
     //ROL::RandomizeVector(*kkt_b);
     kkt_b->setScalar(1.0);
-    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->scale(dx*dy);
-    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->scale(dx*dy);
+    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->scale(dt*dx*dy); // u
+    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->scale(dt*dx*dy); // z
+    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(2)->scale(0.0);      // lambda
 
     {
       RealT res0 = kkt_b->norm();
