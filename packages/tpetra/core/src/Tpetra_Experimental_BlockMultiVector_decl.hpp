@@ -453,7 +453,7 @@ public:
   void sync_host() {
     mv_.sync_host();
   }
- 
+
   /// \brief Update data to the device
   void sync_device() {
     mv_.sync_device();
@@ -469,7 +469,7 @@ public:
   bool need_sync_host() const {
     return mv_.need_sync_host();
   }
- 
+
   //! Whether this object needs synchronization to the device
   bool need_sync_device() const {
     return mv_.need_sync_device();
@@ -489,7 +489,7 @@ public:
   void modify_host() {
     mv_.modify_host();
   }
- 
+
   /// \brief Mark data as modified on the device
   void modify_device() {
     mv_.modify_device();
@@ -604,7 +604,7 @@ protected:
 
   virtual void
   copyAndPermute (const Tpetra::SrcDistObject& source,
-                  size_t numSameIDs,
+                  const size_t numSameIDs,
                   const Teuchos::ArrayView<const LO>& permuteToLIDs,
                   const Teuchos::ArrayView<const LO>& permuteFromLIDs);
 
@@ -620,7 +620,7 @@ protected:
   unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
                     const Teuchos::ArrayView<const impl_scalar_type> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
+                    const size_t constantNumPackets,
                     Tpetra::Distributor& distor,
                     Tpetra::CombineMode CM);
   //@}

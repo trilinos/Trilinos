@@ -46,7 +46,6 @@
 /// \brief Definition of Tpetra::Experimental::BlockCrsMatrix
 
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 
@@ -2838,8 +2837,8 @@ public:
                        buffer_device_type>& exportLIDs,
                      Kokkos::DualView<packet_type*,
                        buffer_device_type>& exports, // output
-                     const Kokkos::DualView<size_t*,
-                       buffer_device_type>& numPacketsPerLID, // output
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type> numPacketsPerLID, // output
                      size_t& constantNumPackets,
                      Distributor& /* distor */)
   {
@@ -2942,7 +2941,7 @@ public:
     // Graph information is on host; let's do this on host parallel reduce
     auto exportLIDsHost = exportLIDs.view_host();
     auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this.
-    const_cast<Kokkos::DualView<size_t*, buffer_device_type>&>(numPacketsPerLID).modify_host();
+    numPacketsPerLID.modify_host ();
     {
       using reducer_type = Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec>;
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
@@ -3083,10 +3082,10 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
                          buffer_device_type>& importLIDs,
-                       const Kokkos::DualView<const packet_type*,
-                         buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*,
-                         buffer_device_type>& numPacketsPerLID,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type> imports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
                        const size_t /* constantNumPackets */,
                        Distributor& /* distor */,
                        const CombineMode combineMode)
@@ -3213,32 +3212,36 @@ public:
       return;
     }
 
-    // Hack so we can sync imports.  NOTE (mfh 07 Feb 2019) This does
-    // _not_ modify the sync flags of imports, even though the data
-    // have been sync'd!
-    {
-      using Tpetra::Details::castAwayConstDualView;
-      auto imports_nc = castAwayConstDualView (imports);
-      imports_nc.sync_host ();
+    // NOTE (mfh 07 Feb 2019) If we ever implement unpack on device,
+    // we can remove this sync.
+    if (imports.need_sync_host ()) {
+      imports.sync_host ();
+    }
 
-      if (imports_nc.need_sync_host () || numPacketsPerLID.need_sync_host () ||
-          importLIDs.need_sync_host ()) {
-        std::ostream& err = this->markLocalErrorAndGetStream ();
-        std::ostringstream os;
-        os << prefix << "All input DualViews must be sync'd to host by now. "
-           << "imports_nc.need_sync_host()="
-           << (imports_nc.need_sync_host () ? "true" : "false")
-           << ", numPacketsPerLID.need_sync_host()="
-           << (numPacketsPerLID.need_sync_host () ? "true" : "false")
-           << ", importLIDs.need_sync_host()="
-           << (importLIDs.need_sync_host () ? "true" : "false")
-           << "." << endl;
-        if (verbose) {
-          std::cerr << os.str ();
-        }
-        err << os.str ();
-        return;
+    // NOTE (mfh 07 Feb 2019) DistObject::doTransferNew has already
+    // sync'd numPacketsPerLID to host, since it needs to do that in
+    // order to post MPI_Irecv messages with the correct lengths.  A
+    // hypothetical device-specific boundary exchange implementation
+    // could possibly receive data without sync'ing lengths to host,
+    // but we don't need to design for that nonexistent thing yet.
+
+    if (imports.need_sync_host () || numPacketsPerLID.need_sync_host () ||
+        importLIDs.need_sync_host ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      std::ostringstream os;
+      os << prefix << "All input DualViews must be sync'd to host by now. "
+         << "imports_nc.need_sync_host()="
+         << (imports.need_sync_host () ? "true" : "false")
+         << ", numPacketsPerLID.need_sync_host()="
+         << (numPacketsPerLID.need_sync_host () ? "true" : "false")
+         << ", importLIDs.need_sync_host()="
+         << (importLIDs.need_sync_host () ? "true" : "false")
+         << "." << endl;
+      if (verbose) {
+        std::cerr << os.str ();
       }
+      err << os.str ();
+      return;
     }
 
     const auto importLIDsHost = importLIDs.view_host ();

@@ -104,7 +104,7 @@ int verifyInputAdapter(
   if (!fail && ia.getLocalNumIDs() != vector.getLocalLength())
     fail = 4;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (!gfail){
     const zgno_t *vtxIds=NULL;
@@ -121,7 +121,7 @@ int verifyInputAdapter(
     if (!fail && stride != 1)
       fail = 10;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printVector(comm, nvals, vtxIds, vals);
@@ -144,11 +144,12 @@ int verifyInputAdapter(
       }
     }
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   }
 
   return gfail;
 }
+
 
 int main(int narg, char *arg[])
 {
@@ -163,10 +164,11 @@ int main(int narg, char *arg[])
   // and Epetra vectors for testing.
 
   RCP<UserInputForTests> uinput;
-
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
   try{
-    uinput = 
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -222,7 +224,7 @@ int main(int narg, char *arg[])
   
     fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, 0, NULL, NULL);
   
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   
     if (!gfail){
       tvector_t *vMigrate = NULL;
@@ -234,7 +236,7 @@ int main(int narg, char *arg[])
         fail = 11;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         RCP<const tvector_t> cnewV = rcp_const_cast<const tvector_t>(newV);
@@ -255,11 +257,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<tvector_t>(*newInput, *newV, 0, NULL, NULL);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -289,7 +291,7 @@ int main(int narg, char *arg[])
   
     fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, 0, NULL, NULL);
   
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   
     if (!gfail){
       xvector_t *vMigrate =NULL;
@@ -300,7 +302,7 @@ int main(int narg, char *arg[])
         fail = 11;
       }
   
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         RCP<const xvector_t> cnewV(vMigrate);
@@ -322,11 +324,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<xvector_t>(*newInput, *newV, 0, NULL, NULL);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 
@@ -371,7 +373,7 @@ int main(int narg, char *arg[])
     if (goodAdapter) {
       fail = verifyInputAdapter<evector_t>(*eVInput, *tV, 0, NULL, NULL);
   
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         evector_t *vMigrate =NULL;
@@ -382,7 +384,7 @@ int main(int narg, char *arg[])
           fail = 11;
         }
   
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
   
         if (!gfail){
           RCP<const evector_t> cnewV(vMigrate, true);
@@ -404,11 +406,11 @@ int main(int narg, char *arg[])
           }
           fail = verifyInputAdapter<evector_t>(*newInput, *newV, 0, NULL, NULL);
           if (fail) fail += 100;
-          gfail = globalFail(comm, fail);
+          gfail = globalFail(*comm, fail);
         }
       }
       if (gfail){
-        printFailureCode(comm, fail);
+        printFailureCode(*comm, fail);
       }
     }
   }

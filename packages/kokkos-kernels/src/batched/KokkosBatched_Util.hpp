@@ -240,7 +240,16 @@ namespace KokkosBatched {
       struct NonUnit { static const bool use_unit_diag = false; };
     };
 
-    struct Algo {
+    struct Mode {
+      struct Serial {
+        static const char *name() { return "Serial"; }        
+      };
+      struct Team {
+        static const char *name() { return "Team"; }
+      };
+    };
+
+    struct Algo {      
       struct Level3 {
 	struct Unblocked {
 	  static const char* name() { return "Unblocked"; }

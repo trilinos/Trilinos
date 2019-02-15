@@ -373,5 +373,22 @@ class GeneralizedCompleteEllipticIntegral : public RTBoundFunc
   double execute(Value**);
 };
 
+class Readline : public RTBoundFunc
+{
+ public:
+  // read(filename, buffer), returns number of chars read, returns 0 if end of file
+  Readline() : RTBoundFunc("readline", 2) {}
+
+  double execute(Value**);
+};
+
+class Scanf : public RTBoundFunc
+{
+ public:
+  Scanf() : RTBoundFunc("scanf", 1, false, true) {}
+
+  double execute(Value**);
+};
+
 }
 #endif

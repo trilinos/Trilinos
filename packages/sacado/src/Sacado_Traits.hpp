@@ -331,7 +331,7 @@ namespace Sacado {
 
   //! Base template specification for %IsADType
   /*!
-   * The %IsADType classes provide a mechanism for computing the
+   * The %IsADType classes provide a mechanism for
    * determining whether a type is an AD type
    */
   template <typename T> struct IsADType {
@@ -340,10 +340,19 @@ namespace Sacado {
 
   //! Base template specification for %IsScalarType
   /*!
-   * The %IsScalarType classes provide a mechanism for computing the
+   * The %IsScalarType classes provide a mechanism for
    * determining whether a type is a scalar type (float, double, etc...)
    */
   template <typename T> struct IsScalarType {
+    static const bool value = false;
+  };
+
+  //! Base template specification for %IsSimdType
+  /*!
+   * The %IsSimdType classes provide a mechanism for computing the
+   * determining whether a type is a Simd type (Doubles, MP::Vector, ...)
+   */
+  template <typename T> struct IsSimdType {
     static const bool value = false;
   };
 

@@ -182,6 +182,8 @@ class FadOpsUnitTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testTimesLR);
   CPPUNIT_TEST(testDivideLR);
 
+  CPPUNIT_TEST(testPowConstB);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -296,6 +298,63 @@ public:
     COMPARE_FADS(aa_dfad, aa_fad);
   }
 
+  // Check various corner cases for pow()
+  void testPowConstB() {
+    FadType a, b, c, cc;
+
+    // Constant b
+    a = FadType(n,1.2345);
+    for (int i=0; i<n; ++i)
+      a.fastAccessDx(i) = urand.number();
+    b = 3.456;
+    c = pow(a, b);
+    cc = FadType(n, pow(a.val(),b.val()));
+    for (int i=0; i<n; ++i)
+      cc.fastAccessDx(i) = b.val()*pow(a.val(),b.val()-1)*a.dx(i);
+    COMPARE_FADS(c, cc);
+
+    // Constant scalar b
+    c = pow(a, b.val());
+    COMPARE_FADS(c, cc);
+
+    // Constant b == 0
+    b = 0.0;
+    c = pow(a, b);
+    cc.val() = 1.0;
+    for (int i=0; i<n; ++i)
+      cc.fastAccessDx(i) = 0.0;
+    COMPARE_FADS(c, cc);
+
+    // Constant scalar b == 0
+    c = pow(a, b.val());
+    COMPARE_FADS(c, cc);
+
+    // a == 0 and constant b
+    a.val() = 0.0;
+    b = 3.456;
+    c = pow(a, b);
+    cc.val() = 0.0;
+    for (int i=0; i<n; ++i)
+      cc.fastAccessDx(i) = 0.0;
+    COMPARE_FADS(c, cc);
+
+    // a == 0 and constant scalar b
+    c = pow(a, b.val());
+    COMPARE_FADS(c, cc);
+
+    // a == 0 and b == 0
+    b = 0.0;
+    c = pow(a, b);
+    cc.val() = 1.0;
+    for (int i=0; i<n; ++i)
+      cc.fastAccessDx(i) = 0.0;
+    COMPARE_FADS(c, cc);
+
+    // a == 0 and scalar b == 0
+    c = pow(a, b.val());
+    COMPARE_FADS(c, cc);
+  }
+
 protected:
 
   // DFad variables
@@ -318,7 +377,7 @@ protected:
 template <class FadType, class ScalarType>
 FadOpsUnitTest<FadType,ScalarType>::
 FadOpsUnitTest() :
-  urand(), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
+  urand(), n(5), tol_a(1.0e-15), tol_r(1.0e-12) {}
 
 template <class FadType, class ScalarType>
 FadOpsUnitTest<FadType,ScalarType>::

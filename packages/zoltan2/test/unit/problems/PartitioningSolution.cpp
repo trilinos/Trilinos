@@ -201,9 +201,9 @@ int main(int narg, char *arg[])
 
   delete [] normalizedPartSizes;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail){
-    printFailureCode(comm, fail);   // exits after printing "FAIL"
+    printFailureCode(*comm, fail);   // exits after printing "FAIL"
   }
 
   // Test the Solution set method that is called by algorithms
@@ -221,9 +221,9 @@ int main(int narg, char *arg[])
     fail=10;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail){
-    printFailureCode(comm, fail);   // exits after printing "FAIL"
+    printFailureCode(*comm, fail);   // exits after printing "FAIL"
   }
 
   // Test the Solution get methods that may be called by users 
@@ -237,9 +237,9 @@ int main(int narg, char *arg[])
     }
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail){
-    printFailureCode(comm, fail);   // exits after printing "FAIL"
+    printFailureCode(*comm, fail);   // exits after printing "FAIL"
   }
 
   if (rank==0)
