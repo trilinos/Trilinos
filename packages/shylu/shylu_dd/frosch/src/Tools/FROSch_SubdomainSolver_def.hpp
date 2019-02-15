@@ -45,7 +45,7 @@
 #include <FROSch_SubdomainSolver_decl.hpp>
 
 namespace FROSch {
-    
+
     template<class SC,class LO,class GO,class NO>
     SubdomainSolver<SC,LO,GO,NO>::SubdomainSolver(CrsMatrixPtr k,
                                                   ParameterListPtr parameterList,
@@ -69,60 +69,62 @@ namespace FROSch {
     IsInitialized_ (false),
     IsComputed_ (false)
     {
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
-            FROSCH_ASSERT(K_->getRowMap()->lib()==Xpetra::UseEpetra,"UnderlyingLib!=Xpetra::UseEpetra");
+#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
+
+          FROSCH_ASSERT(K_->getRowMap()->lib()==Xpetra::UseEpetra,"UnderlyingLib!=Xpetra::UseEpetra");
             // AH 10/18/2017: Dies könnten wir nach initialize() verschieben, oder?
             Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
             Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
             EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
-            
+
             EpetraMultiVectorPtr xTmp;
             EpetraMultiVectorPtr bTmp;
-            
+
             EpetraLinearProblem_.reset(new Epetra_LinearProblem(epetraMat.get(),xTmp.get(),bTmp.get()));
-            
+
             Amesos amesosFactory;
 
             AmesosSolver_.reset(amesosFactory.Create(ParameterList_->get("Solver","Mumps"),*EpetraLinearProblem_));
 
             AmesosSolver_->SetParameters(ParameterList_->sublist("Amesos"));
-
-        } else
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Amesos");
 #endif
-            if (!ParameterList_->get("SolverType","Amesos").compare("Amesos2")) {
+        } else if (!ParameterList_->get("SolverType","Amesos").compare("Amesos2")) {
             if (K_->getRowMap()->lib()==Xpetra::UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
                 Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
                 Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
                 EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
-                
+
                 EpetraMultiVectorPtr xTmp;
                 EpetraMultiVectorPtr bTmp;
-                
+
                 Amesos2SolverEpetra_ = Amesos2::create<EpetraCrsMatrix,EpetraMultiVector>(ParameterList_->get("Solver","Mumps"),epetraMat,xTmp,bTmp);
                 ParameterListPtr parameterList = sublist(ParameterList_,"Amesos2");
                 parameterList->setName("Amesos2");
                 Amesos2SolverEpetra_->setParameters(parameterList);
+#else
+                ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Epetra");
 #endif
             } else if (K_->getRowMap()->lib()==Xpetra::UseTpetra) {
                 Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
                 Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
                 TpetraCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrixNonConst();
-                
+
                 TpetraMultiVectorPtr xTmp;
                 TpetraMultiVectorPtr bTmp;
-                
+
                 Amesos2SolverTpetra_ = Amesos2::create<Tpetra::CrsMatrix<SC,LO,GO,NO>,Tpetra::MultiVector<SC,LO,GO,NO> >(ParameterList_->get("Solver","Mumps"),tpetraMat,xTmp,bTmp);
                 ParameterListPtr parameterList = sublist(ParameterList_,"Amesos2");
                 parameterList->setName("Amesos2");
                 Amesos2SolverTpetra_->setParameters(parameterList);
             } else {
-                FROSCH_ASSERT(false,"This can't happen...");
+                FROSCH_ASSERT(false, "This can't happen. Either use Epetra or Tetra linear algebra stack.");
             }
-#ifdef HAVE_SHYLU_DDFROSCH_MUELU
         } else if (!ParameterList_->get("SolverType","Amesos").compare("MueLu")) {
-            
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
             MueLuFactory_ = Teuchos::rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(parameterList->sublist("MueLu").sublist("MueLu Parameter")));
             Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
 
@@ -149,29 +151,33 @@ namespace FROSch {
             MueLuHierarchy_ = MueLuFactory_->CreateHierarchy(); // Das vor den if block
             MueLuHierarchy_->GetLevel(0)->Set("A",K_); // Das in den if block
             MueLuHierarchy_->GetLevel(0)->Set("Nullspace", nullspace);
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "MueLu");
 #endif
-#ifdef HAVE_SHYLU_DDFROSCH_BELOS
         } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
             Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > xSolution;// = FROSch::ConvertToXpetra<SC, LO, GO, NO>(Xpetra::UseTpetra,*this->solution_,TeuchosComm);
             Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > xRightHandSide;// = FROSch::ConvertToXpetra<SC, LO, GO, NO>(Xpetra::UseTpetra,*residualVec_,TeuchosComm);//hier residualVec. Bei linProb rhs_
-            
+
             Teuchos::RCP<Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > OpK = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(K_));
-            
-            
+
+
             BelosLinearProblem_.reset(new Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
-            
+
             Belos::SolverFactory<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > belosFactory;
             ParameterListPtr solverParameterList = sublist(ParameterList_,"Belos");
-            
+
             BelosSolverManager_ = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
-            
+
             BelosSolverManager_->setProblem(BelosLinearProblem_);
+#else
+            ThrowErrorMissingPackage("FROSch::SubdomainSolver", "Belos");
 #endif
         } else {
             FROSCH_ASSERT(false,"SolverType unknown...");
         }
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     SubdomainSolver<SC,LO,GO,NO>::~SubdomainSolver()
     {
@@ -186,7 +192,7 @@ namespace FROSch {
         Amesos2SolverEpetra_.reset();
 #endif
         Amesos2SolverTpetra_.reset();
-        
+
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU
         MueLuFactory_.reset();
         MueLuHierarchy_.reset();
@@ -197,7 +203,7 @@ namespace FROSch {
         BelosSolverManager_.reset();
 #endif
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int SubdomainSolver<SC,LO,GO,NO>::initialize()
     {
@@ -235,7 +241,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int SubdomainSolver<SC,LO,GO,NO>::compute()
     {
@@ -276,10 +282,10 @@ namespace FROSch {
 
                 if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
                     BelosLinearProblem_->setLeftPrec(OpP);
-                    
+
                 } else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
                     BelosLinearProblem_->setRightPrec(OpP);
-                    
+
                 } else {
                     FROSCH_ASSERT(false,"PreconditionerPosition unknown...");
                 }
@@ -290,7 +296,7 @@ namespace FROSch {
             FROSCH_ASSERT(false,"SolverType unknown...");
         }
         return 0;
-        
+
 
     }
 
@@ -304,22 +310,22 @@ namespace FROSch {
                                              SC beta) const
     {
         FROSCH_ASSERT(IsComputed_,"!IsComputed_.");
-        
+
         MultiVectorPtr yTmp;
-        
+
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
             const Xpetra::EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const Xpetra::EpetraMultiVectorT<GO,NO> *>(&x);
             Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
-            
+
             yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),x.getNumVectors());
             *yTmp = y;
             Xpetra::EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorY = dynamic_cast<Xpetra::EpetraMultiVectorT<GO,NO> *>(yTmp.get());
             Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorY = xEpetraMultiVectorY->getEpetra_MultiVector();
-            
+
             EpetraLinearProblem_->SetLHS(epetraMultiVectorY.get());
             EpetraLinearProblem_->SetRHS(epetraMultiVectorX.get());
-            
+
             EpetraLinearProblem_->GetMatrix()->SetUseTranspose(mode==Teuchos::TRANS);
             AmesosSolver_->Solve();
         } else
@@ -329,26 +335,26 @@ namespace FROSch {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
                 const Xpetra::EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const Xpetra::EpetraMultiVectorT<GO,NO> *>(&x);
                 Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
-                
+
                 yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),x.getNumVectors());
                 *yTmp = y;
                 Xpetra::EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorY = dynamic_cast<Xpetra::EpetraMultiVectorT<GO,NO> *>(yTmp.get());
                 Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorY = xEpetraMultiVectorY->getEpetra_MultiVector();
-                
+
                 Amesos2SolverEpetra_->setX(epetraMultiVectorY);
                 Amesos2SolverEpetra_->setB(epetraMultiVectorX);
-                
+
                 Amesos2SolverEpetra_->solve(); // Was ist, wenn man mit der transponierten Matrix lösen will
 #endif
             } else {
                 const Xpetra::TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> *>(&x);
                 TpetraMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
-                
+
                 yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),x.getNumVectors());
                 *yTmp = y;
                 const Xpetra::TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorY = dynamic_cast<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> *>(yTmp.get());
                 TpetraMultiVectorPtr tpetraMultiVectorY = xTpetraMultiVectorY->getTpetra_MultiVector();
-                
+
                 Amesos2SolverTpetra_->setX(tpetraMultiVectorY);
                 Amesos2SolverTpetra_->setB(tpetraMultiVectorX);
 
@@ -370,7 +376,7 @@ namespace FROSch {
 #endif
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS
         } else if (!ParameterList_->get("SolverType","Amesos").compare("Belos")) {
-            
+
             ConstMultiVectorPtr xPtr = Teuchos::rcpFromRef(x);
             yTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),x.getNumVectors());
             BelosLinearProblem_->setProblem(yTmp,xPtr);
@@ -382,44 +388,44 @@ namespace FROSch {
         }
         y.update(alpha,*yTmp,beta);
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename SubdomainSolver<SC,LO,GO,NO>::ConstMapPtr SubdomainSolver<SC,LO,GO,NO>::getDomainMap() const
     {
         return K_->getDomainMap();
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename SubdomainSolver<SC,LO,GO,NO>::ConstMapPtr SubdomainSolver<SC,LO,GO,NO>::getRangeMap() const
     {
         return K_->getRangeMap();
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     void SubdomainSolver<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                 const Teuchos::EVerbosityLevel verbLevel) const
     {
         FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     std::string SubdomainSolver<SC,LO,GO,NO>::description() const
     {
         return "Subdomain Solver";
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     bool SubdomainSolver<SC,LO,GO,NO>::isInitialized() const
     {
         return IsInitialized_;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     bool SubdomainSolver<SC,LO,GO,NO>::isComputed() const
     {
         return IsComputed_;
     }
-    
+
 }
 
 #endif
