@@ -249,7 +249,7 @@ namespace MueLu {
     myGraph = CrsGraphFactory::Build(rowMap,
                                      colMap,
                                      nnzOnRow,
-                                     Xpetra::DynamicProfile);
+                                     Xpetra::StaticProfile);
 
     *out << "Fill CrsGraph" << std::endl;
     LO rowIdx = 0;
