@@ -88,6 +88,7 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: remap parts");
     SET_VALID_ENTRY("repartition: remap num values");
     SET_VALID_ENTRY("repartition: remap accept partition");
+    SET_VALID_ENTRY("repartition: node repartition level");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
@@ -157,6 +158,16 @@ namespace MueLu {
       GetOStream(Warnings0) << "No repartitioning necessary: partitions were left unchanged by the repartitioner" << std::endl;
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
+    }
+
+    // If we're doing node away, we need to be sure to get the mapping to the NodeComm's rank 0.
+    const int    nodeRepartLevel      = pL.get<int>   ("repartition: node repartition level");
+    if(currentLevel.GetLevelID() == nodeRepartLevel) {
+      // NodePartitionInterface returns the *ranks* of the guy who gets the info, not the *partition number*
+      // In a sense, we've already done remap here.
+
+      // FIXME: We need a low-comm import construction
+      remapPartitions = false;
     }
 
     // ======================================================================================================

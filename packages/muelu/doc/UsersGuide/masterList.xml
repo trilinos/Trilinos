@@ -1036,6 +1036,24 @@
       <description-ML>Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.</description-ML>
     </parameter>
 
+
+    <parameter>
+      <name>repartition: node repartition level</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Level on which to run node-level repartitioning (negative means don't).</description>
+      <visible>false</visible>
+    </parameter>
+    
+    <parameter>
+      <name>repartition: node id</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Id of the current node (only used for node-level repartitioning).</description>
+      <visible>false</visible>
+    </parameter>
+
+
     <parameter>
       <name>repartition: min rows per proc</name>
       <type>int</type>
