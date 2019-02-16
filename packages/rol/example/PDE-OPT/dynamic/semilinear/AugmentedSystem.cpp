@@ -149,7 +149,18 @@ inline void pauseToAttach(MPI_Comm mpicomm)
   comm->barrier();
 }
 
-int main(int argc, char *argv[]) {
+void solveKKTSystem(const std::string & prefix,
+                    bool useWathenPrec,int myRank,
+                    double absTol,double relTol,
+                    const Teuchos::RCP<Teuchos::StackedTimer> & timer,
+                    const ROL::Ptr<std::ostream> & outStream,
+                    const ROL::Ptr<ROL::PinTConstraint<RealT>> & pint_con,
+                    const ROL::Ptr<ROL::Vector<RealT>> & kkt_b,
+                    const ROL::Ptr<ROL::PinTVector<RealT>> & state,
+                    const ROL::Ptr<ROL::PinTVector<RealT>> & control);
+
+int main(int argc, char *argv[]) 
+{
 
   using Teuchos::RCP;
 
@@ -283,115 +294,85 @@ int main(int argc, char *argv[]) {
     /***************** Run KKT Solver ***************************************/
     /*************************************************************************/
 
-    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    Teuchos::RCP<Teuchos::StackedTimer> timer = Teuchos::TimeMonitor::getStackedTimer();
     double tol = 1e-12;
 
-    auto kkt_b     = kkt_vector->clone();
-    //ROL::RandomizeVector(*kkt_b);
-    kkt_b->setScalar(1.0);
-    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->scale(dt*dx*dy); // u
-    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->scale(dt*dx*dy); // z
-    ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(2)->scale(0.0);      // lambda
+    state->setScalar(1.0);
+    control->setScalar(1.0);
 
+
+    // setup and solve the lagrange multiplier RHS of the SQP algorithm
     {
-      RealT res0 = kkt_b->norm();
-      kkt_b->scale(1.0/res0);
-      res0 = kkt_b->norm();
+      auto kkt_b     = kkt_vector->clone();
+      kkt_b->setScalar(1.0);
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->scale(dt*dx*dy); // u
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->scale(dt*dx*dy); // z
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(2)->scale(0.0);      // lambda
 
-      // assert(std::fabs(res0-1.0) <= 1.0e-14);
+      if(myRank==0) (*outStream) << std::endl;
 
-      auto kkt_x_out = kkt_vector->clone();
-      kkt_x_out->zero();
+      solveKKTSystem("LAGR MULTIPLIER STEP: ",
+          useWathenPrec,myRank,absTol,relTol,
+          timer,outStream,
+          pint_con,kkt_b,state,control);
 
-      KKTOperator kktOperator;
-      kktOperator.pint_con = pint_con;
-      kktOperator.state = state;
-      kktOperator.control = control;
-      kktOperator.outStream = outStream;
-      kktOperator.myRank = myRank;
+      if(myRank==0) (*outStream) << std::endl;
+    }
 
-      RCP<ROL::LinearOperator<RealT>> precOperator;
+    // compute quasi normal step
+    {
+      ROL::Ptr<ROL::Vector<RealT>> residual = state->clone();
+      ROL::Ptr<ROL::Vector<RealT>> jv_1     = state->clone();
+      ROL::Ptr<ROL::Vector<RealT>> jv_2     = state->clone();
+      ROL::Ptr<ROL::Vector<RealT>> ajv_1    = state->clone();
+      ROL::Ptr<ROL::Vector<RealT>> ajv_2    = control->clone();
+      ROL::Ptr<ROL::Vector<RealT>> cau_pt_1 = state->clone();
+      ROL::Ptr<ROL::Vector<RealT>> cau_pt_2 = control->clone();
 
-      // build the preconditioner 
-      if(useWathenPrec) {
-        RCP<WathenKKTOperator> wathenOperator(new WathenKKTOperator);
-        wathenOperator->pint_con = pint_con;
-        wathenOperator->state = state;
-        wathenOperator->control = control;
-        wathenOperator->outStream = outStream;
-        wathenOperator->myRank = myRank;
+      // residual = c(x_k)
+      pint_con->value(*residual,*state,*control,tol );
 
-        precOperator = wathenOperator;
-      }
-      else {
-        RCP<MGRITKKTOperator> mgOperator(new MGRITKKTOperator);
-        mgOperator->pint_con = pint_con;
-        mgOperator->state = state;
-        mgOperator->control = control;
-        mgOperator->outStream = outStream;
-        mgOperator->myRank = myRank;
+      // ajv = c'(x_k)^* c(x_k)
+      pint_con->applyAdjointJacobian_1(*ajv_1,*residual,*state,*control,tol);
+      pint_con->applyAdjointJacobian_2(*ajv_2,*residual,*state,*control,tol);
 
-        precOperator = mgOperator;
-      }
+      // jv = c'(x_k) c'(x_k)^* c(x_k)
+      pint_con->applyJacobian_1(*jv_1,*ajv_1,*state,*control,tol);
+      pint_con->applyJacobian_2(*jv_2,*ajv_2,*state,*control,tol);
 
-      Teuchos::ParameterList parlist;
-      ROL::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
-      krylovList.set("Absolute Tolerance",absTol);
-      krylovList.set("Relative Tolerance",relTol);
+      RealT norm_ajv_sqr = std::pow(ajv_1->norm(),2.0) + std::pow(ajv_2->norm(),2.0);
+      RealT norm_jv_sqr = std::pow(jv_1->norm(),2.0) + std::pow(jv_2->norm(),2.0);
 
-      if(myRank==0)
-        (*outStream) << "RELATIVE TOLERANCE = " << relTol << std::endl;
+      // cauchy point
+      cau_pt_1->set(*ajv_1); cau_pt_1->scale(norm_ajv_sqr/norm_jv_sqr);
+      cau_pt_2->set(*ajv_2); cau_pt_2->scale(norm_ajv_sqr/norm_jv_sqr);
 
-      ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
-      // ROL::MINRES<RealT> krylov(1e0, 1e-6, 200); // TODO: Do Belos
+      // now we we will modify the jacobian components
+      jv_1->scale(norm_ajv_sqr/norm_jv_sqr);
+      jv_2->scale(norm_ajv_sqr/norm_jv_sqr);
+      residual->plus(*jv_1);
+      residual->plus(*jv_2);
 
-      int flag = 0, iter = 0;
+      // build RHS vector
+      auto kkt_b     = kkt_vector->clone();
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->set(*cau_pt_1); // u
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->set(*cau_pt_2); // z
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(2)->set(*residual); // lambda
 
-      MPI_Barrier(MPI_COMM_WORLD);
-      double t0 = MPI_Wtime();
+      if(myRank==0) (*outStream) << std::endl;
 
-      if(myRank==0) {
-        (*outStream) << "Solving KKT system: ";
-        if(useWathenPrec)
-          (*outStream) << "using Wathen preconditioner" << std::endl;
-        else
-          (*outStream) << "using MGRIT preconditioner" << std::endl;
-      }
+      solveKKTSystem("QUASI-NORMAL STEP: ",
+          useWathenPrec,myRank,absTol,relTol,
+          timer,outStream,
+          pint_con,kkt_b,state,control);
 
-      timer->start("krylov");
-      RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,*precOperator,iter,flag);
-      timer->stop("krylov");
+      if(myRank==0) (*outStream) << std::endl;
+    }
 
-      if(myRank==0)
-        (*outStream) << "Solving KKT system - complete" << std::endl;
+    // setup and solve the quasi normal step
 
-      MPI_Barrier(MPI_COMM_WORLD);
-      double tf = MPI_Wtime();
-
-      std::stringstream ss;
-      timer->report(ss);
-
-      // Don't trust residual computation, so repeat.
-      auto myb = kkt_b->clone();
-      myb->set(*kkt_b);
-      auto norm_myb = myb->norm();
-      auto tmp = kkt_b->clone();
-      RealT dummytol = 1e-8;
-      kktOperator.apply(*tmp, *kkt_x_out, dummytol);
-      tmp->axpy(-1, *myb);
-      auto norm_myAxmb = tmp->norm();
-      auto norm_mysoln = kkt_x_out->norm();
-
-      if(myRank==0) {
-        (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
-        (*outStream) << std::endl;
-        (*outStream) << "||x||=" << norm_mysoln << "  ||b||=" << norm_myb << "  ||Ax-b||=" << norm_myAxmb << std::endl;
-        (*outStream) << ss.str();
-      }
-
-      (*outStream) << std::setprecision(10);
-
-      #if 0
+    #if 0
+    {
       // This was useful for debugging, maintaing it so that we can recreate it if required.
       // However, its not consistent right now so I don't want to mislead.
  
@@ -498,8 +479,8 @@ int main(int argc, char *argv[]) {
 
         (*outStream) << "  Norm of Aug*1_u modified = " << scratch->norm() << "\n";
       }
-      #endif
     }
+    #endif
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
@@ -514,4 +495,103 @@ int main(int argc, char *argv[]) {
   }
 
   return 0;
+}
+
+void solveKKTSystem(const std::string & prefix,
+                    bool useWathenPrec,int myRank,
+                    double absTol,double relTol,
+                    const Teuchos::RCP<Teuchos::StackedTimer> & timer,
+                    const ROL::Ptr<std::ostream> & outStream,
+                    const ROL::Ptr<ROL::PinTConstraint<RealT>> & pint_con,
+                    const ROL::Ptr<ROL::Vector<RealT>> & kkt_b,
+                    const ROL::Ptr<ROL::PinTVector<RealT>> & state,
+                    const ROL::Ptr<ROL::PinTVector<RealT>> & control)
+{
+  using Teuchos::RCP;
+
+  RealT res0 = kkt_b->norm();
+  res0 = kkt_b->norm();
+
+  auto kkt_x_out = kkt_b->clone();
+  kkt_x_out->zero();
+
+  KKTOperator kktOperator;
+  kktOperator.pint_con = pint_con;
+  kktOperator.state = state;
+  kktOperator.control = control;
+  kktOperator.outStream = outStream;
+  kktOperator.myRank = myRank;
+
+  RCP<ROL::LinearOperator<RealT>> precOperator;
+
+  // build the preconditioner 
+  if(useWathenPrec) {
+    RCP<WathenKKTOperator> wathenOperator(new WathenKKTOperator);
+    wathenOperator->pint_con = pint_con;
+    wathenOperator->state = state;
+    wathenOperator->control = control;
+    wathenOperator->outStream = outStream;
+    wathenOperator->myRank = myRank;
+
+    precOperator = wathenOperator;
+  }
+  else {
+    RCP<MGRITKKTOperator> mgOperator(new MGRITKKTOperator);
+    mgOperator->pint_con = pint_con;
+    mgOperator->state = state;
+    mgOperator->control = control;
+    mgOperator->outStream = outStream;
+    mgOperator->myRank = myRank;
+
+    precOperator = mgOperator;
+  }
+
+  Teuchos::ParameterList parlist;
+  ROL::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
+  krylovList.set("Absolute Tolerance",absTol);
+  krylovList.set("Relative Tolerance",relTol);
+
+  if(myRank==0)
+    (*outStream) << "Relative tolerance = " << relTol << std::endl;
+
+  ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
+  // ROL::MINRES<RealT> krylov(1e0, 1e-6, 200); // TODO: Do Belos
+
+  int flag = 0;
+  int iter = 0;
+
+
+  if(myRank==0) {
+    (*outStream) << "Solving KKT system: ";
+    if(useWathenPrec)
+      (*outStream) << "using Wathen preconditioner" << std::endl;
+    else
+      (*outStream) << "using MGRIT preconditioner" << std::endl;
+  }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  double t0 = MPI_Wtime();
+
+  timer->start("krylov");
+  RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,*precOperator,iter,flag);
+  timer->stop("krylov");
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  double tf = MPI_Wtime();
+
+  // Don't trust residual computation, so repeat.
+  auto myb = kkt_b->clone();
+  myb->set(*kkt_b);
+  auto norm_myb = myb->norm();
+  auto tmp = kkt_b->clone();
+  RealT dummytol = 1e-8;
+  kktOperator.apply(*tmp, *kkt_x_out, dummytol);
+  tmp->axpy(-1, *myb);
+  auto norm_myAxmb = tmp->norm();
+  auto norm_mysoln = kkt_x_out->norm();
+
+  if(myRank==0) {
+     (*outStream) << prefix << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
+     (*outStream) << "||x||=" << norm_mysoln << "  ||b||=" << norm_myb << "  ||Ax-b||=" << norm_myAxmb << std::endl;
+  }
 }
