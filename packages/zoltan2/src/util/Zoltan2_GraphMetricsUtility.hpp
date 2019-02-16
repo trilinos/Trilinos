@@ -162,7 +162,7 @@ void globalWeightedByPart(
 #ifdef HAVE_ZOLTAN2_MPI
   if (comm->getSize() > 1) {
     const bool bUseLocalIDs = false;  // Local IDs not needed
-    typedef Zoltan2_Directory_Simple<part_t,lno_t,gno_t> directory_t;
+    typedef Zoltan2_Directory_Simple<gno_t,lno_t,part_t> directory_t;
     int debug_level = 0;
     directory_t directory(comm, bUseLocalIDs, debug_level);
     if (localNumVertices)

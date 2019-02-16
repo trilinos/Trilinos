@@ -83,9 +83,7 @@ namespace { // (anonymous)
     out << "Test Tpetra::MultiVector::get2dView and get2dViewNonConst" << endl;
     Teuchos::OSTab tab1 (out);
 
-    // For later user
     Scalar curVal = STS::zero ();
-    mag_type curMagVal = STM::zero ();
 
     // Create a Map with enough rows that we can view a noncontiguous
     // subset of columns without the ratio of rows to columns being
@@ -114,7 +112,6 @@ namespace { // (anonymous)
     // of 0, because 0 is the default fill value.
     out << "Fill X" << endl;
     curVal = STS::one ();
-    curMagVal = STM::zero (); // for later use
     X.template sync<device_type> ();
     X.template modify<device_type> ();
     for (size_t j = 0; j < numCols; ++j) {
@@ -213,7 +210,6 @@ namespace { // (anonymous)
 
       MV X_copy (X, Teuchos::Copy); // make a "backup" of X
       curVal = STS::one ();
-      curMagVal = STM::one ();
       for (size_t j = 0; j < numColsSubset; ++j) {
         const size_t col = colsSubset[j];
         auto X_col_orig = X.getVectorNonConst (col);

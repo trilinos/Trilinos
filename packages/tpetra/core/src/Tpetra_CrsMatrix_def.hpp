@@ -8181,8 +8181,6 @@ namespace Tpetra {
     typedef node_type NT;
     typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
-    //const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();  // wcm: unused
-    //const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();  // wcm: unused
     using Teuchos::as;
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();

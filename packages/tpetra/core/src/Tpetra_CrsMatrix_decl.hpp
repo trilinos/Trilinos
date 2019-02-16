@@ -3224,8 +3224,7 @@ namespace Tpetra {
       }
     }
 
-  private:
-
+  public:
     /// \brief Compute the local part of a sparse matrix-(Multi)Vector
     ///   multiply.
     ///
@@ -3262,8 +3261,6 @@ namespace Tpetra {
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
                 const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
-
-  public:
 
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
     ///

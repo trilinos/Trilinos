@@ -41,8 +41,6 @@ SET(HEADERS ${HEADERS}
   Galeri_Exception.h
   Galeri_FiniteElements.h
   Galeri_Utils.h
-  Galeri_ReadHB.h
-  Galeri_iohb.h
   )
 
 SET(SOURCES ${SOURCES}
@@ -50,10 +48,16 @@ SET(SOURCES ${SOURCES}
   Galeri_CrsMatrices.cpp
   Galeri_VbrMatrices.cpp
   Galeri_Utils.cpp
-  Galeri_ReadHB.cpp
-  Galeri_iohb.cpp
   )
 
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
+  SET(HEADERS ${SOURCES}
+    Galeri_ReadHB.h
+    )
+  SET(SOURCES ${SOURCES}
+    Galeri_ReadHB.cpp
+    )
+ENDIF()
 
 #
 # src/Maps
