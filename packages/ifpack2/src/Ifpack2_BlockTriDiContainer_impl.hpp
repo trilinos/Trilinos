@@ -631,8 +631,8 @@ namespace Ifpack2 {
 
       void cancel () {
 #ifdef HAVE_IFPACK2_MPI
-        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i)
-          MPI_Cancel(&reqs.recv[i]);
+        waitall(reqs.recv.size(), reqs.recv.data());
+        waitall(reqs.send.size(), reqs.send.data());
 #endif
       }
 
