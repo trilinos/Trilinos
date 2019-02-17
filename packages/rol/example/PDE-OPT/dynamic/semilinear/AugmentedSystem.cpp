@@ -149,15 +149,16 @@ inline void pauseToAttach(MPI_Comm mpicomm)
   comm->barrier();
 }
 
-void solveKKTSystem(const std::string & prefix,
-                    bool useWathenPrec,int myRank,
-                    double absTol,double relTol,
-                    const Teuchos::RCP<Teuchos::StackedTimer> & timer,
-                    const ROL::Ptr<std::ostream> & outStream,
-                    const ROL::Ptr<ROL::PinTConstraint<RealT>> & pint_con,
-                    const ROL::Ptr<ROL::Vector<RealT>> & kkt_b,
-                    const ROL::Ptr<ROL::PinTVector<RealT>> & state,
-                    const ROL::Ptr<ROL::PinTVector<RealT>> & control);
+ROL::Ptr<ROL::Vector<RealT>> 
+solveKKTSystem(const std::string & prefix,
+               bool useWathenPrec,int myRank,
+               double absTol,double relTol,
+               const Teuchos::RCP<Teuchos::StackedTimer> & timer,
+               const ROL::Ptr<std::ostream> & outStream,
+               const ROL::Ptr<ROL::PinTConstraint<RealT>> & pint_con,
+               const ROL::Ptr<ROL::Vector<RealT>> & kkt_b,
+               const ROL::Ptr<ROL::PinTVector<RealT>> & state,
+               const ROL::Ptr<ROL::PinTVector<RealT>> & control);
 
 int main(int argc, char *argv[]) 
 {
@@ -231,15 +232,9 @@ int main(int argc, char *argv[])
     /***************** BUILD VECTORS *****************************************/
     /*************************************************************************/
     ROL::Ptr<Tpetra::MultiVector<>> u0_ptr = assembler->createStateVector();
-    ROL::Ptr<Tpetra::MultiVector<>> uo_ptr = assembler->createStateVector();
-    ROL::Ptr<Tpetra::MultiVector<>> un_ptr = assembler->createStateVector();
-    ROL::Ptr<Tpetra::MultiVector<>> ck_ptr = assembler->createResidualVector();
     ROL::Ptr<Tpetra::MultiVector<>> zk_ptr = assembler->createControlVector();
-    ROL::Ptr<ROL::Vector<RealT>> u0, uo, un, ck, zk;
+    ROL::Ptr<ROL::Vector<RealT>> u0, zk;
     u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,*assembler,*parlist);
-    uo = ROL::makePtr<PDE_PrimalSimVector<RealT>>(uo_ptr,pde,*assembler,*parlist);
-    un = ROL::makePtr<PDE_PrimalSimVector<RealT>>(un_ptr,pde,*assembler,*parlist);
-    ck = ROL::makePtr<PDE_DualSimVector<RealT>>(ck_ptr,pde,*assembler,*parlist);
     zk = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zk_ptr,pde,*assembler,*parlist);
 
     ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_Tpetra<RealT>>();
@@ -300,8 +295,8 @@ int main(int argc, char *argv[])
     state->setScalar(1.0);
     control->setScalar(1.0);
 
-
     // setup and solve the lagrange multiplier RHS of the SQP algorithm
+    ///////////////////////////////////////////////////////////////////////////
     {
       auto kkt_b     = kkt_vector->clone();
       kkt_b->setScalar(1.0);
@@ -320,38 +315,47 @@ int main(int argc, char *argv[])
     }
 
     // compute quasi normal step
+    ///////////////////////////////////////////////////////////////////////////
+    
+    ROL::Ptr<ROL::Vector<RealT>> g_k; // this will be use in tangential step
     {
       ROL::Ptr<ROL::Vector<RealT>> residual = state->clone();
-      ROL::Ptr<ROL::Vector<RealT>> jv_1     = state->clone();
-      ROL::Ptr<ROL::Vector<RealT>> jv_2     = state->clone();
-      ROL::Ptr<ROL::Vector<RealT>> ajv_1    = state->clone();
-      ROL::Ptr<ROL::Vector<RealT>> ajv_2    = control->clone();
-      ROL::Ptr<ROL::Vector<RealT>> cau_pt_1 = state->clone();
-      ROL::Ptr<ROL::Vector<RealT>> cau_pt_2 = control->clone();
+      ROL::Ptr<ROL::Vector<RealT>> cau_pt_1;
+      ROL::Ptr<ROL::Vector<RealT>> cau_pt_2;
 
       // residual = c(x_k)
       pint_con->value(*residual,*state,*control,tol );
 
-      // ajv = c'(x_k)^* c(x_k)
-      pint_con->applyAdjointJacobian_1(*ajv_1,*residual,*state,*control,tol);
-      pint_con->applyAdjointJacobian_2(*ajv_2,*residual,*state,*control,tol);
+      {
+        ROL::Ptr<ROL::Vector<RealT>> jv_1     = state->clone();
+        ROL::Ptr<ROL::Vector<RealT>> jv_2     = state->clone();
+        ROL::Ptr<ROL::Vector<RealT>> ajv_1    = state->clone();
+        ROL::Ptr<ROL::Vector<RealT>> ajv_2    = control->clone();
 
-      // jv = c'(x_k) c'(x_k)^* c(x_k)
-      pint_con->applyJacobian_1(*jv_1,*ajv_1,*state,*control,tol);
-      pint_con->applyJacobian_2(*jv_2,*ajv_2,*state,*control,tol);
+        // ajv = c'(x_k)^* c(x_k)
+        pint_con->applyAdjointJacobian_1(*ajv_1,*residual,*state,*control,tol);
+        pint_con->applyAdjointJacobian_2(*ajv_2,*residual,*state,*control,tol);
 
-      RealT norm_ajv_sqr = std::pow(ajv_1->norm(),2.0) + std::pow(ajv_2->norm(),2.0);
-      RealT norm_jv_sqr = std::pow(jv_1->norm(),2.0) + std::pow(jv_2->norm(),2.0);
+        // jv = c'(x_k) c'(x_k)^* c(x_k)
+        pint_con->applyJacobian_1(*jv_1,*ajv_1,*state,*control,tol);
+        pint_con->applyJacobian_2(*jv_2,*ajv_2,*state,*control,tol);
 
-      // cauchy point
-      cau_pt_1->set(*ajv_1); cau_pt_1->scale(norm_ajv_sqr/norm_jv_sqr);
-      cau_pt_2->set(*ajv_2); cau_pt_2->scale(norm_ajv_sqr/norm_jv_sqr);
+        RealT norm_ajv_sqr = std::pow(ajv_1->norm(),2.0) + std::pow(ajv_2->norm(),2.0);
+        RealT norm_jv_sqr = std::pow(jv_1->norm(),2.0) + std::pow(jv_2->norm(),2.0);
 
-      // now we we will modify the jacobian components
-      jv_1->scale(norm_ajv_sqr/norm_jv_sqr);
-      jv_2->scale(norm_ajv_sqr/norm_jv_sqr);
-      residual->plus(*jv_1);
-      residual->plus(*jv_2);
+        // now we we will modify the jacobian components
+        jv_1->scale(norm_ajv_sqr/norm_jv_sqr);
+        jv_2->scale(norm_ajv_sqr/norm_jv_sqr);
+        residual->plus(*jv_1);
+        residual->plus(*jv_2);
+
+        jv_1 = ROL::nullPtr;
+        jv_2 = ROL::nullPtr;
+
+        // cauchy point
+        cau_pt_1 = ajv_1; cau_pt_1->scale(norm_ajv_sqr/norm_jv_sqr);
+        cau_pt_2 = ajv_2; cau_pt_2->scale(norm_ajv_sqr/norm_jv_sqr);
+      }
 
       // build RHS vector
       auto kkt_b     = kkt_vector->clone();
@@ -359,12 +363,36 @@ int main(int argc, char *argv[])
       ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->set(*cau_pt_2); // z
       ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(2)->set(*residual); // lambda
 
+      residual = ROL::nullPtr;
+
       if(myRank==0) (*outStream) << std::endl;
 
-      solveKKTSystem("QUASI-NORMAL STEP: ",
+      auto delta_nk = solveKKTSystem("QUASI-NORMAL STEP: ",
+                      useWathenPrec,myRank,absTol,relTol,
+                      timer,outStream,
+                      pint_con,kkt_b,state,control);
+
+      if(myRank==0) (*outStream) << std::endl;
+
+      kkt_b->setScalar(1.0);
+      kkt_b->plus(*delta_nk);
+
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(0)->scale(dt*dx*dy); // u
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(1)->scale(dt*dx*dy); // z
+      ROL::dynamicPtrCast<ROL::PartitionedVector<double>>(kkt_b)->get(2)->setScalar(0.0); // lambda
+
+      g_k = kkt_b;
+    }
+
+    // compute tangential step step
+    ///////////////////////////////////////////////////////////////////////////
+    {
+      if(myRank==0) (*outStream) << std::endl;
+
+      solveKKTSystem("TANG STEP: ",
           useWathenPrec,myRank,absTol,relTol,
           timer,outStream,
-          pint_con,kkt_b,state,control);
+          pint_con,g_k,state,control);
 
       if(myRank==0) (*outStream) << std::endl;
     }
@@ -497,15 +525,16 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void solveKKTSystem(const std::string & prefix,
-                    bool useWathenPrec,int myRank,
-                    double absTol,double relTol,
-                    const Teuchos::RCP<Teuchos::StackedTimer> & timer,
-                    const ROL::Ptr<std::ostream> & outStream,
-                    const ROL::Ptr<ROL::PinTConstraint<RealT>> & pint_con,
-                    const ROL::Ptr<ROL::Vector<RealT>> & kkt_b,
-                    const ROL::Ptr<ROL::PinTVector<RealT>> & state,
-                    const ROL::Ptr<ROL::PinTVector<RealT>> & control)
+ROL::Ptr<ROL::Vector<RealT>> 
+solveKKTSystem(const std::string & prefix,
+               bool useWathenPrec,int myRank,
+               double absTol,double relTol,
+               const Teuchos::RCP<Teuchos::StackedTimer> & timer,
+               const ROL::Ptr<std::ostream> & outStream,
+               const ROL::Ptr<ROL::PinTConstraint<RealT>> & pint_con,
+               const ROL::Ptr<ROL::Vector<RealT>> & kkt_b,
+               const ROL::Ptr<ROL::PinTVector<RealT>> & state,
+               const ROL::Ptr<ROL::PinTVector<RealT>> & control)
 {
   using Teuchos::RCP;
 
@@ -594,4 +623,6 @@ void solveKKTSystem(const std::string & prefix,
      (*outStream) << prefix << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
      (*outStream) << "||x||=" << norm_mysoln << "  ||b||=" << norm_myb << "  ||Ax-b||=" << norm_myAxmb << std::endl;
   }
+
+  return kkt_x_out;
 }
