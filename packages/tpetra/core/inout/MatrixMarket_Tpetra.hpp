@@ -973,7 +973,6 @@ namespace Tpetra {
         using Teuchos::RCP;
         using Teuchos::rcp;
         typedef global_ordinal_type GO;
-        typedef typename ArrayView<const GO>::size_type size_type;
 
         // Construct the CrsMatrix.
         //
@@ -6893,7 +6892,6 @@ namespace Tpetra {
         using Teuchos::REDUCE_MAX;
         using Teuchos::reduceAll;
         using std::endl;
-        typedef typename multivector_type::scalar_type scalar_type;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
         const char prefix[] = "Tpetra::MatrixMarket::writeDenseHeader: ";
 
@@ -7018,7 +7016,6 @@ namespace Tpetra {
         using Teuchos::TypeNameTraits;
         using Teuchos::wait;
         using std::endl;
-        typedef typename multivector_type::scalar_type scalar_type;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
         const Comm<int>& comm = * (X.getMap ()->getComm ());

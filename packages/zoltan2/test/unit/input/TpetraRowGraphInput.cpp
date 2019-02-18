@@ -110,7 +110,7 @@ int verifyInputAdapter(
       ia.getLocalNumEdges() != graph.getNodeNumEntries())
       fail = 6;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   const zgno_t *vtxIds=NULL, *edgeIds=NULL;
   const offset_t *offsets=NULL;
@@ -125,7 +125,7 @@ int verifyInputAdapter(
     if (nvtx != graph.getNodeNumRows())
       fail = 8;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printGraph<offset_t>(comm, nvtx, vtxIds, offsets, edgeIds);
@@ -149,11 +149,12 @@ int main(int narg, char *arg[])
   // Create an object that can give us test Tpetra graphs for testing
 
   RCP<UserInputForTests> uinput;
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput =
-      rcp(new UserInputForTests(
-        testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -208,7 +209,7 @@ int main(int narg, char *arg[])
 
     fail = verifyInputAdapter<ztrowgraph_t>(*trGInput, *trG);
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (!gfail){
       ztrowgraph_t *mMigrate = NULL;
@@ -220,7 +221,7 @@ int main(int narg, char *arg[])
         fail = 11;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
 
       if (!gfail){
         RCP<const ztrowgraph_t> cnewG =
@@ -242,11 +243,11 @@ int main(int narg, char *arg[])
         }
         fail = verifyInputAdapter<ztrowgraph_t>(*newInput, *newG);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 

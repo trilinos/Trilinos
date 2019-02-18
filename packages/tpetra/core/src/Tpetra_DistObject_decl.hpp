@@ -757,158 +757,264 @@ namespace Tpetra {
     /// interface.
     virtual bool useNewInterface () { return false; }
 
-    /// \brief Perform copies and permutations that are local to this process.
+    /// \brief Perform copies and permutations that are local to this
+    ///   process; old interface version.
     ///
-    /// \param source [in] On entry, the source object, from which we
-    ///   are distributing.  We distribute to the destination object,
-    ///   which is <tt>*this</tt> object.
-    /// \param numSameIDs [in] The umber of elements that
-    ///   are the same on the source and destination (this) objects.
-    ///   These elements are owned by the same process in both the
-    ///   source and destination objects.  No permutation occurs.
-    /// \param numPermuteIDs [in] The number of elements that are
-    ///   locally permuted between the source and destination objects.
+    /// Subclasses for which <tt>useNewInterface()</tt> is false
+    /// <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, copies
+    /// the <i>source</i> object's data.
+    ///
+    /// \pre <tt>this->useNewInterface()</tt> is false.
+    ///
+    /// \param source [in] On entry, the source object of the Export
+    ///   or Import operation.
+    /// \param numSameIDs [in] The number of elements that are the
+    ///   same on the source and target objects.  These elements live
+    ///   on the same process in both the source and target objects.
     /// \param permuteToLIDs [in] List of the elements that are
-    ///   permuted.  They are listed by their LID in the destination
-    ///   object.
+    ///   permuted.  They are listed by their local index (LID) in the
+    ///   destination object.
     /// \param permuteFromLIDs [in] List of the elements that are
-    ///   permuted.  They are listed by their LID in the source
-    ///   object.
+    ///   permuted.  They are listed by their local index (LID) in the
+    ///   source object.
     virtual void
-    copyAndPermute (const SrcDistObject& /* source */,
-                    size_t /* numSameIDs */,
-                    const Teuchos::ArrayView<const local_ordinal_type>& /* permuteToLIDs */,
-                    const Teuchos::ArrayView<const local_ordinal_type>& /* permuteFromLIDs */)
-    {}
+    copyAndPermute (const SrcDistObject& source,
+                    const size_t numSameIDs,
+                    const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
+                    const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs);
 
-    /// \brief Kokkos ("new") version of copyAndPermute.
+    /// \brief Perform copies and permutations that are local to this
+    ///   process; new interface version.
     ///
-    /// Implementations may assume that permuteToLIDs and permuteFrom
-    /// LIDs are sync'd on both host and device.
+    /// Subclasses for which <tt>useNewInterface()</tt> is true
+    /// <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, packs
+    /// the <i>source</i> object's data.
+    ///
+    /// \pre <tt>this->useNewInterface()</tt> is true.
+    ///
+    /// \pre permuteToLIDs and permuteFromLIDs are sync'd to both host
+    ///   and device.  That is,
+    ///   <tt>permuteToLIDs.need_sync_host()</tt>,
+    ///   <tt>permuteToLIDs.need_sync_device()</tt>,
+    ///   <tt>permuteFromLIDs.need_sync_host()</tt>, and
+    ///   <tt>permuteFromLIDs.need_sync_device()</tt> are all false.
+    ///
+    /// \param source [in] On entry, the source object of the Export
+    ///   or Import operation.
+    /// \param numSameIDs [in] The number of elements that are the
+    ///   same on the source and target objects.  These elements live
+    ///   on the same process in both the source and target objects.
+    /// \param permuteToLIDs [in] List of the elements that are
+    ///   permuted.  They are listed by their local index (LID) in the
+    ///   destination object.
+    /// \param permuteFromLIDs [in] List of the elements that are
+    ///   permuted.  They are listed by their local index (LID) in the
+    ///   source object.
     virtual void
-    copyAndPermuteNew (const SrcDistObject& /* source */,
-                       const size_t /* numSameIDs */,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* permuteToLIDs */,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* permuteFromLIDs */)
-    {}
+    copyAndPermuteNew (const SrcDistObject& source,
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& permuteFromLIDs);
 
-    /// \brief Perform any packing or preparation required for communication.
+    /// \brief Pack data and metadata for communication (sends);
+    ///   old interface version.
+    ///
+    /// Subclasses for which <tt>useNewInterface()</tt> is false
+    /// <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, packs
+    /// the <i>source</i> object's data.
+    ///
+    /// \pre <tt>this->useNewInterface()</tt> is false.
     ///
     /// \param source [in] Source object for the redistribution.
     ///
     /// \param exportLIDs [in] List of the entries (as local IDs in
-    ///   the source object) we will be sending to other images.
+    ///   the source object) that Tpetra will send to other processes.
     ///
-    /// \param exports [out] On exit, the buffer for data to send.
+    /// \param exports [out] On exit, the packed data to send.
+    ///   Implementations must reallocate this as needed (prefer
+    ///   reusing the existing allocation if possible).
     ///
     /// \param numPacketsPerLID [out] On exit, the implementation of
-    ///   this method must do one of two things: set
-    ///   numPacketsPerLID[i] to contain the number of packets to be
-    ///   exported for exportLIDs[i] and set constantNumPackets to
-    ///   zero, or set constantNumPackets to a nonzero value.  If the
-    ///   latter, the implementation need not fill numPacketsPerLID.
+    ///   must do one of two things: either set
+    ///   <tt>numPacketsPerLID[i]</tt> to the number of packets to be
+    ///   packed for <tt>exportLIDs[i]</tt> and set
+    ///   <tt>constantNumPackets</tt> to zero, or set
+    ///   <tt>constantNumPackets</tt> to a nonzero value.  If the
+    ///   latter, the implementation must not modify the entries of
+    ///   <tt>numPacketsPerLID</tt>.
     ///
-    /// \param constantNumPackets [out] On exit, 0 if numPacketsPerLID
-    ///   has variable contents (different size for each LID).  If
-    ///   nonzero, then it is expected that the number of packets per
-    ///   LID is constant, and that constantNumPackets is that value.
+    /// \param constantNumPackets [out] On exit, 0 if the number of
+    ///   packets per LID could differ, else (if nonzero) the number
+    ///   of packets per LID (which must be constant).
     ///
-    /// \param distor [in] The Distributor object we are using.
+    /// \param distor [in] The Distributor object we are using.  Most
+    ///   implementations will not use this.
     virtual void
-    packAndPrepare (const SrcDistObject& /* source */,
-                    const Teuchos::ArrayView<const local_ordinal_type>& /* exportLIDs */,
-                    Teuchos::Array<packet_type>& /* exports */,
-                    const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                    size_t& /* constantNumPackets */,
-                    Distributor &/* distor */)
-    {}
+    packAndPrepare (const SrcDistObject& source,
+                    const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
+                    Teuchos::Array<packet_type>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor);
 
-    /// \brief Kokkos ("new") version of packAndPrepare.
+    /// \brief Pack data and metadata for communication (sends);
+    ///   new interface version.
     ///
-    /// Implementations may assume that exportLIDs are sync'd on both
-    /// host and device.  The target object <tt>*this</tt> gets to
-    /// decide where to pack and sync the output \c exports.
+    /// Subclasses for which <tt>useNewInterface()</tt> is true
+    /// <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, packs
+    /// the <i>source</i> object's data.
+    ///
+    /// \pre <tt>this->useNewInterface()</tt> is true.
+    ///
+    /// \pre exportLIDs is sync'd to both host and device.  That is,
+    ///   <tt>exportLIDs.need_sync_host ()</tt> and
+    ///   <tt>exportLIDs.need_sync_device()</tt> are both false.
+    ///
+    /// \param source [in] Source object for the redistribution.
+    ///
+    /// \param exportLIDs [in] List of the entries (as local IDs in
+    ///   the source object) that Tpetra will send to other processes.
+    ///
+    /// \param exports [out] On exit, the packed data to send.
+    ///   Implementations must reallocate this as needed (prefer
+    ///   reusing the existing allocation if possible), and may modify
+    ///   and/or sync this wherever they like.
+    ///
+    /// \param numPacketsPerLID [out] On exit, the implementation of
+    ///   this method must do one of two things: either set
+    ///   <tt>numPacketsPerLID[i]</tt> to the number of packets to be
+    ///   packed for <tt>exportLIDs[i]</tt> and set
+    ///   <tt>constantNumPackets</tt> to zero, or set
+    ///   <tt>constantNumPackets</tt> to a nonzero value.  If the
+    ///   latter, the implementation must not modify the entries of
+    ///   <tt>numPacketsPerLID</tt>.  If the former, the
+    ///   implementation may sync <tt>numPacketsPerLID</tt> this
+    ///   wherever it likes, either to host or to device.  The
+    ///   allocation belongs to DistObject, not to subclasses; don't
+    ///   be tempted to change this to pass by reference.
+    ///
+    /// \param constantNumPackets [out] On exit, 0 if the number of
+    ///   packets per LID could differ, else (if nonzero) the number
+    ///   of packets per LID (which must be constant).
+    ///
+    /// \param distor [in] The Distributor object we are using.  Most
+    ///   implementations will not use this.
     virtual void
-    packAndPrepareNew (const SrcDistObject& /* source */,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* exportLIDs */,
-                       Kokkos::DualView<packet_type*, buffer_device_type>& /* exports */,
-                       const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
-                       /// Kyungjoo: numPacketsPerLID is better remove const. its content is modified and
-                       ///     a modify flag should be raised. It is also possible to use
-                       ///     const_cast in the function. IMO, remove const is a more clean way.
-                       size_t& /* constantNumPackets */,
-                       Distributor& /* distor */)
-    {}
+    packAndPrepareNew (const SrcDistObject& source,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& exportLIDs,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type>& exports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
+                       size_t& constantNumPackets,
+                       Distributor& distor);
 
-    /// \brief Perform any unpacking and combining after communication
-    ///   (old version that uses Teuchos memory management classes to
-    ///   hold data).
+    /// \brief Perform any unpacking and combining after
+    ///   communication; old interface version.
+    ///
+    /// Subclasses for which <tt>useNewInterface()</tt> is false
+    /// <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, unpacks
+    /// the received data into itself, possibly modifying its entries.
+    ///
+    /// \pre <tt>this->useNewInterface()</tt> is false.
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
     ///   destination object) we received from other processes.
     ///
-    /// \param imports [in] Buffer containing data we received.
+    /// \param imports [in] Buffer of received data to unpack.
     ///
-    /// \param numPacketsPerLID [in] If constantNumPackets is zero,
-    ///   then numPacketsPerLID[i] contains the number of packets
-    ///   imported for importLIDs[i].
+    /// \param numPacketsPerLID [in/out] On input: If
+    ///   <tt>constantNumPackets</tt> is zero, then
+    ///   <tt>numPacketsPerLID[i]</tt> contains the number of packets
+    ///   imported for </tt>importLIDs[i]</tt>.
     ///
-    /// \param constantNumPackets [in] If nonzero, then
-    ///   numPacketsPerLID is constant (same value in all entries) and
-    ///   constantNumPackets is that value.  If zero, then
-    ///   numPacketsPerLID[i] is the number of packets imported for
-    ///   importLIDs[i].
+    /// \param constantNumPackets [in] If nonzero, then the number of
+    ///   packets per LID is the same for all entries ("constant") and
+    ///   <tt>constantNumPackets</tt> is that number.  If zero, then
+    ///   <tt>numPacketsPerLID[i]</tt> is the number of packets to
+    ///   unpack for LID <tt>importLIDs[i]</tt>.
     ///
-    /// \param distor [in] The Distributor object we are using.
+    /// \param distor [in] The Distributor object we are using.  Most
+    ///   implementations will not use this.
     ///
-    /// \param CM [in] The combine mode to use when combining the
+    /// \param combineMode [in] The CombineMode to use when combining the
     ///   imported entries with existing entries.
     virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& /* importLIDs */,
-                      const Teuchos::ArrayView<const packet_type>& /* imports */,
-                      const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                      size_t /* constantNumPackets */,
-                      Distributor &/* distor */,
-                      CombineMode /* CM */)
-    {}
+    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
+                      const Teuchos::ArrayView<const packet_type>& imports,
+                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                      const size_t constantNumPackets,
+                      Distributor& distor,
+                      const CombineMode combineMode);
 
-    /// \brief Perform any unpacking and combining after communication
-    ///   (new version that uses Kokkos data structures to hold data).
+    /// \brief Perform any unpacking and combining after
+    ///   communication; new interface version.
     ///
-    /// The \c imports input argument controls whether this method
-    /// should unpack on host or unpack on device.
+    /// Subclasses for which <tt>useNewInterface()</tt> is true
+    /// <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, unpacks
+    /// the received data into itself, possibly modifying its entries.
+    ///
+    /// \pre <tt>this->useNewInterface()</tt> is true.
+    ///
+    /// \pre importLIDs is sync'd to both host and device.  That is,
+    ///   <tt>importLIDs.need_sync_host ()</tt> and
+    ///   <tt>importLIDs.need_sync_device()</tt> are both false.
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
-    ///   destination object) we received from other processes.  This
-    ///   is always sync'd to both host and device on input.
+    ///   destination object) we received from other processes.
     ///
-    /// \param imports [in] Buffer containing data we received.
-    ///   DistObject may sync this wherever it likes; subclasses must
-    ///   deal with that, though the subclass may ultimately store its
-    ///   data wherever it likes.
+    /// \param imports [in/out] On input: Buffer of received data to
+    ///   unpack.  DistObject promises nothing about where this is
+    ///   sync'd.  Implementations may sync this wherever they like,
+    ///   either to host or to device.  The allocation belongs to
+    ///   DistObject, not to subclasses; don't be tempted to change
+    ///   this to pass by reference.
     ///
-    /// \param numPacketsPerLID [in] If constantNumPackets is zero,
-    ///   then numPacketsPerLID[i] contains the number of packets
-    ///   imported for importLIDs[i].
+    /// \param numPacketsPerLID [in/out] On input: If
+    ///   <tt>constantNumPackets</tt> is zero, then
+    ///   <tt>numPacketsPerLID[i]</tt> contains the number of packets
+    ///   imported for </tt>importLIDs[i]</tt>.  DistObject promises
+    ///   nothing about where this is sync'd.  Implementations may
+    ///   sync this wherever they like, either to host or to device.
+    ///   The allocation belongs to DistObject, not to subclasses;
+    ///   don't be tempted to change this to pass by reference.
     ///
-    /// \param constantNumPackets [in] If nonzero, then
-    ///   numPacketsPerLID is constant (same value in all entries) and
-    ///   constantNumPackets is that value.  If zero, then
-    ///   numPacketsPerLID[i] is the number of packets imported for
-    ///   importLIDs[i].
+    /// \param constantNumPackets [in] If nonzero, then the number of
+    ///   packets per LID is the same for all entries ("constant") and
+    ///   <tt>constantNumPackets</tt> is that number.  If zero, then
+    ///   <tt>numPacketsPerLID[i]</tt> is the number of packets to
+    ///   unpack for LID <tt>importLIDs[i]</tt>.
     ///
-    /// \param distor [in] The Distributor object we are using.
+    /// \param distor [in] The Distributor object we are using.  Most
+    ///   implementations will not use this.
     ///
-    /// \param CM [in] The combine mode to use when combining the
-    ///   imported entries with existing entries.
+    /// \param combineMode [in] The CombineMode to use when combining
+    ///   the imported entries with existing entries.
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& /* importLIDs */,
-                         const Kokkos::DualView<const packet_type*, buffer_device_type>& /* imports */,
-                         const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
-                         const size_t /* constantNumPackets */,
-                         Distributor& /* distor */,
-                         const CombineMode /* CM */)
-    {}
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                           buffer_device_type>& importLIDs,
+                         Kokkos::DualView<packet_type*,
+                           buffer_device_type> imports,
+                         Kokkos::DualView<size_t*,
+                           buffer_device_type> numPacketsPerLID,
+                         const size_t constantNumPackets,
+                         Distributor& distor,
+                         const CombineMode combineMode);
     //@}
 
     /// \brief Hook for creating a const view.

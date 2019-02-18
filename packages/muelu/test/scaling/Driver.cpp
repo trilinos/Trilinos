@@ -283,7 +283,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
   int  cacheSize = 0;                                 clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 #ifdef HAVE_MPI
-  bool provideNodeComm = false;                       clp.setOption("nodecomm","nonodecomm",    &provideNodeComm,  "make the nodal communicator available");
+  int provideNodeComm = 0;                            clp.setOption("nodecomm",          &provideNodeComm,  "make the nodal communicator available w/ reduction factor X");
 #endif
 
   clp.recogniseAllOptions(true);
@@ -337,7 +337,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
   int NodeId = comm->getRank();
   if(provideNodeComm) {
-    nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
+    nodeComm = MueLu::GenerateNodeComm(comm,NodeId,provideNodeComm);
     //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
   }
 #endif
@@ -498,6 +498,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
           userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
           userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+#ifdef HAVE_MPI
+          if(provideNodeComm) {
+            userParamList.set("Node Comm",nodeComm);
+          }
+#endif
+
           H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
         }
       }

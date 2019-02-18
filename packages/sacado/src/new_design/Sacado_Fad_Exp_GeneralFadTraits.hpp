@@ -65,10 +65,17 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to GeneralFad types
+  //! Specialization of %IsScalarType to GeneralFad types
   template <typename Storage>
   struct IsScalarType< Fad::Exp::GeneralFad<Storage> > {
     static const bool value = false;
+  };
+
+  //! Specialization of %IsSimdType to GeneralFad types
+  template <typename Storage>
+  struct IsSimdType< Fad::Exp::GeneralFad<Storage> > {
+    static const bool value =
+      IsSimdType< typename Fad::Exp::GeneralFad<Storage>::value_type >::value;
   };
 
   //! Specialization of %Value to GeneralFad types

@@ -28,6 +28,7 @@ SET(HEADERS ${HEADERS}
   new_design/Sacado_Fad_Exp_Extender.hpp
   new_design/Sacado_Fad_Exp_GeneralFad.hpp
   new_design/Sacado_Fad_Exp_GeneralFadTraits.hpp
+  new_design/Sacado_Fad_Exp_Ops_Fwd.hpp
   new_design/Sacado_Fad_Exp_Ops.hpp
   new_design/Sacado_Fad_Exp_DynamicStorage.hpp
   new_design/Sacado_Fad_Exp_StaticStorage.hpp
@@ -50,6 +51,7 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_ExpressionTraits.hpp
   Sacado_Fad_ExpressionFwd.hpp
   Sacado_Fad_Expression.hpp
+  Sacado_Fad_Ops_Fwd.hpp
   Sacado_Fad_Ops.hpp
   Sacado_Fad_DynamicStorage.hpp
   Sacado_Fad_DFad.hpp

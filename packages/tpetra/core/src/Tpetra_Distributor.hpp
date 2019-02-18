@@ -930,10 +930,9 @@ namespace Tpetra {
 
     /// \brief List that becomes the reverse communicator's indicesTo_.
     ///
-    /// Array of length totalReceiveLength_.  Allocated and filled in
-    /// computeReceives() as [0, 1, ..., totalReceiveLength_-1].  When
-    /// creating the reverse Distributor, this is assigned to the
-    /// reverse Distributor's indicesTo_.
+    /// Array of length totalReceiveLength_.  When creating the
+    /// reverse Distributor, this is assigned to the reverse
+    /// Distributor's indicesTo_.
     Teuchos::Array<size_t> indicesFrom_;
 
     /// \brief Communication requests associated with nonblocking receives and sends.

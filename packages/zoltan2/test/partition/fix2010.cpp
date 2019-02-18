@@ -82,7 +82,7 @@ int main(int narg, char **arg)
   if (solution.getActualGlobalNumberOfParts() != 0) 
     fail = true;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail){
     if (rank==0)

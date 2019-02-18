@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ $# -nq 1 ]; then
+    echo "syntax: rebase.sh $TRILINOS_SRC/packages/muelu/test/interface"
+    exit -1;
+fi
+
+
 if [ -d "default" ]; then
     ./MueLu_ParameterListInterpreter.exe --noKokkosRefactor --instantiation="DOUBLE_INT_INT" --linAlgebra=Tpetra
     mpiexec -n 4 ./MueLu_ParameterListInterpreter.exe --noKokkosRefactor --instantiation="DOUBLE_INT_INT" --linAlgebra=Tpetra

@@ -92,6 +92,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
+              || name == "Node Comm"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif
@@ -258,7 +259,7 @@ bool IsParamValidVariable(const std::string& name)
 
 
    // Generates a communicator whose only members are other ranks of the baseComm on my node
-    Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId) {
+  Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor) {
 #ifdef HAVE_MPI
        int numRanks = baseComm->getSize();       
        if(numRanks == 1) {NodeId = baseComm->getRank(); return baseComm;}
@@ -286,8 +287,35 @@ bool IsParamValidVariable(const std::string& name)
          }
        }
        NodeId = numNodes;
+
        // Generate nodal communicator
-       return baseComm->split(NodeId,baseComm->getRank());   
+       Teuchos::RCP<const Teuchos::Comm<int> > newComm =  baseComm->split(NodeId,baseComm->getRank());   
+
+       // If we want to divide nodes up (for really beefy nodes), we do so here
+       if(reductionFactor != 1) {
+         // Find # cores per node
+         int lastI = 0;
+         int coresPerNode = 0;
+         for(int i=0, prev=addressList[0]; i<numRanks; i++) {
+           if(prev != addressList[i]) {
+             prev = addressList[i];
+             coresPerNode = std::max(i - lastI, coresPerNode);
+             lastI = i;
+           }
+         }
+         coresPerNode = std::max(numRanks - lastI, coresPerNode);
+
+         // Can we chop that up? 
+         if(coresPerNode % reductionFactor != 0)
+           throw std::runtime_error("Reduction factor does not evently divide # cores per node");
+         int reducedCPN = coresPerNode / reductionFactor;        
+         int nodeDivision = newComm->getRank() / reducedCPN;
+         
+         NodeId = numNodes * reductionFactor + nodeDivision;
+         newComm =  baseComm->split(NodeId,baseComm->getRank());  
+       }
+
+       return newComm;       
 #else
        NodeId = baseComm->getRank();
        return baseComm;

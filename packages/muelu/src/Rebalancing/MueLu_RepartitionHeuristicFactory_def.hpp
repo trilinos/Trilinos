@@ -77,6 +77,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: start level");
+    SET_VALID_ENTRY("repartition: node repartition level");
     SET_VALID_ENTRY("repartition: min rows per proc");
     SET_VALID_ENTRY("repartition: target rows per proc");
     SET_VALID_ENTRY("repartition: min rows per thread");
@@ -85,6 +86,7 @@ namespace MueLu {
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Node Comm", Teuchos::null, "Generating factory of the node level communicator");
 
     return validParamList;
   }
@@ -92,6 +94,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
+    const Teuchos::ParameterList & pL = GetParameterList();    
+    if(pL.isParameter("repartition: node repartition level")) {
+      const int nodeRepartLevel = pL.get<int>("repartition: node repartition level");
+      if(currentLevel.GetLevelID() == nodeRepartLevel) {
+        Input(currentLevel,"Node Comm");
+      }
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -102,6 +111,7 @@ namespace MueLu {
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
     const int    startLevel           = pL.get<int>   ("repartition: start level");
+    const int    nodeRepartLevel      = pL.get<int>   ("repartition: node repartition level");
           LO     minRowsPerProcess    = pL.get<LO>    ("repartition: min rows per proc");
           LO     targetRowsPerProcess = pL.get<LO>    ("repartition: target rows per proc");
           LO     minRowsPerThread     = pL.get<LO>    ("repartition: min rows per thread");
@@ -132,6 +142,10 @@ namespace MueLu {
     // Stick this on the level so Zoltan2Interface can use this later
     Set<LO>(currentLevel,"repartition: heuristic target rows per process",targetRowsPerProcess);
 
+    // Check for validity of the node repartition option
+    TEUCHOS_TEST_FOR_EXCEPTION(nodeRepartLevel >= startLevel, Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): If 'repartition: node repartition level' is set, it must be less than or equal to 'repartition: start level'");
+
+
     RCP<const FactoryBase> Afact = GetFactory("A");
     if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
        Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
@@ -153,7 +167,26 @@ namespace MueLu {
     // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
     // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
 
-    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
+    // Test0: Should we do node repartitioning? 
+    if (currentLevel.GetLevelID() == nodeRepartLevel && A->getMap()->getComm()->getSize() > 1) {
+      RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");
+      TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
+
+      // If we only have one node, then we don't want to pop down to one rank
+      if(NodeComm()->getSize() != A->getMap()->getComm()->getSize()) {
+        GetOStream(Statistics1) << "Repartitioning?  YES: \n  Within node only"<<std::endl;
+        int nodeRank = NodeComm->getRank();
+        
+        // Do a reduction to get the total number of nodes
+        int isZero = (nodeRank == 0);
+        int numNodes=0;
+        Teuchos::reduceAll(*A->getMap()->getComm(), Teuchos::REDUCE_SUM, isZero, Teuchos::outArg(numNodes));
+        Set(currentLevel, "number of partitions", numNodes);
+        return;
+      }
+    }  
+
+    // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning     
     if (currentLevel.GetLevelID() < startLevel) {
       GetOStream(Statistics1) << "Repartitioning?  NO:" <<
           "\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
