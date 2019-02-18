@@ -50,6 +50,7 @@
 
 namespace Amesos2 {
 
+// TODO: How does TPETRA_INST_INT_INT influence an Epetra instantiation???
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(MUMPS);
@@ -70,10 +71,61 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,int,int);
 #endif
 #endif
-
-
+#ifdef HAVE_TPETRA_INST_INT_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,float,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,double,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<float>,int,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,int,long);
+#endif
+#endif
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  AMESOS2_SOLVER_TPETRA_INST(MUMPS, double, int, long long);
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,float,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,double,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<float>,int,long long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,int,long long);
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,float,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,double,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<float>,int,unsigned);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,int,unsigned);
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,float,int,unsigned long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,double,int,unsigned long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<float>,int,unsigned long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,int,unsigned long);
+#endif
 #endif
 
 }
@@ -106,18 +158,60 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
 #endif
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_LONG
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned long, NODETYPE)
 #endif
 #endif
 #undef NODETYPE
@@ -139,18 +233,60 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
 #endif
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_INT_LONG
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned long, NODETYPE)
 #endif
 #endif
 #undef NODETYPE
@@ -172,18 +308,60 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
 #endif
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_INT_LONG
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE);
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE);
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned long, NODETYPE)
 #endif
 #endif
 #undef NODETYPE
@@ -205,21 +383,64 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
 #endif
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_INT_LONG
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE);
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE);
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long, NODETYPE)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE);
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, long long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, long long, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned, NODETYPE)
+#endif
+#endif
+#ifdef HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, int, unsigned long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, unsigned long, NODETYPE)
 #endif
 #endif
 #undef NODETYPE
 #endif
+
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
