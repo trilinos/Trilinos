@@ -409,13 +409,14 @@ namespace FROSch {
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,tmpCoarseMap->getNodeElementList(),0,CoarseSolveComm_);
             //Build RepeatedMap CoarseLevel------------------------------------------------------------------------------------
             //Repeated Map on first level needs to be correct--Build ElementNodeList
-            if (DistributionList_->get("Use RepMap",false)){
+            if (DistributionList_->get("Use Rep Map",false))
+            {
                 if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
                     GOVec RowsCoarseSolve;
+                    
                     if(OnCoarseSolveComm_){
-                        
                         int start = (nSubs*(CoarseSolveComm_->getRank()))/NumProcsCoarseSolve_;
                         int end = (nSubs*(CoarseSolveComm_->getRank()+1))/NumProcsCoarseSolve_;
                         RowsCoarseSolve.resize(end-start);
@@ -423,10 +424,14 @@ namespace FROSch {
                     }
                     Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,nSubs,RowsCoarseSolve,0,this->MpiComm_);
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
-                    Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > GraphEntries =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,10));
+                    std::vector<GO> col1(10);
+                    for(int j = 0;j<10;j++){col1.at(j) = j;}
+                    
+                    Teuchos::ArrayView<const GO> col2(col1);
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,10,col2,0,this->K_->getMap()->getComm());
+                    Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > GraphEntries = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,10);
                     GraphEntries->doImport(*GraphEntriesList_,*scatter,Xpetra::INSERT);
                     Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
-                    
                     //elements needs to be transfered to the coarse communicator
                     Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> >  Elem = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphEntriesList_->getMap(),10);
                     Teuchos::ArrayView<const GO> myGlobals = GraphEntriesList_->getMap()->getNodeElementList();
@@ -444,46 +449,50 @@ namespace FROSch {
                     size_t numEntry = elements_.size();
                     Elem->fillComplete();
                     
-                  
+                    
                     size_t MaxRow = Elem->getGlobalMaxNumRowEntries ();
                     
+                    std::vector<GO> col1e(MaxRow);
+                    for(int j = 0;j<<MaxRow;j++){col1e.at(j) = j;}
+                    Teuchos::ArrayView<const GO> colE(col1e);
+                    
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter2 = Xpetra::ImportFactory<LO,GO,NO>::Build(Elem->getRowMap(),GraphMap);
-                    //Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElemS = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(Elem,*scatter2));
-                    //Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),MaxRow,this->MpiComm_);//ColMap->describe(*fancy,Teuchos::VERB_EXTREME);
-                    //Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSolveMap_->lib(),MaxRow,MaxRow,0,CoarseSolveComm_);
-                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Elem->getColMap();
-                    Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElemS =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,ColMap,MaxRow));
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMapE = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,colE,0,CoarseSolveComm_);
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMapE2 = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,colE,0,this->MpiComm_);
+                    Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > ElemS = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMapE,MaxRow);
                     
                     ElemS->doImport(*Elem,*scatter2,Xpetra::INSERT);
                     ElemS->fillComplete();
                     
                     
-                  Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap2 = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(Xpetra::UseTpetra,nSubs, CoarseSolveComm_);
-                  const size_t numMyElements = GraphMap->getNodeNumElements();
-                
-                  Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
-                  size_t NumEnt;
-                  Teuchos::ArrayView<const GO > idEl;
-                  Teuchos::ArrayView<const GO > va;
-                  ElementNodeList_ = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap2,MaxRow));
-                for (size_t i = 0; i < numMyElements; ++i){
-                    int en = ElemS->getNumEntriesInLocalRow(i);
-                    Teuchos::Array<GO> cols2(en);
-                    for(int h = 0;h<en;h++){
-                                cols2[h] = h;
-                    }
-                    ElemS->getLocalRowView(i,idEl,va);
-                    ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols2,va);
-                }
-                        
-                ElementNodeList_->fillComplete();
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap2 = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(Xpetra::UseTpetra,nSubs, CoarseSolveComm_);
+                    const size_t numMyElements = GraphMap->getNodeNumElements();
                     
-                GO numGlobal = GraphEntries->getGlobalNumRows();
-            //---------------------------------------------------------
-              if(OnCoarseSolveComm_){
-                    SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap2,10);
-                    Teuchos::ArrayView<const LO> in;
-                    Teuchos::ArrayView<const GO> vals_graph;
+                    Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
+                    size_t NumEnt;
+                    Teuchos::ArrayView<const GO > idEl;
+                    Teuchos::ArrayView<const GO > va;
+                    ElementNodeList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap2,ColMapE,MaxRow);
+                    for (size_t i = 0; i < numMyElements; ++i){
+                        int en = ElemS->getNumEntriesInLocalRow(i);
+                        Teuchos::Array<GO> cols2(en);
+                        for(int h = 0;h<en;h++){
+                            cols2[h] = h;
+                        }
+                        ElemS->getLocalRowView(i,idEl,va);
+                        ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols2,va);
+                    }
+                    
+                    ElementNodeList_->fillComplete();
+                    
+                    
+                    GO numGlobal = GraphEntries->getGlobalNumRows();
+                    
+                    //---------------------------------------------------------
+                    if(OnCoarseSolveComm_){
+                        SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap2,10);
+                        Teuchos::ArrayView<const LO> in;
+                        Teuchos::ArrayView<const GO> vals_graph;
                         for (size_t k = 0;k<numMyElements;k++){
                             GO kg = GraphMap->getGlobalElement(k);
                             GraphEntries->getGlobalRowView(kg,in,vals_graph);
@@ -491,8 +500,9 @@ namespace FROSch {
                             SubdomainConnectGraph_->insertGlobalIndices(kg,vals());
                         }
                         SubdomainConnectGraph_->fillComplete();
+                        
                         CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
-                      // CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
+                        // CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                     }
                 }
             }
@@ -532,26 +542,29 @@ namespace FROSch {
             GOVec elementList(tmpCoarseMap->getNodeElementList());
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
-            if(DistributionList_->get("Use RepMap",false)){
+            if(DistributionList_->get("Use RepMap",false))
+            {
                 if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
                     GOVec RowsCoarseSolve;
+                    
                     if(OnCoarseSolveComm_){
-                        
                         int start = (nSubs*(CoarseSolveComm_->getRank()))/NumProcsCoarseSolve_;
                         int end = (nSubs*(CoarseSolveComm_->getRank()+1))/NumProcsCoarseSolve_;
                         RowsCoarseSolve.resize(end-start);
                         for(int i = 0;i<end-start;i++) RowsCoarseSolve[i] = start+i;
                     }
-                    // std::cout<<RowsCoarseSolve<<std::endl;
-                    //  Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),nSubs, CoarseSolveComm_);
                     Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,nSubs,RowsCoarseSolve,0,this->MpiComm_);
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
-                    Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > GraphEntries =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,10));
+                    std::vector<GO> col1(10);
+                    for(int j = 0;j<10;j++){col1.at(j) = j;}
+                    
+                    Teuchos::ArrayView<const GO> col2(col1);
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,10,col2,0,this->K_->getMap()->getComm());
+                    Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > GraphEntries = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,10);
                     GraphEntries->doImport(*GraphEntriesList_,*scatter,Xpetra::INSERT);
                     Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
-                    
                     //elements needs to be transfered to the coarse communicator
                     Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> >  Elem = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphEntriesList_->getMap(),10);
                     Teuchos::ArrayView<const GO> myGlobals = GraphEntriesList_->getMap()->getNodeElementList();
@@ -572,12 +585,14 @@ namespace FROSch {
                     
                     size_t MaxRow = Elem->getGlobalMaxNumRowEntries ();
                     
+                    std::vector<GO> col1e(MaxRow);
+                    for(int j = 0;j<<MaxRow;j++){col1e.at(j) = j;}
+                    Teuchos::ArrayView<const GO> colE(col1e);
+                    
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter2 = Xpetra::ImportFactory<LO,GO,NO>::Build(Elem->getRowMap(),GraphMap);
-                    //Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElemS = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(Elem,*scatter2));
-                    //Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),MaxRow,this->MpiComm_);//ColMap->describe(*fancy,Teuchos::VERB_EXTREME);
-                    //Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSolveMap_->lib(),MaxRow,MaxRow,0,CoarseSolveComm_);
-                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Elem->getColMap();
-                    Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElemS =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,ColMap,MaxRow));
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMapE = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,colE,0,CoarseSolveComm_);
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMapE2 = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,colE,0,this->MpiComm_);
+                    Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > ElemS = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMapE,MaxRow);
                     
                     ElemS->doImport(*Elem,*scatter2,Xpetra::INSERT);
                     ElemS->fillComplete();
@@ -590,7 +605,7 @@ namespace FROSch {
                     size_t NumEnt;
                     Teuchos::ArrayView<const GO > idEl;
                     Teuchos::ArrayView<const GO > va;
-                    ElementNodeList_ = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap2,MaxRow));
+                    ElementNodeList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap2,ColMapE,MaxRow);
                     for (size_t i = 0; i < numMyElements; ++i){
                         int en = ElemS->getNumEntriesInLocalRow(i);
                         Teuchos::Array<GO> cols2(en);
@@ -603,7 +618,9 @@ namespace FROSch {
                     
                     ElementNodeList_->fillComplete();
                     
+                    
                     GO numGlobal = GraphEntries->getGlobalNumRows();
+                    
                     //---------------------------------------------------------
                     if(OnCoarseSolveComm_){
                         SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap2,10);
@@ -616,8 +633,9 @@ namespace FROSch {
                             SubdomainConnectGraph_->insertGlobalIndices(kg,vals());
                         }
                         SubdomainConnectGraph_->fillComplete();
+                        
                         CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
-                        //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
+                        // CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                     }
                 }
             }

@@ -224,7 +224,7 @@ namespace FROSch {
             
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
             
-            if (this->ParameterList_->get("Use RepMap",true)) {
+            if (this->ParameterList_->get("Use RepMap",false)) {
                 if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     Teuchos::Array<GO> entries;
                     std::map<GO,int> rep;
@@ -253,8 +253,14 @@ namespace FROSch {
                     {
                         col_vec.at(i) =i;
                     }
+                    std::vector<GO> col1(10);
+                    for(int j = 0;j<10;j++){col1.at(j) = j;}
+                    
                     Teuchos::ArrayView<GO> cols(col_vec);
-                    this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
+                    Teuchos::ArrayView<const GO> col2(col1);
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,10,col2,0,this->K_->getMap()->getComm());
+                   
+                    this->GraphEntriesList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,10);
                     this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),cols,entries());
                     this->GraphEntriesList_->fillComplete();
                     

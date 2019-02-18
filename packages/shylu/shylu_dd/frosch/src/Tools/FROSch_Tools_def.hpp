@@ -190,7 +190,7 @@ namespace FROSch {
         return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm){
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm){
         
         int numprocs = TeuchosComm->getSize();
         int MyPID=TeuchosComm->getRank();
@@ -215,7 +215,8 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
         //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
         
-        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),MaxRow));
+        //Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),MaxRow));
+        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),MaxRow);
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
         //--------------------Get Repeated Nodes Map------------------------
