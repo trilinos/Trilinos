@@ -302,7 +302,7 @@ CDASH_TRACK="Pull Request"
 echo -e ">>> PULLREQUEST_CDASH_TRACK = ${PULLREQUEST_CDASH_TRACK}"
 
 # If PULLREQUEST_CDASH_TRACK is set and nonzero
-if [ ! -z ${FOO} ]; then
+if [ ! -z ${PULLREQUEST_CDASH_TRACK} ]; then
     CDASH_TRACK=${PULLREQUEST_CDASH_TRACK:?}
     echo -e ">>> PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK=${PULLREQUEST_CDASH_TRACK:?}"
 else
