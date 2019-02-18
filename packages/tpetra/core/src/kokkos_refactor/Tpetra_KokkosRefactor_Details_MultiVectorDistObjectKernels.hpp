@@ -689,6 +689,18 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   }
 
+  // There's no point to using Kokkos::atomic_assign for the REPLACE /
+  // INSERT CombineMode, since this is not a well-defined reduction
+  // for MultiVector anyway.  See GitHub Issue #4417.
+  template<class ExecutionSpace>
+  struct InsertOp {
+    template <typename Scalar>
+    KOKKOS_INLINE_FUNCTION
+    void operator() (Scalar& dest, const Scalar& src) const {
+      dest = src;
+    }
+  };
+  
   // FIXME (mfh 16 Dec 2016) It looks like these are totally generic
   // and don't get specialized in Stokhos.  This suggests we can
   // template them on the execution space, and specialize them for
@@ -696,26 +708,6 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   // might be better to make the unpack kernels (the pack kernels
   // don't use atomic updates) functions that we prebuild, in the
   // manner of KokkosKernels, or at least handle via ETI.
-
-  template<class ExecutionSpace>
-  struct InsertOp {
-    template <typename Scalar>
-    KOKKOS_INLINE_FUNCTION
-    void operator() (Scalar& dest, const Scalar& src) const {
-      Kokkos::atomic_assign(&dest, src);
-    }
-  };
-
-#ifdef KOKKOS_ENABLE_SERIAL
-  template<>
-  struct InsertOp< ::Kokkos::Serial > {
-    template <typename Scalar>
-    KOKKOS_INLINE_FUNCTION
-    void operator() (Scalar& dest, const Scalar& src) const {
-      dest = src; // no need for an atomic operation here
-    }
-  };
-#endif // KOKKOS_ENABLE_SERIAL
 
   template<class ExecutionSpace>
   struct AddOp {
