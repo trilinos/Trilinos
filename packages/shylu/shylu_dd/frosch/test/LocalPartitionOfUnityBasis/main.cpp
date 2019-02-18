@@ -175,9 +175,9 @@ int main(int argc, char *argv[])
 
     RCP<CoarseSpace<SC,LO,GO,NO> > coarseSpace = TestBasis.getLocalPartitionOfUnitySpace();
 
-    for (UN i=0; i<coarseSpace->getLocalBasis()->getLocalLength(); i++) {
-        for (UN j=0; j<coarseSpace->getLocalBasis()->getNumVectors(); j++) {
-            std::cout << coarseSpace->getLocalBasis()->getData(j)[i] << "\t";
+    for (UN i=0; i<coarseSpace->getAssembledBasis()->getLocalLength(); i++) {
+        for (UN j=0; j<coarseSpace->getAssembledBasis()->getNumVectors(); j++) {
+            std::cout << coarseSpace->getAssembledBasis()->getData(j)[i] << "\t";
         }
         std::cout << "\n";
     }

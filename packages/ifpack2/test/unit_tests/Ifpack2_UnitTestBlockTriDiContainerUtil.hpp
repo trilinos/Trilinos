@@ -246,7 +246,7 @@ struct BlockTriDiContainerTester {
           auto input = T_bare->createDefaultApplyParameters();
           input.zeroStartingSolution = zero_starting;
           input.maxNumSweeps = num_sweeps;
-          input.tolerance = norm_based > 1 ? tol : 0;
+          input.tolerance = norm_based ? tol : 0;
           return T_bare->applyInverseJacobi(B, X, input);
         }
       };
@@ -286,12 +286,23 @@ struct BlockTriDiContainerTester {
           TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R) " << details << " rd " << rd);
         else
           TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R) " << details << " rd " << rd);
-        if ( ! T_bare.is_null()) {
-          { // Test norm-based termination.
-            const int nits = apply(*B, *X_solve, true);
+        { // Advanced options only the bare object supports.
+          auto T_bare_advanced = T_bare;
+          if (T_bare_advanced.is_null()) {
+            T_bare_advanced = make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi,
+                                        seq_method);
+            T_bare_advanced->initialize();
+            T_bare_advanced->compute(T_bare_advanced->createDefaultComputeParameters());
+          }
+          if ( ! seq_method) { // Test norm-based termination.
+            auto input = T_bare_advanced->createDefaultApplyParameters();
+            input.zeroStartingSolution = zero_starting;
+            input.maxNumSweeps = num_sweeps;
+            input.tolerance = tol;
+            const int nits = T_bare_advanced->applyInverseJacobi(*B, *X, input);
             if (nits < num_sweeps) {
-              const auto n0 = T_bare->getNorms0();
-              const auto nf = T_bare->getNormsFinal();
+              const auto n0 = T_bare_advanced->getNorms0();
+              const auto nf = T_bare_advanced->getNormsFinal();
               bool ok = true;
               Magnitude r = 0;
               for (int i = 0; i < nvec; ++i) {
@@ -308,26 +319,26 @@ struct BlockTriDiContainerTester {
             const Magnitude df = 0.75;
             // Start by mimicking damping factor manually. First sweep.
             const auto X1 = Teuchos::rcp(new Tpetra_MultiVector(A->getRangeMap(), nvec));
-            auto input = T_bare->createDefaultApplyParameters();
+            auto input = T_bare_advanced->createDefaultApplyParameters();
             input.zeroStartingSolution = true;
             input.maxNumSweeps = 1;
-            T_bare->applyInverseJacobi(*B, *X1, input);
+            T_bare_advanced->applyInverseJacobi(*B, *X1, input);
             X1->scale(df);
             // Second sweep. This sweep also tests ! zeroStartingSolution.
             auto X_true = Tpetra::createCopy(*X1);
-            input = T_bare->createDefaultApplyParameters();
-            T_bare->applyInverseJacobi(*B, *X1, input);
+            input = T_bare_advanced->createDefaultApplyParameters();
+            T_bare_advanced->applyInverseJacobi(*B, *X1, input);
             X_true.update(df, *X1, 1 - df);
             // Norm-based calcs have a different code path; need to test both.
             for (const auto tol_test : {0.0, 1e-20}) {
               if (seq_method) continue;
               // Damping factor computation. 2 sweeps, starting with 0.
-              input = T_bare->createDefaultApplyParameters();
+              input = T_bare_advanced->createDefaultApplyParameters();
               input.zeroStartingSolution = true;
               input.maxNumSweeps = 2;
               input.tolerance = tol_test;
               input.dampingFactor = df;
-              T_bare->applyInverseJacobi(*B, *X, input);
+              T_bare_advanced->applyInverseJacobi(*B, *X, input);
               // Check if X agrees with the manually computed X_true.
               rd = bcmm::reldif(*X, X_true);
               if (rd > 1e1*std::numeric_limits<Magnitude>::epsilon())
