@@ -1,3 +1,6 @@
+#ifndef _Reporter_cpp_
+#define _Reporter_cpp_
+
 #include "Reporter.hpp"
 
 namespace ngp_testing {
@@ -13,7 +16,7 @@ NGP_TEST_INLINE void bounded_strcpy(const char* src, const int maxChar, char* de
   dest[idx] = '\0';
 }
 
-NGP_TEST_FUNCTION
+NGP_TEST_INLINE
 TruncatedString::TruncatedString(const char* src) {
   const int srcLen = get_string_length(src);
   if(should_truncate(srcLen)) {
@@ -25,7 +28,7 @@ TruncatedString::TruncatedString(const char* src) {
   }
 }
 
-NGP_TEST_FUNCTION
+NGP_TEST_INLINE
 int TruncatedString::get_string_length(const char* str) const {
   int len = 0;
   if(str) {
@@ -34,17 +37,17 @@ int TruncatedString::get_string_length(const char* str) const {
   return len;
 }
 
-NGP_TEST_FUNCTION
+NGP_TEST_INLINE
 bool TruncatedString::should_truncate(const int strLen) const {
   return strLen > maxNumChar;
 }
 
-NGP_TEST_FUNCTION
+NGP_TEST_INLINE
 int TruncatedString::get_truncation_offset(const int strLen) const {
   return strLen - maxNumChar + 1;
 }
 
-NGP_TEST_FUNCTION
+NGP_TEST_INLINE
 void TruncatedString::prepend_truncation_indicator(char* dest) {
   dest[0] = '.';
   dest[1] = '.';
@@ -53,4 +56,5 @@ void TruncatedString::prepend_truncation_indicator(char* dest) {
 
 }
 
+#endif
 

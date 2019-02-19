@@ -106,4 +106,6 @@ class Reporter : public ReporterBase {
 
 }
 
+#include "Reporter.cpp"
+
 #endif

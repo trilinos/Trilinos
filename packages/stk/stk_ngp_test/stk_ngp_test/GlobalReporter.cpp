@@ -1,14 +1,39 @@
+#ifndef _GlobalReporter_cpp_
+#define _GlobalReporter_cpp_
+
 #include "GlobalReporter.hpp"
 #include "Reporter.hpp"
 
 namespace ngp_testing {
 namespace global {
 static constexpr int numReports = 5;
-ReporterBase* hostReporter = nullptr;
+inline
+ReporterBase*& getHostReporter()
+{
+  static ReporterBase* hostReporter = nullptr;
+  return hostReporter;
+}
 
-ReporterBase* deviceReporterOnHost = nullptr;
-NGP_TEST_DEVICE_ONLY ReporterBase* deviceReporterOnDevice = nullptr;
-ReporterBase* deviceReporterAddress = nullptr;
+inline
+ReporterBase*& getDeviceReporterOnHost()
+{
+  static ReporterBase* deviceReporterOnHost = nullptr;
+  return deviceReporterOnHost;
+}
+
+inline
+NGP_TEST_DEVICE_ONLY ReporterBase*& getDeviceReporterOnDevice()
+{
+  static NGP_TEST_DEVICE_ONLY ReporterBase* deviceReporterOnDevice = nullptr;
+  return deviceReporterOnDevice;
+}
+
+inline
+ReporterBase*& getDeviceReporterAddress()
+{
+  static ReporterBase* deviceReporterAddress = nullptr;
+  return deviceReporterAddress;
+}
 }
 
 using DeviceReporter = Reporter<Kokkos::DefaultExecutionSpace::device_type>;
@@ -19,38 +44,45 @@ using HostReporter = Reporter<Kokkos::OpenMP::device_type>;
 using HostReporter = Reporter<Kokkos::Serial::device_type>;
 #endif
 
+inline
 void copy_to_device(const DeviceReporter& reporter,
                     ReporterBase* const addr) {
   Kokkos::parallel_for(Kokkos::RangePolicy<>(0,1), KOKKOS_LAMBDA(const int){
-    global::deviceReporterOnDevice = addr;
-    new (global::deviceReporterOnDevice) DeviceReporter(reporter);
+    global::getDeviceReporterOnDevice() = addr;
+    new (global::getDeviceReporterOnDevice()) DeviceReporter(reporter);
   });
   Kokkos::fence();
 }
 
+inline
 void initialize_reporters() {
-  global::hostReporter = new HostReporter(global::numReports);
-  global::deviceReporterOnHost = new DeviceReporter(global::numReports);
-  global::deviceReporterAddress = static_cast<DeviceReporter*>(Kokkos::kokkos_malloc(sizeof(DeviceReporter)));
-  copy_to_device(dynamic_cast<DeviceReporter&>(*global::deviceReporterOnHost), global::deviceReporterAddress);
+  global::getHostReporter() = new HostReporter(global::numReports);
+  global::getDeviceReporterOnHost() = new DeviceReporter(global::numReports);
+  global::getDeviceReporterAddress() = static_cast<DeviceReporter*>(Kokkos::kokkos_malloc(sizeof(DeviceReporter)));
+  copy_to_device(dynamic_cast<DeviceReporter&>(*global::getDeviceReporterOnHost()), global::getDeviceReporterAddress());
 }
 
+inline
 void finalize_reporters() {
-  delete global::hostReporter;
-  delete global::deviceReporterOnHost;
-  Kokkos::kokkos_free(global::deviceReporterAddress);
+  delete global::getHostReporter();
+  delete global::getDeviceReporterOnHost();
+  Kokkos::kokkos_free(global::getDeviceReporterAddress());
 }
 
-NGP_TEST_FUNCTION ReporterBase* get_reporter() {
+NGP_TEST_INLINE ReporterBase* get_reporter() {
 #ifdef __CUDA_ARCH__
-  return global::deviceReporterOnDevice;
+  return global::getDeviceReporterOnDevice();
 #else
-  return global::hostReporter;
+  return global::getHostReporter();
 #endif
 }
 
+inline
 ReporterBase* get_device_reporter() {
-  return global::deviceReporterOnHost;
+  return global::getDeviceReporterOnHost();
 }
 
 }
+
+#endif
+

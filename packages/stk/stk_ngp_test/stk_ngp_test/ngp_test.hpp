@@ -108,4 +108,6 @@ bool expect_near(const T a, const T b, const T tolerance) {
   } while (false)
 
 
+#include "ngp_test.cpp"
+
 #endif
