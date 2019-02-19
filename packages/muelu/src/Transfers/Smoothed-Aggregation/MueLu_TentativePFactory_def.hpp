@@ -88,7 +88,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
-    validParamList->set< RCP<const FactoryBase> >("Material Coordinates",        Teuchos::null, "Generating factory of the material coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Material Coordinates",Teuchos::null, "Generating factory of the material coordinates");
     validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
