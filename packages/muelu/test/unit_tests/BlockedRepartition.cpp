@@ -886,7 +886,7 @@ namespace MueLuTests {
   RCP<RepartitionHeuristicFactory> RepHeuFact = Teuchos::rcp(new RepartitionHeuristicFactory);
   RepHeuFact->SetFactory("A",AcFact);//MueLu::NoFactory::getRCP());
   RepHeuFact->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
-  RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(40));
+  RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(100));
 
   RCP<Factory> BDFact = rcp(new RepartitionBlockDiagonalFactory());
   BDFact->SetFactory("A",AcFact);
