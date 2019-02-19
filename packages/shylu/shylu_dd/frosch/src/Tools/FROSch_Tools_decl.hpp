@@ -190,6 +190,19 @@ namespace FROSch {
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm);
 
 #endif
+
+    /*!
+    \brief Throw runtime error due to missing package in build configuration
+
+    As many packages are optional, we might detect only at runtime that are certain package
+    is not included into the build configuration, but still is used by FROSch.
+    Use this routine to throw a generic error message with some information for the user
+    and provide details how to fix it.
+
+    \param[in] forschObj FROSch object that is asking for the missing package
+    \param[in] packageName Name of the missing package
+    */
+    void ThrowErrorMissingPackage(const std::string& froschObj, const std::string& packageName);
 }
 
 #endif

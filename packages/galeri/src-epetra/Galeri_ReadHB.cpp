@@ -40,8 +40,9 @@
 // @HEADER
 
 #include "Galeri_ConfigDefs.h"
+#ifdef HAVE_GALERI_TRIUTILS
 #include "Galeri_ReadHB.h"
-#include "Galeri_iohb.h"
+#include "Trilinos_Util_iohb.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -755,5 +756,5 @@ void ReadHB(const char *data_file, const Epetra_Comm  &comm,
   }
   return;
 }
-
+#endif //ifdef HAVE_GALERI_TRIUTILS
 } // namespace Galeri
