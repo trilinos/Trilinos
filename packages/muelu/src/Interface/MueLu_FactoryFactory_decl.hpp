@@ -142,6 +142,8 @@
 #include "MueLu_VariableDofLaplacianFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
+#include "MueLu_NodePartitionInterface.hpp"
+
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
@@ -300,6 +302,14 @@ namespace MueLu {
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
+      }
+
+      if (factoryName == "NodePartitionInterface") {
+#if defined(HAVE_MPI)
+        return Build2<NodePartitionInterface>(paramList, factoryMapIn, factoryManagersIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a NodePartitionInterface object: HAVE_MPI == false.");
+#endif // HAVE_MPI
       }
 
       if (factoryName == "RepartitionFactory") {

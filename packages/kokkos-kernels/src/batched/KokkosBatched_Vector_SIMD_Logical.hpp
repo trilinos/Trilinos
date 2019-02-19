@@ -11,7 +11,7 @@ namespace KokkosBatched {
 #define KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l) typename std::enable_if<std::is_integral< T0 >::value && std::is_integral< T1 >::value,const Vector<SIMD<bool>,l> >::type 
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     typename std::enable_if<std::is_integral< T >::value,const Vector<SIMD<bool>,l> >::type 
     operator!(const Vector<SIMD<T>,l> &a) {
@@ -28,7 +28,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator||(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
@@ -45,7 +45,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator&&(const Vector<SIMD<T0>,l> &a, const Vector<SIMD<T1>,l> &b) {
@@ -62,7 +62,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator||(const Vector<SIMD<T0>,l> &a, const T1 &b) {
@@ -79,7 +79,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)    
     operator&&(const Vector<SIMD<T0>,l> &a, const T1 &b) {
@@ -96,7 +96,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator||(const T0 &a, const Vector<SIMD<T1>,l> &b) {
@@ -113,7 +113,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_LOGICAL_RETURN_BOOL_TYPE(T0,T1,l)
     operator&&(const T0 &a, const Vector<SIMD<T1>,l> &b) {

@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -111,7 +111,7 @@ C  Flag for rainbow spectrum
       REAL SRED(0:4), SGREEN(0:4), SBLUE(0:4)
       SAVE SRED, SGREEN, SBLUE
 C      --SRED, SGREEN, SBLUE - color ratios for RGB settings; spectrum is
-C      --   divided in 4 parts 
+C      --   divided in 4 parts
 
       REAL RRED(32:255), RGREEN(32:255), RBLUE(32:255)
       SAVE RRED, RGREEN, RBLUE
@@ -214,7 +214,7 @@ C  Blue-brown-red spectrum (DEFAULT)
             call textur (SATUR, NUMCOL(1,ICURDV), ISPEC, ISINV,
      *        RMULT, GMULT, BMULT)
             SATLST = SATUR
-          ELSE 
+          ELSE
 C  Rainbow spectrum
            IF(RRED(32).EQ.0.)THEN
 

@@ -177,6 +177,31 @@ importsLocallySame (Teuchos::FancyOStream& out,
   //   out << prefix << "Yay, permuteFroms are the same!" << endl;
   // }
 
+  {
+    auto X_permuteFromLIDs = X.getPermuteFromLIDs_dv ();
+    auto Y_permuteFromLIDs = Y.getPermuteFromLIDs_dv ();
+    if (X_permuteFromLIDs.extent (0) != Y_permuteFromLIDs.extent (0)) {
+      out << prefix << X_name << ".getPermuteFromLIDs_dv().extent(0)="
+	  << X_permuteFromLIDs.extent (0)
+	  << " != " << Y_name << ".getPermuteFromLIDs_dv().extent(0)="
+	  << Y_permuteFromLIDs.extent (0)
+	  << endl;
+      same = false;
+    }
+    else {
+      auto X_ptr = X_permuteFromLIDs.view_host ().data ();
+      const auto size = X_permuteFromLIDs.view_host ().extent (0);
+      auto Y_ptr = Y_permuteFromLIDs.view_host ().data ();
+      
+      if (! std::equal (X_ptr, X_ptr + size, Y_ptr)) {
+	out << prefix << X_name << ".getPermuteFromLIDs_dv().view_host()"
+	    << " != " << Y_name << ".getPermuteFromLIDs_dv().view_host()"
+	    << endl;
+	same = false;
+      }
+    }
+  }
+
   if (! std::equal (X.getPermuteToLIDs ().begin (),
                     X.getPermuteToLIDs ().end (),
                     Y.getPermuteToLIDs ().begin ())) {
@@ -188,6 +213,31 @@ importsLocallySame (Teuchos::FancyOStream& out,
   // else {
   //   out << prefix << "Yay, permuteTos are the same!" << endl;
   // }
+
+  {
+    auto X_permuteToLIDs = X.getPermuteToLIDs_dv ();
+    auto Y_permuteToLIDs = Y.getPermuteToLIDs_dv ();
+    if (X_permuteToLIDs.extent (0) != Y_permuteToLIDs.extent (0)) {
+      out << prefix << X_name << ".getPermuteToLIDs_dv().extent(0)="
+	  << X_permuteToLIDs.extent (0)
+	  << " != " << Y_name << ".getPermuteToLIDs_dv().extent(0)="
+	  << Y_permuteToLIDs.extent (0)
+	  << endl;
+      same = false;
+    }
+    else {
+      auto X_ptr = X_permuteToLIDs.view_host ().data ();
+      const auto size = X_permuteToLIDs.view_host ().extent (0);
+      auto Y_ptr = Y_permuteToLIDs.view_host ().data ();
+      
+      if (! std::equal (X_ptr, X_ptr + size, Y_ptr)) {
+	out << prefix << X_name << ".getPermuteToLIDs_dv().view_host()"
+	    << " != " << Y_name << ".getPermuteToLIDs_dv().view_host()"
+	    << endl;
+	same = false;
+      }
+    }
+  }
 
   if (! std::equal (X.getExportLIDs ().begin (),
                     X.getExportLIDs ().end (),
@@ -201,6 +251,31 @@ importsLocallySame (Teuchos::FancyOStream& out,
   //   out << prefix << "Yay, exportLIDs are the same!" << endl;
   // }
 
+  {
+    auto X_exportLIDs = X.getExportLIDs_dv ();
+    auto Y_exportLIDs = Y.getExportLIDs_dv ();
+    if (X_exportLIDs.extent (0) != Y_exportLIDs.extent (0)) {
+      out << prefix << X_name << ".getExportLIDs_dv().extent(0)="
+	  << X_exportLIDs.extent (0)
+	  << " != " << Y_name << ".getExportLIDs_dv().extent(0)="
+	  << Y_exportLIDs.extent (0)
+	  << endl;
+      same = false;
+    }
+    else {
+      auto X_ptr = X_exportLIDs.view_host ().data ();
+      const auto size = X_exportLIDs.view_host ().extent (0);
+      auto Y_ptr = Y_exportLIDs.view_host ().data ();
+      
+      if (! std::equal (X_ptr, X_ptr + size, Y_ptr)) {
+	out << prefix << X_name << ".getExportLIDs_dv().view_host()"
+	    << " != " << Y_name << ".getExportLIDs_dv().view_host()"
+	    << endl;
+	same = false;
+      }
+    }
+  }
+
   if (! std::equal (X.getRemoteLIDs ().begin (),
                     X.getRemoteLIDs ().end (),
                     Y.getRemoteLIDs ().begin ())) {
@@ -212,6 +287,31 @@ importsLocallySame (Teuchos::FancyOStream& out,
   // else {
   //   out << prefix << "Yay, remoteLIDs are the same!" << endl;
   // }
+
+  {
+    auto X_remoteLIDs = X.getRemoteLIDs_dv ();
+    auto Y_remoteLIDs = Y.getRemoteLIDs_dv ();
+    if (X_remoteLIDs.extent (0) != Y_remoteLIDs.extent (0)) {
+      out << prefix << X_name << ".getRemoteLIDs_dv().extent(0)="
+	  << X_remoteLIDs.extent (0)
+	  << " != " << Y_name << ".getRemoteLIDs_dv().extent(0)="
+	  << Y_remoteLIDs.extent (0)
+	  << endl;
+      same = false;
+    }
+    else {
+      auto X_ptr = X_remoteLIDs.view_host ().data ();
+      const auto size = X_remoteLIDs.view_host ().extent (0);
+      auto Y_ptr = Y_remoteLIDs.view_host ().data ();
+      
+      if (! std::equal (X_ptr, X_ptr + size, Y_ptr)) {
+	out << prefix << X_name << ".getRemoteLIDs_dv().view_host()"
+	    << " != " << Y_name << ".getRemoteLIDs_dv().view_host()"
+	    << endl;
+	same = false;
+      }
+    }
+  }
 
   return same;
 }

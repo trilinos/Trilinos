@@ -80,6 +80,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -99,6 +100,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -202,6 +204,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -221,6 +224,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -324,6 +328,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -343,6 +348,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -446,6 +452,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -465,6 +472,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -568,6 +576,7 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 2   [default]
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 512
 repartition: target rows per proc = 0   [default]
 repartition: min rows per thread = 0   [default]
@@ -587,6 +596,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1   [default]
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]

@@ -212,10 +212,34 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   XpetraMultiVectorInput
   SOURCES input/XpetraMultiVectorInput.cpp 
-  NUM_MPI_PROCS 4
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  XpetraMultiVectorInput
+  NAME XpetraMultiVectorInput_noweights
+  ARGS "--file=simple"
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  XpetraMultiVectorInput
+  NAME XpetraMultiVectorInput_oneweight
+  ARGS "--file=vwgt"
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  XpetraMultiVectorInput
+  NAME XpetraMultiVectorInput_twoweights
+  ARGS "--file=vwgt2"
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
@@ -360,6 +384,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_unit_tests
     Poisson.xml
     simple.mtx
     simple_coord.mtx
+    simple.graph
+    simple.coords
+    vwgt.graph
+    vwgt.coords
+    vwgt2.graph
+    vwgt2.coords
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

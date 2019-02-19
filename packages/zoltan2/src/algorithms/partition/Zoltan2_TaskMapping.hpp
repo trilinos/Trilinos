@@ -297,7 +297,7 @@ void getCoarsenedPartGraph(
   if (comm->getSize() > 1)
   {
     const bool bUseLocalIDs = false;  // Local IDs not needed
-    typedef Zoltan2_Directory_Simple<part_t,t_lno_t,t_gno_t> directory_t;
+    typedef Zoltan2_Directory_Simple<t_gno_t,t_lno_t,part_t> directory_t;
     int debug_level = 0;
     const RCP<const Comm<int> > rcp_comm(comm,false);
     directory_t directory(rcp_comm, bUseLocalIDs, debug_level);

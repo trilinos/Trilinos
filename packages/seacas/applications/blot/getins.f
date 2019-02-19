@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -149,67 +149,67 @@ c
 c        local declarations
 
       integer maxstk
-      parameter ( maxstk = 10 )  
+      parameter ( maxstk = 10 )
 c         the maximum number of files allowed in the stack of files
 c         containing instructions that are still to be read.
-      character*2048 file, filelc          
+      character*2048 file, filelc
 c         Name of file to be opened for reading instructions
-      character*2048 name( maxstk ) 
-c         the stack of file names containing instructions that are 
+      character*2048 name( maxstk )
+c         the stack of file names containing instructions that are
 c         still to be read
-      integer recred( maxstk )   
-c         recred(i) = the number of records that have already been 
-c         processed in file i of the stack.  That is, when file i 
+      integer recred( maxstk )
+c         recred(i) = the number of records that have already been
+c         processed in file i of the stack.  That is, when file i
 c         is reopened as the source of instructions, the first
 c         recred(i) records (instructions) have already been read
 c         and so should be skipped.
-      integer stkpnt  
-c         the number of files currently in the stack.  That is, 
+      integer stkpnt
+c         the number of files currently in the stack.  That is,
 c         when the last instruction is read from a file,
-c         the file from the top of the stack, file( numstk ), 
+c         the file from the top of the stack, file( numstk ),
 c         is reopened.  This is the file that called the last file.
       save stkpnt, name, recred
 
-      logical first              
+      logical first
 c         .TRUE. until after the first call to getins.
 c         .FALSE. thereafter.
       save first
-      integer ln                 
+      integer ln
 c          length of a file name or a command string
-      integer ios                
-c          I/O status returned by and I/O statement or the free 
+      integer ios
+c          I/O status returned by and I/O statement or the free
 c          field reader (frefld).
-      logical gotins            
-c          .TRUE. if an instruction was successfully read from 
+      logical gotins
+c          .TRUE. if an instruction was successfully read from
 c          the input stream.
-c         .FALSE. otherwise. ( e.g., an EOF mark was read from 
+c         .FALSE. otherwise. ( e.g., an EOF mark was read from
 c          the input file.
-      logical ecode              
+      logical ecode
 c          code returned by subroutine filhnd.
 c          .TRUE. if file handling proceeded properly.
 c          .FALSE. otherwise
-      integer temp               
+      integer temp
 c          temporary variable for saving integer variables.
-      logical try                
+      logical try
 c          .TRUE. if an attempt to open an instruction file is to be made.
 c          .FALSE. otherwise.
-      logical quit               
-c          .TRUE. if control should go back to the top of the routine 
+      logical quit
+c          .TRUE. if control should go back to the top of the routine
 c          to try to read another command line.
-c          .FALSE. if a command line has successfully been read and 
+c          .FALSE. if a command line has successfully been read and
 c          the program should exit.
-      character*2048 cmdfile  
+      character*2048 cmdfile
 c          Name of the command for directing command to a new file.
       save cmdfile
 
-      logical parse              
-c          .TRUE. if the input is to be read and parsed by the free 
-c          field reader. 
+      logical parse
+c          .TRUE. if the input is to be read and parsed by the free
+c          field reader.
 c          .FALSE. if the input is to be read as a line.
 
       logical instr
 
-      integer nin      
+      integer nin
 c          logical unit where instructions are currently being read from.
       save nin
 
@@ -239,16 +239,16 @@ c
          return 1
       endif
 
-      if ( first ) then            
+      if ( first ) then
         stkpnt = 0
 c         first call to getins
 
 c           find out if an instruction file was specified in the P4
 c           field of the command line
 
-         if ( instr() ) then     
+         if ( instr() ) then
 c   an instruction file was specified
-            call exname ( 7, name( 1 ), ln )   
+            call exname ( 7, name( 1 ), ln )
 c   get name of file
 c
 c                 open file
@@ -256,26 +256,26 @@ c
             if ( batch() ) then
                call filhnd ( 7, name(1)(:ln), .TRUE., ecode,
      &            'o', 'f', 's', 0, *150)
-               stkpnt = stkpnt + 1       
+               stkpnt = stkpnt + 1
 c   increment stack pointer
-               nin = 7               
+               nin = 7
 c    set logical unit where instructions are to be read from
             else
                call filhnd ( 7, name(1)(:ln), .FALSE., ecode,
      &            'o', 'f', 's', 0, *150)
-               if ( ecode ) then       
+               if ( ecode ) then
 c  file opened properly
-                  stkpnt = stkpnt + 1        
+                  stkpnt = stkpnt + 1
 c  increment stack pointer
-                  nin = 7               
+                  nin = 7
 c   set logical unit where instructions are to be read from
-               else                    
+               else
 c   instruction file wasn't there. prompt user for instructions.
                   nin = 0
                endif
             endif
 
-         else                    
+         else
 c   no instruction file was specified
             if ( batch() ) then
                call prterr ('FATAL',
@@ -316,7 +316,7 @@ c
 c
 c           check for an error in reading instruction
 c
-      if ( ios .gt. 0 ) then              
+      if ( ios .gt. 0 ) then
 c   error in reading instruction
          call prterr ('FATAL',
      &      'error reading an instruction in getins')
@@ -347,8 +347,8 @@ c                    skip records that have already been read
                   read ( nin, * )
   120          continue
 
-            else           
-c  no more files on the stack.  Switch 
+            else
+c  no more files on the stack.  Switch
 c  to interactive input if an interactive
 c  job.  If a batch job, print error.
                if ( .not. batch() ) then
@@ -424,15 +424,15 @@ C ... Convert filename to all lowercase -- FREFLD converts to all uppercase
 
       if ( try ) then
 
-         quit = .FALSE.            
+         quit = .FALSE.
 c          will want to return to the
 c          top of the routine to read
 c          an instruction.
 
-         temp = nin                 
+         temp = nin
 c          remember where instructions are coming from.
 
-         if ( nin .eq. 7 ) then 
+         if ( nin .eq. 7 ) then
 c           instructions are currently coming
 c           from a file.  This current file
 c           must be closed.  The information
@@ -441,14 +441,14 @@ c           pointer to its current instruction
 c           has already been stored on the stack.
             call filhnd ( -nin, ' ', .TRUE., ecode, ' ', ' ', ' ',
      &         0, *150)
-         else                       
+         else
 c           instructions are currently coming
 c           from the terminal.  Change unit
 c           of instructions to 7
             nin = 7
          endif
 
-         stkpnt = stkpnt + 1        
+         stkpnt = stkpnt + 1
 c            increment stack pointer
 
          if ( stkpnt .gt. maxstk ) then
@@ -463,7 +463,7 @@ C ... We have a problem on systems with case-sensitive file names.
 C     FREFLD converts all strings to uppercase.  Therefore, the filename
 C     specified in 'file' will be all uppercase.  Since the file is
 C     typically lowercase, we lowercase 'file' in variable 'filelc'.
-C     First, try to open 'file' (uppercase), if this fails, try to 
+C     First, try to open 'file' (uppercase), if this fails, try to
 C     open 'filelc' (lowercase).  NOTE: There is no way (yet) to deal
 C     with mixed-case filenames.  GDS 7/1/91.
 
@@ -483,11 +483,11 @@ C     with mixed-case filenames.  GDS 7/1/91.
      &              'o', 'f', 's', 0, *150)
             end if
          endif
-         if ( ecode ) then          
+         if ( ecode ) then
 c   file was successfully opened
             name( stkpnt ) = file
             recred( stkpnt ) = 0
-         else                       
+         else
 c   file was not successfully opened
 c   reopen last instruction file ( if
 c   necessary ) and reset parameters.

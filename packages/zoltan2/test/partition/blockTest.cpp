@@ -77,7 +77,7 @@ int main(int narg, char **arg)
     fail = 1;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail){
     if (rank==0){
@@ -220,7 +220,7 @@ int main(int narg, char **arg)
       fail = 0;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail){
     if (rank==0){

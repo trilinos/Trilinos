@@ -57,10 +57,16 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to Expr types
+  //! Specialization of %IsScalarType to Expr types
   template <typename T>
   struct IsScalarType< Fad::Exp::Expr<T> > {
     static const bool value = false;
+  };
+
+  //! Specialization of %IsSimdType to Expr types
+  template <typename T>
+  struct IsSimdType< Fad::Exp::Expr<T> > {
+    static const bool value = IsSimdType< typename Fad::Exp::Expr<T>::value_type >::value;
   };
 
   //! Specialization of %Value to Expr types

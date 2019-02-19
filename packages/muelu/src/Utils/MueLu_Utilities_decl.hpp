@@ -992,7 +992,7 @@ namespace MueLu {
 #endif
 
   // Generates a communicator whose only members are other ranks of the baseComm on my node
-  Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId);
+  Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor);
 
 } //namespace MueLu
 

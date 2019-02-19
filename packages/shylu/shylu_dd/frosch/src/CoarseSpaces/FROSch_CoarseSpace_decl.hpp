@@ -97,13 +97,17 @@ namespace FROSch {
         
         int checkForLinearDependencies();
         
+        bool hasBasisMap() const;
+        
         MapPtr getBasisMap() const;
         
-        MultiVectorPtr getLocalBasis() const;
+        bool hasAssembledBasis() const;
+        
+        MultiVectorPtr getAssembledBasis() const;
+        
+        bool hasGlobalBasisMatrix() const;
         
         CrsMatrixPtr getGlobalBasisMatrix() const;
-        
-        bool hasAssembledBasis() const;
         
     protected:
         

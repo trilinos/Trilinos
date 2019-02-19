@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -107,7 +107,7 @@ C   --   Uses IS3DIM of /D3NUMS/
       SAVE NFIL
       DATA NFIL   /0/
 
-C ... Open the output file.  
+C ... Open the output file.
       filnam = basenam(:lenstr(basenam)) // '.ray'
       NFIL = NFIL + 1
       IF (NFIL .GT. 1) then
@@ -117,7 +117,7 @@ C ... Open the output file.
       END IF
       open (unit=95, file=filnam(:lnam), form='formatted',
      *  status='unknown')
-      
+
       PI = ATAN2(0.0, -1.0)
 
       xmin = 1.0e38
@@ -126,7 +126,7 @@ C ... Open the output file.
       xmax =-1.0e38
       ymax =-1.0e38
       zmax =-1.0e38
-      
+
       LSTBLK = -999
       DO 100 IX = 1, NXFAC
          IFAC = IXFAC(IX)
@@ -139,7 +139,7 @@ C ... Open the output file.
            lstr = lenstr(string)
            lstblk = ielb
          end if
-         
+
          NNPF = NLNKF(IELB)
          do 90 ilink = 0, nnpf-1
            XPTS(ILINK) = XN(LINKF(IXL+ILINK))

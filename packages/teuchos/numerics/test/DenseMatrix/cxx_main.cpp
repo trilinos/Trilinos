@@ -465,7 +465,7 @@ int main(int argc, char* argv[])
   op_result = (MultTestHugeATimesHugeB != MultTestHugeATimesHugeBExpResult);
   if (verbose) {
 	std::cout << "operator!= -- results -- small != huge "<< (op_result == true ? "successful" : "failed" )<<std::endl;
-	std::cout << std::endl; MultTestHugeATimesHugeB.print(std::cout); std::cout << std::endl;
+	std::cout << std::endl<< MultTestHugeATimesHugeB << std::endl;
   	//These won't work unless boundschecking is enabled.
   	//std::cout << MultTestHugeATimesHugeB(100, 1) << std::endl;
   	//std::cout << MultTestHugeATimesHugeB(1, 100) << std::endl;

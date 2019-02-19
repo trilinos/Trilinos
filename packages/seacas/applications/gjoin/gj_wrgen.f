@@ -1,23 +1,23 @@
 C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C $Id: wrgen.f,v 1.12 2006/03/20 18:38:37 gdsjaar Exp $
 C=======================================================================
@@ -84,7 +84,7 @@ C   --   KLTESS - IN - index of LTEESS; the elements for all sets
 C   --   KFACSS - IN - index of FACESS; the distribution factors for all sets
 C   --   NAMELB - IN - the names of the element blocks
 C   --   L64BIT - IN - true if use 64-bit integer output database
-      
+
       include 'exodusII.inc'
       include 'gj_params.blk'
 
@@ -95,7 +95,7 @@ C   --   L64BIT - IN - true if use 64-bit integer output database
       character*(MXLNLN) infrec(MAXINF)
       character*(MXSTLN) nameco(6), namelb(*)
       LOGICAL            l64bit, NC4
-      
+
 C      --QAREC - the QA records
 C      --INFREC - the information records
       integer cpuws,wsout
@@ -156,7 +156,7 @@ C   --Write the info records
             lnpsdl = lnpsdl + ia(kansdf+i-1)
  90      continue
       end if
-      
+
       IDUM = 0
       CALL DBPINI ('NTIS', idexo, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &   NUMNPS, LNPSNL, lnpsdl, NUMESS, LESSEL, LESSDL,
@@ -208,12 +208,12 @@ C   --Write element side sets
           goto 150
         endif
       endif
-      
+
 C   --Write the element blocks
 
 C        Write concatenated element block parameters
       call expclb (idexo, ia(kidelb), namelb,
-     &  ia(knelb), ia(knlnk), ia(knatr), .FALSE., ierr) 
+     &  ia(knelb), ia(knlnk), ia(knatr), .FALSE., ierr)
       if (ierr .lt. 0) then
         call exerr('gjoin2', 'Error from expclb', exlmsg)
         goto 150
@@ -227,7 +227,7 @@ C        Write concatenated element block parameters
 C        Write block attributes
 
          if (ia(knatr+ielb-1) .gt. 0) then
-            call expeat (idexo, ia(kidelb+ielb-1), a(ioff), ierr) 
+            call expeat (idexo, ia(kidelb+ielb-1), a(ioff), ierr)
             if (ierr .lt. 0) then
                call exerr ('gjoin2', 'Error from expeat', exlmsg)
                goto 150
@@ -252,6 +252,6 @@ C        skipping null element blocks
  100  continue
 
  150  call exclos (idexo, ierr)
-      
+
       RETURN
       END

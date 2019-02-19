@@ -1,23 +1,23 @@
 C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C     -*- Mode: fortran -*-
 C=======================================================================
@@ -39,7 +39,7 @@ C     $Id: irennp.f,v 1.1 1999/01/18 19:21:22 gdsjaar Exp $
      &     RENNP, MATNS1, MATNS2, TOLER, CLOSE, MATMAT,
      $     XSCL, YSCL, ZSCL, XOFF, YOFF, ZOFF, NDIM, IEXPCT)
 C=======================================================================
- 
+
 C     --*** IRENNP *** (GJOIN) Input node renumber information from user
 C     --   Written by Amy Gilkey - revised 02/23/88
 C     --
@@ -60,16 +60,16 @@ C     --   MATNS1 - OUT - the number of the first nodal point set
 C     --   MATNS2 - OUT - the number of the second nodal point set
 C     --   TOLER - OUT - tolerance to be used for equivalencing
 C     --   CLOSE - OUT - true if match closest node on equivalence
-C                        (This is now default, cannot be turned off)      
- 
+C                        (This is now default, cannot be turned off)
+
       PARAMETER (MAXFLD = 10)
- 
+
       include 'gj_filnum.blk'
       include 'gj_xyzrot.blk'
       DIMENSION A(*)
       INTEGER IDNPS(*), NNNPS(*)
       LOGICAL RENNP, CLOSE, MATMAT
- 
+
       CHARACTER*8 REPLY
       INTEGER     INTYP(MAXFLD+1)
       CHARACTER*8 CFIELD(MAXFLD), WORD
@@ -78,7 +78,7 @@ C                        (This is now default, cannot be turned off)
       CHARACTER*132 INPUT
 
       LOGICAL ONSET, MATSTR, FFEXST
- 
+
       ROT3D   = .FALSE.
       CALL INIREA (3,   0.0, ROTCEN)
       CALL INIREA (3*3, 0.0, ROTMAT)
@@ -103,17 +103,17 @@ C                        (This is now default, cannot be turned off)
       WRITE (*, *)
       CALL GETINP (0,0,'Equivalence or Command (Enter HELP for info)? ',
      *  INPUT, IOSTAT)
-      
-C ... Handle commented lines      
+
+C ... Handle commented lines
       IF (INPUT(1:1) .EQ. '$') goto 110
-        
+
       IDCONT = 0
-      CALL FFISTR(INPUT, MAXFLD, IDCONT, 
+      CALL FFISTR(INPUT, MAXFLD, IDCONT,
      *  NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
- 
+
       CALL OUTLOG (KLOG, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
- 
+
 C     -- Valid Commands:
 C     NO
 C     EQUIVALENCE
@@ -123,11 +123,11 @@ C     LIST
 C     MIRROR
 C     OFFSET
 C     SHIFT
- 
+
       REPLY = CFIELD(1)
       IF (REPLY(1:1) .EQ. ' ') REPLY = 'NO'
       CALL EXUPCS (REPLY)
- 
+
       IF (MATSTR(REPLY, 'HELP', 1)) THEN
          write (*, 10000)
 10000    FORMAT (/,' Valid Commands:',/,4X,
@@ -196,13 +196,13 @@ C     SHIFT
             END IF
             GOTO 120
          END IF
- 
+
   130    CONTINUE
          go to 110
       ELSE IF (matstr(reply, 'REVOLVE', 4)) THEN
          ifld = 2
          DEGANG = ATAN2(0.0, -1.0) / 180.0
- 
+
   140    CONTINUE
          IF (FFEXST (IFLD, INTYP)) THEN
             CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -233,7 +233,7 @@ C     SHIFT
             END IF
             GOTO 140
          END IF
- 
+
   160    CONTINUE
          go to 110
       ELSE IF (matstr(reply, 'REVCEN', 4)) THEN
@@ -245,7 +245,7 @@ C     SHIFT
          IF (NDIM .EQ. 3) CALL FFREAL (IFLD, INTYP, RFIELD,
      &        'Z revolution center', 0.0, ROTCEN(3), *170)
          IF (NDIM .EQ. 2) ROTCEN(3) = 0.0
- 
+
   170    CONTINUE
          go to 110
       else IF (matstr(reply, 'OFFSET', 1) .OR.
@@ -254,7 +254,7 @@ C     SHIFT
 C     ... Originally offset just asked for NDIM values.  It was changed
 C     to go by axis type (OFFSET Y 1.0). We do maintain compatibility
 C     and check for both types of input.
- 
+
          RMULT = 0.0
 C         IF (INTYP(IFLD) .EQ. 0) THEN
 C        Check if character field has 'X','Y', or 'Z'
@@ -317,7 +317,7 @@ C     ... Set for cumulative offsets/shifts
 C     ------------------------------ SCALE -----------------------------
       else IF (matstr(reply, 'SCALE', 2)) THEN
          ifld = 2
- 
+
          IF (INTYP(IFLD) .EQ. 0) THEN
   200       CONTINUE
             IF (FFEXST (IFLD, INTYP)) THEN
@@ -380,29 +380,29 @@ C     ------------------------------ EXPECT -----------------------------
      $        'Valid Response: Yes, No, COMbine, EQUivalence')
          GO TO 110
       END IF
- 
+
       IF (IOSTAT .LT. 0) GOTO 240
- 
+
       MATNS1 = 0
       MATNS2 = 0
       TOLER  = -999.0
- 
+
 C     ... Parse Command lines:
 C     EQUIVALENCE [NS1 NS2] TOLER [CLOSEST|MATERIAL]
- 
+
       IF (RENNP .AND. (NNPS1 .GT. 0) .AND. (NNPS2 .GT. 0)) THEN
          IF (NUMFLD .EQ. 2) THEN
- 
+
 C     ... 'EQUIV' TOLER
             TOLER   = RFIELD(2)
- 
+
          ELSE IF (NUMFLD .EQ. 3 .AND. INTYP(3) .NE. 0) THEN
- 
+
 C     ... 'EQUIV' NS1 NS1
             ONSET   = .TRUE.
- 
+
          ELSE IF (NUMFLD .EQ. 3 .AND. INTYP(3) .EQ. 0) THEN
- 
+
 C     ... 'EQUIV' TOLER 'CLOSEST' | 'MATERIAL'
             TOLER = RFIELD(2)
             IF (MATSTR(CFIELD(3),'CLOSEST',1)) THEN
@@ -413,10 +413,10 @@ C     ... 'EQUIV' TOLER 'CLOSEST' | 'MATERIAL'
                CALL PRTERR ('CMDWARN',
      $              'Unrecognized EQUIV Option: '//CFIELD(3))
             END IF
- 
+
          ELSE IF (NUMFLD .EQ. 4 .and.
      $           intyp(3) .eq. 0 .and. intyp(4) .eq. 0) THEN
- 
+
 C     ... 'EQUIV' TOLER 'CLOSEST' 'MATERIAL'
             onset   = .FALSE.
             TOLER = RFIELD(2)
@@ -424,15 +424,15 @@ C     ... 'EQUIV' TOLER 'CLOSEST' 'MATERIAL'
             IF (MATSTR(CFIELD(3),'MATERIAL',1)) MATMAT  = .TRUE.
             IF (MATSTR(CFIELD(4),'CLOSEST',1))  CLOSE = .TRUE.
             IF (MATSTR(CFIELD(4),'MATERIAL',1)) MATMAT  = .TRUE.
- 
+
          ELSE IF (NUMFLD .EQ. 4 .and.
      $           intyp(3) .ne. 0 .and. intyp(4) .ne. 0) THEN
 C     ... 'EQUIV' NS1 NS2 TOLER
             ONSET   = .TRUE.
             TOLER   = RFIELD(4)
- 
+
          ELSE IF (NUMFLD .GE. 5) THEN
- 
+
 C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
             ONSET   = .TRUE.
             TOLER   = RFIELD(4)
@@ -447,7 +447,7 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
      *           'Should a nodal point set match be done? ',
      *           MAXFLD, IOSTAT, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
             CALL OUTLOG (KLOG, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
- 
+
             REPLY = CFIELD(1)
             CALL EXUPCS (REPLY)
             ONSET = (REPLY(1:1) .EQ. 'Y')
@@ -458,10 +458,10 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
             write (*,*)
      $           'EQUIV [nset1 nset2] toler [material]'
          END IF
- 
+
          IF (ONSET) THEN
             CALL PRTNPS (A(KISTA), NNPS1, NNPS2, IDNPS, NNNPS, A(KISCR))
- 
+
   220       CONTINUE
             IF (NUMFLD .GE. 3) THEN
                IFLD = 2
@@ -475,7 +475,7 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
                IF (IOSTAT .LT. 0) GOTO 240
                IF (NUMFLD .EQ. 0) GOTO 220
                CALL OUTLOG (KLOG, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
- 
+
                INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
                IFLD = 1
             END IF
@@ -496,7 +496,7 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
             IX2 = NNPS1 + IX2
             MATNS1 = IX1
             MATNS2 = IX2
- 
+
          END IF
       ELSE IF (NUMFLD .GE. 2) THEN
          TOLER = RFIELD(2)
@@ -518,6 +518,6 @@ C     ... 'EQUIV' NS1 NS2 TOLER 'CLOSEST'|'MATERIAL'
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) CALL MEMERR
       end if
- 
+
       RETURN
       END

@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -67,7 +67,7 @@ C
             Y0 = COORD(I,2)
             Z0 = COORD(I,3)
             IF (X0 .GE. P1(1) .AND. X0 .LE. P1(2) .AND.
-     *          Y0 .GE. P1(3) .AND. Y0 .LE. P1(4) .AND. 
+     *          Y0 .GE. P1(3) .AND. Y0 .LE. P1(4) .AND.
      *          Z0 .GE. P1(5) .AND. Z0 .LE. P1(6)) THEN
                SELECT(I) = .TRUE.
                INUM = INUM + 1
@@ -78,7 +78,7 @@ C
       END IF
 
       IF (INUM .EQ. 0) THEN
-         CALL PRTERR ('WARNING', 
+         CALL PRTERR ('WARNING',
      *        'No '// NODEL(:LENSTR(NODEL))//' found in range.')
       ELSE
          WRITE (STRTMP, 100) INUM, NODEL

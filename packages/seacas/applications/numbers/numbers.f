@@ -1,23 +1,23 @@
 C Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -150,7 +150,7 @@ C
       end if
 
       CALL DBPINI ('TIS', NDB, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
-     *  NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL, LESSDF, 
+     *  NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, LESSNL, LESSDF,
      *  0, 0, 0, DBNAME(:LNAM))
 
       AXI    = .TRUE.
@@ -159,7 +159,7 @@ C
 C
       CALL MDRSRV ('CRD', IR, NUMNP*NDIM)
       IRX = IR
-      IRY = IR + NUMNP 
+      IRY = IR + NUMNP
       IRZ = IR + 2 * NUMNP
 
       CALL MDRSRV ('MAT',  IM, 6*NELBLK)
@@ -183,15 +183,15 @@ C
 
 C ... Scratch space for block info
 
-      CALL MDRSRV ('IDELB',  IDELB,  NELBLK) 
-      CALL MDRSRV ('NUMELB', NUMELB, NELBLK) 
-      CALL MDRSRV ('NUMLNK', NUMLNK, NELBLK) 
-      CALL MDRSRV ('NUMATR', NUMATR, NELBLK) 
+      CALL MDRSRV ('IDELB',  IDELB,  NELBLK)
+      CALL MDRSRV ('NUMELB', NUMELB, NELBLK)
+      CALL MDRSRV ('NUMLNK', NUMLNK, NELBLK)
+      CALL MDRSRV ('NUMATR', NUMATR, NELBLK)
       CALL MCRSRV ('NAMELB', KNAMEL, MXSTLN*NELBLK)
       CALL MDSTAT (NERRS, NUSED)
       IF (NERRS .GT. 0) GO TO 55
 
-      CALL DBIELB (NDB, 'HIC', 1, NELBLK, IA(IDELB), IA(NUMELB), 
+      CALL DBIELB (NDB, 'HIC', 1, NELBLK, IA(IDELB), IA(NUMELB),
      *  IA(NUMLNK), IA(NUMATR), A, IA, IX, IDUM, C(KNAMEL), *60)
       CALL TRBLK (IA(IDELB), IA(NUMELB), IA(NUMLNK), IA(IM),
      &  NELBLK, NNODES)
@@ -208,7 +208,7 @@ C    INS1 = IDNPS  (NUMNPS) NODAL POINT SET IDS
 C    INS2 = NNNPS  (NUMNPS) NODAL POINT SET COUNTS
 C    INS3 = IPTNPS (NUMNPS) NODAL POINT SET POINTER
 C    INS4 = LSTNPS (LNPSNL) NODAL POINT SET NODE LIST
-C    INS5 = FACNPS (LNPSNL) NODAL POINT DISTRIBUTION FACTORS 
+C    INS5 = FACNPS (LNPSNL) NODAL POINT DISTRIBUTION FACTORS
 C
 C -- Element Side Sets:
 C    IBC1 = IDESS  (NUMESS) ELEMENT SIDE SET IDS
@@ -220,13 +220,13 @@ C    IBC6 = LTEESS (LESSEL) ELEMENT SIDE SET ELEMENT LIST
 C    IBC7 = LTNESS (LESSNL) ELEMENT SIDE SET NODE    LIST
 C    IBC8 = FACESS (LESSNL) ELEMENT SIDE SET DISTRIBUTION FACTORS
 C
-      CALL MDRSRV ('IDNPS',  INS1, NUMNPS) 
-      CALL MDRSRV ('NNNPS',  INS2, NUMNPS) 
+      CALL MDRSRV ('IDNPS',  INS1, NUMNPS)
+      CALL MDRSRV ('NNNPS',  INS2, NUMNPS)
       CALL MDRSRV ('NDNPS',  INS6, NUMNPS)
-      CALL MDRSRV ('IPTNPS', INS3, NUMNPS) 
+      CALL MDRSRV ('IPTNPS', INS3, NUMNPS)
       CALL MDRSRV ('IPTNDS', INS7, NUMNPS)
-      CALL MDRSRV ('LSTNPS', INS4, LNPSNL) 
-      CALL MDRSRV ('FACNPS', INS5, LNPSNL) 
+      CALL MDRSRV ('LSTNPS', INS4, LNPSNL)
+      CALL MDRSRV ('FACNPS', INS5, LNPSNL)
 
       CALL MDRSRV ('IDESS',  IBC1, NUMESS)
       CALL MDRSRV ('NEESS',  IBC2, NUMESS)
@@ -253,34 +253,34 @@ C
       if (numess .gt. 0) then
         call exgcss(ndb, a(ibc1), a(ibc2), a(ibc11), a(ibc4),
      *    a(ibc9), A(ibc6), a(ibc10), a(ibc8), ierr)
-c     ... Now convert sides to nodes.... 
+c     ... Now convert sides to nodes....
 C     ... This code stolen from ex2ex1v2, Vic Yarberry
 C     offset into element list for current side set
         isoff = 0
 C     node count for current side set
         nodcnt = 0
         do 104 i=0,numess-1
-C     update index array            
+C     update index array
           ia(ibc5+i)=nodcnt+1
-C     get num of sides & df            
+C     get num of sides & df
           call exgsp(ndb,ia(ibc1+i),nsess,ndess,nerr)
-          
+
 C     get side set nodes
           if (nsess .gt. 0) then
             call exgssn(ndb,ia(ibc1+i),ia(kltnnn+isoff),
-     &        ia(ibc7+nodcnt),nerr) 
+     &        ia(ibc7+nodcnt),nerr)
             if (nerr .gt. 0) goto 60
           end if
           nness = 0
 C     sum node counts to calculate next index
-          do 102 ii=0,nsess-1 
+          do 102 ii=0,nsess-1
             nness=nness+ia(kltnnn+isoff+ii)
  102      continue
           ia(ibc3+i)=nness
           nodcnt=nodcnt+nness
           isoff=isoff+nsess
  104    continue
-        
+
         if (ierr .ne. 0) go to 60
       end if
 
@@ -312,7 +312,7 @@ C     ... Wrapper to get info record the right length
       ixgv = 1
       ixnv = ixgv + nvargl
       ixev = ixnv + nvarnp
-      
+
       if (nvargl .gt. 0) then
         call exgvan(ndb, 'G', nvargl, names(ixgv), ierr)
       end if
@@ -334,19 +334,19 @@ C ... Read truth table
         call exgvtt (ndb, nelblk, nvarel, ia(iisev), ierr)
         CALL DBPNAM ('*', NVARGL, NVARNP, NVAREL,
      *    NAMES(IXGV), NAMES(IXNV), NAMES(IXEV))
-        
+
 C     --Read the database time steps
 c     determine how many time steps are stored
         call exinq (ndb, EXTIMS, NSTEP, rdum, cdum, ierr)
         call mdrsrv('TIMES', ITIME, max(NSTEP,1))
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 55
-        
+
 c     read time values at all time steps
         if (nstep .gt. 0) then
-          call exgatm (ndb, a(itime), ierr)      
+          call exgatm (ndb, a(itime), ierr)
         end if
-        
+
         CALL DBPTIM ('NM', NSTEP, A(ITIME))
         CALL FNDDIS (NAMECO, NAMES(IXNV), ISDIS, NDIM, NVARNP,
      *    NDISP(1), NDISP(2), NDISP(3))
@@ -368,8 +368,8 @@ C ... CALCULATE ELEMENT CENTROIDS FOR LATER USE
 
       CALL ELCENT ( A(IECEN), A(IX), A(IR), NDIM, NUMEL, NNODES, NUMNP)
       CALL HEADER (NDIM, TITLE, NUMEL, NUMNP, AXI, DBNAME(:LNAM))
-      CALL COMMAND (A, IA, TITLE, A(ITIME), A(ITSEL), A(IM), 
-     *  A(IDSP), A(IR), A(IX), A(ID), A(IW), A(IISEV), 
+      CALL COMMAND (A, IA, TITLE, A(ITIME), A(ITSEL), A(IM),
+     *  A(IDSP), A(IR), A(IX), A(ID), A(IW), A(IISEV),
      *  NAMES(IXGV), NAMES(IXNV), NAMES(IXEV),
      *  NQAREC, C(KQAREC), NINFO, C(KINFO), DBNAME(:LNAM))
       GO TO 60
