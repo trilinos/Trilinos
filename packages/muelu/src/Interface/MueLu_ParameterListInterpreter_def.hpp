@@ -1,4 +1,3 @@
-
 //
 // ***********************************************************************
 //
@@ -1187,6 +1186,12 @@ namespace MueLu {
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         if(useCoordinates_)         manager.SetFactory("Coordinates", coords);
         if(useMaterialCoordinates_) manager.SetFactory("Material Coordinates", coords);
+
+        if(useMaterialCoordinates_) {
+          ParameterList xferParams;
+          xferParams.set("aggregation material",true);
+          coords->SetParameterList(xferParams);
+        }
 
         auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
         if (!RAP.is_null()) {
