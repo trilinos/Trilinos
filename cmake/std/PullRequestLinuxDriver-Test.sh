@@ -295,7 +295,20 @@ else
     echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
 
+# Set the Pull Request CDash Track. 
+# Defaults to "Pull Request" if the parameter PULLREQUEST_CDASH_TRACK does not exist or is empty
 CDASH_TRACK="Pull Request"
+
+echo -e ">>> PULLREQUEST_CDASH_TRACK = ${PULLREQUEST_CDASH_TRACK}"
+
+# If PULLREQUEST_CDASH_TRACK is set and nonzero
+if [ ! -z ${PULLREQUEST_CDASH_TRACK} ]; then
+    CDASH_TRACK=${PULLREQUEST_CDASH_TRACK:?}
+    echo -e ">>> PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK=${PULLREQUEST_CDASH_TRACK:?}"
+else
+    echo -e ">>> PULLREQUEST_CDASH_TRACK isn't set, using default value"
+fi
+
 echo -e "CDash Track = ${CDASH_TRACK:?}"
 
 
