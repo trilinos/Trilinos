@@ -507,7 +507,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           }
 #endif
           if(!material.is_null()) mueluList.sublist("user data").set<RCP<Vector> >("Material Coordinates",material);
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, nullspace);
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList);
         }
       }
 #ifdef HAVE_MUELU_CUDA
