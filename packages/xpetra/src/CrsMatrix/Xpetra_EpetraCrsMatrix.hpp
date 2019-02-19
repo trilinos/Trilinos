@@ -2081,7 +2081,7 @@ public:
 
   }
 
-  void setObjectLabel( const std::string &objectLabel ) { mtx_->SetLabel(objectLabel.c_str());}}
+  void setObjectLabel( const std::string &objectLabel ) { mtx_->SetLabel(objectLabel.c_str());}
   //@}
 
   //! Deep copy constructor
