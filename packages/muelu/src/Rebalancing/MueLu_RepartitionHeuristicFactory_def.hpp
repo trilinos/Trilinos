@@ -139,8 +139,12 @@ namespace MueLu {
     if (targetRowsPerProcess == 0)
       targetRowsPerProcess = minRowsPerProcess;
 
+    // Stick this on the level so Zoltan2Interface can use this later
+    Set<LO>(currentLevel,"repartition: heuristic target rows per process",targetRowsPerProcess);
+
     // Check for validity of the node repartition option
     TEUCHOS_TEST_FOR_EXCEPTION(nodeRepartLevel >= startLevel, Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): If 'repartition: node repartition level' is set, it must be less than or equal to 'repartition: start level'");
+
 
     RCP<const FactoryBase> Afact = GetFactory("A");
     if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
