@@ -71,6 +71,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("CoarseMap",                    Teuchos::null, "Generating factory of the coarse map");
     validParamList->set<bool>                   ("structured aggregation",       false, "Flag specifying that the geometric data is transferred for StructuredAggregationFactory");
     validParamList->set<bool>                   ("aggregation coupled",          false, "Flag specifying if the aggregation algorithm was used in coupled mode.");
+    validParamList->set<bool>                   ("aggregation material",         false, "Flag specifying if the aggregation algorithm was used in material mode.");
     validParamList->set<bool>                   ("Geometric",                    false, "Flag specifying that the coordinates are transferred for GeneralGeometricPFactory");
     validParamList->set<RCP<const FactoryBase> >("coarseCoordinates",            Teuchos::null, "Factory for coarse coordinates generation");
     validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",           Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
@@ -90,6 +91,7 @@ namespace MueLu {
     static bool isAvailableCoords = false;
 
     const ParameterList& pL = GetParameterList();
+
     if(pL.get<bool>("structured aggregation") == true) {
       if(pL.get<bool>("aggregation coupled") == true) {
         Input(fineLevel, "gCoarseNodesPerDim");
@@ -108,6 +110,8 @@ namespace MueLu {
         Input(fineLevel, "Coordinates");
         Input(fineLevel, "Aggregates");
         Input(fineLevel, "CoarseMap");
+        if(pL.get<bool>("aggregation material") == true) 
+          Input(fineLevel, "Material Coordinates");        
       }
     }
     if(pL.get<bool>("hybrid aggregation") == true) {
@@ -125,7 +129,6 @@ namespace MueLu {
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> CoordinateMultiVectorFactory;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
-
     int numDimensions;
     RCP<CoordinateMultiVector> coarseCoords;
     RCP<CoordinateMultiVector> fineCoords;
@@ -169,7 +172,8 @@ namespace MueLu {
       coarseCoords    = TransferCoords<CoordinateMultiVector,CoordinateMultiVectorFactory>(fineLevel,fineCoords);
       Set<RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
       
-      if(fineLevel.IsAvailable("Material Coordinates")) {
+      if(pL.get<bool>("aggregation material") == true) {
+        GetOStream(Runtime0) << "Transferring material coordinates" << std::endl;
         RCP<Vector> fineMatCoords    = Get<RCP<Vector> >(fineLevel,"Material Coordinates");
         RCP<Vector> coarseMatCoords  = TransferCoords<Vector,VectorFactory>(fineLevel,fineMatCoords);
         Set<RCP<Vector> >(coarseLevel, "Material Coordinates", coarseMatCoords);
