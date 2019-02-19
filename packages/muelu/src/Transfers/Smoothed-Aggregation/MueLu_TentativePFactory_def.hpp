@@ -140,6 +140,8 @@ namespace MueLu {
     typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> CoordinateMultiVector;
     typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> CoordinateMultiVectorFactory;
 
+    //    fineLevel->print(std::cout,Debug);//CMS
+
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
     RCP<AmalgamationInfo>      amalgInfo     = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");

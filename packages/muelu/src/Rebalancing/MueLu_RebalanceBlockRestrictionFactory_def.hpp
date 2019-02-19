@@ -120,8 +120,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
-
-
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   Teuchos::RCP<Matrix> originalTransferOp = Teuchos::null;

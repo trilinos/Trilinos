@@ -370,7 +370,6 @@ namespace MueLu {
       }
     }
 
-    // If we're running BlockedCrs we should chop up the newRowMap into a newBlockedRowMap here (and do likewise for importers)
     if(!blockedRowMap.is_null()) {
       SubFactoryMonitor m1(*this, "Blocking newRowMap and Importer", currentLevel);
       RCP<const BlockedMap> blockedTargetMap = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GeneratedBlockedTargetMap(*blockedRowMap,*rowMapImporter);
