@@ -1253,7 +1253,8 @@ namespace Xpetra {
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
           if(getMatrix(r,c)!=Teuchos::null) {
-            getMatrix(r,c)->setObjectLabel(objectLabel);
+            std::ostringstream oss; oss<< objectLabel << "(" << r << "," << c << ")";
+            getMatrix(r,c)->setObjectLabel(oss.str);
           }
         }   
     }
