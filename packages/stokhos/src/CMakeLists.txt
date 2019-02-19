@@ -623,6 +623,7 @@ IF (Stokhos_ENABLE_Sacado)
         Details::getDiagCopyWithoutOffsets
         Details::packCrsMatrix
         Details::unpackCrsMatrixAndCombine
+        replaceDiagonalCrsMatrix
         )
       SET(TPETRAEXT_ETI_CLASSES
         MatrixMatrix

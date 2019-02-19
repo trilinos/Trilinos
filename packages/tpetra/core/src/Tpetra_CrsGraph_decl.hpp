@@ -71,6 +71,11 @@
 
 namespace Tpetra {
 
+
+  // Forward declaration for CrsGraph::swap() test
+  template<class LocalOrdinal, class GlobalOrdinal, class Node> class crsGraph_Swap_Tester;
+
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
     // Forward declaration of an implementation detail of CrsGraph::clone.
@@ -81,7 +86,8 @@ namespace Tpetra {
       clone (const InputCrsGraphType& graphIn,
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-    };
+    };  // class CrsGraphCopier
+
     template<class LO, class GO, class NT>
     void
     unpackCrsGraphAndCombine(
@@ -195,7 +201,7 @@ namespace Tpetra {
       virtual bool isUpperTriangularImpl () const = 0;
       virtual size_t getGlobalNumDiagsImpl () const = 0;
       virtual global_size_t getNodeNumDiagsImpl () const = 0;
-    };
+    };  // class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   } // namespace Details
 
   /// \class CrsGraph
@@ -606,12 +612,6 @@ namespace Tpetra {
     virtual ~CrsGraph () = default;
 
 
-    /// \brief Swaps the data from *this with the data and maps from graph
-    ///
-    /// \param graph [in/out] a crsGraph
-    void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
-
-
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
     /// This performs _exact_ matches on objects with in the graphs. That is,
@@ -619,7 +619,7 @@ namespace Tpetra {
     /// content and order. This is not performing any sort of isomorphic
     /// search.
     ///
-    /// \param graph [in] a crsGraph to compare against this one.
+    /// \param graph [in] a CrsGraph to compare against this one.
     ///
     /// \return True if the other CrsGraph's data structure is identical to this
     ///         CrsGraph.
@@ -2116,7 +2116,10 @@ namespace Tpetra {
                            LocalOrdinal& capacity,
                            const RowInfo& rowInfo) const;
 
+
   public:
+
+
     /// \brief Get the local graph.
     ///
     /// \warning THIS IS AN EXPERT MODE FUNCTION.  THIS IS AN
@@ -2126,11 +2129,23 @@ namespace Tpetra {
     /// (global) graph is fill complete.
     local_graph_type getLocalGraph () const;
 
+
   protected:
+
+
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Throw an exception if the internal state is not consistent.
     void checkInternalState () const;
+
+    /// \brief Swaps the data from *this with the data and maps from graph.
+    ///
+    /// \param graph [in/out] a crsGraph
+    void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
+
+    // Friend the tester for CrsGraph::swap
+    friend class Tpetra::crsGraph_Swap_Tester<LocalOrdinal, GlobalOrdinal, Node>;
+
 
     //! The Map describing the distribution of rows of the graph.
     Teuchos::RCP<const map_type> rowMap_;
@@ -3060,7 +3075,7 @@ namespace Tpetra {
         }
         return clonedGraph;
       }
-    };
+    };  // class CrsGraphCopier
 
   } // namespace Details
 } // namespace Tpetra

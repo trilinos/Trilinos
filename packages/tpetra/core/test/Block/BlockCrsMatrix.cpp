@@ -1360,7 +1360,6 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     out << "Creating mesh row Map" << endl;

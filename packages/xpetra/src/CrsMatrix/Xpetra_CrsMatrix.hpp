@@ -218,6 +218,9 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
 
+    //! Replace the diagonal entries of the matrix
+    virtual void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) = 0;
+
     //! Left scale matrix using the given vector entries
     virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
