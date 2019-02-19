@@ -189,6 +189,7 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // prolongation factory is in prolongation mode
+      if(!finalP.is_null()) {std::ostringstream oss; oss << "P_" << coarseLevel.GetLevelID(); finalP->setObjectLabel(oss.str());}
       Set(coarseLevel, "P", finalP);
 
       // NOTE: EXPERIMENTAL
@@ -199,6 +200,7 @@ namespace MueLu {
       // prolongation factory is in restriction mode
       RCP<Matrix> R = Utilities_kokkos::Transpose(*finalP, true);
       Set(coarseLevel, "R", R);
+      if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
 
       // NOTE: EXPERIMENTAL
       if (Ptent->IsView("stridedMaps"))
