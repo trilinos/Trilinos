@@ -99,3 +99,6 @@
 
 /* Define to rpl_malloc if the replacement function should be used. */
 #cmakedefine malloc
+
+/* Define if want to build with Epetra support. */
+#cmakedefine HAVE_TRIUTILS_EPETRA

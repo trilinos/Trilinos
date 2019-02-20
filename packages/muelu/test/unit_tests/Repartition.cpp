@@ -46,6 +46,7 @@
 #include <vector>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -1007,6 +1008,90 @@ namespace MueLuTests {
 
   } // CoordinateMap
 
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, NodePartition, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#   if !defined(MUELU_HAVE_AMESOS) || !defined(MUELU_HAVE_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(MUELU_HAVE_AMESOS2) || !defined(MUELU_HAVE_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+   
+
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests that node repartitioning works " << std::endl;
+    out << std::endl;
+
+    //FIXME JJH this is a hack until I can figure out why this test won't pass for Scalar=complex
+    std::string scalarName = Teuchos::ScalarTraits<Scalar>::name();
+    out << "scalar type = " << scalarName << std::endl;
+    if (scalarName.find("complex") != std::string::npos) {
+      out << "Skipping Test for SC=complex" << std::endl;
+      return;
+    }
+
+ 
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
+
+    // Create a matrix and coordinates.
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GlobalOrdinal nx = 20, ny = 20;
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+
+    // build coordinates 
+    RCP<mv_type_double> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LocalOrdinal,GlobalOrdinal,Map,mv_type_double>("2D", map, galeriList);
+
+    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("bottom boundary", "Neumann");
+    galeriList.set("top boundary"   , "Neumann");
+    galeriList.set("front boundary" , "Neumann");
+    galeriList.set("back boundary"  , "Neumann");
+    galeriList.set("keepBCs",             false);
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, galeriList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+
+    // Generate the node-level communicator
+    Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
+    int NodeId = comm->getRank();
+    nodeComm = MueLu::GenerateNodeComm(comm,NodeId,1);
+
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast("testCoordinates.xml", Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+    paramList.set("repartition: node repartition level",1);
+    paramList.set("repartition: start level",2);
+    //    paramList.sublist("user data").set("Node Comm",nodeComm);
+    paramList.set("verbosity","high");
+    RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(paramList));
+ 
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->GetLevel(0)->Set("A", A);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    H->GetLevel(0)->Set("Node Comm", nodeComm);
+    mueLuFactory->SetupHierarchy(*H);
+
+    
+
+
+  } // NodePartition
+
+
+
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,Constructor,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,Build,Scalar,LO,GO,Node) \
@@ -1016,7 +1101,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement4,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,DeterminePartitionPlacement5,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,Correctness,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,CoordinateMap,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,CoordinateMap,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition,NodePartition,Scalar,LO,GO,Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 

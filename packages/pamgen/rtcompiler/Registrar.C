@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <math.h>
 #include <cstdlib>
 
@@ -252,6 +253,8 @@ void Registrar::setupStandardFunctions()
     static Gamma     f27; FUNCTIONS[f27.name()] = &f27;
     static Print     f28; FUNCTIONS[f28.name()] = &f28;
     static GeneralizedCompleteEllipticIntegral      f29; FUNCTIONS[f29.name()] = &f29;
+    static Readline  f30; FUNCTIONS[f30.name()] = &f30;
+    static Scanf     f31; FUNCTIONS[f31.name()] = &f31;
     ISINIT = true;
   }
 }
@@ -519,4 +522,81 @@ double GeneralizedCompleteEllipticIntegral::execute(Value** args)
 #else
   return 0;
 #endif
+}
+
+/*****************************************************************************/
+double Readline::execute(Value** args)
+/*****************************************************************************/
+{
+  //arguments to read should be a character arrays
+  assert(args[0]->getObjectType() == ArrayNumberOT);
+  assert(args[0]->getType() == CharT);
+
+  assert(args[1]->getObjectType() == ArrayVarOT);
+  assert(args[1]->getType() == CharT);
+
+  string filename = "";
+  for (long i = 0; i < args[0]->getSize(); ++i) {
+    char c = (char) args[0]->getArrayValue(i);
+    if (c != '"') {
+      filename += c;
+    }
+  }
+
+  static string curr_filename("");
+  static ifstream curr_file;
+
+  if (curr_filename != filename || curr_file.eof()) {
+    curr_filename = filename;
+    if (curr_file.is_open()) {
+      curr_file.close();
+    }
+    curr_file.open(filename);
+  }
+
+  string line;
+  if (getline(curr_file, line)) {
+    assert(args[1]->getSize() > line.size()); // buffer needs to be big enough
+    for (size_t i = 0; i < line.size(); ++i) {
+      args[1]->setArrayValue(line[i], i);
+    }
+    args[1]->setArrayValue(0, line.size()); // Null terminate
+
+    return line.size();
+  }
+  else {
+    return -1;
+  }
+}
+
+/*****************************************************************************/
+double Scanf::execute(Value** args)
+/*****************************************************************************/
+{
+  //first argument to scanf should be a character array
+  assert(args[0]->getObjectType() == ArrayNumberOT || args[0]->getObjectType() == ArrayVarOT);
+  assert(args[0]->getType() == CharT);
+  assert(_numArgs < 22);
+
+  string format = "";
+
+  for (int i = 1; i < _numArgs; ++i) {
+    format += "%lf";
+  }
+
+  string data = "";
+  for (long i = 0; i < args[0]->getSize(); ++i) {
+    data += (char) args[0]->getArrayValue(i);
+  }
+
+  double d[20];
+
+  sscanf(data.c_str(), format.c_str(), &d[0], &d[1], &d[2], &d[3], &d[4], &d[5], &d[6], &d[7], &d[8], &d[9], &d[9],
+         &d[10], &d[11], &d[12], &d[13], &d[14], &d[15], &d[16], &d[17], &d[18], &d[19]);
+
+  for (int i = 1; i < _numArgs; ++i) {
+    args[i]->setValue(d[i-1]);
+  }
+
+  return _numArgs - 1;
 }

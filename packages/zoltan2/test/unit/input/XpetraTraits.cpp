@@ -169,10 +169,12 @@ int main(int narg, char *arg[])
   // Create object that can give us test Tpetra and Xpetra input.
 
   RCP<UserInputForTests> uinput;
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput =
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -538,26 +540,12 @@ int main(int narg, char *arg[])
   typedef Epetra_MultiVector emvector_t;
   typedef Epetra_BlockMap emap_t;
 
-  // Create object that can give us test Epetra input.
-
-  RCP<UserInputForTests> euinput;
-
-  try{
-    euinput =
-      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
-  }
-  catch(std::exception &e){
-    aok = false;
-    std::cout << e.what() << std::endl;
-  }
-  TEST_FAIL_AND_EXIT(*comm, aok, "epetra input ", 1);
-
   // XpetraTraits<Epetra_CrsMatrix>
   {
     RCP<ematrix_t> M;
 
     try{
-      M = euinput->getUIEpetraCrsMatrix();
+      M = uinput->getUIEpetraCrsMatrix();
     }
     catch(std::exception &e){
       aok = false;
@@ -598,7 +586,7 @@ int main(int narg, char *arg[])
     RCP<egraph_t> G;
 
     try{
-      G = euinput->getUIEpetraCrsGraph();
+      G = uinput->getUIEpetraCrsGraph();
     }
     catch(std::exception &e){
       aok = false;
@@ -639,7 +627,7 @@ int main(int narg, char *arg[])
     RCP<evector_t> V;
 
     try{
-      V = rcp(new Epetra_Vector(euinput->getUIEpetraCrsGraph()->RowMap()));
+      V = rcp(new Epetra_Vector(uinput->getUIEpetraCrsGraph()->RowMap()));
       V->Random();
     }
     catch(std::exception &e){
@@ -682,7 +670,7 @@ int main(int narg, char *arg[])
 
     try{
       MV =
-        rcp(new Epetra_MultiVector(euinput->getUIEpetraCrsGraph()->RowMap(),3));
+        rcp(new Epetra_MultiVector(uinput->getUIEpetraCrsGraph()->RowMap(),3));
       MV->Random();
     }
     catch(std::exception &e){

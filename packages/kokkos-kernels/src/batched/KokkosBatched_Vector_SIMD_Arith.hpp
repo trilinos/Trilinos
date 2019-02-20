@@ -68,7 +68,19 @@ namespace KokkosBatched {
         r_val[i] = a[i] + b[i];
       return r_val;
     }
-        
+    
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+    KOKKOS_FORCEINLINE_FUNCTION 
+    static
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
+    operator + (const Vector<SIMD<double>,2> &a,  const Vector<SIMD<double>,2> &b) {
+      double2 r_val;
+      r_val.x = a.double2().x + b.double2().x;
+      r_val.y = a.double2().y + b.double2().y;
+      return r_val;
+    }
+#endif
+
     template<typename T, int l>
     KOKKOS_FORCEINLINE_FUNCTION
     static 
@@ -238,6 +250,17 @@ namespace KokkosBatched {
       return r_val;
     }
 
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+    KOKKOS_FORCEINLINE_FUNCTION
+    static 
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
+    operator - (const Vector<SIMD<double>,2> &a, const Vector<SIMD<double>,2> &b) {
+      double2 r_val;
+      r_val.x = a.double2().x - b.double2().x;
+      r_val.y = a.double2().y - b.double2().y;
+      return r_val;
+    }
+#endif
 
     template<typename T, int l>
     KOKKOS_FORCEINLINE_FUNCTION
@@ -449,6 +472,18 @@ namespace KokkosBatched {
         r_val[i] = a[i] * b[i];
       return r_val;
     }
+
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+    KOKKOS_FORCEINLINE_FUNCTION
+    static 
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
+    operator * (const Vector<SIMD<double>,2> &a, const Vector<SIMD<double>,2> &b) {
+      double2 r_val;
+      r_val.x = a.double2().x * b.double2().x;
+      r_val.y = a.double2().y * b.double2().y;
+      return r_val;
+    }
+#endif
         
     template<typename T, int l>
     KOKKOS_FORCEINLINE_FUNCTION
@@ -689,6 +724,17 @@ namespace KokkosBatched {
       return r_val;
     }
 
+#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+    KOKKOS_FORCEINLINE_FUNCTION
+    static 
+    KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double,2)
+    operator / (const Vector<SIMD<double>,2> &a, const Vector<SIMD<double>,2> &b) {
+      double2 r_val;
+      r_val.x = a.double2().x / b.double2().x;
+      r_val.y = a.double2().y / b.double2().y;
+      return r_val;
+    }
+#endif
 
     template<typename T, int l>
     KOKKOS_FORCEINLINE_FUNCTION
