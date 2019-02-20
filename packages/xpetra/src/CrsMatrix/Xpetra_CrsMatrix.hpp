@@ -259,6 +259,11 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    virtual void setObjectLabel( const std::string &objectLabel ) =0;
+    //@}
+
     //! @name Xpetra-specific routines
     //@{
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
