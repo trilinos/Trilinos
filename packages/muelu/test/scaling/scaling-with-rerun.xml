@@ -1,5 +1,4 @@
 <ParameterList name="MueLu">
-  <Parameter name="number of reruns"  type="int"  value="3"/>
   <!-- ===========  Run #1 ================ -->
   <ParameterList name="Run1">
     <Parameter     name="tol"       type="double"  value="1e-8"/>
