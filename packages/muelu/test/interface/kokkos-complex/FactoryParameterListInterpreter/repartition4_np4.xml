@@ -51,6 +51,7 @@
       <Parameter name="A"                                           type="string"   value="myRAPFact"/>
       <Parameter name="Coordinates"                                 type="string"   value="myTransferCoordinatesFact"/>
       <Parameter name="number of partitions"                        type="string"   value="myRepartitionHeuristicFact"/>
+      <Parameter name="repartition: heuristic target rows per process" type="string"   value="myRepartitionHeuristicFact"/>
       <ParameterList name="ParameterList">
         <Parameter name="algorithm"                                 type="string"   value="multijagged"/>
       </ParameterList>
