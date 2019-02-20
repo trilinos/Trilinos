@@ -18,3 +18,7 @@ export CUDA_LAUNCH_BLOCKING=1
 # Use manually installed cmake and ninja to try to avoid module loading
 # problems (see TRIL-208)
 export PATH=/ascldap/users/rabartl/install/white-ride/cmake-3.11.2/bin:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
+
+# add the OpenMP environment variable we need
+export OMP_NUM_THREADS=2
+
