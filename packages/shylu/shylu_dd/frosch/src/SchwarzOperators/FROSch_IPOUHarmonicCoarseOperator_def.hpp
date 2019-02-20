@@ -253,14 +253,14 @@ namespace FROSch {
                     {
                         col_vec.at(i) =i;
                     }
-                    std::vector<GO> col1(10);
-                    for(int j = 0;j<10;j++){col1.at(j) = j;}
+                    std::vector<GO> col1(20);
+                    for(int j = 0;j<20;j++){col1.at(j) = j;}
                     
                     Teuchos::ArrayView<GO> cols(col_vec);
                     Teuchos::ArrayView<const GO> col2(col1);
-                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,10,col2,0,this->K_->getMap()->getComm());
+                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,20,col2,0,this->K_->getMap()->getComm());
                    
-                    this->GraphEntriesList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,10);
+                    this->GraphEntriesList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,20);
                     this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),cols,entries());
                     this->GraphEntriesList_->fillComplete();
                     
