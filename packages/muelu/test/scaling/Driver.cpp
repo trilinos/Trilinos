@@ -77,6 +77,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MatrixLoad.hpp>
+#include <DriverCore.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -117,44 +118,8 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
-#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 
-/*********************************************************************/
-// Support for ML interface
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-#include <Xpetra_EpetraOperator.hpp>
-#include <ml_MultiLevelPreconditioner.h>
-
-// Helper functions for compilation purposes
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-struct ML_Wrapper{
-  static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & mlopX) {
-    throw std::runtime_error("Template parameter mismatch");
-  }
-};
-
-
-template<class GlobalOrdinal>
-struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
-  static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& A,Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
-    typedef double SC;
-    typedef int LO;
-    typedef GlobalOrdinal GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
-    Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
-    Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
-#if defined(HAVE_MUELU_BELOS)
-    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
-    mlop = Teuchos::rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
-#endif
-
-    mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
-  }
-};
-#endif
 /*********************************************************************/
 
 #ifdef HAVE_MUELU_TPETRA
@@ -240,7 +205,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero();//, one = STS::one();
-  typedef typename STS::magnitudeType real_type;
+  typedef typename STS::coordinateType real_type;
   typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   // =========================================================================
@@ -280,6 +245,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+#else
+  bool profileSetup = false;   
+  bool profileSolve = false;   
 #endif
   int  cacheSize = 0;                                 clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 #ifdef HAVE_MPI
@@ -456,60 +424,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // =========================================================================
       // Preconditioner construction
       // =========================================================================
-      comm->barrier();
-#ifdef HAVE_MUELU_CUDA
-      if(profileSetup) cudaProfilerStart();
-#endif
-
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
-      bool useML = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
-      if(useML && lib != Xpetra::UseEpetra) throw std::runtime_error("Error: Cannot use ML on non-epetra matrices");
-
-      RCP<Hierarchy> H;
-      //      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > AMGXprec;
-      RCP<Operator> Prec;
-      for (int i = 0; i <= numRebuilds; i++) {
-        A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-	if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-	  Teuchos::ParameterList dummyList;
-	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac = Utilities::Op2NonConstTpetraCrs(A);
-	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > At = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
-	  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList, dummyList);
-	  Prec = Teuchos::rcp(new Xpetra::TpetraOperator<SC,LO,GO,NO>(Top));
-#endif
-	} else if(useML) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-          mueluList.remove("use external multigrid package");
-          if(!coordinates.is_null()) {
-            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<real_type,LO,GO,NO>::MV2EpetraMV(coordinates);
-            if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
-            if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
-            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);
-          }
-          ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
-#endif
-        }
-        else {
-          const std::string userName = "user data";
-          Teuchos::Array<LO> lNodesPerDim(3, 10);
-          Teuchos::ParameterList& userParamList = mueluList.sublist(userName);
-          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-          userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
-          userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+      bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");  
 #ifdef HAVE_MPI
-          if(provideNodeComm) {
-            userParamList.set("Node Comm",nodeComm);
-          }
-#endif
-
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
-        }
+      if(provideNodeComm && !useAMGX && !useML) {        
+        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
+        userParamList.set("Node Comm",nodeComm);
       }
-#ifdef HAVE_MUELU_CUDA
-      if(profileSetup) cudaProfilerStop();
 #endif
+      RCP<Hierarchy> H;
+      RCP<Operator> Prec;
+      comm->barrier();
+      MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
+      PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+
 
       // Get the raw matrices for matvec testing
 #if defined(HAVE_MUELU_TPETRA)
