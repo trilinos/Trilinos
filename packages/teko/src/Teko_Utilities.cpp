@@ -1942,13 +1942,11 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
      RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_sum = Teuchos::rcp_dynamic_cast<Thyra::DefaultBlockedLinearOp<double>>(destOp);
      if(blocked_sum.is_null())
        blocked_sum = Thyra::defaultBlockedLinearOp<double>();
-     blocked_sum->beginBlockFill(numRows,numCols);
+
      for(int r = 0; r < numRows; ++r)
-       for(int c = 0; c < numCols; ++c){
-         auto block = explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),Teuchos::null);
-         blocked_sum->setNonconstBlock(r,c,block);
-       }
-     blocked_sum->endBlockFill();
+       for(int c = 0; c < numCols; ++c)
+         explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),blocked_sum->getNonconstBlock(r,c));
+
      return blocked_sum;
    }
 
