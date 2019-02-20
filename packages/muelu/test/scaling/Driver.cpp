@@ -438,9 +438,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         userParamList.set("Node Comm",nodeComm);
       }
 #endif
-      out2<<"*********** ParameterList ***********"<<std::endl;
+      out2<<"*********** MueLu ParameterList ***********"<<std::endl;
       out2<<mueluList;
-      out<<"*************************************"<<std::endl;
+      out<<"********************************************"<<std::endl;
 
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
