@@ -21,10 +21,9 @@ ReporterBase*& getDeviceReporterOnHost()
   return deviceReporterOnHost;
 }
 
-inline
-NGP_TEST_DEVICE_ONLY ReporterBase*& getDeviceReporterOnDevice()
+NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
-  static NGP_TEST_DEVICE_ONLY ReporterBase* deviceReporterOnDevice = nullptr;
+  static ReporterBase* deviceReporterOnDevice = nullptr;
   return deviceReporterOnDevice;
 }
 
