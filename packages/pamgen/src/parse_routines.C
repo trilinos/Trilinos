@@ -168,12 +168,12 @@ namespace PAMGEN_NEVADA {
     PAMGEN_NEVADA::Parse(&token_stream,parse_table,TK_EXIT);
 
     if(!Inline_Mesh_Desc::im_static_storage) {
-      free(parse_table);
+      delete parse_table;
       return Inline_Mesh_Desc::im_static_storage;
     }
 
     if(token_stream.Error_Count() != 0) {
-      free(parse_table);
+      delete parse_table;
       return NULL;
     }
 
