@@ -619,7 +619,6 @@ IF (Stokhos_ENABLE_Sacado)
         CrsGraph
         FECrsMatrix
         FEMultiVector
-#        FECrsGraph
         Experimental::BlockVector
         Experimental::BlockMultiVector
         Experimental::BlockCrsMatrix
