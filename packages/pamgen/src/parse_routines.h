@@ -8,6 +8,9 @@ Token Parse_Topology_Modification(Token_Stream *token_stream, int);
 Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value);
 Token Parse_Inline_Mesh_3D_Tok(Token_Stream *token_stream, int value);
 Token Parse_Inline_Mesh_2D_Tok(Token_Stream *token_stream, int value);
+
+void Allow_New_Mesh_Specification();
+
 }//end of namespace PAMGEN_NEVADA
 #define parse_routinesH
 #endif

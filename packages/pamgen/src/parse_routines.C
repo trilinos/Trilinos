@@ -75,9 +75,9 @@ namespace PAMGEN_NEVADA {
 
   static long long sdimension;
   static long long * parse_error_count = NULL;
+  static bool has_specified_geometry_type=false;
 
-  static bool has_specified_geometry_type;
-
+  void Allow_New_Mesh_Specification(){ has_specified_geometry_type=false;}
 
   //This takes an integer and returns it in an English representation
   std::string EnglishNumber(long long the_number) {
@@ -144,8 +144,8 @@ namespace PAMGEN_NEVADA {
     /****************************************************************************/
   {
     // makes this a noop if an Inline_Mesh_Desc has alread been created.
-    if(Inline_Mesh_Desc::im_static_storage)return Inline_Mesh_Desc::im_static_storage;
-
+    if(Inline_Mesh_Desc::im_static_storage) return Inline_Mesh_Desc::im_static_storage;
+    Allow_New_Mesh_Specification();
 
     sdimension = incoming_dim;
     parse_error_count = & sparse_error_count;
@@ -165,7 +165,6 @@ namespace PAMGEN_NEVADA {
 
     Token_Stream token_stream(input_stream, Inline_Mesh_Desc::echo_stream, input_tree,0,0,true);
 
-    has_specified_geometry_type = false;
     PAMGEN_NEVADA::Parse(&token_stream,parse_table,TK_EXIT);
 
     if(!Inline_Mesh_Desc::im_static_storage) {
@@ -283,7 +282,6 @@ namespace PAMGEN_NEVADA {
     long long cubit_axis = 0;
     bool geometry_spec_error = false;
     {
-
       token = token_stream->Shift();
       std::string mesh_type = token.As_String();
 
@@ -348,9 +346,11 @@ namespace PAMGEN_NEVADA {
       }
     }
 
-    if(geometry_spec_error) 
+    if(geometry_spec_error)  {
       token_stream->Parse_Error("incorrect keyword ",
                                 "cannot specify more than one geometry type in a single mesh object");
+    }
+
 
     Keyword parameter_table[] = {
       {"STARTING BLOCK ID OFFSET", P_STARTING_BLOCK_NUMBER, Get_Real_Token},
