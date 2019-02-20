@@ -175,7 +175,7 @@ int test_mult() {
   Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(0);
   Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(13);
   Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(1024);
-  Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231);
+  //Test::impl_test_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -185,7 +185,7 @@ int test_mult() {
   Test::impl_test_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(0);
   Test::impl_test_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(13);
   Test::impl_test_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(1024);
-  Test::impl_test_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231);
+  //Test::impl_test_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -195,7 +195,7 @@ int test_mult() {
   Test::impl_test_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(0);
   Test::impl_test_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(13);
   Test::impl_test_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(1024);
-  Test::impl_test_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231);
+  //Test::impl_test_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
@@ -216,7 +216,7 @@ int test_mult_mv() {
   Test::impl_test_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(0,5);
   Test::impl_test_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(13,5);
   Test::impl_test_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(1024,5);
-  Test::impl_test_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231,5);
+  //Test::impl_test_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -226,7 +226,7 @@ int test_mult_mv() {
   Test::impl_test_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(0,5);
   Test::impl_test_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(13,5);
   Test::impl_test_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(1024,5);
-  Test::impl_test_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231,5);
+  //Test::impl_test_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -236,7 +236,7 @@ int test_mult_mv() {
   Test::impl_test_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(0,5);
   Test::impl_test_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(13,5);
   Test::impl_test_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(1024,5);
-  Test::impl_test_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231,5);
+  //Test::impl_test_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231,5);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
