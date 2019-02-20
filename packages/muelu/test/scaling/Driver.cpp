@@ -352,12 +352,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
-
-  const bool mustAlreadyExist = true;
+   
   for (int rerunCount = 1; rerunCount <= numReruns; rerunCount++) {
-    ParameterList mueluList, runList;
-
     bool stop = false;
+    ParameterList mueluList, runList;
+    const bool mustAlreadyExist = true;
     if (isDriver) {
       runList   = paramList.sublist("Run1",  mustAlreadyExist);
       mueluList = runList  .sublist("MueLu", mustAlreadyExist);
@@ -394,13 +393,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
     }
 
+
     int runCount = 1;
+    int   savedOut  = -1;
+    FILE* openedOut = NULL;
     do {
       solveType = dsolveType;
       tol       = dtol;
 
-      int   savedOut  = -1;
-      FILE* openedOut = NULL;
       if (isDriver) {
         if (runList.isParameter("filename")) {
           // Redirect all output into a filename We have to redirect all output,
@@ -419,7 +419,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
       }
 
-      out << galeriStream.str();
+      RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      Teuchos::FancyOStream& out2 = *fancy2;
+      out2.setOutputToRootOnly(0);
+
+
+
+      out2 << galeriStream.str();
 
       // =========================================================================
       // Preconditioner construction
@@ -432,31 +438,46 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         userParamList.set("Node Comm",nodeComm);
       }
 #endif
+      out2<<"*********** ParameterList ***********"<<std::endl;
+      out2<<mueluList;
+      out<<"*************************************"<<std::endl;
+
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
-      comm->barrier();
-      MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
-
-      // Build the preconditioner numRebuilds+1 times
-      PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
-
-      comm->barrier();
-      tm = Teuchos::null;
-
+      try {
+        comm->barrier();
+        // Build the preconditioner numRebuilds+1 times
+        MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
+        PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+        
+        comm->barrier();
+        tm = Teuchos::null;
+      }
+      catch(...) { 
+        out2<<"MueLu_Driver: preconditioner setup crashed!"<<std::endl;
+        H=Teuchos::null; Prec=Teuchos::null;
+      }
+      
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
-      comm->barrier();
-      if (writeMatricesOPT > -2) {
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
-        H->Write(writeMatricesOPT, writeMatricesOPT);
-        tm = Teuchos::null;
+      try {
+        comm->barrier();
+        if (writeMatricesOPT > -2) {
+          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
+          H->Write(writeMatricesOPT, writeMatricesOPT);
+          tm = Teuchos::null;
+        }
+        
+        // Solve the system numResolves+1 times
+        SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
+        
+        comm->barrier();
+      }
+      catch(...) { 
+        out2<<"MueLu_Driver: solver crashed!"<<std::endl;
       }
 
-      // Solve the system numResolves+1 times
-      SystemSolve(A,X,B,H,Prec,out,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
-
-      comm->barrier();
       tm = Teuchos::null;
       globalTimeMonitor = Teuchos::null;
 
@@ -474,22 +495,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         const std::string filter = "";
 
-        std::ios_base::fmtflags ff(out.flags());
-        if (timingsFormat == "table-fixed") out << std::fixed;
-        else                                out << std::scientific;
+        std::ios_base::fmtflags ff(out2.flags());
+        if (timingsFormat == "table-fixed") out2 << std::fixed;
+        else                                out2 << std::scientific;
         TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-        out << std::setiosflags(ff);
+        out2 << std::setiosflags(ff);
       }
 
       TimeMonitor::clearCounters();
+      out2 << std::endl;
 
       if (isDriver) {
-        if (openedOut != NULL) {
-          TEUCHOS_ASSERT(savedOut >= 0);
-          dup2(savedOut, STDOUT_FILENO);
-          fclose(openedOut);
-          openedOut = NULL;
-        }
         try {
           runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
           mueluList = runList  .sublist("MueLu", mustAlreadyExist);
@@ -497,8 +513,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           stop = true;
         }
       }
-
+      comm->barrier();
     } while (!stop);
+
+    // Cleanup Output
+    if (openedOut != NULL) {
+      TEUCHOS_ASSERT(savedOut >= 0);
+      dup2(savedOut, STDOUT_FILENO);
+      fclose(openedOut);
+      openedOut = NULL;
+    }
+
+
   }//end reruns
 
   return EXIT_SUCCESS;
