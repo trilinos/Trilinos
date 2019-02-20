@@ -1159,7 +1159,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c.val() == scalar_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))) );
+        return if_then_else( c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))) );
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -1167,7 +1167,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c.val() == scalar_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))) );
+        return if_then_else( c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))) );
       }
 
     protected:
@@ -1383,7 +1383,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
+        return c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -1391,7 +1391,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
+        return c.val() == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
       }
 
     protected:
