@@ -743,7 +743,7 @@ namespace Sacado {
           return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
         else if (sz1 > 0)
           // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-          return if_then_else( expr2.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-value_type(1.0))) );
+          return if_then_else( expr2.val() == value_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-scalar_type(1.0))) );
         else
           return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) );
       }
@@ -798,7 +798,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
+        return if_then_else( c == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -806,7 +806,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
+        return if_then_else( c == scalar_type(0.0) || expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0))) );
       }
 
     protected:
@@ -917,7 +917,7 @@ namespace Sacado {
           return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
         else if (sz1 > 0)
           // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
-          return expr2.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-value_type(1.0)));
+          return expr2.val() == value_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)*pow(expr1.val(),expr2.val()-scalar_type(1.0)));
         else
           return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val()));
       }
@@ -972,7 +972,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0)));
+        return c == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0)));
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -980,7 +980,7 @@ namespace Sacado {
         using std::pow;
         // Use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x), check for b == 0 case
         // Use scalar_type in (b-1) to prevent promoting to Fad when nesting
-        return c == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0)));
+        return c == scalar_type(0.0) || expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0)));
       }
 
     protected:
