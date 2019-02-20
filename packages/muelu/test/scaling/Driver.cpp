@@ -513,6 +513,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           stop = true;
         }
       }
+      fflush(NULL);
       comm->barrier();
     } while (!stop);
 
