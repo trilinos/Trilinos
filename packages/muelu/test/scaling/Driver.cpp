@@ -436,28 +436,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       RCP<Operator> Prec;
       comm->barrier();
       MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
+
+      // Build the preconditioner numRebuilds+1 times
       PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
-
-
-      // Get the raw matrices for matvec testing
-#if defined(HAVE_MUELU_TPETRA)
-      Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Atpetra;
-      Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Xtpetra,Btpetra;
-      if(lib==Xpetra::UseTpetra) {
-        Atpetra = Utilities::Op2NonConstTpetraCrs(A);
-        Xtpetra = Teuchos::rcp(& Xpetra::toTpetra(*X),false);
-        Btpetra = Teuchos::rcp(& Xpetra::toTpetra(*B),false);
-      }
-#endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
-      Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
-      Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
-      if(lib==Xpetra::UseEpetra) {
-        Aepetra = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
-        Xepetra = Teuchos::rcp(& Xpetra::toEpetra(*X),false);
-        Bepetra = Teuchos::rcp(& Xpetra::toEpetra(*B),false);
-      }
-#endif
 
       comm->barrier();
       tm = Teuchos::null;
@@ -466,130 +447,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // System solution (Ax = b)
       // =========================================================================
       comm->barrier();
-
       if (writeMatricesOPT > -2) {
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
         H->Write(writeMatricesOPT, writeMatricesOPT);
         tm = Teuchos::null;
       }
 
-      std::vector<int> tempVector;
-      int min = 0, max = 10;
-      int numInts = 0;
-      if (cacheSize > 0) {
-        cacheSize *= 1024; //convert to bytes
-        numInts = cacheSize/sizeof(int) + 1;
-        tempVector.resize(numInts);
-      }
-
-      for(int solveno = 0; solveno<=numResolves; solveno++) {
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-        X->putScalar(zero);
-        tm = Teuchos::null;
-
-        if (solveType == "none") {
-          // Do not perform a solve
-        } else if (solveType == "matvec") {
-          // Just do matvecs
-          tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 6 - Matvec")));
-#if defined(HAVE_MUELU_TPETRA)
-          if(lib==Xpetra::UseTpetra) Atpetra->apply(*Btpetra,*Xtpetra);
-#endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
-          if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
-#endif
-          //clear the cache (and don't time it)
-          tm = Teuchos::null;
-          int ttt = rand();
-          for (int i=0; i<numInts; ++i)
-            tempVector[i] += (min + (ttt % static_cast<int>(max - min + 1)));
-        } else if (solveType == "standalone") {
-          tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStart();
-#endif
-          H->IsPreconditioner(false);
-          H->Iterate(*B, *X, maxIts);
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStop();
-#endif
-        } else if (solveType == "belos") {
-#ifdef HAVE_MUELU_BELOS
-          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStart();
-#endif
-          // Operator and Multivector type that will be used with Belos
-          typedef MultiVector          MV;
-          typedef Belos::OperatorT<MV> OP;
-
-          // Define Operator and Preconditioner
-          Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
-          Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-          if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-            belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
-#endif
-          }
-          else if(useML) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-            belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
-#endif
-          }
-          else {
-            H->IsPreconditioner(true);
-            belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
-          }
-
-          // Construct a Belos LinearProblem object
-          RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-          if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
-
-          bool set = belosProblem->setProblem();
-          if (set == false) {
-            out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-            // this fixes the resource leak detected by coverity (CID134984)
-            if (openedOut != NULL) {
-              fclose(openedOut);
-              openedOut = NULL;
-            }
-            return EXIT_FAILURE;
-          }
-
-          // Belos parameter list
-          RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
-          belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-          belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-          belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-          belosList->set("Output Frequency",      1);
-          belosList->set("Output Style",          Belos::Brief);
-          if (!scaleResidualHist)
-            belosList->set("Implicit Residual Scaling", "None");
-
-          // Create an iterative solver manager
-          Belos::SolverFactory<SC, MV, OP> solverFactory;
-          RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
-          solver->setProblem(belosProblem);
-
-          // Perform solve
-          Belos::ReturnType ret = Belos::Unconverged;
-          ret = solver->solve();
-
-          // Get the number of iterations for this solve.
-          out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-          // Check convergence
-          if (ret != Belos::Converged)
-            out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-          else
-            out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStop();
-#endif
-#endif //ifdef HAVE_MUELU_BELOS
-        } else {
-          throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
-        }
-      }// end resolves
+      // Solve the system numResolves+1 times
+      SystemSolve(A,X,B,H,Prec,out,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
 
       comm->barrier();
       tm = Teuchos::null;

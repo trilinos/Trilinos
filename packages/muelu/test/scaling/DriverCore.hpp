@@ -203,26 +203,62 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
 
 
 //*************************************************************************************
-#if 0
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A,
                  Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & X,
                  Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & B,
-                 Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node > & H,
-                 Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node > & Prec,
-                 const Teuchos::ParameterList & belosList,
+                 Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node > > & H,
+                 Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node > > & Prec,
                  Teuchos::FancyOStream & out,
                  std::string solveType,
+                 std::string belosType,
                  bool profileSolve,
                  bool useAMGX,
                  bool useML,
+                 int cacheSize,
                  int numResolves,
+                 bool scaleResidualHist,
+                 bool solvePreconditioned,
                  int maxIts,
                  double tol) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
   Xpetra::UnderlyingLib lib = A->getRowMap()->lib();  
-  
+  typedef Teuchos::ScalarTraits<SC> STS;
+  SC zero = STS::zero();
+
+  // Cache clearing
+  std::vector<int> tempVector;
+  int min = 0, max = 10;
+  int numInts = 0;
+  if (cacheSize > 0) {
+    cacheSize *= 1024; //convert to bytes
+    numInts = cacheSize/sizeof(int) + 1;
+    tempVector.resize(numInts);
+  }
+
+  // Get the raw matrices for matvec testing
+#if defined(HAVE_MUELU_TPETRA)
+      Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Atpetra;
+      Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Xtpetra,Btpetra;
+      if(lib==Xpetra::UseTpetra) {
+        Atpetra = Utilities::Op2NonConstTpetraCrs(A);
+        Xtpetra = rcp(& Xpetra::toTpetra(*X),false);
+        Btpetra = rcp(& Xpetra::toTpetra(*B),false);
+      }
+#endif
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
+      Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
+      Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
+      if(lib==Xpetra::UseEpetra) {
+        Aepetra = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
+        Xepetra = rcp(& Xpetra::toEpetra(*X),false);
+        Bepetra = rcp(& Xpetra::toEpetra(*B),false);
+      }
+#endif
+
   for(int solveno = 0; solveno<=numResolves; solveno++) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
     X->putScalar(zero);
@@ -265,21 +301,21 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       typedef Belos::OperatorT<MV> OP;
 
       // Define Operator and Preconditioner
-      Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
+      Teuchos::RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
       Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
       if(useAMGX) {
 #if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-        belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
+        belosPrec = rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
       }
       else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-        belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
+        belosPrec = rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
 #endif
       }
       else {
         H->IsPreconditioner(true);
-        belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+        belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
       }
       
       // Construct a Belos LinearProblem object
@@ -327,11 +363,5 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
   }// end resolves
   
 }
-#endif
-
-
-
-
-
 
 #endif
