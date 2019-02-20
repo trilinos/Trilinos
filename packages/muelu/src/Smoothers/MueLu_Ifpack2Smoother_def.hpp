@@ -521,10 +521,9 @@ namespace MueLu {
       myparamList.print();
       if(myparamList.isParameter("partitioner: type") &&
          myparamList.get<std::string>("partitioner: type") == "line") {
-        Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > xCoordinates =
-          Factory::Get<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > >(currentLevel, "Coordinates");
-        Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>(*xCoordinates));
-
+        Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> > xCoordinates =
+          Factory::Get<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> > >(currentLevel, "Coordinates");
+        Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>(*xCoordinates));
         size_t numDofsPerNode = A_->getNodeNumRows() / xCoordinates->getMap()->getNodeNumElements();
         myparamList.set("partitioner: coordinates", coordinates);
         myparamList.set("partitioner: PDE equations", (int) numDofsPerNode);
