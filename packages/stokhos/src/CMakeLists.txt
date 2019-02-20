@@ -617,6 +617,8 @@ IF (Stokhos_ENABLE_Sacado)
         DistObject
         CrsMatrix
         CrsGraph
+        FECrsMatrix
+        FEMultiVector
         Experimental::BlockVector
         Experimental::BlockMultiVector
         Experimental::BlockCrsMatrix
