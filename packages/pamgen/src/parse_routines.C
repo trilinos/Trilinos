@@ -76,6 +76,8 @@ namespace PAMGEN_NEVADA {
   static long long sdimension;
   static long long * parse_error_count = NULL;
 
+  static bool has_specified_geometry_type;
+
 
   //This takes an integer and returns it in an English representation
   std::string EnglishNumber(long long the_number) {
@@ -163,6 +165,7 @@ namespace PAMGEN_NEVADA {
 
     Token_Stream token_stream(input_stream, Inline_Mesh_Desc::echo_stream, input_tree,0,0,true);
 
+    has_specified_geometry_type = false;
     PAMGEN_NEVADA::Parse(&token_stream,parse_table,TK_EXIT);
 
     if(!Inline_Mesh_Desc::im_static_storage) {
@@ -278,6 +281,7 @@ namespace PAMGEN_NEVADA {
     Token token;
     long long block_index = 0;
     long long cubit_axis = 0;
+    bool geometry_spec_error = false;
     {
 
       token = token_stream->Shift();
@@ -286,34 +290,42 @@ namespace PAMGEN_NEVADA {
       if(mesh_type == "RECTILINEAR" || mesh_type == "2DR" || mesh_type == "3DR" || mesh_type == "2DC"){
         Inline_Mesh_Desc::addDisc( new Cartesian_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = INLINE_CARTESIAN;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "SPHERICAL"){
         Inline_Mesh_Desc::addDisc( new Spherical_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = INLINE_SPHERICAL;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "CYLINDRICAL"){
         Inline_Mesh_Desc::addDisc( new Cylindrical_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = INLINE_CYLINDRICAL;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "CUBIT RADIAL"){
         Inline_Mesh_Desc::addDisc( new Radial_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = RADIAL;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "RADIAL"){
         Inline_Mesh_Desc::addDisc( new Radial_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = RADIAL;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "BRICK"){
         Inline_Mesh_Desc::addDisc( new Brick_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = RADIAL;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "CUBIT RADIAL TRISECTION"){
         Inline_Mesh_Desc::addDisc( new Radial_Trisection_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = RADIAL_TRISECTION;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "RADIAL TRISECTION"){
         Inline_Mesh_Desc::addDisc( new Radial_Trisection_Inline_Mesh_Desc(sdimension ));
         Inline_Mesh_Desc::im_static_storage->inline_geometry_type = RADIAL_TRISECTION;
+        if(has_specified_geometry_type) geometry_spec_error = true; else has_specified_geometry_type = true;
       }
       else if(mesh_type == "SET ASSIGN"){
       }
@@ -336,6 +348,9 @@ namespace PAMGEN_NEVADA {
       }
     }
 
+    if(geometry_spec_error) 
+      token_stream->Parse_Error("incorrect keyword ",
+                                "cannot specify more than one geometry type in a single mesh object");
 
     Keyword parameter_table[] = {
       {"STARTING BLOCK ID OFFSET", P_STARTING_BLOCK_NUMBER, Get_Real_Token},
