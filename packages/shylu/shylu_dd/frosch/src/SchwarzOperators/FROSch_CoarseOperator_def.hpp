@@ -579,8 +579,8 @@ namespace FROSch {
                     }
                     
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter2 = Xpetra::ImportFactory<LO,GO,NO>::Build(Elem->getRowMap(),GraphMap);
-                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMapE = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,col1e(),0,CoarseSolveComm_);
-                    Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMapE2 = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,col1e(),0,this->MpiComm_);
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMapE = Xpetra::MapFactory<LO,GO,NO>::createLocalMap(Xpetra::UseTpetra,MaxRow,CoarseSolveComm_);
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMapE2 = Xpetra::MapFactory<LO,GO,NO>::createLocalMap(Xpetra::UseTpetra,MaxRow,CoarseSolveComm_);
                     Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > ElemS = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMapE,MaxRow);
                     
                     ElemS->doImport(*Elem,*scatter2,Xpetra::INSERT);
