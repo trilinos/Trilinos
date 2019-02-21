@@ -53,6 +53,7 @@ class MultistateField
 {
 public:
     MultistateField() {}
+
     MultistateField(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField) :
         numOldStates(stkField.number_of_states() - 1)
     {
@@ -64,44 +65,105 @@ public:
             fieldOldStates[i] = ngp::ConstField<T>(bulk, *fieldOfState);
         }
     }
+
     STK_FUNCTION
     virtual ~MultistateField() {}
+
     STK_FUNCTION
     unsigned get_num_states() const
     {
         return numOldStates + 1;
     }
+
     STK_FUNCTION
     ngp::Field<T> get_field_new_state() const
     {
         return fieldNewState;
     }
+
     STK_FUNCTION
     ngp::ConstField<T> get_field_old_state(stk::mesh::FieldState state) const
     {
         NGP_ThrowRequire(state != stk::mesh::StateNew);
         return fieldOldStates[state-1];
     }
+
     STK_FUNCTION
     void increment_state()
     {
-        for(unsigned i=numOldStates-1; i>0; i--)
+        for(unsigned i=numOldStates-1; i>0; i--) {
             fieldOldStates[i].swap_data(fieldOldStates[i-1]);
+        }
         fieldOldStates[0].swap_data(fieldNewState);
     }
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    void sync_to_host()
     {
-        fieldNewState.copy_device_to_host(bulk, *field.field_state(stk::mesh::StateNew));
-        for(unsigned i=0; i<numOldStates; i++)
-            fieldOldStates[i].copy_device_to_host(bulk, *field.field_state(get_old_state_for_index(i)));
+        if (need_sync_to_host()) {
+            copy_device_to_host();
+        }
+    }
+
+    void sync_to_device()
+    {
+        if (need_sync_to_device()) {
+            copy_host_to_device();
+        }
+    }
+
+    void modify_on_host()
+    {
+        fieldNewState.modify_on_host();
+    }
+
+    void modify_on_device()
+    {
+        fieldNewState.modify_on_device();
     }
 
 private:
+    bool need_sync_to_host() const
+    {
+        return fieldNewState.need_sync_to_host();
+    }
+
+    bool need_sync_to_device() const
+    {
+        return fieldNewState.need_sync_to_device();
+    }
+
+    void clear_sync_state()
+    {
+        fieldNewState.clear_sync_state();
+        for(unsigned i=0; i<numOldStates; i++)
+        {
+            fieldOldStates[i].clear_sync_state();
+        }
+    }
+
+    void copy_device_to_host()
+    {
+        fieldNewState.copy_device_to_host();
+        for(unsigned i=0; i<numOldStates; i++)
+        {
+            fieldOldStates[i].copy_device_to_host();
+        }
+    }
+
+    void copy_host_to_device()
+    {
+        fieldNewState.copy_host_to_device();
+        for(unsigned i=0; i<numOldStates; i++)
+        {
+            fieldOldStates[i].copy_host_to_device();
+        }
+    }
+
     stk::mesh::FieldState get_old_state_for_index(unsigned i)
     {
         return static_cast<stk::mesh::FieldState>(i+1);
     }
+
     unsigned numOldStates;
     ngp::Field<T> fieldNewState;
     ngp::ConstField<T> fieldOldStates[MAX_NUM_FIELD_STATES];

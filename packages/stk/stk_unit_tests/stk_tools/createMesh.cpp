@@ -31,6 +31,7 @@ TEST_F(StkToolsA, WriteTextMeshDescFromExodusFile)
     os << "const std::string meshDesc = \"";
 
     std::map<unsigned, int> localToGlobalId;
+    std::vector<stk::mesh::PartOrdinal> partOrdinals;
 
     unsigned counter = 0;
     for(size_t i=0;i<buckets.size();++i)
@@ -39,7 +40,8 @@ TEST_F(StkToolsA, WriteTextMeshDescFromExodusFile)
         for(size_t j=0;j<bucket.size();j++)
         {
             stk::mesh::Entity element = bucket[j];
-            unsigned partOrdinal = stk::mesh::impl::get_element_block_part_ordinals(element, get_bulk())[0];
+            stk::mesh::impl::get_element_block_part_ordinals(element, get_bulk(), partOrdinals);
+            unsigned partOrdinal = partOrdinals[0];
             if(localToGlobalId.find(partOrdinal)==localToGlobalId.end())
             {
                 localToGlobalId[partOrdinal]=counter;
@@ -62,7 +64,8 @@ TEST_F(StkToolsA, WriteTextMeshDescFromExodusFile)
                 os << "," << get_bulk().identifier(nodes[k]);
             }
 
-            unsigned part_id = stk::mesh::impl::get_element_block_part_ordinals(element, get_bulk())[0];
+            stk::mesh::impl::get_element_block_part_ordinals(element, get_bulk(), partOrdinals);
+            unsigned part_id = partOrdinals[0];
             unsigned local_id = localToGlobalId.at(part_id);
             os << ",block_" << local_id+1 << "\\n\\\n";
         }

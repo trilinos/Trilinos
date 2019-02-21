@@ -8,30 +8,28 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, stk::mesh::Entity entity2)
+bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, stk::mesh::Entity entity2, std::vector<stk::mesh::PartOrdinal>& ordinalScratchSpace1, std::vector<stk::mesh::PartOrdinal>& ordinalScratchSpace2)
 {
-    std::vector<stk::mesh::PartOrdinal> blockOrdinalsForEntity1 = get_element_block_part_ordinals(entity1, bulkData);
-    std::vector<stk::mesh::PartOrdinal> blockOrdinalsForEntity2 = get_element_block_part_ordinals(entity2, bulkData);
-    return blockOrdinalsForEntity1==blockOrdinalsForEntity2;
+    get_element_block_part_ordinals(entity1, bulkData, ordinalScratchSpace1);
+    get_element_block_part_ordinals(entity2, bulkData, ordinalScratchSpace2);
+    return ordinalScratchSpace1==ordinalScratchSpace2;
 }
 
-bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals)
+bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, stk::mesh::Entity entity1, const std::vector<stk::mesh::PartOrdinal>& other_element_part_ordinals, std::vector<stk::mesh::PartOrdinal>& scratch_space)
 {
-    std::vector<stk::mesh::PartOrdinal> blockOrdinalsForEntity1 = get_element_block_part_ordinals(entity1, bulkData);
-    return blockOrdinalsForEntity1 == other_element_part_ordinals;
+    get_element_block_part_ordinals(entity1, bulkData, scratch_space);
+    return scratch_space == other_element_part_ordinals;
 }
 
-std::vector<PartOrdinal> get_element_block_part_ordinals(stk::mesh::Entity element, const stk::mesh::BulkData& bulkData)
+void get_element_block_part_ordinals(stk::mesh::Entity element, const stk::mesh::BulkData& bulkData, std::vector<PartOrdinal>& partOrdinalsElementBlock)
 {
-  std::vector<PartOrdinal> partOrdinals;
-    bulkData.bucket(element).supersets(partOrdinals);
-    std::vector<PartOrdinal> partOrdinalsElementBlock;
-    for(PartOrdinal part_ordinal : partOrdinals)
-        if (stk::mesh::is_element_block(bulkData.mesh_meta_data().get_part(part_ordinal)))
-            partOrdinalsElementBlock.push_back(part_ordinal);
-    return partOrdinalsElementBlock;
+    partOrdinalsElementBlock.clear();
+    std::pair<const unsigned*,const unsigned*> partOrdinals = bulkData.bucket(element).superset_part_ordinals();
+    for(; partOrdinals.first < partOrdinals.second; ++partOrdinals.first) {
+        if (stk::mesh::is_element_block(bulkData.mesh_meta_data().get_part(*partOrdinals.first)))
+            partOrdinalsElementBlock.push_back(*partOrdinals.first);
+    }
 }
-
 
 }
 }

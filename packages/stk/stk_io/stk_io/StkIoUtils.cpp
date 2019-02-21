@@ -728,22 +728,22 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
 
     stk::mesh::EntityRank sideRank = bulk.mesh_meta_data().side_rank();
     ThrowRequire(bulk.entity_rank(face) == sideRank);
-    ThrowRequire(bulk.bucket(face).member(sideSetPart));
+    ThrowAssert(bulk.bucket(face).member(sideSetPart));
 
     const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(sideSetPart);
 
-    if(!bulk.does_sideset_exist(parentPart))
-    {
-        stk::RuntimeWarning() << "Sideset parent part: " << parentPart.name() << " does not exist for surface part: " << sideSetPart.name();
+    const stk::mesh::SideSet* ssetPtr = nullptr;
+    try {
+        ssetPtr = &bulk.get_sideset(parentPart);
+    }
+    catch(std::exception& excpt) {
         return returnValue;
     }
 
-    const stk::mesh::SideSet& sset = bulk.get_sideset(parentPart);
+    const stk::mesh::SideSet& sset = *ssetPtr;
 
-    std::vector<stk::mesh::Entity> side_elements;
-    std::vector<stk::mesh::Entity> side_nodes(bulk.begin_nodes(face), bulk.end_nodes(face));
-
-    stk::mesh::get_entities_through_relations(bulk, side_nodes, stk::topology::ELEMENT_RANK, side_elements);
+    const stk::mesh::Entity* sideElements = bulk.begin_elements(face);
+    const unsigned numSideElements = bulk.num_elements(face);
 
     int numFound = 0;
 
@@ -751,14 +751,15 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
 
     stk::mesh::Entity foundElem;
 
-    for(stk::mesh::Entity elem : side_elements)
+    for(unsigned i=0; i<numSideElements; ++i)
     {
+        stk::mesh::Entity elem = sideElements[i];
         const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
         stk::mesh::ConnectivityOrdinal const * side_ordinal = bulk.begin_ordinals(elem, sideRank);
         stk::mesh::Permutation const * side_permutations = bulk.begin_permutations(elem, sideRank);
-        const size_t num_elem_sides = bulk.num_connectivity(elem, sideRank);
+        const unsigned num_elem_sides = bulk.num_connectivity(elem, sideRank);
 
-        for(size_t k = 0; k < num_elem_sides; ++k)
+        for(unsigned k = 0; k < num_elem_sides; ++k)
         {
             if(elem_sides[k] == face)
             {
@@ -778,9 +779,9 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
 
     if(numFound == 1) {
         returnValue.second = foundElemWithPermutationZero;
-    } else if(numFound == 0 && side_elements.size() == 1) {
+    } else if(numFound == 0 && numSideElements == 1) {
 
-        stk::mesh::Entity elem = side_elements[0];
+        stk::mesh::Entity elem = sideElements[0];
         const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
         stk::mesh::Permutation const * side_permutations = bulk.begin_permutations(elem, sideRank);
         const size_t num_elem_sides = bulk.num_connectivity(elem, sideRank);
@@ -859,6 +860,21 @@ stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params)
         selector &= *output_selector;
 
     return selector;
+}
+
+std::string construct_parallel_filename(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
+{
+    int width = std::log10(static_cast<double>(numSubdomains - 1))+1;
+    std::ostringstream os;
+    os << baseFilename << "." << numSubdomains << "." << std::setfill('0') << std::setw(width) << subdomainIndex;
+    return os.str();
+}
+
+std::string construct_filename_for_serial_or_parallel(const std::string &baseFilename, int numSubdomains, int subdomainIndex)
+{
+    if(numSubdomains == 1)
+        return baseFilename;
+    return stk::io::construct_parallel_filename(baseFilename, numSubdomains, subdomainIndex);
 }
 
 }}

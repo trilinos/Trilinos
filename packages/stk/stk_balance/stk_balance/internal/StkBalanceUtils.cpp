@@ -1,5 +1,6 @@
 #include "StkBalanceUtils.hpp"
 #include <stk_balance/balanceUtils.hpp>
+#include <stk_io/StkIoUtils.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include "stk_mesh/base/SkinMeshUtil.hpp"
@@ -38,10 +39,7 @@ int getNumSharedNodesBetweenElements(const ::stk::mesh::BulkData& stkMeshBulkDat
 
 std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const std::string& baseFilename)
 {
-    int width = std::log10(static_cast<double>(numSubdomains - 1))+1;
-    std::ostringstream os;
-    os << baseFilename << "." << numSubdomains << "." << std::setfill('0') << std::setw(width) << subdomainIndex;
-    return os.str();
+    return stk::io::construct_parallel_filename(baseFilename, numSubdomains, subdomainIndex);
 }
 
 void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,

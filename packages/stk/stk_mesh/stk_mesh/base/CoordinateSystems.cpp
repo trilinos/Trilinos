@@ -43,6 +43,7 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 
 unsigned get_index( const char * const func ,
@@ -72,6 +73,7 @@ const char * get_string( const char * const func ,
 }
 
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -85,6 +87,7 @@ const Cartesian2d & Cartesian2d::tag()
 const char * Cartesian2d::name() const
 { static const char n[] = "Cartesian2d" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * Cartesian2d_label() {
   static const char x[] = "x" ;
@@ -93,15 +96,16 @@ const char * const * Cartesian2d_label() {
   return label;
 }
 }
-std::string Cartesian2d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string Cartesian2d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( Cartesian2d::tag().name(), 2, Cartesian2d_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type Cartesian2d::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type Cartesian2d::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( Cartesian2d::tag().name(), 2, Cartesian2d_label(), size , arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -111,6 +115,7 @@ const Cartesian3d & Cartesian3d::tag()
 const char * Cartesian3d::name() const
 { static const char n[] = "Cartesian3d" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * Cartesian3d_label() {
   static const char x[] = "x" ;
@@ -120,15 +125,16 @@ const char * const * Cartesian3d_label() {
   return label;
 }
 }
-std::string Cartesian3d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string Cartesian3d::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( Cartesian3d::tag().name(), 3, Cartesian3d_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type Cartesian::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type Cartesian::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( Cartesian3d::tag().name(), 3, Cartesian3d_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -138,6 +144,7 @@ const Cylindrical & Cylindrical::tag()
 const char * Cylindrical::name() const
 { static const char n[] = "Cylindrical" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * Cylindrical_label() {
   static const char r[] = "r" ;
@@ -147,15 +154,16 @@ const char * const * Cylindrical_label() {
   return label;
 }
 }
-std::string Cylindrical::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string Cylindrical::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( Cylindrical::tag().name(), 3, Cylindrical_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type Cylindrical::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type Cylindrical::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( Cylindrical::tag().name(), 3, Cylindrical_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -165,6 +173,7 @@ const FullTensor & FullTensor::tag()
 const char * FullTensor::name() const
 { static const char n[] = "FullTensor" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * FullTensor36_label() {
   static const char xx[] = "xx" ;
@@ -182,15 +191,16 @@ const char * const * FullTensor36_label() {
   return label;
 }
 }
-std::string FullTensor36::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string FullTensor36::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( FullTensor36::tag().name(), 9, FullTensor36_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type FullTensor::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type FullTensor::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( FullTensor36::tag().name(), 9, FullTensor36_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -200,6 +210,7 @@ const FullTensor22 & FullTensor22::tag()
 const char * FullTensor22::name() const
 { static const char n[] = "FullTensor22" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * FullTensor22_label() {
   static const char xx[] = "xx" ;
@@ -210,15 +221,16 @@ const char * const * FullTensor22_label() {
   return label;
 }
 }
-std::string FullTensor22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string FullTensor22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( FullTensor22::tag().name(), 4, FullTensor22_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type FullTensor22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type FullTensor22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( FullTensor22::tag().name(), 4, FullTensor22_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -228,6 +240,7 @@ const SymmetricTensor33 & SymmetricTensor33::tag()
 const char * SymmetricTensor::name() const
 { static const char n[] = "SymmetricTensor" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * SymmetricTensor33_label() {
   static const char xx[] = "xx" ;
@@ -240,15 +253,16 @@ const char * const * SymmetricTensor33_label() {
   return label;
 }
 }
-std::string SymmetricTensor33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string SymmetricTensor33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( SymmetricTensor33::tag().name(), 6, SymmetricTensor33_label(), size , index ) );
 }
 
-shards::ArrayDimTag::size_type SymmetricTensor33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type SymmetricTensor33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( SymmetricTensor33::tag().name(), 6, SymmetricTensor33_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -258,6 +272,7 @@ const SymmetricTensor31 & SymmetricTensor31::tag()
 const char * SymmetricTensor31::name() const
 { static const char n[] = "SymmetricTensor31" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * SymmetricTensor31_label() {
   static const char rr[] = "rr" ;
@@ -268,15 +283,16 @@ const char * const * SymmetricTensor31_label() {
   return label;
 }
 }
-std::string SymmetricTensor31::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string SymmetricTensor31::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( SymmetricTensor31::tag().name(), 4, SymmetricTensor31_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type SymmetricTensor31::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type SymmetricTensor31::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( SymmetricTensor31::tag().name(), 4, SymmetricTensor31_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -286,6 +302,7 @@ const SymmetricTensor21 & SymmetricTensor21::tag()
 const char * SymmetricTensor21::name() const
 { static const char n[] = "SymmetricTensor21" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * SymmetricTensor21_label() {
   static const char xx[] = "xx" ;
@@ -295,15 +312,16 @@ const char * const * SymmetricTensor21_label() {
   return label;
 }
 }
-std::string SymmetricTensor21::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string SymmetricTensor21::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( SymmetricTensor21::tag().name(), 3, SymmetricTensor21_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type SymmetricTensor21::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type SymmetricTensor21::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( SymmetricTensor21::tag().name(), 3, SymmetricTensor21_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -313,6 +331,7 @@ const AsymmetricTensor03 & AsymmetricTensor03::tag()
 const char * AsymmetricTensor03::name() const
 { static const char n[] = "AsymmetricTensor03" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * AsymmetricTensor03_label() {
   static const char yz[] = "yz" ;
@@ -322,15 +341,16 @@ const char * const * AsymmetricTensor03_label() {
   return label;
 }
 }
-std::string AsymmetricTensor03::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string AsymmetricTensor03::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( AsymmetricTensor03::tag().name(), 3, AsymmetricTensor03_label(), size , index ) );
 }
 
-shards::ArrayDimTag::size_type AsymmetricTensor03::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type AsymmetricTensor03::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( AsymmetricTensor03::tag().name(), 3, AsymmetricTensor03_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -340,6 +360,7 @@ const Matrix22 & Matrix22::tag()
 const char * Matrix22::name() const
 { static const char n[] = "Matrix22" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * Matrix22_label() {
   static const char xx[] = "xx" ;
@@ -350,15 +371,16 @@ const char * const * Matrix22_label() {
   return label;
 }
 }
-std::string Matrix22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string Matrix22::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( Matrix22::tag().name(), 4, Matrix22_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type Matrix22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type Matrix22::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( Matrix22::tag().name(), 4, Matrix22_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -368,6 +390,7 @@ const Matrix33 & Matrix33::tag()
 const char * Matrix33::name() const
 { static const char n[] = "Matrix33" ; return n ; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
 namespace {
 const char * const * Matrix33_label() {
   static const char xx[] = "xx" ;
@@ -384,15 +407,16 @@ const char * const * Matrix33_label() {
 }
 }
 
-std::string Matrix33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
+STK_DEPRECATED std::string Matrix33::to_string( shards::ArrayDimTag::size_type size , shards::ArrayDimTag::size_type index ) const
 {
   return std::string( get_string( Matrix33::tag().name(), 9, Matrix33_label(), size, index ) );
 }
 
-shards::ArrayDimTag::size_type Matrix33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
+STK_DEPRECATED shards::ArrayDimTag::size_type Matrix33::to_index( shards::ArrayDimTag::size_type size , const std::string & arg ) const
 {
   return get_index( Matrix33::tag().name(), 9, Matrix33_label(), size, arg.c_str() );
 }
+#endif
 
 //----------------------------------------------------------------------
 

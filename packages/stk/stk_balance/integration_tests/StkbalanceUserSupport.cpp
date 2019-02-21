@@ -286,6 +286,7 @@ TEST(Stkbalance, checkForDegenerateElements)
     stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
 
     std::ostringstream os;
+    std::vector<stk::mesh::PartOrdinal> ords;
 
     for(stk::mesh::Entity element : elements)
     {
@@ -295,7 +296,7 @@ TEST(Stkbalance, checkForDegenerateElements)
         if(nodes.size() != sizeBefore)
         {
             os << "[" << bulk.parallel_rank() << "] for element " << bulk.identifier(element) << " has degeneracy in element block ";
-            std::vector<stk::mesh::PartOrdinal> ords = stk::mesh::impl::get_element_block_part_ordinals(element, bulk);
+            stk::mesh::impl::get_element_block_part_ordinals(element, bulk, ords);
             os << meta.get_parts()[ords[0]]->name() << " with " << nodes.size() << " unique nodes\n";
         }
     }

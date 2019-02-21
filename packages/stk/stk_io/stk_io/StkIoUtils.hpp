@@ -127,6 +127,10 @@ void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& sup
 
 stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params);
 
+std::string construct_parallel_filename(const std::string &baseFilename, int numSubdomains, int subdomainIndex);
+
+std::string construct_filename_for_serial_or_parallel(const std::string &baseFilename, int numSubdomains, int subdomainIndex);
+
 }}
 
 

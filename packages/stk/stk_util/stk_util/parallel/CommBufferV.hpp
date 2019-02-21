@@ -90,7 +90,7 @@ public:
         T* items_to_unpack = reinterpret_cast<T*>(char_ptr);
         size_t num_bytes = item_size_in_bytes * num_items;
         std::memcpy(items, items_to_unpack, num_bytes);
-        unpack_iterator += item_size_in_bytes * num_items;
+        unpack_iterator += num_bytes;
     }
 
 private:
@@ -99,7 +99,7 @@ private:
         enum { item_size_in_bytes = sizeof(T) };
         const size_t num_bytes = item_size_in_bytes*num_items;
         if (num_bytes > (data_buffer.capacity() - data_buffer.size())) {
-            data_buffer.reserve(std::max(num_bytes, data_buffer.capacity()*2));
+            data_buffer.reserve(std::max(data_buffer.size()+num_bytes, data_buffer.capacity()*2));
         }
         const unsigned char* item_chars = reinterpret_cast<const unsigned char*>(items);
         data_buffer.insert(data_buffer.end(), item_chars, item_chars+num_bytes);

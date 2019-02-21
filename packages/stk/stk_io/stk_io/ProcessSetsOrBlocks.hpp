@@ -189,9 +189,13 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
   stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
   stk::mesh::PartVector nodeParts = {&nodePart};
 
+  std::vector<stk::mesh::Entity> nodes;
+  nodes.reserve(ids.size());
+
+  bulk.declare_entities(stk::topology::NODE_RANK, ids, nodeParts, nodes);
+
   for (size_t i=0; i < ids.size(); i++) {
-    stk::mesh::Entity node = bulk.declare_entity(stk::topology::NODE_RANK, ids[i], nodeParts);
-    bulk.set_local_id(node, i);
+    bulk.set_local_id(nodes[i], i);
   }
 
 #ifdef STK_BUILT_IN_SIERRA
@@ -210,8 +214,12 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
-//  stk::mesh::Part& nodePart = meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
-//  stk::mesh::PartVector nodeParts = {&nodePart};
+  stk::mesh::EntityVector elems;
+  stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+  stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+
+  stk::mesh::Part& nodePart = bulk.mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+  stk::mesh::PartVector nodeParts = {&nodePart};
 
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
@@ -220,6 +228,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* part = get_part_for_grouping_entity(region, meta, entity);
+      stk::mesh::PartVector elemParts = {part};
       if (part != nullptr) {
           stk::topology topo = part->topology();
           ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
@@ -230,24 +239,26 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
           entity->get_field_data("ids", elem_ids);
           entity->get_field_data("connectivity", connectivity);
 
+          bulk.declare_entities(stk::topology::ELEM_RANK, elem_ids, elemParts, elems);
+
           size_t element_count = elem_ids.size();
           int nodes_per_elem = topo.num_nodes();
-
-          stk::mesh::EntityIdVector id_vec(nodes_per_elem);
 
           size_t offset = entity->get_offset();
           for(size_t i=0; i<element_count; ++i) {
               INT *conn = &connectivity[i*nodes_per_elem];
-              std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-              stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], id_vec);
+              stk::mesh::Entity element = elems[i];
 
               bulk.set_local_id(element, offset + i);
 
-//              for(unsigned j = 0; j < id_vec.size(); ++j)
-//              {
-//                  stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id_vec[j]);
-//                  bulk.change_entity_parts(node, nodeParts, {});
-//              }
+              for(int j = 0; j < nodes_per_elem; ++j)
+              {
+                  stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, conn[j]);
+                  if (!bulk.is_valid(node)) {
+                      node = bulk.declare_node(conn[j], nodeParts);
+                  }
+                  bulk.declare_relation(element, node, j, perm, scratch1, scratch2, scratch3);
+              }
           }
       }
     }

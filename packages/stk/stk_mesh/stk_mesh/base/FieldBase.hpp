@@ -326,6 +326,10 @@ inline bool is_matching_rank(const FieldBase& f, Entity e) {
   return is_matching_rank(f, f.get_mesh().bucket(e));
 }
 
+inline bool is_matching_rank(const FieldBase& f, EntityRank rank) {
+  return f.entity_rank() == rank;
+}
+
 inline unsigned field_scalars_per_entity(const FieldBase& f, const Bucket& b) {
   ThrowAssert(f.entity_rank() == b.entity_rank());
   ThrowAssert(&f.get_mesh() == &b.mesh());

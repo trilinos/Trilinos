@@ -62,7 +62,7 @@ protected:
     {
         stk::io::fill_mesh_preexisting(stkIo, fileToRead, get_bulk());
     }
-    void TearDown()
+    void NGPTearDown()
     {
         unlink(filename.c_str());
     }

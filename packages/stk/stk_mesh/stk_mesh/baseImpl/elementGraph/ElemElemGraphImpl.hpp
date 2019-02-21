@@ -291,6 +291,17 @@ struct GraphEdge
         vertex1(std::numeric_limits<impl::LocalId>::max()), vertex2(std::numeric_limits<impl::LocalId>::max())
     {}
 
+    GraphEdge(const GraphEdge& rhs)
+    : vertex1(rhs.vertex1), vertex2(rhs.vertex2)
+    {}
+
+    GraphEdge(const GraphEdge&& rhs)
+    : vertex1(std::move(rhs.vertex1)), vertex2(std::move(rhs.vertex2))
+    {}
+
+    GraphEdge& operator=(const GraphEdge&) = default;
+    GraphEdge& operator=(GraphEdge&&) = default;
+
     int side1() const { return get_side(vertex1); }
     int side2() const { return get_side(vertex2); }
 

@@ -66,15 +66,26 @@ void remove_index_from_list(size_t index, std::vector<Entity>& elementsInCommon)
 
 void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::vector<Entity>& elementsInCommon)
 {
-    for(size_t j = elementsInCommon.size(); j > 0; j--)
-        if(!is_in_list(elementsInCommon[j-1], begin, end))
-            remove_index_from_list(j-1, elementsInCommon);
+    int numElemsFound=0;
+    for(int j=0, endElemsInCommon=elementsInCommon.size(); j<endElemsInCommon; ++j) {
+        if (is_in_list(elementsInCommon[j], begin, end)) {
+            if (j > numElemsFound) {
+                elementsInCommon[numElemsFound] = elementsInCommon[j];
+            }
+            ++numElemsFound;
+        }
+    }
+    elementsInCommon.resize(numElemsFound);
 }
 
 void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
 {
-    for(unsigned i = 1; i < numNodes; ++i)
-        remove_entities_not_in_list(mesh.begin(nodes[i], rank), mesh.end(nodes[i], rank), elementsInCommon);
+    for(unsigned i = 1; i < numNodes; ++i) {
+        const MeshIndex& meshIndex = mesh.mesh_index(nodes[i]);
+        const Bucket& bucket = *meshIndex.bucket;
+        const unsigned ord = meshIndex.bucket_ordinal;
+        remove_entities_not_in_list(bucket.begin(ord, rank), bucket.end(ord, rank), elementsInCommon);
+    }
 }
 
 void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
@@ -82,7 +93,10 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
     elementsInCommon.clear();
     if(numNodes > 0)
     {
-        elementsInCommon.assign(mesh.begin(nodes[0], rank), mesh.end(nodes[0], rank));
+        const MeshIndex& meshIndex = mesh.mesh_index(nodes[0]);
+        const Bucket& bucket = *meshIndex.bucket;
+        const unsigned ord = meshIndex.bucket_ordinal;
+        elementsInCommon.assign(bucket.begin(ord, rank), bucket.end(ord, rank));
         remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
     }
 }
@@ -249,10 +263,7 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
     EntityRank entity_rank = mesh.entity_rank(entity);
 
     // scratch space
-    stk::mesh::OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    stk::mesh::PartVector part_scratch;
-    part_scratch.reserve(64);
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
     stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
 
     stk::topology upward_entity_topology = mesh.bucket(upward_entity).topology();
@@ -286,7 +297,7 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
         perm = mesh.find_permutation(upward_entity_topology, upward_entity_nodes, entity_top, nodes, entity_ordinal);
         ThrowRequireMsg(perm != INVALID_PERMUTATION, "find_permutation could not find permutation that produces a match");
     }
-    mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, ordinal_scratch, part_scratch);
+    mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, scratch1, scratch2, scratch3);
 }
 
 //----------------------------------------------------------------------
@@ -673,7 +684,7 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
 {
     stk::topology elem_top = mesh.bucket(elem).topology();
 
-    std::vector<unsigned> entity_node_ordinals(entity_top.num_nodes());
+    OrdinalVector entity_node_ordinals(entity_top.num_nodes());
     elem_top.sub_topology_node_ordinals(mesh.entity_rank(entity), relationOrdinal, entity_node_ordinals.begin());
 
     const stk::mesh::Entity *elem_nodes = mesh.begin_nodes(elem);
@@ -682,10 +693,7 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
 
     Permutation perm = mesh.find_permutation(elem_top, elem_nodes, entity_top, entity_top_nodes.data(), relationOrdinal);
 
-    OrdinalVector ordinal_scratch;
-    ordinal_scratch.reserve(64);
-    PartVector part_scratch;
-    part_scratch.reserve(64);
+    OrdinalVector scratch1, scratch2, scratch3;
 
     PARTVECTOR initialParts;
     initialParts.reserve(parts.size() + 1);
@@ -708,7 +716,7 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
 
     if(!elem_to_side_exists)
     {
-        mesh.declare_relation(elem, entity, relationOrdinal, perm, ordinal_scratch, part_scratch);
+        mesh.declare_relation(elem, entity, relationOrdinal, perm, scratch1, scratch2, scratch3);
     }
 
     const unsigned num_side_nodes = mesh.count_valid_connectivity(entity, stk::topology::NODE_RANK);
@@ -719,7 +727,7 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
         for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
         {
             Entity node = elem_nodes_local[entity_node_ordinals[i]];
-            mesh.declare_relation(entity, node, i, node_perm, ordinal_scratch, part_scratch);
+            mesh.declare_relation(entity, node, i, node_perm, scratch1, scratch2, scratch3);
         }
     }
     else
