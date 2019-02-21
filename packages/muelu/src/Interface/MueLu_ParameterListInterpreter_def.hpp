@@ -1194,13 +1194,14 @@ namespace MueLu {
         }
 
         auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+        // Note: We do not want to add transfer factories twice
         if (!RAP.is_null()) {
-          if(useCoordinates_)         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
-          if(useMaterialCoordinates_) RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
+          if(useCoordinates_)                             RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+          if(!useCoordinates_ && useMaterialCoordinates_) RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
         } else {
           auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
-          if(useCoordinates_)         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
-          if(useMaterialCoordinates_) RAP->AddTransferFactory(manager.GetFactory("Material Coordinates"));
+          if(useCoordinates_)                             RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+          if(!useCoordinates_ && useMaterialCoordinates_) RAPs->AddTransferFactory(manager.GetFactory("Material Coordinates"));
         }
       }
     }
