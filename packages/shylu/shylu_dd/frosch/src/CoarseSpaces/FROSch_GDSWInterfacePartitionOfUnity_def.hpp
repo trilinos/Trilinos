@@ -330,6 +330,13 @@ namespace FROSch {
         return 0;
     }
     
+    template <class SC,class LO,class GO,class NO>
+    int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computeConnectivity()
+    {
+        this->DDInterface_->identifyConnectivityEntities();
+        return 0;
+    }
+    
 }
 
 #endif

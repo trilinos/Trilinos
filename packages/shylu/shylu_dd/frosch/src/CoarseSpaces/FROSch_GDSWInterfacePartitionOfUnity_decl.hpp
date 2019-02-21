@@ -101,6 +101,8 @@ namespace FROSch {
         
         virtual int computePartitionOfUnity();
         
+        virtual int computeConnectivity();
+        
     protected:
         
         bool UseVertices_;

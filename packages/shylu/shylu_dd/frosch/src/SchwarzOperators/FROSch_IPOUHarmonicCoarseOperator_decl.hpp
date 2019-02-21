@@ -180,8 +180,6 @@ namespace FROSch {
         /*
          ^^^^^^^^^^
          */
-        DDInterfacePtr DDInterface_;
-
     };
     
 }

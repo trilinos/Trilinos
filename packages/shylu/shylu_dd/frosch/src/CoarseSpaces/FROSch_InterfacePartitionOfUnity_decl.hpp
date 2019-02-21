@@ -104,6 +104,8 @@ namespace FROSch {
         
         virtual int computePartitionOfUnity() = 0;
         
+        virtual int computeConnectivity() = 0;
+        
         MultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
         
         MapPtrVecPtr getPartitionOfUnityMaps() const;
