@@ -891,6 +891,12 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { }
+    //@}
+
+
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix) {}
 
@@ -1277,6 +1283,11 @@ namespace Xpetra {
     //! Print the object with some verbosity level to an FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { }
 
+    //@}
+
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { }
     //@}
 
     //! Deep copy constructor
