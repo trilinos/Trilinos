@@ -941,14 +941,15 @@ description () const
   if (this->getObjectLabel () != "") {
     out << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", ";
-  out << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+  //  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", ";
+  //  out << "Computed: " << (isComputed () ? "true" : "false") << ", ";
   if (A_.is_null ()) {
     out << "Matrix: null, ";
   }
   else {
-    out << "Matrix: not null"
-        << ", Global matrix dimensions: ["
+    //    out << "Matrix: not null"    
+    // << ", Global matrix dimensions: ["
+    out << "Global matrix dimensions: ["
         << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "], ";
   }
 
@@ -972,6 +973,9 @@ description () const
 
   std::string containerType = ContainerType::getName();
   out << "block container: " << ((containerType == "Generic") ? containerType_ : containerType);
+  if(List_.isParameter("partitioner: PDE equations"))
+    out << ", dofs/node: "<<List_.get<int>("partitioner: PDE equations");
+     
 
   out << "}";
   return out.str();
