@@ -215,7 +215,7 @@ namespace FROSch {
         //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
         
         //Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),MaxRow));
-        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),MaxRow);
+        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),B->getColMap(),MaxRow);
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
         //--------------------Get Repeated Nodes Map------------------------

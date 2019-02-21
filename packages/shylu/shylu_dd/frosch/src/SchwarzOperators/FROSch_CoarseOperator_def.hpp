@@ -463,7 +463,6 @@ namespace FROSch {
                     
                     Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap2 = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(Xpetra::UseTpetra,nSubs, CoarseSolveComm_);
                     const size_t numMyElements = GraphMap->getNodeNumElements();
-                    
                     Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
                     Teuchos::ArrayView<const GO > idEl;
                     Teuchos::ArrayView<const GO > va;
