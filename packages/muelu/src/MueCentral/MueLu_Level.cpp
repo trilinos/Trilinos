@@ -365,8 +365,7 @@ namespace MueLu {
     typedef Teuchos::TabularOutputter TTO;
     TTO outputter(out);
     outputter.pushFieldSpec("data name",                TTO::STRING, TTO::LEFT, TTO::GENERAL, 20);
-    outputter.pushFieldSpec("gen. factory addr.",       TTO::STRING, TTO::LEFT, TTO::GENERAL, 18);
-    outputter.pushFieldSpec("gen. factory name",        TTO::STRING, TTO::LEFT, TTO::GENERAL, 30);
+    outputter.pushFieldSpec("gen. factory",             TTO::STRING, TTO::LEFT, TTO::GENERAL, 50);
     outputter.pushFieldSpec("req",                      TTO::INT,    TTO::LEFT, TTO::GENERAL, 3);
     outputter.pushFieldSpec("keep",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 5);
     outputter.pushFieldSpec("type",                     TTO::STRING, TTO::LEFT, TTO::GENERAL, 15);
@@ -393,11 +392,10 @@ namespace MueLu {
         // factory ptr
         if (factory == NoFactory::get()) {
           outputter.outputField("NoFactory");
-          outputter.outputField("NoFactory");
         }
         else {
-          outputter.outputField(factory);          
-          outputter.outputField(ClipDescription(factory->description()));
+          std::ostringstream oss; oss << ClipDescription(factory->description()) << "(" << factory <<")";
+          outputter.outputField(oss.str());
         }
 
 
