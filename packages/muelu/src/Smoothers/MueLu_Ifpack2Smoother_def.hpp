@@ -136,7 +136,18 @@ namespace MueLu {
     }
     else if (type_ == "BLOCK RELAXATION" ||
              type_ == "BLOCK_RELAXATION" ||
-             type_ == "BLOCKRELAXATION")
+             type_ == "BLOCKRELAXATION" ||
+             // Banded
+             type_ == "BANDED_RELAXATION" ||
+             type_ == "BANDED RELAXATION" ||
+             type_ == "BANDEDRELAXATION" ||
+             // Tridiagonal
+             type_ == "TRIDI_RELAXATION" ||
+             type_ == "TRIDI RELAXATION" ||
+             type_ == "TRIDIRELAXATION" ||
+             type_ == "TRIDIAGONAL_RELAXATION" ||
+             type_ == "TRIDIAGONAL RELAXATION" ||
+             type_ == "TRIDIAGONALRELAXATION")
     {
       //We need to check for the "partitioner type" = "line"
       ParameterList precList = this->GetParameterList();
@@ -516,7 +527,7 @@ namespace MueLu {
 
         size_t numDofsPerNode = A_->getNodeNumRows() / xCoordinates->getMap()->getNodeNumElements();
         myparamList.set("partitioner: coordinates", coordinates);
-        myparamList.set("partitioner: PDE equations", numDofsPerNode);
+        myparamList.set("partitioner: PDE equations", (int) numDofsPerNode);
       }
 
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
