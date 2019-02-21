@@ -514,8 +514,8 @@ namespace FROSch {
                     --------------------------------------------\n";
                 }
                 
-                if(this->ParameterList_->get("Use RepMap",false)) {
-                    if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
+                if (this->ParameterList_->get("Use RepMap",false)) {
+                    if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;
                         GOVec2D conn;
@@ -525,37 +525,34 @@ namespace FROSch {
                         InterfaceEntityPtrVec ConnVec = Connect->getEntityVector();
                         GO ConnVecSize = ConnVec.size();
                         conn.resize(ConnVecSize);
-                        if(ConnVecSize>0){
-                            for(GO i = 0;i<ConnVecSize;i++){
+                        if (ConnVecSize>0) {
+                            for(GO i = 0;i<ConnVecSize;i++) {
                                 conn[i] = ConnVec[i]->getSubdomainsVector();
-                                for(int j = 0;j<conn[i].size();j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),Connect->getEntityMap()->getComm()->getRank()));
+                                for (int j = 0; j<conn[i].size(); j++) rep.insert(std::pair<GO,int>(conn.at(i).at(j),Connect->getEntityMap()->getComm()->getRank()));
                             }
                             for (auto& x: rep) {
                                 entries.push_back(x.first);
                             }
                         }
                         MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
-                        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-                        std::vector<GO> col_vec(entries.size());
-                        for(UN i = 0;i<entries.size();i++)
-                        {
+                        
+                        UN maxNumElements = -1;
+                        UN numElementsLocal = entries.size();
+                        reduceAll(*this->MpiComm_,Teuchos::REDUCE_MAX,numElementsLocal,Teuchos::ptr(&maxNumElements));
+                        Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::createLocalMap(Xpetra::UseTpetra,maxNumElements,this->MpiComm_);
+                        
+                        Teuchos::Array<GO> col_vec(entries.size());
+                        for (UN i = 0; i<entries.size(); i++) {
                             col_vec.at(i) = i;
                         }
-//                        Teuchos::Array<GO> col1(10);
-//                        for(UN j = 0;j<10;j++){
-//                            col1.at(j) = j;
-//                        }
-                        
-                        Teuchos::ArrayView<GO> cols(col_vec);
-                        Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::createLocalMap(Xpetra::UseTpetra,10,this->K_->getMap()->getComm());
                         //Build(Xpetra::UseTpetra,10,col1(),0,this->K_->getMap()->getComm());
                         //this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(GraphMap,10));
-                        this->GraphEntriesList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,10);
-                        this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),cols,entries());
+                        this->GraphEntriesList_ = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphMap,ColMap,numElementsLocal);
+                        this->GraphEntriesList_->insertGlobalValues(GraphMap()->getComm()->getRank(),col_vec(),entries());
                         this->GraphEntriesList_->fillComplete();
-                        
                     }
                 }
+                
                 this->BlockCoarseDimension_[blockId] = 0;
                 for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                     this->BlockCoarseDimension_[blockId] += numEntitiesGlobal[i];

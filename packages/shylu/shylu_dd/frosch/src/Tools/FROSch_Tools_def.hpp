@@ -190,7 +190,11 @@ namespace FROSch {
         return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,repeatedIndices(),0,matrix->getRowMap()->getComm());
     }
     template <class SC,class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm){
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph,
+                                                            Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,
+                                                            Teuchos::RCP<Teuchos::ParameterList> parameterList,
+                                                            Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm)
+    {
         
         int MyPID=TeuchosComm->getRank();
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -202,7 +206,7 @@ namespace FROSch {
         size_t MaxRow = B->getGlobalMaxNumRowEntries();
         Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,MaxRow,0,TeuchosComm);
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
-        Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
+        Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
         problem->solve();
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
         adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());

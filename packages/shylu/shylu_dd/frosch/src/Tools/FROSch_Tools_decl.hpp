@@ -187,7 +187,10 @@ namespace FROSch {
     int RepartionMatrixZoltan2(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &crsMatrix, Teuchos::RCP<Teuchos::ParameterList> parameterList);
     
     template <class SC, class LO, class GO, class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm);
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph,
+                                                            Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,
+                                                            Teuchos::RCP<Teuchos::ParameterList> parameterList,
+                                                            Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm);
 
 #endif
 
