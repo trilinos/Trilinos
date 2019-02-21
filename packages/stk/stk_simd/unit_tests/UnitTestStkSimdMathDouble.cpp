@@ -1858,21 +1858,36 @@ TEST(StkSimd, simd_isnan)
   
 }
 
-TEST(StkSimd, ReduceSum)
-{
-  int N = 500000;
-  double t0; // timing variable
-
+std::vector<double> X_RandomValues(int N = 500000) {
   std::vector<double> x(N);
-  std::vector<double> y(N);
-
   for (int n=0; n < N; ++n) {
     x[n] = 21*(rand()-0.4)/RAND_MAX;
+  }
+  return x;
+}
+
+std::vector<double> Y_RandomValues(std::vector<double>& x) {
+  int N = x.size();
+  std::vector<double> y(N);
+  for (int n=0; n < N; ++n) {
     y[n] = 0.5*x[n];
   }
+  return y;
+}
+
+
+TEST(StkSimd, ReduceSum)
+{
+
+  double t0; // timing variable
+
+  std::vector<double> x = X_RandomValues();
+  std::vector<double> y = Y_RandomValues(x);
 
   double sum_val = 0.0;
   double save_sum = 0.0;
+
+  const int N = x.size();
   const int Ns = N/stk::simd::ndoubles;
 
   for (int i=0; i < 3; ++i) {
@@ -1897,7 +1912,8 @@ TEST(StkSimd, ReduceSum)
     for (int n=0; n < N; ++n) {
       const double xl = x[n];
       const double yl = y[n];
-      sum_val += ( (xl/yl) + (stk::math::sqrt(yl)+1.0) )*(0.03);
+      double d = ( (xl/yl) + (stk::math::sqrt(yl)+1.0) )*(0.03);
+      sum_val += d;
     }
     t0 += stk::get_time_in_seconds();
     std::cout << "OMP: Real reduce took " << t0 << " seconds" <<  std::endl;
@@ -1905,6 +1921,101 @@ TEST(StkSimd, ReduceSum)
 
   //printf("sums = %g %g\n",sum_val, save_sum);
 
-  ASSERT_NEAR( sum_val-save_sum, 0.0, 1e-12*sum_val );  
+  EXPECT_NEAR( sum_val-save_sum, 0.0, 1e-12*sum_val );
+
+}
+
+TEST(StkSimd, ReduceMax)
+{
+  double t0; // timing variable
+
+  std::vector<double> x = X_RandomValues();
+  std::vector<double> y = Y_RandomValues(x);
+
+  double max_val = std::numeric_limits<double>::min();
+  double save_max = std::numeric_limits<double>::min();
+
+  const int N = x.size();
+  const int Ns = N/stk::simd::ndoubles;
+
+  for (int i=0; i < 3; ++i) {
+
+    max_val = std::numeric_limits<double>::min();
+
+    t0 = -stk::get_time_in_seconds();
+    for (int n=0; n < Ns; ++n) {
+      const int ns = n*stk::simd::ndoubles;
+      const stk::simd::Double xl = stk::simd::load(&x[ns]);
+      const stk::simd::Double yl = stk::simd::load(&y[ns]);
+      const stk::simd::Double  d = ( (xl/yl) + (stk::math::sqrt(yl)+stk::simd::Double(1.0)) )*stk::simd::Double(0.03);
+      max_val = stk::math::max(max_val, stk::simd::reduce_max(d));
+    }
+    t0 += stk::get_time_in_seconds();
+    std::cout << "OMP: SIMD reduce took " << t0 << " seconds" << std::endl;
+
+    save_max = max_val;
+    max_val = std::numeric_limits<double>::min();
+
+    t0 = -stk::get_time_in_seconds();
+    for (int n=0; n < N; ++n) {
+      const double xl = x[n];
+      const double yl = y[n];
+      double d = ( (xl/yl) + (stk::math::sqrt(yl)+1.0) )*(0.03);
+      max_val = stk::math::max(max_val, d);
+    }
+    t0 += stk::get_time_in_seconds();
+    std::cout << "OMP: Real reduce took " << t0 << " seconds" <<  std::endl;
+  }
+
+  //printf("sums = %g %g\n",sum_val, save_sum);
+
+  EXPECT_EQ( max_val, save_max);
+
+}
+
+TEST(StkSimd, ReduceMin)
+{
+  double t0; // timing variable
+
+  std::vector<double> x = X_RandomValues();
+  std::vector<double> y = Y_RandomValues(x);
+
+  double min_val = std::numeric_limits<double>::max();
+  double save_min = std::numeric_limits<double>::max();
+
+  const int N = x.size();
+  const int Ns = N/stk::simd::ndoubles;
+
+  for (int i=0; i < 3; ++i) {
+    min_val = std::numeric_limits<double>::max();
+
+    t0 = -stk::get_time_in_seconds();
+    for (int n=0; n < Ns; ++n) {
+      const int ns = n*stk::simd::ndoubles;
+      const stk::simd::Double xl = stk::simd::load(&x[ns]);
+      const stk::simd::Double yl = stk::simd::load(&y[ns]);
+      const stk::simd::Double  d = ( (xl/yl) + (stk::math::sqrt(yl)+stk::simd::Double(1.0)) )*stk::simd::Double(0.03);
+      min_val = stk::math::min(min_val, stk::simd::reduce_min(d));
+    }
+    t0 += stk::get_time_in_seconds();
+    std::cout << "OMP: SIMD reduce took " << t0 << " seconds" << std::endl;
+
+    save_min = min_val;
+    min_val = std::numeric_limits<double>::max();
+
+    t0 = -stk::get_time_in_seconds();
+    for (int n=0; n < N; ++n) {
+      const double xl = x[n];
+      const double yl = y[n];
+      double d = ( (xl/yl) + (stk::math::sqrt(yl)+1.0) )*(0.03);
+      min_val = stk::math::min(min_val, d);
+    }
+    t0 += stk::get_time_in_seconds();
+    std::cout << "OMP: Real reduce took " << t0 << " seconds" <<  std::endl;
+  }
+
+  //printf("sums = %g %g\n",sum_val, save_sum);
+  EXPECT_EQ( min_val, save_min);
+
 }
 

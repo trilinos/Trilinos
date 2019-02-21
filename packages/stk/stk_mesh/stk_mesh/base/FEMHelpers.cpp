@@ -98,8 +98,7 @@ Entity declare_element(BulkData & mesh,
     Entity elem = mesh.declare_element(elem_id, parts);
 
     Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-    OrdinalVector ordinal_scratch(64);
-    PartVector part_scratch;
+    OrdinalVector scratch1, scratch2, scratch3;
 
     for(unsigned i = 0; i < top.num_nodes(); ++i)
     {
@@ -110,7 +109,7 @@ Entity declare_element(BulkData & mesh,
             node = mesh.declare_node(node_ids[i], empty);
         }
 
-        mesh.declare_relation(elem, node, i, perm, ordinal_scratch, part_scratch);
+        mesh.declare_relation(elem, node, i, perm, scratch1, scratch2, scratch3);
     }
     return elem;
 }
@@ -306,13 +305,11 @@ bool is_edge_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity eleme
 namespace {
 inline void sub_topology_check(const stk::mesh::EntityVector& candidateSideNodes,
                                stk::topology elemTopology,
-                               stk::topology subTopology,
-                               const std::string &elementType)
+                               stk::topology subTopology)
 {
     bool sizeCheck = (subTopology == stk::topology::INVALID_TOPOLOGY) ? true : (candidateSideNodes.size() == subTopology.num_nodes());
-    ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for "
-                               << elementType << " (" << elemTopology
-                               << "),subTopology=" << subTopology
+    ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for ("
+                               << elemTopology << "),subTopology=" << subTopology
                                << ", side: " << candidateSideNodes.size()
                                << ", expected: " << subTopology.num_nodes());
 }
@@ -320,13 +317,11 @@ inline void sub_topology_check(const stk::mesh::EntityVector& candidateSideNodes
 inline void sub_topology_check(const stk::mesh::Entity* candidateSideNodes,
                                size_t numCandidateSideNodes,
                                stk::topology elemTopology,
-                               stk::topology subTopology,
-                               const std::string &elementType)
+                               stk::topology subTopology)
 {
     bool sizeCheck = (subTopology == stk::topology::INVALID_TOPOLOGY) ? true : (numCandidateSideNodes == subTopology.num_nodes());
-    ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for "
-                               << elementType << " (" << elemTopology
-                               << "),subTopology=" << subTopology
+    ThrowRequireMsg(sizeCheck, "ERROR, Invalid number of nodes for ("
+                               << elemTopology << "),subTopology=" << subTopology
                                << ", side: " << numCandidateSideNodes
                                << ", expected: " << subTopology.num_nodes());
 }
@@ -342,7 +337,7 @@ EquivAndPositive is_shell_edge_equivalent_and_positive(const stk::mesh::BulkData
     stk::topology elemTopology = mesh.bucket(element).topology();
     stk::topology subTopology = elemTopology.sub_topology(mesh.mesh_meta_data().side_rank(), 0);
     stk::topology edgeTopology = subTopology.sub_topology(stk::topology::EDGE_RANK, 0);
-    sub_topology_check(candidateSideNodes, elemTopology, edgeTopology,"shell");
+    sub_topology_check(candidateSideNodes, elemTopology, edgeTopology);
 
     const stk::mesh::Entity* elemNodes = mesh.begin_nodes(element);
     unsigned numElemNodes = elemTopology.num_nodes();
@@ -388,7 +383,7 @@ EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh
     }
 
     stk::topology subTopology = elemTopology.sub_topology(mesh.mesh_meta_data().side_rank(), sideOrdinal);
-    sub_topology_check(candidateSideNodes, elemTopology, subTopology,"solid");
+    sub_topology_check(candidateSideNodes, elemTopology, subTopology);
 
     return is_equivalent_and_positive(mesh, element, sideOrdinal, mesh.mesh_meta_data().side_rank(), candidateSideNodes.data());
 }
@@ -407,7 +402,7 @@ EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh
     }
 
     stk::topology subTopology = elemTopology.sub_topology(mesh.mesh_meta_data().side_rank(), sideOrdinal);
-    sub_topology_check(candidateSideNodes, numCandidateSideNodes, elemTopology, subTopology,"solid");
+    sub_topology_check(candidateSideNodes, numCandidateSideNodes, elemTopology, subTopology);
 
     return is_equivalent_and_positive(mesh, element, sideOrdinal, mesh.mesh_meta_data().side_rank(), candidateSideNodes);
 }

@@ -144,6 +144,7 @@ lib stk_topology
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(stk_topology-root)/stk_topology/*.cpp ]
+        [ glob $(stk_topology-root)/stk_topology/topology_detail/*.cpp ]
     ]
     /sierra/stk_util//stk_util_environment
   : 

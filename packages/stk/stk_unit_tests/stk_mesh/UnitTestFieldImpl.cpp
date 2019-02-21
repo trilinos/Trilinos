@@ -142,7 +142,6 @@ void UnitTestFieldImpl::testFieldRestriction()
   Part & pA = meta_data.declare_part( std::string("A") , stk::topology::NODE_RANK );
   Part & pB = meta_data.declare_part( std::string("B") , stk::topology::NODE_RANK );
   Part & pC = meta_data.declare_part( std::string("C") , stk::topology::NODE_RANK );
-  Part & pD = meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK );
 
   // Declare three restrictions:
 
@@ -189,16 +188,21 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   ASSERT_TRUE( nodeField->restrictions().size() == 2 );
 
+#ifndef NDEBUG
+//The following checking/cleaning of restrictions can be expensive, so it
+//is only done in debug mode.
   //------------------------------
   // Introduce a redundant restriction, clean it, and
   // check that it was cleaned.
-
+  Part & pD = meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK );
   std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_data_ordinal()<<std::endl;
+
   meta_data.declare_part_subset( pD, pA );
   meta_data.declare_field_restriction(*f2 , pA , stride[f2->field_array_rank()-1], stride[0] );
   meta_data.declare_field_restriction(*f2 , pD , stride[f2->field_array_rank()-1], stride[0] );
 
-  ASSERT_TRUE( f2->restrictions().size() == 1 );
+  unsigned expected = 1;
+  ASSERT_TRUE( f2->restrictions().size() == expected );
 
   {
     const FieldBase::Restriction & rA = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pA );
@@ -234,6 +238,7 @@ void UnitTestFieldImpl::testFieldRestriction()
       std::runtime_error
     );
   }
+#endif
 }
 
 

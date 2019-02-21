@@ -151,6 +151,11 @@ lib stk_search_util_base
     # builds only and will not be present for developer builds.
         <file>$(stk_search_util-root)/lib/libstk_search_util_base.a
     ]
+   [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 exe stk_search_util_utest

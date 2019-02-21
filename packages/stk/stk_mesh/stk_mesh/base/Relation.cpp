@@ -40,7 +40,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <utility>                      // for pair
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
-#include "stk_mesh/base/Part.hpp"       // for Part, insert_ordinal, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, OrdinalVector, etc
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -76,8 +75,8 @@ void get_entities_through_relations(
   const BulkData &mesh,
   Entity const *rels_begin,
   Entity const *rels_end,
-  const std::vector<Entity>::const_iterator i_beg ,
-  const std::vector<Entity>::const_iterator i_end ,
+  const Entity* i_beg ,
+  const Entity* i_end ,
   std::vector<Entity> & entities_related )
 {
   for (Entity const *rels_left = rels_begin ; rels_left != rels_end ; ++rels_left )
@@ -87,11 +86,14 @@ void get_entities_through_relations(
     Entity const e = *rels_left;
     EntityRank erank = mesh.entity_rank(e);
 
-    std::vector<Entity>::const_iterator i = i_beg ;
+    const Entity* i = i_beg ;
     for ( ; i != i_end ; ++i )
     {
-      int num_conn = mesh.num_connectivity(*i, erank);
-      const Entity* irels_j  = mesh.begin(*i, erank);
+      const MeshIndex& meshIndex = mesh.mesh_index(*i);
+      const Bucket* bucket = meshIndex.bucket;
+      unsigned bucketOrd = meshIndex.bucket_ordinal;
+      int num_conn = bucket->num_connectivity(bucketOrd, erank);
+      const Entity* irels_j  = bucket->begin(bucketOrd, erank);
       Entity const *irels_end = irels_j + num_conn;
 
       while ( irels_j != irels_end && e != *irels_j) {
@@ -119,14 +121,14 @@ void get_entities_through_relations(
   entities_related.clear();
 
   if ( ! entities.empty() ) {
-          std::vector<Entity>::const_iterator i = entities.begin();
-    const std::vector<Entity>::const_iterator j = entities.end();
+    const Entity* i = entities.data();
+    const Entity* j = i+entities.size();
 
     const Bucket &ibucket = mesh.bucket(*i);
     const Ordinal &ibordinal = mesh.bucket_ordinal(*i);
     const EntityRank end_rank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
 
-    std::vector<Entity>::const_iterator next_i = i + 1;
+    const Entity* next_i = i + 1;
     for (EntityRank rank = stk::topology::BEGIN_RANK; rank < end_rank; ++rank)
     {
       int num_conn   = mesh.num_connectivity(ibucket[ibordinal], rank);
@@ -140,6 +142,25 @@ void get_entities_through_relations(
 
 void get_entities_through_relations(
   const BulkData& mesh,
+  const Entity* entities_begin ,
+  const Entity* entities_end ,
+        EntityRank              entities_related_rank ,
+        std::vector<Entity> & entities_related )
+{
+  entities_related.clear();
+
+  if ( entities_begin != entities_end ) {
+
+    int num_rels = mesh.num_connectivity(entities_begin[0], entities_related_rank);
+    Entity const* rel_entities = mesh.begin(entities_begin[0], entities_related_rank);
+
+    get_entities_through_relations(mesh, rel_entities, rel_entities + num_rels,
+                                   entities_begin+1, entities_end, entities_related);
+  }
+}
+
+void get_entities_through_relations(
+  const BulkData& mesh,
   const std::vector<Entity> & entities ,
         EntityRank              entities_related_rank ,
         std::vector<Entity> & entities_related )
@@ -148,8 +169,8 @@ void get_entities_through_relations(
 
   if ( ! entities.empty() ) {
 
-          std::vector<Entity>::const_iterator i = entities.begin();
-    const std::vector<Entity>::const_iterator j = entities.end();
+    const Entity* i = entities.data();
+    const Entity* j = i+entities.size();
 
     int num_rels = mesh.num_connectivity(*i, entities_related_rank);
     Entity const* rel_entities = mesh.begin(*i, entities_related_rank);

@@ -108,6 +108,49 @@ FieldRestrictionVector & FieldBaseImpl::restrictions()
 
 //----------------------------------------------------------------------
 
+template<typename PARTVECTOR>
+void get_parts_and_all_subsets(const PARTVECTOR& parts, OrdinalVector& parts_and_all_subsets)
+{
+  parts_and_all_subsets.clear();
+  for(const Part* part : parts) {
+    stk::util::insert_keep_sorted_and_unique(part->mesh_meta_data_ordinal(), parts_and_all_subsets);
+
+    const PartVector& subsets = part->subsets();
+    for(const Part* subset : subsets) {
+      stk::util::insert_keep_sorted_and_unique(subset->mesh_meta_data_ordinal(), parts_and_all_subsets);
+    }
+  }
+}
+
+std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& tmp,
+                                                             FieldRestrictionVector::iterator i,
+                                                             PartVector& selectorI_parts,
+                                                             OrdinalVector& selectorI_parts_and_subsets,
+                                                             PartVector& arg_selector_parts,
+                                                             OrdinalVector& arg_selector_parts_and_subsets,
+                                                             bool arg_selector_is_all_unions
+                                                            )
+{
+  bool found_subset = false;
+  bool found_superset = false;
+
+  const Selector& selectorI = i->selector();
+  selectorI_parts.clear();
+  selectorI.get_parts(selectorI_parts);
+  get_parts_and_all_subsets(selectorI_parts, selectorI_parts_and_subsets);
+  const bool selectorI_is_all_unions = selectorI.is_all_unions();
+  
+  const bool both_selectors_are_unions = arg_selector_is_all_unions && selectorI_is_all_unions;
+  found_superset = both_selectors_are_unions ? is_subset(arg_selector_parts_and_subsets, selectorI_parts_and_subsets) : false;
+  
+  found_subset = both_selectors_are_unions ? is_subset(selectorI_parts_and_subsets, arg_selector_parts_and_subsets) : false;
+  if (found_subset) {
+    *i = tmp;
+  }
+
+  return std::make_pair(found_superset, found_subset);
+}
+
 void FieldBaseImpl::insert_restriction(
   const char     * arg_method ,
   const Selector & arg_selector ,
@@ -166,34 +209,56 @@ void FieldBaseImpl::insert_restriction(
     if ( new_restriction ) {
       // New field restriction, verify we are not committed:
       ThrowRequireMsg(!m_meta_data->is_commit(), "STK-Mesh error: attempting to specify field allocation after MetaData has been committed. Field allocations must be specified (e.g. stk::mesh::put_field_on_mesh(...) before MetaData is committed.");
-      unsigned num_subsets = 0;
+      PartVector arg_selector_parts, selectorI_parts;
+      OrdinalVector arg_selector_parts_and_subsets, selectorI_parts_and_subsets;
+      arg_selector.get_parts(arg_selector_parts);
+      get_parts_and_all_subsets(arg_selector_parts, arg_selector_parts_and_subsets);
+
+      const bool arg_selector_is_all_unions = arg_selector.is_all_unions();
+      bool found_superset = false;
+      bool found_subset = false;
+
       for(FieldRestrictionVector::iterator i=restrs.begin(), iend=restrs.end(); i!=iend; ++i) {
 
-        const Selector& selectorI = i->selector();
-        bool found_subset = is_subset(selectorI, arg_selector);
-        if (found_subset) {
-          ThrowErrorMsgIf( i->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
-                           arg_method << " FAILED for " << *this << " " <<
-                           print_restriction( *i, arg_selector, m_field_rank ) <<
-                           " WITH INCOMPATIBLE REDECLARATION " <<
-                           print_restriction( tmp, arg_selector, m_field_rank ));
-          *i = tmp;
-          ++num_subsets;
+        const unsigned i_num_scalars_per_entity = i->num_scalars_per_entity();
+
+        bool shouldCheckForExistingSubsetsOrSupersets =
+          arg_num_scalars_per_entity != i_num_scalars_per_entity;
+#ifndef NDEBUG
+        shouldCheckForExistingSubsetsOrSupersets = true;
+#endif
+        if (shouldCheckForExistingSubsetsOrSupersets) {
+          std::pair<bool,bool> result =
+             check_for_existing_subsets_or_supersets(tmp, i,
+                                                     selectorI_parts, selectorI_parts_and_subsets,
+                                                     arg_selector_parts, arg_selector_parts_and_subsets,
+                                                     arg_selector_is_all_unions
+                                                      );
+          if (result.first) {
+            found_superset = true;
+          }
+          if (result.second) {
+            found_subset = true;
+          }
         }
 
-        bool found_superset = is_subset(arg_selector, selectorI);
         if (found_superset) {
-          ThrowErrorMsgIf( i->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
+          ThrowErrorMsgIf( i_num_scalars_per_entity != arg_num_scalars_per_entity,
+                       " FAILED to add new field-restriction " <<
+                       print_restriction( *i, arg_selector, m_field_rank ) <<
+                       " WITH INCOMPATIBLE REDECLARATION " <<
+                       print_restriction( tmp, arg_selector, m_field_rank ));
+          return;
+        }
+        if (found_subset) {
+          ThrowErrorMsgIf( i_num_scalars_per_entity != arg_num_scalars_per_entity,
                            arg_method << " FAILED for " << *this << " " <<
                            print_restriction( *i, arg_selector, m_field_rank ) <<
                            " WITH INCOMPATIBLE REDECLARATION " <<
                            print_restriction( tmp, arg_selector, m_field_rank ));
-          //if there's already a restriction for a superset of this selector, then
-          //there's nothing to do and we're out of here..
-          return;
         }
       }
-      if (num_subsets == 0) {
+      if (!found_subset) {
         restrs.insert( restr , tmp );
       }
       else {
@@ -219,6 +284,7 @@ void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Pa
   //Check whether restriction contains subset part, if so, it may now be redundant
   //with another restriction.
   //If they are, make sure they are compatible and remove the subset restrictions.
+  PartVector scratch1, scratch2;
   for (size_t r = 0; r < restrs.size(); ++r) {
     FieldRestriction const& curr_restriction = restrs[r];
 
@@ -227,8 +293,9 @@ void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Pa
       for (size_t i = 0, ie = restrs.size(); i < ie; ++i) {
         FieldRestriction const& check_restriction = restrs[i];
         if (i != r &&
+            check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity() &&
             check_restriction.selector()(subset) &&
-            is_subset(curr_restriction.selector(), check_restriction.selector())) {
+            is_subset(curr_restriction.selector(), check_restriction.selector(), scratch1, scratch2)) {
           ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
                            "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
           delete_me = true;

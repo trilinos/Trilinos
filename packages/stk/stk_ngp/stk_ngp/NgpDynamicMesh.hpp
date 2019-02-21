@@ -51,7 +51,7 @@
 #include <stk_ngp/NgpMesh.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::Cuda Device;
 #else
   typedef Kokkos::Serial Device;

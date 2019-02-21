@@ -2,7 +2,7 @@
 #include <Kokkos_Core.hpp>
 #include <limits>
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   typedef Kokkos::Cuda Device;
   typedef Kokkos::CudaSpace MemSpace;
 #else
