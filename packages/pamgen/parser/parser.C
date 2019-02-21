@@ -2,6 +2,7 @@
 
 #include "keyword.h"
 #include "parser.h"
+#include "parse_routines.h"
 
 #include <sstream>
 #include <ctype.h>
@@ -11,8 +12,8 @@
 #include <assert.h>
 #include <cstdlib>
 #include <iostream>
-using namespace std;
 
+using namespace std;
 
 namespace PAMGEN_NEVADA {
 
@@ -74,6 +75,7 @@ int Parse( Token_Stream *token_stream,
     token_stream->Set_Recovery_Flag(false);
     assert(match->func != 0);
     token_stream->pushNewInputBlock( match->name );
+    Allow_New_Mesh_Specification();
     match->func(token_stream, match->argument);
     token_stream->popInputBlock();
   }
