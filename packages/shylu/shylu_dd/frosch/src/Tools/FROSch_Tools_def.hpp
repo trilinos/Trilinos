@@ -204,7 +204,7 @@ namespace FROSch {
         
         Teuchos::RCP<inputAdapter> adaptedMatrix = Teuchos::rcp(new inputAdapter(Xgraph,0,0));
         size_t MaxRow = B->getGlobalMaxNumRowEntries();
-        Teuchos::RCP<Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,MaxRow,MaxRow,0,TeuchosComm);
+        Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > ColMap = Xpetra::MapFactory<LO,GO,NO>::createLocalMap(Xpetra::UseTpetra,MaxRow,TeuchosComm);
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
         problem->solve();
@@ -222,6 +222,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),B->getColMap(),MaxRow);
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
+        B->describe(*fancy,Teuchos::VERB_EXTREME); BB->describe(*fancy,Teuchos::VERB_EXTREME);
         //--------------------Get Repeated Nodes Map------------------------
         //All Elemnts and neighboring on Proc
         Teuchos::ArrayView<const GO>  eList =EleRepMap->getNodeElementList();
@@ -234,16 +235,16 @@ namespace FROSch {
         Teuchos::ArrayView<const LO> cc2;
         std::vector<GO> vec = createVector(eList);
         
-        for(size_t i = 0 ; i<Xgraph->getRowMap()->getNodeNumElements();i++){
+        for (size_t i = 0; i<Xgraph->getRowMap()->getNodeNumElements(); i++) {
             std::vector<GO> el1;
             std::vector<GO> el2;
             
             BB->getLocalRowView(i,cc,arr);
             el1 = Teuchos::createVector(arr);
             
-            for(unsigned h = 0;h<el1.size();h++) rep.insert(std::pair<GO,int>(el1.at(h),MyPID));
+            for (unsigned h = 0;h<el1.size(); h++) rep.insert(std::pair<GO,int>(el1.at(h),MyPID));
             
-            for(unsigned k = Xgraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
+            for (unsigned k = Xgraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
                 BB->getLocalRowView(k,cc2,arr2);
                 el2 = Teuchos::createVector(arr2);
                 
@@ -254,7 +255,7 @@ namespace FROSch {
                 std::vector<GO> common (3);
                 it = std::set_intersection(el1.begin(),el1.end(),el2.begin(),el2.end(), common.begin());
                 common.resize(it-common.begin());
-                for (unsigned l = 0;l<common.size();l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
+                for (unsigned l = 0;l<common.size(); l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
             }
         }
         

@@ -329,7 +329,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::buildCoarseSolveMap(CrsMatrixPtr &k0)
     {
-        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout)); 
 
         NumProcsCoarseSolve_ = DistributionList_->get("NumProcs",0);
         double fac = DistributionList_->get("Factor",1.0);
@@ -416,7 +416,7 @@ namespace FROSch {
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
                     GOVec RowsCoarseSolve;
                     
-                    if(OnCoarseSolveComm_) {
+                    if (OnCoarseSolveComm_) {
                         int start = (nSubs*(CoarseSolveComm_->getRank()))/NumProcsCoarseSolve_;
                         int end = (nSubs*(CoarseSolveComm_->getRank()+1))/NumProcsCoarseSolve_;
                         RowsCoarseSolve.resize(end-start);
@@ -585,7 +585,7 @@ namespace FROSch {
                     ElemS->fillComplete();
                     
                     
-                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap2 = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(Xpetra::UseTpetra,nSubs, CoarseSolveComm_);
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap2 = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(Xpetra::UseTpetra,nSubs,CoarseSolveComm_);
                     const size_t numMyElements = GraphMap->getNodeNumElements();
                     
                     Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
