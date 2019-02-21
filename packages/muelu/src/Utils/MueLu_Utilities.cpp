@@ -652,4 +652,12 @@ bool IsParamValidVariable(const std::string& name)
     }
 
 
+// Clips the description() of a MueLu Factory
+std::string ClipDescription(const std::string & inString) {
+  size_t open_bracket = inString.find("{",0);
+  size_t double_colon = inString.find("::",0);
+  return inString.substr(double_colon+2,open_bracket == std::string::npos ? open_bracket : open_bracket-(double_colon+2));
+}
+
+
 } // namespace MueLu

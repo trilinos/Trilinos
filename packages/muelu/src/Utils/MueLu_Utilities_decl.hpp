@@ -1032,6 +1032,10 @@ namespace MueLu {
   // Generates a communicator whose only members are other ranks of the baseComm on my node
   Teuchos::RCP<const Teuchos::Comm<int> > GenerateNodeComm(RCP<const Teuchos::Comm<int> > & baseComm, int &NodeId, const int reductionFactor);
 
+  // Clips the description() of a MueLu Factory
+  std::string ClipDescription(const std::string & inString);
+
+
 } //namespace MueLu
 
 #define MUELU_UTILITIES_SHORT
