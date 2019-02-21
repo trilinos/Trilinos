@@ -192,7 +192,6 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph, Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > B,Teuchos::RCP<Teuchos::ParameterList> parameterList,Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm){
         
-        int numprocs = TeuchosComm->getSize();
         int MyPID=TeuchosComm->getRank();
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
         //Zoltan2 Problem
@@ -216,7 +215,7 @@ namespace FROSch {
         //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
         
         //Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),MaxRow));
-        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),MaxRow);
+        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),B->getColMap(),MaxRow);
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
         //--------------------Get Repeated Nodes Map------------------------
@@ -238,9 +237,9 @@ namespace FROSch {
             BB->getLocalRowView(i,cc,arr);
             el1 = Teuchos::createVector(arr);
             
-            for(int h = 0;h<el1.size();h++) rep.insert(std::pair<GO,int>(el1.at(h),MyPID));
+            for(unsigned h = 0;h<el1.size();h++) rep.insert(std::pair<GO,int>(el1.at(h),MyPID));
             
-            for(int k = Xgraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
+            for(unsigned k = Xgraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
                 BB->getLocalRowView(k,cc2,arr2);
                 el2 = Teuchos::createVector(arr2);
                 
@@ -251,7 +250,7 @@ namespace FROSch {
                 std::vector<GO> common (3);
                 it = std::set_intersection(el1.begin(),el1.end(),el2.begin(),el2.end(), common.begin());
                 common.resize(it-common.begin());
-                for(int l = 0;l<common.size();l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
+                for (unsigned l = 0;l<common.size();l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
             }
         }
         
