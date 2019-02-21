@@ -112,6 +112,8 @@ namespace MueLu {
         Input(coarseLevel, "Nullspace");
       if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
         Input(coarseLevel, "Coordinates");
+      if (pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null)
+        Input(coarseLevel, "Material Coordinates");
 
     } else {
       if (pL.get<bool>("transpose: use implicit") == false)
