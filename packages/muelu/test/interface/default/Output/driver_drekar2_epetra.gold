@@ -23,6 +23,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1
@@ -85,6 +86,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -161,6 +163,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1
@@ -223,6 +226,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -299,6 +303,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "distance laplacian": threshold = 0.02, blocksize = 1
 aggregation: drop tol = 0.02
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
 lightweight wrap = 1
@@ -361,6 +366,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -434,8 +440,8 @@ Cycle type          = V
 level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  1  
   1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
-  3  371   1111   2.99     2.99         1  
+  2  1112  3334   3.00     3.00         1  
+  3  371   1111   2.99     3.00         1  
 
 Smoother (level 0) both : MueLu::IfpackSmoother{type = Chebyshev}
 

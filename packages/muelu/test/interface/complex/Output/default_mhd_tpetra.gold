@@ -24,6 +24,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "classical": threshold = (0,0), blocksize = 1
 aggregation: drop tol = 0   [default]
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
@@ -97,6 +98,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "classical": threshold = (0,0), blocksize = 1
 aggregation: drop tol = 0   [default]
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1

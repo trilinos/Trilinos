@@ -21,6 +21,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
@@ -79,6 +80,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -143,6 +145,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "classical": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
@@ -201,6 +204,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -305,6 +309,7 @@ Transferring coordinates
 Reusing coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -350,6 +355,7 @@ Transferring coordinates
 Reusing coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]

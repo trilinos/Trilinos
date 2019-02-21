@@ -283,7 +283,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         H->GetLevel(0)->Set("Coordinates", coordinates);
-        H->GetLevel(0)->Set("Material Coordinates", materialCoordinates);
+
+        // Only add the material coordinates if we need them
+        if(paramList.isParameter("aggregation: drop scheme") &&  paramList.get<std::string>("aggregation: drop scheme") == "distance and material")
+          H->GetLevel(0)->Set("Material Coordinates", materialCoordinates);
 
         mueluFactory->SetupHierarchy(*H);
 

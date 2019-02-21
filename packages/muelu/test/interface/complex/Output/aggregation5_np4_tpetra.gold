@@ -28,6 +28,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "classical": threshold = (0,0), blocksize = 1
 aggregation: drop tol = 0   [default]
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
@@ -73,6 +74,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -114,6 +116,7 @@ Build (MueLu::AmalgamationFactory)
 
 algorithm = "classical": threshold = (0,0), blocksize = 1
 aggregation: drop tol = 0   [default]
+aggregation: secondary drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 lightweight wrap = 1
@@ -159,6 +162,7 @@ Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
 structured aggregation = 0   [default]
 aggregation coupled = 0   [default]
+aggregation material = 0   [default]
 Geometric = 0   [default]
 write start = -1   [default]
 write end = -1   [default]
@@ -185,14 +189,14 @@ presmoother ->
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.44
+Operator complexity = 1.37
 Smoother complexity = 1.78
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
   0  9999  29995  3.00                  4  
   1  3333  9997   3.00     3.00         4  
-  2  1111  3331   3.00     3.00         4  
+  2  371   1121   3.02     8.98         4  
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
