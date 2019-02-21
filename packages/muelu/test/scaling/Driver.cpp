@@ -440,7 +440,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
       out2<<"*********** MueLu ParameterList ***********"<<std::endl;
       out2<<mueluList;
-      out<<"********************************************"<<std::endl;
+      out2<<"*******************************************"<<std::endl;
 
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
