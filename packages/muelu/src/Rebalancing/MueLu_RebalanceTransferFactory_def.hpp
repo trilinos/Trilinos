@@ -222,7 +222,7 @@ namespace MueLu {
             Set(coarseLevel, "Coordinates", Get< RCP<CoordinateMultiVector> >(coarseLevel, "Coordinates"));
 
         if (pL.isParameter("Material Coordinates") && pL.get< RCP<const FactoryBase> >("Material Coordinates") != Teuchos::null)
-          if (IsAvailable(coarseLevel, "Coordinates"))
+          if (IsAvailable(coarseLevel, "Material Coordinates"))
             Set(coarseLevel, "Material Coordinates", Get< RCP<Vector> >(coarseLevel, "Material Coordinates"));
 
         return;
