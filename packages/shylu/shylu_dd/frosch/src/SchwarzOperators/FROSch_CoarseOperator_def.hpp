@@ -411,6 +411,7 @@ namespace FROSch {
             //Repeated Map on first level needs to be correct--Build ElementNodeList
             if (DistributionList_->get("Use RepMap",false))
             {
+                std::cout<<"CoarseOP 412\n";
                 if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
@@ -540,6 +541,7 @@ namespace FROSch {
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
             if(DistributionList_->get("Use RepMap",false))
             {
+                std::cout<<"Coarse Op 544\n";
                 if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());

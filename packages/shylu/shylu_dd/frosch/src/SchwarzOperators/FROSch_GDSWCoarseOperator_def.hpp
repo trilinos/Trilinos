@@ -515,6 +515,7 @@ namespace FROSch {
                 }
                 
                 if (this->ParameterList_->get("Use RepMap",false)) {
+                    std::cout<<"GDSW 518\n";
                     if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;
