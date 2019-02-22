@@ -384,8 +384,6 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     ordinal_type numTargetCubPoints = projStruct->getNumTargetEvalPoints(faceDim, iface);
 
     ordinal_type numTargetCurlCubPoints = projStruct->getNumTargetDerivEvalPoints(faceDim, iface);
-    range_type faceCurlPointsRange = projStruct->getTargetDerivPointsRange(faceDim, iface);
-
     ordinal_type numCubPoints = projStruct->getNumBasisEvalPoints(faceDim, iface);
 
     scalarViewType hgradBasisGradAtCubPoints("hgradBasisGradAtCubPoints",hgradBasis->getCardinality(), numCubPoints, faceDim);
