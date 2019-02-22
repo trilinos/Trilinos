@@ -625,7 +625,6 @@ bicgstab_aztecoo (MV& x,
   bool brkdown_will_occur = false;
   dot_type alpha = STS::one ();
   dot_type beta = STS::zero ();
-  mag_type true_scaled_r = STM::zero ();
   dot_type omega = STS::one ();
   dot_type rhonm1 = STS::one ();
   dot_type rhon = STS::zero ();
