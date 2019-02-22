@@ -450,6 +450,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
       RCP<Hierarchy> H;
       RCP<Operator> Prec;
+      bool preconditionerOK = true;
       try {
         comm->barrier();
         // Build the preconditioner numRebuilds+1 times
@@ -462,27 +463,34 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       catch(const std::exception& e) { 
         out2<<"MueLu_Driver: preconditioner setup crashed w/ message:"<<e.what()<<std::endl;
         H=Teuchos::null; Prec=Teuchos::null;
+        preconditionerOK = false;
       }
       
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
-      try {
-        comm->barrier();
-        if (writeMatricesOPT > -2) {
-          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
-          H->Write(writeMatricesOPT, writeMatricesOPT);
-          tm = Teuchos::null;
+      if(preconditionerOK) {
+        try {
+          comm->barrier();
+          if (writeMatricesOPT > -2) {
+            tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
+            H->Write(writeMatricesOPT, writeMatricesOPT);
+            tm = Teuchos::null;
+          }
+          
+          // Solve the system numResolves+1 times
+          SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
+          
+          comm->barrier();
         }
-        
-        // Solve the system numResolves+1 times
-        SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
-        
-        comm->barrier();
+        catch(const std::exception& e) { 
+          out2<<"MueLu_Driver: solver crashed w/ message:"<<e.what()<<std::endl;
+        }       
       }
-      catch(...) { 
-        out2<<"MueLu_Driver: solver crashed!"<<std::endl;
+      else {
+        out2<<"MueLu_Driver: Not solving system due to crash in preconditioner setup"<<std::endl;
       }
+
 
       tm = Teuchos::null;
       globalTimeMonitor = Teuchos::null;
