@@ -453,8 +453,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         comm->barrier();
         tm = Teuchos::null;
       }
-      catch(...) { 
-        out2<<"MueLu_Driver: preconditioner setup crashed!"<<std::endl;
+      catch(const std::exception& e) { 
+        out2<<"MueLu_Driver: preconditioner setup crashed w/ message:"<<e.what()<<std::endl;
         H=Teuchos::null; Prec=Teuchos::null;
       }
       
