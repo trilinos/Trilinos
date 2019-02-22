@@ -274,7 +274,6 @@ int DeRhamCommutativityTri(const bool verbose) {
 
   ValueType  vertices_orig[numTotalVertexes][dim] = {{0,0},{0,1},{1,0},{1,1}};
   ordinal_type tris_orig[numCells][numElemVertexes] = {{0,1,2},{1,2,3}};  
-  edgeType common_edge = {{1,2}};
   ordinal_type tris_rotated[numCells][numElemVertexes];
 
   *outStream
