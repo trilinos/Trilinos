@@ -424,7 +424,7 @@ namespace FROSch {
                             RowsCoarseSolve[i] = start+i;
                         }
                     }
-                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,nSubs,RowsCoarseSolve,0,this->MpiComm_);
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,RowsCoarseSolve,0,this->MpiComm_);
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
                     
                     Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
@@ -551,7 +551,7 @@ namespace FROSch {
                         RowsCoarseSolve.resize(end-start);
                         for(int i = 0;i<end-start;i++) RowsCoarseSolve[i] = start+i;
                     }
-                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,nSubs,RowsCoarseSolve,0,this->MpiComm_);
+                    Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,RowsCoarseSolve,0,this->MpiComm_);
                     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
                     
                     Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();

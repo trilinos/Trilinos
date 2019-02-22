@@ -195,7 +195,7 @@ namespace FROSch {
                                 entries.push_back(x.first);
                             }
                         }
-                        MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
+                        MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,1,0,this->K_->getMap()->getComm());
                         
                         UN maxNumElements = -1;
                         UN numElementsLocal = entries.size();
