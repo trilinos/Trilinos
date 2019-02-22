@@ -224,6 +224,7 @@ namespace MueLu {
       ExportDataSetKeepFlags(H, restrictorsToPrint_,  "R");
       ExportDataSetKeepFlags(H, nullspaceToPrint_,  "Nullspace");
       ExportDataSetKeepFlags(H, coordinatesToPrint_,  "Coordinates");
+      ExportDataSetKeepFlags(H, materialCoordinatesToPrint_,  "Material Coordinates");
 #ifdef HAVE_MUELU_INTREPID2
       ExportDataSetKeepFlags(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
@@ -261,6 +262,7 @@ namespace MueLu {
       WriteData<Matrix>(H, restrictorsToPrint_,  "R");
       WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
       WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
+      WriteData<Vector>(H, materialCoordinatesToPrint_,  "Material Coordinates");
 #ifdef HAVE_MUELU_INTREPID2
       typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
       WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
@@ -314,6 +316,7 @@ namespace MueLu {
     Teuchos::Array<int>   restrictorsToPrint_;
     Teuchos::Array<int>   nullspaceToPrint_;
     Teuchos::Array<int>   coordinatesToPrint_;
+    Teuchos::Array<int>   materialCoordinatesToPrint_;
     Teuchos::Array<int>   elementToNodeMapsToPrint_;
 
     std::map<int, std::vector<keep_pair> > keep_;
