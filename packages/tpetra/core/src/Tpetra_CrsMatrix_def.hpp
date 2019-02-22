@@ -682,36 +682,20 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix)
+  swap(CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & crs_matrix)
   {
-    std::swap(matrix.importMV_, this->importMV_);                 // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.exportMV_, this->exportMV_);                 // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.staticGraph_, this->staticGraph_);           // Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.myGraph_, this->myGraph_);                   // Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(matrix.lclMatrix_, this->lclMatrix_);               // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
-    std::swap(matrix.k_values1D_, this->k_values1D_);             // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
-    std::swap(matrix.values2D_, this->values2D_);                 // Teuchos::ArrayRCP<Teuchos::Array<Kokkos::Details::ArithTraits<Scalar>::val_type>>
-    std::swap(matrix.storageStatus_, this->storageStatus_);       // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
-    std::swap(matrix.fillComplete_, this->fillComplete_);         // bool
-    std::swap(matrix.nonlocals_, this->nonlocals_);               // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
-    std::swap(matrix.frobNorm_, this->frobNorm_);                 // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
-
+    std::swap(crs_matrix.importMV_,      this->importMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(crs_matrix.lclMatrix_,     this->lclMatrix_);       // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
+    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
+    std::swap(crs_matrix.values2D_,      this->values2D_);        // Teuchos::ArrayRCP<Teuchos::Array<Kokkos::Details::ArithTraits<Scalar>::val_type>>
+    std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
+    std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
+    std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
+    std::swap(crs_matrix.frobNorm_,      this->frobNorm_);        // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
   }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isIdenticalTo(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix) const
-  {
-    bool output = true;
-
-    // WCMCLEN SCAFFOLDING TODO: Implement this...
-
-
-    return output;
-  }
-
-
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -6640,7 +6624,7 @@ namespace Tpetra {
   packAndPrepareNew (const SrcDistObject& source,
                      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<char*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                      size_t& constantNumPackets,
                      Distributor& distor)
   {
@@ -6772,11 +6756,9 @@ namespace Tpetra {
       // View exportLIDs' host data as a Teuchos::ArrayView.  We don't
       // need to sync, since we're doing write-only access, but we do
       // need to mark the DualView as modified on host.
-      {
-        auto numPacketsPerLID_nc = numPacketsPerLID; // const DV& -> DV
-        numPacketsPerLID_nc.clear_sync_state(); // write only access
-        numPacketsPerLID_nc.modify_host();
-      }
+
+      numPacketsPerLID.clear_sync_state (); // write-only access
+      numPacketsPerLID.modify_host ();
       auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
       Teuchos::ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
                                                       numPacketsPerLID_h.size ());
@@ -7443,8 +7425,8 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                       Kokkos::DualView<char*, buffer_device_type> imports,
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                        const size_t constantNumPackets,
                        Distributor& distor,
                        const CombineMode combineMode)
@@ -8199,8 +8181,6 @@ namespace Tpetra {
     typedef node_type NT;
     typedef CrsMatrix<Scalar, LO, GO, NT> this_type;
     typedef Vector<int, LO, GO, NT> IntVectorType;
-    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
-    const GO GINVALID = Teuchos::OrdinalTraits<GO>::invalid ();
     using Teuchos::as;
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
@@ -8224,9 +8204,10 @@ namespace Tpetra {
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
 
-   int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-   RCP<ParameterList> matrixparams; // parameters for the destination matrix
-   if (! params.is_null ()) {
+    int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+    RCP<ParameterList> matrixparams; // parameters for the destination matrix
+    bool overrideAllreduce = false;
+    if (! params.is_null ()) {
       matrixparams = sublist (params, "CrsMatrix");
       reverseMode = params->get ("Reverse Mode", reverseMode);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
@@ -8234,6 +8215,7 @@ namespace Tpetra {
       isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
 
+      overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
       if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
       if(reverseMode) isMM = false;
     }
@@ -8242,7 +8224,8 @@ namespace Tpetra {
    std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
    int mismatch = 0;
    int reduced_mismatch = 0;
-   if (isMM) {
+   if (isMM && !overrideAllreduce) {
+
      // Test for pathological matrix transfer
      const bool source_vals = ! getGraph ()->getImporter ().is_null();
      const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
@@ -9148,7 +9131,7 @@ namespace Tpetra {
       }
     }
 
-    if( isMM && !MyImporter.is_null()) {
+    if( isMM ) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMisMM (*TimeMonitor::getNewTimer(prefix + std::string("isMM Block")));
 #endif
@@ -9199,8 +9182,8 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        Teuchos::ArrayView<const int>  EPID1 =  MyImporter->getExportPIDs();// SourceMatrix->graph->importer
-        Teuchos::ArrayView<const LO>   ELID1 =  MyImporter->getExportLIDs();
+        Teuchos::ArrayView<const int>  EPID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportPIDs();
+        Teuchos::ArrayView<const LO>   ELID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportLIDs();
 
         Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
         Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();
@@ -9234,23 +9217,11 @@ namespace Tpetra {
           }
         }
 
-        if (verbose) {
-          std::ostringstream os;
-          os << *verbosePrefix << "sort, unique, & erase usrtg" << std::endl;
-          std::cerr << os.str ();
-        }
-
 // This sort can _not_ be omitted.[
         std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order
         auto eopg = std ::unique(usrtg.begin(),usrtg.end());
         // 25 Jul 2018: Could just ignore the entries at and after eopg.
         usrtg.erase(eopg,usrtg.end());
-
-        if (verbose) {
-          std::ostringstream os;
-          os << *verbosePrefix << "Done with sort, unique, & erase" << std::endl;
-          std::cerr << os.str ();
-        }
 
         const Array_size_type type2_us_size = usrtg.size();
         Teuchos::ArrayRCP<int>  EPID2=Teuchos::arcp(new int[type2_us_size],0,type2_us_size,true);

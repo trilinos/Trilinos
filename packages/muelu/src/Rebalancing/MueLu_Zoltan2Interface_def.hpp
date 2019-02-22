@@ -87,6 +87,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >   ("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
     validParamList->set< RCP<const FactoryBase> >   ("Coordinates",   Teuchos::null, "Factory of the coordinates");
     validParamList->set< RCP<const ParameterList> > ("ParameterList", Teuchos::null, "Zoltan2 parameters");
+    validParamList->set< RCP<const FactoryBase> >   ("repartition: heuristic target rows per process", Teuchos::null, "Factory for number of rows per process to use with MultiJagged");
 
     return validParamList;
   }
@@ -103,10 +104,16 @@ namespace MueLu {
     RCP<const Teuchos::ParameterList> providedList = Teuchos::any_cast<RCP<const Teuchos::ParameterList> >(entry.getAny(false));
     if (providedList != Teuchos::null && providedList->isType<std::string>("algorithm")) {
       const std::string algo = providedList->get<std::string>("algorithm");
-      if (algo == "multijagged" || algo == "rcb")
+      if (algo == "multijagged") {
         Input(currentLevel, "Coordinates");
-    } else
+        Input(currentLevel, "repartition: heuristic target rows per process");
+      } else if (algo == "rcb") {
+        Input(currentLevel, "Coordinates");
+      }
+    } else {
+      Input(currentLevel, "repartition: heuristic target rows per process");
       Input(currentLevel, "Coordinates");
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -186,6 +193,12 @@ namespace MueLu {
         for (LO j = 0; j < blkSize; j++) {
           weightsPerRow[i] += A->getNumEntriesInLocalRow(i*blkSize+j);
         }
+      }
+     
+      // MultiJagged: Grab the target rows per process from the Heuristic to use unless the Zoltan2 list says otherwise
+      if(algo == "multijagged" && !Zoltan2Params.isParameter("mj_premigration_coordinate_count")) {
+        LO heuristicTargetRowsPerProcess = Get<LO>(level,"repartition: heuristic target rows per process");
+        Zoltan2Params.set("mj_premigration_coordinate_count", heuristicTargetRowsPerProcess);
       }
 
       std::vector<int>           strides;

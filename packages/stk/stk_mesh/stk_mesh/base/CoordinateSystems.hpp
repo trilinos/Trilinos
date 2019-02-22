@@ -36,6 +36,7 @@
 
 //----------------------------------------------------------------------
 
+#include <stk_mesh/base/Types.hpp>
 #include <Shards_Array.hpp>             // for ArrayDimTag::size_type, etc
 #include <string>                       // for string
 
@@ -69,8 +70,10 @@ struct Cartesian3d : public shards::ArrayDimTag {
   enum { X = 0 , Y = 1 , Z = 2 };       ///< Identifiers for each dimension
 
   const char * name() const ;
-  std::string to_string( size_type size , size_type index ) const ;
-  size_type    to_index(  size_type size , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type size , size_type index ) const ;
+  STK_DEPRECATED size_type    to_index(  size_type size , const std::string & ) const ;
+#endif
   static const Cartesian3d & tag();       ///< Singleton
 
 private:
@@ -91,8 +94,10 @@ struct Cartesian2d: public shards::ArrayDimTag {
   enum { X = 0 , Y = 1 };       ///< Identifiers for each dimension
 
   const char * name() const ;
-  std::string to_string( size_type size , size_type index ) const ;
-  size_type    to_index(  size_type size , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type size , size_type index ) const ;
+  STK_DEPRECATED size_type    to_index(  size_type size , const std::string & ) const ;
+#endif
   static const Cartesian2d & tag();       ///< Singleton
 
 private:
@@ -115,8 +120,10 @@ struct Cylindrical : public shards::ArrayDimTag {
          Z = 2 };
 
   const char * name() const ;
-  std::string to_string( size_type size , size_type index ) const ;
-  size_type    to_index(  size_type size , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type size , size_type index ) const ;
+  STK_DEPRECATED size_type    to_index(  size_type size , const std::string & ) const ;
+#endif
   static const Cylindrical & tag(); ///< Singleton
 
 private:
@@ -151,8 +158,10 @@ struct FullTensor36 : public shards::ArrayDimTag {
          ZX = 5 , ZY = 7 , ZZ = 2 };
 
   const char * name() const ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type, const std::string & ) const  ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type, const std::string & ) const  ;
+#endif
   static const FullTensor36 & tag(); ///< Singleton
 
 private:
@@ -174,8 +183,10 @@ struct FullTensor22 : public shards::ArrayDimTag {
          YX = 3 , YY = 1};
 
   const char * name() const ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type, const std::string & ) const  ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type, const std::string & ) const  ;
+#endif
   static const FullTensor22 & tag(); ///< Singleton
 
 private:
@@ -201,8 +212,10 @@ struct SymmetricTensor33 : public shards::ArrayDimTag {
          ZX = 5 , ZY = 4,  ZZ = 2};
 
   const char * name() const  ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type , const std::string & ) const ;
+#endif
   static const SymmetricTensor33 & tag(); ///< Singleton
 
 private:
@@ -228,8 +241,10 @@ struct SymmetricTensor31 : public shards::ArrayDimTag {
          zr = 3 , zz = 1};
 
   const char * name() const  ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type , const std::string & ) const ;
+#endif
   static const SymmetricTensor31 & tag(); ///< Singleton
 
 private:
@@ -249,8 +264,10 @@ struct SymmetricTensor21 : public shards::ArrayDimTag {
          YX = 2 , YY = 1 };
 
   const char * name() const  ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type , const std::string & ) const ;
+#endif
   static const SymmetricTensor21 & tag(); ///< Singleton
 
 private:
@@ -277,8 +294,10 @@ struct AsymmetricTensor03 : public shards::ArrayDimTag {
              ZX = 2 ,   ZY = 1  /* ZZ=0 */ };
 
   const char * name() const  ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type , const std::string & ) const ;
+#endif
   static const AsymmetricTensor03 & tag(); ///< Singleton
 
 private:
@@ -300,8 +319,10 @@ struct Matrix22 : public shards::ArrayDimTag {
          YX = 1,  YY = 3 };
 
   const char * name() const  ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type , const std::string & ) const ;
+#endif
   static const Matrix22 & tag(); ///< Singleton
 
 private:
@@ -322,8 +343,10 @@ struct Matrix33 : public shards::ArrayDimTag {
          ZX = 2 , ZY = 5 , ZZ = 8 };
 
   const char * name() const  ;
-  std::string to_string( size_type, size_type) const  ;
-  size_type    to_index(  size_type , const std::string & ) const ;
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after March 14, 2019
+  STK_DEPRECATED std::string to_string( size_type, size_type) const  ;
+  STK_DEPRECATED size_type    to_index(  size_type , const std::string & ) const ;
+#endif
   static const Matrix33 & tag(); ///< Singleton
 
 private:

@@ -218,6 +218,9 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const = 0;
 
+    //! Replace the diagonal entries of the matrix
+    virtual void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) = 0;
+
     //! Left scale matrix using the given vector entries
     virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
@@ -254,6 +257,11 @@ namespace Xpetra {
     //! Print the object with some verbosity level to an FancyOStream object.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
+    //@}
+
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    virtual void setObjectLabel( const std::string &objectLabel ) =0;
     //@}
 
     //! @name Xpetra-specific routines

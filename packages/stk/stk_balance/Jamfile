@@ -183,7 +183,14 @@ lib stk_balance_lib
     /sierra/stk_util//stk_util_command_line
   :
     <include>$(stk_balance-root-inc)/stk_balance
-    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a ]
+    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter -Wno-implicit-fallthrough"
+    ]
+
   :
   :
   ;

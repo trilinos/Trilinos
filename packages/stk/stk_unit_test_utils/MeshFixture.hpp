@@ -39,6 +39,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_ngp_test/ngp_test.hpp>
 
 namespace stk
 {
@@ -160,7 +161,7 @@ protected:
     stk::mesh::BulkData *bulkData = nullptr;
 };
 
-class MeshFixture : public MeshFixtureNoTest, public ::testing::Test {
+class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
  protected:
   MeshFixture(){}
   MeshFixture(unsigned spatial_dim) : MeshFixtureNoTest(spatial_dim) {}

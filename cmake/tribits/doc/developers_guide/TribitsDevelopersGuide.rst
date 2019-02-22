@@ -5396,6 +5396,7 @@ To add a new TriBITS package with packages, do the following:
 Once the new SE packages are defined, downstream SE packages can define
 dependencies on these.
 
+
 How to add a new TriBITS Subpackage
 -----------------------------------
 
@@ -5769,6 +5770,7 @@ library and executable links.  See documentation in the functions
 `TRIBITS_ADD_LIBRARY()`_ and `TRIBITS_ADD_EXECUTABLE()`_, and the ``DEPLIBS``
 argument to these functions, for more details.
 
+
 How to tentatively enable a TPL
 -------------------------------
 
@@ -5870,6 +5872,75 @@ one would perform the following steps:
    Otherwise, to see notes about ignoring missing inserted/external packages,
    set the variable ``-D<Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE``
    and TriBITS will print warnings about missing external packages.
+
+
+How to put a TriBITS and raw CMake build system side-by-side
+------------------------------------------------------------
+
+There are cases where it is advantageous to have a raw CMake build system and
+a TriBITS CMake build system sit side-by-side in a CMake project.  There are
+various ways to accomplish this but a very simple way that has minimal impact
+on the raw CMake build system is described here.  An example of how to
+accomplish this is shown in the example project ``RawAndTribitsHelloWorld``.
+This CMake project is a copy of the `TribitsHelloWorld`_ project that puts a
+primary default raw CMake build system side-by-side with a secondary TriBITS
+CMake build system.  The key aspects of this basic approach shown in this
+example are:
+
+1) An ``if()`` statement must be added to the base project ``CMakeLists.txt``
+   file to switch between the two build systems.  (This is required since the
+   raw CMake commands ``cmake_minimum_required()`` and ``project()`` must
+   exist in the base ``CMakeLists.txt`` file and not in and included
+   ``*.cmake`` file.)  The switch trigger in the ``if()`` statement can be any
+   logic desired, but a simple way is to look for the
+   ``${PROJECT_NAME}_TRIBITS_DIR`` cache variable being set.
+
+2) The TriBITS build system in every subdirectory is contained in files of the
+   name ``CMakeLists.tribits.cmake`` beside the ``CMakeLists.txt`` files for
+   the raw CMake build system.  (The file ``CMakeLists.tribits.cmake`` ends
+   with a ``*.cmake`` extension so that source editors pick it up as a CMake
+   file.)
+
+3) At the top of every raw CMake build system ``CMakeLists.txt`` file is a
+   call to a simple macro ``include_tribits_build()`` which includes the
+   ``CMakeLists.tribits.cmake`` file and then returns if doing a TriBITS build
+   and otherwise does nothing for a raw CMake build.
+
+The top file ``RawAndTribitsHelloWorld/CMakeLists.txt`` file demonstrates the
+basic approach:
+
+.. include:: ../../examples/RawAndTribitsHelloWorld/CMakeLists.txt
+   :literal:
+
+Then every raw ``CMakeLists.txt`` file starts with the command
+``include_tribits_build()`` at the very top as shown in the example file
+``RawAndTribitsHelloWorld/hello_world/CMakeLists.txt``:
+
+.. include:: ../../examples/RawAndTribitsHelloWorld/hello_world/CMakeLists.txt
+   :literal:
+
+To configure the project as a raw CMake project, just configure it as with any
+raw CMake project as::
+
+  cmake [options] <some_base_dir>/RawAndTribitsHelloWorld
+
+To configure it as a TriBITS project, just set the cache var
+``RawAndTribitsHelloWorld_TRIBITS_DIR`` to point to valid TriBITS source tree
+as::
+
+  cmake [options] \
+    -DRawAndTribitsHelloWorld_TRIBITS_DIR=<tribits_dir> \
+     <some_base_dir>/RawAndTribitsHelloWorld
+
+A twist on this use case is for a package that only builds as a TriBITS
+package inside of some larger TriBITS project and not as its own TriBITS CMake
+project.  In this case, some slight changes are needed to this example but the
+basic approach is nearly identical.  One still needs a ``if()`` statement at
+the top of first ``CMakeLists.txt`` file (this time for the package) and the
+macro ``include_tribits_build()`` needs to be defined at the top of that file
+as well.  Then every ``CMakeLists.txt`` file in subdirectories just calls
+``include_tribits_build()``.  That is it.
+
 
 How to check for and tweak TriBITS "ENABLE" cache variables
 -----------------------------------------------------------
@@ -6181,6 +6252,7 @@ The following steps describe how to submit results to a CDash site using the
   .. clones of your base git repo.  One to provide the CTest -S script, and
   .. the other cloned and updated by the CTest driver script.
 
+
 Additional Topics
 =================
 
@@ -6188,6 +6260,7 @@ In this section, a number of miscellaneous topics and TriBITS features are
 discussed.  These features and topics are either not considered primary
 features of TriBITS (but can be very useful in many situations) or don't neatly
 fit into one of the other sections.
+
 
 TriBITS Repository Contents
 ---------------------------
@@ -8426,15 +8499,16 @@ These options are described below.
 
   The cache variable ``${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME``
   determines if the start and end date/time for each advanced test (i.e. added
-  with `TRIBITS_ADD_ADVANCED_TEST()`_) is printed or not with each test.  The
-  TriBITS default is ``OFF`` but a TriBITS project can change this default by
-  setting::
+  with `TRIBITS_ADD_ADVANCED_TEST()`_) is printed or not with each test.  If
+  set to ``TRUE`` this also causes in the timing for each ``TEST_<IDX>`` block
+  to be printed as well.  The TriBITS default is ``OFF`` but a TriBITS project
+  can change this default by setting::
 
     SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
 
   The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
-  and therefore will only work on Linux/Unix/Mac systems and not Windows
-  systems.
+  and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
+  systems and not Windows systems.
 
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a

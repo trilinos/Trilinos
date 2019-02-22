@@ -45,8 +45,8 @@
 
 #include "Ifpack2_Details_RowMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp" // only need the declaration here
-#include "Tpetra_Import.hpp"
-#include "Tpetra_Map.hpp"
+#include "Tpetra_Import_decl.hpp"
+#include "Tpetra_Map_decl.hpp"
 #include <type_traits>
 
 namespace Ifpack2 {
@@ -65,8 +65,8 @@ public:
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> row_matrix_type;
+  using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+					    global_ordinal_type, node_type>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::OverlappingRowMatrix: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
@@ -90,7 +90,7 @@ public:
                         const int overlapLevel);
 
   //! Destructor
-  ~OverlappingRowMatrix ();
+  ~OverlappingRowMatrix () = default;
 
   //@}
   //! @name Matrix query methods
@@ -330,7 +330,6 @@ public:
   exportMultiVector (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &OvX,
                      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
                      Tpetra::CombineMode CM = Tpetra::ADD);
-  //@}
 
   std::string description() const;
 
@@ -347,7 +346,7 @@ private:
   typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vector_type;
 
   //! The input matrix to the constructor.
-  Teuchos::RCP<const row_matrix_type> A_;
+  Teuchos::RCP<const crs_matrix_type> A_;
 
   Tpetra::global_size_t NumGlobalRows_;
   Tpetra::global_size_t NumGlobalNonzeros_;
@@ -360,9 +359,9 @@ private:
   Teuchos::RCP<const import_type> Importer_;
 
   //! The matrix containing only the overlap rows.
-  Teuchos::RCP<row_matrix_type> ExtMatrix_;
-  Teuchos::RCP<map_type>        ExtMap_;
-  Teuchos::RCP<import_type>     ExtImporter_;
+  Teuchos::RCP<const crs_matrix_type> ExtMatrix_;
+  Teuchos::RCP<const map_type>        ExtMap_;
+  Teuchos::RCP<const import_type>     ExtImporter_;
 
   //! Graph of the matrix (as returned by getGraph()).
   Teuchos::RCP<const row_graph_type> graph_;

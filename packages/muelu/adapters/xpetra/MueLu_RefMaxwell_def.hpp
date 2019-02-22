@@ -372,6 +372,7 @@ namespace MueLu {
         coarseLevel.Set("R",R11_);
         coarseLevel.Set("Coordinates",CoordsH_);
         coarseLevel.Set("number of partitions", numProcsAH);
+        coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
         coarseLevel.setlib(AH_->getDomainMap()->lib());
         fineLevel.setlib(AH_->getDomainMap()->lib());
@@ -536,6 +537,7 @@ namespace MueLu {
         if (doRebalancing) {
 
           coarseLevel.Set("number of partitions", numProcsA22);
+          coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
           // auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
           // ParameterList repartheurParams;

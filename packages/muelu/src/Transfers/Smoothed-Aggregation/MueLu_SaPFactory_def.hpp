@@ -131,11 +131,9 @@ namespace MueLu {
     RCP<Matrix> finalP;
 
     // Reuse pattern if available
-    RCP<ParameterList> APparams;
+    RCP<ParameterList> APparams = rcp(new ParameterList);;
     if(pL.isSublist("matrixmatrix: kernel params"))
-      APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-    else
-      APparams= rcp(new ParameterList);
+      APparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
     if (coarseLevel.IsAvailable("AP reuse data", this)) {
       GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
@@ -188,8 +186,9 @@ namespace MueLu {
     // Level Set
     if (!restrictionMode_) {
       // The factory is in prolongation mode
+      if(!finalP.is_null()) {std::ostringstream oss; oss << "P_" << coarseLevel.GetLevelID(); finalP->setObjectLabel(oss.str());}
       Set(coarseLevel, "P",             finalP);
-
+    
       APparams->set("graph", finalP);
       Set(coarseLevel, "AP reuse data", APparams);
 
@@ -210,6 +209,7 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "Transpose P", coarseLevel);
         R = Utilities::Transpose(*finalP, true);
+        if(!R.is_null()) {std::ostringstream oss; oss << "R_" << coarseLevel.GetLevelID(); R->setObjectLabel(oss.str());}
       }
 
       Set(coarseLevel, "R", R);

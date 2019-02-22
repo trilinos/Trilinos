@@ -77,7 +77,6 @@ struct topology::topology_type
   static const unsigned num_permutations           = data::num_permutations;
   static const unsigned num_positive_permutations  = data::num_positive_permutations;
 
-  typedef typename data::spatial_dimension_vector                        spatial_dimension_vector;
   typedef typename data::face_topology_vector                            face_topology_vector;
   typedef typename data::edge_node_ordinals_vector                       edge_node_ordinals_vector;
   typedef typename data::face_node_ordinals_vector                       face_node_ordinals_vector;
@@ -98,9 +97,9 @@ struct topology::topology_type
   {
     switch(spatial_dimension)
     {
-    case 1: return topology_detail::defined_on_spatial_dimension_< type, 1>::value;
-    case 2: return topology_detail::defined_on_spatial_dimension_< type, 2>::value;
-    case 3: return topology_detail::defined_on_spatial_dimension_< type, 3>::value;
+    case 1: return topology_detail::defined_on_spatial_dimension_<data, 1>();
+    case 2: return topology_detail::defined_on_spatial_dimension_<data, 2>();
+    case 3: return topology_detail::defined_on_spatial_dimension_<data, 3>();
     default: break;
     }
     return false;

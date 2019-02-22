@@ -49,6 +49,7 @@
     <ParameterList name="myZoltanInterface">
       <Parameter name="factory"                                     type="string"   value="Zoltan2Interface"/>
       <Parameter name="A"                                           type="string"   value="myRAPFact"/>
+      <Parameter name="repartition: heuristic target rows per process" type="string"   value="myRepartitionHeuristicFact"/>
       <Parameter name="number of partitions"                        type="string"   value="myRepartitionHeuristicFact"/>
       <Parameter name="Coordinates"                                 type="string"   value="myTransferCoordinatesFact"/>
 

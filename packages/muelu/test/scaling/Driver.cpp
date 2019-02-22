@@ -77,6 +77,7 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MatrixLoad.hpp>
+#include <DriverCore.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -117,44 +118,8 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
-#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 
-/*********************************************************************/
-// Support for ML interface
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-#include <Xpetra_EpetraOperator.hpp>
-#include <ml_MultiLevelPreconditioner.h>
-
-// Helper functions for compilation purposes
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-struct ML_Wrapper{
-  static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & mlopX) {
-    throw std::runtime_error("Template parameter mismatch");
-  }
-};
-
-
-template<class GlobalOrdinal>
-struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
-  static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& A,Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
-    typedef double SC;
-    typedef int LO;
-    typedef GlobalOrdinal GO;
-    typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
-    Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
-    Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
-#if defined(HAVE_MUELU_BELOS)
-    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
-    mlop = Teuchos::rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
-#endif
-
-    mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
-  }
-};
-#endif
 /*********************************************************************/
 
 #ifdef HAVE_MUELU_TPETRA
@@ -240,7 +205,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero();//, one = STS::one();
-  typedef typename STS::magnitudeType real_type;
+  typedef typename STS::coordinateType real_type;
   typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   // =========================================================================
@@ -280,10 +245,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                          clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                          clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+#else
+  bool profileSetup = false;   
+  bool profileSolve = false;   
 #endif
   int  cacheSize = 0;                                 clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 #ifdef HAVE_MPI
-  bool provideNodeComm = false;                       clp.setOption("nodecomm","nonodecomm",    &provideNodeComm,  "make the nodal communicator available");
+  int provideNodeComm = 0;                            clp.setOption("nodecomm",          &provideNodeComm,  "make the nodal communicator available w/ reduction factor X");
 #endif
 
   clp.recogniseAllOptions(true);
@@ -337,7 +305,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
   int NodeId = comm->getRank();
   if(provideNodeComm) {
-    nodeComm = MueLu::GenerateNodeComm(comm,NodeId);
+    nodeComm = MueLu::GenerateNodeComm(comm,NodeId,provideNodeComm);
     //    printf("DEBUG: Base rank %d => New, node %d, rank %d\n",comm->getRank(),NodeId,nodeComm->getRank());
   }
 #endif
@@ -384,12 +352,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
-
-  const bool mustAlreadyExist = true;
+   
   for (int rerunCount = 1; rerunCount <= numReruns; rerunCount++) {
-    ParameterList mueluList, runList;
-
     bool stop = false;
+    ParameterList mueluList, runList;
+    const bool mustAlreadyExist = true;
     if (isDriver) {
       runList   = paramList.sublist("Run1",  mustAlreadyExist);
       mueluList = runList  .sublist("MueLu", mustAlreadyExist);
@@ -426,13 +393,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
     }
 
+
     int runCount = 1;
+    int   savedOut  = -1;
+    FILE* openedOut = NULL;
     do {
       solveType = dsolveType;
       tol       = dtol;
 
-      int   savedOut  = -1;
-      FILE* openedOut = NULL;
       if (isDriver) {
         if (runList.isParameter("filename")) {
           // Redirect all output into a filename We have to redirect all output,
@@ -451,213 +419,65 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
       }
 
-      out << galeriStream.str();
+      RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      Teuchos::FancyOStream& out2 = *fancy2;
+      out2.setOutputToRootOnly(0);
+
+
+
+      out2 << galeriStream.str();
 
       // =========================================================================
       // Preconditioner construction
       // =========================================================================
-      comm->barrier();
-#ifdef HAVE_MUELU_CUDA
-      if(profileSetup) cudaProfilerStart();
-#endif
-
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
-      bool useML = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
-      if(useML && lib != Xpetra::UseEpetra) throw std::runtime_error("Error: Cannot use ML on non-epetra matrices");
+      bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");  
+#ifdef HAVE_MPI
+      if(provideNodeComm && !useAMGX && !useML) {        
+        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
+        userParamList.set("Node Comm",nodeComm);
+      }
+#endif
+      out2<<"*********** MueLu ParameterList ***********"<<std::endl;
+      out2<<mueluList;
+      out2<<"*******************************************"<<std::endl;
 
       RCP<Hierarchy> H;
-      //      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > AMGXprec;
       RCP<Operator> Prec;
-      for (int i = 0; i <= numRebuilds; i++) {
-        A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-	if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-	  Teuchos::ParameterList dummyList;
-	  Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Ac = Utilities::Op2NonConstTpetraCrs(A);
-	  Teuchos::RCP<Tpetra::Operator<SC,LO,GO,NO> > At = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC,LO,GO,NO> >(Ac);
-	  Teuchos::RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > Top = MueLu::CreateTpetraPreconditioner(At, mueluList, dummyList);
-	  Prec = Teuchos::rcp(new Xpetra::TpetraOperator<SC,LO,GO,NO>(Top));
-#endif
-	} else if(useML) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-          mueluList.remove("use external multigrid package");
-          if(!coordinates.is_null()) {
-            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<real_type,LO,GO,NO>::MV2EpetraMV(coordinates);
-            if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
-            if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
-            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);
-          }
-          ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
-#endif
-        }
-        else {
-          const std::string userName = "user data";
-          Teuchos::Array<LO> lNodesPerDim(3, 10);
-          Teuchos::ParameterList& userParamList = mueluList.sublist(userName);
-          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-          userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
-          userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, mueluList);
-        }
+      try {
+        comm->barrier();
+        // Build the preconditioner numRebuilds+1 times
+        MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
+        PreconditionerSetup(A,coordinates,nullspace,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+        
+        comm->barrier();
+        tm = Teuchos::null;
       }
-#ifdef HAVE_MUELU_CUDA
-      if(profileSetup) cudaProfilerStop();
-#endif
-
-      // Get the raw matrices for matvec testing
-#if defined(HAVE_MUELU_TPETRA)
-      Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > Atpetra;
-      Teuchos::RCP<Tpetra::MultiVector<SC,LO,GO,NO> > Xtpetra,Btpetra;
-      if(lib==Xpetra::UseTpetra) {
-        Atpetra = Utilities::Op2NonConstTpetraCrs(A);
-        Xtpetra = Teuchos::rcp(& Xpetra::toTpetra(*X),false);
-        Btpetra = Teuchos::rcp(& Xpetra::toTpetra(*B),false);
+      catch(const std::exception& e) { 
+        out2<<"MueLu_Driver: preconditioner setup crashed w/ message:"<<e.what()<<std::endl;
+        H=Teuchos::null; Prec=Teuchos::null;
       }
-#endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
-      Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
-      Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
-      if(lib==Xpetra::UseEpetra) {
-        Aepetra = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
-        Xepetra = Teuchos::rcp(& Xpetra::toEpetra(*X),false);
-        Bepetra = Teuchos::rcp(& Xpetra::toEpetra(*B),false);
-      }
-#endif
-
-      comm->barrier();
-      tm = Teuchos::null;
-
+      
       // =========================================================================
       // System solution (Ax = b)
       // =========================================================================
-      comm->barrier();
-
-      if (writeMatricesOPT > -2) {
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
-        H->Write(writeMatricesOPT, writeMatricesOPT);
-        tm = Teuchos::null;
-      }
-
-      std::vector<int> tempVector;
-      int min = 0, max = 10;
-      int numInts = 0;
-      if (cacheSize > 0) {
-        cacheSize *= 1024; //convert to bytes
-        numInts = cacheSize/sizeof(int) + 1;
-        tempVector.resize(numInts);
-      }
-
-      for(int solveno = 0; solveno<=numResolves; solveno++) {
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-        X->putScalar(zero);
-        tm = Teuchos::null;
-
-        if (solveType == "none") {
-          // Do not perform a solve
-        } else if (solveType == "matvec") {
-          // Just do matvecs
-          tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 6 - Matvec")));
-#if defined(HAVE_MUELU_TPETRA)
-          if(lib==Xpetra::UseTpetra) Atpetra->apply(*Btpetra,*Xtpetra);
-#endif
-#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
-          if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
-#endif
-          //clear the cache (and don't time it)
+      try {
+        comm->barrier();
+        if (writeMatricesOPT > -2) {
+          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
+          H->Write(writeMatricesOPT, writeMatricesOPT);
           tm = Teuchos::null;
-          int ttt = rand();
-          for (int i=0; i<numInts; ++i)
-            tempVector[i] += (min + (ttt % static_cast<int>(max - min + 1)));
-        } else if (solveType == "standalone") {
-          tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStart();
-#endif
-          H->IsPreconditioner(false);
-          H->Iterate(*B, *X, maxIts);
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStop();
-#endif
-        } else if (solveType == "belos") {
-#ifdef HAVE_MUELU_BELOS
-          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStart();
-#endif
-          // Operator and Multivector type that will be used with Belos
-          typedef MultiVector          MV;
-          typedef Belos::OperatorT<MV> OP;
-
-          // Define Operator and Preconditioner
-          Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
-          Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-          if(useAMGX) {
-#if defined(HAVE_MUELU_AMGX) and defined(HAVE_MUELU_TPETRA)
-            belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
-#endif
-          }
-          else if(useML) {
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-            belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(Prec)); // Turns an Xpetra::Operator object into a Belos operator
-#endif
-          }
-          else {
-            H->IsPreconditioner(true);
-            belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
-          }
-
-          // Construct a Belos LinearProblem object
-          RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-          if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
-
-          bool set = belosProblem->setProblem();
-          if (set == false) {
-            out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-            // this fixes the resource leak detected by coverity (CID134984)
-            if (openedOut != NULL) {
-              fclose(openedOut);
-              openedOut = NULL;
-            }
-            return EXIT_FAILURE;
-          }
-
-          // Belos parameter list
-          RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
-          belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-          belosList->set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-          belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-          belosList->set("Output Frequency",      1);
-          belosList->set("Output Style",          Belos::Brief);
-          if (!scaleResidualHist)
-            belosList->set("Implicit Residual Scaling", "None");
-
-          // Create an iterative solver manager
-          Belos::SolverFactory<SC, MV, OP> solverFactory;
-          RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
-          solver->setProblem(belosProblem);
-
-          // Perform solve
-          Belos::ReturnType ret = Belos::Unconverged;
-          ret = solver->solve();
-
-          // Get the number of iterations for this solve.
-          out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-          // Check convergence
-          if (ret != Belos::Converged)
-            out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-          else
-            out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-#ifdef HAVE_MUELU_CUDA
-          if(profileSolve) cudaProfilerStop();
-#endif
-#endif //ifdef HAVE_MUELU_BELOS
-        } else {
-          throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
         }
-      }// end resolves
+        
+        // Solve the system numResolves+1 times
+        SystemSolve(A,X,B,H,Prec,out2,solveType,belosType,profileSolve,useAMGX,useML,cacheSize,numResolves,scaleResidualHist,solvePreconditioned,maxIts,tol);
+        
+        comm->barrier();
+      }
+      catch(...) { 
+        out2<<"MueLu_Driver: solver crashed!"<<std::endl;
+      }
 
-      comm->barrier();
       tm = Teuchos::null;
       globalTimeMonitor = Teuchos::null;
 
@@ -675,22 +495,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         const std::string filter = "";
 
-        std::ios_base::fmtflags ff(out.flags());
-        if (timingsFormat == "table-fixed") out << std::fixed;
-        else                                out << std::scientific;
+        std::ios_base::fmtflags ff(out2.flags());
+        if (timingsFormat == "table-fixed") out2 << std::fixed;
+        else                                out2 << std::scientific;
         TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-        out << std::setiosflags(ff);
+        out2 << std::setiosflags(ff);
       }
 
       TimeMonitor::clearCounters();
+      out2 << std::endl;
 
       if (isDriver) {
-        if (openedOut != NULL) {
-          TEUCHOS_ASSERT(savedOut >= 0);
-          dup2(savedOut, STDOUT_FILENO);
-          fclose(openedOut);
-          openedOut = NULL;
-        }
         try {
           runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
           mueluList = runList  .sublist("MueLu", mustAlreadyExist);
@@ -698,8 +513,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           stop = true;
         }
       }
-
+      fflush(NULL);
+      comm->barrier();
     } while (!stop);
+
+    // Cleanup Output
+    if (openedOut != NULL) {
+      TEUCHOS_ASSERT(savedOut >= 0);
+      dup2(savedOut, STDOUT_FILENO);
+      fclose(openedOut);
+      openedOut = NULL;
+    }
+
+
   }//end reruns
 
   return EXIT_SUCCESS;

@@ -113,3 +113,4 @@ UzawaSmoother
 VisualizationHelpers
 ZoltanInterface - #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+NodePartitionInterface - #if defined(HAVE_MPI)

@@ -53,7 +53,6 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
@@ -68,6 +67,7 @@
 #include "Kokkos_Random.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <memory>
+#include <sstream>
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
@@ -1172,7 +1172,7 @@ namespace Tpetra {
   packAndPrepareNew (const SrcDistObject& sourceObj,
                      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                      Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& /* numExportPacketsPerLID */,
+                     Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID,
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
@@ -1414,8 +1414,8 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
+                       Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
+                       Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
                        const size_t constantNumPackets,
                        Distributor& /* distor */,
                        const CombineMode CM)
@@ -3296,34 +3296,64 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
+    using Teuchos::outArg;    
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef MultiVector<Scalar, LO, GO, Node> MV;
+    using Teuchos::reduceAll;
+    using Teuchos::REDUCE_MIN;
+    using std::endl;
+    using MV = MultiVector<Scalar, LO, GO, Node>;
     const char prefix[] = "Tpetra::MultiVector constructor (offsetView): ";
+    const char suffix[] = "Please report this bug to the Tpetra developers.";
+    int lclGood = 1;
+    int gblGood = 1;    
+    std::unique_ptr<std::ostringstream> errStrm;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
 
+    // Be careful to use the input Map's communicator, not X's.  The
+    // idea is that, on return, *this is a subview of X, using the
+    // input Map.
+    const auto comm = subMap.getComm ();
+    TEUCHOS_ASSERT( ! comm.is_null () );
+    const int myRank = comm->getRank ();
+
+    const size_t lclNumRowsBefore = X.getLocalLength ();
+    const size_t numCols = X.getNumVectors ();
     const size_t newNumRows = subMap.getNodeNumElements ();
+    if (verbose) {
+      std::ostringstream os;
+      os << "Proc " << myRank << ": " << prefix << "X: {lclNumRows: "
+	 << lclNumRowsBefore << ", origLclNumRows: " << X.getOrigNumLocalRows ()
+	 << ", numCols: " << numCols << "}, subMap: " << newNumRows << endl;
+      std::cerr << os.str ();
+    }
+    // We ask for the _original_ number of rows in X, because X could
+    // be a shorter (fewer rows) view of a longer MV.  (For example, X
+    // could be a domain Map view of a column Map MV.)
     const bool tooManyElts = newNumRows + offset > X.getOrigNumLocalRows ();
     if (tooManyElts) {
-      const int myRank = X.getMap ()->getComm ()->getRank ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        newNumRows + offset > X.getLocalLength (), std::runtime_error,
-        prefix << "Invalid input Map.  The input Map owns " << newNumRows <<
-        " entries on process " << myRank << ".  offset = " << offset << ".  "
-        "Yet, the MultiVector contains only " << X.getOrigNumLocalRows () <<
-        " rows on this process.");
+      errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
+      *errStrm << "  Proc " << myRank << ": subMap.getNodeNumElements() (="
+	<< newNumRows << ") + offset (=" << offset << ") > X.getOrigNumLocal"
+        "Rows() (=" << X.getOrigNumLocalRows () << ")." << endl;
+      lclGood = 0;
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(! debug && tooManyElts, std::invalid_argument,
+	 prefix << errStrm->str () << suffix);
     }
 
-    // mfh 27 Sep 2017: This debugging code depends on being able to
-    // declare variables that we can use below, so it's too hard for
-    // now to use run-time control to enable this code.
-#ifdef HAVE_TPETRA_DEBUG
-    const size_t strideBefore =
-      X.isConstantStride () ? X.getStride () : static_cast<size_t> (0);
-    const size_t lclNumRowsBefore = X.getLocalLength ();
-    const size_t numColsBefore = X.getNumVectors ();
-    const impl_scalar_type* hostPtrBefore =
-      X.getDualView().view_host().data ();
-#endif // HAVE_TPETRA_DEBUG
+    if (debug) {
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
+      if (gblGood != 1) {
+	std::ostringstream gblErrStrm;
+	const std::string myErrStr =
+	  errStrm.get () != nullptr ? errStrm->str () : std::string ("");
+	::Tpetra::Details::gathervPrint (gblErrStrm, myErrStr, *comm);
+	TEUCHOS_TEST_FOR_EXCEPTION
+	  (true, std::invalid_argument, gblErrStrm.str ());
+      }
+    }
 
     const std::pair<size_t, size_t> origRowRng (offset, X.origView_.extent (0));
     const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
@@ -3339,7 +3369,8 @@ namespace Tpetra {
     // particular, the right way to fix Gauss-Seidel would be to fix
     // #385; that would make "getting the original column Map
     // MultiVector out again" unnecessary.
-    dual_view_type newView = subview (offset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
+    dual_view_type newView =
+      subview (offset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
 
     // NOTE (mfh 06 Jan 2015) Work-around to deal with Kokkos not
     // handling subviews of degenerate Views quite so well.  For some
@@ -3359,56 +3390,52 @@ namespace Tpetra {
 
     MV subViewMV = X.isConstantStride () ?
       MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView) :
-      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView, X.whichVectors_ ());
+      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView,
+	  X.whichVectors_ ());
 
-#ifdef HAVE_TPETRA_DEBUG
-    const size_t strideAfter = X.isConstantStride () ?
-      X.getStride () :
-      static_cast<size_t> (0);
-    const size_t lclNumRowsAfter = X.getLocalLength ();
-    const size_t numColsAfter = X.getNumVectors ();
-    const impl_scalar_type* hostPtrAfter =
-      X.getDualView().view_host().data ();
+    if (debug) {
+      const size_t lclNumRowsRet = subViewMV.getLocalLength ();
+      const size_t numColsRet = subViewMV.getNumVectors ();
+      if (newNumRows != lclNumRowsRet || numCols != numColsRet) {
+	lclGood = 0;
+	if (errStrm.get () == nullptr) {
+	  errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
+	}
+	*errStrm << "  Proc " << myRank <<
+	  ": subMap.getNodeNumElements(): " << newNumRows <<
+	  ", subViewMV.getLocalLength(): " << lclNumRowsRet <<
+	  ", X.getNumVectors(): " << numCols <<
+	  ", subViewMV.getNumVectors(): " << numColsRet << endl;
+      }
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
+      if (gblGood != 1) {
+	std::ostringstream gblErrStrm;
+	if (myRank == 0) {
+	  gblErrStrm << prefix << "Returned MultiVector has the wrong local "
+	    "dimensions on one or more processes:" << endl;
+	}
+	const std::string myErrStr =
+	  errStrm.get () != nullptr ? errStrm->str () : std::string ("");
+	::Tpetra::Details::gathervPrint (gblErrStrm, myErrStr, *comm);
+	gblErrStrm << suffix << endl;
+	TEUCHOS_TEST_FOR_EXCEPTION
+	  (true, std::invalid_argument, gblErrStrm.str ());
+      }
+    }
 
-    const size_t strideRet = subViewMV.isConstantStride () ?
-      subViewMV.getStride () :
-      static_cast<size_t> (0);
-    const size_t lclNumRowsRet = subViewMV.getLocalLength ();
-    const size_t numColsRet = subViewMV.getNumVectors ();
-
-    const char suffix[] = ".  This should never happen.  Please report this "
-      "bug to the Tpetra developers.";
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclNumRowsRet != subMap.getNodeNumElements (),
-      std::logic_error, prefix << "Returned MultiVector has a number of rows "
-      "different than the number of local indices in the input Map.  "
-      "lclNumRowsRet: " << lclNumRowsRet << ", subMap.getNodeNumElements(): "
-      << subMap.getNodeNumElements () << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      strideBefore != strideAfter || lclNumRowsBefore != lclNumRowsAfter ||
-      numColsBefore != numColsAfter || hostPtrBefore != hostPtrAfter,
-      std::logic_error, prefix << "Original MultiVector changed dimensions, "
-      "stride, or host pointer after taking offset view.  strideBefore: " <<
-      strideBefore << ", strideAfter: " << strideAfter << ", lclNumRowsBefore: "
-      << lclNumRowsBefore << ", lclNumRowsAfter: " << lclNumRowsAfter <<
-      ", numColsBefore: " << numColsBefore << ", numColsAfter: " <<
-      numColsAfter << ", hostPtrBefore: " << hostPtrBefore << ", hostPtrAfter: "
-      << hostPtrAfter << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      strideBefore != strideRet, std::logic_error, prefix << "Returned "
-      "MultiVector has different stride than original MultiVector.  "
-      "strideBefore: " << strideBefore << ", strideRet: " << strideRet <<
-      ", numColsBefore: " << numColsBefore << ", numColsRet: " << numColsRet
-      << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numColsBefore != numColsRet, std::logic_error,
-      prefix << "Returned MultiVector has a different number of columns than "
-      "original MultiVector.  numColsBefore: " << numColsBefore << ", "
-      "numColsRet: " << numColsRet << suffix);
-#endif // HAVE_TPETRA_DEBUG
+    if (verbose) {
+      std::ostringstream os;
+      os << "Proc " << myRank << ": " << prefix << "Call op=" << endl;
+      std::cerr << os.str ();
+    }
 
     *this = subViewMV; // shallow copy
+
+    if (verbose) {
+      std::ostringstream os;
+      os << "Proc " << myRank << ": " << prefix << "Done!" << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

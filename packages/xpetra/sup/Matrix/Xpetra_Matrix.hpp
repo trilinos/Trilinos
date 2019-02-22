@@ -509,6 +509,11 @@ namespace Xpetra {
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    virtual void setObjectLabel( const std::string &objectLabel ) =0;
+    //@}
+
     // JG: Added:
 
     //! Supports the getCrsGraph() call

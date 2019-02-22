@@ -256,10 +256,10 @@ struct UnpackCrsMatrixAndCombineFunctor {
     num_bytes_per_value (num_bytes_per_value_in),
     atomic (atomic_in),
     tokens (XS()),
-    lids_scratch ("lids_scratch", tokens.size() * max_num_ent),
-    gids_scratch ("gids_scratch", tokens.size() * max_num_ent),
-    pids_scratch ("pids_scratch", tokens.size() * max_num_ent),
-    vals_scratch ("vals_scratch", tokens.size() * max_num_ent)
+    lids_scratch (Kokkos::view_alloc("lids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
+    gids_scratch (Kokkos::view_alloc("gids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
+    pids_scratch (Kokkos::view_alloc("pids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
+    vals_scratch (Kokkos::view_alloc("vals_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent)
   {}
 
   KOKKOS_INLINE_FUNCTION void init(value_type& dst) const

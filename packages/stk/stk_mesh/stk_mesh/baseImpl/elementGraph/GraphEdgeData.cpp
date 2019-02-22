@@ -60,9 +60,16 @@ const GraphEdgesForElement& Graph::get_edges_for_element(impl::LocalId elem) con
     return m_graphEdges[elem];
 }
 
+void Graph::reserve_edges(impl::LocalId localElemId, size_t numEdges)
+{
+    if (numEdges > 0) {
+        m_graphEdges[localElemId].reserve(m_graphEdges[localElemId].size()+numEdges);
+    }
+}
+
 void Graph::add_edge(const GraphEdge &graphEdge)
 {
-    m_graphEdges[graphEdge.elem1()].push_back(graphEdge);
+    m_graphEdges[graphEdge.elem1()].emplace_back(graphEdge);
     ++m_numEdges;
 }
 

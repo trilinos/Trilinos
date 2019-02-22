@@ -354,6 +354,17 @@ protected:
     const double m_defaultWeight;
 };
 
+class BasicColoringSettings : public stk::balance::BalanceSettings
+{
+public:
+    BasicColoringSettings() {}
+
+    virtual GraphOption getGraphOption() const
+    {
+        return BalanceSettings::COLORING;
+    }
+};
+
 class GraphEdge
 {
 public:
@@ -396,7 +407,8 @@ inline bool operator==(const GraphEdge &a, const GraphEdge &b)
     return (a.vertex1().m_value == b.vertex1().m_value) && (a.vertex2() == b.vertex2());
 }
 
+const std::string& get_coloring_part_base_name();
+stk::mesh::Part* get_coloring_part(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity);
 }
 }
-
 #endif

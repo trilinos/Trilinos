@@ -32,12 +32,13 @@ void populate_part_ordinals_for_remote_edges(const stk::mesh::BulkData& bulkData
 void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData)
 {
     const stk::mesh::impl::ParallelGraphInfo& parallel_info = graph.get_parallel_graph().get_parallel_graph_info();
+    std::vector<stk::mesh::PartOrdinal> partOrdinals;
     for(const auto& item : parallel_info)
     {
         const stk::mesh::GraphEdge &edge = item.first;
         const stk::mesh::impl::ParallelInfo &pinfo = item.second;
         stk::mesh::Entity local_element = graph.get_entity(edge.elem1());
-        std::vector<stk::mesh::PartOrdinal> partOrdinals = stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData);
+        stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData, partOrdinals);
 
         pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());
 

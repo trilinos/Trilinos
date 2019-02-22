@@ -32,6 +32,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ARGS "${ARGS} --show-test-details=ALL --output-show-proc-rank"
   ${MAXNP}
   COMM mpi
+  NUM_MPI_PROCS 2
   FAIL_REGULAR_EXPRESSION "  FAILED  "
   )
 
