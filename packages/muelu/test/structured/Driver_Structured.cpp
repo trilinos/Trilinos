@@ -147,10 +147,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string xmlFileName       = "";                clp.setOption("xml",                   &xmlFileName,       "read parameters from an xml file");
   std::string yamlFileName      = "";                clp.setOption("yaml",                  &yamlFileName,      "read parameters from a yaml file");
+  int         rerun             = 1;                 clp.setOption("rerun",                 &rerun,             "number of reruns required");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-  double      tol              = 1e-12;              clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+  double      tol               = 1e-12;             clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
+  std::string operation         = "solve";           clp.setOption("op",                    &operation,         "operation to perform: (matvec | setup | solver)");
 #ifdef HAVE_MUELU_TPETRA
   std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -319,86 +321,92 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   if(profileSetup) cudaProfilerStart();
 #endif
 
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-  RCP<Hierarchy> H;
-  RCP<Operator> Prec;
-  A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+  for(int run = 0; run < rerun; ++run) {
 
-  const std::string userName = "user data";
-  Teuchos::ParameterList& userParamList = paramList.sublist(userName);
-  userParamList.set<int>("int numDimensions", numDimensions);
-  userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-  userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-  H = MueLu::CreateXpetraPreconditioner(A, paramList, paramList);
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
+    RCP<Hierarchy> H;
+    RCP<Operator> Prec;
+    A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-  comm->barrier();
-  tm = Teuchos::null;
+    const std::string userName = "user data";
+    Teuchos::ParameterList& userParamList = paramList.sublist(userName);
+    userParamList.set<int>("int numDimensions", numDimensions);
+    userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    H = MueLu::CreateXpetraPreconditioner(A, paramList, paramList);
+
+    comm->barrier();
+    tm = Teuchos::null;
 
 #ifdef HAVE_MUELU_CUDA
-  if(profileSolve) cudaProfilerStop();
+    if(profileSolve) cudaProfilerStop();
 #endif
 
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-  X->putScalar(zero);
-  tm = Teuchos::null;
+    if(operation == "setup") {continue;}
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
+    X->putScalar(zero);
+    tm = Teuchos::null;
 
 #ifdef HAVE_MUELU_BELOS
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
 #ifdef HAVE_MUELU_CUDA
-  if(profileSolve) cudaProfilerStart();
+    if(profileSolve) cudaProfilerStart();
 #endif
-  // Operator and Multivector type that will be used with Belos
-  typedef MultiVector          MV;
-  typedef Belos::OperatorT<MV> OP;
+    // Operator and Multivector type that will be used with Belos
+    typedef MultiVector          MV;
+    typedef Belos::OperatorT<MV> OP;
 
-  // Define Operator and Preconditioner
-  Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-  Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-  H->IsPreconditioner(true);
-  belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+    // Define Operator and Preconditioner
+    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+    Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
+    H->IsPreconditioner(true);
+    belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
 
-  // Construct a Belos LinearProblem object
-  RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-  if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
+    // Construct a Belos LinearProblem object
+    RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+    if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
 
-  bool set = belosProblem->setProblem();
-  if (set == false) {
-    out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-    return EXIT_FAILURE;
-  }
+    bool set = belosProblem->setProblem();
+    if (set == false) {
+      out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+      return EXIT_FAILURE;
+    }
 
-  // Belos parameter list
-  Teuchos::ParameterList belosList;
-  belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-  belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-  belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-  belosList.set("Output Frequency",      1);
-  belosList.set("Output Style",          Belos::Brief);
-  if (!scaleResidualHist)
-    belosList.set("Implicit Residual Scaling", "None");
+    // Belos parameter list
+    Teuchos::ParameterList belosList;
+    belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+    belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    belosList.set("Output Frequency",      1);
+    belosList.set("Output Style",          Belos::Brief);
+    if (!scaleResidualHist)
+      belosList.set("Implicit Residual Scaling", "None");
 
-  // Create an iterative solver manager
-  RCP< Belos::SolverManager<SC, MV, OP> > solver;
-  solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    // Create an iterative solver manager
+    RCP< Belos::SolverManager<SC, MV, OP> > solver;
+    solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
 
-  // Perform solve
-  Belos::ReturnType retStatus = Belos::Unconverged;
-  retStatus = solver->solve();
+    // Perform solve
+    Belos::ReturnType retStatus = Belos::Unconverged;
+    retStatus = solver->solve();
 
-  // Get the number of iterations for this solve.
-  out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-  // Check convergence
-  if (retStatus != Belos::Converged)
-    out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-  else
-    out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    // Get the number of iterations for this solve.
+    out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+    // Check convergence
+    if (retStatus != Belos::Converged)
+      out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+    else
+      out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #ifdef HAVE_MUELU_CUDA
-  if(profileSolve) cudaProfilerStop();
+    if(profileSolve) cudaProfilerStop();
 #endif
 #endif //ifdef HAVE_MUELU_BELOS
 
-  comm->barrier();
-  tm = Teuchos::null;
+    comm->barrier();
+    tm = Teuchos::null;
+  } // Rerun loop
+
   globalTimeMonitor = Teuchos::null;
 
   RCP<ParameterList> reportParams = rcp(new ParameterList);
