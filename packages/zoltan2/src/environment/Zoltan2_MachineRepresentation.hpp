@@ -2,14 +2,16 @@
 #define _ZOLTAN2_MACHINEREPRESENTATION_HPP_
 
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+#include <Teuchos_ParameterList.hpp>
+
 #include <Zoltan2_MachineForTesting.hpp>
 #include <Zoltan2_MachineTopoMgr.hpp>
-#include <Zoltan2_MachineTopoMgrForTest.hpp>
-#include <Teuchos_StandardParameterEntryValidators.hpp>
-
-#include <Teuchos_ParameterList.hpp>
+#include <Zoltan2_MachineTopoMgrForTesting.hpp>
+#include <Zoltan2_MachineDragonfly.hpp>
+#include <Zoltan2_MachineDragonflyForTesting.hpp>
 #include <Zoltan2_MachineRCA.hpp>
-#include <Zoltan2_MachineRCAForTest.hpp>
+#include <Zoltan2_MachineRCAForTesting.hpp>
 #include <Zoltan2_Environment.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
@@ -25,17 +27,20 @@ public:
     typedef pcoord_t machine_pcoord_t;
     typedef part_t machine_part_t;
 #if defined(HAVE_ZOLTAN2_LDMS)
-    typedef MachineLDMS<pcoord_t,part_t> machine_t;
-#elif defined(HAVE_ZOLTAN2_RCALIB)
-    typedef MachineRCA<pcoord_t,part_t> machine_t;
+    typedef MachineLDMS<pcoord_t, part_t> machine_t;
+#elif defined(HAVE_ZOLTAN2_RCALIB) 
+    // JAE Should Machine types be built off of MachineRCA?
+    typedef MachineDragonfly<pcoord_t, part_t> machine_t;
+//    typedef MachineRCA<pcoord_t, part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
-    typedef MachineTopoMgr<pcoord_t,part_t> machine_t;
+    typedef MachineTopoMgr<pcoord_t, part_t> machine_t;
 #elif defined(HAVE_ZOLTAN2_BGQTEST)
-    typedef MachineBGQTest<pcoord_t,part_t> machine_t;
+    typedef MachineBGQTest<pcoord_t, part_t> machine_t;
 #else
-    typedef MachineForTesting<pcoord_t,part_t> machine_t;
-    //typedef MachineBGQTest<pcoord_t,part_t> machine_t;
-    //typedef MachineRCATest<pcoord_t,part_t> machine_t;
+//    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+    typedef MachineDragonflyForTesting<pcoord_t, part_t> machine_t;
+//    typedef MachineBGQTest<pcoord_t, part_t> machine_t;
+//    typedef MachineRCAForTesting<pcoord_t, part_t> machine_t;
 #endif
 
     /*! \brief Constructor MachineRepresentation Class
@@ -44,14 +49,16 @@ public:
 
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
       machine(new machine_t(comm)) {
-   }
+    }
 
 
 
-    MachineRepresentation(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl) :
-          machine(new machine_t(comm, pl)) { }
+    MachineRepresentation(const Teuchos::Comm<int> &comm, 
+                          const Teuchos::ParameterList &pl) :
+      machine(new machine_t(comm, pl)) { 
+    }
 
-    ~MachineRepresentation() {delete machine;}
+    ~MachineRepresentation() { delete machine; }
 
     // Interface functions follow.
     // They are just wrappers around the specific machine's functions.
@@ -62,24 +69,28 @@ public:
       return machine->hasMachineCoordinates();
     }
 
-    /*! \brief returns the dimension (number of coords per node) in the machine
+    /*! \brief returns the dimension (number of coords per node) in 
+     * the machine
      */
     inline int getMachineDim() const { return machine->getMachineDim(); }
 
-    /*! \brief sets the number of unique coordinates in each machine dimension
+    /*! \brief sets the number of unique coordinates in each 
+     * machine dimension
+     *  
      *  return true if coordinates are available
      */
     inline bool getMachineExtent(int *nxyz) const { 
       return machine->getMachineExtent(nxyz);
     }
 
-    /*! \brief if the machine has a wrap-around tourus link in each dimension.
+    /*! \brief if the machine has a wrap-around tourus link in 
+     * each dimension.
+     *  
      *  return true if the information is available
      */
     bool getMachineExtentWrapArounds(bool *wrap_around) const {
       return machine->getMachineExtentWrapArounds(wrap_around);
     }
-
 
     /*! \brief getMyCoordinate function
      *  set the machine coordinate xyz of the current process
@@ -140,12 +151,14 @@ public:
         Teuchos::rcp( new Teuchos::FileNameValidator(false) );
 
       // bool parameter
-      pl.set("Input_RCA_Machine_Coords", "", "Input File for input machine coordinates",
-          file_not_required_validator);
+      pl.set("Input_RCA_Machine_Coords", "", 
+             "Input File for input machine coordinates",
+             file_not_required_validator);
     }
 
 
-    // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
+    // KDD TODO: Add Graph interface and methods supporting full LDMS 
+    // interface.
 
 private:
     machine_t *machine;

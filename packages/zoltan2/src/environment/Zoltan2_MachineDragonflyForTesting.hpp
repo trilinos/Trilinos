@@ -1,78 +1,25 @@
-#ifndef _ZOLTAN2_MACHINE_DRAGONFLY_HPP_
-#define _ZOLTAN2_MACHINE_DRAGONFLY_HPP_
+#ifndef _ZOLTAN2_MACHINE_DRAGONFLYTEST_HPP_
+#define _ZOLTAN2_MACHINE_DRAGONFLYTEST_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_Machine.hpp>
 
-#ifdef HAVE_ZOLTAN2_RCALIB
-extern "C"{
-#include <rca_lib.h>
-}
-#endif
-
+#include <cstdlib>    /* srand, rand */
+#include <fstream>
+#include <string>
 
 namespace Zoltan2{
 
-/*! \brief A Dragonfly (e.g. Cori & Trinity) Machine Class
+/*! \brief A Dragonfly (e.g. Cori & Trinity) Machine Class for 
+ *  testing only. A more realistic machine should be used for 
+ *  task mapping.
  *
- *  NOTE: REQUIRES RCA library to run
- *
- *  Nodes in Cori are divided into groups(RCA x_dim) of 96 nodes
- *  and all groups are connected with an all-to-all connection.
- *  Within a group, nodes are arranged into 6 rows (RCA y_dim) 
- *  and 16 columns (RCA z_dim).
- *  All nodes within a row are connected with an all-to-all. Same 
- *  for columns. Therefore: 
- *  (3, 2, 1) -> (3, 4, 11) will take 2 hops.
- *  (5, 1, 1) -> (5, 1, 5)  will take 1 hop.
- *
- *  We represent this "nearness" by transformation using a high 
- *  dimensional coord-system of size (1 + N_y + N_z). The first 
- *  element represents the group, the next N_y elements represent
- *  the row, the next N_z elements represent the columns.
- *  
- *  (9, 2, 1) in the high-dim space:
- *  __ __
- *  | 9 |______ Group, 1 element
- *  | 0 |
- *  | 0 |
- *  | 1 |
- *  | 0 |
- *  | 0 |
- *  | 0 |______ Row, N_y elements
- *  | 0 |
- *  | 1 |
- *  | 0 |
- *  | 0 |
- *  |...|
- *  | 0 |
- *  -- --______ Col, N_z elements 
- *
- *
- *  To assist with MultiJagged coord partitioning we stretch the 
- *  dimensions. If RCA coords are (3, 2, 14), we first transform 
- *  the X, Y, Z by 
- *  
- *  X_new = 2 * X * N_Y * N_Z;
- *  Y_new = Y + X * N_Y * N_Z;
- *  Z_new = Z + X * N_Y * N_Z;
- *
- *  Then transformed coords are (576, 290, 302) and in high-dim
- *  space:
- *
- *  (3,2,10) -> (576, 290, 296) -> 
- *
- *  (576,| 288, 288, 289, 288, 288, 288,| 288, ..., 288, 289, 288)
- *
- *  Now Coordinates are distance sqrt(2) apart if 1 hop, and
- *  distance 2 apart if 2 hops.  
- *
- *  NOTE: Does not account for dragonfly's dynamic routing 
+ *  Does NOT require RCA library to run. 
  */
 
 template <typename pcoord_t, typename part_t>
-class MachineDragonfly : public Machine <pcoord_t, part_t> {
+class MachineDragonflyForTesting : public Machine <pcoord_t, part_t> {
 
 public:
   /*! \brief Constructor: Dragonfly (e.g. Cori & Trinity) network 
@@ -83,7 +30,7 @@ public:
    *  \param comm Communication object.
    */
 
-  MachineDragonfly(const Teuchos::Comm<int> &comm):
+  MachineDragonflyForTesting(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
     transformed_networkDim(3), 
     actual_networkDim(3),
@@ -140,7 +87,7 @@ public:
    *  \param pl   Parameter List
    */
 
-  MachineDragonfly(const Teuchos::Comm<int> &comm, 
+  MachineDragonflyForTesting(const Teuchos::Comm<int> &comm, 
              const Teuchos::ParameterList &pl_ ):
     Machine<pcoord_t,part_t>(comm),
     transformed_networkDim(3), 
@@ -193,8 +140,8 @@ public:
         // Calculate transformed coordinates and machine extents
         int nx = this->actual_machine_extent[0];
         int ny = this->actual_machine_extent[1];
-        int nz = this->actual_machine_extent[2]; 
-
+        int nz = this->actual_machine_extent[2];
+        
         transformed_procCoords[0][this->myRank] = 2 * xyz[0] * ny * nz;
 
         for (int i = 1; i < 1 + ny; ++i) {
@@ -255,7 +202,7 @@ public:
     delete [] xyz;
   }
 
-  virtual ~MachineDragonfly() {
+  virtual ~MachineDragonflyForTesting() {
     if (is_transformed) {
       is_transformed = false;
       for (int i = 0; i < transformed_networkDim; ++i) {
@@ -292,6 +239,7 @@ public:
 
   // Return RCA machine extents
   bool getActualMachineExtent(int *nxyz) const {
+/*
 #if defined (HAVE_ZOLTAN2_RCALIB)
     mesh_coord_t mxyz;
     rca_get_max_dimension(&mxyz);
@@ -304,6 +252,13 @@ public:
 #else
     return false;
 #endif
+*/
+    
+    nxyz[0] = 11; // X - group
+    nxyz[1] = 6;  // Y - row within group
+    nxyz[2] = 16; // Z - col within group
+   
+    return true; 
   }
 
   void printAllocation() {
@@ -356,6 +311,7 @@ public:
   }
 
   bool getMyActualMachineCoordinate(pcoord_t *xyz) {
+/*
 #if defined (HAVE_ZOLTAN2_RCALIB)
     // Cray node info for current node
     rs_node_t nodeInfo; 
@@ -376,6 +332,12 @@ public:
 #else
     return false;
 #endif
+*/
+    xyz[0] = rand() % 11;
+    xyz[1] = rand() % 6;
+    xyz[2] = rand() % 16;
+ 
+    return true; 
   }
 
   inline bool getTransformedMachineCoordinate(const int rank,

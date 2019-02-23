@@ -43,7 +43,7 @@ public:
     gatherMachineCoordinates(comm);
   }
 
-  MachineForTesting(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl ):
+  MachineForTesting(const Teuchos::Comm<int> &comm, const Teuchos::ParameterList &pl):
     Machine<pcoord_t,part_t>(comm),
     networkDim(3),
     procCoords(NULL)
