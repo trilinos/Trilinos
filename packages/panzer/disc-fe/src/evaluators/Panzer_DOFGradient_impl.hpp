@@ -66,11 +66,13 @@ namespace {
     const int space_dim_;
     const int fad_size_;
     const bool use_shared_memory_;
+    const ScalarT m_multiplier_;
 
     evaluateGrad_withSens(PHX::MDField<ScalarT> dof_grad,
 			  PHX::MDField<const ScalarT,Cell,Point> dof_value,
 			  const ArrayT  grad_basis,
-			  const bool use_shared_memory) :
+			  const bool use_shared_memory,
+                    const ScalarT multiplier) :
       dof_grad_(dof_grad),
       dof_value_(dof_value),
       grad_basis_(grad_basis),
@@ -78,7 +80,8 @@ namespace {
       num_points_(grad_basis.extent(2)),
       space_dim_(grad_basis.extent(3)),
       fad_size_(Kokkos::dimension_scalar(dof_grad.get_view())),
-      use_shared_memory_(use_shared_memory) {}
+      use_shared_memory_(use_shared_memory),
+      m_multiplier_(multiplier)  {}
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const team_policy& team) const
@@ -90,9 +93,9 @@ namespace {
 	  for (int d=0; d<space_dim_; ++d) {
 	    // first initialize to the right thing (prevents over writing with 0)
 	    // then loop over one less basis function
-	    dof_grad_(cell,pt,d) = dof_value_(cell, 0) * grad_basis_(cell, 0, pt, d);
+	    dof_grad_(cell,pt,d) = m_multiplier_ * dof_value_(cell, 0) * grad_basis_(cell, 0, pt, d);
 	    for (int bf=1; bf<num_fields_; ++bf)
-	      dof_grad_(cell,pt,d) += dof_value_(cell, bf) * grad_basis_(cell, bf, pt, d);
+	      dof_grad_(cell,pt,d) += m_multiplier_ * dof_value_(cell, bf) * grad_basis_(cell, bf, pt, d);
 	  }
 	});
       } else {
@@ -119,7 +122,7 @@ namespace {
 	  // Perform contraction
 	  for (int dof=0; dof<num_fields_; ++dof) {
 	    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points_), [&] (const int& pt) {
-	      point_values(pt) += dof_values(dof) * grad_basis_(cell,dof,pt,dim);
+	      point_values(pt) += m_multiplier_ * dof_values(dof) * grad_basis_(cell,dof,pt,dim);
 	    });
 	  }
 	  // Copy to main memory
@@ -165,6 +168,10 @@ DOFGradient(
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsGrad(),std::logic_error,
                              "DOFGradient: Basis of type \"" << basis->name() << "\" does not support GRAD");
 
+  multiplier_ = 1.0;
+  if ( p.isType<double>("Multiplier"))
+      multiplier_ = p.get<double>("Multiplier");
+
   this->addEvaluatedField(dof_gradient);
   this->addDependentField(dof_value);
 
@@ -178,12 +185,14 @@ DOFGradient<EvalT, TRAITS>::
 DOFGradient(const PHX::FieldTag & input,
             const PHX::FieldTag & output,
             const panzer::BasisDescriptor & bd,
-            const panzer::IntegrationDescriptor & id)
+            const panzer::IntegrationDescriptor & id,
+            const double  multiplier /* = 1 */)
   : use_descriptors_(true)
   , bd_(bd)
   , id_(id)
   , dof_value(input)
   , dof_gradient(output)
+  , multiplier_(multiplier)
 {
   // Verify that this basis supports the gradient operation
   TEUCHOS_TEST_FOR_EXCEPTION(bd_.getType()=="HGrad",std::logic_error,
@@ -222,7 +231,7 @@ evaluateFields(typename Traits::EvalData workset)
 
   typedef decltype(basisValues.grad_basis) ArrayT;
   bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
-  evaluateGrad_withSens<ScalarT, ArrayT> eval(dof_gradient,dof_value,basisValues.grad_basis,use_shared_memory);
+  evaluateGrad_withSens<ScalarT, ArrayT> eval(dof_gradient,dof_value,basisValues.grad_basis,use_shared_memory, multiplier_);
   auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::Device>(workset.num_cells);
   Kokkos::parallel_for(policy, eval, "panzer::DOFGradient::evaluateFields");
 }

@@ -62,12 +62,14 @@ public:
     * \param[in] input Tag that corresponds to the input DOF field (sized according to bd)
     * \param[in] output Tag that corresponds to the output field (sized according the id, and the dimension)
     * \param[in] bd Basis being used
-    * \param[in] id Integration rule used
+    * \param[in] ir Integration rule used
+    * \param[in] multiplier The scalar multiplier out in front of the gradient (default = 1.0), multiplier * grad
     */
   DOFGradient(const PHX::FieldTag & input,
               const PHX::FieldTag & output,
               const panzer::BasisDescriptor & bd,
-              const panzer::IntegrationDescriptor & id);
+              const panzer::IntegrationDescriptor & id,
+              const double multiplier = 1.0);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
@@ -89,6 +91,8 @@ private:
 
   std::string basis_name;
   std::size_t basis_index;
+
+  double multiplier_;
 };
 
 }
