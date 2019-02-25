@@ -130,7 +130,7 @@ the object.  Specifically:
 namespace Teuchos {
 
 template<typename OrdinalType, typename ScalarType>
-class SerialBandDenseMatrix : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>
+class SerialBandDenseMatrix : public CompObject, public BLAS<OrdinalType, ScalarType>
 {
 public:
 
@@ -421,7 +421,7 @@ public:
 
   //! @name I/O methods.
   //@{
-  //! Print method.  Defines the behavior of the std::ostream << operator inherited from the Object class.
+  //! Print method.  Defines the behavior of the std::ostream << operator
   virtual void print(std::ostream& os) const;
 
   //@}
@@ -448,7 +448,6 @@ protected:
 template<typename OrdinalType, typename ScalarType>
 SerialBandDenseMatrix<OrdinalType, ScalarType>::SerialBandDenseMatrix ()
   : CompObject (),
-    Object(),
     BLAS<OrdinalType,ScalarType>(),
     numRows_ (0),
     numCols_ (0),
@@ -467,7 +466,6 @@ SerialBandDenseMatrix (OrdinalType numRows_in,
                        OrdinalType ku_in,
                        bool zeroOut)
   : CompObject (),
-    Object(),
     BLAS<OrdinalType,ScalarType>(),
     numRows_ (numRows_in),
     numCols_ (numCols_in),
@@ -493,7 +491,6 @@ SerialBandDenseMatrix (DataAccess CV,
                        OrdinalType kl_in,
                        OrdinalType ku_in)
   : CompObject (),
-    Object(),
     BLAS<OrdinalType,ScalarType>(),
     numRows_ (numRows_in),
     numCols_ (numCols_in),
@@ -515,7 +512,6 @@ template<typename OrdinalType, typename ScalarType>
 SerialBandDenseMatrix<OrdinalType, ScalarType>::
 SerialBandDenseMatrix (const SerialBandDenseMatrix<OrdinalType, ScalarType> &Source, ETransp trans)
   : CompObject (),
-    Object(),
     BLAS<OrdinalType,ScalarType>(),
     numRows_ (0),
     numCols_ (0),
@@ -574,7 +570,6 @@ SerialBandDenseMatrix (DataAccess CV,
                        OrdinalType numCols_in,
                        OrdinalType startCol)
   : CompObject (),
-    Object(),
     BLAS<OrdinalType,ScalarType>(),
     numRows_ (numRows_in),
     numCols_ (numCols_in),
@@ -1074,6 +1069,16 @@ void SerialBandDenseMatrix<OrdinalType, ScalarType>::copyMat(
     }
   }
 }
+
+#ifndef TEUCHOS_HIDE_DEPRECATED_CODE
+/// \brief Print the given SerialBandDenseMatrix to the given output stream.
+template<typename OrdinalType, typename ScalarType>
+std::ostream& operator<< (std::ostream& os, const Teuchos::SerialBandDenseMatrix<OrdinalType, ScalarType>& obj)
+{
+  obj.print (os);
+  return os;
+}
+#endif
 
 } // namespace Teuchos
 
