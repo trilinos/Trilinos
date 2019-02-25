@@ -394,7 +394,7 @@ namespace MueLu {
           outputter.outputField("NoFactory");
         }
         else {
-          std::ostringstream oss; oss << ClipDescription(factory->description()) << "(" << factory <<")";
+          std::ostringstream oss; oss << factory->ShortClassName() << "(" << factory <<")";
           outputter.outputField(oss.str());
         }
 
@@ -456,7 +456,7 @@ namespace MueLu {
         std::ostringstream ss;
         for (container_type::const_iterator ct = requestedBy.begin(); ct != requestedBy.end(); ct++) {
           if (ct != requestedBy.begin()) ss << ",";
-          ss << ClipDescription(ct->first->description()) << "("<<ct->first<<")";
+          ss << ct->first->ShortClassName() << "("<<ct->first<<")";
           if (ct->second > 1) ss << "x" << ct->second;
         }
         outputter.outputField(ss.str());
