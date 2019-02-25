@@ -1426,6 +1426,7 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
+    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombineNew");
 
@@ -1493,9 +1494,7 @@ namespace Tpetra {
     }
 
     // We have to sync before modifying, because this method may read
-    // as well as write (depending on the CombineMode).  This matters
-    // because copyAndPermute may have modified *this in the other
-    // memory space.
+    // as well as write (depending on the CombineMode).
     if (unpackOnHost) {
       if (this->need_sync_host ()) {
         this->sync_host ();
@@ -1542,33 +1541,40 @@ namespace Tpetra {
       required to be contiguous. */
 
     if (numVecs > 0 && importLIDs.extent (0) > 0) {
-      typedef typename Kokkos::DualView<double*,
-        device_type>::t_dev::execution_space dev_exec_space;
-      typedef typename Kokkos::DualView<double*,
-        device_type>::t_host::execution_space host_exec_space;
+      using dev_exec_space = typename dual_view_type::t_dev::execution_space;
+      using host_exec_space = typename dual_view_type::t_host::execution_space;
+
+      // This fixes GitHub Issue #4418.
+      const bool use_atomic_updates = unpackOnHost ?
+	host_exec_space::concurrency () != 1 :
+	dev_exec_space::concurrency () != 1;
+
+      if (printDebugOutput) {
+	std::ostringstream os;
+	os << *prefix << "Unpack: " << combineModeToString (CM) << endl;
+	std::cerr << os.str ();
+      }
 
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
-      // custom combine modes, start editing here.  Also, if you trust
-      // inlining, it would be nice to condense this code by using a
-      // binary function object f in the pack functors.
+      // custom combine modes, start editing here.
+      
       if (CM == INSERT || CM == REPLACE) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << *prefix << "Unpack: INSERT / REPLACE" << endl;
-          std::cerr << os.str ();
-        }
-        KokkosRefactor::Details::InsertOp<execution_space> op;
+	using op_type = KokkosRefactor::Details::InsertOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
-                                       X_h, imports_h, importLIDs_h, op,
-                                       numVecs, debugCheckIndices);
+                                       X_h, imports_h, importLIDs_h,
+				       op_type (), numVecs,
+				       use_atomic_updates,
+                                       debugCheckIndices);
 
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
-                                       X_d, imports_d, importLIDs_d, op,
-                                       numVecs, debugCheckIndices);
+                                       X_d, imports_d, importLIDs_d,
+				       op_type (), numVecs,
+				       use_atomic_updates,
+                                       debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1576,37 +1582,40 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
-                                                       whichVecs_h, op,
+                                                       whichVecs_h,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
-                                                       whichVecs_d, op,
+                                                       whichVecs_d,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else if (CM == ADD) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << *prefix << "Unpack: ADD" << endl;
-          std::cerr << os.str ();
-        }
-        KokkosRefactor::Details::AddOp<execution_space> op;
+	using op_type = KokkosRefactor::Details::AddOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
-                                       X_h, imports_h, importLIDs_h, op,
-                                       numVecs, debugCheckIndices);
+                                       X_h, imports_h, importLIDs_h,
+				       op_type (), numVecs,
+				       use_atomic_updates,
+                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
-                                       X_d, imports_d, importLIDs_d, op,
-                                       numVecs, debugCheckIndices);
+                                       X_d, imports_d, importLIDs_d,
+				       op_type (), numVecs,
+                                       use_atomic_updates,
+				       debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1614,37 +1623,40 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
-                                                       whichVecs_h, op,
+                                                       whichVecs_h,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
-                                                       whichVecs_d, op,
+                                                       whichVecs_d,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else if (CM == ABSMAX) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << *prefix << "Unpack: ABSMAX" << endl;
-          std::cerr << os.str ();
-        }
-        KokkosRefactor::Details::AbsMaxOp<execution_space> op;
+	using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
-                                       X_h, imports_h, importLIDs_h, op,
-                                       numVecs, debugCheckIndices);
+                                       X_h, imports_h, importLIDs_h,
+				       op_type (), numVecs,
+                                       use_atomic_updates,
+				       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
-                                       X_d, imports_d, importLIDs_d, op,
-                                       numVecs, debugCheckIndices);
+                                       X_d, imports_d, importLIDs_d,
+				       op_type (), numVecs,
+                                       use_atomic_updates,
+				       debugCheckIndices);
           }
         }
         else {
@@ -1652,19 +1664,27 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
-                                                       whichVecs_h, op,
+                                                       whichVecs_h,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
-                                                       whichVecs_d, op,
+                                                       whichVecs_d,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	  (true, std::logic_error, "Invalid CombineMode");
       }
     }
     else {
