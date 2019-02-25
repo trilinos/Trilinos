@@ -47,7 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR
-#include "netcdf.h"       // for nc_sync, NC_NOERR
 #include <stdio.h>
 
 /*!

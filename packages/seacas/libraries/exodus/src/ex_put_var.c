@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
 #include <stdio.h>
@@ -155,12 +154,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
       ex_compress_variable(exoid, *varid, 2);
 
       /*    leave define mode  */
-      if ((status = nc_enddef(exoid)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to complete %s variable %s definition to file id %d",
-                 ex_name_of_object(var_type),
-                 ex_name_var_of_object(var_type, var_index, obj_id_ndx), exoid);
-        ex_err_fn(exoid, __func__, errmsg, status);
+      if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
         return (EX_FATAL);
       }
     }
@@ -176,10 +170,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(exoid, __func__);
   return (EX_FATAL);
 }
 

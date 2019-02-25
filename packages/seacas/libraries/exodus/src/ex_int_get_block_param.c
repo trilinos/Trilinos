@@ -376,13 +376,9 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
     elem_blk_parm->elem_type_val = EX_EL_TRUSS;
     elem_blk_parm->num_sides     = 2;
 
-    if (elem_blk_parm->num_nodes_per_elem == 2) {
-      elem_blk_parm->num_nodes_per_side[0] = 2;
-      elem_blk_parm->num_nodes_per_side[1] = 2;
-    }
-    else if (elem_blk_parm->num_nodes_per_elem == 3) {
-      elem_blk_parm->num_nodes_per_side[0] = 3;
-      elem_blk_parm->num_nodes_per_side[1] = 3;
+    if (elem_blk_parm->num_nodes_per_elem == 2 || elem_blk_parm->num_nodes_per_elem == 3) {
+      elem_blk_parm->num_nodes_per_side[0] = 1;
+      elem_blk_parm->num_nodes_per_side[1] = 1;
     }
     else {
       EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));

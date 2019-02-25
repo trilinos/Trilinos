@@ -246,7 +246,7 @@ int Ioss::ElementTopology::number_boundaries() const
       return number_faces() + number_edges();
     }
     if (parametric_dimension() == 1) {
-      return number_edges();
+      return 2; // For bar/beam/... boundary is nodes; for ShellLine it is edges
     }
   }
   else {

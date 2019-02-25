@@ -51,7 +51,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
 #include <stdio.h>
 
 /*!
@@ -141,9 +140,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
     ex_compress_variable(exoid, mapid, 1);
 
     /* leave define mode  */
-    if ((status = nc_enddef(exoid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
+    if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -167,10 +164,6 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
-  {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

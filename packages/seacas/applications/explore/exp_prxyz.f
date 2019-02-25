@@ -99,7 +99,7 @@ C   --   CORD - IN - the nodal coordinates
 10000  FORMAT (/, 1X, 'COORDINATES')
 10005  FORMAT (1X, 'Nodal ids are Global')
  20   FORMAT('1PE',I2.2,'.',I2.2)
- 30   FORMAT('(1X, ''Node'', I10, 5 (2X, ',A,'), :, /,',
+ 30   FORMAT('(1X, ''Node'', I12, 5 (2X, ',A,'), :, /,',
      $     '(15X, 5 (2X, ',A,')))')
 
 10010  FORMAT (/, 1X, 4X, 5X, 4X, 5 (2X, A8, :, 7X), :, /,

@@ -377,7 +377,7 @@ C ... Read in the times for all the time steps from the database
          WRITE (*, *)
          IF (NSTEPS .GT. 0) THEN
             WRITE (*, 10000, IOSTAT=IDUM) NSTEPS
-10000       FORMAT (1X, 'Number of time steps on the database =', I10)
+10000       FORMAT (1X, 'Number of time steps on the database =', I12)
          END IF
 
 C ... Get the memory for the variables

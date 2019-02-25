@@ -139,8 +139,8 @@ C     problems with some analysis codes
           ifa = ltsess(indx+j)
           if (btest(icheck(iel), ifa)) then
             write (stra, 10000) iel, ifa, idess(iess)
-10000       FORMAT('SIDESET ERROR: The element face pair ',I10,'.',I1,
-     $        ' is duplicated in sideset ', I10,'.')
+10000       FORMAT('SIDESET ERROR: The element face pair ',I12,'.',I1,
+     $        ' is duplicated in sideset ', I12,'.')
             call sqzstr(stra, lstra)
             CALL PRTERR ('WARNING', STRA(:lstra))
           else
@@ -155,9 +155,9 @@ C     in the sideset...
         call exgsp(ndb, idess(iess), nsess, ndfss, ierr)
         if (nness(iess) .ne. ndfss .and. ndfss .gt. 0) then
            write (stra, 10001) idess(iess), ndfss, nness(iess)
-10002      FORMAT('SIDESET ERROR: In sideset ', I10,
-     *          ' the number of distribution factors (', I10,
-     *          ') does not match the sideset node count (', I10, ')')
+10002      FORMAT('SIDESET ERROR: In sideset ', I12,
+     *          ' the number of distribution factors (', I12,
+     *          ') does not match the sideset node count (', I12, ')')
            call sqzstr(stra, lstra)
            CALL PRTERR ('WARNING', STRA(:lstra))
         end if
@@ -169,10 +169,10 @@ C     in the sideset...
            end do
            if (ndfss .ne. numnod) then
               write (stra, 10001) idess(iess), ndfss, numnod
-10001         FORMAT('SIDESET ERROR: In sideset ', I10,
-     *             ' the number of distribution factors (', I10,
+10001         FORMAT('SIDESET ERROR: In sideset ', I12,
+     *             ' the number of distribution factors (', I12,
      *             ') does not match the computed sideset node count (',
-     *             I10, ')')
+     *             I12, ')')
               call sqzstr(stra, lstra)
               CALL PRTERR ('WARNING', STRA(:lstra))
            endif
@@ -236,8 +236,8 @@ C           icheck is the nodes for the faces.
           end if
         END IF
       end do
-10040 FORMAT('SIDESET DF CONTINUITY ERRORS For Sideset ',I10)
-10050 FORMAT('Element ',I10,', Side ',I1, ', Node ',I10,
+10040 FORMAT('SIDESET DF CONTINUITY ERRORS For Sideset ',I12)
+10050 FORMAT('Element ',I12,', Side ',I1, ', Node ',I12,
      *  ': Previous Value = ',1PE11.4,'  Current Value = ',1PE11.4)
 
       RETURN

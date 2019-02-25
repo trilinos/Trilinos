@@ -504,9 +504,6 @@ namespace Iopx {
           mode |= EX_ALL_INT64_DB;
         }
       }
-      if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF) {
-        par_mode = EX_MPIIO;
-      }
       exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
                                     &dbRealWordSize, util().communicator(), info);
     }

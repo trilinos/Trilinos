@@ -152,6 +152,6 @@ C   --   VAREL - IN - the selected element variables for the time step
 10005  format (1X, 'Element Ids are Global')
 10010  FORMAT (1X, 'Row ',I4,', Column ',I1,' is variable ',A)
  20   FORMAT('(1PE',I2.2,'.',I2.2,')')
- 30   FORMAT('(1X, ''Element'', I10, 5(2X,A',I2,'))')
+ 30   FORMAT('(1X, ''Element'', I12, 5(2X,A',I2,'))')
  40   FORMAT('(18X, 5 (2X, A',I2,'))')
       END

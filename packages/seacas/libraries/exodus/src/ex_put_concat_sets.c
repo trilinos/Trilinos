@@ -51,7 +51,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
-#include "netcdf.h"       // for NC_NOERR, nc_def_dim, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
 #include <stdio.h>
@@ -76,8 +75,8 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
   const void_int *sets_entry_index    = set_specs->sets_entry_index;
   const void_int *sets_dist_index     = set_specs->sets_dist_index;
   const void *    sets_dist_fact      = set_specs->sets_dist_fact;
-  size_t          i, num_df, num_entry;
-  int             cur_num_sets, num_sets;
+  size_t          num_df, num_entry;
+  int             i, cur_num_sets, num_sets;
   int             dimid, varid, set_id_ndx, dims[1];
   int *           set_stat = NULL;
   int             set_int_type, int_size;
@@ -411,9 +410,7 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
   }
 
   /* leave define mode  */
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
     free(set_stat);
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -551,10 +548,6 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
 error_ret:
   free(set_stat);
 
-  if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
-  {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

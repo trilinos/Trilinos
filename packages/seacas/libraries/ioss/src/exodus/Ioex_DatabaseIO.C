@@ -448,7 +448,7 @@ namespace Ioex {
 
     size_t num_qa_records = qaRecords.size() / 4;
 
-    bool i_write = (usingParallelIO && myProcessor == 0) || !usingParallelIO;
+    bool i_write = myProcessor == 0 || !usingParallelIO;
     if (i_write) {
       auto qa = new qa_element[num_qa_records + 1];
       for (size_t i = 0; i < num_qa_records + 1; i++) {
@@ -516,7 +516,7 @@ namespace Ioex {
   // common
   void DatabaseIO::put_info()
   {
-    bool i_write = (usingParallelIO && myProcessor == 0) || !usingParallelIO;
+    bool i_write = myProcessor == 0 || !usingParallelIO;
 
     // dump info records, include the product_registry
     // See if the input file was specified as a property on the database...

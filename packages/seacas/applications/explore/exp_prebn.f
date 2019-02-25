@@ -182,9 +182,9 @@ C     ... Print either all values (if not all same), or the common values
       RETURN
 
 10000 FORMAT (1X, '         #      elem            ', A)
-10010 FORMAT (1X, I10, I10, 5X, 8I10, :, /,
-     &  (26X, 8I10))
-10020 FORMAT (1X, I10, I10, 3X, 4 (1X, 1pE11.4), :, /,
+10010 FORMAT (1X, I12, I12, 5X, 8I12, :, /,
+     &  (26X, 8I12))
+10020 FORMAT (1X, I12, I12, 3X, 4 (1X, 1pE11.4), :, /,
      &  (24X, 4 (1X, 1pE11.4)))
 10025 FORMAT (1X, 'All attributes are equal. Values are: ',
      &  (3 (1x, 1pE11.4)), :, /,
