@@ -247,13 +247,13 @@ RCP<CoordinatesType> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdi
   ArrayRCP<LO>                aggSizes     = aggregates->ComputeAggregateSizes();
   const ArrayRCP<const LO>    vertex2AggID = aggregates->GetVertex2AggId()->getData(0);
   const ArrayRCP<const LO>    procWinner   = aggregates->GetProcWinner()->getData(0);
-  
+
   // Fill in coarse coordinates
   for (int dim = 0; dim < numDimensions; ++dim) {
     ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
     ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
     
-    for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
+    for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
       if (procWinner[lnode] == myPID &&
           lnode < vertex2AggID.size() &&
           lnode < fineCoordsData.size() &&
@@ -266,7 +266,6 @@ RCP<CoordinatesType> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdi
       coarseCoordsData[agg] /= aggSizes[agg];
     }
   }
-
   return coarseCoords;
 }
 
