@@ -60,6 +60,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "FaceBlock"; }
     std::string short_type_string() const override { return "faceblock"; }
+    std::string contains_string() const override { return "Face"; }
     EntityType  type() const override { return FACEBLOCK; }
 
     // Handle implicit properties -- These are calcuated from data stored

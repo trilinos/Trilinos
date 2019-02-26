@@ -162,6 +162,12 @@ namespace Ioss {
      */
     virtual std::string short_type_string() const = 0;
 
+    /** \brief What does this entity contain
+     *
+     *  \returns The name of the thing this entitiy contains.
+     */
+    virtual std::string contains_string() const = 0;
+
     /** \brief Get the EntityType, which indicates the particular type of GroupingEntity this is.
      *
      *  \returns The particular EntityType of this GroupingEntity.

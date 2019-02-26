@@ -72,7 +72,7 @@ double bidir(double *alpha, /* vector of Lanczos scalars */
   while (i <= j && iterate) {
     /* follow the forward recurrence until a local maximum > 1.0 */
     s[i] = -((alpha[i - 1] - ritz) * s[i - 1] + beta[i - 1] * s[i - 2]) / beta[i];
-    if (fabs(s[i - 1]) > hurdle && i > 2) {
+    if (fabs(s[i - 1]) > hurdle) {
       if (fabs(s[i]) < fabs(s[i - 1]) && fabs(s[i - 1]) > fabs(s[i - 2])) {
         iterate = FALSE;
         k       = i - 1;

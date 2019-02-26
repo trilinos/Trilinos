@@ -105,7 +105,7 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
 
   edata   = smalloc_ret((nwires + 1) * sizeof(struct refine_edata));
   desires = smalloc_ret(nwires * sizeof(double));
-  if (vdata == NULL || desires == NULL) {
+  if (desires == NULL) {
     goto skip;
   }
 

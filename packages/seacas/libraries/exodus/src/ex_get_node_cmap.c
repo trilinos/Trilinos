@@ -55,7 +55,6 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NCNT_CMAP, etc
 #include <inttypes.h>     // for PRId64
-#include <netcdf.h>       // for NC_NOERR, nc_get_vara_int, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <sys/types.h> // for int64_t

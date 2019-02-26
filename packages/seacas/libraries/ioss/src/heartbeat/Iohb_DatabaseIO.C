@@ -131,7 +131,7 @@ namespace {
       else {
         tmp = new std::ofstream(filename.c_str());
       }
-      if (tmp != nullptr && !tmp->is_open()) {
+      if (!tmp->is_open()) {
         delete tmp;
       }
       else {

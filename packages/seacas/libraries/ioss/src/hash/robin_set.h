@@ -39,11 +39,11 @@ namespace tsl {
    * backward shift deletion.
    *
    * For operations modifying the hash set (insert, erase, rehash, ...), the strong exception
-   * guarantee is only guaranteed when the expression `std::is_nothrow_swappable<Key>::value &&
-   * std::is_nothrow_move_constructible<Key>::value` is true, otherwise if an exception
+   * guarantee is only guaranteed when the expression `std::is_nothrow_swappable<Key>\:\:value &&
+   * std::is_nothrow_move_constructible<Key>\:\:value` is true, otherwise if an exception
    * is thrown during the swap or the move, the hash set may end up in a undefined state. Per the
    * standard a `Key` with a noexcept copy constructor and no move constructor also satisfies the
-   * `std::is_nothrow_move_constructible<Key>::value` criterion (and will thus guarantee the
+   * `std::is_nothrow_move_constructible<Key>\:\:value` criterion (and will thus guarantee the
    * strong exception for the set).
    *
    * When `StoreHash` is true, 32 bits of the hash are stored alongside the values. It can improve

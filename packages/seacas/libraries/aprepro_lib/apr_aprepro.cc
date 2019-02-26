@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.09 (2018/08/01)";
+  const char *       version_string = "5.10 (2019/02/07)";
 
   void output_copyright();
 } // namespace
@@ -373,9 +373,6 @@ namespace SEAMS {
     }
 
     auto ptr = new symrec(sym_name, parser_type, is_internal);
-    if (ptr == nullptr) {
-      return nullptr;
-    }
 
     unsigned hashval   = hash_symbol(ptr->name.c_str());
     ptr->next          = sym_table[hashval];
@@ -522,9 +519,7 @@ namespace SEAMS {
         var = putsym(sym_name, type, internal);
       }
       else {
-        if (var->type != (int)type) {
-          var->type = (int)type;
-        }
+        var->type = immutable ? Parser::token::IMMSVAR : Parser::token::SVAR;
       }
       var->value.svar = sym_value;
     }
@@ -543,9 +538,7 @@ namespace SEAMS {
         var = putsym(sym_name, type, internal);
       }
       else {
-        if (var->type != (int)type) {
-          var->type = (int)type;
-        }
+        var->type = immutable ? Parser::token::IMMVAR : Parser::token::VAR;
       }
       var->value.var = sym_value;
     }
@@ -563,9 +556,7 @@ namespace SEAMS {
         var = putsym(sym_name, type, false);
       }
       else {
-        if (var->type != (int)type) {
-          var->type = (int)type;
-        }
+        var->type = Parser::token::AVAR;
       }
       var->value.avar = value;
     }
@@ -691,7 +682,7 @@ namespace SEAMS {
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
           if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
-            if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
+            if (doInternal == ptr->isInternal) {
               if (ptr->type == Parser::token::VAR) {
                 (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name
                               << "\t= " << std::setprecision(10) << ptr->value.var << "}" << '\n';

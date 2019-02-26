@@ -202,9 +202,9 @@ C ... Node/Element inverse connectivity
 10010 FORMAT (/,1x, 'Inverse Node-Element Connectivity:',/,
      *  ' Output is: id of elements connected to node')
 10005 FORMAT (1X, A,' ids are Global')
-10020 FORMAT (1X, 'Node', I10,2X, 5 (1X, i10,':',i2.2), :, /,
+10020 FORMAT (1X, 'Node', I12,2X, 5 (1X, i10,':',i2.2), :, /,
      &  (17X, 5(1X, i10,':',i2.2)))
-10030 FORMAT (1X, 'Node', I10,':',2X, 8 (1X, i10), :, /,
+10030 FORMAT (1X, 'Node', I12,':',2X, 8 (1X, i10), :, /,
      &  (17X, 8(1X, i10)))
       RETURN
       END

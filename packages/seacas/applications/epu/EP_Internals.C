@@ -553,6 +553,9 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
   if (mesh.sidesetCount > 0) {
     status = define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesetCount, DIM_NUM_SS,
                                 VAR_SS_STAT, VAR_SS_IDS, VAR_NAME_SS);
+    if (status != EX_NOERR) {
+      return EX_FATAL;
+    }
   }
 
   status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality,

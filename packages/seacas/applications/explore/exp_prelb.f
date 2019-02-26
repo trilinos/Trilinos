@@ -116,11 +116,11 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       end if
 
       WRITE (STRA, 10000, IOSTAT=IDUM) NELBLK
-10000 FORMAT ('(#', I10, ')')
+10000 FORMAT ('(#', I12, ')')
       CALL PCKSTR (1, STRA)
       LSTRA = LENSTR (STRA)
       WRITE (STRB, 10010, IOSTAT=IDUM) LENE(NELBLK), LENE(NELBLK)
-10010 FORMAT ('(', I10, '..', I10, ')')
+10010 FORMAT ('(', I12, '..', I12, ')')
       CALL PCKSTR (1, STRB)
       LSTRB = LENSTR (STRB)
 
@@ -255,8 +255,8 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
 10020 FORMAT (/, 1X, 'ELEMENT BLOCKS', :, ' - ', A)
 C ... NOTE: Normal elements hava a mximum of <100 nodes, but superelements
 C           Or other "strange" elements may have lots of nodes; keep format high
-10030 FORMAT (1X, 'Block', I10, 1X, A, ':',
-     &  I10, ' elements', 1X, A,
+10030 FORMAT (1X, 'Block', I12, 1X, A, ':',
+     &  I12, ' elements', 1X, A,
      &  I6, '-node', I4, ' attributes')
 10040 FORMAT (2X, 'Element block name = "',A
      $  ,'", Element type = "', A, '"')

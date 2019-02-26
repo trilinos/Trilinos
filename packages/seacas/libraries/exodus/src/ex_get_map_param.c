@@ -50,7 +50,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_EM, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 

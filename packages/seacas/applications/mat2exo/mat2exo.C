@@ -59,10 +59,8 @@
 #include "matio.h"         // for matvar_t, Mat_VarFree, etc
 #include "matio_pubconf.h" // for MATIO_VERSION
 #include <SL_tokenize.h>   // for tokenize
-#include <cassert>         // for assert
 #include <cstddef>         // for size_t
 #include <cstdio>          // for sprintf, printf, fprintf, etc
-#include <cstdlib>         // for calloc, free, exit
 #include <cstring>         // for strtok, memcpy, strlen, etc
 #include <exodusII.h>      // for ex_put_variable_param, etc
 #include <iostream>        // for operator<<, basic_ostream, etc
@@ -81,8 +79,8 @@ mat_t *mat_file = nullptr; /* file for binary .mat input */
 /**********************************************************************/
 static const char *qainfo[] = {
     "mat2exo",
-    "2018/04/20",
-    "4.03",
+    "2019/01/31",
+    "4.04",
 };
 
 /**********************************************************************/
@@ -94,12 +92,11 @@ void get_put_vars(int exo_file, ex_entity_type type, const std::vector<int> &ids
                   const char *mname);
 
 std::vector<std::string> matGetStr(const char *name);
-int  matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data);
-int  matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data);
-int  matGetInt(const char *name);
-int  matArrNRow(const char *name);
-int  matArrNCol(const char *name);
-void del_arg(int *argc, char *argv[], int j);
+int matGetDbl(const char *name, size_t n1, size_t n2, std::vector<double> &data);
+int matGetInt(const char *name, size_t n1, size_t n2, std::vector<int> &data);
+int matGetInt(const char *name);
+int matArrNRow(const char *name);
+int matArrNCol(const char *name);
 
 /**********************************************************************/
 int main(int argc, char *argv[])
@@ -129,14 +126,11 @@ int main(int argc, char *argv[])
 
   ex_opts(EX_VERBOSE);
 
-  /* Possibly overestimates size, but that is ok */
-  const char *ext       = ".exo";
-  size_t      line_size = strlen(argv[1]) + strlen(ext) + 1;
-  char *      line      = reinterpret_cast<char *>(calloc(line_size, sizeof(char)));
-  strcpy(line, argv[1]);
-  strtok(line, ".");
-  strcat(line, ext);
-  int exo_file = ex_create(line, EX_CLOBBER, &cpu_word_size, &io_word_size);
+  const std::string ext{".exo"};
+  std::string       line(argv[1]);
+  line = line.substr(0, line.find("."));
+  line += ext;
+  int exo_file = ex_create(line.c_str(), EX_CLOBBER, &cpu_word_size, &io_word_size);
   if (exo_file < 0) {
     std::cerr << "MAT2EXO: error creating " << line << "\n";
     exit(1);
@@ -157,9 +151,8 @@ int main(int argc, char *argv[])
   int num_nodeset_vars = matGetInt("nnsvars");
   int num_sideset_vars = matGetInt("nssvars");
 
-  ex_put_init(exo_file, line, num_axes, num_nodes, num_elements, num_blocks, num_node_sets,
+  ex_put_init(exo_file, line.c_str(), num_axes, num_nodes, num_elements, num_blocks, num_node_sets,
               num_side_sets);
-  free(line);
 
   if (num_global_vars > 0) {
     ex_put_variable_param(exo_file, EX_GLOBAL, num_global_vars);
@@ -501,39 +494,26 @@ int matArrNCol(const char *name)
   return ncol;
 }
 
-/**********************************************************************/
-/* remove an argument from the list */
-void del_arg(int *argc, char *argv[], int j)
-{
-  for (int jj = j + 1; jj < *argc; jj++) {
-    argv[jj - 1] = argv[jj];
-  }
-  (*argc)--;
-  argv[*argc] = nullptr;
-}
-
 void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std::string &name)
 {
   auto names = matGetStr(name.c_str());
   SMART_ASSERT(names.size() == (size_t)num_vars);
-  const char **str2 = reinterpret_cast<const char **>(calloc(num_vars, sizeof(char *)));
+  std::vector<const char *> str2(num_vars);
   for (int i = 0; i < num_vars; i++) {
     str2[i] = names[i].c_str();
   }
-  ex_put_variable_names(exo_file, entity, num_vars, const_cast<char **>(str2));
-  free(str2);
+  ex_put_variable_names(exo_file, entity, num_vars, const_cast<char **>(str2.data()));
 }
 
 void get_put_user_names(int exo_file, ex_entity_type entity, int num_entity, const char *mname)
 {
   auto names = matGetStr(mname);
   SMART_ASSERT(names.size() == (size_t)num_entity)(names.size())(num_entity);
-  const char **str2 = reinterpret_cast<const char **>(calloc(num_entity, sizeof(char *)));
+  std::vector<const char *> str2(num_entity);
   for (int i = 0; i < num_entity; i++) {
     str2[i] = names[i].c_str();
   }
-  ex_put_names(exo_file, entity, const_cast<char **>(str2));
-  free(str2);
+  ex_put_names(exo_file, entity, const_cast<char **>(str2.data()));
 }
 
 void get_put_attr_names(int exo_file, int seq, int id, int num_attr)
@@ -543,12 +523,11 @@ void get_put_attr_names(int exo_file, int seq, int id, int num_attr)
 
   auto names = matGetStr(str);
   SMART_ASSERT(names.size() == (size_t)num_attr);
-  const char **str2 = reinterpret_cast<const char **>(calloc(num_attr, sizeof(char *)));
+  std::vector<const char *> str2(num_attr);
   for (int i = 0; i < num_attr; i++) {
     str2[i] = names[i].c_str();
   }
-  ex_put_attr_names(exo_file, EX_ELEM_BLOCK, id, const_cast<char **>(str2));
-  free(str2);
+  ex_put_attr_names(exo_file, EX_ELEM_BLOCK, id, const_cast<char **>(str2.data()));
 }
 
 void get_put_vars(int exo_file, ex_entity_type type, const std::vector<int> &ids, int num_blocks,

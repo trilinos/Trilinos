@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_block, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_def_var, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
 #include <stdio.h>
@@ -535,10 +534,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   free(blocks_to_define);
 
   /* leave define mode  */
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete %s definition in file id %d",
-             ex_name_of_object(blocks[i].type), exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -577,9 +573,6 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
 error_ret:
   free(blocks_to_define);
 
-  if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

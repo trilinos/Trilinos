@@ -1744,7 +1744,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
 
   if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
     if (options.verbose && rank == 0) {
-      std::cerr << "\n Number of time steps on database     =" << std::setw(12)
+      std::cerr << "\n Number of time steps on database     =" << std::setw(14)
                 << region.get_property("state_count").get_int() << "\n\n";
     }
 
@@ -1926,8 +1926,8 @@ namespace {
       size_t num_nodes = inb->entity_count();
       size_t degree    = inb->get_property("component_degree").get_int();
       if (options.verbose && rank == 0) {
-        std::cerr << " Number of  Coordinates per Node        =" << std::setw(12) << degree << "\n";
-        std::cerr << " Number of             Nodes            =" << std::setw(12) << num_nodes
+        std::cerr << " Number of  Coordinates per Node =" << std::setw(14) << degree << "\n";
+        std::cerr << " Number of                 Nodes =" << std::setw(14) << num_nodes
                   << "\n";
       }
       auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
@@ -2024,9 +2024,10 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
       if (options.verbose && rank == 0) {
-        std::cerr << " Number of " << std::setw(16) << (*blocks.begin())->type_string()
-                  << "s            =" << std::setw(12) << blocks.size() << "\t"
-                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+        std::cerr << " Number of " << std::right << std::setw(20) << (*blocks.begin())->type_string()
+                  << "s =" << std::setw(14) << blocks.size() << "\n"
+                  << " Number of " << std::right << std::setw(20) << (*blocks.begin())->contains_string()
+		  << "s =" << std::setw(14) << total_entities << "\n";
       }
       if (options.debug && rank == 0) {
         std::cerr << '\n';
@@ -2055,9 +2056,10 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
       if (options.verbose && rank == 0) {
-        std::cerr << " Number of " << std::setw(16) << (*blocks.begin())->type_string()
-                  << "s            =" << std::setw(12) << blocks.size() << "\t"
-                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+        std::cerr << " Number of " << std::right << std::setw(20) << (*blocks.begin())->type_string()
+                  << "s =" << std::setw(14) << blocks.size() << "\n"
+                  << " Number of " << std::right << std::setw(20) << (*blocks.begin())->contains_string()
+		  << "s =" << std::setw(14) << total_entities << "\n";
       }
       if (options.debug && rank == 0) {
         std::cerr << '\n';
@@ -2127,10 +2129,11 @@ namespace {
       transfer_fields(ss, surf, Ioss::Field::ATTRIBUTE);
       output_region.add(surf);
     }
-    if (options.verbose && rank == 0) {
-      std::cerr << " Number of          SideSets            =" << std::setw(12) << fss.size()
-                << "\t"
-                << "Number of element sides =" << std::setw(12) << total_sides << "\n";
+    if (options.verbose && rank == 0 && !fss.empty()) {
+      std::cerr << " Number of " << std::right << std::setw(20) << (*fss.begin())->type_string()
+		<< "s =" << std::setw(14) << fss.size() << "\n"
+		<< " Number of " << std::right << std::setw(20) << (*fss.begin())->contains_string()
+		<< "s =" << std::setw(14) << total_sides << "\n";
     }
     if (options.debug && rank == 0) {
       std::cerr << '\n';
@@ -2158,9 +2161,9 @@ namespace {
       }
 
       if (options.verbose && rank == 0) {
-        std::cerr << " Number of " << std::setw(16) << (*sets.begin())->type_string()
-                  << "s            =" << std::setw(12) << sets.size() << "\t"
-                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+        std::cerr << " Number of " << std::right << std::setw(20) << (*sets.begin())->type_string()
+                  << "s            =" << std::setw(14) << sets.size() << "\t"
+                  << "Length of entity list   =" << std::setw(14) << total_entities << "\n";
       }
       if (options.debug && rank == 0) {
         std::cerr << '\n';

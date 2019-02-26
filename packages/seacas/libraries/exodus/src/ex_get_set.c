@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for ex_check_valid_file_id, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <inttypes.h>     // for PRId64
 #include <stdio.h>        // for snprintf, NULL
 
