@@ -145,12 +145,9 @@ namespace Tempus {
  *                  + F(X_i,t_i) = 0\f$ for \f$X_i\f$
  *       - \f$g_i \leftarrow - \frac{X_i-\tilde{X}}{a_{ii} \Delta t}\f$
  *     - \f$f_i \leftarrow M(X_i,\hat{t}_i)^{-1}\, F(X_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i = - g_i - M(X_i,t_i)^{-1}\,F(X_i,t_i)\f$ [Optional]
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
  *                               - \Delta t\,\sum_{i=1}^{s}      b_i\,g_i\f$
- *   - Solve \f$M(x_n)\, \dot{x}_n + F(x_n,t_n) + G(x_n,t_n) = 0\f$
- *       for \f$\dot{x}_n\f$ [Optional]
  *
  *  The single-timestep algorithm for IMEX-RK using the pseudo time derivative,
  *  \f$\tilde{\dot{X}}\f$, is (which is currently implemented)
@@ -168,12 +165,9 @@ namespace Tempus {
  *           for \f$X_i\f$
  *       - \f$g_i \leftarrow - \tilde{\dot{X}}\f$
  *     - \f$f_i \leftarrow M(X_i,\hat{t}_i)^{-1}\, F(X_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i = - g_i - M(X_i,t_i)^{-1}\,F(X_i,t_i)\f$ [Optional]
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
  *                               - \Delta t\,\sum_{i=1}^{s}      b_i\,g_i\f$
- *   - Solve \f$M(x_n)\, \dot{x}_n + F(x_n,t_n) + G(x_n,t_n) = 0\f$
- *       for \f$\dot{x}_n\f$ [Optional]
  *
  *  The following table contains the pre-coded IMEX-RK tableaus.
  *  <table>

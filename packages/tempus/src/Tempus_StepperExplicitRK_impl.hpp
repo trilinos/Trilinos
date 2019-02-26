@@ -51,56 +51,6 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
 }
 
 template<class Scalar>
-void StepperExplicitRK<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validExplicitODE(appModel);
-  this->appModel_ = appModel;
-
-  this->inArgs_  = this->appModel_->getNominalValues();
-  this->outArgs_ = this->appModel_->createOutArgs();
-}
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setSolver(std::string solverName)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicitRK "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicitRK "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperExplicitRK::setSolver()");
-  *out << "Warning -- No solver to set for StepperExplicitRK "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
 Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& sh) const
 {
@@ -558,9 +508,7 @@ StepperExplicitRK<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   this->getValidParametersBasic(pl);
-  pl->set<bool>("Use FSAL", false);  // Default is false for this stepper.
-  pl->set<std::string>("Initial Condition Consistency",
-                       "Consistent");   // Default for explicit ODEs.
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   pl->set<bool>("Use Embedded", false,
     "'Whether to use Embedded Stepper (if available) or not\n"
     "  'true' - Stepper will compute embedded solution and is adaptive.\n"

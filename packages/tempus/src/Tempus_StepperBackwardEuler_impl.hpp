@@ -421,9 +421,6 @@ StepperBackwardEuler<Scalar>::getValidParameters() const
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
   this->getValidParametersBasic(pl);
-  pl->set<bool>("Use FSAL", false);  // Default is false for this stepper.
-  pl->set<bool>("Initial Condition Consistency Check",
-                false);              // Default is false for this stepper.
   pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");

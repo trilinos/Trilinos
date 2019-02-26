@@ -82,6 +82,11 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     // Set FSAL to false, because it is not currently setup for ASA.
     pl->sublist("Default Stepper").set("Use FSAL", false);
 
+    // Set IC consistency check to false, because it is not currently
+    // setup for ASA.
+    pl->sublist("Default Stepper")
+           .set("Initial Condition Consistency Check", false);
+
     // Setup the Integrator and reset initial time step
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);

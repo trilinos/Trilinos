@@ -432,7 +432,7 @@ void StepperIMEX_RK_Partition<Scalar>::setInitialConditions(
   TEUCHOS_TEST_FOR_EXCEPTION(icConsistency != "None", std::logic_error,
     "Error - setInitialConditions() requested a consistency of '"
              << icConsistency << "'.\n"
-    "        But only  'None' is available for IMEX-RK!\n");
+    "        But only 'None' is available for IMEX-RK!\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
     "Error - The First-Step-As-Last (FSAL) principle is not "
@@ -727,9 +727,7 @@ StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
   pl->setName("Default Stepper - IMEX RK SSP2");
   pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
   this->getValidParametersBasic(pl);
-  pl->set<bool>("Use FSAL", false);  // Default is false for this stepper.
-  pl->set<bool>("Initial Condition Consistency Check",
-                false);              // Default is false for this stepper.
+  pl->set<bool>("Initial Condition Consistency Check", false);
   pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");

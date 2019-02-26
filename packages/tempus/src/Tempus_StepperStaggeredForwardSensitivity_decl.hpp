@@ -125,15 +125,20 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
     virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
-    virtual bool getUseFSAL() const {return stepperPL_->get<bool>("Use FSAL");}
+    virtual bool getUseFSAL() const
+      {return stepperPL_->get<bool>("Use FSAL", false);}
+
     virtual void setICConsistency(std::string s)
       {stepperPL_->set<std::string>("Initial Condition Consistency", s);}
     virtual std::string getICConsistency() const
-      {return stepperPL_->get<std::string>("Initial Condition Consistency");}
+      {return stepperPL_->get<std::string>("Initial Condition Consistency",
+                                           "None");}
+
     virtual void setICConsistencyCheck(bool c)
       {stepperPL_->set<bool>("Initial Condition Consistency Check", c);}
     virtual bool getICConsistencyCheck() const
-      {return stepperPL_->get<bool>("Initial Condition Consistency Check");}
+      {return stepperPL_->get<bool>("Initial Condition Consistency Check",
+                                    false);}
   //@}
 
     /// Pass initial guess to Newton solver

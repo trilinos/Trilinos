@@ -140,7 +140,7 @@ public:
 
     void getValidParametersBasic(Teuchos::RCP<Teuchos::ParameterList> pl) const
     {
-      pl->set<bool>("Use FSAL", true,
+      pl->set<bool>("Use FSAL", false,
         "The First-Step-As-Last (FSAL) principle is the situation where the\n"
         "last function evaluation, f(x^{n-1},t^{n-1}) [a.k.a. xDot^{n-1}],\n"
         "can be used for the first function evaluation, f(x^n,t^n)\n"
@@ -156,11 +156,15 @@ public:
         "same solution but at additional expense.  However, the reverse\n"
         "is not true.  When the FSAL priniciple can not be used\n"
         "(need to set useFSAL=false), setting useFSAL=true will produce\n"
-        "incorrect solutions.\n");
+        "incorrect solutions.\n"
+        "\n"
+        "Default in general for explicit and implicit steppers is false,\n"
+        "but individual steppers can override this default.\n");
 
       pl->set<std::string>("Initial Condition Consistency", "None",
         "This indicates which type of consistency should be applied to\n"
-        "the initial conditions (ICs):\n\n"
+        "the initial conditions (ICs):\n"
+        "\n"
         "  'None'   - Do nothing to the ICs provided in the SolutionHistory.\n"
         "  'Zero'   - Set the derivative of the SolutionState to zero in the\n"
         "             SolutionHistory provided, e.g., xDot^0 = 0, or \n"
@@ -173,13 +177,22 @@ public:
         "             xDot, and another Jacobian and residual may be\n"
         "             needed, e.g., boundary conditions on xDot may need\n"
         "             to replace boundary conditions on x.\n"
-        "For explicit ODEs, the default is 'Consistent', because it is one\n"
-        "additional evaluation.  For implicit ODEs, the default is 'None',\n"
-        "because the application very often knows its IC and is easier and\n"
-        "cheaper than the solve for 'Consistent'.\n");
+        "\n"
+        "In general for explicit steppers, the default is 'Consistent',\n"
+        "because it is fairly cheap with just one residual evaluation.\n"
+        "In general for implicit steppers, the default is 'None', because\n"
+        "the application often knows its IC and can set it the initial\n"
+        "SolutionState.  Also, as noted above, 'Consistent' may require\n"
+        "another Jacobian from the application.  Individual steppers may\n"
+        "override these defaults.\n");
+
       pl->set<bool>("Initial Condition Consistency Check", true,
         "Check if the initial condition, x and xDot, is consistent with the\n"
-        "governing equations, xDot = f(x,t), or f(x, xDot, t) = 0.\n");
+        "governing equations, xDot = f(x,t), or f(x, xDot, t) = 0.\n"
+        "\n"
+        "In general for explicit and implicit steppers, the default is true,\n"
+        "because it is fairly cheap with just one residual evaluation.\n"
+        "Individual steppers may override this default.\n");
     }
 
   //@}

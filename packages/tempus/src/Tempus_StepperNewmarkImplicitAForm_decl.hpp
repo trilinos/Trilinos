@@ -64,9 +64,10 @@ namespace Tempus {
  *     - \f$\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n\f$
  *     - \f$\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n\f$
  *
- *  The First-Step-As-Last (FSAL) principle is required with the Newmark
+ *  The First-Step-As-Last (FSAL) principle is part of the Newmark
  *  implicit A-Form as the acceleration from the previous time step is
- *  used for the predictors.  The default is to set useFSAL=true.
+ *  used for the predictors.  The default is to set useFSAL=true,
+ *  and useFSAL=false will be ignored.
  */
 template<class Scalar>
 class StepperNewmarkImplicitAForm

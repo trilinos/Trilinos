@@ -491,9 +491,7 @@ StepperDIRK<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   *pl = *(DIRK_ButcherTableau_->getValidParameters());
   this->getValidParametersBasic(pl);
-  pl->set<bool>("Use FSAL", false);  // Default is false for this stepper.
-  pl->set<bool>("Initial Condition Consistency Check",
-                false);              // Default is false for this stepper.
+  pl->set<bool>("Initial Condition Consistency Check", false);
   pl->set<bool>("Zero Initial Guess", false);
   return pl;
 }

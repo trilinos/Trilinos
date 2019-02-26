@@ -118,9 +118,6 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", 0.0);
   tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
   tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
-  tempusPL->sublist("Demo Stepper").set("Use FSAL", false);
-  tempusPL->sublist("Demo Stepper").set("Initial Condition Consistency", "None");
-  tempusPL->sublist("Demo Stepper").set("Initial Condition Consistency Check", false);
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
@@ -147,9 +144,6 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time", initialTime);
   tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Final Time", finalTime);
   tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
-  tempusPL->sublist("Demo Stepper").set("Use FSAL", false);
-  tempusPL->sublist("Demo Stepper").set("Initial Condition Consistency", "None");
-  tempusPL->sublist("Demo Stepper").set("Initial Condition Consistency Check", false);
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
@@ -185,9 +179,6 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Initial Time Step", fixedTimeStep);
   tempusPL->sublist("Demo Integrator").sublist("Time Step Control").set("Maximum Time Step", fixedTimeStep);
   tempusPL->sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
-  tempusPL->sublist("Demo Stepper").set("Use FSAL", false);
-  tempusPL->sublist("Demo Stepper").set("Initial Condition Consistency", "None");
-  tempusPL->sublist("Demo Stepper").set("Initial Condition Consistency Check", false);
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");

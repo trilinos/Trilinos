@@ -78,11 +78,10 @@ namespace Tempus {
  *       - \f$\dot{X}_i \leftarrow \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
  *
- *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
- *  The default is to set useFSAL=false, however useFSAL=true will also work
- *  but have no affect (i.e., no-op).
+ *  The First-Step-As-Last (FSAL) principle is not needed with DIRK, but
+ *  maybe useful if the first stage is explicit (i.e, EDIRK).
+ *  The default is to set useFSAL=false.
  */
 template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>

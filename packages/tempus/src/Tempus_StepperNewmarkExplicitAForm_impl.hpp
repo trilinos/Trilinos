@@ -69,24 +69,6 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
 }
 
 template<class Scalar>
-void StepperNewmarkExplicitAForm<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validExplicitODE(appModel);
-  this->appModel_ = appModel;
-
-  this->inArgs_  = this->appModel_->getNominalValues();
-  this->outArgs_ = this->appModel_->createOutArgs();
-}
-
-template<class Scalar>
-void StepperNewmarkExplicitAForm<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::initialize()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -365,8 +347,8 @@ StepperNewmarkExplicitAForm<Scalar>::getValidParameters() const
   pl->set<std::string>("Stepper Type", "Newmark Explicit a-Form",
                        "'Stepper Type' must be 'Newmark Explicit a-Form'.");
   this->getValidParametersBasic(pl);
-  pl->set<std::string>("Initial Condition Consistency",
-                       "Consistent");   // Default for explicit ODEs.
+  pl->set<bool>("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   pl->sublist("Newmark Explicit Parameters", false, "");
   pl->sublist("Newmark Explicit Parameters", false, "").set("Gamma",
                0.5, "Newmark Explicit parameter");

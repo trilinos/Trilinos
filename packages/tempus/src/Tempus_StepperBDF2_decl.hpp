@@ -29,17 +29,18 @@ namespace Tempus {
  *     or RK4.  The default startup stepper is 'IRK 1 Stage Theta Method'
  *     which second order.
  *   - For \f$n>1\f$, solve for \f$x_n\f$ via
- *  \f[
- *    f\left(x_n, \dot{x}_n, t_n\right) = 0
- *  \f]
- *  where
- *  \f[
+ *       \f$ f\left(x_n, \dot{x}_n, t_n\right) = 0\f$
+ *  where \f$
  *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
  *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
  *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
- *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right],
- *  \f]
- *  and \f$\Delta t_n = t_n - t_{n-1}\f$.
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
+ *  and \f$\Delta t_n = \tau_n = t_n - t_{n-1}\f$.
+ *   - \f$\dot{x}_n \leftarrow
+ *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
+ *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
  *
  *  The First-Step-As-Last (FSAL) principle is not needed BDF2.
  *  The default is to set useFSAL=false, however useFSAL=true will also work

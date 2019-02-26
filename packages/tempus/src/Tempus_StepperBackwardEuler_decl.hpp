@@ -26,8 +26,7 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Backward Euler is simply,
  *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$ [Optional]
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$
  *
  *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
  *  The default is to set useFSAL=false, however useFSAL=true will also work

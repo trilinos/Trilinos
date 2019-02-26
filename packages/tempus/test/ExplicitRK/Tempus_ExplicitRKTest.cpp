@@ -84,6 +84,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, ParameterList)
       tempusPL->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
     }
 
+    // Set IC consistency to default value.
+    tempusPL->sublist("Demo Stepper")
+                 .set("Initial Condition Consistency", "None");
+
     // Test constructor IntegratorBasic(tempusPL, model)
     {
       RCP<Tempus::IntegratorBasic<double> > integrator =

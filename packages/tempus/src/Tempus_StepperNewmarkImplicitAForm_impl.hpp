@@ -296,8 +296,8 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
     Teuchos::OSTab ostab(out,1,
       "StepperNewmarkImplicitAForm::setInitialConditions()");
     *out << "\nWarning -- The First-Step-As-Last (FSAL) principle is "
-         << "needed with Newmark Implicit A-Form.  The default is to "
-         << "set useFSAL=true." << std::endl;
+         << "part of the Newmark Implicit A-Form.  The default is to "
+         << "set useFSAL=true, and useFSAL=false will be ignored." << std::endl;
   }
 }
 
@@ -520,8 +520,8 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
   this->getValidParametersBasic(pl);
-  pl->set<std::string>("Initial Condition Consistency",
-                       "Consistent"); // Default is false for this stepper.
+  pl->set<bool>       ("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");

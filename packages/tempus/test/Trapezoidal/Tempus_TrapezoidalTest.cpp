@@ -73,8 +73,6 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
       Tempus::integratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
-    stepperPL->set("Initial Condition Consistency", "None");
-    stepperPL->set("Initial Condition Consistency Check", false);
 
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();

@@ -158,7 +158,7 @@ class RKButcherTableau :
         pl->set<std::string>("Stepper Type", this->description());
         pl->set<bool>("Use Embedded", false);
         pl->set<bool>("Use FSAL", false);
-        pl->set<std::string>("Initial Condition Consistency", "Consistent");
+        pl->set<std::string>("Initial Condition Consistency", "None");
         pl->set<bool>("Initial Condition Consistency Check", true);
 
         return pl;

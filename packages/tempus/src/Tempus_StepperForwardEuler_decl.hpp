@@ -47,10 +47,7 @@ namespace Tempus {
  *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}\f$
  *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$
  *
- *  The default for Forward Euler is to use FSAL (useFSAL=true).  Note
- *  however that steppers in general can not use FSAL with operator
- *  splitting as \f$\dot{x}_{n-1}\f$ will usually be modified by other
- *  operators.
+ *  The default for Forward Euler is to use FSAL (useFSAL=true).
  */
 template<class Scalar>
 class StepperForwardEuler : virtual public Tempus::StepperExplicit<Scalar>
@@ -64,13 +61,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    //virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-    //  getModel(){return this->appModel_;}
-
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 

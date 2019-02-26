@@ -29,10 +29,12 @@ namespace Tempus {
  *  for the explicit case.
  *
  *  Newmark is second order accurate if \f$\gamma =  0.5\f$; otherwise it
- * is first order
- *  accurate.  Some additional properties about the Newmark Beta scheme
- *  can be found <a
- * href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
+ *  is first order accurate.  Some additional properties about the Newmark
+ *  Beta scheme can be found
+ *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
+ *
+ *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  Newmark implicit D-Form method.
  */
 template <class Scalar>
 class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scalar> {

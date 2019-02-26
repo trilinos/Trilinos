@@ -19,6 +19,9 @@ void StepperExplicit<Scalar>::setModel(
 {
   this->validExplicitODE(appModel);
   this->appModel_ = appModel;
+
+  this->inArgs_  = this->appModel_->getNominalValues();
+  this->outArgs_ = this->appModel_->createOutArgs();
 }
 
 

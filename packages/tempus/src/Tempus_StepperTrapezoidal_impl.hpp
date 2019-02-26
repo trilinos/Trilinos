@@ -175,6 +175,36 @@ void StepperTrapezoidal<Scalar>::setInitialConditions (
   // at the same time level for the initialState.
   initialState->setIsSynced(true);
 
+  // Test for consistency.
+  if (this->getICConsistencyCheck()) {
+    auto f    = initialState->getX()->clone_v();
+    auto xDot = this->getStepperXDot(initialState);
+
+    const Scalar time = initialState->getTime();
+    const Scalar dt   = initialState->getTimeStep();
+    RCP<TimeDerivative<Scalar> > timeDer = Teuchos::null;
+    const Scalar alpha = Scalar(0.0);
+    const Scalar beta  = Scalar(0.0);
+    RCP<ImplicitODEParameters<Scalar> > p =
+      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
+                                                     EVALUATE_RESIDUAL));
+
+    this->evaluateImplicitODE(f, x, xDot, time, p);
+
+    Scalar reldiff = Thyra::norm(*f)/Thyra::norm(*x);
+    Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
+    if (reldiff > eps) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::setInitialConditions()");
+      *out << "Warning -- Failed consistency check but continuing!\n"
+         << "  ||f(x,xDot,t)||/||x|| > eps" << std::endl
+         << "  ||f(x,xDot,t)||       = " << Thyra::norm(*f) << std::endl
+         << "  ||x||                 = " << Thyra::norm(*x) << std::endl
+         << "  ||f(x,xDot,t)||/||x|| = " << reldiff         << std::endl
+         << "                    eps = " << eps             << std::endl;
+    }
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION( !(this->getUseFSAL()), std::logic_error,
     "Error - The First-Step-As-Last (FSAL) principle is required\n"
     "        for the Trapezoidal Stepper (i.e., useFSAL=true)!\n");
@@ -325,8 +355,8 @@ StepperTrapezoidal<Scalar>::getValidParameters() const
   pl->setName("Default Stepper - " + this->description());
   pl->set<std::string>("Stepper Type", this->description());
   this->getValidParametersBasic(pl);
-  pl->set<bool>("Initial Condition Consistency Check",
-                false);              // Default is false for this stepper.
+  pl->set<bool>       ("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");

@@ -51,6 +51,8 @@ namespace Tempus {
  *   - if ( useFSAL )
  *     - \f$\mathbf{a}^n =
  *          \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)\f$
+ *
+ *  The default for Forward Euler is to use FSAL (useFSAL=true).
  */
 template<class Scalar>
 class StepperNewmarkExplicitAForm
@@ -65,13 +67,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return this->appModel_;}
-
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
 

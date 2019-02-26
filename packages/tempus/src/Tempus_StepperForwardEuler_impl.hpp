@@ -27,24 +27,6 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
 }
 
 template<class Scalar>
-void StepperForwardEuler<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validExplicitODE(appModel);
-  this->appModel_ = appModel;
-
-  this->inArgs_  = this->appModel_->getNominalValues();
-  this->outArgs_ = this->appModel_->createOutArgs();
-}
-
-template<class Scalar>
-void StepperForwardEuler<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-template<class Scalar>
 void StepperForwardEuler<Scalar>::setObserver(
   Teuchos::RCP<StepperObserver<Scalar> > obs)
 {
@@ -312,8 +294,8 @@ StepperForwardEuler<Scalar>::getValidParameters() const
   pl->set<std::string>("Stepper Type", "Forward Euler",
                        "'Stepper Type' must be 'Forward Euler'.");
   this->getValidParametersBasic(pl);
-  pl->set<std::string>("Initial Condition Consistency",
-                       "Consistent");   // Default for explicit ODEs.
+  pl->set<bool>("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
 }
 

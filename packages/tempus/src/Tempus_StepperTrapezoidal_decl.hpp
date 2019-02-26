@@ -25,8 +25,7 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Trapezoidal method is simply,
  *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}\f$ [Optional]
- *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}\f$
  *
  *   The First-Step-As-Last (FSAL) principle is required for the Trapezoidal
  *   Stepper (i.e., useFSAL=true)!  There are at least two ways around this,

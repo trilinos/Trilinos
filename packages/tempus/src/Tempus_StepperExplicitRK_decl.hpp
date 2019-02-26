@@ -58,7 +58,6 @@ namespace Tempus {
  *     - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
- *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$ [Optional]
  *
  *  When using the First-Step-As-Last (FSAL) priniciple, where one can
  *  reuse the last function evaulation as the first evaluation of the next
@@ -75,7 +74,6 @@ namespace Tempus {
  *       - \f$\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)\f$
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
- *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$ [Optional]
  *
  *   For Explicit RK, FSAL requires \f$c_1 = 0\f$, \f$c_s = 1\f$, and
  *   be stiffly accurate (\f$a_{sj} = b_j\f$).  An example of this is
@@ -111,20 +109,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return this->appModel_;}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-    { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 

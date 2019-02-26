@@ -208,16 +208,11 @@ namespace Tempus {
  *         for \f$X_i\f$ where \f$Y_i\f$ are known parameters
  *       - \f$g^x_i \leftarrow - \tilde{\dot{X}}\f$
  *     - \f$f_i \leftarrow f(Z_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i
- *          = - g^x_i - f^x(Z_i,t_i)\f$ [Optional]
- *     - \f$\dot{Y}_i = - f^y_i \f$ [Optional]
  *   - end for
  *   - \f$z_n = z_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\, f_i\f$
  *   - \f$x_n \mathrel{+{=}} - \Delta t\,\sum_{i=1}^{s} b_i\, g^x_i\f$
- *   - Solve \f$M(z_n) \dot{z}_n + F(z_n,t_n) + G(z_n,t_n) = 0\f$
- *       for \f$\dot{z}_n\f$ [Optional]
  *
- *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK.
+ *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK Partition.
  *  The default is to set useFSAL=false, and useFSAL=true will result
  *  in an error.
  *
