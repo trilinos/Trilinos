@@ -18,6 +18,7 @@
 #   ATDM_CONFIG_USE_CUDA
 #   ATDM_CONFIG_USE_PTHREADS
 #   ATDM_CONFIG_CUDA_RDC
+#   ATDM_CONFIG_COMPLEX
 #   ATDM_CONFIG_SHARED_LIBS
 #
 # or will error out.
@@ -238,6 +239,14 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
   export ATDM_CONFIG_CUDA_RDC=ON
+fi
+
+# Enable complex (double) data-types or not
+export ATDM_CONFIG_COMPLEX=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"no-complex"* ]]; then
+  export ATDM_CONFIG_COMPLEX=OFF
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
+  export ATDM_CONFIG_COMPLEX=ON
 fi
 
 # Set 'static' or 'shared'

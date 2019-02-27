@@ -76,7 +76,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<shared_static>-<release_debug>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<cplx>-<shared_static>-<release_debug>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -85,7 +85,7 @@ build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc),
+[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<cplx>`](#cplx),
 [`<shared_static>`](#shared_static) and [`<release_debug>`](#release_debug),
 is described below.
 
@@ -182,6 +182,17 @@ builds (does nothing in non-CUDA builds):
 
 NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
 `--remove-duplicate-link-files` as well.
+
+<a name="cplx"/>
+
+**`<cplx>`:** The following `<build-name>` keywords determine the value for the
+Trilinos CMake cache var `Trilinos_ENABLE_COMPLEX`:
+
+* `complex`: Enable support for `complex<double>` scale type (set `Trilinos_ENABLE_COMPLEX=ON`)
+* `no-complex`: Do not enable support for `complex<double>` scale type (set `Trilinos_ENABLE_COMPLEX=ON`)
+
+NOTE: Setting `Trilinos_ENABLE_COMPLEX=ON` only enables `complex<double>` not
+`complex<float>` by default.
 
 <a name="shared_static"/>
 
