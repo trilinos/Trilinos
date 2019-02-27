@@ -541,12 +541,18 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
   if (mesh.blockCount > 0) {
     status = define_netcdf_vars(exodusFilePtr, "element block", mesh.blockCount, DIM_NUM_EL_BLK,
                                 VAR_STAT_EL_BLK, VAR_ID_EL_BLK, VAR_NAME_EL_BLK);
+    if (status != EX_NOERR) {
+      return EX_FATAL;
+    }
   }
 
   // node set id array:
   if (mesh.nodesetCount > 0) {
     status = define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesetCount, DIM_NUM_NS,
                                 VAR_NS_STAT, VAR_NS_IDS, VAR_NAME_NS);
+    if (status != EX_NOERR) {
+      return EX_FATAL;
+    }
   }
 
   // side set id array:

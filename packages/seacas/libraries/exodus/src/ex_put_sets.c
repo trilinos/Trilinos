@@ -297,6 +297,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
 
     /* leave define mode  */
     if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
+      free(sets_to_define);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
