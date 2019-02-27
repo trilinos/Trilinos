@@ -100,6 +100,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.8.4
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-6.1.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=GNU-6.1.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.4.0"* ]]; then

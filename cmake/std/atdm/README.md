@@ -76,7 +76,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<cplx>-<shared_static>-<release_debug>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -85,7 +85,7 @@ build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<cplx>`](#cplx),
+[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<complex>`](#complex),
 [`<shared_static>`](#shared_static) and [`<release_debug>`](#release_debug),
 is described below.
 
@@ -183,13 +183,16 @@ builds (does nothing in non-CUDA builds):
 NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
 `--remove-duplicate-link-files` as well.
 
-<a name="cplx"/>
+<a name="complex"/>
 
-**`<cplx>`:** The following `<build-name>` keywords determine the value for the
-Trilinos CMake cache var `Trilinos_ENABLE_COMPLEX`:
+**`<complex>`:** The following `<build-name>` keywords determine if support
+for the `complex<double>` scalar type is built into the code and is tested or
+not:
 
-* `complex`: Enable support for `complex<double>` scale type (set `Trilinos_ENABLE_COMPLEX=ON`)
-* `no-complex`: Do not enable support for `complex<double>` scale type (set `Trilinos_ENABLE_COMPLEX=ON`)
+* `complex`: Enable support for `complex<double>` scalar type (set
+  `Trilinos_ENABLE_COMPLEX=ON`)
+* `no-complex`: Do not enable support for `complex<double>` scalar type (set
+  `Trilinos_ENABLE_COMPLEX=ON`) (DEFAULT)
 
 NOTE: Setting `Trilinos_ENABLE_COMPLEX=ON` only enables `complex<double>` not
 `complex<float>` by default.
@@ -197,10 +200,10 @@ NOTE: Setting `Trilinos_ENABLE_COMPLEX=ON` only enables `complex<double>` not
 <a name="shared_static"/>
 
 **`<shared_static>`:** The following `<build-name>` keywords specify debug if
-  a shared or static library build of Trilinos is to be created (which also
-  impacts if shared or stack TPL libs are linked to on some system):
+a shared or static library build of Trilinos is to be created (which also
+impacts if shared or stack TPL libs are linked to on some system):
 
-* `static`: `BUILD_SHARED_LIBS=OFF`, DEFAULT
+* `static`: `BUILD_SHARED_LIBS=OFF` (DEFAULT)
 * `shared`: `BUILD_SHARED_LIBS=ON`
 
 <a name="release_debug"/>
