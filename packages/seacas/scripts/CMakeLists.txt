@@ -66,11 +66,15 @@ endif()
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASExodus)
 ASSERT_DEFINED(BUILD_SHARED_LIBS)
 IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
-   CONFIGURE_FILE(
-   	${CMAKE_CURRENT_SOURCE_DIR}/exodus.py.in
-	${CMAKE_CURRENT_BINARY_DIR}/exodus.py
-	@ONLY
-   )
-   INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus.py DESTINATION lib)
+   IF (BUILD_SHARED_LIBS)
+      CONFIGURE_FILE(
+		${CMAKE_CURRENT_SOURCE_DIR}/exodus.py.in
+		${CMAKE_CURRENT_BINARY_DIR}/exodus.py
+		@ONLY
+		)
+      INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus.py DESTINATION lib)
+   else()
+      MESSAGE(STATUS "Exodus.py NOT installed since shared exodus library is not available.")
+   endif()
 endif()
 

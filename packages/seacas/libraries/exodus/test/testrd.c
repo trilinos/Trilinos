@@ -54,7 +54,6 @@
  *****************************************************************************/
 
 #include "exodusII.h"
-#include "netcdf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -354,7 +353,7 @@ int main(int argc, char **argv)
 
   /* read element block attributes */
   for (i = 0; i < num_elem_blk; i++) {
-    if (num_elem_in_block[i] > 0) {
+    if (num_elem_in_block[i] > 0 && num_attr[i] > 0) {
       for (j = 0; j < num_attr[i]; j++) {
         attrib_names[j] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
       }
@@ -830,17 +829,19 @@ int main(int argc, char **argv)
   error = ex_get_variable_param(exoid, EX_GLOBAL, &num_glo_vars);
   printf("\nafter ex_get_variable_param, error = %3d\n", error);
 
-  for (i = 0; i < num_glo_vars; i++) {
-    var_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
-  }
+  if (num_glo_vars > 0) {
+    for (i = 0; i < num_glo_vars; i++) {
+      var_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
+    }
 
-  error = ex_get_variable_names(exoid, EX_GLOBAL, num_glo_vars, var_names);
-  printf("\nafter ex_get_variable_names, error = %3d\n", error);
+    error = ex_get_variable_names(exoid, EX_GLOBAL, num_glo_vars, var_names);
+    printf("\nafter ex_get_variable_names, error = %3d\n", error);
 
-  printf("There are %2d global variables; their names are :\n", num_glo_vars);
-  for (i = 0; i < num_glo_vars; i++) {
-    printf(" '%s'\n", var_names[i]);
-    free(var_names[i]);
+    printf("There are %2d global variables; their names are :\n", num_glo_vars);
+    for (i = 0; i < num_glo_vars; i++) {
+      printf(" '%s'\n", var_names[i]);
+      free(var_names[i]);
+    }
   }
 
   /* read nodal variables parameters and names */
@@ -1010,39 +1011,39 @@ int main(int argc, char **argv)
   free(time_values);
 
   /* read all global variables at one time step */
-
-  var_values = (float *)calloc(num_glo_vars, sizeof(float));
-
-  error = ex_get_var(exoid, time_step, EX_GLOBAL, 1, 1, num_glo_vars, var_values);
-  printf("\nafter ex_get_glob_vars, error = %3d\n", error);
-
-  printf("global variable values at time step %2d\n", time_step);
-  for (i = 0; i < num_glo_vars; i++) {
-    printf("%5.3f\n", var_values[i]);
-  }
-
-  free(var_values);
-
-  /* read a single global variable through time */
-
   var_index = 1;
   beg_time  = 1;
   end_time  = -1;
 
-  var_values = (float *)calloc(num_time_steps, sizeof(float));
+  if (num_glo_vars > 0) {
+    var_values = (float *)calloc(num_glo_vars, sizeof(float));
 
-  error = ex_get_var_time(exoid, EX_GLOBAL, var_index, 1, beg_time, end_time, var_values);
-  printf("\nafter ex_get_glob_var_time, error = %3d\n", error);
+    error = ex_get_var(exoid, time_step, EX_GLOBAL, 1, 1, num_glo_vars, var_values);
+    printf("\nafter ex_get_glob_vars, error = %3d\n", error);
 
-  printf("global variable %2d values through time:\n", var_index);
-  for (i = 0; i < num_time_steps; i++) {
-    printf("%5.3f\n", var_values[i]);
+    printf("global variable values at time step %2d\n", time_step);
+    for (i = 0; i < num_glo_vars; i++) {
+      printf("%5.3f\n", var_values[i]);
+    }
+
+    free(var_values);
+
+    /* read a single global variable through time */
+
+    var_values = (float *)calloc(num_time_steps, sizeof(float));
+
+    error = ex_get_var_time(exoid, EX_GLOBAL, var_index, 1, beg_time, end_time, var_values);
+    printf("\nafter ex_get_glob_var_time, error = %3d\n", error);
+
+    printf("global variable %2d values through time:\n", var_index);
+    for (i = 0; i < num_time_steps; i++) {
+      printf("%5.3f\n", var_values[i]);
+    }
+
+    free(var_values);
   }
 
-  free(var_values);
-
   /* read a nodal variable at one time step */
-
   if (num_nodes > 0) {
     var_values = (float *)calloc(num_nodes, sizeof(float));
 

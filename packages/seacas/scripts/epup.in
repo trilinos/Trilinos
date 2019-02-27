@@ -72,9 +72,19 @@ txtrst=$(tput sgr0)       # Text reset
 
 cycles=-1
 
-ACCESS=@ACCESSDIR@
-EPU=${ACCESS}/bin/epu
-PARALLEL=${ACCESS}/bin/parallel
+pushd $(dirname "${0}") > /dev/null
+basedir=$(pwd -P)
+popd > /dev/null
+if [ -x ${basedir}/epu -a -x ${basedir}/parallel -a -x ${basedir}/getopt.seacas ]; then
+    ACCESS_BIN=$basedir
+elif [ "$ACCESS" == "" ]; then
+    ACCESS_BIN=@ACCESSDIR@/bin
+else
+    ACCESS_BIN=${ACCESS}/bin
+fi
+
+EPU=${ACCESS_BIN}/epu
+PARALLEL=${ACCESS_BIN}/parallel
 SEQ="seq -w"
 if [ $# -eq 0 ] ; then
   usage
@@ -82,7 +92,7 @@ fi
 
 ########################################################################
 # epu options:
-GETOPT=${ACCESS}/bin/getopt.seacas
+GETOPT=${ACCESS_BIN}/getopt.seacas
 
 all_options="$@"
 

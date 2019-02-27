@@ -95,7 +95,7 @@ https://web.mscsoftware.com/training_videos/patran/reverb3/index.html#page/Finit
 
 
 -------------------------
-\section circle Circle and Sphere 
+\section circle Circle and Sphere
 For elements of type circle or sphere, the topology is one node at the center of the circle or sphere element.
 A circle or sphere element has no sides.
 
@@ -103,8 +103,10 @@ A circle or sphere element has no sides.
 ![Sphere](../topology/sphere.png)
 
 -------------------------
-\section bar Bar, Truss, Beam 
-The element name for this element type can be "bar", "beam", "truss"
+\section bar Bar, Truss, Beam
+The element name for this element type can be "bar", "beam", "truss".
+For the "beam", the boundaries are the "top" and "bottom" edges; for
+the "bar" or "truss", the boundaries are the end nodes.
 
 ![Bar2](../topology/bar2.png)
 ![Bar3](../topology/bar3.png)

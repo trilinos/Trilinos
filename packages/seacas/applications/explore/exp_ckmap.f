@@ -57,7 +57,7 @@ C     duplicate adjacent values.
       nerr = 0
       if (icnt .le. 1) return
 
-      CALL INDEXX (MAP, INDX, ICNT, .TRUE.)
+      CALL INDEXI (MAP, INDX, ICNT, .TRUE.)
 
 C ... There has been a request to show min and max ids to help with
 C     debugging potential database corruption issues.  Do it here.

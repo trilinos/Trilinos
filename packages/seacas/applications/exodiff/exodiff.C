@@ -46,6 +46,7 @@
 #define ST_ZU "%lu"
 #endif
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
@@ -54,6 +55,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 
 #include "ED_SystemInterface.h"
 #include "ED_Version.h"
@@ -520,29 +522,45 @@ namespace {
     // into file2.  Similarly with elmt_map.
     INT *node_map = nullptr;
     INT *elmt_map = nullptr;
-    if (interface.map_flag != FILE_ORDER) {
-      if (interface.map_flag == PARTIAL) {
-        Compute_Partial_Maps(node_map, elmt_map, file1, file2);
-      }
-      else if (interface.map_flag == USE_FILE_IDS) {
+    if (interface.map_flag == DISTANCE) {
+      Compute_Maps(node_map, elmt_map, file1, file2);
+    }
+    else if (interface.map_flag == PARTIAL) {
+      // Same as distance, but ok if not all nodes/elements are matched
+      Compute_Partial_Maps(node_map, elmt_map, file1, file2);
+    }
+    else if (interface.map_flag == USE_FILE_IDS) {
+      if (!interface.ignore_maps) {
+        // Node/element X in file 1 matches node/element X in file 2 no matter what order they are
+        // in
         Compute_FileId_Maps(node_map, elmt_map, file1, file2);
       }
-      else if (interface.map_flag == DISTANCE) {
-        Compute_Maps(node_map, elmt_map, file1, file2);
-      }
       else {
-        ERROR("Invalid map option.\n");
-      }
+        size_t num_nodes = file1.Num_Nodes();
+        node_map         = new INT[num_nodes];
+        std::iota(node_map, node_map + num_nodes, 0);
 
-      if (interface.dump_mapping) {
-        Dump_Maps(node_map, elmt_map, file1);
+        size_t num_elem = file1.Num_Elmts();
+        elmt_map        = new INT[num_elem];
+        std::iota(elmt_map, elmt_map + num_elem, 0);
       }
-      if (Check_Maps(node_map, elmt_map, file1, file2)) {
-        if (interface.map_flag == DISTANCE) {
-          std::cout << "exodiff: INFO .. Map option is not needed.\n";
-        }
-        interface.map_flag = FILE_ORDER;
-      }
+    }
+    else if (interface.map_flag == FILE_ORDER) {
+      // Match by implicit ordering... IDs in that ordering must match (checked later)
+      size_t num_nodes = file1.Num_Nodes();
+      node_map         = new INT[num_nodes];
+      std::iota(node_map, node_map + num_nodes, 0);
+
+      size_t num_elem = file1.Num_Elmts();
+      elmt_map        = new INT[num_elem];
+      std::iota(elmt_map, elmt_map + num_elem, 0);
+    }
+    else {
+      ERROR("Invalid map option.\n");
+    }
+
+    if (interface.dump_mapping) {
+      Dump_Maps(node_map, elmt_map, file1);
     }
 
     bool diff_flag = false; // Set to 'true' to indicate files contain diffs
@@ -553,9 +571,6 @@ namespace {
 
     // Get node and element number maps which map internal implicit ids into
     // global ids...
-    // For now, assume that both files have the same map. At some point, need
-    // to actually use the maps to build the correspondence map from one file
-    // to the next...
     const INT *node_id_map = nullptr;
     const INT *elem_id_map = nullptr;
     if (!interface.ignore_maps) {
@@ -564,20 +579,29 @@ namespace {
       node_id_map = file1.Get_Node_Map();
       elem_id_map = file1.Get_Elmt_Map();
       if (!interface.summary_flag) {
-        Compare_Maps(file1, file2, node_map, elmt_map, interface.map_flag == PARTIAL);
+        bool diff = Compare_Maps(file1, file2, node_map, elmt_map, interface.map_flag == PARTIAL);
+        if (diff && (interface.map_flag == FILE_ORDER)) {
+          std::cerr << "exodiff: Exiting due to node/element mismatch with `-match_file_order` "
+                       "option enabled.\n";
+          if (interface.exit_status_switch) {
+            exit(2);
+          }
+          else {
+            exit(1);
+          }
+        }
       }
     }
     else {
+      // Ignoring the maps from the file, so create a dummy
+      // map to make logic later in program consistent.
       node_id_map  = new INT[file1.Num_Nodes()];
       INT *tmp_map = const_cast<INT *>(node_id_map);
-      for (size_t i = 0; i < file1.Num_Nodes(); i++) {
-        tmp_map[i] = i + 1;
-      }
+      std::iota(tmp_map, tmp_map + file1.Num_Nodes(), 1);
+
       elem_id_map = new INT[file1.Num_Elmts()];
       tmp_map     = const_cast<INT *>(elem_id_map);
-      for (size_t i = 0; i < file1.Num_Elmts(); i++) {
-        tmp_map[i] = i + 1;
-      }
+      std::iota(tmp_map, tmp_map + file1.Num_Elmts(), 1);
     }
 
     int out_file_id = -1;
@@ -1125,19 +1149,8 @@ bool Invalid_Values(const double *values, size_t count)
 bool Equal_Values(const double *values, size_t count, double *value)
 {
   SMART_ASSERT(values != nullptr);
-
-  bool all_same = true;
-  if (count > 0) {
-    *value = values[0];
-  }
-
-  for (size_t i = 1; i < count; i++) {
-    if (values[i] != *value) {
-      all_same = false;
-      break;
-    }
-  }
-  return all_same;
+  return (std::adjacent_find(values, values + count, std::not_equal_to<double>()) ==
+          values + count);
 }
 
 template <typename INT>
@@ -1254,7 +1267,7 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       const std::string &name = (interface.glob_var_names)[out_idx];
       int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
       int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
-      if (idx1 < 0 || idx2 < 0 || vals1 == nullptr || vals2 == nullptr) {
+      if (idx1 < 0 || idx2 < 0 || vals2 == nullptr) {
         ERROR("Unable to find global variable named '" << name << "' on database.\n");
         exit(1);
       }

@@ -126,7 +126,7 @@ C ... See if need to read the data
       CALL PCKSTR (1, STRA)
       LSTRA = LENSTR (STRA)
       WRITE (STRB, 10002, IOSTAT=IDUM) LNPSNL
-10002 FORMAT ('(index=', I10, ')')
+10002 FORMAT ('(index=', I12, ')')
       CALL PCKSTR (1, STRB)
       LSTRB = LENSTR (STRB)
 
@@ -198,11 +198,11 @@ C ... See if need to read the data
 10000 FORMAT (/, 1X, 'NODESET TIME STEP VARIABLES')
 10010 FORMAT (1X, 'Row ',I4,', Column ',I1,' is variable ',A)
  2000 FORMAT('(1PE',I2.2,'.',I2.2,')')
- 3000 FORMAT('(1X, ''Node'', I10, 5(2X,A',I2,'))')
+ 3000 FORMAT('(1X, ''Node'', I12, 5(2X,A',I2,'))')
  4000 FORMAT('(15X, 5 (2X, A',I2,'))')
 
 10005 FORMAT (1X, 'Nodal ids are Global')
-10030 FORMAT (/,1X, 'Set', I10, 1X, A, ':',
-     &     I10, ' nodes', 1X, A, ' name = "',A,'"')
+10030 FORMAT (/,1X, 'Set', I12, 1X, A, ':',
+     &     I12, ' nodes', 1X, A, ' name = "',A,'"')
       END
 

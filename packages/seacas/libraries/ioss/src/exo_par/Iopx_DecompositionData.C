@@ -863,6 +863,7 @@ namespace Iopx {
                                                                    int64_t id, size_t blk_seq,
                                                                    size_t nnpe) const;
 
+  /// relates DecompositionData::get_block_connectivity
   template <typename INT>
   void DecompositionData<INT>::get_block_connectivity(int filePtr, INT *data, int64_t id,
                                                       size_t blk_seq, size_t nnpe) const

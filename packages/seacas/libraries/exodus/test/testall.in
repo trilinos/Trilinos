@@ -261,6 +261,18 @@ echo "end testwt-results" >> test.output
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test-results.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-results.dmp | tee testwt-results.res
 
+echo "testwt-oned - write 1D mesh..."
+echo "begin testwt-oned" >> test.output
+${PREFIX} ${BINDIR}/testwt-oned${SUFFIX} >> test.output
+echo "end testwt-oned" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-oned.dmp | tee testwt-oned.res
+
+echo "testrd - read test of 1D file..."
+echo "begin testrd 1D" >> test.output
+${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testrd-oned.dmp | tee testrd-oned.res
+echo "end testrd 1D" >> test.output
+
 if [ "$THREAD_SAFE" == "ON" ]; then
 
 echo "test_ts_nvar - each thread writes data for a single nodal variable..."

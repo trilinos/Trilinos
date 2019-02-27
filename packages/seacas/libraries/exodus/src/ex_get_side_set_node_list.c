@@ -632,7 +632,11 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       get_nodes(exoid, side_set_node_list, node_pos, connect, connect_offset);
       break;
     }
-    case EX_EL_TRUSS:
+    case EX_EL_TRUSS: { /* Sideset for truss is single node at either end of trus */
+      get_nodes(exoid, side_set_node_list, node_pos, connect, connect_offset + side_num);
+      break;
+    }
+
     case EX_EL_BEAM: { /* Note: no side-node lookup table is used for this
                           simple case */
       for (i = 0; i < num_nodes_per_elem; i++) {

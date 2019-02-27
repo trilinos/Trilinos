@@ -55,7 +55,6 @@
 
 #include "exodusII.h"     // for ex_block, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_NAME_ELB, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
 #include <stdio.h>

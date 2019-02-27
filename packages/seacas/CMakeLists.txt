@@ -24,7 +24,7 @@ endif()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   SEACASExodus_ENABLE_STATIC
   EXODUS_STATIC
-  "Build static version of Exodus."
+  "Build static version of Exodus in addition to shared version."
   ${SEACASExodus_ENABLE_STATIC_DEFAULT}
   )
 

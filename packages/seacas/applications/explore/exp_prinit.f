@@ -164,31 +164,31 @@ C   --   NVARSS - IN - the number of sideset variables (if OPTION)
 10010  FORMAT (/, 1X, 'Database:  ', A)
 10020  FORMAT (/, 1X, A)
 10030  FORMAT (
-     &   /, 1X, 'Number of coordinates per node       =', I10
-     &   /, 1X, 'Number of nodes                      =', I10
-     &   /, 1X, 'Number of elements                   =', I10
-     &   /, 1X, 'Number of element blocks             =', I10
+     &   /, 1X, 'Number of coordinates per node       =', I12
+     &   /, 1X, 'Number of nodes                      =', I12
+     &   /, 1X, 'Number of elements                   =', I12
+     &   /, 1X, 'Number of element blocks             =', I12
      &   )
 10040  FORMAT (
-     &   /, 1X, 'Number of nodal point sets           =', I10, :
-     &   /, 1X, '   Length of node list               =', I10
-     &   /, 1X, '   Length of distribution list       =', I10
+     &   /, 1X, 'Number of nodal point sets           =', I12, :
+     &   /, 1X, '   Length of node list               =', I12
+     &   /, 1X, '   Length of distribution list       =', I12
      &   )
 10050  FORMAT
-     &   (  1X, 'Number of element side sets          =', I10, :
-     &   /, 1X, '   Length of element list            =', I10
-     &   /, 1X, '   Length of node list               =', I10
-     &   /, 1X, '   Length of distribution list       =', I10
+     &   (  1X, 'Number of element side sets          =', I12, :
+     &   /, 1X, '   Length of element list            =', I12
+     &   /, 1X, '   Length of node list               =', I12
+     &   /, 1X, '   Length of distribution list       =', I12
      &   )
 10055  FORMAT (
-     &   /, 1X, 'Number of coordinate frames          =', I10
+     &   /, 1X, 'Number of coordinate frames          =', I12
      &   )
 
 10060  FORMAT (
-     &   /, 1X, 'Number of global variables           =', I10
-     &   /, 1X, 'Number of variables at each node     =', I10
-     &   /, 1X, 'Number of variables at each element  =', I10
-     &   /, 1X, 'Number of variables at each nodeset  =', I10
-     &   /, 1X, 'Number of variables at each sideset  =', I10
+     &   /, 1X, 'Number of global variables           =', I12
+     &   /, 1X, 'Number of variables at each node     =', I12
+     &   /, 1X, 'Number of variables at each element  =', I12
+     &   /, 1X, 'Number of variables at each nodeset  =', I12
+     &   /, 1X, 'Number of variables at each sideset  =', I12
      &   )
       END

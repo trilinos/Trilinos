@@ -292,8 +292,8 @@ namespace tsl {
      * example).
      *
      * The strong exception guarantee only holds if the expression
-     * `std::is_nothrow_swappable<ValueType>::value &&
-     * std::is_nothrow_move_constructible<ValueType>::value` is true.
+     * `std::is_nothrow_swappable<ValueType>\:\:value &&
+     * std::is_nothrow_move_constructible<ValueType>\:\:value` is true.
      *
      * Behaviour is undefined if the destructor of `ValueType` throws.
      */

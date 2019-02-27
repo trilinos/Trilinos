@@ -1089,8 +1089,8 @@ integer {D}+({E})?
   }
 }
 
-/* This implementation of ExampleFlexLexer::yylex() is required to fill the
- * vtable of the class ExampleFlexLexer. We define the scanner's main yylex
+/* This implementation of SEAMSFlexLexer::yylex() is required to fill the
+ * vtable of the class SEAMSFlexLexer. We define the scanner's main yylex
  * function via YY_DECL to reside in the Scanner class instead. */
 
 #ifdef yylex
@@ -1098,7 +1098,7 @@ integer {D}+({E})?
 #endif
 int SEAMSFlexLexer::yylex()
 {
-  std::cerr << "in ExampleFlexLexer::yylex() !" << '\n';
+  std::cerr << "in SEAMSFlexLexer::yylex() !" << '\n';
   return 0;
 }
 

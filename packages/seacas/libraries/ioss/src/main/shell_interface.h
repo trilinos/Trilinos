@@ -63,7 +63,7 @@ namespace IOShell {
     std::string              outFiletype{"unknown"};
     std::string              groupName;
     std::string              decomp_method;
-    std::string              compose_output{"none"};
+    std::string              compose_output{"default"};
     double                   maximum_time{std::numeric_limits<double>::max()};
     double                   minimum_time{-std::numeric_limits<double>::max()};
     double                   append_time{std::numeric_limits<double>::max()};

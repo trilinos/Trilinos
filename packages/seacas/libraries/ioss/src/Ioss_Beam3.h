@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_Bar3_h
-#define IOSS_Ioss_Bar3_h
+#ifndef IOSS_Ioss_Beam3_h
+#define IOSS_Ioss_Beam3_h
 
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
@@ -39,15 +39,15 @@
 // STL Includes
 
 namespace Ioss {
-  class Bar3 : public Ioss::ElementTopology
+  class Beam3 : public Ioss::ElementTopology
   {
 
   public:
-    static constexpr const char *name = "bar3";
+    static constexpr auto name = "bar3";
 
     static void factory();
-    ~Bar3() override;
-    Bar3(const Bar3 &) = delete;
+    ~Beam3() override;
+    Beam3(const Beam3 &) = delete;
 
     ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
@@ -72,11 +72,11 @@ namespace Ioss {
     Ioss::ElementTopology *edge_type(int edge_number = 0) const override;
 
   protected:
-    Bar3();
+    Beam3();
 
   private:
-    static Bar3 instance_;
+    static Beam3 instance_;
   };
 } // namespace Ioss
 
-#endif // IOSS_Ioss_Bar3_h
+#endif // IOSS_Ioss_Beam3_h

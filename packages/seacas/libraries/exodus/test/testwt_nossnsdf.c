@@ -57,7 +57,6 @@
  *****************************************************************************/
 
 #include "exodusII.h"
-#include "netcdf.h"
 #include <stdio.h>
 #include <stdlib.h>
 
