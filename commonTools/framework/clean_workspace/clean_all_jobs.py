@@ -29,3 +29,7 @@ class CleanReference(object):
         except pickle.PicklingError:
             print('Pickle Failure', file=sys.stderr)
             sys.exit()
+
+if __name__ == '__main__':
+    cleanRef = CleanReference()
+    cleanRef.run()
