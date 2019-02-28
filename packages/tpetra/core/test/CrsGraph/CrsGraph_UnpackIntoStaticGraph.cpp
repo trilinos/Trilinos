@@ -50,7 +50,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
 #include "Tpetra_Details_unpackCrsGraphAndCombine.hpp"
-#include "Tpetra_Details_padCrsArrays.hpp"
+#include "Tpetra_Details_crsUtils.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <random>
