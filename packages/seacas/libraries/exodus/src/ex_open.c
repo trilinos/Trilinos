@@ -323,10 +323,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
           EX_FUNC_LEAVE(EX_FATAL);
         }
       }
-      if ((status = nc_enddef(exoid)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to complete definition in file id %d named %s", exoid, path);
-        ex_err_fn(exoid, __func__, errmsg, status);
+      if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }

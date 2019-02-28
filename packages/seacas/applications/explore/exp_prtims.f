@@ -67,7 +67,7 @@ C   --   TIMES - IN - the times for each time step
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'N') .GT. 0)) THEN
          WRITE (STRING, 10000, IOSTAT=IDUM) NSTEPS
-10000    FORMAT ('Number of time steps = ', I10)
+10000    FORMAT ('Number of time steps = ', I12)
          CALL SQZSTR (STRING, LSTR)
          IF (NOUT .GT. 0) THEN
             WRITE (NOUT, 10050) STRING(:LSTR)

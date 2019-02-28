@@ -28,6 +28,8 @@ bool is_this_element_shell(const stk::mesh::GraphEdge& graphEdge,
     return stk::mesh::impl::is_shell_or_beam2(topo);
 }
 
+constexpr int MAX_NUM_SIDE_CONNECTIONS = 12;
+
 class SideConnections
 {
 public:
@@ -44,15 +46,17 @@ private:
 
 private:
     size_t numSides;
-    std::vector<bool> foundShellViaSide;
-    std::vector<bool> foundSomethingUnShellLikeViaSide;
+    bool foundShellViaSide[MAX_NUM_SIDE_CONNECTIONS];
+    bool foundSomethingUnShellLikeViaSide[MAX_NUM_SIDE_CONNECTIONS];
 };
 
 SideConnections::SideConnections(size_t numSides_) :
-        numSides(numSides_),
-        foundShellViaSide(numSides, false),
-        foundSomethingUnShellLikeViaSide(numSides, false)
+        numSides(numSides_)
 {
+  for(int i=0; i<MAX_NUM_SIDE_CONNECTIONS; ++i) {
+    foundShellViaSide[i] = false;
+    foundSomethingUnShellLikeViaSide[i] = false;
+  }
 }
 
 std::vector<int> SideConnections::get_sides_connected_to_shell_and_nonshell(const GraphInfo &graphInfo, size_t localId)

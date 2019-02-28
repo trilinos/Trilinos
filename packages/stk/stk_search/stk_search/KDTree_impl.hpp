@@ -1407,7 +1407,7 @@ inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBo
           *(stack_ptr++) = current_object++ + right_child_offset1;
           continue;
         }
-        returnList.push_back(-right_child_offset1);
+        returnList.emplace_back(-right_child_offset1);
       }
       if(stack_ptr != object_stack) {
         current_object = *(--stack_ptr);
@@ -1438,8 +1438,8 @@ inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBo
            *(stack_ptr++) = current_object++ + right_child_offset1;
            continue;
          }
-         returnIndexList.push_back(-right_child_offset1);
-         returnBoxList.push_back(current_object->m_box);
+         returnIndexList.emplace_back(-right_child_offset1);
+         returnBoxList.emplace_back(current_object->m_box);
        }
        if(stack_ptr != object_stack) {
          current_object = *(--stack_ptr);

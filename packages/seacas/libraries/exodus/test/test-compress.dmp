@@ -35,7 +35,6 @@
 		side_ss4:_DeflateLevel = 1 ;
 		elem_ss5:_DeflateLevel = 1 ;
 		side_ss5:_DeflateLevel = 1 ;
-		info_records:_DeflateLevel = 1 ;
 		vals_glo_var:_DeflateLevel = 1 ;
 		vals_nod_var1:_DeflateLevel = 1 ;
 		vals_nod_var2:_DeflateLevel = 1 ;

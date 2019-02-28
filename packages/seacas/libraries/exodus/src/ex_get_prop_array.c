@@ -54,7 +54,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
 #include <stdio.h>
 #include <string.h> // for memset, strcmp
 

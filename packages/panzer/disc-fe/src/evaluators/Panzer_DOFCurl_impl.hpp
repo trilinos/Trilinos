@@ -499,7 +499,7 @@ DOFCurl(const PHX::FieldTag & input,
   , id_(id) 
   , dof_value(input)
 {
-  TEUCHOS_ASSERT(bd_.getType()=="Curl");
+  TEUCHOS_ASSERT(bd_.getType()=="HCurl");
 
   basis_dimension = basis_dim; // user specified
 

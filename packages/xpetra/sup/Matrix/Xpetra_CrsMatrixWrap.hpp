@@ -598,6 +598,14 @@ public:
     // Teuchos::OSTab tab(out);
   }
 
+  //! @name Overridden from Teuchos::LabeledObject
+  //@{
+  void setObjectLabel( const std::string &objectLabel ) { matrixData_->setObjectLabel(objectLabel);}
+  //@}
+
+
+
+
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Access the underlying local Kokkos::CrsMatrix object

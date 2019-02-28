@@ -112,6 +112,7 @@ static const std::string s_ignore_disconnected_nodes("ignore_disconnected_nodes"
 static const std::string s_process_all_input_nodes("process_all_input_nodes");
 static const std::string s_sort_stk_parts("sort_stk_parts");
 static const std::string s_entity_nodes_suffix("_n");
+static const std::string s_distribution_factors("distribution_factors");
 
 typedef std::pair<stk::mesh::EntityId, int> EntityIdToProcPair;
 typedef std::vector<EntityIdToProcPair> EntitySharingInfo;
@@ -458,24 +459,22 @@ bool is_part_io_part(const mesh::Part &part);
 
 std::string getPartName(stk::mesh::Part& part);
 
-/** Define an alternate name to use for the part on output
- */
 void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName);
 std::string get_alternate_part_name(stk::mesh::Part& part);
 bool has_alternate_part_name(stk::mesh::Part& part);
 
-/** Define original topology type to use for the part on output
- */
 void set_original_topology_type(stk::mesh::Part& part);
 void set_original_topology_type(stk::mesh::Part& part, const std::string& origTopo);
 std::string get_original_topology_type(stk::mesh::Part& part);
 bool has_original_topology_type(stk::mesh::Part& part);
 
-/** Define an id to use for the part on output
- */
-void set_original_part_id(stk::mesh::Part& part, const int originalId);
-int get_original_part_id(stk::mesh::Part& part);
+void set_original_part_id(stk::mesh::Part& part, const int64_t originalId);
+int64_t get_original_part_id(stk::mesh::Part& part);
 bool has_original_part_id(stk::mesh::Part& part);
+
+void set_original_block_order(stk::mesh::Part& part, const int64_t originalBlockOrder);
+int64_t get_original_block_order(stk::mesh::Part& part);
+bool has_original_block_order(stk::mesh::Part& part);
 
 /** Notify I/O if to create a nodeset off a sideset
  */

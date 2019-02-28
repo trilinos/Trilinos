@@ -230,8 +230,12 @@ FieldBase * FieldRepository::declare_field(
 
 void FieldRepository::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
+  stk::mesh::EntityRank partRank = subset.primary_entity_rank();
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
+    if (partRank == stk::topology::INVALID_RANK || partRank == (*f)->entity_rank())
+    {
+      (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
+    }
   }
 }
 

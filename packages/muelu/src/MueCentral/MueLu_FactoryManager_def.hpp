@@ -181,6 +181,7 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
+      if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));

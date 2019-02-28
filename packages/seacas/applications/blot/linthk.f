@@ -131,7 +131,7 @@ C                       Real value specified for line thickness
                         IF ((TKSPCR .LT. 0.0)  .OR.
      &                     (TKSPCR .GT. 1000.)) THEN
                            WRITE (*, 10010) TKSPCR
-10010                       FORMAT (1X, E12.6, ' not a valid line ',
+10010                       FORMAT (1X, E12.5, ' not a valid line ',
      &                        'thickness specification.  It must',
      &                        ' be ''THIN'','/1x, '''MEDIUM'',',
      &                        ' ''THICK'', or a value between',

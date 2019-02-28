@@ -48,8 +48,6 @@ OptionMaskParser::parse(
   if ( option_mask ) {
     const std::string mask_string( option_mask );
 
-    m_status = true;
-
     std::string::const_iterator it0 = mask_string.begin();
     std::string::const_iterator it1;
     std::string::const_iterator it2;
@@ -132,8 +130,6 @@ OptionMaskParser::parseArg(
     std::istringstream mask_hex_stream(name.c_str());
     if (mask_hex_stream >> std::resetiosflags(std::ios::basefield) >> mask_hex)
       m_optionMask |= mask_hex;
-    else
-      m_status = false;
   }
 }
 

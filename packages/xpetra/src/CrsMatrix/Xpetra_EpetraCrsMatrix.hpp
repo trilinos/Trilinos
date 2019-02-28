@@ -214,6 +214,7 @@ public:
 
   std::string description() const { return std::string(""); }
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { }
+  void setObjectLabel( const std::string &objectLabel ) { }
 
   EpetraCrsMatrixT(const EpetraCrsMatrixT& matrix) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
@@ -1097,7 +1098,7 @@ public:
 
   }
 
-
+  void setObjectLabel( const std::string &objectLabel ) {mtx_->SetLabel(objectLabel.c_str());}
   //@}
 
   //! Deep copy constructor
@@ -2080,7 +2081,7 @@ public:
 
   }
 
-
+  void setObjectLabel( const std::string &objectLabel ) { mtx_->SetLabel(objectLabel.c_str());}
   //@}
 
   //! Deep copy constructor

@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_vara_int, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <sys/types.h> // for int64_t
@@ -48,7 +47,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
                           int64_t num_entities, void_int *map)
 {
   int         dimid, mapid, status;
-  size_t      i;
+  int64_t     i;
   size_t      num_entries;
   size_t      start[1], count[1];
   char        errmsg[MAX_ERR_LENGTH];
@@ -92,15 +91,24 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
-  if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
-    if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
-               exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
-      EX_FUNC_LEAVE(EX_FATAL);
-    }
+  if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
+             exoid);
+    ex_err_fn(exoid, __func__, errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
-    /* generate default map of 1..n, where n is num_entries */
+  if (start_entity_num + num_entities - 1 > num_entries) {
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: start index (%" PRId64 ") + entity count (%" PRId64
+             ") is larger than total number of entities (%" ST_ZU ") in file id %d",
+             start_entity_num, num_entities, num_entries, exoid);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
+    /* generate portion of the default map (1..num_entries) */
     if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
       int64_t *lmap = (int64_t *)map;
       for (i = 0; i < num_entities; i++) {

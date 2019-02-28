@@ -75,11 +75,11 @@ bool is_sorted_and_unique(const VECTOR& vec, COMPARE compare)
 }
 
 template<class VECTOR>
-bool insert_keep_sorted_and_unique(typename VECTOR::value_type p, VECTOR& procs)
+bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec)
 {
-  typename VECTOR::iterator iter = std::lower_bound(procs.begin(), procs.end(), p);
-  if (iter == procs.end() || *iter != p) {
-    procs.insert(iter, p);
+  typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item);
+  if (iter == vec.end() || *iter != item) {
+    vec.insert(iter, item);
     return true;
   }
   return false;

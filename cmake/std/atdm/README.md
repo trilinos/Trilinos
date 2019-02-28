@@ -76,7 +76,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<shared_static>-<release_debug>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<shared_static>-<release_debug>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -85,8 +85,9 @@ build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<shared_static>`](#shared_static)
-and [`<release_debug>`](#release_debug), is described below.
+[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc),
+[`<shared_static>`](#shared_static) and [`<release_debug>`](#release_debug),
+is described below.
 
 <a name="system_name"/>
 
@@ -170,9 +171,23 @@ Kokkos threading / backend model variable `<NODE_TYPE>` (default is
 If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
 automatically set to `CUDA`.
 
+<a name="rdc"/>
+
+**`<rdc>`:** The following `<build-name>` keywords determine the value for the
+Trilinos CMake cache var `Kokkos_ENABLE_Cuda_Relocatable_Device_Code` in CUDA
+builds (does nothing in non-CUDA builds):
+
+* `rdc`: Set `Kokkos_ENABLE_Cuda_Relocatable_Device_Code=ON`
+* `no-rdc`: Set `Kokkos_ENABLE_Cuda_Relocatable_Device_Code=OFF`
+
+NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
+`--remove-duplicate-link-files` as well.
+
 <a name="shared_static"/>
 
-**`<shared_static>`:** The following `<build-name>` keywords specify debug if a shared or static library build of Trilinos is to be created (which also impacts if shared or stack TPL libs are linked to on some system):
+**`<shared_static>`:** The following `<build-name>` keywords specify debug if
+  a shared or static library build of Trilinos is to be created (which also
+  impacts if shared or stack TPL libs are linked to on some system):
 
 * `static`: `BUILD_SHARED_LIBS=OFF`, DEFAULT
 * `shared`: `BUILD_SHARED_LIBS=ON`

@@ -1,12 +1,13 @@
 #include "balanceUtils.hpp"
 #include "mpi.h"
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_topology/topology.hpp>
+#include "search_tolerance/FaceSearchTolerance.hpp"
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
-#include "search_tolerance/FaceSearchTolerance.hpp"
+#include "stk_util/diag/StringUtil.hpp"
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_topology/topology.hpp>
 
 namespace stk
 {
@@ -425,6 +426,33 @@ const stk::mesh::Field<int> * GraphCreationSettings::getSpiderConnectivityCountF
         ThrowRequireMsg(m_spiderConnectivityCountField != nullptr, "Must create spider connectivity field when stomping spiders.");
     }
     return m_spiderConnectivityCountField;
+}
+
+const std::string& get_coloring_part_base_name()
+{
+    static std::string coloringPartBaseName = "STK_INTERNAL_COLORING_PART";
+    return coloringPartBaseName;
+}
+
+stk::mesh::Part* get_coloring_part(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity)
+{
+    const stk::mesh::Bucket& bucket = bulk.bucket(entity);
+    const stk::mesh::PartVector& parts = bucket.supersets();
+    stk::mesh::Part* colorPart = nullptr;
+    unsigned numColors = 0;
+    const std::string coloringBaseName = get_coloring_part_base_name();
+    const unsigned length = coloringBaseName.length();
+    for (stk::mesh::Part* part : parts)
+    {
+        std::string partSubName = part->name().substr(0, length);
+        if (!sierra::case_strcmp(partSubName, coloringBaseName))
+        {
+            ++numColors;
+            colorPart = part;
+        }
+    }
+    ThrowRequireMsg(numColors <= 1, "Entity " << bulk.entity_key(entity) << " has " << numColors << " coloring parts.");
+    return colorPart;
 }
 
 }

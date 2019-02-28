@@ -41,6 +41,22 @@ inline float reduce_sum(const Float& x) {
   return _mm512_reduce_add_ps(x._data);
 }
 
+inline double reduce_max(const Double& x) {
+  return _mm512_reduce_max_pd(x._data);
+}
+
+inline float reduce_max(const Float& x) {
+  return _mm512_reduce_max_ps(x._data);
+}
+
+inline double reduce_min(const Double& x) {
+  return _mm512_reduce_min_pd(x._data);
+}
+
+inline float reduce_min(const Float& x) {
+  return _mm512_reduce_min_ps(x._data);
+}
+
 }
 }
 

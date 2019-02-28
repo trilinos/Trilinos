@@ -110,8 +110,10 @@ namespace MueLu {
       } else if (algo == "rcb") {
         Input(currentLevel, "Coordinates");
       }
-    } else
+    } else {
+      Input(currentLevel, "repartition: heuristic target rows per process");
       Input(currentLevel, "Coordinates");
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

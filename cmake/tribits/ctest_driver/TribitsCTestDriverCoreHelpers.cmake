@@ -58,30 +58,6 @@ ENDMACRO()
 
 
 #
-# Function for getting the tracking branch
-#
-FUNCTION(EXTRAREPO_GET_TRACKING_BRANCH  EXTRAREPO_SRC_DIR  TRACKING_BRANCH_OUT)
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    EXECUTE_PROCESS(
-      COMMAND "${GIT_EXE}" rev-parse --abbrev-ref --symbolic-full-name @{u}
-      WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE  EP_RTN
-      OUTPUT_VARIABLE  TRACKING_BRANCH
-      )
-    IF (NOT EP_RTN STREQUAL "0")
-      MESSAGE(SEND_ERROR "Error: obtaining tracking branch for repo"
-        " '${EXTRAREPO_SRC_DIR}' failed!" )
-    ENDIF()
-  ELSE()
-    # For unit testing purpose, just return generic tacking branch string
-    SET(TRACKING_BRANCH "tracking/branch")
-  ENDIF()
-  SET(${TRACKING_BRANCH_OUT}  ${TRACKING_BRANCH}  PARENT_SCOPE)
-ENDFUNCTION()
-
-
-#
 # Update an existing git repo
 #
 FUNCTION(TRIBITS_UPDATE_GIT_EXTRAREPO  GIT_EXE  EXTRAREPO_SRC_DIR)
@@ -91,9 +67,11 @@ FUNCTION(TRIBITS_UPDATE_GIT_EXTRAREPO  GIT_EXE  EXTRAREPO_SRC_DIR)
   SET(EXTRAREPO_FETCH_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.fetch.out")
   SET(EXTRAREPO_SET_BRANCH_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRAREPO_NAME_IN}.set_branch.out")
 
-  EXTRAREPO_GET_TRACKING_BRANCH("${EXTRAREPO_SRC_DIR}"
-    EXTRAREPO_TRACKING_BRANCH)
-  #PRINT_VAR(EXTRAREPO_TRACKING_BRANCH)
+  SET(FETCH_CMND_ARGS
+    COMMAND "${GIT_EXE}" fetch ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
+    TIMEOUT 600 # seconds
+    WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
+    OUTPUT_FILE "${EXTRAREPO_FETCH_OUT_FILE}" )
   SET(CLEAN_CMND_ARGS
     COMMAND "${GIT_EXE}" clean -fdx
     WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
@@ -102,27 +80,22 @@ FUNCTION(TRIBITS_UPDATE_GIT_EXTRAREPO  GIT_EXE  EXTRAREPO_SRC_DIR)
     COMMAND "${GIT_EXE}" reset --hard HEAD
     WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
     OUTPUT_FILE "${EXTRAREPO_RESET_OUT_FILE}" )
-  SET(FETCH_CMND_ARGS
-    COMMAND "${GIT_EXE}" fetch origin
-    TIMEOUT 600 # seconds
-    WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
-    OUTPUT_FILE "${EXTRAREPO_FETCH_OUT_FILE}" )
   IF (${PROJECT_NAME}_EXTRAREPOS_BRANCH)
     SET(SET_BRANCH_CMND_ARGS
       COMMAND "${GIT_EXE}" checkout -B ${${PROJECT_NAME}_EXTRAREPOS_BRANCH}
-        --track origin/${${PROJECT_NAME}_EXTRAREPOS_BRANCH}
+        --track ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}/${${PROJECT_NAME}_EXTRAREPOS_BRANCH}
       WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
       OUTPUT_FILE "${EXTRAREPO_SET_BRANCH_OUT_FILE}" )
   ELSE ()
     SET(SET_BRANCH_CMND_ARGS
-      COMMAND "${GIT_EXE}" reset --hard "${EXTRAREPO_TRACKING_BRANCH}"
+      COMMAND "${GIT_EXE}" reset --hard "@{u}"
       WORKING_DIRECTORY "${EXTRAREPO_SRC_DIR}"
       OUTPUT_FILE "${EXTRAREPO_SET_BRANCH_OUT_FILE}" )
   ENDIF()
 
+  EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${FETCH_CMND_ARGS})
   EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${CLEAN_CMND_ARGS})
   EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${RESET_CMND_ARGS})
-  EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${FETCH_CMND_ARGS})
   EXTRAREPO_EXECUTE_PROCESS_WRAPPER(${SET_BRANCH_CMND_ARGS})
 
 ENDFUNCTION()
@@ -152,8 +125,15 @@ FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRAREPO  EXTRAREPO_NAME_IN  EXTRAREPO_DIR_IN
 
     # Set the command to clone
     IF (${EXTRAREPO_REPOTYPE_IN} STREQUAL GIT)
+      IF (${PROJECT_NAME}_EXTRAREPOS_BRANCH) 
+        SET(CHECKOUT_BRANCH_ARG -b ${${PROJECT_NAME}_EXTRAREPOS_BRANCH})
+      ELSE()
+        SET(CHECKOUT_BRANCH_ARG)
+      ENDIF()
       SET(CLONE_CMND_ARGS
-        COMMAND "${GIT_EXE}" clone "${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
+        COMMAND "${GIT_EXE}" clone
+        ${CHECKOUT_BRANCH_ARG} -o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
+	"${EXTRAREPO_REPOURL}" ${EXTRAREPO_DIR_IN}
         WORKING_DIRECTORY "${${PROJECT_NAME}_SOURCE_DIRECTORY}"
         OUTPUT_FILE "${EXTRAREPO_CLONE_OUT_FILE}" )
     ELSE()
@@ -184,77 +164,22 @@ ENDFUNCTION()
 
 
 #
-# Update the branch of the base git repo
-#
-FUNCTION(TRIBITS_SET_BASE_REPO_BRANCH  CTEST_UPDATE_RETURN_VAL
-  UPDATE_FAILED_VAR_OUT
-  )
-
-  SET(GIT_CHECKOUT_RETURN_VAL "0")
-
-  IF (${PROJECT_NAME}_BRANCH AND NOT "${CTEST_UPDATE_RETURN_VAL}" LESS "0")
-
-    MESSAGE("For base repo, doing switch to branch ${${PROJECT_NAME}_BRANCH}")
-
-    SET(EXECUTE_PROCESS_COMMANDS_ARGS
-      COMMAND ${GIT_EXE} checkout
-        -B ${${PROJECT_NAME}_BRANCH} --track origin/${${PROJECT_NAME}_BRANCH}
-      WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
-      RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
-      OUTPUT_VARIABLE BRANCH_OUTPUT
-      ERROR_VARIABLE  BRANCH_ERROR
-      )
-     # NOTE: Above will work smoothly even if the local branch already
-     # exists and/or is already on that branch.  This command does not move
-     # ORIG_HEAD so it will not mess up the pull and update that CTest did
-     # for the base repo.
-
-    IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-      EXECUTE_PROCESS(${EXECUTE_PROCESS_COMMANDS_ARGS})
-    ELSE()
-      MESSAGE("EXECUTE_PROCESS(${EXECUTE_PROCESS_COMMANDS_ARGS})")
-      SET(GIT_CHECKOUT_RETURN_VAL 0)
-    ENDIF()
-
-    IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-      MESSAGE("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
-        " error code ${GIT_CHECKOUT_RETURN_VAL}")
-      QUEUE_ERROR("Switch to branch ${${PROJECT_NAME}_BRANCH} failed with"
-        " error code ${GIT_CHECKOUT_RETURN_VAL}")
-    ENDIF()
-    #Apparently the successful branch switch is also written to stderr.
-    MESSAGE("${BRANCH_ERROR}")
-
-  ENDIF()
-
-  IF ("${CTEST_UPDATE_RETURN_VAL}" LESS "0" OR NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
-    SET(${UPDATE_FAILED_VAR_OUT} TRUE PARENT_SCOPE)
-  ELSE()
-    SET(${UPDATE_FAILED_VAR_OUT} FALSE PARENT_SCOPE)
-  ENDIF()
-
-ENDFUNCTION()
-
-
-#
-# Clone or update all of the repos and put them on right branch
+# Clone or update all of the extra repos and put them on the right branch.
 #
 # NOTE: The base repo is cloned and updated by CTEST_UPDATE() before calling
-# this function.  This function only puts the base repo on the right branch.
+# this function.  This function only operators on the extra repos.
 #
 
-FUNCTION(TRIBITS_CLONE_OR_UPDATE_ALL_REPOS  CTEST_UPDATE_RETURN_VAL
+FUNCTION(TRIBITS_CLONE_OR_UPDATE_EXTRA_REPOS  CTEST_UPDATE_RETURN_VAL
   UPDATE_FAILED_VAR_OUT
   )
 
   SET(UPDATE_FAILED FALSE)
 
-  # A) Put the base repo on the right branch
-
-  TRIBITS_SET_BASE_REPO_BRANCH(${CTEST_UPDATE_RETURN_VAL}  BASE_REPO_UPDATE_FAILED)
-  IF (BASE_REPO_UPDATE_FAILED)
-    SET(UPDATE_FAILED TRUE)
-  ENDIF()
+  # A) NOTE: The base repo is already on the right branch either due to the
+  # initial clone run in ctest_start() that set the branch with 'git clone -b
+  # <branch> ...' or it was set in the ctest_update() where it checked out the
+  # correct banch.
 
   # B) Clone and update the extra repos
 
@@ -321,7 +246,6 @@ ENDMACRO()
 # NOTE: This macro is used to clean up the main TRIBITS_CTEST_DRIVER()
 # macro.
 #
-
 MACRO(TRIBITS_SETUP_PACKAGES)
 
   # Here, we must point into the source tree just cloned (or updated)
@@ -390,7 +314,6 @@ ENDMACRO()
 #
 # Select packages set by the input
 #
-
 MACRO(ENABLE_USER_SELECTED_PACKAGES)
 
   # 1) Set the enables for packages already set with
@@ -438,7 +361,6 @@ ENDMACRO()
 #
 # Select only packages that are modified or failed in the last CI iteration
 #
-
 MACRO(ENABLE_ONLY_MODIFIED_PACKAGES)
 
   #
@@ -607,7 +529,6 @@ ENDMACRO()
 # NOTE: These disables need to dominate over the above enables so this code is
 # after all the enable code has run
 #
-
 MACRO(DISABLE_EXCLUDED_PACKAGES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     MESSAGE("Disabling excluded package ${TRIBITS_PACKAGE} ...")
@@ -657,7 +578,6 @@ ENDMACRO()
 # locally.  When run locally, ctest will just report aggregated times for
 # subprojects that have 1 or more tests.  Not true for CDash.
 #
-
 MACRO(TRIBITS_CTEST_DRIVER_SET_LABELS_TO_SUBPROJECTS_MAPPING)
   SET(CTEST_LABELS_FOR_SUBPROJECTS)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
@@ -669,7 +589,6 @@ ENDMACRO()
 #
 # Select the default generator.
 #
-
 MACRO(SELECT_DEFAULT_GENERATOR)
   # When the build tree is known and exists, use
   # its generator.
@@ -689,7 +608,6 @@ ENDMACRO()
 #
 # Call INITIALIZE_ERROR_QUEUE once at the top of TRIBITS_CTEST_DRIVER
 #
-
 MACRO(INITIALIZE_ERROR_QUEUE)
   SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE "")
 ENDMACRO()
@@ -706,7 +624,6 @@ ENDMACRO()
 # When adding more callers of QUEUE_ERROR, just make sure that it does not
 # duplicate an existing/reported dashboard failure.
 #
-
 MACRO(QUEUE_ERROR err_msg)
   SET(TRIBITS_CTEST_DRIVER_ERROR_QUEUE
     ${TRIBITS_CTEST_DRIVER_ERROR_QUEUE} "${err_msg}")
@@ -716,7 +633,6 @@ ENDMACRO()
 #
 # Call REPORT_QUEUED_ERRORS() once at the bottom of TRIBITS_CTEST_DRIVER()
 #
-
 MACRO(REPORT_QUEUED_ERRORS)
   IF ("${TRIBITS_CTEST_DRIVER_ERROR_QUEUE}" STREQUAL "")
     MESSAGE("TRIBITS_CTEST_DRIVER_ERROR_QUEUE is empty. All is well.")
@@ -733,7 +649,6 @@ ENDMACRO()
 # Override CTEST_SUBMIT to drive multiple submits and to detect failed
 # submissions and track them as queued errors.
 #
-
 MACRO(TRIBITS_CTEST_SUBMIT)
 
   # Cache the original CTEST_DROP_SITE and CTEST_DROP_LOCATION
@@ -1015,13 +930,7 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
         SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
       ENDIF()
 
-      SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
-      IF (EXISTS "${REPO_VERSION_FILE}")
-        SET(CTEST_NOTES_FILES "${REPO_VERSION_FILE};${CTEST_NOTES_FILES}")
-      ENDIF()
-
       PRINT_VAR(CTEST_NOTES_FILES)
-
 
       IF (NOT CTEST_DO_CONFIGURE AND CTEST_DO_SUBMIT)
         MESSAGE("${TRIBITS_PACKAGE}: Skipping submitting configure"
@@ -1383,9 +1292,8 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
       LIST(APPEND CTEST_NOTES_FILES "${CMAKE_CACHE_CLEAN_FILE}")
     ENDIF()
   
-    SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
     IF (EXISTS "${REPO_VERSION_FILE}")
-      LIST(APPEND CTEST_NOTES_FILES "${REPO_VERSION_FILE}")
+      SET(CTEST_NOTES_FILES "${REPO_VERSION_FILE};${CTEST_NOTES_FILES}")
     ENDIF()
   
     PRINT_VAR(CTEST_NOTES_FILES)

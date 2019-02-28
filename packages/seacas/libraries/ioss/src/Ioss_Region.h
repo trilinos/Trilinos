@@ -104,6 +104,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "Region"; }
     std::string short_type_string() const override { return "region"; }
+    std::string contains_string() const override { return "Entities"; }
     EntityType  type() const override { return REGION; }
 
     MeshType          mesh_type() const;

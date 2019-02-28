@@ -73,9 +73,9 @@ namespace Iogn {
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
     assert(tokens.size() == 3);
-    numX = std::stoi(tokens[0]);
-    numY = std::stoi(tokens[1]);
-    numZ = std::stoi(tokens[2]);
+    numX = std::stoull(tokens[0]);
+    numY = std::stoull(tokens[1]);
+    numZ = std::stoull(tokens[2]);
 
     if (numX <= 0 || numY <= 0 || numZ <= 0) {
       if (myProcessor == 0) {
@@ -300,7 +300,7 @@ namespace Iogn {
         Ioss::Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
-          Zs.push_back(std::stoi(tokens[j]));
+          Zs.push_back(std::stoull(tokens[j]));
           numZ += Zs[j];
         }
         myNumZ   = Zs[myProcessor];
@@ -336,7 +336,7 @@ namespace Iogn {
       }
 
       else if (option[0] == "times") {
-        timestepCount = std::stoi(option[1]);
+        timestepCount = std::stoull(option[1]);
       }
 
       else if (option[0] == "tets") {
@@ -349,7 +349,7 @@ namespace Iogn {
         assert(tokens.size() % 2 == 0);
         for (size_t ir = 0; ir < tokens.size();) {
           std::string type  = tokens[ir++];
-          int         count = std::stoi(tokens[ir++]);
+          int         count = std::stoull(tokens[ir++]);
           set_variable_count(type, count);
         }
         if (timestepCount == 0) {

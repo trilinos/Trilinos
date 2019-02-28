@@ -360,11 +360,9 @@ class Zoltan2_Directory_Simple : public Zoltan2_Directory<gid_t, lid_t, user_t> 
         case Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::Aggregate:
           throw std::logic_error("Aggregate doesn't mean anything for single "
             "types. Must use Zoltan2_Directory_Vector class.");
-          break;
         case Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::AggregateAdd:
           throw std::logic_error("AggregateAdd doesn't mean anything for single "
             "types. Must use Zoltan2_Directory_Vector class.");
-          break;
       }
     }
 

@@ -273,8 +273,7 @@ int DeRhamCommutativityQuad(const bool verbose) {
   constexpr ordinal_type numTotalVertexes = 6;
 
   ValueType  vertices_orig[numTotalVertexes][dim] = {{-1,-1},{1,-1},{1,1},{-1,1}, {-1,2},{1,2}};
-  ordinal_type quads_orig[numCells][numElemVertexes] = {{0,1,2,3},{2,3,4,5}};  
-  edgeType common_edge = {{2,3}};
+  ordinal_type quads_orig[numCells][numElemVertexes] = {{0,1,2,3},{2,3,4,5}};
   ordinal_type quads_rotated[numCells][numElemVertexes];
 
   *outStream

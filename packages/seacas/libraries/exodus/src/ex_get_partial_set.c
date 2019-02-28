@@ -53,7 +53,6 @@
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for ex_is_parallel, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_vara_int, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t, NULL
 #include <stdint.h>       // for int64_t

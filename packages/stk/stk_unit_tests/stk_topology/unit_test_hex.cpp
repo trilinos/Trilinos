@@ -32,9 +32,26 @@
 // 
 
 #include <gtest/gtest.h>
+#include <stk_ngp_test/ngp_test.hpp>
 #include <stk_topology/topology.hpp>
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 
-TEST( stk_topology, hex8)
+TEST(stk_topology, DISABLED_hex8_defined_on_spatial_dimension_perf)
+{
+  stk::topology hex8 = stk::topology::HEX_8;
+
+  const size_t numIterations = 10000000000;
+  size_t result = 0;
+
+  double startTime = stk::cpu_time();
+  for (size_t i = 0; i < numIterations; ++i) {
+    result += hex8.defined_on_spatial_dimension(i % 4) ? 1 : 0;
+  }
+  double stopTime = stk::cpu_time();
+  std::cout << "result = " << result << ", time = " << stopTime - startTime << "s" << std::endl;
+}
+
+TEST(stk_topology, hex8)
 {
   stk::topology hex8 = stk::topology::HEX_8;
 
@@ -60,5 +77,41 @@ TEST( stk_topology, hex8)
 
   EXPECT_EQ(hex8.base(),stk::topology::HEX_8);
 
+}
+
+void check_hex_on_device()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  {
+    stk::topology hex8 = stk::topology::HEX_8;
+
+    NGP_EXPECT_TRUE(hex8.is_valid());
+    NGP_EXPECT_TRUE(hex8.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(hex8.is_shell());
+
+    NGP_EXPECT_EQ(hex8.rank(),stk::topology::ELEMENT_RANK);
+    NGP_EXPECT_EQ(hex8.side_rank(),stk::topology::FACE_RANK);
+
+    const unsigned num_nodes = 8;
+    const unsigned num_edges = 12;
+    const unsigned num_faces = 6;
+
+    NGP_EXPECT_EQ(hex8.num_nodes(),num_nodes);
+    NGP_EXPECT_EQ(hex8.num_vertices(),num_nodes);
+    NGP_EXPECT_EQ(hex8.num_edges(),num_edges);
+    NGP_EXPECT_EQ(hex8.num_faces(),num_faces);
+
+    NGP_EXPECT_FALSE(hex8.defined_on_spatial_dimension(1));
+    NGP_EXPECT_FALSE(hex8.defined_on_spatial_dimension(2));
+    NGP_EXPECT_TRUE(hex8.defined_on_spatial_dimension(3));
+
+    NGP_EXPECT_EQ(hex8.base(),stk::topology::HEX_8);
+
+  });
+}
+
+NGP_TEST(stk_topology_ngp, hex8)
+{
+  check_hex_on_device();
 }
 

@@ -100,7 +100,7 @@ mpi_filebuf * mpi_filebuf::set_buffer_length( const size_t len )
   if ( nullptr != comm_buffer ) return nullptr ;
 
   // Wait and verify upon the attempt to open
-  comm_buffer_len = buffer_putback_length < len ? len : buffer_putback_length ;
+  comm_buffer_len = static_cast<size_t>(buffer_putback_length) < len ? len : static_cast<size_t>(buffer_putback_length);
 
   return this ;
 }

@@ -147,6 +147,7 @@ namespace MueLu {
     // Check if we need to build coarse coordinates as they are used if we construct
     // a linear interpolation prolongator
     if(buildCoarseCoordinates || (interpolationOrder == 1)) {
+      SubFactoryMonitor sfm(*this, "BuildCoordinates", coarseLevel);
       RCP<const Map> coarseCoordsFineMap = Get< RCP<const Map> >(fineLevel, "coarseCoordinatesFineMap");
       RCP<const Map> coarseCoordsMap = Get< RCP<const Map> >(fineLevel, "coarseCoordinatesMap");
       fineCoordinates   = Get< RCP<realvaluedmultivector_type> >(fineLevel, "Coordinates");
@@ -163,6 +164,7 @@ namespace MueLu {
     *out << "Fine and coarse coordinates have been loaded from the fine level and set on the coarse level." << std::endl;
 
     if(interpolationOrder == 0) {
+      SubFactoryMonitor sfm(*this, "BuildConstantP", coarseLevel);
       // Compute the prolongator using piece-wise constant interpolation
       BuildConstantP(P, prolongatorGraph, A);
     } else if(interpolationOrder == 1) {
@@ -175,18 +177,22 @@ namespace MueLu {
                                                              prolongatorGraph->getColMap());
       ghostCoordinates->doImport(*coarseCoordinates, *ghostImporter, Xpetra::INSERT);
 
+      SubFactoryMonitor sfm(*this, "BuildLinearP", coarseLevel);
       BuildLinearP(A, prolongatorGraph, fineCoordinates, ghostCoordinates, numDimensions, P);
     }
 
     *out << "The prolongator matrix has been built." << std::endl;
 
-    // Build the coarse nullspace
-    RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
-    RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
-                                                                 fineNullspace->getNumVectors());
-    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
-             Teuchos::ScalarTraits<SC>::zero());
-    Set(coarseLevel, "Nullspace", coarseNullspace);
+    {
+      SubFactoryMonitor sfm(*this, "BuildNullspace", coarseLevel);
+      // Build the coarse nullspace
+      RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
+      RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
+                                                                   fineNullspace->getNumVectors());
+      P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
+               Teuchos::ScalarTraits<SC>::zero());
+      Set(coarseLevel, "Nullspace", coarseNullspace);
+    }
 
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;
 

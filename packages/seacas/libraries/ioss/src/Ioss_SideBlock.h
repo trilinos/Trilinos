@@ -68,6 +68,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "SideBlock"; }
     std::string short_type_string() const override { return "sideblock"; }
+    std::string contains_string() const override { return "Element/Side pair"; }
     EntityType  type() const override { return SIDEBLOCK; }
 
     const SideSet *owner() const { return owner_; }

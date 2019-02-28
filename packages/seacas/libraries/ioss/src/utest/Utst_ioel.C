@@ -41,6 +41,7 @@
 
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
+#include <Ioss_NullEntity.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
 
@@ -58,8 +59,15 @@ int main(int argc, char *argv[])
   Ioss::Initializer        initialize_topologies;
 
   int err_count = test_all_elements();
+
+  // Make sure Ioss::NullEntity works.  Not used in IOSS iteself,
+  // but some clients use it, so need to make sure it compiles
+  // correctly.
+  Ioss::GroupingEntity *entity = new Ioss::NullEntity();
+  std::cout << "\nThe null entity type is " << entity->type_string()
+	    << " and it contains " << entity->contains_string() << "\n";
+
   OUTPUT << "\n" << argv[0];
-  ;
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << '\n';
     return EXIT_SUCCESS;

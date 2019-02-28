@@ -57,7 +57,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for ex_leavedef, EX_FATAL, etc
-#include <netcdf.h>       // for NC_NOERR, nc_def_var, etc
 #include <stdio.h>
 #include <sys/types.h> // for int64_t
 
@@ -82,6 +81,7 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
   if (ex_int64_status(exoid) & EX_MAPS_INT64_DB) {
     map_type = NC_INT64;
   }
+  EX_UNUSED(processor);
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
