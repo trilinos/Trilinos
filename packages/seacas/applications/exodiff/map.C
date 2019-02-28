@@ -1127,8 +1127,8 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   const INT *node_id_map2 = file2.Get_Node_Map();
   const INT *elem_id_map2 = file2.Get_Elmt_Map();
 
-  bool   diff       = false;
-  size_t warn_count = 0;
+  bool diff       = false;
+  int  warn_count = 0;
 
   if (node_map != nullptr) {
     if (!interface.dump_mapping) {
