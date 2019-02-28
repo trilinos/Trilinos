@@ -60,15 +60,28 @@ namespace Details {
 namespace impl {
 
 template<class ViewType>
-ViewType uninitialized_view(const std::string& name, const size_t& size) {
+ViewType
+uninitialized_view(const std::string& name, const size_t& size)
+{
   return ViewType (Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size);
 }
 
-// Determine if row_ptr and indices arrays need to be resized to accommodate
-// new entries
+/// \brief Implementation of numpy.argsort
+template <class Ordinal>
+Teuchos::Array<size_t>
+argsort(Ordinal const * const a, size_t const n)
+{
+  Teuchos::Array<size_t> ix(n);
+  std::iota(ix.begin(), ix.end(), 0);
+  std::sort(ix.begin(), ix.end(), [&](size_t i, size_t j) {return a[i] < a[j];});
+  return ix;
+}
+
+/// \brief Implementation of padCrsArrays
 template<class RowPtr, class Indices, class Padding>
 void
-pad_crs_arrays(RowPtr& row_ptr_beg,
+pad_crs_arrays(
+    RowPtr& row_ptr_beg,
     RowPtr& row_ptr_end,
     Indices& indices,
     const Padding& padding)
@@ -157,7 +170,26 @@ pad_crs_arrays(RowPtr& row_ptr_beg,
 }
 
 
-/// \brief Merge index arrays
+/// \brief Merge two arrays \c indices1 and \c indices2 representing CRS index arrays.
+///   The result is returned in one sorted range with unique elements. Elements
+///   are compared using operator<.
+///
+///   On input, indices1 need not be sorted, but indices2 must be sorted. The
+///   intended use case is indices1 contains new elements to merge in to the
+///   existing CRS indices contained in indices2 - which should already be
+///   sorted.
+///
+///   This function is modeled after std::merge but takes arrays and lengths
+///   instead of iterators. It also does not require that both input arrays be
+///   sorted (just the second).
+///
+/// \param [in] indices1 - the first array of indices
+/// \param [in] n1 - the length of indices1
+/// \param [in] indices2 - the second array of indices
+/// \param [in] n2 - the length of indices2
+///
+/// \return merged - The sorted and unique elements
+///
 template <class Ordinal>
 Teuchos::Array<Ordinal>
 ind_merge(
@@ -170,17 +202,14 @@ ind_merge(
   // We assume that indices1 is not sorted.  It is the index array sent to us by
   // users.  indices2, on the other hand, should be sorted.  It is the crs index
   // array.
-  Teuchos::Array<size_t> idx(n1);
-  std::iota(idx.begin(), idx.end(), 0);
-  std::sort(idx.begin(), idx.end(),
-      [&](size_t a, size_t b) {return indices1[a] < indices1[b];});
+  auto ix = argsort(indices1, n1);
 
   Teuchos::Array<Ordinal> merged;
   merged.reserve(n1 + n2);
   if (n2 == 0)
   {
     for (size_t i = 0; i < n1; i++)
-      merged.push_back(indices1[idx[i]]);
+      merged.push_back(indices1[ix[i]]);
   }
   else
   {
@@ -191,23 +220,42 @@ ind_merge(
       if (i2 == n2)
       {
         for (size_t i = i1; i < n1; i++)
-          merged.push_back(indices1[idx[i]]);
+          merged.push_back(indices1[ix[i]]);
         break;
       }
-      if (indices2[i2] < indices1[idx[i1]])
+      if (indices2[i2] < indices1[ix[i1]])
         merged.push_back(indices2[i2++]);
       else
-        merged.push_back(indices1[idx[i1++]]);
+        merged.push_back(indices1[ix[i1++]]);
     }
     std::copy(indices2+i2, indices2+n2, std::back_inserter(merged));
   }
+
+  // Return only the unique elements
   auto last = std::unique(merged.begin(), merged.end());
   merged.erase(last, merged.end());
   return merged;
 }
 
-/// \brief Copies the elements from the sorted array indices1 which are
-///   not found in the sorted array indices2 to the array diff.
+/// \brief Copies the elements from the array \c indices1 which are
+///   not found in the array \c indices2 to the array \c diff.
+///
+///   On input, indices1 need not be sorted, but indices2 must be sorted. The
+///   intended use case is indices1 contains new elements to merge in to the
+///   existing CRS indices contained in indices2 - which should already be
+///   sorted.
+///
+///   This function is modeled after std::set_difference but takes arrays and
+///   lengths instead of iterators. It also does not require that both input
+///   arrays be sorted (just the second).
+///
+/// \param [in] indices1 - the first array of indices
+/// \param [in] n1 - the length of indices1
+/// \param [in] indices2 - the second array of indices
+/// \param [in] n2 - the length of indices2
+///
+/// \return diff - The difference between \c indices1 and \c indices2
+///
 template <class Ordinal>
 Teuchos::Array<Ordinal>
 ind_difference(
@@ -218,39 +266,40 @@ ind_difference(
 {
   Teuchos::Array<Ordinal> diff;
 
-  // indices1 must be sorted.  We assume that indices2 is sorted already.
-  Teuchos::Array<size_t> idx(n1);
-  std::iota(idx.begin(), idx.end(), 0);
-  std::sort(idx.begin(), idx.end(),
-      [&](size_t a, size_t b) {return indices1[a] < indices1[b];});
+  // indices1 need not be sorted.  We assume that indices2 is sorted already.
+  auto ix = argsort(indices1, n1);
   size_t i1 = 0;
   size_t i2 = 0;
- while (i1 < n1)
+  while (i1 < n1)
   {
     if (i2 == n2)
-   {
+    {
       for (size_t i = i1; i < n1; i++)
-        diff.push_back(indices1[idx[i]]);
-     return diff;
+        diff.push_back(indices1[ix[i]]);
+      return diff;
     }
-    auto ind1 = indices1[idx[i1]];
-   auto ind2 = indices2[i2];
+    auto ind1 = indices1[ix[i1]];
+    auto ind2 = indices2[i2];
     if (ind1 < ind2)
     {
-     diff.push_back(ind1);
+      diff.push_back(ind1);
       i1++;
-    }    else
+    }
+    else
     {
       if (! (ind2 < ind1))
-       i1++;
+        i1++;
       i2++;
     }
- }
+  }
+
+  // Return only unique elements
   auto last = std::unique(diff.begin(), diff.end());
   diff.erase(last, diff.end());
   return diff;
 }
 
+/// \brief Implementation of insertCrsIndices
 template<class T>
 int
 insert_crs_indices(
@@ -261,7 +310,17 @@ insert_crs_indices(
 {
   if (num_in == 0)
     return 0;
+
+  // Rather than loop through the two arrays of indices and looking for their
+  // difference and then checking if their is enough capacity in indices to
+  // accommodate the new elements (not already in indices, excluding
+  // duplicates), we go ahead and merge the two arrays in to one. After the
+  // arrays are merged, we can check if the length of the merged array exceeds
+  // the capacity of the indices array. If it does, return -1 to indicate the
+  // error. If it does not, however, we can just copy the merged elements back
+  // in to \c indices.
   auto merged = ind_merge(in_indices, num_in, indices.data(), num_assigned);
+
   // Check if we have the capacity for the incoming indices
   if (static_cast<size_t>(merged.size()) > indices.size())
     return -1;
@@ -273,21 +332,51 @@ insert_crs_indices(
 } // namespace impl
 
 
-// Determine if row_ptr and indices arrays need to be resized to accommodate
-// new entries
+/// \brief Determine if the row pointers and indices arrays need to be resized
+///   to accommodate new entries. If they do need to be resized, resize the
+///   indices arrays and shift the existing contents to accommodate new entries.
+///   Modify values in the row pointers array to point to the newly shifted
+///   locations in the indices arrays.
+///
+///   This routine is called to resize/shift the CRS arrays when before
+///   attempting to insert new values if the number of new values exceeds the
+///   amount of free space in the CRS arrays.
+///
+/// \param [in/out] row_ptr_beg - row_ptr_beg[i] points to the first
+///        column index (in the indices array) of row i.
+/// \param [in/out] row_ptr_end - row_ptr_end[i] points to the last
+///        column index (in the indices array) of row i.
+/// \param [in/out] indices - array containing columns indices of nonzeros in
+///        CRS representation.
+/// \param [in] padding - Kookos::UnorderedMap. padding[i] is the amount of free
+///        space required for row i. If the distance between row_ptr_end[i] and
+///        row_ptr_beg[i] does not accommodate padding[i], we resize and shift
+///        indices to accommodate.
+///
 template<class RowPtr, class Indices, class Padding>
 void
-padCrsArrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
-             const Padding& padding)
+padCrsArrays(
+    RowPtr& row_ptr_beg,
+    RowPtr& row_ptr_end,
+    Indices& indices,
+    const Padding& padding)
 {
   using impl::pad_crs_arrays;
   pad_crs_arrays<RowPtr, Indices, Padding>(row_ptr_beg, row_ptr_end, indices, padding);
 }
 
-/// \brief Insert new indices in \c in_indices in to \c indices
+/// \brief Insert new indices in \c inIndices in to \c indices
+///
+///   On input, inIndices need not be sorted, but indices must be sorted. The
+///   intended use case is inIndices contains new elements to insert in to the
+///   existing CRS indices contained in indices - which should already be
+///   sorted.
+///
+///   Only elements in inIndices that are not already in indices are inserted
+///   (duplicates are skipped).
 ///
 /// \param indices [in/out] CRS indices. The CRS indices must be sorted on input
-/// \param numAssigned [in] The number of indices that have already been assigned.
+/// \param numAssigned [in].The number of indices that have already been assigned.
 /// \param inIndices [in] The indices to insert. Only those entries not already
 ///    present in \c indices will be inserted.
 /// \param numIn [in] The length of in_indices

@@ -2106,6 +2106,10 @@ namespace Tpetra {
       auto numEntries = rowInfo.numEntries;
       auto numAllocated = rowInfo.allocSize;
       int numInserted = 0;
+      // @mfh: Is this right? We should just try to insert, even if k_gblInds1D_
+      // has length 0 (eg, empty graph). In that case, insertCrsIndices below
+      // will return -1 indicating not enough room for the new elements and we
+      // error out below. This check seems to silently pass an error?
       if (k_gblInds1D_.extent(0) != 0) {
         const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
         auto indices = subview(this->k_gblInds1D_, slice);
@@ -2114,7 +2118,7 @@ namespace Tpetra {
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
-        std::logic_error,
+        std::runtime_error,
         "There is not enough capacity to insert indices in to row " << lclRow <<
         ".  You must either fix the upper bound on the number of entries in this row"
         ", or switch from StaticProfile to DynamicProfile.");
