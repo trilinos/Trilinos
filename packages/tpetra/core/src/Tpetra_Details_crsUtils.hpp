@@ -199,9 +199,9 @@ ind_merge(
     size_t const n2)
 {
 
-  // We assume that indices1 is not sorted.  It is the index array sent to us by
-  // users.  indices2, on the other hand, should be sorted.  It is the crs index
-  // array.
+  // We assume that indices1 is not sorted. It is the index array sent to us by
+  // users. indices2, on the other hand, should be sorted. It is the existing
+  // CRS index array.
   auto ix = argsort(indices1, n1);
 
   Teuchos::Array<Ordinal> merged;
@@ -266,8 +266,11 @@ ind_difference(
 {
   Teuchos::Array<Ordinal> diff;
 
-  // indices1 need not be sorted.  We assume that indices2 is sorted already.
+  // We assume that indices1 is not sorted. It is the index array sent to us by
+  // users. indices2, on the other hand, should be sorted. It is the existing
+  // CRS index array.
   auto ix = argsort(indices1, n1);
+
   size_t i1 = 0;
   size_t i2 = 0;
   while (i1 < n1)
@@ -276,7 +279,7 @@ ind_difference(
     {
       for (size_t i = i1; i < n1; i++)
         diff.push_back(indices1[ix[i]]);
-      return diff;
+      break;
     }
     auto ind1 = indices1[ix[i1]];
     auto ind2 = indices2[i2];
@@ -338,9 +341,9 @@ insert_crs_indices(
 ///   Modify values in the row pointers array to point to the newly shifted
 ///   locations in the indices arrays.
 ///
-///   This routine is called to resize/shift the CRS arrays when before
-///   attempting to insert new values if the number of new values exceeds the
-///   amount of free space in the CRS arrays.
+///   This routine is called to resize/shift the CRS arrays before attempting to
+///   insert new values if the number of new values exceeds the amount of free
+///   space in the CRS arrays.
 ///
 /// \param [in/out] row_ptr_beg - row_ptr_beg[i] points to the first
 ///        column index (in the indices array) of row i.
