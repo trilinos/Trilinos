@@ -428,7 +428,7 @@ namespace Amesos2 {
     using Teuchos::OrdinalTraits;
     
     RCP<const type> get_mat;
-    if( *colmap == *this->col_map_ ){
+    if( *colmap == *this->col_map_ && distribution != CONTIGUOUS_AND_ROOTED ){
       // No need to redistribute
       get_mat = rcp(this,false); // non-owning
     } else {
