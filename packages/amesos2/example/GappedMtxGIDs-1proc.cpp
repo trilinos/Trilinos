@@ -277,20 +277,56 @@ int main(int argc, char *argv[]) {
     solver->solve();
 
 
-    // Compute: RHShat = A*Xhat
-    RCP<MV> RHShat;
-    RHShat = rcp(new MV(rowMap,numVectors));
-    A->apply(*Xhat, *RHShat);
+    // Check result
+    {
+      // Compute: RHShat = A*Xhat
+      RCP<MV> RHShat;
+      RHShat = rcp(new MV(rowMap,numVectors));
+      A->apply(*Xhat, *RHShat);
 
-    // norm2(RHShat - RHS)
-    typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    Teuchos::Array<Magnitude> xhatnorms(numVectors);
-    RHS->update(-1.0, *RHShat, 1.0);
-    RHS->norm2(xhatnorms());
+      // norm2(RHShat - RHS)
+      typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+      Teuchos::Array<Magnitude> xhatnorms(numVectors);
+      RHS->update(-1.0, *RHShat, 1.0);
+      RHS->norm2(xhatnorms());
 
+      if( myRank == 0 ){
+        *fos << "\nsolve finished" << endl;
+        *fos << "\nnorm2(Ax - b) = " << xhatnorms << endl;
+      }
+    }
+
+    // Store modified RHS and re-solve, reusing the symbolic and numeric results
+    RCP<MV> newRHS;
+    newRHS = Tpetra::MatrixMarket::Reader<MAT>::readDenseFile (rhs_name, comm, rangeMap);
+    newRHS->scale(2.0);
     if( myRank == 0 ){
-      *fos << "\nsolve finished" << endl;
-      *fos << "\nnorm2(Ax - b) = " << xhatnorms << endl;
+      *fos << "\n\nRetest: created new RHS to test" << endl;
+    }
+
+    solver->setB( newRHS );
+    if( myRank == 0 ){
+      *fos << "Amesos2: call solve with newRHS" << endl;
+    }
+    solver->solve();
+
+    // Check result
+    {
+      // Compute: RHShat = A*Xhat
+      RCP<MV> RHShat;
+      RHShat = rcp(new MV(rowMap,numVectors));
+      A->apply(*Xhat, *RHShat);
+
+      // norm2(RHShat - newRHS)
+      typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+      Teuchos::Array<Magnitude> xhatnorms(numVectors);
+      newRHS->update(-1.0, *RHShat, 1.0);
+      newRHS->norm2(xhatnorms());
+
+      if( myRank == 0 ){
+        *fos << "\nsecond solve finished" << endl;
+        *fos << "\nnorm2(Ax - b) = " << xhatnorms << endl;
+      }
     }
 
 
