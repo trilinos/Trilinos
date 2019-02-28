@@ -345,9 +345,9 @@ insert_crs_indices(
 ///   insert new values if the number of new values exceeds the amount of free
 ///   space in the CRS arrays.
 ///
-/// \param [in/out] row_ptr_beg - row_ptr_beg[i] points to the first
+/// \param [in/out] rowPtrBeg - rowPtrBeg[i] points to the first
 ///        column index (in the indices array) of row i.
-/// \param [in/out] row_ptr_end - row_ptr_end[i] points to the last
+/// \param [in/out] rowPtrEnd - rowPtrEnd[i] points to the last
 ///        column index (in the indices array) of row i.
 /// \param [in/out] indices - array containing columns indices of nonzeros in
 ///        CRS representation.
@@ -359,13 +359,13 @@ insert_crs_indices(
 template<class RowPtr, class Indices, class Padding>
 void
 padCrsArrays(
-    RowPtr& row_ptr_beg,
-    RowPtr& row_ptr_end,
+    RowPtr& rowPtrBeg,
+    RowPtr& rowPtrEnd,
     Indices& indices,
     const Padding& padding)
 {
   using impl::pad_crs_arrays;
-  pad_crs_arrays<RowPtr, Indices, Padding>(row_ptr_beg, row_ptr_end, indices, padding);
+  pad_crs_arrays<RowPtr, Indices, Padding>(rowPtrBeg, rowPtrEnd, indices, padding);
 }
 
 /// \brief Insert new indices in \c inIndices in to \c indices
