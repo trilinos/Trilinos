@@ -52,7 +52,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
-#include "Tpetra_Details_padCrsArrays.hpp"
+#include "Tpetra_Details_crsUtils.hpp"
 #include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
