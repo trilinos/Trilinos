@@ -513,9 +513,7 @@ namespace FROSch {
                     faces: rotations            --- " << useFaceRotations << "\n\
                     --------------------------------------------\n";
                 }
-                std::cout<<"GDSW 516\n";
                 if (this->ParameterList_->get("Use RepMap",false)) {
-                    std::cout<<"GDSW 518\n";
                     if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;

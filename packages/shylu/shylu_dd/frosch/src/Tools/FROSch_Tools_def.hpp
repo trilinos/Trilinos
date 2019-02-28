@@ -222,7 +222,6 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),B->getColMap(),MaxRow);
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
-
         //--------------------Get Repeated Nodes Map------------------------
         //All Elemnts and neighboring on Proc
         Teuchos::ArrayView<const GO>  eList =EleRepMap->getNodeElementList();
@@ -235,7 +234,7 @@ namespace FROSch {
         Teuchos::ArrayView<const LO> cc2;
         Teuchos::Array<GO> vec = createVector(eList);
         
-        for (size_t i = 0; i<Xgraph->getRowMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i<ReGraph->getRowMap()->getNodeNumElements(); i++) {
             std::vector<GO> el1;
             std::vector<GO> el2;
             
@@ -244,7 +243,7 @@ namespace FROSch {
             
             for (unsigned h = 0;h<el1.size(); h++) rep.insert(std::pair<GO,unsigned>(el1.at(h),MyPID));
             
-            for (unsigned k = Xgraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
+            for (unsigned k = ReGraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
                 BB->getLocalRowView(k,cc2,arr2);
                 el2 = Teuchos::createVector(arr2);
                 

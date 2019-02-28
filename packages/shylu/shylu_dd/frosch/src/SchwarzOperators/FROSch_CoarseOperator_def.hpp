@@ -409,10 +409,8 @@ namespace FROSch {
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,tmpCoarseMap->getNodeElementList(),0,CoarseSolveComm_);
             //Build RepeatedMap CoarseLevel------------------------------------------------------------------------------------
             //Repeated Map on first level needs to be correct--Build ElementNodeList
-            std::cout<<"CoarseOP 412\n";
             if (DistributionList_->get("Use RepMap",false))
             {
-                std::cout<<"CoarseOP 415\n";
                 if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());
@@ -489,7 +487,7 @@ namespace FROSch {
                     //---------------------------------------------------------
                     if (OnCoarseSolveComm_) {
                         SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap2,ColMapG,numRowEntries.getConst());
-                        Teuchos::ArrayView<const LO> in; ColMapG->describe(*fancy,Teuchos::VERB_EXTREME);
+                        Teuchos::ArrayView<const LO> in;
                         Teuchos::ArrayView<const GO> vals_graph;
                         for (size_t k = 0; k<numMyElements; k++) {
                             GO kg = GraphMap->getGlobalElement(k);
@@ -500,7 +498,7 @@ namespace FROSch {
                         SubdomainConnectGraph_->fillComplete();
                         
                         CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
-                        // CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
+                         //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                     }
                 }
             }
@@ -540,10 +538,8 @@ namespace FROSch {
             GOVec elementList(tmpCoarseMap->getNodeElementList());
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMap()->lib(),-1,elementList,0,CoarseSolveComm_);
-            std::cout<<"Coarse Op 543\n";
             if(DistributionList_->get("Use RepMap",false))
             {
-                std::cout<<"Coarse Op 546\n";
                 if(this->K_->getMap()->lib() == Xpetra::UseTpetra){
                     int nSubs = this->MpiComm_->getSize();
                     GOVec elementList(tmpCoarseMap->getNodeElementList());

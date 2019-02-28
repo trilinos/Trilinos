@@ -174,9 +174,7 @@ namespace FROSch {
                     coarse nodes: rotations      --- " << useRotations << "\n\
                     --------------------------------------------\n";
                 }
-                std::cout<<"RGDSW 177\n";
                 if (this->ParameterList_->get("Use RepMap",false)) {
-                    std::cout<<"RGDSW 179\n";
                     if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                         Teuchos::Array<GO> entries;
                         std::map<GO,int> rep;

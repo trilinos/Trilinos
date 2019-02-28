@@ -215,9 +215,7 @@ namespace FROSch {
             LocalPartitionOfUnityBasis_ = LocalPartitionOfUnityBasisPtr(new LocalPartitionOfUnityBasis<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,this->DofsPerNode_[blockId],sublist(coarseSpaceList,"LocalPartitionOfUnityBasis"),interfaceNullspaceBasis,InterfacePartitionOfUnity_->getLocalPartitionOfUnity(),InterfacePartitionOfUnity_->getPartitionOfUnityMaps())); // sublist(coarseSpaceList,"LocalPartitionOfUnityBasis") testen
             
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
-            std::cout<<"IPOU 218\n";
             if (this->ParameterList_->get("Use RepMap",false)) {
-                std::cout<<"IPOU 220\n";
                 if (this->K_->getMap()->lib() == Xpetra::UseTpetra) {
                     Teuchos::Array<GO> entries;
                     std::map<GO,int> rep;
