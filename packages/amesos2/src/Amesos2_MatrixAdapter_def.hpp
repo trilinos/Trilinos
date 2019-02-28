@@ -277,7 +277,7 @@ namespace Amesos2 {
     ((void) ra);
 
     RCP<const type> get_mat;
-    if( *rowmap == *this->row_map_ ){
+    if( *rowmap == *this->row_map_ && distribution != CONTIGUOUS_AND_ROOTED ){
       // No need to redistribute
       get_mat = rcp(this,false); // non-owning
     } else {
