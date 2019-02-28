@@ -48,7 +48,7 @@ namespace Ioss {
     std::string type_string() const override { return "NullEntity"; }
     std::string short_type_string() const override { return "null"; }
     std::string contains_string() const override { return "Nothing"; }
-    EntityType  type() const { return INVALID_TYPE; }
+    EntityType  type() const override { return INVALID_TYPE; }
 
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
