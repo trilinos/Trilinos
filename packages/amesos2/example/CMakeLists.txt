@@ -9,6 +9,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 ENDIF()
 
+IF (Tpetra_INST_DOUBLE)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  GappedMtxGIDs-1proc
+  SOURCES GappedMtxGIDs-1proc
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+)
+ENDIF ()
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(GappedMtxGIDs_File
+  SOURCE_FILES gap-ids-1proc-rowmap.mm gap-ids-1procA.mm gap-ids-1procRhs.mm
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/matrices/
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  )
 
 TRIBITS_ADD_EXECUTABLE(
   SimpleSolveExample
