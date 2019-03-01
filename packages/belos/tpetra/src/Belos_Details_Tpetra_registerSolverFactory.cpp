@@ -60,6 +60,17 @@
 #include "BelosRCGSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
 
+namespace BelosTpetra {
+namespace Impl {
+
+extern void register_CgPipeline (const bool verbose);
+extern void register_CgSingleReduce (const bool verbose);
+extern void register_GmresPipeline (const bool verbose);
+extern void register_GmresSingleReduce (const bool verbose);
+  
+} // namespace Impl
+} // namespace BelosTpetra  
+
 #include "TpetraCore_ETIHelperMacros.h"
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
@@ -68,6 +79,11 @@ namespace Details {
 namespace Tpetra {
 
 void registerSolverFactory() {
+  ::BelosTpetra::Impl::register_CgPipeline (false);
+  ::BelosTpetra::Impl::register_CgSingleReduce (false);
+  ::BelosTpetra::Impl::register_GmresPipeline (false);
+  ::BelosTpetra::Impl::register_GmresSingleReduce (false);
+  
   #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)   \
     Impl::registerSolverSubclassForTypes<                           \
       manager<SC,::Tpetra::MultiVector<SC, LO, GO, NT>,             \
