@@ -59,6 +59,7 @@ using Teuchos::CommandLineProcessor;
 using Tpetra::Details::padCrsArrays;
 using Tpetra::Details::insertCrsIndices;
 using Tpetra::Details::impl::ind_difference;
+using Tpetra::Details::impl::uninitialized_view;
 using std::vector;
 
 namespace {
@@ -83,14 +84,14 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
   ordinal_type num_row = 4;
   ordinal_type num_indices_per_row = 5;
   ordinal_type num_indices = num_indices_per_row * num_row;
-  auto row_ptrs_beg = view_type("beg", num_row+1);
+  auto row_ptrs_beg = uninitialized_view<view_type>("beg", num_row+1);
   // this assumes UVM
   for (ordinal_type i=0; i<num_row+1; i++) row_ptrs_beg(i) = num_indices_per_row*i;
 
-  auto row_ptrs_end = view_type("end", num_row);
+  auto row_ptrs_end = uninitialized_view<view_type>("end", num_row);
   for (ordinal_type i=0; i<num_row; i++) row_ptrs_end(i) = row_ptrs_beg(i+1);
 
-  auto indices = view_type("indices", num_indices);
+  auto indices = uninitialized_view<view_type>("indices", num_indices);
   for (ordinal_type i=0; i<num_row; i++) {
     auto start = row_ptrs_beg(i);
     auto end = row_ptrs_beg(i+1);
@@ -99,13 +100,14 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
     }
   }
 
-  auto import_lids = view_type("import lids", num_row);
-  auto num_packets_per_lid = view_type("num packets", num_row);
+  auto import_lids = uninitialized_view<view_type>("import lids", num_row);
+  auto num_packets_per_lid = uninitialized_view<view_type>("num packets", num_row);
   for (ordinal_type i=0; i<num_row; i++) {
    import_lids(i) = i;
    num_packets_per_lid(i) = i;
   }
-  ordinal_type num_extra = num_row*(num_packets_per_lid(0) + num_packets_per_lid(num_row-1))/2;
+  ordinal_type num_extra =
+    num_row*(num_packets_per_lid(0) + num_packets_per_lid(num_row-1))/2;
 
   Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
   execution_space::fence();

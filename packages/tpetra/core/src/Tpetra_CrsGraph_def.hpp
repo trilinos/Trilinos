@@ -2099,24 +2099,21 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Kokkos::pair<size_t, size_t> range_type;
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
-    const bool debug = ::Tpetra::Details::Behavior::debug();
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debug = true;
+#else
+    constexpr bool debug = false;
+#endif // HAVE_TPETRA_DEBUG
 
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
     if (this->getProfileType () == StaticProfile) {
       auto numEntries = rowInfo.numEntries;
       auto numAllocated = rowInfo.allocSize;
-      int numInserted = 0;
-      // @mfh: Is this right? We should just try to insert, even if k_gblInds1D_
-      // has length 0 (eg, empty graph). In that case, insertCrsIndices below
-      // will return -1 indicating not enough room for the new elements and we
-      // error out below. This check seems to silently pass an error?
-      if (k_gblInds1D_.extent(0) != 0) {
-        const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
-        auto indices = subview(this->k_gblInds1D_, slice);
-        numInserted =
-          Details::insertCrsIndices(indices, numEntries, inputGblColInds, numInputInds);
-      }
+      const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
+      auto indices = subview(this->k_gblInds1D_, slice);
+      auto numInserted =
+        Details::insertCrsIndices(indices, numEntries, inputGblColInds, numInputInds);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
         std::runtime_error,
@@ -2130,7 +2127,7 @@ namespace Tpetra {
         << ".  Please report this bug to Tpetra developers.\n");
       this->k_numRowEntries_(lclRow) += numInserted;
       this->setLocallyModified();
-      return numInserted;
+      return static_cast<size_t>(numInserted);
     }
     else {
       size_t newNumEntries = rowInfo.numEntries + numInputInds; // preliminary
