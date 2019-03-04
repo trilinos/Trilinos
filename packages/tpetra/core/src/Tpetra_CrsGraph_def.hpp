@@ -3207,7 +3207,7 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                 const typename local_graph_type::entries_type::non_const_type& columnIndices)
+                 const typename local_graph_type::entries_type::non_const_type& columnIndicesIn)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3236,6 +3236,18 @@ namespace Tpetra {
     indicesAreAllocated_ = true;
     indicesAreLocal_     = true;
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
+
+    // Column indices sorted by row
+    using Tpetra::Details::impl::uninitialized_view;
+    using view_type = typename local_graph_type::entries_type::non_const_type;
+    auto columnIndices = uninitialized_view<view_type>("column indices", columnIndicesIn.size());
+    Kokkos::deep_copy(columnIndices, columnIndicesIn);
+    for (size_t i = 0; i < rowPointers.size() - 1; i++) {
+      auto begin = rowPointers[i];
+      auto end = rowPointers[i+1];
+      Kokkos::sort(columnIndices, begin, end);
+    }
+
     k_lclInds1D_         = columnIndices;
     k_rowPtrs_           = rowPointers;
     // Storage MUST be packed, since the interface doesn't give any
