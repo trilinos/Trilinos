@@ -197,9 +197,9 @@ ind_merge(InputIter1 first1, InputIter1 last1,
   std::copy(first1, last1, d_first);
   std::copy(first2, last2, d_first + d1);
 
-  // We assume that indices1 is not sorted. It is the index array sent to us by
-  // users. indices2, on the other hand, should be sorted. It is the existing
-  // CRS index array.
+  // We assume that the first range is NOT sorted. It is the range sent by
+  // users. The second range, on the other hand, should be sorted. It is the
+  // existing CRS index array.
   std::sort(d_first, d_first + d1);
   std::inplace_merge(d_first, d_first + d1, d_first + d1 + d2);
   return std::unique(d_first, d_first + d1 + d2);
@@ -226,11 +226,8 @@ ind_merge(InputIter1 first1, InputIter1 last1,
 ///
 template <class Ordinal>
 Teuchos::Array<Ordinal>
-ind_difference(
-    Ordinal const * const indices1,
-    size_t const n1,
-    Ordinal const * const indices2,
-    size_t const n2)
+ind_difference(Ordinal const * const indices1, size_t const n1,
+               Ordinal const * const indices2, size_t const n2)
 {
   Teuchos::Array<Ordinal> diff;
 
