@@ -1930,6 +1930,11 @@ namespace Ifpack2 {
 #else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked multi_vector_algo_type;
 #endif
+      static int recommended_team_size(const int blksize, 
+				       const int vector_length, 
+				       const int internal_vector_length) { 
+	return 1; 
+      }
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
@@ -1938,6 +1943,27 @@ namespace Ifpack2 {
       typedef KokkosBatched::Experimental::Mode::Team mode_type;
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KokkosBatched::Experimental::Algo::Level3::Unblocked multi_vector_algo_type;
+      static int recommended_team_size(const int blksize, 
+				       const int vector_length, 
+				       const int internal_vector_length) { 
+	const int vector_size = vector_length/internal_vector_length;
+    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
+	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+      }
+    };
+    template<>
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::CudaUVMSpace> {
+      typedef KokkosBatched::Experimental::Mode::Team mode_type;
+      typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
+      typedef KokkosBatched::Experimental::Algo::Level3::Unblocked multi_vector_algo_type;
+      static int recommended_team_size(const int blksize, 
+    				       const int vector_length, 
+    				       const int internal_vector_length) { 
+    	const int vector_size = vector_length/internal_vector_length;
+    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
+	// to match the old code behavior when internal vector length is 1
+	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+      }
     };
 #endif
 
@@ -2223,56 +2249,56 @@ namespace Ifpack2 {
 	  });
       }      
 
-      template<int B>
-      void runSpecificBlocksize() {
-        const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);        
-        if (num_vectors == 1) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
-          const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > 
-            policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size);
-#else
-          const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > 
-            policy(packptr.extent(0)-1, 1, 1);
-#endif
-          Kokkos::parallel_for                                      
-            ("SolveTridiags::TeamPolicy::run<SingleVector>", policy, *this);
-        } else {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
-          const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > 
-            policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size);
-#else
-          const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > 
-            policy(packptr.extent(0)-1, 1, 1);
-#endif
-          Kokkos::parallel_for
-            ("SolveTridiags::TeamPolicy::run<MultiVector>", policy, *this);
-        }         
-      }
-
       void run() {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
-#endif
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
-        const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
-        switch (blocksize) {
-        case   3: runSpecificBlocksize< 3>(); break;
-        case   5: runSpecificBlocksize< 5>(); break;
-        case   7: runSpecificBlocksize< 7>(); break;
-        case   9: runSpecificBlocksize< 9>(); break; 
-        case  10: runSpecificBlocksize<10>(); break;
-        case  11: runSpecificBlocksize<11>(); break;
-        case  16: runSpecificBlocksize<16>(); break;
-        case  17: runSpecificBlocksize<17>(); break;
-        case  18: runSpecificBlocksize<18>(); break;
-        default : runSpecificBlocksize< 0>(); break;
-        }
+
+#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
+#endif   
+#if defined(KOKKOS_ENABLE_CUDA)
+	const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);
+	const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
+
+	const local_ordinal_type team_size = 
+	  SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
+	  recommended_team_size(blocksize, vector_length, internal_vector_length);
+	
+#define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)			\
+	if (num_vectors == 1) {						\
+	  const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > \
+	    policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+	  Kokkos::parallel_for						\
+	    ("SolveTridiags::TeamPolicy::run<SingleVector>", policy, *this); \
+	} else {							\
+	  const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > \
+	    policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+	  Kokkos::parallel_for						\
+	    ("SolveTridiags::TeamPolicy::run<MultiVector>", policy, *this); \
+	} break
+	
+	switch (blocksize) {
+	case   3: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 3);
+	case   5: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 5);
+	case   7: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 7);
+	case   9: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 9);
+	case  10: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(10);
+	case  11: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(11);
+	case  16: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(16);
+	case  17: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(17);
+	case  18: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(18);
+	default : BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 0);            
+	}
+#undef BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS
+	
+#endif
+
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }
+
     }; 
     
     ///
