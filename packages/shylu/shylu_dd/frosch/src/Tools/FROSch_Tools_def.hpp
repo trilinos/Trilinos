@@ -228,22 +228,23 @@ namespace FROSch {
         
         std::map<GO,int> rep;
         
-        Teuchos::ArrayView<const GO> arr;
-        Teuchos::ArrayView<const LO> cc;
-        Teuchos::ArrayView<const GO> arr2;
-        Teuchos::ArrayView<const LO> cc2;
+        
+        
         Teuchos::Array<GO> vec = createVector(eList);
         
         for (size_t i = 0; i<ReGraph->getRowMap()->getNodeNumElements(); i++) {
             std::vector<GO> el1;
             std::vector<GO> el2;
-            
+            Teuchos::ArrayView<const GO> arr;
+            Teuchos::ArrayView<const LO> cc;
             BB->getLocalRowView(i,cc,arr);
             el1 = Teuchos::createVector(arr);
             
             for (unsigned h = 0;h<el1.size(); h++) rep.insert(std::pair<GO,unsigned>(el1.at(h),MyPID));
             
             for (unsigned k = ReGraph->getRowMap()->getNodeNumElements();k<vec.size();k++){
+                Teuchos::ArrayView<const GO> arr2;
+                Teuchos::ArrayView<const LO> cc2;
                 BB->getLocalRowView(k,cc2,arr2);
                 el2 = Teuchos::createVector(arr2);
                 
