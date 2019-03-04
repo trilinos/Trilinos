@@ -552,7 +552,7 @@ namespace MueLu {
           glElementCoarseNodeCG[7] += 1;
 
           LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
-          LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
+          // LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
             + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
 
           // Compute the element prolongator
