@@ -4364,11 +4364,25 @@ namespace Tpetra {
     // pointers.
     dev_view_type tgtBuf_dev;
     host_view_type tgtBuf_host;
+    const bool commIsInterComm = ::Tpetra::Details::isInterComm (comm);
+    // If comm is an intercomm, then we may not alias input and
+    // output buffers, so we have to make a copy of the local
+    // sum.
     if (useHostVersion) {
-      tgtBuf_host = host_view_type ("tgtBuf", lclNumRows, numCols);
+      if (commIsInterComm || !contig) {
+        tgtBuf_host = host_view_type (Kokkos::ViewAllocateWithoutInitializing ("tgtBuf"), lclNumRows, numCols);
+      }
+      else {
+        tgtBuf_host = srcBuf_host;
+      }
     }
     else {
-      tgtBuf_dev = dev_view_type ("tgtBuf", lclNumRows, numCols);
+      if (commIsInterComm || !contig) {
+        tgtBuf_dev = dev_view_type (Kokkos::ViewAllocateWithoutInitializing ("tgtBuf"), lclNumRows, numCols);
+      }
+      else {
+        tgtBuf_dev = srcBuf_dev;
+      }
     }
 
     const int reduceCount = static_cast<int> (totalAllocSize);
@@ -4397,7 +4411,9 @@ namespace Tpetra {
     if (useHostVersion) {
       this->modify_host ();
       if (contig || isConstantStride ()) {
-        Kokkos::deep_copy (srcView_host, tgtBuf_host);
+        if (commIsInterComm) {
+          Kokkos::deep_copy (srcView_host, tgtBuf_host);
+        }
       }
       else { // need to copy one column at a time
         for (size_t j = 0; j < numCols; ++j) {
@@ -4410,7 +4426,9 @@ namespace Tpetra {
     else { // use device version
       this->template modify<device_type> ();
       if (contig || isConstantStride ()) {
-        Kokkos::deep_copy (srcView_dev, tgtBuf_dev);
+        if (commIsInterComm) {
+          Kokkos::deep_copy (srcView_dev, tgtBuf_dev);
+        }
       }
       else { // need to copy one column at a time
         for (size_t j = 0; j < numCols; ++j) {
