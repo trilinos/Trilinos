@@ -11,7 +11,7 @@
 #
 
 if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=GNU-6.1.0
+  export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CLANG" ]] ; then
     export ATDM_CONFIG_COMPILER=CLANG-3.9.0
@@ -27,7 +27,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG"* ]]; then
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
-    export ATDM_CONFIG_COMPILER=GNU-6.1.0
+    export ATDM_CONFIG_COMPILER=GNU-7.2.0
   elif [[ "$ATDM_CONFIG_COMPILER" != "GNU-6.1.0" ]] &&
     [[ "$ATDM_CONFIG_COMPILER" != "GNU-7.2.0" ]] ; then
     echo
