@@ -99,7 +99,7 @@ pad_crs_arrays(
   Kokkos::deep_copy(entries_this_row, 0);
   size_t additional_size_needed = 0;
   Kokkos::parallel_reduce("Determine additional size needed", policy,
-    KOKKOS_LAMBDA(const int& i, size_t& ladditional_size_needed) {
+    KOKKOS_LAMBDA(const int i, size_t& ladditional_size_needed) {
 
       auto allocated_this_row = row_ptr_beg(i+1) - row_ptr_beg(i);
       auto used_this_row = row_ptr_end(i) - row_ptr_beg(i);
@@ -170,71 +170,39 @@ pad_crs_arrays(
 }
 
 
-/// \brief Merge two arrays \c indices1 and \c indices2 representing CRS index arrays.
-///   The result is returned in one sorted range with unique elements. Elements
-///   are compared using operator<.
+/// \brief Merges two ranges [first1, last1) and [first2, last2) into one sorted
+///   range beginning at d_first, eliminates all but the first element from
+///   every consecutive group of equivalent elements from the merged range,
+///   and returns a past-the-end iterator for the new logical end of the range.
 ///
-///   On input, indices1 need not be sorted, but indices2 must be sorted. The
-///   intended use case is indices1 contains new elements to merge in to the
-///   existing CRS indices contained in indices2 - which should already be
-///   sorted.
+///   On input, the first range need not be sorted, but the second must be
+///   sorted. The intended use case is the first range contains new elements to
+///   merge in to the existing CRS indices contained in the second range - which
+///   should already be sorted.
 ///
-///   This function is modeled after std::merge but takes arrays and lengths
-///   instead of iterators. It also does not require that both input arrays be
-///   sorted (just the second).
+/// \param first1, last1 - first range of elements to merge (need not be sorted)
+/// \param first2, last2 - second range of elements to merge (must be sorted)
 ///
-/// \param [in] indices1 - the first array of indices
-/// \param [in] n1 - the length of indices1
-/// \param [in] indices2 - the second array of indices
-/// \param [in] n2 - the length of indices2
+/// \return last - Output iterator to element past the last unique element in
+///   the merged range.
 ///
-/// \return merged - The sorted and unique elements
-///
-template <class Ordinal>
-Teuchos::Array<Ordinal>
-ind_merge(
-    Ordinal const * const indices1,
-    size_t const n1,
-    Ordinal const * const indices2,
-    size_t const n2)
+template <class InputIter1, class InputIter2, class OutputIter>
+OutputIter
+ind_merge(InputIter1 first1, InputIter1 last1,
+          InputIter2 first2, InputIter2 last2,
+          OutputIter d_first)
 {
+  auto d1 = std::distance(first1, last1);
+  auto d2 = std::distance(first2, last2);
+  std::copy(first1, last1, d_first);
+  std::copy(first2, last2, d_first + d1);
 
   // We assume that indices1 is not sorted. It is the index array sent to us by
   // users. indices2, on the other hand, should be sorted. It is the existing
   // CRS index array.
-  auto ix = argsort(indices1, n1);
-
-  Teuchos::Array<Ordinal> merged;
-  merged.reserve(n1 + n2);
-  if (n2 == 0)
-  {
-    for (size_t i = 0; i < n1; i++)
-      merged.push_back(indices1[ix[i]]);
-  }
-  else
-  {
-    size_t i1 = 0;
-    size_t i2 = 0;
-    while (i1 < n1)
-    {
-      if (i2 == n2)
-      {
-        for (size_t i = i1; i < n1; i++)
-          merged.push_back(indices1[ix[i]]);
-        break;
-      }
-      if (indices2[i2] < indices1[ix[i1]])
-        merged.push_back(indices2[i2++]);
-      else
-        merged.push_back(indices1[ix[i1++]]);
-    }
-    std::copy(indices2+i2, indices2+n2, std::back_inserter(merged));
-  }
-
-  // Return only the unique elements
-  auto last = std::unique(merged.begin(), merged.end());
-  merged.erase(last, merged.end());
-  return merged;
+  std::sort(d_first, d_first + d1);
+  std::inplace_merge(d_first, d_first + d1, d_first + d1 + d2);
+  return std::unique(d_first, d_first + d1 + d2);
 }
 
 /// \brief Copies the elements from the array \c indices1 which are
@@ -304,7 +272,7 @@ ind_difference(
 
 /// \brief Implementation of insertCrsIndices
 template<class T>
-int
+typename std::make_signed<typename T::value_type>::type
 insert_crs_indices(
     T& indices,
     size_t const num_assigned,
@@ -315,14 +283,18 @@ insert_crs_indices(
     return 0;
 
   // Rather than loop through the two arrays of indices and looking for their
-  // difference and then checking if their is enough capacity in indices to
+  // difference, and then checking if their is enough capacity in indices to
   // accommodate the new elements (not already in indices, excluding
   // duplicates), we go ahead and merge the two arrays in to one. After the
   // arrays are merged, we can check if the length of the merged array exceeds
   // the capacity of the indices array. If it does, return -1 to indicate the
   // error. If it does not, however, we can just copy the merged elements back
   // in to \c indices.
-  auto merged = ind_merge(in_indices, num_in, indices.data(), num_assigned);
+  Teuchos::Array<typename T::value_type> merged(num_in + num_assigned);
+  auto last = ind_merge(in_indices, in_indices + num_in,
+                        indices.data(), indices.data() + num_assigned,
+                        merged.begin());
+  merged.erase(last, merged.end());
 
   // Check if we have the capacity for the incoming indices
   if (static_cast<size_t>(merged.size()) > indices.size())
@@ -388,7 +360,7 @@ padCrsArrays(
 ///    If numInserted == -1, there was not enough capacity for all of the incoming
 ///    indices and none were inserted.
 template <class T>
-int
+typename std::make_signed<typename T::value_type>::type
 insertCrsIndices(
     T& indices,
     size_t const numAssigned,
