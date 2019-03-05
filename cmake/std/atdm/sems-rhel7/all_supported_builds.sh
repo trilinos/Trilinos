@@ -4,6 +4,7 @@ export ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-
 
 export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
   sems-rhel7-clang-3.9.0-openmp-complex-shared-release-debug
+  sems-rhel7-clang-3.9.0-openmp-complex-static-release-debug
   sems-rhel7-cuda-9.2-Pascal60-complex-shared-release-debug
   #sems-rhel7-clang-3.9.0-openmp-release-debug
   #sems-rhel7-clang-3.9.0-serial-release-debug
