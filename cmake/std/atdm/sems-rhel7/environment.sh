@@ -181,6 +181,29 @@ module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
 module load sems-superlu/4.3/base
 
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
+  [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] && \
+  [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
+  export ATDM_CONFIG_USE_NINJA=OFF
+  export ATDM_CONFIG_CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=OFF
+fi
+# NOTE: The reason for the above logic is that 'nvcc' can't handle *.rsp
+# response files that CMake switches to when the command-lines become too long
+# and there is no way to turn off the usage of response files with the CMake
+# Ninja generator as of CMake 3.14.0.  The problem is that when CUDA and
+# complex are enabled and shared libs are used, 'nvcc' is used to create the
+# kokkoskernels shared lib which has a ton of object files that trigger
+# internal the CMake logic to condense these down into a single
+# kokkoskernels.rsp file that it passes to 'nvcc' to create the kokkoskernels
+# library.  When that *.rsp file is passed to 'nvcc', it does not know how to
+# process it and it gives the error "No input files specified".  The
+# workaround is to switch to the CMake Makefile generator and turn off the
+# usage of response files for list of object files.  (The CMake Ninja
+# generator as of CMake 3.14 does not allow you to turn this off :-( ).  Note
+# that we don't yet need to switch the CMake Makefile generator 'static'
+# builds since 'ar' is used to create the kokkoskernels lib which triggers the
+# usage of response files for this target.
+
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so
 else
