@@ -19,8 +19,14 @@
 /* Define if want to build sacado-tests */
 #cmakedefine HAVE_SACADO_TESTS
 
-/* Define if want to build with teuchos enabled */
-#cmakedefine HAVE_SACADO_TEUCHOS
+/* Define if want to build with teuchos-core enabled */
+#cmakedefine HAVE_SACADO_TEUCHOSCORE
+
+/* Define if want to build with teuchos-comm enabled */
+#cmakedefine HAVE_SACADO_TEUCHOSCOMM
+
+/* Define if want to build with teuchos-numerics enabled */
+#cmakedefine HAVE_SACADO_TEUCHOSNUMERICS
 
 /* Define if want to build with kokkos-core enabled */
 #cmakedefine HAVE_SACADO_KOKKOSCORE
