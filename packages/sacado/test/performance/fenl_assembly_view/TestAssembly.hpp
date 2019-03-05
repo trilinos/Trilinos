@@ -82,7 +82,6 @@ Perf fenl_assembly(
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   using Teuchos::arrayView;
-  using Teuchos::ParameterList;
 
   typedef Kokkos::Example::BoxElemFixture< Device , Order > FixtureType ;
 

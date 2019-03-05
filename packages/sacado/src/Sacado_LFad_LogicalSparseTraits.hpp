@@ -115,16 +115,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Fad_ScalarTraitsImp.hpp"
-#include "Teuchos_SerializationTraits.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValT, typename LogT>
   struct PromotionTraits< Sacado::LFad::LogicalSparse<ValT,LogT>,
                           Sacado::LFad::LogicalSparse<ValT,LogT> > {
@@ -133,39 +131,47 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValT, typename LogT, typename R>
   struct PromotionTraits< Sacado::LFad::LogicalSparse<ValT,LogT>, R > {
     typedef typename Sacado::Promote< Sacado::LFad::LogicalSparse<ValT,LogT>, R >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename L, typename ValT, typename LogT>
   struct PromotionTraits< L, Sacado::LFad::LogicalSparse<ValT,LogT> > {
   public:
     typedef typename Sacado::Promote< L, Sacado::LFad::LogicalSparse<ValT,LogT> >::type
     promote;
   };
+}
+#endif
 
-  //
-  // These specialization implementations don't work for LFad because
-  // the value type (e.g., double) is different from the dx() type (e.g., bool)
-  //
+//
+// These specialization implementations don't work for LFad because
+// the value type (e.g., double) is different from the dx() type (e.g., bool)
+//
 
-  // //! Specializtion of %Teuchos::ScalarTraits
+// // Scalar traits
+// #ifdef HAVE_SACADO_TEUCHOSCORE
+// #include "Sacado_Fad_ScalarTraitsImp.hpp"
+// namespace Teuchos {
   // template <typename ValT, typename LogT>
   // struct ScalarTraits< Sacado::LFad::LogicalSparse<ValT,LogT> > :
   //   public Sacado::Fad::ScalarTraitsImp< Sacado::LFad::LogicalSparse<ValT,LogT> >
   // {};
+// }
+// #endif
 
-  // //! Specialization of %Teuchos::SerializationTraits
+// // Serialization traits
+// #ifdef HAVE_SACADO_TEUCHOSCOMM
+// #include "Sacado_Fad_SerializationTraitsImp.hpp"
+// namespace Teuchos {
   // template <typename Ordinal, typename ValT, typename LogT>
   // struct SerializationTraits<Ordinal, Sacado::LFad::LogicalSparse<ValT,LogT> > :
   //   public Sacado::Fad::SerializationTraitsImp< Ordinal,
   //                                            Sacado::LFad::LogicalSparse<ValT,LogT> >
   // {};
-}
-#endif // HAVE_SACADO_TEUCHOS
+// }
+// #endif
 
 #endif // SACADO_LFAD_LOGICALSPARSETRAITS_HPP

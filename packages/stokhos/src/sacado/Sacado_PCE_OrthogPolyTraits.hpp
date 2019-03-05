@@ -123,7 +123,7 @@ namespace Sacado {
 } // namespace Sacado
 
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+// Note Stokhos has required dependency on all Teuchos sub-packages
 #include "Teuchos_PromotionTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Sacado_PCE_ScalarTraitsImp.hpp"
@@ -190,6 +190,5 @@ namespace Teuchos {
   };
 
 }
-#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_PCE_UNIVARIATEHERMITETRAITS_HPP
