@@ -4127,17 +4127,38 @@ namespace Tpetra {
       const LO C_lclNumRows = C_tmp->getLocalLength ();
       const LO C_numVecs = C_tmp->getNumVectors ();
       auto C_lcl = C_tmp->template getLocalView<device_type> ();
-      auto C_sub = Kokkos::subview (C_lcl,
-                                    std::make_pair (LO (0), C_lclNumRows),
-                                    std::make_pair (LO (0), C_numVecs));
       const char ctransA = (transA == Teuchos::NO_TRANS ? 'N' :
                             (transA == Teuchos::TRANS ? 'T' : 'C'));
       const char ctransB = (transB == Teuchos::NO_TRANS ? 'N' :
                             (transB == Teuchos::TRANS ? 'T' : 'C'));
       const impl_scalar_type alpha_IST (alpha);
 
-      ::Tpetra::Details::ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
-      KokkosBlas::gemm(&ctransA, &ctransB, alpha_IST, A_sub, B_sub, beta_local, C_sub);
+      // The first two cases are specializations for inner products between a vector and a multivector
+      if (beta == STS::zero () && transA != Teuchos::NO_TRANS && transB == Teuchos::NO_TRANS && A_numVecs == 1) {
+        auto C_sub = Kokkos::subview (C_lcl,
+                                      LO (0),
+                                      Kokkos::ALL ());
+        ::Tpetra::Details::ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-dot");
+        KokkosBlas::dot(C_sub, A_sub, B_sub);
+        if (alpha != STS::one ())
+          KokkosBlas::scal (C_sub, alpha_IST, C_sub);
+      }
+      else if (beta == STS::zero () && transA != Teuchos::NO_TRANS && transB == Teuchos::NO_TRANS && B_numVecs == 1) {
+        auto C_sub = Kokkos::subview (C_lcl,
+                                      Kokkos::ALL (),
+                                      LO (0) );
+        ::Tpetra::Details::ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-dot");
+        KokkosBlas::dot(C_sub, A_sub, B_sub);
+        if (alpha != STS::one ())
+          KokkosBlas::scal (C_sub, alpha_IST, C_sub);
+      }
+      else {
+        auto C_sub = Kokkos::subview (C_lcl,
+                                    std::make_pair (LO (0), C_lclNumRows),
+                                    std::make_pair (LO (0), C_numVecs));
+        ::Tpetra::Details::ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
+        KokkosBlas::gemm(&ctransA, &ctransB, alpha_IST, A_sub, B_sub, beta_local, C_sub);
+      }
     }
 
     if (! isConstantStride ()) {
