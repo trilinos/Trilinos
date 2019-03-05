@@ -88,7 +88,6 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<std::string>            ("axisPermutation",         "", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
     validParamList->set<std::string>            ("stencil type",            "full", "You can use two type of stencils: full and reduced, that correspond to 27 and 7 points stencils respectively in 3D.");
     validParamList->set<std::string>            ("block strategy",          "coupled", "The strategy used to handle systems of PDEs can be: coupled or uncoupled.");
 
@@ -553,7 +552,7 @@ namespace MueLu {
 
           LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
           // LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
-            + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
+          //   + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
 
           // Compute the element prolongator
           Teuchos::SerialDenseMatrix<LO,SC> Pi, Pf, Pe;
