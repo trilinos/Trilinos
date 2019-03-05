@@ -84,6 +84,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -217,6 +218,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -381,6 +383,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -514,6 +517,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]

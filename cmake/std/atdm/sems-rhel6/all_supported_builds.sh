@@ -3,10 +3,6 @@
 export ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-
 
 export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
-  sems-rhel6-gnu-6.1.0-openmp-debug
-  sems-rhel6-gnu-6.1.0-openmp-release
-  sems-rhel6-gnu-6.1.0-serial-debug
-  sems-rhel6-gnu-6.1.0-serial-release
   sems-rhel6-gnu-7.2.0-openmp-debug
   sems-rhel6-gnu-7.2.0-openmp-release
   sems-rhel6-gnu-7.2.0-openmp-release-debug
