@@ -18,7 +18,6 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Isorropia
   KokkosExample
   MiniTensor
-  TpetraTSQR
   Domi
   Pliris
   Komplex

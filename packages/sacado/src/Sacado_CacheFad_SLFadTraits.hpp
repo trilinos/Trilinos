@@ -123,15 +123,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Fad_ScalarTraitsImp.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to SLFad types
   template <typename ValueT, int Num>
   struct PromotionTraits< Sacado::CacheFad::SLFad<ValueT,Num>,
                           Sacado::CacheFad::SLFad<ValueT,Num> > {
@@ -140,35 +139,42 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to SLFad types
   template <typename ValueT, int Num, typename R>
   struct PromotionTraits< Sacado::CacheFad::SLFad<ValueT,Num>, R > {
     typedef typename Sacado::Promote< Sacado::CacheFad::SLFad<ValueT,Num>, R >::type
     promote;
   };
 
-  //! Specialization of %Teuchos::PromotionTraits to SLFad types
   template <typename L, typename ValueT, int Num>
   struct PromotionTraits< L, Sacado::CacheFad::SLFad<ValueT,Num> > {
   public:
     typedef typename Sacado::Promote< L, Sacado::CacheFad::SLFad<ValueT,Num> >::type
     promote;
   };
+}
+#endif
 
-  //! Specializtion of %Teuchos::ScalarTraits
+// Scalar traits
+#ifdef HAVE_SACADO_TEUCHOSCORE
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+namespace Teuchos {
   template <typename ValueT, int Num>
   struct ScalarTraits< Sacado::CacheFad::SLFad<ValueT,Num> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::CacheFad::SLFad<ValueT,Num> >
   {};
+}
+#endif
 
-  //! Specialization of %Teuchos::SerializationTraits
+// Serialization traits
+#ifdef HAVE_SACADO_TEUCHOSCOMM
+#include "Sacado_Fad_SerializationTraitsImp.hpp"
+namespace Teuchos {
   template <typename Ordinal, typename ValueT, int Num>
   struct SerializationTraits<Ordinal, Sacado::CacheFad::SLFad<ValueT,Num> > :
     public Sacado::Fad::SerializationTraitsImp< Ordinal,
                                                 Sacado::CacheFad::SLFad<ValueT,Num> >
   {};
 
-  //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename ValueT, int Num>
   struct ValueTypeSerializer<Ordinal, Sacado::CacheFad::SLFad<ValueT,Num> > :
     public Sacado::Fad::SerializerImp< Ordinal,
@@ -183,6 +189,11 @@ namespace Teuchos {
       Base(vs, sz) {}
   };
 }
-#endif // HAVE_SACADO_TEUCHOS
+#endif
+
+// KokkosComm
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#include "KokkosExp_View_Fad.hpp"
+#endif
 
 #endif // SACADO_CACHEFAD_SLFADTRAITS_HPP

@@ -197,7 +197,7 @@ SET(HEADERS ${HEADERS}
   template/Sacado_TemplateContainer.hpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Teuchos)
+IF (${PACKAGE_NAME}_ENABLE_TeuchosNumerics)
 
   # BLAS
   SET(HEADERS ${HEADERS}
@@ -205,6 +205,14 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     Sacado_Fad_BLASImp.hpp
     Sacado_Fad_LAPACK.hpp
     Sacado_Fad_LAPACKImp.hpp
+    )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_TeuchosCore)
+
+  # ScalarTraits
+  SET(HEADERS ${HEADERS}
     Sacado_Fad_ScalarTraitsImp.hpp
     Sacado_Tay_ScalarTraitsImp.hpp
     )
@@ -236,7 +244,17 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
 
   ENDIF(${PACKAGE_NAME}_ENABLE_PARAMLIB)
 
-ENDIF(${PACKAGE_NAME}_ENABLE_Teuchos)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_TeuchosComm)
+
+  # SerializationTraits
+  SET(HEADERS ${HEADERS}
+    Sacado_Fad_SerializationTraitsImp.hpp
+    Sacado_Tay_SerializationTraitsImp.hpp
+    )
+
+ENDIF()
 
 #mpl
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mpl)
