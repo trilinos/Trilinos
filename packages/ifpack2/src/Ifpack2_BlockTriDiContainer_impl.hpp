@@ -1423,6 +1423,12 @@ namespace Ifpack2 {
 #else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked algo_type;
 #endif
+      static int recommended_team_size(const int blksize, 
+    				       const int vector_length, 
+    				       const int internal_vector_length) { 
+	return 1;
+      }
+
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
@@ -1430,6 +1436,27 @@ namespace Ifpack2 {
     struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
       typedef KokkosBatched::Experimental::Mode::Team mode_type;
       typedef KokkosBatched::Experimental::Algo::Level3::Unblocked algo_type;
+      static int recommended_team_size(const int blksize, 
+    				       const int vector_length, 
+    				       const int internal_vector_length) { 
+    	const int vector_size = vector_length/internal_vector_length;
+    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
+	// to match the old code behavior when internal vector length is 1
+	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+      }
+    };
+    template<>
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaUVMSpace> {
+      typedef KokkosBatched::Experimental::Mode::Team mode_type;
+      typedef KokkosBatched::Experimental::Algo::Level3::Unblocked algo_type;
+      static int recommended_team_size(const int blksize, 
+    				       const int vector_length, 
+    				       const int internal_vector_length) { 
+    	const int vector_size = vector_length/internal_vector_length;
+    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
+	// to match the old code behavior when internal vector length is 1
+	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+      }
     };
 #endif
 
@@ -1481,6 +1508,7 @@ namespace Ifpack2 {
       // diagonal safety
       const magnitude_type tiny;
       const local_ordinal_type vector_loop_size;
+      const local_ordinal_type vector_length_value;
 
     public:
       ExtractAndFactorizeTridiags(const BlockTridiags<MatrixType> &btdm_, 
@@ -1512,9 +1540,56 @@ namespace Ifpack2 {
         blocksize_square(blocksize*blocksize),
         // diagonal weight to avoid zero pivots
         tiny(tiny_),
-	vector_loop_size(vector_length/internal_vector_length) {}
+	vector_loop_size(vector_length/internal_vector_length),
+	vector_length_value(vector_length) {}
 
     private:
+
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      extract(const local_ordinal_type &packidx) const {
+        local_ordinal_type partidx = packptr(packidx);
+        local_ordinal_type npacks = packptr(packidx+1) - partidx;
+
+        const size_type kps = pack_td_ptr(partidx);
+        local_ordinal_type kfs[vector_length] = {};
+        local_ordinal_type ri0[vector_length] = {};
+        local_ordinal_type nrows[vector_length] = {};
+
+        for (local_ordinal_type vi=0;vi<npacks;++vi,++partidx) {
+          kfs[vi] = flat_td_ptr(partidx);
+          ri0[vi] = partptr(partidx);
+          nrows[vi] = partptr(partidx+1) - ri0[vi];
+        }
+        for (local_ordinal_type tr=0,j=0;tr<nrows[0];++tr) {
+          for (local_ordinal_type e=0;e<3;++e) {
+            const impl_scalar_type* block[vector_length] = {};
+            for (local_ordinal_type vi=0;vi<npacks;++vi) {
+              const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
+              block[vi] = &A_values(Aj*blocksize_square);
+            }
+            const size_type pi = kps + j;
+            ++j;
+            for (local_ordinal_type ii=0;ii<blocksize;++ii) {
+              for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                const auto idx = ii*blocksize + jj;
+                auto& v = internal_vector_values(pi, ii, jj, 0);
+                for (local_ordinal_type vi=0;vi<npacks;++vi) 
+                  v[vi] = block[vi][idx];
+              }
+            }
+
+            if (nrows[0] == 1) break;
+            if (e == 1 && (tr == 0 || tr+1 == nrows[0])) break;
+            for (local_ordinal_type vi=1;vi<npacks;++vi) {
+              if ((e == 0 && nrows[vi] == 1) || (e == 1 && tr+1 == nrows[vi])) {
+                npacks = vi;
+                break;
+              }
+            }
+          }
+        }
+      }
 
       KOKKOS_INLINE_FUNCTION 
       void 
@@ -1542,12 +1617,14 @@ namespace Ifpack2 {
         }
       }
 
+      template<typename AAViewType>
       KOKKOS_INLINE_FUNCTION 
       void 
       factorize(const member_type &member, 
 		const local_ordinal_type &i0,
 		const local_ordinal_type &nrows,
-                const local_ordinal_type &v) const {
+                const local_ordinal_type &v,
+		const AAViewType &AA) const {
         namespace KB = KokkosBatched::Experimental;
 
         typedef ExtractAndFactorizeTridiagsDefaultModeAndAlgo
@@ -1559,8 +1636,9 @@ namespace Ifpack2 {
         const auto one = Kokkos::ArithTraits<magnitude_type>::one();
 
         // subview pattern
-        auto A = Kokkos::subview(internal_vector_values, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
-        A.assign_data( &internal_vector_values(i0,0,0,v) );
+        auto A = Kokkos::subview(AA, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
+	  //Kokkos::subview(internal_vector_values, i0, Kokkos::ALL(), Kokkos::ALL(), 0);
+        A.assign_data( &AA(i0,0,0,v) );
         KB::LU<member_type,
                default_mode_type,KB::Algo::LU::Unblocked>
           ::invoke(member, A , tiny);
@@ -1569,17 +1647,17 @@ namespace Ifpack2 {
           auto C = A;
           local_ordinal_type i = i0;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
-            B.assign_data( &internal_vector_values(i+1,0,0,v) );
+            B.assign_data( &AA(i+1,0,0,v) );
             KB::Trsm<member_type,
                      KB::Side::Left,KB::Uplo::Lower,KB::Trans::NoTranspose,KB::Diag::Unit,
                      default_mode_type,default_algo_type>
               ::invoke(member, one, A, B);
-            C.assign_data( &internal_vector_values(i+2,0,0,v) );
+            C.assign_data( &AA(i+2,0,0,v) );
             KB::Trsm<member_type,
                      KB::Side::Right,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
                      default_mode_type,default_algo_type>
               ::invoke(member, one, A, C);
-            A.assign_data( &internal_vector_values(i+3,0,0,v) );
+            A.assign_data( &AA(i+3,0,0,v) );
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
@@ -1592,10 +1670,13 @@ namespace Ifpack2 {
       }
 
     public:
-      
+
+      struct ExtractAndFactorizeScalarTag {};
+      struct ExtractAndFactorizeInternalVectorTag {};
+
       KOKKOS_INLINE_FUNCTION 
       void 
-      operator() (const member_type &member) const {
+      operator() (const ExtractAndFactorizeScalarTag &, const member_type &member) const {
 	// btdm is packed and sorted from largest one 
 	const local_ordinal_type packidx = member.league_rank();
 
@@ -1603,30 +1684,56 @@ namespace Ifpack2 {
 	const local_ordinal_type npacks = packptr(packidx+1) - partidx;
 	const local_ordinal_type i0 = pack_td_ptr(partidx);
 	const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
+        if (vector_length_value == 1) {
+          extract(packidx);
+          factorize(member, i0, nrows, 0, scalar_values);
+        } else {
+          Kokkos::parallel_for
+            (Kokkos::ThreadVectorRange(member, vector_length_value), [&](const local_ordinal_type &v) {
+              if (v < npacks) extract(member, partidx+v, v);
+              factorize(member, i0, nrows, v, scalar_values);
+            });
+        }
+      }
 
-	Kokkos::parallel_for
-	  (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
-            const local_ordinal_type vbeg = v*internal_vector_length;
-            const local_ordinal_type vend = vbeg + internal_vector_length;
-            for (local_ordinal_type vv=vbeg;vv<vend;++vv)
-              if (vv < npacks) extract(member, partidx+vv, vv);
-	    member.team_barrier();
-	    factorize(member, i0, nrows, v);
-	  });
+      KOKKOS_INLINE_FUNCTION 
+      void 
+      operator() (const ExtractAndFactorizeInternalVectorTag &, const member_type &member) const {
+	// btdm is packed and sorted from largest one 
+	const local_ordinal_type packidx = member.league_rank();
+
+	const local_ordinal_type partidx = packptr(packidx);
+	const local_ordinal_type npacks = packptr(packidx+1) - partidx;
+	const local_ordinal_type i0 = pack_td_ptr(partidx);
+	const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
+        if (vector_loop_size == 1) {
+          extract(packidx);
+          factorize(member, i0, nrows, 0, internal_vector_values);
+        } else {          
+          Kokkos::parallel_for
+            (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
+              const local_ordinal_type vbeg = v*internal_vector_length;
+              const local_ordinal_type vend = vbeg + internal_vector_length;
+              for (local_ordinal_type vv=vbeg;vv<vend;++vv)
+                if (vv < npacks) extract(member, partidx+vv, vv);
+              factorize(member, i0, nrows, v, internal_vector_values);
+            });
+        }
       }
 
       void run() {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
-
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
-        const team_policy_type policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size); 
-#else // Host architecture: team size is always one
-        const team_policy_type policy(packptr.extent(0)-1, 1, 1); 
-#endif
-        Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run", policy, *this);
-        
+	const local_ordinal_type blocksize = internal_vector_values.extent(1);
+	const local_ordinal_type team_size = ExtractAndFactorizeTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
+	  recommended_team_size(blocksize, vector_length, internal_vector_length);
+	Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeInternalVectorTag>
+	  policy(packptr.extent(0)-1, team_size, vector_loop_size); 
+	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run", 
+			     //policy.set_scratch_size(0,Kokkos::PerTeam(10000)), 
+			     policy, *this);
+	
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
@@ -1930,6 +2037,11 @@ namespace Ifpack2 {
 #else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked multi_vector_algo_type;
 #endif
+      static int recommended_team_size(const int blksize, 
+				       const int vector_length, 
+				       const int internal_vector_length) { 
+	return 1; 
+      }
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
@@ -1938,6 +2050,27 @@ namespace Ifpack2 {
       typedef KokkosBatched::Experimental::Mode::Team mode_type;
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
       typedef KokkosBatched::Experimental::Algo::Level3::Unblocked multi_vector_algo_type;
+      static int recommended_team_size(const int blksize, 
+				       const int vector_length, 
+				       const int internal_vector_length) { 
+	const int vector_size = vector_length/internal_vector_length;
+    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
+	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+      }
+    };
+    template<>
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::CudaUVMSpace> {
+      typedef KokkosBatched::Experimental::Mode::Team mode_type;
+      typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
+      typedef KokkosBatched::Experimental::Algo::Level3::Unblocked multi_vector_algo_type;
+      static int recommended_team_size(const int blksize, 
+    				       const int vector_length, 
+    				       const int internal_vector_length) { 
+    	const int vector_size = vector_length/internal_vector_length;
+    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
+	// to match the old code behavior when internal vector length is 1
+	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+      }
     };
 #endif
 
@@ -2223,56 +2356,54 @@ namespace Ifpack2 {
 	  });
       }      
 
-      template<int B>
-      void runSpecificBlocksize() {
-        const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);        
-        if (num_vectors == 1) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
-          const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > 
-            policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size);
-#else
-          const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > 
-            policy(packptr.extent(0)-1, 1, 1);
-#endif
-          Kokkos::parallel_for                                      
-            ("SolveTridiags::TeamPolicy::run<SingleVector>", policy, *this);
-        } else {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
-          const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > 
-            policy(packptr.extent(0)-1, Kokkos::AUTO(), vector_loop_size);
-#else
-          const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > 
-            policy(packptr.extent(0)-1, 1, 1);
-#endif
-          Kokkos::parallel_for
-            ("SolveTridiags::TeamPolicy::run<MultiVector>", policy, *this);
-        }         
-      }
-
       void run() {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
-#endif
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
-        const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
-        switch (blocksize) {
-        case   3: runSpecificBlocksize< 3>(); break;
-        case   5: runSpecificBlocksize< 5>(); break;
-        case   7: runSpecificBlocksize< 7>(); break;
-        case   9: runSpecificBlocksize< 9>(); break; 
-        case  10: runSpecificBlocksize<10>(); break;
-        case  11: runSpecificBlocksize<11>(); break;
-        case  16: runSpecificBlocksize<16>(); break;
-        case  17: runSpecificBlocksize<17>(); break;
-        case  18: runSpecificBlocksize<18>(); break;
-        default : runSpecificBlocksize< 0>(); break;
-        }
+
+#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
+#endif   
+
+	const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);
+	const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
+
+	const local_ordinal_type team_size = 
+	  SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
+	  recommended_team_size(blocksize, vector_length, internal_vector_length);
+	
+#define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)			\
+	if (num_vectors == 1) {						\
+	  const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > \
+	    policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+	  Kokkos::parallel_for						\
+	    ("SolveTridiags::TeamPolicy::run<SingleVector>", policy, *this); \
+	} else {							\
+	  const Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> > \
+	    policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+	  Kokkos::parallel_for						\
+	    ("SolveTridiags::TeamPolicy::run<MultiVector>", policy, *this); \
+	} break
+	
+	switch (blocksize) {
+	case   3: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 3);
+	case   5: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 5);
+	case   7: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 7);
+	case   9: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 9);
+	case  10: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(10);
+	case  11: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(11);
+	case  16: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(16);
+	case  17: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(17);
+	case  18: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(18);
+	default : BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 0);            
+	}
+#undef BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS
+	
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
       }
+
     }; 
     
     ///
