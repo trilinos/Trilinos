@@ -192,17 +192,18 @@ fi
 # and there is no way to turn off the usage of response files with the CMake
 # Ninja generator as of CMake 3.14.0.  The problem is that when CUDA and
 # complex are enabled and shared libs are used, 'nvcc' is used to create the
-# kokkoskernels shared lib which has a ton of object files that trigger
-# internal the CMake logic to condense these down into a single
-# kokkoskernels.rsp file that it passes to 'nvcc' to create the kokkoskernels
-# library.  When that *.rsp file is passed to 'nvcc', it does not know how to
+# kokkoskernels shared lib which has a ton of object files which triggers
+# internal CMake logic to condense these down into a single kokkoskernels.rsp
+# file that it passes to 'nvcc' to create the kokkoskernels library.  When the
+# CMake-generated *.rsp file is passed to 'nvcc', it does not know how to
 # process it and it gives the error "No input files specified".  The
-# workaround is to switch to the CMake Makefile generator and turn off the
-# usage of response files for list of object files.  (The CMake Ninja
-# generator as of CMake 3.14 does not allow you to turn this off :-( ).  Note
-# that we don't yet need to switch the CMake Makefile generator 'static'
-# builds since 'ar' is used to create the kokkoskernels lib which triggers the
-# usage of response files for this target.
+# workaround is to switch to the CMake Makefile generator which allows and
+# turning off the usage of response files for the list of object files (and
+# 'nvcc' seems to be able to handle this long command-line in this case).
+# Note that we don't yet need to switch to use the CMake Makefile generator
+# for 'static' builds since 'ar' is used to create the kokkoskernels lib which
+# does not seem to have a problem with the creation of this lib.  (See
+# TRIL-255 and TRIL-264.)
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so
