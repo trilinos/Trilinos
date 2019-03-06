@@ -195,7 +195,8 @@ setInitialState(Scalar t0,
     x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
 
   // Set SolutionState MetaData from TimeStepControl
-  newState->setTime    (timeStepControl_->getInitTime());
+  //newState->setTime    (timeStepControl_->getInitTime());
+  newState->setTime    (t0);
   newState->setIndex   (timeStepControl_->getInitIndex());
   newState->setTimeStep(timeStepControl_->getInitTimeStep());
   int order = timeStepControl_->getInitOrder();
