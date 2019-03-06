@@ -52,7 +52,6 @@
 
 #include "exodusII.h"     // for ex_inquire_int, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_varid
 #include <stdio.h>
 
 /*

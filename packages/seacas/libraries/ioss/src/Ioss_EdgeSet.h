@@ -59,6 +59,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "EdgeSet"; }
     std::string short_type_string() const override { return "edgelist"; }
+    std::string contains_string() const override { return "Edge"; }
     EntityType  type() const override { return EDGESET; }
 
     // Handle implicit properties -- These are calcuated from data stored

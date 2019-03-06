@@ -263,8 +263,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       size_t cnt = 0;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
 
-        if (mesh->elem_type[ecnt] != SPHERE ||
-            (mesh->elem_type[ecnt] == SPHERE && problem->no_sph == 1)) {
+        if (mesh->elem_type[ecnt] != SPHERE || problem->no_sph == 1) {
           /*
            * for our purposes, the coordinate of the element will
            * be the average of the coordinates of the nodes that make
@@ -623,7 +622,6 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
             tmpdim[0] = nprocg[iloop];
             tmpdim[1] = 1;
             tmpdim[2] = 1;
-            totalproc = nprocg[iloop];
           }
           else {
             num_level = nprocg[iloop];

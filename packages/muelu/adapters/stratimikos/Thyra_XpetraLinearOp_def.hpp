@@ -197,12 +197,6 @@ void XpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
     rgMapExtractor = bA->getRangeMapExtractor();
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgMapExtractor));
   }
-
-  // copy back Xpetra results from tY to Thyra vector Y
-  Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateThyra(
-      tY_inout,
-      rgMapExtractor,
-      Teuchos::rcpFromPtr(Y_inout));
 }
 
 

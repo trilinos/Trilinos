@@ -82,6 +82,7 @@ public:
   std::pair<int, int> explicit_steps; // Only compare these two steps (db1:db2) if nonzero.
 
   int max_number_of_names{DEFAULT_MAX_NUMBER_OF_NAMES};
+  int max_warnings{100};
 
   std::vector<std::string> glob_var_names;
   Tolerance                glob_var_default{RELATIVE, 1.0e-6, 0.0};

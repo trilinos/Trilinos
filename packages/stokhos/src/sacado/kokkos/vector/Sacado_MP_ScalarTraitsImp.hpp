@@ -42,8 +42,6 @@
 #ifndef SACADO_MP_SCALAR_TRAITS_IMP_HPP
 #define SACADO_MP_SCALAR_TRAITS_IMP_HPP
 
-#ifdef HAVE_SACADO_TEUCHOS
-
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerializationTraits.hpp"
 #include "Teuchos_SerializationTraitsHelpers.hpp"
@@ -668,7 +666,5 @@ namespace Sacado {
   }
 
 }
-
-#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_MP_SCALAR_TRAITS_IMP_HPP

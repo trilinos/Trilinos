@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for EX_FATAL, exerrval, ex_err, etc
 #include "exodusII_int.h" // for ex_get_counter_list, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <assert.h>       // for assert
 #include <stddef.h>       // for size_t
 #include <stdint.h>       // for int64_t
@@ -189,10 +188,7 @@ int ex_copy(int in_exoid, int out_exoid)
   EXCHECK(cpy_variables(in_exoid, out_exoid, in_large, mesh_only));
 
   /* take the output file out of define mode */
-  if ((status = nc_enddef(out_exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d",
-             out_exoid);
-    ex_err_fn(out_exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(out_exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -248,10 +244,7 @@ int ex_copy_transient(int in_exoid, int out_exoid)
   EXCHECK(cpy_variables(in_exoid, out_exoid, in_large, mesh_only));
 
   /* take the output file out of define mode */
-  if ((status = nc_enddef(out_exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d",
-             out_exoid);
-    ex_err_fn(out_exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(out_exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

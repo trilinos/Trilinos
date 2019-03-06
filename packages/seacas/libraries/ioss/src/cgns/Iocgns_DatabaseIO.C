@@ -128,7 +128,9 @@ namespace {
     std::array<int, 3>               offset{{0, 0, 0}};
     std::bitset<6>                   face_adj;
 
+#ifdef SEACAS_HAVE_MPI
     bool split() const { return face_adj.any(); }
+#endif
   };
 
   std::pair<std::string, int> decompose_name(const std::string &name, bool is_parallel)
@@ -475,10 +477,10 @@ namespace Iocgns {
       // This isn't currently working since CGNS currently has chunking
       // disabled for HDF5 files and compression requires chunking.
       if (!is_input()) {
-	if (properties.exists("COMPRESSION_LEVEL")) {
-	  int comp = properties.get("COMPRESSION_LEVEL").get_int();
-	  cg_configure(CG_CONFIG_HDF5_COMPRESS, (void*)comp);
-	}
+        if (properties.exists("COMPRESSION_LEVEL")) {
+          int comp = properties.get("COMPRESSION_LEVEL").get_int();
+          cg_configure(CG_CONFIG_HDF5_COMPRESS, (void*)comp);
+        }
       }
 #endif
     }
@@ -1334,7 +1336,7 @@ namespace Iocgns {
     // least 1 "side" (face 3D or edge 2D).
     // Currently, assuming they are adjacent if they share at least one node...
 
-    size_t node_count = get_region()->get_property("node_count").get_int();
+    int64_t node_count = get_region()->get_property("node_count").get_int();
 
     const auto &blocks = get_region()->get_element_blocks();
     for (auto I = blocks.cbegin(); I != blocks.cend(); I++) {
@@ -1347,6 +1349,7 @@ namespace Iocgns {
       std::vector<size_t> I_nodes(node_count);
       for (size_t i = 0; i < I_map->size(); i++) {
         auto global     = I_map->map()[i + 1] - 1;
+        assert(global < node_count);
         I_nodes[global] = i + 1;
       }
       for (auto J = I + 1; J != blocks.end(); J++) {
@@ -1356,6 +1359,7 @@ namespace Iocgns {
         std::vector<cgsize_t> point_list_donor;
         for (size_t i = 0; i < J_map->size(); i++) {
           auto global = J_map->map()[i + 1] - 1;
+          assert(global < node_count);
           if (I_nodes[global] > 0) {
             // Have a match between nodes used by two different blocks,
             // They are adjacent...

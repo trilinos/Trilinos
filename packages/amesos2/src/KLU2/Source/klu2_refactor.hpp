@@ -477,7 +477,7 @@ Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
         }
     }
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     ASSERT (Offp [n] == poff) ;
     ASSERT (Symbolic->nzoff == poff) ;
     PRINTF (("\n------------------- Off diagonal entries, new:\n")) ;

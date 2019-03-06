@@ -74,8 +74,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
     stepperPL->get<std::string>("Predictor Name","None");
   if (is_null(predPL)) {
     if (predictorName != "None") {
-      RCP<ParameterList> predPL =
-        Teuchos::sublist(stepperPL, predictorName, true);
+      predPL = Teuchos::sublist(stepperPL, predictorName, true);
       RCP<StepperFactory<Scalar> > sf =
         Teuchos::rcp(new StepperFactory<Scalar>());
       predictorStepper_ =

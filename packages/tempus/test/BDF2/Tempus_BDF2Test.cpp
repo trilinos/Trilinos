@@ -261,7 +261,6 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     dt /= 2;
 
     // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     integrator = Tempus::integratorBasic<double>(pl, model);
@@ -293,11 +292,11 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
       RCP<Tempus::SolutionHistory<double> > solnHistExact =
         Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time = (*solutionHistory)[i]->getTime();
+        double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
           Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time).get_x(),
-            model->getExactSolution(time).get_x_dot()));
+            model->getExactSolution(time_i).get_x(),
+            model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
@@ -314,13 +313,13 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 
@@ -387,7 +386,6 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     dt /= 2;
 
     // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt/4.0);
     // Ensure time step does not get larger than the initial time step size,
@@ -442,12 +440,12 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
         double time_gold;
         sscanf(time_gold_char, "%lf", &time_gold);
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
+        double time_i = solutionState->getTime();
         //Throw error if time does not match time in gold file to specified tolerance
-        TEST_FLOATING_EQUALITY( time, time_gold, 1.0e-5 );
+        TEST_FLOATING_EQUALITY( time_i, time_gold, 1.0e-5 );
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        x_exact_plot = model->getExactSolution(time).get_x();
-        ftmp << time << "   "
+        x_exact_plot = model->getExactSolution(time_i).get_x();
+        ftmp << time_i << "   "
              << get_ele(*(x_plot), 0) << "   "
              << get_ele(*(x_plot), 1) << "   "
              << get_ele(*(x_exact_plot), 0) << "   "
@@ -466,13 +464,13 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 
@@ -566,7 +564,6 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     dt /= 2;
 
     // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     integrator = Tempus::integratorBasic<double>(pl, model);
@@ -644,12 +641,12 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
   if (comm->NumProc() == 1) {
-    RCP<ParameterList> pList =
+    RCP<ParameterList> pListCDR =
       getParametersFromXmlFile("Tempus_BDF2_CDR.xml");
-    RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
-    const int num_elements = model_pl->get<int>("num elements");
-    const double left_end = model_pl->get<double>("left end");
-    const double right_end = model_pl->get<double>("right end");
+    RCP<ParameterList> model_pl_CDR = sublist(pListCDR, "CDR Model", true);
+    const int num_elements = model_pl_CDR->get<int>("num elements");
+    const double left_end = model_pl_CDR->get<double>("left end");
+    const double right_end = model_pl_CDR->get<double>("right end");
 
     const Thyra::VectorBase<double>& x = *(solutions[solutions.size()-1]);
 
@@ -703,7 +700,6 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
     if (n == nTimeStepSizes-1) dt /= 10.0;
 
     // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =

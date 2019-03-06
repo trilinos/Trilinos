@@ -80,7 +80,7 @@ namespace {
     bool              reverse_normals{};
     bool              add_sset{};
     bool              convert_gage{};
-    FinalPressureType final_pressure;
+    FinalPressureType final_pressure{FINAL};
     double            delta_time{};
     double            maximum_time{};
     double            minimum_time{};

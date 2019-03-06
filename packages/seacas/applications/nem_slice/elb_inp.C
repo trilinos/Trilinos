@@ -688,7 +688,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                   Weight_Description<INT> *weight)
 {
   FILE *inp_fd;
-  char  ctemp[1024], inp_line[MAX_INP_LINE];
+  char  ctemp[2048], inp_line[MAX_INP_LINE];
   char  inp_copy[MAX_INP_LINE];
   char *cptr, *cptr2;
 
@@ -1726,12 +1726,6 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     if (nvars < weight->exo_vindx) {
       Gen_Error(0, "FATAL: requested variable index is larger than number in"
                    " ExodusII weighting file");
-      return 0;
-    }
-
-    if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "FATAL: variable index must be in the range [1,%d]", nvars);
-      Gen_Error(0, ctemp);
       return 0;
     }
 

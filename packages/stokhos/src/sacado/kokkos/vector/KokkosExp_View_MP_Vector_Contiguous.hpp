@@ -1003,9 +1003,16 @@ public:
       // Do not introduce padding...
       typedef std::integral_constant< unsigned , 0 >  padding ;
       offset_type offset( padding(), layout );
-      sacado_size_type sacado_size =
+
+      // Always use static dimension if we are static
+      const unsigned static_dim = StokhosStorageStaticDimension;
+      if (static_dim > 0)
+        return handle_type::memory_span( offset.span(), static_dim );
+
+      // Else get size from prescribed layout
+      const size_t sacado_size =
         Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout);
-      return handle_type::memory_span( offset.span(), sacado_size.value );
+      return handle_type::memory_span( offset.span(), sacado_size );
     }
 
   //----------------------------------------

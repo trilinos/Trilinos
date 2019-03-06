@@ -312,36 +312,45 @@ C                    for all node sets
           END IF
 
 C           if (num_of_node_sets > 0) then
-          IF (numnps .gt. 0 .and. LNPSNL .gt. 0) THEN
-C              Read the concatenated node sets
-            CALL EXGCNS(ndbin, a(kidns), a(knnns), a(kndnps),
-     &        a(kixnns), a(kdisns), a(kltnns), a(kfacns), ierr)
+          IF (numnps .gt. 0) then
+             if (LNPSNL .gt. 0) THEN
+C     Read the concatenated node sets
+                CALL EXGCNS(ndbin, ia(kidns), ia(knnns), ia(kndnps),
+     &               ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns),
+     $               ierr)
 
-C              Reserve scratch arrays for subroutine ZMNPS
-            CALL MDRSRV ('NEWIX', KNEWIX, NUMNP)
-            CALL MDRSRV ('IXNPS', KIXNPS, LNPSNO)
-            CALL MDSTAT (NERR, MEM)
-            IF (NERR .GT. 0) THEN
-              CALL MEMERR
-              MERR = 1
-              RETURN
-            END IF
-C              Compress the node set information by renumbering the
-C              nodes and removing deleted nodes
-            CALL ZMNPS (NUMNP, NUMNPO, A(KXNODE), NNPSO, LNPSNO,
-     &        A(KIDNS), A(KNNNS), A(KIXNNS), A(KNDNPS), A(KDISNS),
-     &        A(KLTNNS), A(KFACNS), A(KNEWIX), A(KIXNPS))
-C              Remove scratch arrays
-            CALL MDDEL ('NEWIX')
-            CALL MDDEL ('IXNPS')
-            CALL MDSTAT (NERR, MEM)
-            IF (NERR .GT. 0) THEN
-              CALL MEMERR
-              MERR = 1
-              RETURN
-            END IF
+C     Reserve scratch arrays for subroutine ZMNPS
+                CALL MDRSRV ('NEWIX', KNEWIX, NUMNP)
+                CALL MDRSRV ('IXNPS', KIXNPS, LNPSNO)
+                CALL MDSTAT (NERR, MEM)
+                IF (NERR .GT. 0) THEN
+                   CALL MEMERR
+                   MERR = 1
+                   RETURN
+                END IF
+C     Compress the node set information by renumbering the
+C     nodes and removing deleted nodes
+                CALL ZMNPS (NUMNP, NUMNPO, A(KXNODE), NNPSO, LNPSNO,
+     &               IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KNDNPS),
+     $               IA(KDISNS), IA(KLTNNS), A(KFACNS), IA(KNEWIX),
+     $               IA(KIXNPS))
+C     Remove scratch arrays
+                CALL MDDEL ('NEWIX')
+                CALL MDDEL ('IXNPS')
+                CALL MDSTAT (NERR, MEM)
+                IF (NERR .GT. 0) THEN
+                   CALL MEMERR
+                   MERR = 1
+                   RETURN
+                END IF
+             ELSE
+C ... Even though there are no nodes in the node set, we have told the output 
+C     database that there are (empty) node sets.  We need to read and write 
+C     the node set ids
+                CALL EXGNSI (NDBIN, IA(KIDNS), IERR)
+             END IF
           END IF
-        END IF
+       END IF
 
 C ****************************************************************
 C        Read and munch the side sets
@@ -416,8 +425,9 @@ C              Reserve scratch arrays for ZMESS
 
 C              Delete scratch arrays
             CALL MDDEL ('LTNNN')
-            CALL MDDEL ('NEWIX')
             CALL MDDEL ('IXESS')
+            CALL MDDEL ('NEWSD')
+            CALL MDDEL ('NEWIX')
             CALL MDSTAT(NERR, MEM)
             IF (NERR .GT. 0) THEN
               CALL MEMERR
@@ -870,6 +880,10 @@ c         CALL NCSNC (NDBOUT, IERR)
       CALL MDDEL ('VARVAL')
       CALL MDDEL ('IXELB')
       CALL MDDEL ('IXELBO')
+      if (iszoom .or. isfilter .or. (nelblk .ne. nelbo)) then
+        call mddel ('IXNODE')
+        CALL MDdel ('IXELEM')
+      end if
       CALL MDSTAT(NERR, MEM)
       IF (NERR .GT. 0) THEN
         CALL MEMERR

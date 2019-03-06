@@ -79,17 +79,27 @@ SolutionState<Scalar>::SolutionState(
     xdot_nc_        (Teuchos::null),
     xdotdot_        (xdotdot),
     xdotdot_nc_     (Teuchos::null),
-    stepperState_   (Teuchos::null),
+    stepperState_   (stepperState),
     stepperState_nc_(Teuchos::null),
-    physicsState_   (Teuchos::null),
+    physicsState_   (physicsState),
     physicsState_nc_(Teuchos::null)
 {
   metaData_nc_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
   metaData_    = metaData_nc_;
-  stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
-  stepperState_    = stepperState_nc_;
-  physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
-  physicsState_    = physicsState_nc_;
+
+  using Teuchos::rcp_const_cast;
+  if (stepperState_ == Teuchos::null) {
+    stepperState_nc_ = Teuchos::rcp(new StepperState<Scalar>("Default"));
+    stepperState_    = stepperState_nc_;
+  } else {
+    stepperState_nc_ = rcp_const_cast<StepperState<Scalar> >(stepperState_);
+  }
+  if (physicsState_ == Teuchos::null) {
+    physicsState_nc_ = Teuchos::rcp(new PhysicsState<Scalar> ());
+    physicsState_    = physicsState_nc_;
+  } else {
+    physicsState_nc_ = rcp_const_cast<PhysicsState<Scalar> >(physicsState_);
+  }
 }
 
 

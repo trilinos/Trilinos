@@ -99,43 +99,41 @@ namespace {
       return;
     }
     const char *tokens = option.c_str();
-    if (tokens != nullptr) {
-      if (strchr(tokens, ':') != nullptr) {
-        // The string contains a separator
+    if (strchr(tokens, ':') != nullptr) {
+      // The string contains a separator
 
-        int vals[3];
-        vals[0] = start;
-        vals[1] = stop;
-        vals[2] = increment;
+      int vals[3];
+      vals[0] = start;
+      vals[1] = stop;
+      vals[2] = increment;
 
-        int j = 0;
-        for (auto &val : vals) {
-          // Parse 'i'th field
-          char tmp_str[128];
-          ;
-          int k = 0;
+      int j = 0;
+      for (auto &val : vals) {
+        // Parse 'i'th field
+        char tmp_str[128];
+        ;
+        int k = 0;
 
-          while (tokens[j] != '\0' && tokens[j] != ':') {
-            tmp_str[k++] = tokens[j++];
-          }
-
-          tmp_str[k] = '\0';
-          if (strlen(tmp_str) > 0) {
-            val = strtol(tmp_str, nullptr, 0);
-          }
-
-          if (tokens[j++] == '\0') {
-            break; // Reached end of string
-          }
+        while (tokens[j] != '\0' && tokens[j] != ':') {
+          tmp_str[k++] = tokens[j++];
         }
-        start     = vals[0];
-        stop      = vals[1];
-        increment = vals[2];
+
+        tmp_str[k] = '\0';
+        if (strlen(tmp_str) > 0) {
+          val = strtol(tmp_str, nullptr, 0);
+        }
+
+        if (tokens[j++] == '\0') {
+          break; // Reached end of string
+        }
       }
-      else {
-        // Does not contain a separator, min == max
-        start = stop = strtol(tokens, nullptr, 0);
-      }
+      start     = vals[0];
+      stop      = vals[1];
+      increment = vals[2];
+    }
+    else {
+      // Does not contain a separator, min == max
+      start = stop = strtol(tokens, nullptr, 0);
     }
   }
 
@@ -349,17 +347,16 @@ void SystemInterface::enroll_options()
                   "\t\tmaps in the two files.",
                   nullptr);
   options_.enroll("match_file_order", GetLongOption::NoValue,
-                  "Invokes a matching algorithm using the node and element position\n"
-                  "\t\torder in the two files.",
+                  "Verifies that node and element ids match and are in same order\n"
+                  "\t\tin the two files.",
                   nullptr);
   options_.enroll("match_by_name", GetLongOption::NoValue,
                   "Match element blocks, nodesets, and sidesets by name instead of by id.",
                   nullptr);
-  options_.enroll(
-      "show_unmatched", GetLongOption::NoValue,
-      "If the -partial switch is given, this prints out the elements that did not match.", nullptr);
+  options_.enroll("show_unmatched", GetLongOption::NoValue,
+                  "If the -partial switch used, print the elements that did not match.", nullptr);
   options_.enroll("dumpmap", GetLongOption::NoValue,
-                  "If the -map switch is given, this prints out the resulting map.", nullptr);
+                  "If the -map switch used, print the resulting node and element maps.", nullptr);
   options_.enroll("nsmap", GetLongOption::NoValue,
                   "Creates a map between the nodeset nodes in the two files\n"
                   "\t\tif they include the same nodes, but are in different order.",
@@ -455,6 +452,10 @@ void SystemInterface::enroll_options()
                   "There is a compiled limit of 1000 exodus names.\n"
                   "\t\tThis option allows the maximum number to be changed.",
                   "1000");
+  options_.enroll(
+      "max_warnings", GetLongOption::MandatoryValue,
+      "Maximum number of warnings to output during element/node matching process.  Default 100.",
+      "100");
   options_.enroll("use_old_floor", GetLongOption::NoValue,
                   "use the older definition of the floor tolerance.\n"
                   "\t\tOLD: ignore if |a-b| < floor.\n"
@@ -863,6 +864,15 @@ bool SystemInterface::parse_options(int argc, char **argv)
       if (tmp > 0) {
         Set_Max_Names(tmp);
       }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("max_warnings");
+    if (temp != nullptr) {
+      errno        = 0;
+      max_warnings = atoi(temp);
+      SMART_ASSERT(errno == 0);
     }
   }
 

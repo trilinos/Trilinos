@@ -187,7 +187,6 @@ initializeSolutionHistory(Scalar t0,
   using Thyra::VectorSpaceBase;
   using Thyra::assign;
   using Thyra::createMember;
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   //
   // Create and initialize product X, Xdot, Xdotdot

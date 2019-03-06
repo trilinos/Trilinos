@@ -80,7 +80,7 @@ void StepperBDF2<Scalar>::setStartUpStepper(
     if (startUpStepper_ == Teuchos::null) {
       if (startupStepperName != "None") {
         // Construct from ParameterList
-        RCP<ParameterList> startupStepperPL =
+        startupStepperPL =
           Teuchos::sublist(this->stepperPL_, startupStepperName, true);
         RCP<StepperFactory<Scalar> > sf =
           Teuchos::rcp(new StepperFactory<Scalar>());

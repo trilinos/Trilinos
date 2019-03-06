@@ -143,7 +143,7 @@ C     --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       CALL PCKSTR (1, STRA)
       LSTRA = LENSTR (STRA)
       WRITE (STRB, 10010, IOSTAT=IDUM) LESSEL
-10010 FORMAT ('(index=', I10, ')')
+10010 FORMAT ('(index=', I12, ')')
       CALL PCKSTR (1, STRB)
       LSTRB = LENSTR (STRB)
       WRITE (STRC, 10010, IOSTAT=IDUM) LESSNL
@@ -326,16 +326,16 @@ C           nodsid is only for the current sideset.
  20   FORMAT('1PE',I2.2,'.',I2.2)
 10020 FORMAT (/, 1X, 'ELEMENT SIDE SETS', :, ' - ', A)
 10025 FORMAT (1x, 'Element Ids are Global')
-10030 FORMAT (1X, 'Set', I10, 1X, A, ':',
-     &  I10, ' elements', 1X, A,
-     &  I10, ' nodes/df', 1X, A, ' name = "',A,'"')
-10040 FORMAT ((1X, 8I10))
-10045 FORMAT ((1X, 8(I10,'.',I1)))
+10030 FORMAT (1X, 'Set', I12, 1X, A, ':',
+     &  I12, ' elements', 1X, A,
+     &  I12, ' nodes/df', 1X, A, ' name = "',A,'"')
+10040 FORMAT ((1X, 8I12))
+10045 FORMAT ((1X, 8(I12,'.',I1)))
 10050 FORMAT ((1X, 6 (1X, 1pE11.4)))
 10055 FORMAT ('(10x, ''All distribution factors are equal to ''', A,')')
 10060 FORMAT (10x, 'Distribution factors not stored in file.')
 10070 FORMAT ((2x,4(2X, A)))
 10090 FORMAT ((2x,3(2X, A)))
 10080 FORMAT (1X)
-10100 FORMAT ('((1X, I10,''.'',I1,8x,(8(1x,I10,1x,',A,')))))')
+10100 FORMAT ('((1X, I12,''.'',I1,8x,(8(1x,I12,1x,',A,')))))')
       END

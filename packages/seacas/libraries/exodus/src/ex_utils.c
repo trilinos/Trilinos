@@ -1522,8 +1522,10 @@ void ex_compress_variable(int exoid, int varid, int type)
     int deflate_level = file->compression_level;
     int compress      = 1;
     int shuffle       = file->shuffle;
-    if (!file->is_parallel && deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
-      nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+    if (deflate_level > 0 && file->is_hdf5) {
+      if (type != 3) { /* Do not try to compress character data */
+	nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+      }
     }
 #if defined(PARALLEL_AWARE_EXODUS)
     if (type != 3 && file->is_parallel && file->is_hdf5) {
@@ -1532,6 +1534,20 @@ void ex_compress_variable(int exoid, int varid, int type)
 #endif
   }
 #endif
+}
+
+int ex_leavedef(int exoid, const char *call_rout)
+{
+  char errmsg[MAX_ERR_LENGTH];
+  int  status;
+
+  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+    ex_err_fn(exoid, call_rout, errmsg, status);
+
+    return (EX_FATAL);
+  }
+  return (EX_NOERR);
 }
 
 static int warning_output = 0;
@@ -1713,11 +1729,16 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     else if (my_mode & EX_PNETCDF) {
       pariomode = NC_PNETCDF;
       /* See if client specified 64-bit or not... */
-      if ((int64_status & EX_ALL_INT64_DB) != 0) {
+      if ((my_mode & EX_64BIT_DATA) || (int64_status & EX_ALL_INT64_DB)) {
         tmp_mode = EX_64BIT_DATA;
       }
       else {
-        tmp_mode = EX_64BIT_OFFSET;
+	if (my_mode & EX_64BIT_DATA) {
+	  tmp_mode = EX_64BIT_DATA;
+	}
+	else {
+	  tmp_mode = EX_64BIT_OFFSET;
+	}
       }
 #if !NC_HAS_PNETCDF
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -1961,10 +1982,15 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_para
     }
   }
 
+#if 0
+  /* Testing to see if can eliminate some nc_enddef movement of vars/recs */
+  if ((status = nc__enddef(exoid, 10000, 4, 10000, 4)) != NC_NOERR) {
+#else
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
-  }
-  return EX_NOERR;
+#endif
+  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+  ex_err_fn(exoid, __func__, errmsg, status);
+  return (EX_FATAL);
+}
+return EX_NOERR;
 }

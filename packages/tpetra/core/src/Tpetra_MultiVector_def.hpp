@@ -299,51 +299,6 @@ namespace { // (anonymous)
 
 namespace Tpetra {
 
-  namespace Details {
-    // Work-around for #3823.  The right way to fix this is to fix
-    // KokkosBlas::dot for complex, but this at least makes Tpetra's
-    // tests pass for complex.
-    template<class XVector,class YVector>
-    typename std::enable_if<
-      Kokkos::ArithTraits<typename XVector::non_const_value_type>::is_complex ||
-        Kokkos::ArithTraits<typename YVector::non_const_value_type>::is_complex,
-      typename ::Kokkos::Details::InnerProductSpaceTraits<
-        typename XVector::non_const_value_type>::dot_type>::type
-    localDotWorkAround (const XVector& x, const YVector& y)
-    {
-      using x_value_type = typename XVector::non_const_value_type;
-
-      using IPT = ::Kokkos::Details::InnerProductSpaceTraits<x_value_type>;
-      using dot_type = typename IPT::dot_type;
-      using execution_space = typename XVector::execution_space;
-      using range_type = Kokkos::RangePolicy<execution_space, int>;
-      // Use double precision internally; this should improve
-      // accuracy for complex<float> and thus help more tests pass.
-      using impl_dot_type = typename Teuchos::ScalarTraits<dot_type>::doublePrecision;
-
-      impl_dot_type result;
-      Kokkos::parallel_reduce
-        ("Tpetra::MultiVector oneColDotWorkAround",
-         range_type (0, x.extent (0)),
-         KOKKOS_LAMBDA (const int lclRow, impl_dot_type& dst) {
-          dst += IPT::dot (x(lclRow), y(lclRow));
-        }, result);
-      return static_cast<dot_type> (result);
-    }
-
-    template<class XVector,class YVector>
-    typename std::enable_if<
-      !Kokkos::ArithTraits<typename XVector::non_const_value_type>::is_complex &&
-        !Kokkos::ArithTraits<typename YVector::non_const_value_type>::is_complex,
-      typename ::Kokkos::Details::InnerProductSpaceTraits<
-        typename XVector::non_const_value_type>::dot_type>::type
-    localDotWorkAround (const XVector& x, const YVector& y)
-    {
-      return KokkosBlas::dot (x, y);
-    }
-  } // namespace Details
-
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1426,6 +1381,7 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
+    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombineNew");
 
@@ -1493,9 +1449,7 @@ namespace Tpetra {
     }
 
     // We have to sync before modifying, because this method may read
-    // as well as write (depending on the CombineMode).  This matters
-    // because copyAndPermute may have modified *this in the other
-    // memory space.
+    // as well as write (depending on the CombineMode).
     if (unpackOnHost) {
       if (this->need_sync_host ()) {
         this->sync_host ();
@@ -1542,33 +1496,40 @@ namespace Tpetra {
       required to be contiguous. */
 
     if (numVecs > 0 && importLIDs.extent (0) > 0) {
-      typedef typename Kokkos::DualView<double*,
-        device_type>::t_dev::execution_space dev_exec_space;
-      typedef typename Kokkos::DualView<double*,
-        device_type>::t_host::execution_space host_exec_space;
+      using dev_exec_space = typename dual_view_type::t_dev::execution_space;
+      using host_exec_space = typename dual_view_type::t_host::execution_space;
+
+      // This fixes GitHub Issue #4418.
+      const bool use_atomic_updates = unpackOnHost ?
+	host_exec_space::concurrency () != 1 :
+	dev_exec_space::concurrency () != 1;
+
+      if (printDebugOutput) {
+	std::ostringstream os;
+	os << *prefix << "Unpack: " << combineModeToString (CM) << endl;
+	std::cerr << os.str ();
+      }
 
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
-      // custom combine modes, start editing here.  Also, if you trust
-      // inlining, it would be nice to condense this code by using a
-      // binary function object f in the pack functors.
+      // custom combine modes, start editing here.
+      
       if (CM == INSERT || CM == REPLACE) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << *prefix << "Unpack: INSERT / REPLACE" << endl;
-          std::cerr << os.str ();
-        }
-        KokkosRefactor::Details::InsertOp<execution_space> op;
+	using op_type = KokkosRefactor::Details::InsertOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
-                                       X_h, imports_h, importLIDs_h, op,
-                                       numVecs, debugCheckIndices);
+                                       X_h, imports_h, importLIDs_h,
+				       op_type (), numVecs,
+				       use_atomic_updates,
+                                       debugCheckIndices);
 
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
-                                       X_d, imports_d, importLIDs_d, op,
-                                       numVecs, debugCheckIndices);
+                                       X_d, imports_d, importLIDs_d,
+				       op_type (), numVecs,
+				       use_atomic_updates,
+                                       debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1576,37 +1537,40 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
-                                                       whichVecs_h, op,
+                                                       whichVecs_h,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
-                                                       whichVecs_d, op,
+                                                       whichVecs_d,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else if (CM == ADD) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << *prefix << "Unpack: ADD" << endl;
-          std::cerr << os.str ();
-        }
-        KokkosRefactor::Details::AddOp<execution_space> op;
+	using op_type = KokkosRefactor::Details::AddOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
-                                       X_h, imports_h, importLIDs_h, op,
-                                       numVecs, debugCheckIndices);
+                                       X_h, imports_h, importLIDs_h,
+				       op_type (), numVecs,
+				       use_atomic_updates,
+                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
-                                       X_d, imports_d, importLIDs_d, op,
-                                       numVecs, debugCheckIndices);
+                                       X_d, imports_d, importLIDs_d,
+				       op_type (), numVecs,
+                                       use_atomic_updates,
+				       debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1614,37 +1578,40 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
-                                                       whichVecs_h, op,
+                                                       whichVecs_h,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
-                                                       whichVecs_d, op,
+                                                       whichVecs_d,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else if (CM == ABSMAX) {
-        if (printDebugOutput) {
-          std::ostringstream os;
-          os << *prefix << "Unpack: ABSMAX" << endl;
-          std::cerr << os.str ();
-        }
-        KokkosRefactor::Details::AbsMaxOp<execution_space> op;
+	using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
-                                       X_h, imports_h, importLIDs_h, op,
-                                       numVecs, debugCheckIndices);
+                                       X_h, imports_h, importLIDs_h,
+				       op_type (), numVecs,
+                                       use_atomic_updates,
+				       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
-                                       X_d, imports_d, importLIDs_d, op,
-                                       numVecs, debugCheckIndices);
+                                       X_d, imports_d, importLIDs_d,
+				       op_type (), numVecs,
+                                       use_atomic_updates,
+				       debugCheckIndices);
           }
         }
         else {
@@ -1652,19 +1619,27 @@ namespace Tpetra {
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
-                                                       whichVecs_h, op,
+                                                       whichVecs_h,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
-                                                       whichVecs_d, op,
+                                                       whichVecs_d,
+						       op_type (),
                                                        numVecs,
+						       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+	  (true, std::logic_error, "Invalid CombineMode");
       }
     }
     else {
@@ -1863,8 +1838,7 @@ namespace Tpetra {
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
         auto y_2d = y.template getLocalView<dev_memory_space> ();
         auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
-        // Work-around for #3823; see notes above.
-        lclDot = ::Tpetra::Details::localDotWorkAround (x_1d, y_1d);
+        lclDot = KokkosBlas::dot (x_1d, y_1d);
 
         if (x.isDistributed ()) {
           using Teuchos::outArg;
