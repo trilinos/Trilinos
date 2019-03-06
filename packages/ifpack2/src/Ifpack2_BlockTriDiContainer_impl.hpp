@@ -2644,14 +2644,12 @@ namespace Ifpack2 {
           (Kokkos::TeamThreadRange(member, blocksize), 
            [&](const local_ordinal_type &k0) {
             impl_scalar_type val = 0;
-            Kokkos::parallel_reduce
+            Kokkos::parallel_for
               (Kokkos::ThreadVectorRange(member, blocksize), 
-               [&](const local_ordinal_type &k1, impl_scalar_type &update) {
-                update += AA(k0,k1)*xx(k1);
-              }, val);
-            Kokkos::single(Kokkos::PerThread(member), [&]() {
-                yy(k0) -= val;
+               [&](const local_ordinal_type &k1) {
+                val += AA(k0,k1)*xx(k1);
               });
+	    Kokkos::atomic_fetch_add(&yy(k0), -val);
           });
       }
 
