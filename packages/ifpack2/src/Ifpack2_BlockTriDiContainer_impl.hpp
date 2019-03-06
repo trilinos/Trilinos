@@ -1432,6 +1432,19 @@ namespace Ifpack2 {
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
+    int ExtractAndFactorizeRecommendedCudaTeamSize(const int blksize,
+						   const int vector_length,
+						   const int internal_vector_length) {      
+      const int vector_size = vector_length/internal_vector_length;
+      int total_team_size(0);
+      if      (blksize <=  5) total_team_size =  32;
+      else if (blksize <=  9) total_team_size =  64;
+      else if (blksize <= 12) total_team_size =  96;
+      else if (blksize <= 16) total_team_size = 128;
+      else if (blksize <= 20) total_team_size = 160;
+      else                    total_team_size = 160;
+      return 2*total_team_size/vector_size; 
+    }
     template<>
     struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
       typedef KokkosBatched::Experimental::Mode::Team mode_type;
@@ -1439,10 +1452,7 @@ namespace Ifpack2 {
       static int recommended_team_size(const int blksize, 
     				       const int vector_length, 
     				       const int internal_vector_length) { 
-    	const int vector_size = vector_length/internal_vector_length;
-    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
-	// to match the old code behavior when internal vector length is 1
-	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+	return ExtractAndFactorizeRecommendedCudaTeamSize(blksize, vector_length, internal_vector_length);
       }
     };
     template<>
@@ -1452,10 +1462,7 @@ namespace Ifpack2 {
       static int recommended_team_size(const int blksize, 
     				       const int vector_length, 
     				       const int internal_vector_length) { 
-    	const int vector_size = vector_length/internal_vector_length;
-    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
-	// to match the old code behavior when internal vector length is 1
-	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+	return ExtractAndFactorizeRecommendedCudaTeamSize(blksize, vector_length, internal_vector_length);
       }
     };
 #endif
@@ -2045,6 +2052,20 @@ namespace Ifpack2 {
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
+    int SolveTridiagsRecommendedCudaTeamSize(const int blksize,
+					     const int vector_length,
+					     const int internal_vector_length) {      
+      const int vector_size = vector_length/internal_vector_length;
+      int total_team_size(0);
+      if      (blksize <=  5) total_team_size =  32;
+      else if (blksize <=  9) total_team_size =  64;
+      else if (blksize <= 12) total_team_size =  96;
+      else if (blksize <= 16) total_team_size = 128;
+      else if (blksize <= 20) total_team_size = 160;
+      else                    total_team_size = 160;
+      return total_team_size/vector_size; 
+    }
+
     template<>
     struct SolveTridiagsDefaultModeAndAlgo<Kokkos::CudaSpace> {
       typedef KokkosBatched::Experimental::Mode::Team mode_type;
@@ -2053,9 +2074,7 @@ namespace Ifpack2 {
       static int recommended_team_size(const int blksize, 
 				       const int vector_length, 
 				       const int internal_vector_length) { 
-	const int vector_size = vector_length/internal_vector_length;
-    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
-	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+	return SolveTridiagsRecommendedCudaTeamSize(blksize, vector_length, internal_vector_length);
       }
     };
     template<>
@@ -2066,10 +2085,7 @@ namespace Ifpack2 {
       static int recommended_team_size(const int blksize, 
     				       const int vector_length, 
     				       const int internal_vector_length) { 
-    	const int vector_size = vector_length/internal_vector_length;
-    	const int total_team_size = blksize <= 8 ? 32 : blksize <= 16 ? 64 : 128;
-	// to match the old code behavior when internal vector length is 1
-	return internal_vector_length == 1 ? 32/vector_size : total_team_size/vector_size; 
+	return SolveTridiagsRecommendedCudaTeamSize(blksize, vector_length, internal_vector_length);
       }
     };
 #endif
