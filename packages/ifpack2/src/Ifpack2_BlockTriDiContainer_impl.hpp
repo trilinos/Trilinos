@@ -1706,33 +1706,7 @@ namespace Ifpack2 {
 
     public:
 
-      struct ExtractAndFactorizeScalarTag {};
       struct ExtractAndFactorizeInternalVectorTag {};
-
-      KOKKOS_INLINE_FUNCTION 
-      void 
-      operator() (const ExtractAndFactorizeScalarTag &, const member_type &member) const {
-	// btdm is packed and sorted from largest one 
-	const local_ordinal_type packidx = member.league_rank();
-
-	const local_ordinal_type partidx = packptr(packidx);
-	const local_ordinal_type npacks = packptr(packidx+1) - partidx;
-	const local_ordinal_type i0 = pack_td_ptr(partidx);
-	const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
-
-	impl_scalar_scratch_type_3d_view
-	  WW(member.team_scratch(0), blocksize, blocksize, vector_length_value);
-        if (vector_length_value == 1) {
-          extract(packidx);
-          factorize(member, i0, nrows, 0, scalar_values, WW);
-        } else {
-          Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, vector_length_value), [&](const local_ordinal_type &v) {
-              if (v < npacks) extract(member, partidx+v, v);
-              factorize(member, i0, nrows, v, scalar_values, WW);
-            });
-        }
-      }
 
       KOKKOS_INLINE_FUNCTION 
       void 
