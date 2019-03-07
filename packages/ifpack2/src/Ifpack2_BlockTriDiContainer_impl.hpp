@@ -1566,10 +1566,8 @@ namespace Ifpack2 {
 
       KOKKOS_INLINE_FUNCTION 
       void 
-      extract(const local_ordinal_type &packidx) const {
-        local_ordinal_type partidx = packptr(packidx);
-        local_ordinal_type npacks = packptr(packidx+1) - partidx;
-
+      extract(local_ordinal_type partidx, 
+	      local_ordinal_type npacks) const {
         const size_type kps = pack_td_ptr(partidx);
         local_ordinal_type kfs[vector_length] = {};
         local_ordinal_type ri0[vector_length] = {};
@@ -1613,25 +1611,42 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       extract(const member_type &member, 
-              const local_ordinal_type &partidx,
-	      const local_ordinal_type &v) const {
-        const size_type kps = pack_td_ptr(partidx);
-        const local_ordinal_type kfs = flat_td_ptr(partidx);
-        const local_ordinal_type ri0 = partptr(partidx);
-        const local_ordinal_type nrows = partptr(partidx+1) - ri0;
-        for (local_ordinal_type tr=0,j=0;tr<nrows;++tr) {          
-          local_ordinal_type lbeg = (tr == 0         ? 1 : 0);
-          local_ordinal_type lend = (tr == nrows - 1 ? 2 : 3);
-          for (local_ordinal_type l=lbeg;l<lend;++l,++j) { // l == 1, diagonal
-            const size_type Aj = A_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
-            const impl_scalar_type* block = &A_values(Aj*blocksize_square);
-            const size_type pi = kps + j;
-            Kokkos::parallel_for
-              (Kokkos::TeamThreadRange(member,blocksize_square), [&](const local_ordinal_type &ij) {
-                const local_ordinal_type ii = ij/blocksize;
-                const local_ordinal_type jj = ij%blocksize;
-                scalar_values(pi, ii, jj, v) = block[ii*blocksize + jj];
-              });
+              const local_ordinal_type &partidxbeg,
+	      const local_ordinal_type &npacks,
+	      const local_ordinal_type &vbeg) const {
+        local_ordinal_type kfs_vals[internal_vector_length] = {};
+        local_ordinal_type ri0_vals[internal_vector_length] = {};
+        local_ordinal_type nrows_vals[internal_vector_length] = {};
+
+        const size_type kps = pack_td_ptr(partidxbeg);
+        for (local_ordinal_type v=vbeg,vi=0;v<npacks && vi<internal_vector_length;++v,++vi) {
+          kfs_vals[vi] = flat_td_ptr(partidxbeg+vi);
+          ri0_vals[vi] = partptr(partidxbeg+vi);
+          nrows_vals[vi] = partptr(partidxbeg+vi+1) - ri0_vals[vi];
+        }
+
+        local_ordinal_type j_vals[internal_vector_length] = {};	
+	for (local_ordinal_type tr=0;tr<nrows_vals[0];++tr) {          
+	  for (local_ordinal_type v=vbeg,vi=0;v<npacks && vi<internal_vector_length;++v,++vi) {	
+	    const local_ordinal_type nrows = nrows_vals[vi];
+	    if (tr < nrows) {
+	      auto &j = j_vals[vi];
+	      const local_ordinal_type kfs = kfs_vals[vi];
+	      const local_ordinal_type ri0 = ri0_vals[vi];
+	      const local_ordinal_type lbeg = (tr == 0         ? 1 : 0);
+	      const local_ordinal_type lend = (tr == nrows - 1 ? 2 : 3);
+	      for (local_ordinal_type l=lbeg;l<lend;++l,++j) {
+		const size_type Aj = A_rowptr(lclrow(ri0 + tr)) + A_colindsub(kfs + j);
+		const impl_scalar_type* block = &A_values(Aj*blocksize_square);
+		const size_type pi = kps + j;
+		Kokkos::parallel_for
+		  (Kokkos::TeamThreadRange(member,blocksize), 
+		   [&](const local_ordinal_type &ii) {
+		    for (local_ordinal_type jj=0;jj<blocksize;++jj)
+		      scalar_values(pi, ii, jj, v) = block[ii*blocksize + jj];
+		  });
+	      }
+	    }
           }
         }
       }
@@ -1722,15 +1737,13 @@ namespace Ifpack2 {
 	internal_vector_scratch_type_3d_view
 	  WW(member.team_scratch(0), blocksize, blocksize, vector_loop_size);
         if (vector_loop_size == 1) {
-          extract(packidx);
+          extract(partidx, npacks);
           factorize(member, i0, nrows, 0, internal_vector_values, WW);
         } else {          
           Kokkos::parallel_for
             (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
-              const local_ordinal_type vend = vbeg + internal_vector_length;
-              for (local_ordinal_type vv=vbeg;vv<vend;++vv)
-                if (vv < npacks) extract(member, partidx+vv, vv);
+	      extract(member, partidx+vbeg, npacks, vbeg);
               factorize(member, i0, nrows, v, internal_vector_values, WW);
             });
         }
