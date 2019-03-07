@@ -76,8 +76,8 @@
 #include <memory>
 
 // need to interface this into cmake variable (or only use this flag when it is necessary)
-//#define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
-#undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
+#define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
+//#undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #include "cuda_profiler_api.h"
 #endif
@@ -781,6 +781,8 @@ namespace Ifpack2 {
       // space. But it's easy to detect, so it's recorded in case an optimization
       // can be made based on it.
       bool row_contiguous;
+
+      local_ordinal_type max_partsz;
     };
 
     ///
@@ -818,7 +820,9 @@ namespace Ifpack2 {
       
       // permutation vector
       std::vector<local_ordinal_type> p;
-      if (!jacobi) {
+      if (jacobi) {
+	interf.max_partsz = 1;
+      } else {
         // reorder parts to maximize simd packing efficiency
         p.resize(nparts);
         
@@ -832,6 +836,8 @@ namespace Ifpack2 {
                   });
         for (local_ordinal_type i=0;i<nparts;++i)
           p[i] = partsz[i].second;
+
+	interf.max_partsz = partsz[0].first;
       }
 
       // allocate parts
@@ -1513,6 +1519,7 @@ namespace Ifpack2 {
     private:
       // part interface
       const ConstUnmanaged<local_ordinal_type_1d_view> partptr, lclrow, packptr;
+      const local_ordinal_type max_partsz;
       // block crs matrix (it could be Kokkos::UVMSpace::size_type, which is int)
       using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,typename impl_type::device_type>::size_type; 
       const ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,typename impl_type::device_type> > A_rowptr;
@@ -1533,11 +1540,12 @@ namespace Ifpack2 {
       ExtractAndFactorizeTridiags(const BlockTridiags<MatrixType> &btdm_, 
                                   const PartInterface<MatrixType> &interf_,
                                   const Teuchos::RCP<const block_crs_matrix_type> &A_,
-                                  const magnitude_type& tiny_) : 
+                                  const magnitude_type& tiny_) :
         // interface
         partptr(interf_.partptr), 
         lclrow(interf_.lclrow), 
         packptr(interf_.packptr),
+	max_partsz(interf_.max_partsz),
         // block crs matrix
         A_rowptr(A_->getCrsGraph().getLocalGraph().row_map), 
         A_values(const_cast<block_crs_matrix_type*>(A_.get())->template getValues<memory_space>()),
@@ -1721,11 +1729,11 @@ namespace Ifpack2 {
 
     public:
 
-      struct ExtractAndFactorizeInternalVectorTag {};
+      struct ExtractAndFactorizeTag {};
 
       KOKKOS_INLINE_FUNCTION 
       void 
-      operator() (const ExtractAndFactorizeInternalVectorTag &, const member_type &member) const {
+      operator() (const ExtractAndFactorizeTag &, const member_type &member) const {
 	// btdm is packed and sorted from largest one 
 	const local_ordinal_type packidx = member.league_rank();
 
@@ -1760,9 +1768,9 @@ namespace Ifpack2 {
 	const local_ordinal_type per_team_scratch = internal_vector_scratch_type_3d_view::
 	  shmem_size(blocksize, blocksize, vector_loop_size);
 
-	Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeInternalVectorTag>
+	Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeTag>
 	  policy(packptr.extent(0)-1, team_size, vector_loop_size); 
-	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run", 
+	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run<ExtractAndFactorizeTag>", 
 			     policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this);
 	
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
