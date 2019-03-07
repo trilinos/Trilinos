@@ -52,6 +52,7 @@ set (ROL_example_PDE-OPT_nonlinear-elliptic_example_02_MPI_4_DISABLE ON CACHE BO
 set (ROL_example_PDE-OPT_obstacle_example_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_example_PDE-OPT_topo-opt_poisson_example_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_test_elementwise_TpetraMultiVector_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (ROL_NonlinearProblemTest_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TpetraCore_Core_initialize_where_tpetra_initializes_kokkos_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TpetraCore_Core_initialize_where_tpetra_initializes_mpi_and_user_initializes_kokkos_MPI_2_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TpetraCore_Core_initialize_where_user_initializes_kokkos_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
