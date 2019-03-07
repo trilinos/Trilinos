@@ -73,9 +73,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // invoke this class method over the set of enabled template
 // parameters.
 #define LCL_CALL( SC, LO, GO, NT ) \
-  ::Amesos2::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
-                                          Tpetra::Operator<SC, LO, GO, NT>, \
-                                          typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>::registerLinearSolverFactory ();
+  ::Amesos2::Details::LinearSolverFactory< ::Tpetra::MultiVector<SC, LO, GO, NT>, \
+                                           ::Tpetra::Operator<SC, LO, GO, NT>, \
+                                           typename ::Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>::registerLinearSolverFactory ();
 
 namespace Amesos2 {
 namespace Details {
