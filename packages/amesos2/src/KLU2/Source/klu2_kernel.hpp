@@ -600,7 +600,7 @@ static void prune
                 if (pivrow == Li [p2])
                 {
                     /* found it!  This column can be pruned */
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
                     PRINTF (("==== PRUNE: col j %d of L\n", j)) ;
                     {
                         Int p3 ;
@@ -644,7 +644,7 @@ static void prune
                      * column j as pruned. */
                     Lpend [j] = ptail ;
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
                     {
                         Int p3 ;
                         for (p3 = 0 ; p3 < Llen [j] ; p3++)
@@ -724,7 +724,7 @@ size_t KLU_kernel   /* final size of LU on output */
     Int k, p, i, j, pivrow = 0, kbar, diagrow, firstrow, lup, top, scale, len ;
     size_t newlusize ;
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     Entry *Lx ;
 #endif
 
@@ -777,7 +777,7 @@ size_t KLU_kernel   /* final size of LU on output */
      * (Pinv [k] < EMPTY), and then marked "unflipped" when it becomes
      * pivotal. */
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (k = 0 ; k < n ; k++)
     {
         PRINTF (("Initial P [%d] = %d\n", k, P [k])) ;
@@ -839,7 +839,7 @@ size_t KLU_kernel   /* final size of LU on output */
         /* compute the nonzero pattern of the kth column of L and U */
         /* ------------------------------------------------------------------ */
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
         for (i = 0 ; i < n ; i++)
         {
             ASSERT (Flag [i] < k) ;
@@ -851,7 +851,7 @@ size_t KLU_kernel   /* final size of LU on output */
         top = lsolve_symbolic (n, k, Ap, Ai, Q, Pinv, Stack, Flag,
                     Lpend, Ap_pos, LU, lup, Llen, Lip, k1, PSinv) ;
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
         PRINTF (("--- in U:\n")) ;
         for (p = top ; p < n ; p++)
         {
@@ -888,7 +888,7 @@ size_t KLU_kernel   /* final size of LU on output */
 
         lsolve_numeric <Entry> (Pinv, LU, Stack, Lip, top, n, Llen, X) ;
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
         for (p = top ; p < n ; p++)
         {
             PRINTF (("X for U %d : ",  Stack [p])) ;
@@ -988,7 +988,7 @@ size_t KLU_kernel   /* final size of LU on output */
         P [k] = pivrow ;
         Pinv [pivrow] = k ;
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
         for (i = 0 ; i < n ; i++) { ASSERT (IS_ZERO (X [i])) ;}
         GET_POINTER (LU, Uip, Ulen, Ui, Ux, k, len) ;
         for (p = 0 ; p < len ; p++)
@@ -1027,7 +1027,7 @@ size_t KLU_kernel   /* final size of LU on output */
         }
     }
 
-#ifndef NDEBUG
+#ifndef NDEBUGKLU2
     for (i = 0 ; i < n ; i++)
     {
         PRINTF (("P [%d] = %d   Pinv [%d] = %d\n", i, P [i], i, Pinv [i])) ;

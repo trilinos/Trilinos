@@ -115,26 +115,26 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    const Scalar errorAbs = metaData->getTolRel();
    const Scalar errorRel = metaData->getTolAbs();
 
-   Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX_, scratchX;
-   stageX_ = Thyra::createMember(appModel_->get_f_space());
+   Teuchos::RCP<Thyra::VectorBase<Scalar> > stageX, scratchX;
+   stageX = Thyra::createMember(appModel_->get_f_space());
    scratchX = Thyra::createMember(appModel_->get_f_space());
-   Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+   Thyra::assign(stageX.ptr(), *(currentState->getX()));
 
-   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_(2);
+   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot(2);
    for (int i=0; i<2; ++i) {
-      stageXDot_[i] = Thyra::createMember(appModel_->get_f_space());
-      assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+      stageXDot[i] = Thyra::createMember(appModel_->get_f_space());
+      assign(stageXDot[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
    }
 
    // A: one functione evaluation at F(t_0, X_0)
    typedef Thyra::ModelEvaluatorBase MEB;
-   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_ = appModel_->getNominalValues();
-   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_ = appModel_->createOutArgs();
-   inArgs_.set_x(stageX_);
-   if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
-   if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-   outArgs_.set_f(stageXDot_[0]); // K1
-   appModel_->evalModel(inArgs_,outArgs_);
+   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel_->getNominalValues();
+   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel_->createOutArgs();
+   inArgs.set_x(stageX);
+   if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(time);
+   if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
+   outArgs.set_f(stageXDot[0]); // K1
+   appModel_->evalModel(inArgs,outArgs);
 
    auto err_func = [] (Teuchos::RCP<Thyra::VectorBase<Scalar> > U,
          const Scalar rtol, const Scalar atol,
@@ -150,28 +150,28 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
       return err;
    };
 
-   Scalar d0 = err_func(stageX_, errorRel, errorAbs, scratchX);
-   Scalar d1 = err_func(stageXDot_[0], errorRel, errorAbs, scratchX);
+   Scalar d0 = err_func(stageX, errorRel, errorAbs, scratchX);
+   Scalar d1 = err_func(stageXDot[0], errorRel, errorAbs, scratchX);
 
    // b) first guess for the step size
    dt = Teuchos::as<Scalar>(0.01)*(d0/d1);
 
    // c) perform one explicit Euler step (X_1)
-   Thyra::Vp_StV(stageX_.ptr(), dt, *(stageXDot_[0]));
+   Thyra::Vp_StV(stageX.ptr(), dt, *(stageXDot[0]));
 
    // compute F(t_0 + dt, X_1)
-   inArgs_.set_x(stageX_);
-   if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time + dt);
-   if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-   outArgs_.set_f(stageXDot_[1]); // K2
-   appModel_->evalModel(inArgs_,outArgs_);
+   inArgs.set_x(stageX);
+   if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(time + dt);
+   if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
+   outArgs.set_f(stageXDot[1]); // K2
+   appModel_->evalModel(inArgs,outArgs);
 
    // d) compute estimate of the second derivative of the solution
    // d2 = || f(t_0 + dt, X_1) - f(t_0, X_0) || / dt
    Teuchos::RCP<Thyra::VectorBase<Scalar> > errX;
    errX = Thyra::createMember(appModel_->get_f_space());
    assign(errX.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-   Thyra::V_VmV(errX.ptr(), *(stageXDot_[1]), *(stageXDot_[0]));
+   Thyra::V_VmV(errX.ptr(), *(stageXDot[1]), *(stageXDot[0]));
    Scalar d2 = err_func(errX, errorRel, errorAbs, scratchX) / dt;
 
    // e) compute step size h_1 (from m = 0 order Taylor series)

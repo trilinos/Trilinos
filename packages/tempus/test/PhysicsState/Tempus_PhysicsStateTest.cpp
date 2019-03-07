@@ -125,10 +125,10 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
+        double time_i = solutionState->getTime();
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        x_exact_plot = model->getExactSolution(time).get_x();
-        ftmp << time << "   "
+        x_exact_plot = model->getExactSolution(time_i).get_x();
+        ftmp << time_i << "   "
              << Thyra::get_ele(*(x_plot), 0) << "   "
              << Thyra::get_ele(*(x_plot), 1) << "   "
              << Thyra::get_ele(*(x_exact_plot), 0) << "   "
