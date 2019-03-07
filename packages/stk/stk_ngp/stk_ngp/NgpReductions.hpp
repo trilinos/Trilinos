@@ -153,6 +153,7 @@ struct MinFunctor
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_min(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
+    field.sync_to_device();
     return get_field_reduction<Mesh, Field, MinFunctor<typename Field::value_type>>(mesh, field, selector, std::numeric_limits<typename Field::value_type>::max());
 }
 
@@ -168,6 +169,7 @@ struct MaxFunctor
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_max(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
+    field.sync_to_device();
     return get_field_reduction<Mesh, Field, MaxFunctor<typename Field::value_type>>(mesh, field, selector, std::numeric_limits<typename Field::value_type>::lowest());
 }
 
@@ -183,6 +185,7 @@ struct SumFunctor
 template <typename Mesh, typename Field>
 typename Field::value_type get_field_sum(Mesh &mesh, Field field, const stk::mesh::Selector &selector)
 {
+    field.sync_to_device();
     return get_field_reduction<Mesh, Field, SumFunctor<typename Field::value_type>>(mesh, field, selector, 0);
 }
 

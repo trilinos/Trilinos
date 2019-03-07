@@ -52,7 +52,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_dimid, etc
 #include <stdio.h>
 
 static int ex_put_var_names_int(int exoid, char *tname, char *dnumvar, char *vnames, int *varid)

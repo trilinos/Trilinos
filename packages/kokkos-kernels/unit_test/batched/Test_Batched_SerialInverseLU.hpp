@@ -60,8 +60,17 @@ namespace Test {
     
     inline
     void run() {
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialInverseLU");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name = name_region + name_value_type;
+      Kokkos::Profiling::pushRegion(name.c_str() );
       Kokkos::RangePolicy<DeviceType,ParamTagType> policy(0, _c.extent(0));
-      Kokkos::parallel_for(policy, *this);            
+      Kokkos::parallel_for((name+"::GemmFunctor").c_str(), policy, *this);            
+      Kokkos::Profiling::popRegion();
     }
   };
 
@@ -87,8 +96,17 @@ namespace Test {
 
     inline
     void run() {
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialInverseLU");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name = name_region + name_value_type;
+      Kokkos::Profiling::pushRegion(name.c_str() );
       Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
-      Kokkos::parallel_for(policy, *this);
+      Kokkos::parallel_for((name+"::LUFunctor").c_str(), policy, *this);
+      Kokkos::Profiling::popRegion();
     }
   };
 
@@ -114,8 +132,18 @@ namespace Test {
 
     inline
     void run() {
+      typedef typename AViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialInverseLU");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name = name_region + name_value_type;
+      Kokkos::Profiling::pushRegion(name.c_str() );
       Kokkos::RangePolicy<DeviceType> policy(0, _a.extent(0));
-      Kokkos::parallel_for(policy, *this);
+      Kokkos::parallel_for((name+"::InverseLUFunctor").c_str(), policy, *this);
+      Kokkos::Profiling::popRegion();
+
     }
   };
 
@@ -142,7 +170,7 @@ namespace Test {
     Kokkos::deep_copy(w, value_type(0.0));
 
     Functor_BatchedSerialLU<DeviceType,AViewType,AlgoTagType>(a1).run();
-	
+
     Functor_TestBatchedSerialInverseLU<DeviceType,AViewType,WViewType,AlgoTagType>(a1,w).run();
 
     value_type alpha = 1.0, beta = 0.0;   

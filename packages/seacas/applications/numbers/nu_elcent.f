@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -48,18 +48,18 @@ C
       ELSE
           DO 20 I=1, NUMEL
               ELCEN(I,1) = (COORD(IX(1,I),1) + COORD(IX(2,I),1) +
-     *                      COORD(IX(3,I),1) + COORD(IX(4,I),1) + 
-     *                      COORD(IX(5,I),1) + COORD(IX(6,I),1) + 
+     *                      COORD(IX(3,I),1) + COORD(IX(4,I),1) +
+     *                      COORD(IX(5,I),1) + COORD(IX(6,I),1) +
      *                      COORD(IX(7,I),1) + COORD(IX(8,I),1))/8.0
 C
               ELCEN(I,2) = (COORD(IX(1,I),2) + COORD(IX(2,I),2) +
-     *                      COORD(IX(3,I),2) + COORD(IX(4,I),2) + 
-     *                      COORD(IX(5,I),2) + COORD(IX(6,I),2) + 
+     *                      COORD(IX(3,I),2) + COORD(IX(4,I),2) +
+     *                      COORD(IX(5,I),2) + COORD(IX(6,I),2) +
      *                      COORD(IX(7,I),2) + COORD(IX(8,I),2))/8.0
 C
               ELCEN(I,3) = (COORD(IX(1,I),3) + COORD(IX(2,I),3) +
-     *                      COORD(IX(3,I),3) + COORD(IX(4,I),3) + 
-     *                      COORD(IX(5,I),3) + COORD(IX(6,I),3) + 
+     *                      COORD(IX(3,I),3) + COORD(IX(4,I),3) +
+     *                      COORD(IX(5,I),3) + COORD(IX(6,I),3) +
      *                      COORD(IX(7,I),3) + COORD(IX(8,I),3))/8.0
    20     CONTINUE
       END IF

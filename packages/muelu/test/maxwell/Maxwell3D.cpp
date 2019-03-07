@@ -133,6 +133,31 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     
     int nedges  = 3630;  clp.setOption("nedges",               &nedges,           "number of edges");
     int nnodes  = 1331;  clp.setOption("nnodes",               &nnodes,           "number of nodes");
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file;
+    if (!TYPE_EQUAL(SC, std::complex<double>)) {
+      S_file = "S.mat";
+      SM_file = "";
+      M1_file = "M1.mat";
+      M0_file = "M0.mat";
+      M0inv_file = "";
+      D0_file = "D0.mat";
+      coords_file = "coords.mat";
+    } else {
+      S_file = "S_complex.mat";
+      SM_file = "";
+      M1_file = "M1_complex.mat";
+      M0_file = "M0_complex.mat";
+      M0inv_file = "";
+      D0_file = "D0_complex.mat";
+      coords_file = "coords.mat";
+    }
+    clp.setOption("S", &S_file);
+    clp.setOption("SM", &SM_file);
+    clp.setOption("M1", &M1_file);
+    clp.setOption("M0", &M0_file);
+    clp.setOption("M0inv", &M0inv_file);
+    clp.setOption("D0", &D0_file);
+    clp.setOption("coords", &coords_file);
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -150,52 +175,47 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
-    RCP<Matrix> S_Matrix, M1_Matrix, M0_Matrix, D0_Matrix;
-    if (!TYPE_EQUAL(SC, std::complex<double>)) {
-      // edge stiffness matrix
-      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S.mat", edge_map);
-      // edge mass matrix
-      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1.mat", edge_map);
-      // nodal mass matrix
-      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0.mat", node_map);
-      // gradient matrix
-      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.mat", edge_map, Teuchos::null, node_map, edge_map);
-    } else {
-      // edge stiffness matrix
-      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S_complex.mat", edge_map);
-      // edge mass matrix
-      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1_complex.mat", edge_map);
-      // nodal mass matrix
-      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0_complex.mat", node_map);
-      // gradient matrix
-      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.mat", edge_map, Teuchos::null, node_map, edge_map);
-    }
-    // coordinates
-    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
-
-    // build lumped mass matrix inverse (M0inv_Matrix)
-    RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
-    RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
-    RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
-    Teuchos::ArrayRCP<size_t> rowPtr;
-    Teuchos::ArrayRCP<LO> colInd;
-    Teuchos::ArrayRCP<SC> values;
-    Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
-    M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
-    SC ONE = (SC)1.0;
-    for (size_t i = 0; i < nodeNumElements; i++) {
-      rowPtr[i] = i;  colInd[i] = i;  values[i] = ONE / diags[i];
-    }
-    rowPtr[nodeNumElements] = nodeNumElements;
-    M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
-    M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
-    RCP<Matrix> M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
-
+    // edge mass matrix
+    RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
     // build stiffness plus mass matrix (SM_Matrix)
     RCP<Matrix> SM_Matrix;
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
-    SM_Matrix->fillComplete();
+    if (SM_file == "") {
+      // edge stiffness matrix
+      RCP<Matrix> S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
+      SM_Matrix->fillComplete();
+    } else {
+      SM_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(SM_file, edge_map);
+    }
+    RCP<Matrix> M0inv_Matrix;
+    if (M0inv_file == "") {
+      // nodal mass matrix
+      RCP<Matrix> M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0_file, node_map);
+      // build lumped mass matrix inverse (M0inv_Matrix)
+      RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
+      RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
+      Teuchos::ArrayRCP<size_t> rowPtr;
+      Teuchos::ArrayRCP<LO> colInd;
+      Teuchos::ArrayRCP<SC> values;
+      Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
+      size_t nodeNumElements = node_map->getNodeNumElements();
+      M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
+      SC ONE = (SC)1.0;
+      for (size_t i = 0; i < nodeNumElements; i++) {
+        rowPtr[i] = i;  colInd[i] = i;  values[i] = ONE / diags[i];
+      }
+      rowPtr[nodeNumElements] = nodeNumElements;
+      M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
+      M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
+      M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+    } else {
+      M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
+    }
+    // gradient matrix
+    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, Teuchos::null, node_map, edge_map);
+    // coordinates
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
 
     // set parameters
     std::string defaultXMLfile;
@@ -342,6 +362,31 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     int nedges  = 3630;  clp.setOption("nedges",               &nedges,           "number of edges");
     int nnodes  = 1331;  clp.setOption("nnodes",               &nnodes,           "number of nodes");
+    std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file;
+    if (!TYPE_EQUAL(SC, std::complex<double>)) {
+      S_file = "S.mat";
+      SM_file = "";
+      M1_file = "M1.mat";
+      M0_file = "M0.mat";
+      M0inv_file = "";
+      D0_file = "D0.mat";
+      coords_file = "coords.mat";
+    } else {
+      S_file = "S_complex.mat";
+      SM_file = "";
+      M1_file = "M1_complex.mat";
+      M0_file = "M0_complex.mat";
+      M0inv_file = "";
+      D0_file = "D0_complex.mat";
+      coords_file = "coords.mat";
+    }
+    clp.setOption("S", &S_file);
+    clp.setOption("SM", &SM_file);
+    clp.setOption("M1", &M1_file);
+    clp.setOption("M0", &M0_file);
+    clp.setOption("M0inv", &M0inv_file);
+    clp.setOption("D0", &D0_file);
+    clp.setOption("coords", &coords_file);
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -359,53 +404,47 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
-    RCP<Matrix> S_Matrix, M1_Matrix, M0_Matrix, D0_Matrix;
-    
-    if (!TYPE_EQUAL(SC, std::complex<double>)) {
-      // edge stiffness matrix
-      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S.mat", edge_map);
-      // edge mass matrix
-      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1.mat", edge_map);
-      // nodal mass matrix
-      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0.mat", node_map);
-      // gradient matrix
-      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.mat", edge_map, Teuchos::null, node_map, edge_map);
-    } else {
-      // edge stiffness matrix
-      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S_complex.mat", edge_map);
-      // edge mass matrix
-      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1_complex.mat", edge_map);
-      // nodal mass matrix
-      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0_complex.mat", node_map);
-      // gradient matrix
-      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.mat", edge_map, Teuchos::null, node_map, edge_map);
-    }
-    // coordinates
-    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
-
-    // build lumped mass matrix inverse (M0inv_Matrix)
-    RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
-    RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
-    RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
-    Teuchos::ArrayRCP<size_t> rowPtr;
-    Teuchos::ArrayRCP<LO> colInd;
-    Teuchos::ArrayRCP<SC> values;
-    Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
-    M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
-    SC ONE = (SC)1.0;
-    for (size_t i = 0; i < nodeNumElements; i++) {
-      rowPtr[i] = i;  colInd[i] = i;  values[i] = ONE / diags[i];
-    }
-    rowPtr[nodeNumElements] = nodeNumElements;
-    M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
-    M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
-    RCP<Matrix> M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
-
+    // edge mass matrix
+    RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
     // build stiffness plus mass matrix (SM_Matrix)
     RCP<Matrix> SM_Matrix;
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
-    SM_Matrix->fillComplete();
+    if (SM_file == "") {
+      // edge stiffness matrix
+      RCP<Matrix> S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
+      SM_Matrix->fillComplete();
+    } else {
+      SM_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(SM_file, edge_map);
+    }
+    RCP<Matrix> M0inv_Matrix;
+    if (M0inv_file == "") {
+      // nodal mass matrix
+      RCP<Matrix> M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0_file, node_map);
+      // build lumped mass matrix inverse (M0inv_Matrix)
+      RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
+      RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
+      RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
+      Teuchos::ArrayRCP<size_t> rowPtr;
+      Teuchos::ArrayRCP<LO> colInd;
+      Teuchos::ArrayRCP<SC> values;
+      Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
+      size_t nodeNumElements = node_map->getNodeNumElements();
+      M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
+      SC ONE = (SC)1.0;
+      for (size_t i = 0; i < nodeNumElements; i++) {
+        rowPtr[i] = i;  colInd[i] = i;  values[i] = ONE / diags[i];
+      }
+      rowPtr[nodeNumElements] = nodeNumElements;
+      M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
+      M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
+      M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+    } else {
+      M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
+    }
+    // gradient matrix
+    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, Teuchos::null, node_map, edge_map);
+    // coordinates
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
 
     // set parameters
     std::string defaultXMLfile;

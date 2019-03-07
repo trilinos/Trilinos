@@ -212,7 +212,7 @@ V_Sum_Invoke (const RV& r, const XV& X)
 
   typedef V_Sum_Functor<RV, XV, SizeType> functor_type;
   functor_type op (X);
-  Kokkos::parallel_reduce (policy, op, r);
+  Kokkos::parallel_reduce ("KokkosBlas::Sum::S0", policy, op, r);
 }
 
 
@@ -238,7 +238,7 @@ MV_Sum_Invoke (const RV& r, const XMV& X)
   else {
     typedef MV_Sum_Right_FunctorVector<RV, XMV, SizeType> functor_type;
     functor_type op (X);
-    Kokkos::parallel_reduce (policy, op, r);
+    Kokkos::parallel_reduce ("KokkosBlas::Sum::S1", policy, op, r);
   }
 }
 

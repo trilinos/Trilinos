@@ -84,6 +84,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -95,8 +96,11 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -105,9 +109,12 @@ ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -117,6 +124,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -124,7 +132,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -211,6 +218,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -222,8 +230,11 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -232,9 +243,12 @@ ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -244,6 +258,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -251,7 +266,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -338,6 +352,7 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
@@ -349,8 +364,11 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -359,9 +377,12 @@ ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -371,6 +392,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -378,7 +400,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Max coarse size (<= 1000) achieved

@@ -291,6 +291,12 @@ void get_entities_through_relations(
  */
 void get_entities_through_relations(
   const BulkData& mesh,
+  const Entity* entities_begin ,
+  const Entity* entities_end ,
+        EntityRank              entities_related_rank ,
+        std::vector<Entity> & entities_related );
+void get_entities_through_relations(
+  const BulkData& mesh,
   const std::vector<Entity> & entities ,
         EntityRank             entities_related_rank ,
         std::vector<Entity> & entities_related );

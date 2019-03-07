@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <string.h> // for strlen
@@ -133,7 +132,7 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
   size_t    name_length, prop_name_len;
   char *    name;
   long long vals[1];
-  int       max_name_len = 0;
+  size_t    max_name_len = 0;
   int       int_type     = NC_INT;
 
   char errmsg[MAX_ERR_LENGTH];
@@ -233,9 +232,7 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
   }
 
   /* leave define mode  */
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to leave define mode in file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -247,9 +244,6 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

@@ -200,6 +200,11 @@ lib stk_util_parallel
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_parallel.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 
@@ -243,8 +248,9 @@ lib stk_util_environment
     /tpl/boost-program-options//boost_program_options
   :
     [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -267,6 +273,7 @@ lib stk_util_registry
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <define>STK_VERSION=\"\\\"$(version)\\\"\"
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -293,6 +300,11 @@ lib stk_util_use_case
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_use_case.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 lib stk_util_diag
@@ -313,6 +325,11 @@ lib stk_util_diag
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_diag.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 lib stk_util_util
@@ -330,6 +347,11 @@ lib stk_util_util
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_util.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
   ;
 
@@ -349,6 +371,11 @@ lib stk_util_command_line
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_command_line.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 lib stk_util_unit_test_support
@@ -366,6 +393,11 @@ lib stk_util_unit_test_support
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_unit_test_support.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
   ;
 

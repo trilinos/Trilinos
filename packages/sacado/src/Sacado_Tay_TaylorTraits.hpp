@@ -109,16 +109,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Tay_ScalarTraitsImp.hpp"
-#include "Teuchos_SerializationTraits.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to DFad types
   template <typename ValueT>
   struct PromotionTraits< Sacado::Tay::Taylor<ValueT>,
                           Sacado::Tay::Taylor<ValueT> > {
@@ -141,21 +139,30 @@ namespace Teuchos {
     typedef typename Sacado::Promote< L, Sacado::Tay::Taylor<ValueT> >::type
     promote;
   };
+}
+#endif
 
-  //! Specializtion of %Teuchos::ScalarTraits
+// Scalar traits
+#ifdef HAVE_SACADO_TEUCHOSCORE
+#include "Sacado_Tay_ScalarTraitsImp.hpp"
+namespace Teuchos {
   template <typename ValueT>
   struct ScalarTraits< Sacado::Tay::Taylor<ValueT> > :
     public Sacado::Tay::ScalarTraitsImp< Sacado::Tay::Taylor<ValueT> >
   {};
+}
+#endif
 
-  //! Specialization of %Teuchos::SerializationTraits
+// Serialization traits
+#ifdef HAVE_SACADO_TEUCHOSCOMM
+#include "Sacado_Tay_SerializationTraitsImp.hpp"
+namespace Teuchos {
   template <typename Ordinal, typename ValueT>
   struct SerializationTraits<Ordinal, Sacado::Tay::Taylor<ValueT> > :
     public Sacado::Tay::SerializationTraitsImp< Ordinal,
                                                 Sacado::Tay::Taylor<ValueT> >
   {};
 
-  //! Specialization of %Teuchos::ValueTypeSerializer
   template <typename Ordinal, typename ValueT>
   struct ValueTypeSerializer<Ordinal, Sacado::Tay::Taylor<ValueT> > :
     public Sacado::Tay::SerializerImp< Ordinal,
@@ -170,6 +177,6 @@ namespace Teuchos {
       Base(vs, sz) {}
   };
 }
-#endif // HAVE_SACADO_TEUCHOS
+#endif
 
 #endif // SACADO_TAYLOR_SIMPLETAYLORTRAITS_HPP

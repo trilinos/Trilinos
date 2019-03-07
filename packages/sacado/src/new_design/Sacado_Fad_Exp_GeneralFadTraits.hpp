@@ -65,10 +65,17 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to GeneralFad types
+  //! Specialization of %IsScalarType to GeneralFad types
   template <typename Storage>
   struct IsScalarType< Fad::Exp::GeneralFad<Storage> > {
     static const bool value = false;
+  };
+
+  //! Specialization of %IsSimdType to GeneralFad types
+  template <typename Storage>
+  struct IsSimdType< Fad::Exp::GeneralFad<Storage> > {
+    static const bool value =
+      IsSimdType< typename Fad::Exp::GeneralFad<Storage>::value_type >::value;
   };
 
   //! Specialization of %Value to GeneralFad types
@@ -134,16 +141,14 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//
 // Define Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
+//
+
+// Promotion traits
+#ifdef HAVE_SACADO_TEUCHOSNUMERICS
 #include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Sacado_Fad_ScalarTraitsImp.hpp"
-#include "Teuchos_SerializationTraits.hpp"
-
 namespace Teuchos {
-
-  //! Specialization of %Teuchos::PromotionTraits to GeneralFad types
   template <typename Storage>
   struct PromotionTraits< Sacado::Fad::Exp::GeneralFad<Storage>,
                           Sacado::Fad::Exp::GeneralFad<Storage> > {
@@ -168,21 +173,30 @@ namespace Teuchos {
                                       Sacado::Fad::Exp::GeneralFad<Storage> >::type
     promote;
   };
+}
+#endif
 
-  //! Specializtion of %Teuchos::ScalarTraits
+// Scalar traits
+#ifdef HAVE_SACADO_TEUCHOSCORE
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+namespace Teuchos {
   template <typename Storage>
   struct ScalarTraits< Sacado::Fad::Exp::GeneralFad<Storage> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::Exp::GeneralFad<Storage> >
   {};
+}
+#endif
 
-  //! Specialization of %Teuchos::SerializationTraits
+// Serialization traits
+#ifdef HAVE_SACADO_TEUCHOSCOMM
+#include "Sacado_Fad_SerializationTraitsImp.hpp"
+namespace Teuchos {
   template <typename Ordinal, typename Storage>
   struct SerializationTraits<Ordinal, Sacado::Fad::Exp::GeneralFad<Storage> > :
     public Sacado::Fad::SerializationTraitsImp< Ordinal,
                                                 Sacado::Fad::Exp::GeneralFad<Storage> >
   {};
 
-  //! Specialization of %Teuchos::StorageypeSerializer
   template <typename Ordinal, typename Storage>
   struct ValueTypeSerializer<Ordinal, Sacado::Fad::Exp::GeneralFad<Storage> > :
     public Sacado::Fad::SerializerImp< Ordinal,
@@ -197,6 +211,11 @@ namespace Teuchos {
       Base(vs, sz) {}
   };
 }
-#endif // HAVE_SACADO_TEUCHOS
+#endif
+
+// KokkosComm
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#include "KokkosExp_View_Fad.hpp"
+#endif
 
 #endif // SACADO_FAD_EXP_GENERALFADTRAITS_HPP

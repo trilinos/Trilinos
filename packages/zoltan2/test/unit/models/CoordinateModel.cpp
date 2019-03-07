@@ -230,10 +230,10 @@ void testCoordinateModel(std::string &fname, int nWeights,
   if (!fail && model->getNumWeightsPerCoordinate() !=  nWeights)
     fail = 9;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
   
   ArrayView<const zgno_t> gids;
   ArrayView<input_t> xyz;
@@ -268,10 +268,10 @@ void testCoordinateModel(std::string &fname, int nWeights,
     }
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   if (gfail)
-    printFailureCode(comm, fail);
+    printFailureCode(*comm, fail);
 }
 
 int main(int narg, char *arg[])

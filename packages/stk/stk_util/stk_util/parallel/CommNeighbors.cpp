@@ -75,6 +75,10 @@ namespace stk {
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
+#ifdef __INTEL_COMPILER
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
 void CommNeighbors::rank_error( const char * method , int p ) const
 {
   std::ostringstream os ;

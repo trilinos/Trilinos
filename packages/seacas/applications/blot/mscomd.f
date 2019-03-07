@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -725,7 +725,7 @@ C *** Mesh control ***
         if (FFMATC (IFLD, INTYP, CFIELD, 'ADD', 3)) THEN
           NLIT = NLIT + 1
           if (NLIT .GT. MAXLIT) THEN
-            call prterr('WARNING', 
+            call prterr('WARNING',
      *        'Too many lights defined, overwriting last defined light')
             NLIT = MAXLIT
           end if
@@ -752,7 +752,7 @@ C *** Mesh control ***
         else
           nlit = 1
         end if
-        
+
         CALL FFREAL (IFLD, INTYP, RFIELD,
      *    'X Component', 1.0, LITE(1,NLIT), *140)
         CALL FFADDR (LITE(1,NLIT), INLINE(1))
@@ -772,9 +772,9 @@ C ... Normalize light vectors.
           lite(5,i) = lite(1,i) / vmag
           lite(6,i) = lite(2,i) / vmag
           lite(7,i) = lite(3,i) / vmag
-          lite(8,i) = lite(4,i) 
+          lite(8,i) = lite(4,i)
  127    continue
-        
+
       ELSE IF (VERB .EQ. 'AMBIENT') THEN
         INVERB = ' '
         CALL FFADDC (VERB, INLINE(1))
@@ -890,12 +890,12 @@ C          Check that next field has characters in it.
              END IF
            END IF
          END IF
-C ... Optional integer specifying number of sphere segments         
+C ... Optional integer specifying number of sphere segments
          CALL FFINTG (IFLD, INTYP, IFIELD,
      &     'segments used to draw spheres', 12, ISMULT, *140)
          ISMULT = MIN(ISMULT, NPTSPX)
          SPHPLT = SPHPLT * ISMULT
-         
+
          INVERB = ' '
 
 C *** Display control ***

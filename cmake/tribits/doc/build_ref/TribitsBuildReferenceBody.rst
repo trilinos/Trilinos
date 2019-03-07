@@ -1934,6 +1934,21 @@ did not get added, then this line will show why the test was not added
 ``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
 arguments).
 
+
+Enable advanced test start and end times and timing blocks
+----------------------------------------------------------
+
+For tests added using ``TRIBITS_ADD_ADVANCED_TEST()``, one can see start and
+end times for the tests and the timing for each ``TEST_<IDX>`` block in the
+detailed test output by configuring with::
+
+  -D<Project>_SHOW_TEST_START_END_DATE_TIME=ON
+
+The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
+and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
+systems and not native Windows systems.
+
+
 .. _DART_TESTING_TIMEOUT:
 
 Setting test timeouts at configure time

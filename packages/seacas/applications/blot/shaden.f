@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -143,7 +143,7 @@ C ... Normalize surface normal
 C ... Determine dot product of surface normal and light vector.
       SMAG = 0.0
       DO 120 I = 1, NLIT
-         SMAG = SMAG + max(0.0, (XMAG * LITE(5,I) + YMAG * LITE(6,I) + 
+         SMAG = SMAG + max(0.0, (XMAG * LITE(5,I) + YMAG * LITE(6,I) +
      *                 ZMAG * LITE(7,I)) * LITE(8,I))
   120 CONTINUE
 
@@ -155,16 +155,16 @@ C ... Calculate Reflection Vector.
           x = 2 * xmag * R - lite(5,i)
           y = 2 * ymag * R - lite(6,i)
           z = 2 * zmag * R - lite(7,i)
-          
+
 C ... Normalize Reflection Vector
           vmag = sqrt(x**2 + y**2 + z**2)
           x = x / vmag
           y = y / vmag
           z = z / vmag
-          
-C ... NOTE: Sight vector is (0,0,1), 
-          
-C ... Calculate dot product of Reflect and Sight 
+
+C ... NOTE: Sight vector is (0,0,1),
+
+C ... Calculate dot product of Reflect and Sight
 C     - sight = z, therefore, dot product = z
           RMAG = RMAG + max(0.0, Z)**SPEXP * LITE(8,I)
  160    CONTINUE

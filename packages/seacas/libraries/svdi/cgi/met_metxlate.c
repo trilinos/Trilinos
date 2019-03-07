@@ -2062,9 +2062,6 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
       break;
     }
 
-    x = *(float *)params[1];
-    y = *(float *)params[2];
-
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->text_color);
 

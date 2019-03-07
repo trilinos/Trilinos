@@ -33,8 +33,8 @@
  */
 #ifndef Ioss_STANDARD_ELEMENT_TYPES_H
 #define Ioss_STANDARD_ELEMENT_TYPES_H
-#include <Ioss_Bar2.h>
-#include <Ioss_Bar3.h>
+#include <Ioss_Beam2.h>
+#include <Ioss_Beam3.h>
 #include <Ioss_Edge2.h>
 #include <Ioss_Edge3.h>
 #include <Ioss_Hex16.h>
@@ -58,6 +58,8 @@
 #include <Ioss_ShellLine2D2.h>
 #include <Ioss_ShellLine2D3.h>
 #include <Ioss_Sphere.h>
+#include <Ioss_Spring2.h>
+#include <Ioss_Spring3.h>
 #include <Ioss_Super.h>
 #include <Ioss_Tet10.h>
 #include <Ioss_Tet11.h>

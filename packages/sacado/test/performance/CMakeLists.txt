@@ -3,7 +3,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURC
 
 # Don't build these tests when Cuda is enabled -- they take forever to compile
 # using the nvcc wrapper
-IF (${PACKAGE_NAME}_ENABLE_Teuchos AND NOT Kokkos_ENABLE_Cuda)
+IF (${PACKAGE_NAME}_ENABLE_TeuchosCore AND NOT Kokkos_ENABLE_Cuda)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_expr_depth
@@ -61,18 +61,20 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos AND NOT Kokkos_ENABLE_Cuda)
     COMM serial mpi
     )
 
-  TRIBITS_ADD_EXECUTABLE(
-    fad_blas
-    SOURCES fad_blas.cpp
-    COMM serial mpi
-    )
+  IF (${PACKAGE_NAME}_ENABLE_TeuchosNumerics)
+    TRIBITS_ADD_EXECUTABLE(
+      fad_blas
+      SOURCES fad_blas.cpp
+      COMM serial mpi
+      )
+  ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(copyPythonScripts
     DEST_FILES   plot_fad_expr_depth.py)
 
 ENDIF()
 
-IF (Sacado_ENABLE_Teuchos AND Sacado_ENABLE_KokkosCore)
+IF (Sacado_ENABLE_TeuchosCore AND Sacado_ENABLE_KokkosCore)
 
   TRIBITS_ADD_EXECUTABLE(
     fad_kokkos_view

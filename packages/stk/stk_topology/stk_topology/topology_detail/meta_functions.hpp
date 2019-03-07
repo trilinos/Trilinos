@@ -84,11 +84,12 @@ template <typename Topology>
 struct edge_topology_ : public boost::mpl::integral_c<topology::topology_t, Topology::edge_topology> {};
 
 template <typename Topology, unsigned SpatialDimension>
-struct defined_on_spatial_dimension_
-  : public boost::mpl::eval_if_c< (SpatialDimension < 4),
-                                  boost::mpl::at_c<typename Topology::spatial_dimension_vector, SpatialDimension>,
-                                  boost::mpl::identity<boost::mpl::false_> >::type
-{};
+STK_FUNCTION
+constexpr bool defined_on_spatial_dimension_()
+{
+  static_assert(SpatialDimension < 4, "Invalid spatial dimension");
+  return Topology::spatial_dimension_vector[SpatialDimension];
+}
 
 template <typename Topology, unsigned EdgeOrdinal>
 struct edge_node_ordinals_

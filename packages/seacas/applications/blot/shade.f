@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -92,9 +92,9 @@ C     SHDCOL(4-7,*) - Future Use
       REAL SHDCOL(7,NELBLK)
 C ... ISHDCL(1, *) = -1 if color not set, >0 if color set
 C     ISHDCL(2, *) = Number of colors to use for this block (SET if 0)
-C     ISHDCL(3, *) = Starting location in color map (SET)      
+C     ISHDCL(3, *) = Starting location in color map (SET)
       INTEGER ISHDCL(3,NELBLK)
-      
+
 C ... AMBIENT controls the range of hue values. The hue is scaled by:
 C         HUE = (1 - AMBIENT) * HUE + AMBIENT
 C ... It is somewhat similar to the ambient intensity.
@@ -109,7 +109,7 @@ C ... Determine range of plot window
 
 C ... Set colors for all blocks
       call setcol (nelblk, shdcol, ishdcl, ielbst, blkcol, idelb)
-      
+
 C ... Heres where we actually start plotting something.
 
       call excpus(time1)
@@ -117,10 +117,10 @@ C ... Heres where we actually start plotting something.
         IFAC = IXFAC(IX)
         IELB = 0
         IXL = IDBLNK (IELB, IFAC, LENF, NLNKF)
-        
+
         NNPF = NLNKF(IELB)
         CALL SHADEN (NNPF, LINKF(IXL), XN, YN, ZN,
-     *    ishdcl(2,ielb), LITE, NLIT, ishdcl(3,ielb), 
+     *    ishdcl(2,ielb), LITE, NLIT, ishdcl(3,ielb),
      *    shdcol(4,ielb), shdcol(5,ielb), shdcol(6,ielb),
      *    xmin, ymin, xmax, ymax)
  100  CONTINUE
@@ -133,7 +133,7 @@ C ... Heres where we actually start plotting something.
      *  '(',1pe10.3,' faces/second)',/)
 
       CALL PLTFLU
-      
+
       RETURN
       END
-      
+

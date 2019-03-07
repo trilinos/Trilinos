@@ -90,7 +90,8 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
     crs_graph = rcp(new Tpetra_CrsGraph(x_map, vecLength));
     std::vector<int> indices(vecLength);
     for (int i=0; i<vecLength; i++) indices[i]=i;
-    for (int i=0; i<x_map->getNodeNumElements(); i++)
+    const int nodeNumElements = x_map->getNodeNumElements();
+    for (int i=0; i<nodeNumElements; i++)
       crs_graph->insertGlobalIndices(x_map->getGlobalElement(i), vecLength, &indices[0]);
     crs_graph->fillComplete();
 

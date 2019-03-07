@@ -87,6 +87,8 @@ namespace Tpetra {
     typedef Node node_type;
     typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
+    ImportExportData () = delete;
+
     /// \brief Constructor
     ///
     /// \param source [in] Source Map of the Import or Export
@@ -123,7 +125,7 @@ namespace Tpetra {
                       const Teuchos::RCP<Teuchos::FancyOStream>& out,
                       const Teuchos::RCP<Teuchos::ParameterList>& plist);
     //! Destructor
-    ~ImportExportData();
+    ~ImportExportData () = default;
 
     /// \brief Copy the data, but reverse the direction of the
     ///   transfer as well as reversing the Distributor.
@@ -138,8 +140,24 @@ namespace Tpetra {
     //! Target Map of the Import or Export
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
 
-    //! Output stream for debug output.
+    //! Output stream for verbose debugging output.
     Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+    //! Whether to print verbose debugging output.
+    bool verbose_ = false;
+
+    using execution_space = typename Node::device_type::execution_space;
+
+    // See #1088 for why this is not just device_type::memory_space.
+#ifdef KOKKOS_ENABLE_CUDA
+    using memory_space = typename std::conditional<
+      std::is_same<execution_space, Kokkos::Cuda>::value,
+      Kokkos::CudaSpace,
+      typename Node::device_type::memory_space>::type;
+#else
+    using memory_space = typename Node::device_type::memory_space;
+#endif // KOKKOS_ENABLE_CUDA
+    using device_type = Kokkos::Device<execution_space, memory_space>;
 
     /// \brief Index of target Map LIDs to which to permute.
     ///
@@ -152,7 +170,7 @@ namespace Tpetra {
     /// For each remaining GIDs g in the target Map, if the source Map
     /// also owns g, then permuteToLIDs_ gets the corresponding LID in
     /// the target Map.
-    Teuchos::Array<LocalOrdinal> permuteToLIDs_;
+    Kokkos::DualView<LocalOrdinal*, device_type> permuteToLIDs_;
 
     /// \brief Index of source Map LIDs from which to permute.
     ///
@@ -165,7 +183,7 @@ namespace Tpetra {
     /// For each remaining GID g in the target Map, if the source Map
     /// also owns g, then permuteFromLIDs_ gets the corresponding LID
     /// in the source Map.
-    Teuchos::Array<LocalOrdinal> permuteFromLIDs_;
+    Kokkos::DualView<LocalOrdinal*, device_type> permuteFromLIDs_;
 
     /// \brief "Incoming" indices.
     ///
@@ -173,7 +191,7 @@ namespace Tpetra {
     /// target Map, but not by the source Map.  The target object of
     /// the Import or Export will receive data for these LIDs from
     /// other processes.
-    Teuchos::Array<LocalOrdinal> remoteLIDs_;
+    Kokkos::DualView<LocalOrdinal*, device_type> remoteLIDs_;
 
     /// \brief "Outgoing" local indices.
     ///
@@ -181,7 +199,7 @@ namespace Tpetra {
     /// source Map, but not by the target Map.  The source object of
     /// the Import or Export will send data from these LIDs to other
     /// processes.
-    Teuchos::Array<LocalOrdinal> exportLIDs_;
+    Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs_;
 
     //! Ranks of the processes to which the source object sends data.
     Teuchos::Array<int> exportPIDs_;

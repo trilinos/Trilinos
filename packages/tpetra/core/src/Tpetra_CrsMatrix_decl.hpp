@@ -70,6 +70,9 @@
 
 namespace Tpetra {
 
+  // Forward declaration for CrsMatrix::swap() test
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class crsMatrix_Swap_Tester;
+
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
   /// \relatesalso CrsMatrix
   /// \tparam CrsMatrixType A specialization of CrsMatrix.
@@ -1020,6 +1023,9 @@ namespace Tpetra {
 
     //! Destructor.
     virtual ~CrsMatrix ();
+
+
+  public:
 
     //@}
     //! @name Methods for inserting, modifying, or removing entries
@@ -2514,7 +2520,7 @@ namespace Tpetra {
     size_t getNodeNumEntries() const override;
 
     /// \brief Number of entries in the sparse matrix in the given
-    ///   globa row, on the calling (MPI) process.
+    ///   global row, on the calling (MPI) process.
     ///
     /// \return <tt>OrdinalTraits<size_t>::invalid()</tt>if the
     ///   specified global row index is invalid on the calling
@@ -2825,11 +2831,9 @@ namespace Tpetra {
     ///   entries of the matrix in a given row, using local column
     ///   indices.
     ///
-    /// \param localRow [in] Local index of the row for which to
-    ///   return entries.
-    /// \param colInds [out] Local column indices corresponding to
-    ///   values.
-    /// \param vals [out] Matrix values.
+    /// \param localRow   [in]  Local index of the row for which to return entries.
+    /// \param colInds    [out] Local column indices corresponding to values.
+    /// \param vals       [out] Matrix values.
     /// \param numEntries [out] Number of entries returned.
     ///
     /// Note: A std::runtime_error exception is thrown if either
@@ -2847,10 +2851,9 @@ namespace Tpetra {
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using global row and column indices.
     ///
-    /// \param GlobalRow [in] Global index of the row to view.
-    /// \param indices [out] On output: view of the global column
-    ///   indices in the row.
-    /// \param values [out] On output: view of the values in the row.
+    /// \param GlobalRow [in]  Global index of the row to view.
+    /// \param indices   [out] On output: view of the global column indices in the row.
+    /// \param values    [out] On output: view of the values in the row.
     ///
     /// \pre <tt>isLocallyIndexed () == false</tt>
     /// \post <tt>indices.size () == this->getNumEntriesInGlobalRow (GlobalRow)</tt>
@@ -2865,10 +2868,9 @@ namespace Tpetra {
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices.
     ///
-    /// \param LocalRow [in] Local index of the row to view.
-    /// \param indices [out] On output: view of the local column
-    ///   indices in the row.
-    /// \param values [out] On output: view of the values in the row.
+    /// \param LocalRow [in]  Local index of the row to view.
+    /// \param indices  [out] On output: view of the local column indices in the row.
+    /// \param values   [out] On output: view of the values in the row.
     ///
     /// \pre <tt>isGloballyIndexed () == false</tt>
     /// \post <tt>indices.size () == this->getNumEntriesInLocalRow (LocalRow)</tt>
@@ -2898,12 +2900,10 @@ namespace Tpetra {
     /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
     /// \post <tt>numEnt == getNumEntriesInGlobalRow (LocalRow)</tt>
     ///
-    /// \param lclRow [in] Local index of the row.
-    /// \param numEnt [out] Number of entries in the row that are
-    ///   stored on the calling process.
-    /// \param lclColInds [out] Local indices of the columns
-    ///   corresponding to values.
-    /// \param vals [out] Matrix values.
+    /// \param lclRow     [in]  Local index of the row.
+    /// \param numEnt     [out] Number of entries in the row that are stored on the calling process.
+    /// \param lclColInds [out] Local indices of the columns corresponding to values.
+    /// \param vals       [out] Matrix values.
     ///
     /// \return Error code; zero on no error.
     LocalOrdinal
@@ -2919,13 +2919,11 @@ namespace Tpetra {
     /// The order of arguments exactly matches those of
     /// Epetra_CrsMatrix::ExtractMyRowView.
     ///
-    /// \param lclRow [in] Local index of the row to view.
+    /// \param lclRow [in]  Local index of the row to view.
     /// \param numEnt [out] On output: Number of entries in the row.
-    /// \param val [out] On successful output: View of the values in
-    ///   the row.  Output value is undefined if not successful.
-    /// \param ind [out] On successful output: View of the local
-    ///   column indices in the row.  Output value is undefined if not
-    ///   successful.
+    /// \param val    [out] On successful output: View of the values in the row. Output value is undefined if not successful.
+    /// \param ind    [out] On successful output: View of the local column indices in the row.
+    ///                     Output value is undefined if not successful.
     ///
     /// \return Zero if successful, else a nonzero error code.
     ///
@@ -3226,8 +3224,7 @@ namespace Tpetra {
       }
     }
 
-  private:
-
+  public:
     /// \brief Compute the local part of a sparse matrix-(Multi)Vector
     ///   multiply.
     ///
@@ -3264,8 +3261,6 @@ namespace Tpetra {
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
                 const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
-
-  public:
 
     /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
     ///
@@ -3829,14 +3824,14 @@ namespace Tpetra {
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs) override;
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) override;
 
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                        Kokkos::DualView<char*, buffer_device_type>& exports,
-                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets,
                        Distributor& distor) override;
 
@@ -3844,9 +3839,12 @@ namespace Tpetra {
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                             const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                             const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+    unpackAndCombineNewImpl (const Kokkos::DualView<const local_ordinal_type*,
+                               buffer_device_type>& importLIDs,
+                             const Kokkos::DualView<const char*,
+                               buffer_device_type>& imports,
+                             const Kokkos::DualView<const size_t*,
+                               buffer_device_type>& numPacketsPerLID,
                              const size_t constantNumPackets,
                              Distributor& distor,
                              const CombineMode combineMode,
@@ -3854,9 +3852,12 @@ namespace Tpetra {
     /// \brief Implementation of unpackAndCombineNewImpl for when the
     ///   target matrix's structure may change.
     void
-    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                                      const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                                      const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
+                                        buffer_device_type>& importLIDs,
+                                      const Kokkos::DualView<const char*,
+                                        buffer_device_type>& imports,
+                                      const Kokkos::DualView<const size_t*,
+                                        buffer_device_type>& numPacketsPerLID,
                                       const size_t constantNumPackets,
                                       Distributor& distor,
                                       const CombineMode combineMode);
@@ -3873,9 +3874,9 @@ namespace Tpetra {
     ///   serious changes to matrix assembly in order to implement
     ///   sensibly).
     void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                         const Kokkos::DualView<const char*, buffer_device_type>& imports,
-                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+                         Kokkos::DualView<char*, buffer_device_type> imports,
+                         Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                          const size_t constantNumPackets,
                          Distributor& distor,
                          const CombineMode CM) override;
@@ -3988,7 +3989,7 @@ namespace Tpetra {
     /// Knowing the number of entries for each row also makes
     /// parallelizing packing and unpacking easier.
     void
-    packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+    packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
              Kokkos::DualView<char*, buffer_device_type>& exports,
              const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
              size_t& constantNumPackets,
@@ -4002,7 +4003,7 @@ namespace Tpetra {
     /// Call this only when this matrix (which is the source matrix to
     /// pack) does not yet have a KokkosSparse::CrsMatrix.
     void
-    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                       Kokkos::DualView<char*, buffer_device_type>& exports,
                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                       size_t& constantNumPackets,
@@ -4120,7 +4121,8 @@ namespace Tpetra {
     void
     allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
                           size_t& totalNumEntries,
-                          const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const;
+                          const Kokkos::DualView<const local_ordinal_type*,
+                            buffer_device_type>& exportLIDs) const;
     //@}
 
   public:
@@ -4780,6 +4782,18 @@ namespace Tpetra {
     /// between <tt>const double*</tt> and <tt>double* const</tt>.
     Kokkos::View<impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
     getRowViewNonConst (const RowInfo& rowInfo) const;
+
+
+  protected:
+
+    // Friend the tester for CrsMatrix::swap
+    friend class Tpetra::crsMatrix_Swap_Tester<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    /// \brief Swaps the data from *this with the data and maps from crsMatrix
+    ///
+    /// \param matrix [in/out] a crsMatrix
+    void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
+
 
   protected:
 

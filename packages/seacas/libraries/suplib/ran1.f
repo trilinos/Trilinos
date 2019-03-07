@@ -1,23 +1,23 @@
 C    Copyright(C) 2009-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C            
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
 C          with the distribution.
-C    
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,11 +33,11 @@ C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       REAL FUNCTION RAN1(idum)
 C
 C  This function returns a pseudo-random number for each invocation.
-C  It is a FORTRAN 77 adaptation of the "Integer Version 2" minimal 
+C  It is a FORTRAN 77 adaptation of the "Integer Version 2" minimal
 C  standard number generator whose Pascal code appears in the article:
 C
-C     Park, Steven K. and Miller, Keith W., "Random Number Generators: 
-C     Good Ones are Hard to Find", Communications of the ACM, 
+C     Park, Steven K. and Miller, Keith W., "Random Number Generators:
+C     Good Ones are Hard to Find", Communications of the ACM,
 C     October, 1988.
 C
       PARAMETER (MPLIER=16807,MODLUS=2147483647,MOBYMP=127773,
@@ -55,7 +55,7 @@ C
         else
           NEXTN = JSEED
         end if
-        
+
         IFRST = 1
       ENDIF
 C

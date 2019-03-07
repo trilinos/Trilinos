@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, VAR_WHOLE_TIME, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_var_double, etc
 #include <stdio.h>
 
 /*!

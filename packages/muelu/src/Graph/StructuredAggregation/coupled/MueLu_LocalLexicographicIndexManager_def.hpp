@@ -114,7 +114,9 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map>fineMap,
-                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs, Array<GO>& ghostedNodeCoarseGIDs) const {
+                      Array<LO>& ghostedNodeCoarseLIDs,
+                      Array<int>& ghostedNodeCoarsePIDs,
+                      Array<GO>& ghostedNodeCoarseGIDs) const {
 
     // First we allocated memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
@@ -198,7 +200,6 @@ namespace MueLu {
     ArrayView<const GO> fineNodeGIDs = fineCoordinatesMap->getNodeElementList();
 
     Array<GO> coarseStartIndices(3);
-    GO tmp;
     for(int dim = 0; dim < 3; ++dim) {
       coarseStartIndices[dim] = this->coarseMeshData[myRankIndex][2*dim + 3];
     }
@@ -466,7 +467,7 @@ namespace MueLu {
   getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
     // Assumptions: (i,j,k) is a tuple on the coarse mesh
     //              myLID is the corresponding local ID on the fine mesh
-    const GO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
+    const LO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
     const LO indices[3] = {i, j, k};
 
     myLID = 0;

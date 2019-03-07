@@ -141,7 +141,9 @@ unpackCrsGraphAndCombineNew(
     const Kokkos::DualView<const size_t*,
                            typename CrsGraph<LO,GO,NT>::buffer_device_type>&
                            numPacketsPerLID,
-    const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
+    const Kokkos::DualView<const LO*,
+                           typename CrsGraph<LO,GO,NT>::buffer_device_type>&
+                           importLIDs,
     const size_t constantNumPackets,
     Distributor & distor,
     const CombineMode combineMode);

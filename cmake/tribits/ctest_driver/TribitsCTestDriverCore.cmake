@@ -51,6 +51,8 @@ MESSAGE("")
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 
+SET(THIS_CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
 #
 # Get the basic variables that define the project and the build
 #
@@ -468,7 +470,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _TRIBITS_PROJECT_ROOT:
 #
-#   ``TRIBITS_PROJECT_ROOT``.
+#   ``TRIBITS_PROJECT_ROOT=<projectDir>``.
 #
 #     The root directory to an existing source tree where the project's
 #     `<projectDir>/ProjectName.cmake`_ (defining the ``PROJECT_NAME``
@@ -477,7 +479,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     default and env override is set for this during the INCLUDE() of the
 #     module ``TribitsCTestDriverCore.cmake``.
 #
-#   ``${PROJECT_NAME}_TRIBITS_DIR``
+#   ``${PROJECT_NAME}_TRIBITS_DIR=<tribits-dir>``
 #
 #     The base directory for the TriBITS system's various CMake modules,
 #     python scripts, and other files.  By default this is assumed to be
@@ -488,7 +490,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DASHBOARD_ROOT:
 #
-#   ``CTEST_DASHBOARD_ROOT``
+#   ``CTEST_DASHBOARD_ROOT=<dashboard-root-dir>``
 #
 #     If set, this is the base directory where this script runs that clones
 #     the sources for the project.  If this directory does not exist, it will
@@ -499,7 +501,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_SOURCE_NAME:
 #
-#   ``CTEST_SOURCE_NAME``
+#   ``CTEST_SOURCE_NAME=<src-dir-name>``
 #
 #     The name of the source directory.  This can be SET() in the CTest -S
 #     script before the call to ``TRIBITS_CTEST_DRIVER()`` or overridden as an
@@ -507,7 +509,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_SOURCE_DIRECTORY:
 #
-#   ``CTEST_SOURCE_DIRECTORY``
+#   ``CTEST_SOURCE_DIRECTORY=<src-dir-full-path>``
 #
 #     Built-in CTest variable that determines the location of the sources that
 #     are used to define packages, dependencies and configure, build, and test
@@ -526,7 +528,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_BINARY_DIRECTORY:
 #
-#   ``CTEST_BINARY_DIRECTORY``
+#   ``CTEST_BINARY_DIRECTORY=<binary-dir-full-path>``
 #
 #     Built-in CTest variable that determines the location of the binary tree
 #     where output from CMake/CTest is put.  This is used to set to
@@ -551,7 +553,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _${PROJECT_NAME}_PACKAGES:
 #
-#   ``${PROJECT_NAME}_PACKAGES``
+#   ``${PROJECT_NAME}_PACKAGES=<pkg0>,<pkg1>,...``
 #
 #     A semi-colon ';' or comma ',' separated list of packages that determines
 #     the specific set of packages to test.  If left at the default value of
@@ -562,7 +564,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _${PROJECT_NAME}_ADDITIONAL_PACKAGES:
 #
-#   ``${PROJECT_NAME}_ADDITIONAL_PACKAGES``
+#   ``${PROJECT_NAME}_ADDITIONAL_PACKAGES=<pkg0>,<pkg1>,...``
 #
 #     If ``${PROJECT_NAME}_PACKAGES`` is empty (and therefore
 #     ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON`` is set), then additional
@@ -575,7 +577,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES:
 #
-#   ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES``
+#   ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=[TRUE|FALSE]``
 #
 #     If set to ``TRUE``, then all of the downstream packages from those
 #     specified in ``${PROJECT_NAME}_PACKAGES`` will be enabled (see
@@ -584,7 +586,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     ``CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=TRUE`` is set in which case the
 #     default value is ``TRUE``.
 #
-#   ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE``
+#   ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=[TRUE|FALSE]``
 #
 #     If set to ``TRUE``, then ST packages will get enabled in automated logic
 #     in the outer determination of what packages to get tested.  This value
@@ -593,7 +595,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _${PROJECT_NAME}_EXCLUDE_PACKAGES:
 #
-#   ``${PROJECT_NAME}_EXCLUDE_PACKAGES``
+#   ``${PROJECT_NAME}_EXCLUDE_PACKAGES=<pkg0>,<pgk1>,...``
 #
 #     A semi-colon ';' or comma ',' separated list of packages **NOT** to
 #     enable when determining the set of packages to be tested.  NOTE: Listing
@@ -603,7 +605,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     in your driver script).  But for the all-at-once approach this list of
 #     package disables **IS** pass into the inner configure.
 #
-#   ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES``
+#   ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=[TRUE|FALSE]``
 #
 #     If set to ``ON`` (or ``TRUE``), then if there are conflicts between
 #     explicit enables and disables then explicit disables will override the
@@ -613,7 +615,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES:
 #
-#   ``CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES``
+#   ``CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=[TRUE|FALSE]``
 #
 #     If set to ``TRUE``, then all of the upstream packages for those selected
 #     to be explicitly tested will be processed with results posted to CDash.
@@ -637,7 +639,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_ENABLE_MODIFIED_PACKAGES_ONLY:
 #
-#   ``CTEST_ENABLE_MODIFIED_PACKAGES_ONLY``
+#   ``CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then only packages that have changes pulled from the git
 #     repos since the last time the build ran will be tested (in addition to
@@ -761,7 +763,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_NEW_START:
 #
-#   ``CTEST_DO_NEW_START``
+#   ``CTEST_DO_NEW_START=[TRUE|FALSE]``
 #
 #     If ``TRUE``, ``ctest_start()`` is called to set up a new "dashboard"
 #     (i.e. define a new CDash build with a unique Build Stamp defined in the
@@ -769,7 +771,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     is called which allows it this ctest -S invocation to append results to
 #     an existing CDash build.  (See ???).  Default ``TRUE``.
 #
-#   ``CTEST_DO_UPDATES``
+#   ``CTEST_DO_UPDATES=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then the source repos will be updated as specified in
 #     `Repository Updates (TRIBITS_CTEST_DRIVER())`_.  Default ``TRUE``.
@@ -784,7 +786,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_START_WITH_EMPTY_BINARY_DIRECTORY:
 #
-#   ``CTEST_START_WITH_EMPTY_BINARY_DIRECTORY``
+#   ``CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then if the binary directory ``${CTEST_BINARY_DIRECTORY}``
 #     already exists, then it will be clean out using the CTest command
@@ -796,7 +798,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_CONFIGURE:
 #
-#   ``CTEST_DO_CONFIGURE``
+#   ``CTEST_DO_CONFIGURE=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then the selected packages will be configured.  If
 #     ``FALSE``, it is assumed that a relavent configure is already in place
@@ -807,7 +809,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_WIPE_CACHE:
 #
-#   ``CTEST_WIPE_CACHE``
+#   ``CTEST_WIPE_CACHE=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then ``${CTEST_BINARY_DIRECTORY}/CMakeCache.txt`` and
 #     ``${CTEST_BINARY_DIRECTORY}/CMakeFiles/`` will be deleted before
@@ -817,7 +819,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_BUILD:
 #
-#   ``CTEST_DO_BUILD``
+#   ``CTEST_DO_BUILD=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then the selected packages will be build.  If ``FALSE``, it
 #     is assumed that a relavent build is already in place in the binary
@@ -840,7 +842,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_INSTALL:
 #
-#   ``CTEST_DO_INSTALL``
+#   ``CTEST_DO_INSTALL=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then the 'install' target will be built to install what has
 #     been configured and built by the build step for the all-at-once mode
@@ -854,7 +856,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_TEST:
 #
-#   ``CTEST_DO_TEST``
+#   ``CTEST_DO_TEST=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then ``CTEST_TEST()`` will be called and test results will
 #     be submitted to CDash.  This should be set to ``FALSE`` when one wanted
@@ -864,7 +866,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_PARALLEL_LEVEL:
 #
-#   ``CTEST_PARALLEL_LEVEL``
+#   ``CTEST_PARALLEL_LEVEL=<num>``
 #
 #     The parallel level passed in the ``PARALLEL_LEVEL`` argument to
 #     ``CTEST_TEST()`` AND ``CTEST_MEMCHECK()``.  The default value is ``1``
@@ -872,7 +874,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_COVERAGE_TESTING:
 #
-#   ``CTEST_DO_COVERAGE_TESTING``
+#   ``CTEST_DO_COVERAGE_TESTING=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then ``CTEST_COVERAGE()`` is called to collect coverage and
 #     submit results generated from the previous ``CTEST_TEST()`` command.
@@ -892,7 +894,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_MEMORY_TESTING:
 #
-#   ``CTEST_DO_MEMORY_TESTING``
+#   ``CTEST_DO_MEMORY_TESTING=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then ``CTEST_MEMCHECK()`` is called to run the test suite
 #     with the memory checking tool and results submitted to CDash.
@@ -916,7 +918,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE:
 #
-#   ``CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE``
+#   ``CTEST_GENERATE_OUTER_DEPS_XML_OUTPUT_FILE=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then ``<Project>PackageDependencies.xml`` file will be
 #     generated in the outer CTest -S program.  This file is used to help
@@ -929,7 +931,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE:
 #
-#   ``CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE``
+#   ``CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then CDash subprojects XML file is generated and submitted
 #     to CDash.  This file tells CDash about the subproject (i.e. TriBITS
@@ -937,7 +939,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_DO_SUBMIT:
 #
-#   ``CTEST_DO_SUBMIT``
+#   ``CTEST_DO_SUBMIT=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then all of the results generated locally are submitted to
 #     CDash using ``CTEST_SUBMIT()``.  One can set this to ``FALSE`` when
@@ -958,7 +960,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_TEST_TYPE:
 #
-#   ``CTEST_TEST_TYPE``
+#   ``CTEST_TEST_TYPE=[Nightly|Continuous|Experimental]``
 #
 #     Determines the type of build.  This value is passed in as the first
 #     argument to the built-in CTest function ``CTEST_START()``.  Valid values
@@ -970,7 +972,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _${PROJECT_NAME}_TESTING_TRACK:
 #
-#   ``${PROJECT_NAME}_TESTING_TRACK``
+#   ``${PROJECT_NAME}_TESTING_TRACK=<track-name>``
 #
 #     Specifies the testing track on CDash for which results are displayed
 #     under (i.e. the "Group" filter field on CDash).  This is the value used
@@ -982,7 +984,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_SITE:
 #
-#   ``CTEST_SITE``
+#   ``CTEST_SITE=<site-name>``
 #
 #     This is a built-in CTest variable that determines what is displayed for
 #     the ``site`` field for the build on CDash.  This specified by default by
@@ -990,7 +992,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _COMPILER_VERSION:
 #
-#   ``COMPILER_VERSION``
+#   ``COMPILER_VERSION=<compiler-version>``
 #
 #     Gives the name of the compiler that is used to compose a default
 #     `CTEST_BUILD_NAME`_.  If ``CTEST_BUILD_NAME`` is explicitly set, then
@@ -998,7 +1000,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_BUILD_NAME:
 #
-#   ``CTEST_BUILD_NAME``
+#   ``CTEST_BUILD_NAME=<build-name>``
 #
 #     This is a built-in CTest variable that determines the name of the build
 #     on CDash.  Builds that have the same ``CTEST_SITE``,
@@ -1011,6 +1013,20 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     system command using ``FIND_PROGRAM(uname)``.  The value of
 #     ``BUILD_DIR_NAME`` is expected to be set in each specific CTest -S
 #     driver script.
+#
+#   .. _CTEST_NOTES_FILES:
+#
+#   ``CTEST_NOTES_FILES="<filepath1>;<filepath2>;..."``
+#
+#     Built-in CTest variable that specifies a semi-colon seprated list of
+#     files that will get uploaded to CDash as "notes files".  This function
+#     will also add other files as notes files as well such as the file
+#     ``CMakeCache.clean.txt`` (cleaned-up version of the CMakeCache.txt
+#     file), the file ``Updates.txt`` (lists new git commits pulled in all the
+#     git repos), the file ``UpdateCommandsOutput.txt`` (list of commands and
+#     their output which are run by ``ctest_update()`` in the base git repo),
+#     and the file ``${PROJECT_NAME}RepoVersion.txt`` (gives version of all
+#     the git repos being tested).
 #
 # .. _Specifying where the results go to CDash (TRIBITS_CTEST_DRIVER()):
 #
@@ -1049,7 +1065,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # repos is determined using the following vars (which can be set in the CTest
 # -S script or overridden with env vars of the same name):
 #
-#   ``${PROJECT_NAME}_EXTRAREPOS_FILE``
+#   ``${PROJECT_NAME}_EXTRAREPOS_FILE=<extrarepos-file-path>``
 #
 #     Points to a file that lists the extra VC and TriBITS repos. If not
 #     explicitly set, then by default it will read from the file
@@ -1058,19 +1074,19 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     ``ProjectName.cmake`` file in which case no extra repos file is read in.
 #     See `<Project>_EXTRAREPOS_FILE`_.
 #
-#   ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE``
+#   ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=[Nightly|Continuous|Experimental]``
 #
 #     The category of extra repos to process from the file
 #     ``${PROJECT_NAME}_EXTRAREPOS_FILE`` (see
 #     `<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`_).
 #
-#   ``${PROJECT_NAME}_PRE_REPOSITORIES``
+#   ``${PROJECT_NAME}_PRE_REPOSITORIES=<reponame1>,<reponame2>,...``
 #
 #     Subset of "pre" extra repos specified in the file
 #     ``${PROJECT_NAME}_EXTRAREPOS_FILE`` to process (see
 #     `<Project>_PRE_REPOSITORIES`_).
 #
-#   ``${PROJECT_NAME}_EXTRA_REPOSITORIES``
+#   ``${PROJECT_NAME}_EXTRA_REPOSITORIES=<reponame1>,<reponame2>,...``
 #
 #     Subset of "post" extra repos specified in the file
 #     ``${PROJECT_NAME}_EXTRAREPOS_FILE`` to process (see
@@ -1090,7 +1106,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # package-by-package, based on the vars (which can be set in the CTest -S
 # script and overridden by env vars):
 #
-#   ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE``
+#   ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=[TRUE|FALSE]``
 #
 #     If ``TRUE``, then single calls to ``CTEST_CONFIGURE()``,
 #     ``CTEST_BUILD()`` and ``CTEST_TEST()`` are made for all of the packages
@@ -1166,108 +1182,145 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # **Repository Updates (TRIBITS_CTEST_DRIVER()):**
 #
 # Like the rest of TriBITS, ``ctest -S`` scripts written using this function
-# supports a collection of extra repositories in addition to the base git
-# repository.  The basic clone and update of the extra repositories requires
-# all repos to use the git version control system.
+# support a collection of extra repositories in addition to the base git
+# repository.
 #
-# Whether the repos are updated (or left as is) is determined by the var:
+# Whether the local repos are updated (or left as is) is determined by the
+# variable:
 #
 #  .. _CTEST_DO_UPDATES:
 #
-#  ``CTEST_DO_UPDATES``
+#  ``CTEST_DO_UPDATES=[TRUE|FALSE]``
 #
 #    If set to ``TRUE``, then each of the git repos will be cloned if they do
-#    not already exist at `CTEST_SOURCE_DIRECTORY` and if already present will
-#    be updated as described below (and will wipe out any local changes).  If
-#    set to ``FALSE``, then the git repos will be left alone and must
-#    therefore already be cloned and updated at the desired state.  For
-#    example, this should be set to ``FALSE`` when running against a local
-#    development repo (e.g. the `make dashboard`_ target sets this to
-#    ``FALSE`` automatically) or when other logic is used to setup the source
-#    directories. **WARNING:** If you are running against a local repo with
-#    local changes and you don't set to ``FALSE``, then your local uncommitted
-#    changes will be wiped out and the local branch will be hard reset to the
-#    remote tracking branch!  The default value is ``TRUE``.
+#    not already exist and if already present will be updated as described
+#    below (and will wipe out any local changes).  If set to ``FALSE``, then
+#    the git repos will be left alone and must therefore already be cloned and
+#    updated at the desired state.  For example, this should be set to
+#    ``FALSE`` when running against a local development repo (e.g. the `make
+#    dashboard`_ target sets this to ``FALSE`` automatically) or when other
+#    logic is used to setup the source directories. **WARNING:** If you are
+#    running against a local repo with local changes and you don't set to
+#    ``FALSE``, then your local uncommitted changes will be wiped out and the
+#    local branch will be hard reset to the remote tracking branch!  The
+#    default value is ``TRUE``.
 #
 # **WARNING:** If you don't want local changes in your git repos to get blown
 # away, then set ``CTEST_DO_UPDATES`` to ``FALSE``!
 #
-# CTest itself is used for handling the cloning and the pull of the base
-# repository by calling ``CTEST_UPDATE()``.  The repo that is cloned is
-# determined by:
+# If the base repo pointed to by ``${CTEST_SOURCE_DIRECTORY}`` is missing, it
+# cloned inside of the ``CTEST_START()`` function using the custom command::
+#
+#   git clone [-b ${${PROJECT_NAME}_BRANCH}] \
+#     -o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE} \
+#     ${${PROJECT_NAME}_REPOSITORY_LOCATION}
+#
+# where:
 #
 #   .. _${PROJECT_NAME}_REPOSITORY_LOCATION:
 #
-#   ``${PROJECT_NAME}_REPOSITORY_LOCATION``
+#   ``${PROJECT_NAME}_REPOSITORY_LOCATION=<repo-url>``
 #
-#     The location of the base git repo to clone inside of ``CTEST_UPDATE()``.
-#     The default is
+#     The URL of the base git repo ``<repo-url>`` to clone inside of
+#     ``CTEST_START()``.  The default is
 #     ``${${PROJECT_NAME}_REPOSITORY_LOCATION_NIGHTLY_DEFAULT}`` when
 #     ``CTEST_TEST_TYPE=Nightly`` and otherwise the default is
 #     ``${${PROJECT_NAME}_REPOSITORY_LOCATION_DEFAULT}``.
 #
-# The cloning of the extra git repositories are completely handled by the
-# CMake/CTest code in this ``TRIBITS_CTEST_DRIVER()`` function as described
-# below.
+#   .. _${PROJECT_NAME}_GIT_REPOSITORY_REMOTE:
 #
-# After the base repository is cloned for the first time (by calling
-# ``CTEST_UPDATE()``), the extra repositories are cloned using the following
-# command::
+#   ``${PROJECT_NAME}_GIT_REPOSITORY_REMOTE=<remote-name>``
 #
-#   git clone <extrarepo_url>
+#     The git remote name given to the cloned repo.  This is needed for robust
+#     git operations as described below (Default 'origin').  If a repo is
+#     already cloned, then a remote in the already existing repo must exist
+#     with this name or 
 #
-# where ``<extrarepo_url>`` is given in the
-# ``${PROJECT_NAME}_EXTRAREPOS_FILE`` file.
-# 
-# Therefore, by default, whatever the default branch is set to on clone in the
-# base repos, that is the branch that will be used.  Also, future repository
-# updates will be done on those branches according to their set up remote
-# tracking branch.
+#   .. _${PROJECT_NAME}_BRANCH:
 #
-# However the branches of the code tested can be explicitly set using the
-# vars:
-#
-#   ``${PROJECT_NAME}_BRANCH``
+#   ``${PROJECT_NAME}_BRANCH=<branch>``
 #
 #     The branch of the base repo to explicitly checkout after clone (and on
-#     each update).  The default is
-#     ``${${PROJECT_NAME}_REPOSITORY_BRANCH}}``.
+#     each update).  The value of empty "" is allowed which results in the
+#     default branch being checked out on clone (and the ``-b <branch>``
+#     argument to be omitted from the ``git clone`` command).  The default
+#     value determined by the variable
+#     ``${${PROJECT_NAME}_REPOSITORY_BRANCH}}``.  The default value for
+#     ``${PROJECT_NAME}_REPOSITORY_BRANCH`` is empty.
 #
-#   ``${PROJECT_NAME}_REPOSITORY_BRANCH``
+# If the base repo already exists, no initial clone is performed and it is
+# assumed that it is in a state to allow it to be updated as described below.
 #
-#     Defines the default for ``${PROJECT_NAME}_BRANCH``.  This must be set in
-#     the CTest -S script (e.g. in the ``<projectDir>/CTestConfig.cmake``
-#     file).  The default if not otherwise specified is empty "".
+# After the base repo is cloned, any missing extra git repositories are cloned
+# using CMake/CTest code in this ``TRIBITS_CTEST_DRIVER()`` function (raw
+# CTest does not support cloning a list of extra repos) using the command::
 #
-#   ``${PROJECT_NAME}_EXTRAREPOS_BRANCH``
+#   git clone [-b ${${PROJECT_NAME}_EXTRAREPO_BRANCH}] \
+#     -o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE} \
+#     <extrarepo_url>
 #
-#     The branch that each extra VC repo that is checked out.  The default
-#     value is set to ``${${PROJECT_NAME}_BRANCH}``.  (NOTE: Checking out a
-#     separate branch on the extra repos from the base repo was needed for
-#     backward compatibility for the Trilinos project but this is not
-#     recommended usage and it violates the "single branch" approach for using
-#     `gitdist`_.)
+# where:
 #
-# If ``${PROJECT_NAME}_BRANCH`` is set to non-empty, then that branch will be
-# checked out in all of the repositories.  For the base repository, after the
-# clone or update is performed in the call to ``CTEST_UPDATE()``, then that
-# branch is checked out using the command::
+#   .. _${PROJECT_NAME}_EXTRAREPOS_BRANCH:
 #
-#   $ git checkout -B ${${PROJECT_NAME}_BRANCH} \
-#       --track origin/${${PROJECT_NAME}_BRANCH}`
+#   ``${PROJECT_NAME}_EXTRAREPOS_BRANCH=<extrarepo-branch>``
 #
-# That command is robust and will pass even if the current branch is already a
-# tracking branch for ``origin/${${PROJECT_NAME}_BRANCH}``.  **WARNING:** This
-# version of the ``git checkout -B``` command is not supported in older
-# versions of git.
+#     The branch ``<extrarepo-branch>`` that each extra VC repo that is
+#     checked out.  The default value is set to ``${${PROJECT_NAME}_BRANCH}``.
+#     If empty "", then the ``-b <branch>`` argument is omitted from the ``git
+#     clone`` command.  (NOTE: Checking out a separate branch on the extra
+#     repos from the base repo was needed for backward compatibility for the
+#     Trilinos project and is not recommended usage as it violates the "single
+#     branch" approach for using `gitdist`_.)
 #
-# If ``${PROJECT_NAME}_EXTRAREPO_BRANCH`` is empty, then each extra repository
-# is updated (even after the initial clone) using the commands::
+#   ``<extrarepo_url>``
 #
+#     The git repo remote URL given in the file
+#     `${PROJECT_NAME}_EXTRAREPOS_FILE`_.
+#
+# When ``CTEST_DO_UPDATES=TRUE`` (after a possible initial clone), the
+# function ``CTEST_UPDATE()`` is called to update the base git repo.  The base
+# git repo is updated with the custom git commands executed inside of the
+# ``CTEST_UPDATE()`` using::
+#
+#   $ git fetch ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
 #   $ git clean -fdx         # Remove untracked ignored files
-#   $ git reset --hard HEAD  # Removed untracked and modified tracked files
-#   $ git fetch origin       # Get updated commits
-#   $ git reset --hard @{u}  # Deal with forced push
+#   $ git reset --hard HEAD  # Clean files and set ORIG_HEAD to HEAD
+#   $ git checkout -B ${${PROJECT_NAME}_BRANCH} \
+#       --track origin/${${PROJECT_NAME}_BRANCH}   # Sets HEAD
+#
+# The above set of commands are the maximally robust way to update a git repo.
+# They will correct any local state of the local repo and will put the local
+# repo on the requested local tracking branch.  It can handled hard-reset
+# remote branches, previous tracking branch now missing, etc.  The only
+# requirement is that the remote repo pointed to at
+# ``${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}`` is valid and has not changed
+# since the repo was first cloned.  (NOTE: A future version of TriBITS may
+# automate the update of this git remote.)
+#
+# If ``${PROJECT_NAME}_BRANCH`` is empty "", the last ``git checkout -B
+# <branch> ...`` command is replaced with the git command::
+#
+#   $ git reset --hard @{u}  # Sets HEAD
+#
+# After the base git repo is updated inside of ``CTEST_UPDATE()`` as described
+# above, each of the extra repos is updated using a similar set of git
+# commands::
+#
+#   $ git fetch ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
+#   $ git clean -fdx         # Remove untracked ignored files
+#   $ git reset --hard HEAD  # Clean files and set ORIG_HEAD to HEAD
+#   $ git checkout -B ${${PROJECT_NAME}_EXTRAREPO_BRANCH} \
+#       --track origin/${${PROJECT_NAME}_EXTRAREPO_BRANCH}  # Sets HEAD
+#
+# where if ``${PROJECT_NAME}_EXTRAREPO_BRANCH`` is empty, the last ``git
+# checkout -B <branch> ...`` command replaced with::
+#
+#   $ git reset --hard @{u}
+#
+# **WARNING:** This version of the ``git checkout -B <branch> ...`` command
+# is not supported in older versions of git.  Therefore, a newer version of
+# git is required when using named branches.
 #
 # The command ``git clone -fdx`` removes any untracked ignored files that may
 # have been created since the last update (either by the build process or by
@@ -1275,34 +1328,14 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # reset --hard HEAD`` removes any untracked non-ignored files, any modified
 # tracked files, and sets ``ORIG_HEAD`` to the current ``HEAD``.  This sets
 # ``ORIG_HEAD`` after the initial clone (which is needed since ``ORIG_HEAD``
-# is not set after the initial ``git clone``).  This allows using the range
-# ``ORIG_HEAD..HEAD`` with git diff and log commands even after the initial
-# clone.  The ``git fetch`` command followed by the ``git reset --hard @{u}``
-# command are used to update the local repo to match the remote tracking
-# branch instead of ``git pull` or ``git fetch ; git merge @{u}``.  This is
-# done to deal with a possible forced push of the remote tracking branch.
-# Using ``git fetch ; git reset --hard @{u}`` ensures that the local branch is
-# exactly the same the remote tracking branch no matter what.
-#
-# If ``${PROJECT_NAME}_EXTRAREPO_BRANCH`` is non-empty, then each extra
-# repository is updated (even after the initial clone) using the commands::
-#
-#   $ git clean -fdx         # Remove untracked ignored files
-#   $ git reset --hard HEAD  # Clean files and set ORIG_HEAD to HEAD
-#   $ git fetch origin       # Get updated commits
-#   $ git checkout -B ${${PROJECT_NAME}_EXTRAREPO_BRANCH} \
-#       --track origin/${${PROJECT_NAME}_EXTRAREPO_BRANCH}  # Put on tracking branch
-#
-# These are the same commands as for the case where
-# ``${PROJECT_NAME}_EXTRAREPO_BRANCH`` is empty except for the last command
-# which does a checkout of the tracking branch
-# ``${PROJECT_NAME}_EXTRAREPO_BRANCH``.  In this case, the ``git reset --hard
-# HEAD`` serves an additional purpose.  It sets ``ORIG_HEAD`` to the current
-# ``HEAD`` before the update of the branch.  This is important because the
-# command ``git checkout -B ...`` does not move ``ORIG_HEAD`` so this reset is
-# needed so that the git range ``ORIG_HEAD..HEAD`` gives the changes since the
-# last update.  So for an update where no new commits are pulled,
-# ``ORIG_HEAD..HEAD`` will return no commits.
+# is not set after the initial ``git clone`` command).  This allows using the
+# range ``ORIG_HEAD..HEAD`` with ``git diff`` and ``git log`` commands even
+# after the initial clone.  (Directly after the initial clone, the range
+# ``ORIG_HEAD..HEAD`` will be empty). The git commands ``git checkout -B
+# <branch> <remote>/<branch>`` or ``git reset --hard @{u}`` are used to update
+# the local repo to match the remote tracking branch.  This is done to deal
+# with a possible forced push of the remote tracking branch or even changing
+# to different tracking branch (when using an explicit ``<branch>`` name).
 #
 # Note that the repository updating approach described above using non-empty
 # ``${PROJECT_NAME}_BRANCH`` is more robust, because it can recover from a
@@ -1310,9 +1343,10 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # different branch.  One of these repos might get into this state when a
 # person is messing around in the Nightly build and source directories to try
 # to figure out what happened and forgot to put the repos back on the correct
-# tracking branch.  Therefore, it is recommended to always set
+# tracking branch.  Therefore, it is recommended to always set an explicit
 # ``${PROJECT_NAME}_BRANCH`` to a non-null value like ``master`` or
-# ``develop`` for the git repos.
+# ``develop`` for the git repos, even if this branch is the default repo
+# branch.
 #
 # .. _Other CTest Driver options (TRIBITS_CTEST_DRIVER()):
 #
@@ -1323,7 +1357,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   .. _CTEST_CMAKE_GENERATOR:
 #
-#   ``CTEST_CMAKE_GENERATOR``
+#   ``CTEST_CMAKE_GENERATOR="[Unix Makefiles|Ninja|..]"``
 #
 #     Built-in CTest variable that determines the CMake generator used in the
 #     inner configure.  If an existing ``CMakeCache.txt`` file exists, then
@@ -1336,7 +1370,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     what flags can be used in `CTEST_BUILD_FLAGS`_ since ``make`` and
 #     ``ninja`` accept different arguments in some cases.
 #
-#   ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE``
+#   ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE=[TRUE|FALSE]``
 #
 #     Puts TriBITS configure into development mode (vs. release mode) in the
 #     outer CTest -S script.  The default is provided by
@@ -1344,12 +1378,12 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     typically set in the `<projectDir>/Version.cmake`_ file).  See
 #     `<Project>_ENABLE_DEVELOPMENT_MODE`_.
 #
-#   ``${PROJECT_NAME}_VERBOSE_CONFIGURE``
+#   ``${PROJECT_NAME}_VERBOSE_CONFIGURE=[TRUE|FALSE]``
 #
 #     Make TriBITS run in verbose mode.  (Useful for debugging hard problems.)
 #     See `<Project>_VERBOSE_CONFIGURE`_.
 #
-#   ``CTEST_CONFIGURATION_UNIT_TESTING``
+#   ``CTEST_CONFIGURATION_UNIT_TESTING=[TRUE|FALSE]``
 #
 #     If set to ``TRUE``, then ``TRIBITS_CTEST_DRIVER()`` is put in unit
 #     testing mode and does not actually drive configure, build, test, and
@@ -1443,6 +1477,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Remove an existing CMakeCache.txt file or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
+
+  # Extra notes files suggested by user
+  SET_DEFAULT_AND_FROM_ENV( CTEST_NOTES_FILES "" )
+  SET(CTEST_NOTES_FILES_INPUT_BY_USER "${CTEST_NOTES_FILES}")
 
   # Select a default generator.
   SELECT_DEFAULT_GENERATOR()
@@ -1559,6 +1597,16 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   STRING(REPLACE "," ";" ${PROJECT_NAME}_EXCLUDE_PACKAGES
     "${${PROJECT_NAME}_EXCLUDE_PACKAGES}" )
 
+  IF(CTEST_TEST_TYPE STREQUAL "Nightly")
+    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_REPOSITORY_LOCATION
+       "${${PROJECT_NAME}_REPOSITORY_LOCATION_NIGHTLY_DEFAULT}")
+  ELSE()
+    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_REPOSITORY_LOCATION
+       "${${PROJECT_NAME}_REPOSITORY_LOCATION_DEFAULT}")
+  ENDIF()
+
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_GIT_REPOSITORY_REMOTE "origin" )
+
   IF(${PROJECT_NAME}_REPOSITORY_BRANCH)
     SET(${PROJECT_NAME}_BRANCH_DEFAULT ${${PROJECT_NAME}_REPOSITORY_BRANCH})
   ELSE()
@@ -1569,14 +1617,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_EXTRAREPOS_BRANCH "${${PROJECT_NAME}_BRANCH}" )
 
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE "${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}" )
-
-  IF(CTEST_TEST_TYPE STREQUAL "Nightly")
-    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_REPOSITORY_LOCATION
-       "${${PROJECT_NAME}_REPOSITORY_LOCATION_NIGHTLY_DEFAULT}")
-  ELSE()
-    SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_REPOSITORY_LOCATION
-       "${${PROJECT_NAME}_REPOSITORY_LOCATION_DEFAULT}")
-  ENDIF()
 
   # Select the ${PROJECT_NAME} packages to enable (empty means to select all
   # available).  This will override any disabled packages but not those
@@ -1747,23 +1787,63 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   SET(CREATE_VC_UPDATE_FILE FALSE)
 
+  SET(CTEST_UPDATE_COMMANDS_OUTPUT_FILE
+    "${CTEST_BINARY_DIRECTORY}/UpdateCommandsOutput.txt")
+
   IF (CTEST_DO_UPDATES)
 
     SET(UPDATE_TYPE "git")
     MESSAGE("UPDATE_TYPE = '${UPDATE_TYPE}'")
 
-    SET(CTEST_UPDATE_COMMAND "${GIT_EXE}")
-    MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
+    #
+    # Set the initial clone command for if the local repo is missing
+    #
+
+    IF (${PROJECT_NAME}_BRANCH) 
+      SET(CHECKOUT_BRANCH_ARG "-b ${${PROJECT_NAME}_BRANCH} ")
+    ELSE()
+      SET(CHECKOUT_BRANCH_ARG)
+    ENDIF()
+
+    SET( _CTEST_CHECKOUT_COMMAND
+      "\"${GIT_EXE}\" clone ${CHECKOUT_BRANCH_ARG}-o ${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE} ${CTEST_UPDATE_ARGS} ${${PROJECT_NAME}_REPOSITORY_LOCATION}" )
+    MESSAGE("CTEST_CHECKOUT_COMMAND=${_CTEST_CHECKOUT_COMMAND}")
 
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
       MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
-      SET( CTEST_CHECKOUT_COMMAND
-        "\"${GIT_EXE}\" clone ${CTEST_UPDATE_ARGS} ${${PROJECT_NAME}_REPOSITORY_LOCATION}" )
-      MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
+      SET( CTEST_CHECKOUT_COMMAND "${_CTEST_CHECKOUT_COMMAND}")
+      # NOTE: Just to be safe, only set CTEST_CHECKOUT_COMMAND to do a clone
+      # if the repo does not already exist!
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
       SET(CREATE_VC_UPDATE_FILE TRUE)
     ENDIF()
+
+    #
+    # Set the git update command for an already cloned repo
+    #
+
+    # CTest always needs the raw git command in order to do stuff like get the
+    # version of the repo before and after the update, even if you provide a
+    # custom update command.
+    SET(CTEST_GIT_COMMAND "${GIT_EXE}") 
+    MESSAGE("CTEST_GIT_COMMAND=${CTEST_GIT_COMMAND}")
+    # NOTE: You can't put the above command "${GIT_EXE}" in quotes like
+    # "'${GIT_EXE}'" or "\"${GIT_EXE}\"" or it will not work and
+    # ctest_update() will return failed!
+
+    # Provide a custom command to do the update
+
+    SET(CTEST_GIT_UPDATE_CUSTOM
+      "${CMAKE_COMMAND}"
+      -DGIT_EXE=${GIT_EXE}
+      -DREMOTE_NAME=${${PROJECT_NAME}_GIT_REPOSITORY_REMOTE}
+      -DBRANCH=${${PROJECT_NAME}_BRANCH}
+      -DUNIT_TEST_MODE=${CTEST_DEPENDENCY_HANDLING_UNIT_TESTING}
+      -DOUTPUT_FILE=${CTEST_UPDATE_COMMANDS_OUTPUT_FILE}
+      -P ${THIS_CMAKE_CURRENT_LIST_DIR}/tribits_ctest_update_commands_wrapper.cmake
+      )
+    MESSAGE("CTEST_GIT_UPDATE_CUSTOM=${CTEST_GIT_UPDATE_CUSTOM}")
 
   ENDIF()
 
@@ -1888,9 +1968,21 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     MESSAGE("\nCalling CTEST_UPDATE() to update base source repo '${CTEST_SOURCE_DIRECTORY}' ...")
     CTEST_UPDATE_WRAPPER( SOURCE "${CTEST_SOURCE_DIRECTORY}"
       RETURN_VALUE  CTEST_UPDATE_RETURN_VAL)
-    MESSAGE("CTEST_UPDATE(...) returned '${CTEST_UPDATE_RETURN_VAL}'")
+    MESSAGE("CTEST_UPDATE(...) returned '${CTEST_UPDATE_RETURN_VAL}' [ rtn >= 0: num files; rnt == -1: error ]")
 
-    TRIBITS_CLONE_OR_UPDATE_ALL_REPOS(${CTEST_UPDATE_RETURN_VAL}  LOC_UPDATE_FAILED)
+    IF ("${UPDATE_FAILED}" STREQUAL "-1")
+      SET(UPDATE_FAILED TRUE)
+    ENDIF()
+
+    # Print the output from the git commands called in ctest_update()
+    IF (EXISTS "${CTEST_UPDATE_COMMANDS_OUTPUT_FILE}")
+      FILE(READ "${CTEST_UPDATE_COMMANDS_OUTPUT_FILE}" CTEST_UPDATE_COMMANDS_OUTPUT_STR)
+      MESSAGE("\n------------------------------------------------------------------------")
+      MESSAGE("${CTEST_UPDATE_COMMANDS_OUTPUT_STR}")
+      MESSAGE("------------------------------------------------------------------------\n")
+    ENDIF()
+
+    TRIBITS_CLONE_OR_UPDATE_EXTRA_REPOS(${CTEST_UPDATE_RETURN_VAL}  LOC_UPDATE_FAILED)
     IF (LOC_UPDATE_FAILED)
       SET(UPDATE_FAILED TRUE)
     ENDIF()
@@ -2027,12 +2119,28 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n"
     )
 
-  IF (EXISTS ${CTEST_BINARY_DIRECTORY}/Updates.txt)
-    SET(CTEST_NOTES_FILES_WO_CACHE
-      "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
-  ELSE()
-    SET(CTEST_NOTES_FILES_WO_CACHE "${CTEST_NOTES_FILES}")
+  # Set up a list of notes files that don't include the CMakeCache.clean.txt
+  # file which will change for every submit in the package-by-package modee.
+
+  SET(CTEST_NOTES_FILES_WO_CACHE)
+
+  SET(REPO_VERSION_FILE "${CTEST_BINARY_DIRECTORY}/${PROJECT_NAME}RepoVersion.txt")
+
+  SET(MULTIREPO_GIT_UPDATES_FILE "${CTEST_BINARY_DIRECTORY}/Updates.txt" )
+  IF (EXISTS "${MULTIREPO_GIT_UPDATES_FILE}")
+    LIST(APPEND CTEST_NOTES_FILES_WO_CACHE "${MULTIREPO_GIT_UPDATES_FILE}")
   ENDIF()
+
+  IF (EXISTS "${CTEST_UPDATE_COMMANDS_OUTPUT_FILE}")
+    LIST(APPEND CTEST_NOTES_FILES_WO_CACHE "${CTEST_UPDATE_COMMANDS_OUTPUT_FILE}" )
+  ENDIF()
+
+  # Tack on any notes files that the client might have set to the end of these
+  print_var(CTEST_NOTES_FILES_INPUT_BY_USER)
+  IF (NOT "${CTEST_NOTES_FILES_INPUT_BY_USER}" STREQUAL "")
+    LIST(APPEND CTEST_NOTES_FILES_WO_CACHE "${CTEST_NOTES_FILES_INPUT_BY_USER}")
+  ENDIF()
+
   PRINT_VAR(CTEST_NOTES_FILES_WO_CACHE)
 
   # Note: We must only do the submit after we have decided if there are any
@@ -2041,6 +2149,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   IF (UPDATE_FAILED)
     MESSAGE("The VC update failed so submitting update and stopping ...")
     IF (CTEST_DO_SUBMIT)
+      SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
       TRIBITS_CTEST_SUBMIT( PARTS update notes )
     ENDIF()
     REPORT_QUEUED_ERRORS()

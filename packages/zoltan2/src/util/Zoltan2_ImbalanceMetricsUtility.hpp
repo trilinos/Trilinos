@@ -402,9 +402,9 @@ template <typename Adapter>
     if (useDegreeAsWeight) {
       ArrayView<const gno_t> Ids;
       ArrayView<sdata_t> vwgts;
+      RCP<GraphModel<base_adapter_t> > graph;
       if (graphModel == Teuchos::null) {
 	std::bitset<NUM_MODEL_FLAGS> modelFlags;
-	RCP<GraphModel<base_adapter_t> > graph;
 	const RCP<const base_adapter_t> bia =
 	  rcp(dynamic_cast<const base_adapter_t *>(ia), false);
 	graph = rcp(new GraphModel<base_adapter_t>(bia,env,comm,modelFlags));

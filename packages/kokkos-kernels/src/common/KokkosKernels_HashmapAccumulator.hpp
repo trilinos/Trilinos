@@ -40,6 +40,8 @@
 // ************************************************************************
 //@HEADER
 */
+#ifndef _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
+#define _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
 
@@ -740,3 +742,7 @@ struct HashmapAccumulator
 
 }   // namespace Experimental
 }   // namespace KokkosKernels
+
+#endif //  _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
+
+

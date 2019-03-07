@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,10 +30,10 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
-      SUBROUTINE DBINAM (NDB, OPTION, NDIM, NELBLK, NNDIM, NNELB, 
+      SUBROUTINE DBINAM (NDB, OPTION, NDIM, NELBLK, NNDIM, NNELB,
      &                   NVARHI, NVARGL, NVARNP, NVAREL, NVARNS,
-     &                   NVARSS, NAMECO, 
-     &                   IXHV, IXGV, IXNV, IXEV, IXNS, IXSS, 
+     &                   NVARSS, NAMECO,
+     &                   IXHV, IXGV, IXNV, IXEV, IXNS, IXSS,
      &                   A, IA, KIEVOK, C, KNAMES, EXODUS, IDELB,
      &                   ISHEX, KHEXID, NAMLEN, *)
 C=======================================================================
@@ -127,7 +127,7 @@ C ... Easier to just hardwire the coordinate names...
          nameco(1) = 'X'
          nameco(2) = 'Y'
          if (ndim .eq. 3) nameco(3) = 'Z'
-         
+
          DO 100 I = 1, MIN(NDIM,MAXDIM)
            CALL EXUPCS (NAMECO(I))
   100    CONTINUE
@@ -181,8 +181,8 @@ C      --Get the name indices
 C      --Read and pack variable names
 
          call dbinm2 (ndb, nvargl, nvarnp, nvarel, nvarns, nvarss,
-     &                C(KNAMES+NAMLEN*(IXGV-1)), 
-     &                C(KNAMES+NAMLEN*(IXNV-1)), 
+     &                C(KNAMES+NAMLEN*(IXGV-1)),
+     &                C(KNAMES+NAMLEN*(IXNV-1)),
      &                C(KNAMES+NAMLEN*(IXEV-1)),
      &                C(KNAMES+NAMLEN*(IXNS-1)),
      &                C(KNAMES+NAMLEN*(IXSS-1)), namlen)
@@ -219,11 +219,11 @@ C   --Read the element block variable truth table
 
       subroutine dbinm2 (ndb, nvargl, nvarnp, nvarel, nvarns, nvarss,
      &                   namgv, namnv, namev, namns, namss, namlen)
-      
+
       include 'params.blk'
       character*(namlen) namgv(*), namnv(*), namev(*), namns(*),
      *  namss(*)
-      
+
       if (nvargl .gt. 0) then
         call exgvan(ndb, 'G', nvargl, namgv, ierr)
       end if
@@ -239,31 +239,31 @@ C   --Read the element block variable truth table
       if (nvarss .gt. 0) then
         call exgvan(ndb, 'S', nvarss, namss, ierr)
       end if
-      
+
       DO 130 I = 1, nvargl
         CALL EXUPCS (namgv(i))
  130  CONTINUE
       CALL PCKSTR (NVARGL, namgv)
-      
+
       DO 140 I = 1, nvarnp
         CALL EXUPCS (namnv(i))
  140  CONTINUE
       CALL PCKSTR (NVARNP, namnv)
-      
+
       DO 150 I = 1, nvarel
         CALL EXUPCS (namev(i))
  150  CONTINUE
       CALL PCKSTR (NVAREL, namev)
-      
+
       DO I = 1, nvarns
         CALL EXUPCS (namns(i))
       END DO
       CALL PCKSTR (NVARNS, namns)
-      
+
       DO I = 1, nvarss
         CALL EXUPCS (namss(i))
       END DO
       CALL PCKSTR (NVARSS, namss)
-      
+
       return
       end

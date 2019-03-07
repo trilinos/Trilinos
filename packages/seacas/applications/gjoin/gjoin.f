@@ -1,23 +1,23 @@
 C Copyright (c) 2008-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,12 +29,12 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C -*- Mode: fortran -*-
 C=======================================================================
 C $Id: gjoin2.f,v 1.10 2008/07/31 20:15:56 gdsjaar Exp $
-c 
+c
       PROGRAM GJOIN2
 C=======================================================================
 
@@ -98,7 +98,7 @@ C      --INFREC - the information records
 
       L64BIT = .false.
       Nc4    = .false.
-      
+
       CALL STRTUP (QAINFO)
 
       CALL BANNER (0, QAINFO,
@@ -167,7 +167,7 @@ C ... Parse options...
       CALL INIGEN (A, FIRST,
      &   KXN, KYN, KZN, KMAPEL,
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
-     &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS, 
+     &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
      &   kltsnc, kfacss, KNMLB)
       CALL MDSTAT (NERR, MEM)
@@ -215,7 +215,7 @@ C   --Open and read the second database
       IF (TWODB) THEN
         CALL RDGEN (A, IA, C, .TRUE., FILNAM,
      &    TITLE2, NDIM2, NUMNP2, NUMEL2, NELBL2,
-     &    NNPS2, LNPSN2, NESS2, LESSE2, LESSD2, 
+     &    NNPS2, LNPSN2, NESS2, LESSE2, LESSD2,
      &    KXN, KYN, KZN, KMAPEL,
      &    KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &    KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
@@ -224,7 +224,7 @@ C   --Open and read the second database
      &    USESDF, *110)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 140
-        
+
         IF (NDIM .NE. NDIM2) THEN
           CALL PRTERR ('FATAL', 'Number of dimensions must match')
           GOTO 110
@@ -308,14 +308,14 @@ C   --Combine the nodes
             knlnk2 = knlnk  + nelbl1
             klink2 = klink  + llink1
             knmlb2 = knmlb  + MXSTLN*nelbl1
-            
+
             CALL DBMIRR (1, NELBL2, IA(KIDEL2), IA(KNELB2), IA(KNLNK2),
      *        IA(KLINK2), C(KNMLB2), NDIM, NONQUD)
 
 C ... Note that at this point, the index arrays have already been offset
 C    for the second database, so the arrays containing lists of
 C    nodes/dist-fact are passed in with no offset.
-            CALL MIRSS (NESS2, LESSE2, LESSD2, 
+            CALL MIRSS (NESS2, LESSE2, LESSD2,
      *        IA(KIDSS+NESS1), IA(KNESS+NESS1), IA(KNDSS+NESS1),
      *        IA(KIXESS+NESS1), IA(KIXDSS+NESS1), IA(KLTESS),
      *        IA(KLTSSS), IA(KLTSNC), A(KFACSS),
@@ -328,12 +328,12 @@ C    nodes/dist-fact are passed in with no offset.
              CALL MDSTAT (NERR, MEM)
              IF (NERR .GT. 0) GOTO 140
            END IF
-           
+
            CALL MDRSRV ('IX1', KIX1, NUMNP1)
            CALL MDRSRV ('IX2', KIX2, NUMNP2)
            CALL MDSTAT (NERR, MEM)
            IF (NERR .GT. 0) GOTO 140
-           
+
            if (.not. MATMAT) then
              CALL MATXYZ (NDIM,
      &         MATNS1, MATNS2, IA(KNNNS), IA(KIXNNS), IA(KLTNNS),
@@ -346,7 +346,7 @@ C    nodes/dist-fact are passed in with no offset.
              knelb2 = knelb  + nelbl1
              knlnk2 = knlnk  + nelbl1
              klink2 = klink  + llink1
-             
+
              CALL MDRSRV ('IX3', KIX3, NUMNP1)
              CALL MDRSRV ('IX4', KIX4, NUMNP2)
              CALL MDSTAT (NERR, MEM)
@@ -361,56 +361,56 @@ C    nodes/dist-fact are passed in with no offset.
              CALL MDDEL ('IX3')
              CALL MDDEL ('IX4')
            end if
-           
+
            IF (NMAT .LE. 0) CALL MDDEL ('IXNP2')
            CALL MDDEL ('IX1')
            CALL MDDEL ('IX2')
-           
+
            GOTO 120
          END IF
-         
+
          RENNP = (NMAT .GT. 0)
          IF (.NOT. RENNP) KIXNP2 = 1
-         
+
 C      --"Munch" the coordinates (second set)
-         
+
          IF (RENNP) THEN
            NEWJNP = NUMNP2
            CALL MUNXYZ (NDIM, NEWJNP, NUMNP1, IA(KIXNP2),
      &       A(KXN+NUMNP1), A(KYN+NUMNP1), A(KZN+NUMNP1))
-           
+
            NEWNP = NUMNP1 + NEWJNP
-           
+
            CALL MDLONG ('XN', KXN, NEWNP)
            CALL MDLONG ('YN', KYN, NEWNP)
            CALL MDLONG ('ZN', KZN, NEWNP)
          END IF
-         
+
          IF (RENNP) THEN
            IOFFNP = -999
          ELSE
            IOFFNP = NUMNP1
          END IF
-         
+
 C      --Renumber the element block nodes (second set)
-         
+
          CALL RENELB (NELBL2, IOFFNP, IA(KIXNP2),
      &     IA(KNELB+NELBL1), IA(KNLNK+NELBL1), IA(KLINK+LLINK1))
-         
+
 C      --Renumber the nodal point set nodes (second set)
-         
+
          CALL RENIX (LNPSN2, IOFFNP, IA(KIXNP2), IA(KLTNNS+LNPSN1))
-         
+
          IF (RENNP) CALL MDDEL ('IXNP2')
       END IF
-C     End of IF(TWODB)      
+C     End of IF(TWODB)
 C   --Initialize items for output database
 
       TITLE = TITLE1
 
       NEWELB = NELBL1 + NELBL2
       NEWEL = NUMEL1 + NUMEL2
-      
+
       NEWNPS = NNPS1 + NNPS2
       NEWNNL = INTADD (NNPS1+NNPS2, IA(KNNNS))
 
@@ -468,8 +468,8 @@ C   --"Munch" the element blocks
          CALL MDDEL ('JNELB')
          CALL MDDEL ('ISCR')
          CALL MCDEL ('NAMSCR')
-         CALL MDLONG('LINK',  KLINK,  LLINK) 
-         CALL MDLONG('ATRIB', KATRIB, LATRIB) 
+         CALL MDLONG('LINK',  KLINK,  LLINK)
+         CALL MDLONG('ATRIB', KATRIB, LATRIB)
       END IF
 
       CALL MDDEL ('IELBST')
@@ -529,7 +529,7 @@ c$$$
 c$$$         CALL MDLONG ('MAPEL', KMAPEL, NEW)
 c$$$      END IF
 C ... The above code assumes that the element map is a permutation of
-C     the sequence (1..numel). For example, if an optimizer has been 
+C     the sequence (1..numel). For example, if an optimizer has been
 C     run on the input databases.  It will fail if the map contains
 C     values >numel which can happen in some instances.  Since
 C     an optimization would have to be redone for the combined mesh and
@@ -537,7 +537,7 @@ C     there is no good way to ensure that combining 2 or more arbitrary
 C     maps will give unique ids, we just punt and create a map which is
 C     1..numel.  Since we don't need it until output, we allocate and
 C     create it at the expmap call.
-      
+
 C   --Renumber the element block nodes
 
       IF (DELNP) THEN
@@ -628,9 +628,9 @@ C   --"Munch" the element side sets
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 140
 
-         CALL MUNESS (NEWESS, IA(KIESSS), NEWSEL, NEWSDL, 
+         CALL MUNESS (NEWESS, IA(KIESSS), NEWSEL, NEWSDL,
      &     IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS), IA(KIXDSS),
-     &     IA(KLTESS), IA(KLTSSS), A(KFACSS), 
+     &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
      &     IA(KNESO), IA(KNDS0), IA(KISCR), USESDF)
 
@@ -648,7 +648,7 @@ C   --"Munch" the element side sets
 C      --Squeeze the element side sets
 
          IF (DELEL) THEN
-           CALL ZMESS (NEWESS, NEWSEL, NEWSDL, 
+           CALL ZMESS (NEWESS, NEWSEL, NEWSDL,
      &       IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS),
      *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC),
      *       A(KFACSS), USESDF)
@@ -697,7 +697,7 @@ C        call mdlong('MAPEL', KMAPEL, newel)
         IF (NERR .GT. 0) GOTO 140
          GOTO 100
        END IF
-       
+
 C   --Write out the new database
 
   130 CONTINUE
@@ -723,7 +723,7 @@ C   --Write the QA records
 
 
       CALL WRGEN (A, A, FILNAM, TITLE, NDIM, NEWNP, NEWEL, NEWELB,
-     &   NEWNPS, NEWNNL, NEWESS, NEWSEL, NEWSDL, 
+     &   NEWNPS, NEWNNL, NEWESS, NEWSEL, NEWSDL,
      &   KXN, KYN, KZN, KMAPEL,
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
@@ -759,7 +759,7 @@ C   This is currently used in the sideset mirroring code
       integer nelblk
       character*(MXSTLN) namelb(nelblk)
       character*(MXSTLN) comtop
-      
+
       comtop = namelb(1)
       do 10 i=2, nelblk
          if (namelb(i) .ne. comtop) then

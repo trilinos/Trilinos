@@ -44,7 +44,8 @@
 //TODO implement permutations for tets, pyramids, wedges and hexes
 //TODO implement permutations polarity
 
-namespace stk { namespace topology_detail {
+namespace stk {
+namespace topology_detail {
 
 template <topology::topology_t Topology, typename Enable = void>
 struct topology_data;
@@ -58,29 +59,27 @@ template <>
 struct topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::INVALID_TOPOLOGY;
-  static const topology::topology_t base = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t value = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t base = topology::INVALID_TOPOLOGY;
 
-  static const bool is_valid = false;
-  static const topology::rank_t rank = topology::INVALID_RANK;
-  static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 0;
-  static const unsigned num_nodes = 0;
-  static const unsigned num_vertices = 0;
-  static const unsigned num_edges = 0;
-  static const unsigned num_faces = 0;
-  static const unsigned num_permutations = 0;
-  static const unsigned num_positive_permutations = 0;
+  static constexpr bool is_valid = false;
+  static constexpr topology::rank_t rank = topology::INVALID_RANK;
+  static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
+  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 0;
+  static constexpr unsigned num_nodes = 0;
+  static constexpr unsigned num_vertices = 0;
+  static constexpr unsigned num_edges = 0;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 0;
+  static constexpr unsigned num_positive_permutations = 0;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       false}; // 3d
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -99,29 +98,27 @@ struct topology_data<topology::NODE>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::NODE;
-  static const topology::topology_t base = topology::NODE;
+  static constexpr topology::topology_t value = topology::NODE;
+  static constexpr topology::topology_t base = topology::NODE;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::NODE_RANK;
-  static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 0;
-  static const unsigned num_nodes = 0;
-  static const unsigned num_vertices = 0;
-  static const unsigned num_edges = 0;
-  static const unsigned num_faces = 0;
-  static const unsigned num_permutations = 0;
-  static const unsigned num_positive_permutations = 0;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::NODE_RANK;
+  static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
+  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 0;
+  static constexpr unsigned num_nodes = 0;
+  static constexpr unsigned num_vertices = 0;
+  static constexpr unsigned num_edges = 0;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 0;
+  static constexpr unsigned num_positive_permutations = 0;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , true  // 1d
-                                , true  // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       true,   // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -131,6 +128,7 @@ struct topology_data<topology::NODE>
   typedef boost::mpl::vector<> permutation_node_ordinals_vector;
 
 };
+
 
 //***************************************************************************
 // PARTICLE -- topology::ELEMENT_RANK
@@ -142,29 +140,27 @@ struct topology_data<topology::PARTICLE>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::PARTICLE;
-  static const topology::topology_t base = topology::PARTICLE;
+  static constexpr topology::topology_t value = topology::PARTICLE;
+  static constexpr topology::topology_t base = topology::PARTICLE;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 1;
-  static const unsigned num_nodes = 1;
-  static const unsigned num_vertices = 1;
-  static const unsigned num_edges = 0;
-  static const unsigned num_faces = 0;
-  static const unsigned num_permutations = 1;
-  static const unsigned num_positive_permutations = 1;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
+  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 1;
+  static constexpr unsigned num_nodes = 1;
+  static constexpr unsigned num_vertices = 1;
+  static constexpr unsigned num_edges = 0;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 1;
+  static constexpr unsigned num_positive_permutations = 1;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , true  // 1d
-                                , true  // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       true,   // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -192,29 +188,27 @@ struct topology_data<topology::LINE_2>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::LINE_2;
-  static const topology::topology_t base = topology::LINE_2;
+  static constexpr topology::topology_t value = topology::LINE_2;
+  static constexpr topology::topology_t base = topology::LINE_2;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::EDGE_RANK;
-  static const topology::rank_t side_rank = topology::NODE_RANK;
-  static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 1;
-  static const unsigned num_nodes = 2;
-  static const unsigned num_vertices = 2;
-  static const unsigned num_edges = 0;
-  static const unsigned num_faces = 0;
-  static const unsigned num_permutations = 2;
-  static const unsigned num_positive_permutations = 1;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::EDGE_RANK;
+  static constexpr topology::rank_t side_rank = topology::NODE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 1;
+  static constexpr unsigned num_nodes = 2;
+  static constexpr unsigned num_vertices = 2;
+  static constexpr unsigned num_edges = 0;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 2;
+  static constexpr unsigned num_positive_permutations = 1;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -233,8 +227,8 @@ template <>
 struct topology_data<topology::LINE_3>
   : public topology_data<topology::LINE_2>
 {
-  static const topology::topology_t value = topology::LINE_3;
-  static const unsigned num_nodes = 3;
+  static constexpr topology::topology_t value = topology::LINE_3;
+  static constexpr unsigned num_nodes = 3;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1, 2>
@@ -255,34 +249,30 @@ template <>
 struct topology_data<topology::LINE_2_1D>
   : public topology_data<topology::LINE_2>
 {
-  static const topology::topology_t value = topology::LINE_2_1D;
-  static const topology::topology_t base = topology::LINE_2_1D;
+  static constexpr topology::topology_t value = topology::LINE_2_1D;
+  static constexpr topology::topology_t base = topology::LINE_2_1D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , true  // 1d
-                                , false // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       true,    // 1d
+                                                       false,   // 2d
+                                                       false};  // 3d
 };
 
 template <>
 struct topology_data<topology::LINE_3_1D>
   : public topology_data<topology::LINE_3>
 {
-  static const topology::topology_t value = topology::LINE_3_1D;
-  static const topology::topology_t base = topology::LINE_2_1D;
+  static constexpr topology::topology_t value = topology::LINE_3_1D;
+  static constexpr topology::topology_t base = topology::LINE_2_1D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , true  // 1d
-                                , false // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       true,    // 1d
+                                                       false,   // 2d
+                                                       false};  // 3d
 };
 
 //***************************************************************************
@@ -298,16 +288,16 @@ template <>
 struct topology_data<topology::BEAM_2>
   : public topology_data<topology::LINE_2>
 {
-  static const topology::topology_t value = topology::BEAM_2;
-  static const topology::topology_t base = topology::BEAM_2;
+  static constexpr topology::topology_t value = topology::BEAM_2;
+  static constexpr topology::topology_t base = topology::BEAM_2;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
 
-  static const bool is_shell = false;
-  static const unsigned dimension = 2;
-  static const unsigned num_edges = 1;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_edges = 1;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1>
@@ -319,21 +309,20 @@ template <>
 struct topology_data<topology::BEAM_3>
   : public topology_data<topology::LINE_3>
 {
-  static const topology::topology_t value = topology::BEAM_3;
-  static const topology::topology_t base = topology::BEAM_2;
+  static constexpr topology::topology_t value = topology::BEAM_3;
+  static constexpr topology::topology_t base = topology::BEAM_2;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  static const bool is_shell = false;
-  static const unsigned dimension = 2;
-  static const unsigned num_edges = 1;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_edges = 1;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1, 2>
                             > edge_node_ordinals_vector;
-
 };
 
 //***************************************************************************
@@ -353,23 +342,21 @@ template <>
 struct topology_data<topology::SHELL_LINE_2>
   : public topology_data<topology::LINE_2>
 {
-  static const topology::topology_t value = topology::SHELL_LINE_2;
-  static const topology::topology_t base = topology::SHELL_LINE_2;
+  static constexpr topology::topology_t value = topology::SHELL_LINE_2;
+  static constexpr topology::topology_t base = topology::SHELL_LINE_2;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
 
-  static const bool is_shell = true;
-  static const unsigned dimension = 2;
-  static const unsigned num_edges = 2;
+  static constexpr bool is_shell = true;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_edges = 2;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1>
@@ -382,23 +369,21 @@ template <>
 struct topology_data<topology::SHELL_LINE_3>
   : public topology_data<topology::LINE_3>
 {
-  static const topology::topology_t value = topology::SHELL_LINE_3;
-  static const topology::topology_t base = topology::SHELL_LINE_2;
+  static constexpr topology::topology_t value = topology::SHELL_LINE_3;
+  static constexpr topology::topology_t base = topology::SHELL_LINE_2;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  static const bool is_shell = true;
-  static const unsigned dimension = 2;
-  static const unsigned num_edges = 2;
+  static constexpr bool is_shell = true;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_edges = 2;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1, 2>
@@ -450,29 +435,27 @@ struct topology_data<topology::TRI_3>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::TRI_3;
-  static const topology::topology_t base = topology::TRI_3;
+  static constexpr topology::topology_t value = topology::TRI_3;
+  static constexpr topology::topology_t base = topology::TRI_3;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::FACE_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 2;
-  static const unsigned num_nodes = 3;
-  static const unsigned num_vertices = 3;
-  static const unsigned num_edges = 3;
-  static const unsigned num_faces = 0;
-  static const unsigned num_permutations = 6;
-  static const unsigned num_positive_permutations = 3;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::FACE_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_nodes = 3;
+  static constexpr unsigned num_vertices = 3;
+  static constexpr unsigned num_edges = 3;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 6;
+  static constexpr unsigned num_positive_permutations = 3;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -499,8 +482,8 @@ template <>
 struct topology_data<topology::TRI_4>
   : public topology_data<topology::TRI_3>
 {
-  static const topology::topology_t value = topology::TRI_4;
-  static const unsigned num_nodes = 4;
+  static constexpr topology::topology_t value = topology::TRI_4;
+  static constexpr unsigned num_nodes = 4;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1, 2,  3>
@@ -517,10 +500,10 @@ template <>
 struct topology_data<topology::TRI_6>
   : public topology_data<topology::TRI_3>
 {
-  static const topology::topology_t value = topology::TRI_6;
-  static const unsigned num_nodes = 6;
+  static constexpr topology::topology_t value = topology::TRI_6;
+  static constexpr unsigned num_nodes = 6;
 
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1,  3>
@@ -580,51 +563,45 @@ template <>
 struct topology_data<topology::TRI_3_2D>
   : public topology_data<topology::TRI_3>
 {
-  static const topology::topology_t value = topology::TRI_3_2D;
-  static const topology::topology_t base = topology::TRI_3_2D;
+  static constexpr topology::topology_t value = topology::TRI_3_2D;
+  static constexpr topology::topology_t base = topology::TRI_3_2D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 };
 
 template <>
 struct topology_data<topology::TRI_4_2D>
   : public topology_data<topology::TRI_4>
 {
-  static const topology::topology_t value = topology::TRI_4_2D;
-  static const topology::topology_t base = topology::TRI_3_2D;
+  static constexpr topology::topology_t value = topology::TRI_4_2D;
+  static constexpr topology::topology_t base = topology::TRI_3_2D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 };
 
 template <>
 struct topology_data<topology::TRI_6_2D>
   : public topology_data<topology::TRI_6>
 {
-  static const topology::topology_t value = topology::TRI_6_2D;
-  static const topology::topology_t base = topology::TRI_3_2D;
+  static constexpr topology::topology_t value = topology::TRI_6_2D;
+  static constexpr topology::topology_t base = topology::TRI_3_2D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 };
 
 //***************************************************************************
@@ -676,16 +653,16 @@ template <>
 struct topology_data<topology::SHELL_TRI_3>
   : public topology_data<topology::TRI_3>
 {
-  static const topology::topology_t value = topology::SHELL_TRI_3;
-  static const topology::topology_t base = topology::SHELL_TRI_3;
+  static constexpr topology::topology_t value = topology::SHELL_TRI_3;
+  static constexpr topology::topology_t base = topology::SHELL_TRI_3;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool is_shell = true;
-  static const bool has_homogeneous_faces = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
 
-  static const unsigned dimension = 3;
-  static const unsigned num_faces = 2;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_faces = 2;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_3
@@ -702,16 +679,16 @@ template <>
 struct topology_data<topology::SHELL_TRI_4>
   : public topology_data<topology::TRI_4>
 {
-  static const topology::topology_t value = topology::SHELL_TRI_4;
-  static const topology::topology_t base = topology::SHELL_TRI_3;
+  static constexpr topology::topology_t value = topology::SHELL_TRI_4;
+  static constexpr topology::topology_t base = topology::SHELL_TRI_3;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool is_shell = true;
-  static const bool has_homogeneous_faces = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
 
-  static const unsigned dimension = 3;
-  static const unsigned num_faces = 2;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_faces = 2;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_4
@@ -728,16 +705,16 @@ template <>
 struct topology_data<topology::SHELL_TRI_6>
   : public topology_data<topology::TRI_6>
 {
-  static const topology::topology_t value = topology::SHELL_TRI_6;
-  static const topology::topology_t base = topology::SHELL_TRI_3;
+  static constexpr topology::topology_t value = topology::SHELL_TRI_6;
+  static constexpr topology::topology_t base = topology::SHELL_TRI_3;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool is_shell = true;
-  static const bool has_homogeneous_faces = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
 
-  static const unsigned dimension = 3;
-  static const unsigned num_faces = 2;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_faces = 2;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_6
@@ -778,29 +755,27 @@ struct topology_data<topology::QUAD_4>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::QUAD_4;
-  static const topology::topology_t base = topology::QUAD_4;
+  static constexpr topology::topology_t value = topology::QUAD_4;
+  static constexpr topology::topology_t base = topology::QUAD_4;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::FACE_RANK;
-  static const topology::rank_t side_rank = topology::EDGE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 2;
-  static const unsigned num_nodes = 4;
-  static const unsigned num_vertices = 4;
-  static const unsigned num_edges = 4;
-  static const unsigned num_faces = 0;
-  static const unsigned num_permutations = 8;
-  static const unsigned num_positive_permutations = 4;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::FACE_RANK;
+  static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 2;
+  static constexpr unsigned num_nodes = 4;
+  static constexpr unsigned num_vertices = 4;
+  static constexpr unsigned num_edges = 4;
+  static constexpr unsigned num_faces = 0;
+  static constexpr unsigned num_permutations = 8;
+  static constexpr unsigned num_positive_permutations = 4;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
 
@@ -830,10 +805,10 @@ template <>
 struct topology_data<topology::QUAD_8>
   : public topology_data<topology::QUAD_4>
 {
-  static const topology::topology_t value = topology::QUAD_8;
-  static const unsigned num_nodes = 8;
+  static constexpr topology::topology_t value = topology::QUAD_8;
+  static constexpr unsigned num_nodes = 8;
 
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1,  4>
@@ -858,8 +833,8 @@ template <>
 struct topology_data<topology::QUAD_9>
   : public topology_data<topology::QUAD_8>
 {
-  static const topology::topology_t value = topology::QUAD_9;
-  static const unsigned num_nodes = 9;
+  static constexpr topology::topology_t value = topology::QUAD_9;
+  static constexpr unsigned num_nodes = 9;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7,  8>
@@ -900,51 +875,45 @@ template <>
 struct topology_data<topology::QUAD_4_2D>
   : public topology_data<topology::QUAD_4>
 {
-  static const topology::topology_t value = topology::QUAD_4_2D;
-  static const topology::topology_t base = topology::QUAD_4_2D;
+  static constexpr topology::topology_t value = topology::QUAD_4_2D;
+  static constexpr topology::topology_t base = topology::QUAD_4_2D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 };
 
 template <>
 struct topology_data<topology::QUAD_8_2D>
   : public topology_data<topology::QUAD_8>
 {
-  static const topology::topology_t value = topology::QUAD_8_2D;
-  static const topology::topology_t base = topology::QUAD_4_2D;
+  static constexpr topology::topology_t value = topology::QUAD_8_2D;
+  static constexpr topology::topology_t base = topology::QUAD_4_2D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 };
 
 template <>
 struct topology_data<topology::QUAD_9_2D>
   : public topology_data<topology::QUAD_9>
 {
-  static const topology::topology_t value = topology::QUAD_9_2D;
-  static const topology::topology_t base = topology::QUAD_4_2D;
+  static constexpr topology::topology_t value = topology::QUAD_9_2D;
+  static constexpr topology::topology_t base = topology::QUAD_4_2D;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true  // 2d
-                                , false // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,   // 0d
+                                                       false,   // 1d
+                                                       true,    // 2d
+                                                       false};  // 3d
 };
 
 //***************************************************************************
@@ -977,16 +946,16 @@ template <>
 struct topology_data<topology::SHELL_QUAD_4>
   : public topology_data<topology::QUAD_4>
 {
-  static const topology::topology_t value = topology::SHELL_QUAD_4;
-  static const topology::topology_t base = topology::SHELL_QUAD_4;
+  static constexpr topology::topology_t value = topology::SHELL_QUAD_4;
+  static constexpr topology::topology_t base = topology::SHELL_QUAD_4;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool is_shell = true;
-  static const bool has_homogeneous_faces = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
 
-  static const unsigned dimension = 3;
-  static const unsigned num_faces = 2;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_faces = 2;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_4
@@ -1003,16 +972,16 @@ template <>
 struct topology_data<topology::SHELL_QUAD_8>
   : public topology_data<topology::QUAD_8>
 {
-  static const topology::topology_t value = topology::SHELL_QUAD_8;
-  static const topology::topology_t base = topology::SHELL_QUAD_4;
+  static constexpr topology::topology_t value = topology::SHELL_QUAD_8;
+  static constexpr topology::topology_t base = topology::SHELL_QUAD_4;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool is_shell = true;
-  static const bool has_homogeneous_faces = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
 
-  static const unsigned dimension = 3;
-  static const unsigned num_faces = 2;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_faces = 2;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_8
@@ -1029,16 +998,16 @@ template <>
 struct topology_data<topology::SHELL_QUAD_9>
   : public topology_data<topology::QUAD_9>
 {
-  static const topology::topology_t value = topology::SHELL_QUAD_9;
-  static const topology::topology_t base = topology::SHELL_QUAD_4;
+  static constexpr topology::topology_t value = topology::SHELL_QUAD_9;
+  static constexpr topology::topology_t base = topology::SHELL_QUAD_4;
 
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const bool is_shell = true;
-  static const bool has_homogeneous_faces = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr bool is_shell = true;
+  static constexpr bool has_homogeneous_faces = true;
 
-  static const unsigned dimension = 3;
-  static const unsigned num_faces = 2;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_faces = 2;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_9
@@ -1060,29 +1029,27 @@ struct topology_data<topology::TET_4>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::TET_4;
-  static const topology::topology_t base = topology::TET_4;
+  static constexpr topology::topology_t value = topology::TET_4;
+  static constexpr topology::topology_t base = topology::TET_4;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
-  static const bool has_homogeneous_faces = true;
-  static const bool is_shell = false;
-  static const unsigned dimension = 3;
-  static const unsigned num_nodes = 4;
-  static const unsigned num_vertices = 4;
-  static const unsigned num_edges = 6;
-  static const unsigned num_faces = 4;
-  static const unsigned num_permutations = 12;
-  static const unsigned num_positive_permutations = 12;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_nodes = 4;
+  static constexpr unsigned num_vertices = 4;
+  static constexpr unsigned num_edges = 6;
+  static constexpr unsigned num_faces = 4;
+  static constexpr unsigned num_permutations = 12;
+  static constexpr unsigned num_positive_permutations = 12;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_3
@@ -1130,11 +1097,11 @@ template <>
 struct topology_data<topology::TET_8>
   : public topology_data<topology::TET_4>
 {
-  static const topology::topology_t value = topology::TET_8;
-  static const unsigned num_nodes = 8;
+  static constexpr topology::topology_t value = topology::TET_8;
+  static constexpr unsigned num_nodes = 8;
 
-  static const unsigned num_permutations = 1;
-  static const unsigned num_positive_permutations = 1;
+  static constexpr unsigned num_permutations = 1;
+  static constexpr unsigned num_positive_permutations = 1;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_4
@@ -1160,10 +1127,10 @@ template <>
 struct topology_data<topology::TET_10>
   : public topology_data<topology::TET_4>
 {
-  static const topology::topology_t value = topology::TET_10;
-  static const unsigned num_nodes = 10;
+  static constexpr topology::topology_t value = topology::TET_10;
+  static constexpr unsigned num_nodes = 10;
 
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_6
@@ -1209,8 +1176,8 @@ template <>
 struct topology_data<topology::TET_11>
   : public topology_data<topology::TET_10>
 {
-  static const topology::topology_t value = topology::TET_11;
-  static const unsigned num_nodes = 11;
+  static constexpr topology::topology_t value = topology::TET_11;
+  static constexpr unsigned num_nodes = 11;
 
   typedef boost::mpl::vector<
       boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7, 8, 9,  10>
@@ -1236,29 +1203,27 @@ struct topology_data<topology::PYRAMID_5>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::PYRAMID_5;
-  static const topology::topology_t base = topology::PYRAMID_5;
+  static constexpr topology::topology_t value = topology::PYRAMID_5;
+  static constexpr topology::topology_t base = topology::PYRAMID_5;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 3;
-  static const unsigned num_nodes = 5;
-  static const unsigned num_vertices = 5;
-  static const unsigned num_edges = 8;
-  static const unsigned num_faces = 5;
-  static const unsigned num_permutations = 4;
-  static const unsigned num_positive_permutations = 4;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_nodes = 5;
+  static constexpr unsigned num_vertices = 5;
+  static constexpr unsigned num_edges = 8;
+  static constexpr unsigned num_faces = 5;
+  static constexpr unsigned num_permutations = 4;
+  static constexpr unsigned num_positive_permutations = 4;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_3
@@ -1301,10 +1266,10 @@ template <>
 struct topology_data<topology::PYRAMID_13>
   : public topology_data<topology::PYRAMID_5>
 {
-  static const topology::topology_t value = topology::PYRAMID_13;
-  static const unsigned num_nodes = 13;
+  static constexpr topology::topology_t value = topology::PYRAMID_13;
+  static constexpr unsigned num_nodes = 13;
 
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::TRI_6
@@ -1346,8 +1311,8 @@ template <>
 struct topology_data<topology::PYRAMID_14>
   : public topology_data<topology::PYRAMID_13>
 {
-  static const topology::topology_t value = topology::PYRAMID_14;
-  static const unsigned num_nodes = 14;
+  static constexpr topology::topology_t value = topology::PYRAMID_14;
+  static constexpr unsigned num_nodes = 14;
 
 
   typedef boost::mpl::vector_c<   topology::topology_t
@@ -1384,29 +1349,27 @@ struct topology_data<topology::WEDGE_6>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::WEDGE_6;
-  static const topology::topology_t base = topology::WEDGE_6;
+  static constexpr topology::topology_t value = topology::WEDGE_6;
+  static constexpr topology::topology_t base = topology::WEDGE_6;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
-  static const bool has_homogeneous_faces = false;
-  static const bool is_shell = false;
-  static const unsigned dimension = 3;
-  static const unsigned num_nodes = 6;
-  static const unsigned num_vertices = 6;
-  static const unsigned num_edges = 9;
-  static const unsigned num_faces = 5;
-  static const unsigned num_permutations = 6;
-  static const unsigned num_positive_permutations = 6;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr bool has_homogeneous_faces = false;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_nodes = 6;
+  static constexpr unsigned num_vertices = 6;
+  static constexpr unsigned num_edges = 9;
+  static constexpr unsigned num_faces = 5;
+  static constexpr unsigned num_permutations = 6;
+  static constexpr unsigned num_positive_permutations = 6;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<   topology::topology_t
 
@@ -1453,10 +1416,10 @@ template <>
 struct topology_data<topology::WEDGE_15>
   : public topology_data<topology::WEDGE_6>
 {
-  static const topology::topology_t value = topology::WEDGE_15;
-  static const unsigned num_nodes = 15;
+  static constexpr topology::topology_t value = topology::WEDGE_15;
+  static constexpr unsigned num_nodes = 15;
 
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_8
@@ -1501,8 +1464,8 @@ template <>
 struct topology_data<topology::WEDGE_18>
   : public topology_data<topology::WEDGE_15>
 {
-  static const topology::topology_t value = topology::WEDGE_18;
-  static const unsigned num_nodes = 18;
+  static constexpr topology::topology_t value = topology::WEDGE_18;
+  static constexpr unsigned num_nodes = 18;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_9
@@ -1614,29 +1577,27 @@ struct topology_data<topology::HEX_8>
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   typedef topology::topology_t value_type;
-  static const topology::topology_t value = topology::HEX_8;
-  static const topology::topology_t base = topology::HEX_8;
+  static constexpr topology::topology_t value = topology::HEX_8;
+  static constexpr topology::topology_t base = topology::HEX_8;
 
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::FACE_RANK;
-  static const topology::topology_t edge_topology = topology::LINE_2;
-  static const bool has_homogeneous_faces = true;
-  static const bool is_shell = false;
-  static const unsigned dimension = 3;
-  static const unsigned num_nodes = 8;
-  static const unsigned num_vertices = 8;
-  static const unsigned num_edges = 12;
-  static const unsigned num_faces = 6;
-  static const unsigned num_permutations = 24;
-  static const unsigned num_positive_permutations = 24;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::FACE_RANK;
+  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr bool has_homogeneous_faces = true;
+  static constexpr bool is_shell = false;
+  static constexpr unsigned dimension = 3;
+  static constexpr unsigned num_nodes = 8;
+  static constexpr unsigned num_vertices = 8;
+  static constexpr unsigned num_edges = 12;
+  static constexpr unsigned num_faces = 6;
+  static constexpr unsigned num_permutations = 24;
+  static constexpr unsigned num_positive_permutations = 24;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true  // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_4
@@ -1705,12 +1666,12 @@ template <>
 struct topology_data<topology::HEX_20>
   : public topology_data<topology::HEX_8>
 {
-  static const topology::topology_t value = topology::HEX_20;
-  static const unsigned num_nodes = 20;
-  static const unsigned num_permutations = 24;
-  static const unsigned num_positive_permutations = 24;
+  static constexpr topology::topology_t value = topology::HEX_20;
+  static constexpr unsigned num_nodes = 20;
+  static constexpr unsigned num_permutations = 24;
+  static constexpr unsigned num_positive_permutations = 24;
 
-  static const topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_8
@@ -1779,8 +1740,8 @@ template <>
 struct topology_data<topology::HEX_27>
   : public topology_data<topology::HEX_20>
 {
-  static const topology::topology_t value = topology::HEX_27;
-  static const unsigned num_nodes = 27;
+  static constexpr topology::topology_t value = topology::HEX_27;
+  static constexpr unsigned num_nodes = 27;
 
   typedef boost::mpl::vector_c<   topology::topology_t
                                 , topology::QUAD_9
@@ -1838,38 +1799,34 @@ template <topology::topology_t Topology>
 struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPEREDGE_START && Topology < topology::SUPEREDGE_END) >::type >
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
-  static const topology::topology_t value = Topology;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::EDGE_RANK;
-  static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const unsigned num_nodes = Topology - topology::SUPEREDGE_START;
+  static constexpr topology::topology_t value = Topology;
+  static constexpr topology::topology_t base = value;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::EDGE_RANK;
+  static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
+  static constexpr unsigned num_nodes = Topology - topology::SUPEREDGE_START;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , true // 2d
-                                , true // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
 };
 
 template <topology::topology_t Topology>
 struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPERFACE_START && Topology < topology::SUPERFACE_END) >::type >
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
-  static const topology::topology_t value = Topology;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::FACE_RANK;
-  static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const unsigned num_nodes = Topology - topology::SUPERFACE_START;
+  static constexpr topology::topology_t value = Topology;
+  static constexpr topology::topology_t base = value;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::FACE_RANK;
+  static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
+  static constexpr unsigned num_nodes = Topology - topology::SUPERFACE_START;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , false // 1d
-                                , false // 2d
-                                , true // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       false,  // 1d
+                                                       false,  // 2d
+                                                       true};  // 3d
 };
 
 //***************************************************************************
@@ -1880,19 +1837,17 @@ template <topology::topology_t Topology>
 struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPERELEMENT_START) >::type >
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
-  static const topology::topology_t value = Topology;
-  static const topology::topology_t base = value;
-  static const bool is_valid = true;
-  static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::INVALID_RANK;
-  static const unsigned num_nodes = Topology - topology::SUPERELEMENT_START;
+  static constexpr topology::topology_t value = Topology;
+  static constexpr topology::topology_t base = value;
+  static constexpr bool is_valid = true;
+  static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
+  static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
+  static constexpr unsigned num_nodes = Topology - topology::SUPERELEMENT_START;
 
-  typedef boost::mpl::vector_c<   bool
-                                , false // 0d
-                                , true // 1d
-                                , true // 2d
-                                , true // 3d
-                              > spatial_dimension_vector;
+  static constexpr bool spatial_dimension_vector[4] = {false,  // 0d
+                                                       true,   // 1d
+                                                       true,   // 2d
+                                                       true};  // 3d
 };
 
 }} // namespace stk::topology_detail

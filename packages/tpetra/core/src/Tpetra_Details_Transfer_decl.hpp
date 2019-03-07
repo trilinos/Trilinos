@@ -43,15 +43,14 @@
 #define TPETRA_DETAILS_TRANSFER_DECL_HPP
 
 #include "Tpetra_Details_Transfer_fwd.hpp"
+#include "Tpetra_ImportExportData_fwd.hpp"
 #include "Tpetra_Map_decl.hpp"
 #include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
-  //
-  // Forward declaration.  The "doxygen" bit simply tells Doxygen (our
-  // automatic documentation generation system) to skip forward
-  // declarations.
-  //
+
+// Forward declaration.  The macro tells Doxygen (our automatic
+// documentation generation system) to skip forward declarations.
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class Distributor;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -67,20 +66,71 @@ template<class LO,
          class NT>
 class Transfer : public Teuchos::Describable {
 public:
-  //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~Transfer () {}
-
-  /// \brief The specialization of Map used by this class and subclasses.
+  /// \brief Map specialization used by this class and subclasses.
   ///
   /// The initial two colons avoid confusion between Tpetra::Map and
-  /// Tpetra::Detaills::Map.
-  typedef ::Tpetra::Map<LO, GO, NT> map_type;
+  /// Tpetra::Details::Map.
+  using map_type = ::Tpetra::Map<LO, GO, NT>;
+
+private:
+  using execution_space = typename NT::device_type::execution_space;
+
+  // See #1088 for why this is not just device_type::memory_space.
+#ifdef KOKKOS_ENABLE_CUDA
+  static constexpr bool is_cuda =
+    std::is_same<execution_space, Kokkos::Cuda>::value;
+  using memory_space = typename std::conditional<is_cuda, Kokkos::CudaSpace,
+    typename NT::device_type::memory_space>::type;
+#else
+  using memory_space = typename NT::device_type::memory_space;
+#endif // KOKKOS_ENABLE_CUDA
+  using device_type = Kokkos::Device<execution_space, memory_space>;
+
+public:
+  // Don't be tempted to comment this out if code doesn't build.
+  // The point is to ensure correct initialization of TransferData_.
+  Transfer () = delete;
+
+  /// \brief Four-argument constructor (most often used).
+  ///
+  /// \pre </tt> ! source.is_null() </tt>
+  ///
+  /// \param source [in] Source Map of the Export or Import.
+  /// \param target [in] Target Map of the Export or Import.
+  ///   May be null only if Export or Import is using one of
+  ///   the special source-Map-only constructors.
+  /// \param out [in/out] Stream for verbose debugging output.
+  ///   If null, Transfer will wrap and use std::cerr.
+  /// \param plist [in/out] Parameters; may be null.
+  ///
+  /// \param className [in] Either "Export" or "Import".  Used to
+  ///   control verbose debugging output (sometimes you might want it
+  ///   only for one or the other class).
+  Transfer (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+            const Teuchos::RCP<Teuchos::FancyOStream>& out,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist,
+            const std::string& className);
+
+  Transfer (const Transfer<LO, GO, NT>& rhs) = default;
+
+  struct reverse_tag {};
+  /// \brief Reverse-mode "copy" constructor.
+  ///
+  /// Use this for constructing an Export from an Import, or an Import
+  /// from an Export.
+  Transfer (const Transfer<LO, GO, NT>& rhs, reverse_tag tag);
+
+  Transfer<LO, GO, NT>& operator= (const Transfer<LO, GO, NT>&) = default;
+
+  //! Destructor (declared virtual for memory safety of derived classes).
+  virtual ~Transfer () = default;
 
   /// \brief Number of initial identical IDs.
   ///
   /// The number of IDs that are identical between the source and
   /// target Maps, up to the first different ID.
-  virtual size_t getNumSameIDs() const = 0;
+  size_t getNumSameIDs() const;
 
   /// \brief Number of IDs to permute but not to communicate.
   ///
@@ -88,40 +138,58 @@ public:
   /// part of the first getNumSameIDs() entries.  The Import or Export
   /// will permute these entries locally (without distributed-memory
   /// communication).
-  virtual size_t getNumPermuteIDs () const = 0;
+  size_t getNumPermuteIDs () const;
+
+  /// \brief List of local IDs in the source Map that are permuted, as
+  ///   a const DualView (that is sync'd to both host and device).
+  Kokkos::DualView<const LO*, device_type> getPermuteFromLIDs_dv () const;
 
   //! List of local IDs in the source Map that are permuted.
-  virtual Teuchos::ArrayView<const LO> getPermuteFromLIDs () const = 0;
+  Teuchos::ArrayView<const LO> getPermuteFromLIDs () const;
+
+  /// \brief List of local IDs in the target Map that are permuted, as
+  ///   a const DualView (that is sync'd to both host and device).
+  Kokkos::DualView<const LO*, device_type> getPermuteToLIDs_dv () const;
 
   //! List of local IDs in the target Map that are permuted.
-  virtual Teuchos::ArrayView<const LO> getPermuteToLIDs () const = 0;
+  Teuchos::ArrayView<const LO> getPermuteToLIDs () const;
 
   //! Number of entries not on the calling process.
-  virtual size_t getNumRemoteIDs () const = 0;
+  size_t getNumRemoteIDs () const;
+
+  /// \brief List of entries in the target Map to receive from other
+  ///   processes, as a const DualView (that is sync'd to both host
+  ///   and device).
+  Kokkos::DualView<const LO*, device_type> getRemoteLIDs_dv () const;
 
   //! List of entries in the target Map to receive from other processes.
-  virtual Teuchos::ArrayView<const LO> getRemoteLIDs () const = 0;
+  Teuchos::ArrayView<const LO> getRemoteLIDs () const;
 
   //! Number of entries that must be sent by the calling process to other processes.
-  virtual size_t getNumExportIDs () const = 0;
+  size_t getNumExportIDs () const;
+
+  /// \brief List of entries in the source Map that will be sent to
+  ///   other processes, as a const DualView (that is sync'd to both
+  ///   host and device).
+  Kokkos::DualView<const LO*, device_type> getExportLIDs_dv () const;
 
   //! List of entries in the source Map that will be sent to other processes.
-  virtual Teuchos::ArrayView<const LO> getExportLIDs () const = 0;
+  Teuchos::ArrayView<const LO> getExportLIDs () const;
 
   /// \brief List of processes to which entries will be sent.
   ///
   /// The entry with local ID getExportLIDs()[i] will be sent to
   /// process getExportPiDs()[i].
-  virtual Teuchos::ArrayView<const int> getExportPIDs () const = 0;
+  Teuchos::ArrayView<const int> getExportPIDs () const;
 
   //! The source Map used to construct this Export or Import.
-  virtual Teuchos::RCP<const map_type> getSourceMap () const = 0;
+  Teuchos::RCP<const map_type> getSourceMap () const;
 
   //! The target Map used to construct this Export or Import.
-  virtual Teuchos::RCP<const map_type> getTargetMap () const = 0;
+  Teuchos::RCP<const map_type> getTargetMap () const;
 
   //! The Distributor that this Export or Import object uses to move data.
-  virtual ::Tpetra::Distributor& getDistributor () const = 0;
+  ::Tpetra::Distributor& getDistributor () const;
 
   /// \brief Is this Export or Import locally complete?
   ///
@@ -139,7 +207,7 @@ public:
   /// taking a subset of a large object.  Nevertheless, you may find
   /// this predicate useful for figuring out whether you set up your
   /// Maps in the way that you expect.
-  virtual bool isLocallyComplete () const = 0;
+  bool isLocallyComplete () const;
 
   /// \brief Describe this object in a human-readable way to the given
   ///   output stream.
@@ -167,6 +235,15 @@ public:
               Teuchos::Describable::verbLevel_default) const;
 
 protected:
+  //! All the data needed for executing the Export communication plan.
+  Teuchos::RCP<ImportExportData<LO, GO, NT> > TransferData_;
+
+  //! Valid (nonnull) output stream for verbose output.
+  Teuchos::FancyOStream& verboseOutputStream () const;
+
+  //! Whether to print verbose debugging output.
+  bool verbose () const;
+
   /// \brief Implementation of describe() for subclasses
   ///   (Tpetra::Import and Tpetra::Export).
   ///
@@ -187,6 +264,17 @@ protected:
                   Teuchos::Describable::verbLevel_default) const;
 
 private:
+  /// \brief Set parameters.
+  ///
+  /// Please see the Export or Import class documentation for a list
+  /// of all accepted parameters and their default values.
+  ///
+  /// \param plist [in/out] Parameters; may be null.
+  /// \param className [in] "Export" or "Import".
+  void
+  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                    const std::string& className);
+
   /// \brief Print "global" (not necessarily just on Process 0)
   ///   information for describe().
   ///

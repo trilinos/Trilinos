@@ -2,23 +2,23 @@
 # Copyright(C) 2005 National Technology & Engineering Solutions of
 # Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 # * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#           
+#
 # * Redistributions in binary form must reproduce the above
 #   copyright notice, this list of conditions and the following
 #   disclaimer in the documentation and/or other materials provided
 #   with the distribution.
-#                         
+#
 # * Neither the name of NTESS nor the names of its
 #   contributors may be used to endorse or promote products derived
 #   from this software without specific prior written permission.
-#                                                 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -53,8 +53,8 @@ exit 1
 
 function show_device {
  echo " "
- tempA=`find ${ACCESS}/bin -name ${codename}${sep}\* |grep -v ${codename}.o |sed -e s:${ACCESS}/bin/${codename}${sep}::`
- echo "Standard options for 'device':" 
+ tempA=`find ${ACCESS_BIN} -name ${codename}${sep}\* |grep -v ${codename}.o |sed -e s:${ACCESS_BIN}/${codename}${sep}::`
+ echo "Standard options for 'device':"
  echo "${txtgrn}" $tempA "${txtrst}"
  echo " "
 }
@@ -76,7 +76,20 @@ echo ""
 }
 
 codename=fastq
-ACCESS=@ACCESSDIR@
+
+# If 'getopt.seacas' in same path as this script, then use that as the
+# setting for ACCESS Assumes that fastq_x11, ... will also be in same
+# directory
+pushd $(dirname "${0}") > /dev/null
+basedir=$(pwd -P)
+popd > /dev/null
+if [ -x ${basedir}/getopt.seacas ]; then
+    ACCESS_BIN=$basedir
+elif [ "$ACCESS" == "" ]; then
+    ACCESS_BIN=@ACCESSDIR@/bin
+else
+    ACCESS_BIN=${ACCESS}/bin
+fi
 sep=@SEPARATOR@
 
 # Text color variables
@@ -105,7 +118,7 @@ makexoII="true"
 batch="false"
 
 export EXTO3=INT
-GETOPT=${ACCESS}/bin/getopt.seacas
+GETOPT=${ACCESS_BIN}/getopt.seacas
 
 TEMP=`${GETOPT} -o m:hi:p:d:e:a -a --long ps_option:,mesh:,device:,input:,exodus:,hardcopy:,aprepro,help -n 'fastq' -- "$@"`
 
@@ -183,8 +196,8 @@ if [ ${aprepro} == "true" ] && [ ! -z "$FOR001" ] ; then
     aprepro="file"
     tmp=$FOR001
     export FOR001="./fastq.$$"
-    ${ACCESS}/bin/aprepro "$tmp" "${FOR001}"
-fi    
+    ${ACCESS_BIN}/aprepro "$tmp" "${FOR001}"
+fi
 
 if [ "${device}" == "dual" ] ; then
     export DUAL_FILENAME="${filename}.met"
@@ -198,9 +211,9 @@ else
     export EXT01=${device}
 fi
 
-if [ ! -x "${ACCESS}/bin/${codename}${sep}${device}" ]
+if [ ! -x "${ACCESS_BIN}/${codename}${sep}${device}" ]
 then
-   echo "${txtred}ERROR: ${ACCESS}/bin/${codename}${sep}${device} does not exist.${txtrst}"
+   echo "${txtred}ERROR: ${ACCESS_BIN}/${codename}${sep}${device} does not exist.${txtrst}"
    echo "    Contact gdsjaar@sandia.gov if you need this device;"
    echo "    otherwise use one of the supported devices:"
    show_device
@@ -208,7 +221,7 @@ then
 fi
 
 # Run the code, --
-if ${ACCESS}/bin/${codename}${sep}${device} -basename ${filename}
+if ${ACCESS_BIN}/${codename}${sep}${device} -basename ${filename}
 then
   echo "${txtgrn}BLOT Successful Execution${txtrst}"
 fi
@@ -221,7 +234,7 @@ then
   if [ ${device} == "pst" ] ; then mv cgiout1     ${filename}.ps  ; fi
 fi
 
-if [ "${aprepro}" == "file" ] ; then 
+if [ "${aprepro}" == "file" ] ; then
     rm -f ${FOR001}
 fi
 

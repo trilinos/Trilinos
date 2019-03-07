@@ -60,14 +60,6 @@ void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blo
     FaceCreator(bulkData, bulkData.get_face_adjacent_element_graph()).create_side_entities_given_sideset(skinnedSideSet, partToPutSidesInto);
 }
 
-STK_DEPRECATED void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, const stk::mesh::Selector* air)
-{
-    stk::mesh::Selector nothing;
-    const stk::mesh::Selector* airPtr = air != nullptr ? air : &nothing;
-
-    create_exposed_block_boundary_sides(bulkData, blocksToSkin, partToPutSidesInto, *airPtr);
-}
-
 void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto)
 {
     std::vector<SideSetEntry> skinnedSideSet = SkinMeshUtil::get_skinned_sideset(bulkData, blocksToSkin);

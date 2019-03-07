@@ -139,10 +139,10 @@ void IOShell::Interface::enroll_options()
 
 #if defined(PARALLEL_AWARE_EXODUS)
   options_.enroll(
-      "compose", Ioss::GetLongOption::MandatoryValue,
-      "Specify the parallel-io method to be used to output a single file in a parallel run.\n"
-      "\t\tOptions are default, mpiio, mpiposix, pnetcdf, external",
-      nullptr);
+      "compose", Ioss::GetLongOption::OptionalValue,
+      "If no argument, specify single-file output; if 'external', then file-per-processor.\n"
+      "\t\tAll other options are ignored and just exist for backward-compatibility",
+      nullptr, "true");
 
   options_.enroll(
       "rcb", Ioss::GetLongOption::NoValue,

@@ -2,23 +2,23 @@
 # Copyright(C) 2005 National Technology & Engineering Solutions of
 # Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 # * Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
-#           
+#
 # * Redistributions in binary form must reproduce the above
 #   copyright notice, this list of conditions and the following
 #   disclaimer in the documentation and/or other materials provided
 #   with the distribution.
-#                         
+#
 # * Neither the name of NTESS nor the names of its
 #   contributors may be used to endorse or promote products derived
 #   from this software without specific prior written permission.
-#                                                 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 #**************************************************************************
 #**************************************************************************
 #**
@@ -86,14 +86,14 @@ set NEM_SLICE = $ACCESSBIN/nem_slice
 set default_raids  = 1
 set default_root   = `pwd`/
 set default_sub    = .
-set default_offset = 1 
+set default_offset = 1
 
 set input_suffix   = i
 set genesis_suffix = g
 set exodus_suffix  = e
 set spread_suffix  = par
 set spreadit       = "NO"
-  
+
 env >! JUNK
 grep "ALEGRA_EXE" JUNK > JUNK2
 set alegra_rc = $status
@@ -109,7 +109,7 @@ if ($#argv == 0) goto USAGE
 if ($#argv == 1 && "$argv[1]" == "-h") goto USAGE
 @ i = 1
 while ($i < $#argv)
-    switch ($argv[$i]) 
+    switch ($argv[$i])
     case -h:
         set argv[$i] = "-help"
         breaksw
@@ -118,9 +118,9 @@ while ($i < $#argv)
         @ i++
         set testvar = `echo $argv[$i] | sed "s/.*\-l/\-l/" | sed "s/\-l.*//"`
         if ( "$testvar" == "" ) then
-            set decomp_method = "$argv[$i]" 
+            set decomp_method = "$argv[$i]"
         else
-            set nem_slice_flag = "$argv[$i]" 
+            set nem_slice_flag = "$argv[$i]"
         endif
         set argv[$i] = "user_defined"
         breaksw
@@ -175,7 +175,7 @@ if ($#temp <= 0) then
         goto USAGE
 endif
 set runid = $temp[1]
-# Check for arguments and set corresponding variables 
+# Check for arguments and set corresponding variables
 while ("$argv[1]" != "--")
         switch ($argv[1])
         case -help:
@@ -186,23 +186,23 @@ while ("$argv[1]" != "--")
                 breaksw
         case -offset:
                 shift argv
-                set offset = $argv[1] 
+                set offset = $argv[1]
                 breaksw
         case -mesh_opt:
                 shift argv
-                set mesh_opt = $argv[1] 
+                set mesh_opt = $argv[1]
                 breaksw
         case -raids:
                 shift argv
-                set raids = $argv[1] 
+                set raids = $argv[1]
                 breaksw
         case -ROOTDIR:
                 shift argv
-                set rootdir = $argv[1] 
+                set rootdir = $argv[1]
                 breaksw
         case -SUBDIR:
                 shift argv
-                set subdir = $argv[1] 
+                set subdir = $argv[1]
                 breaksw
         case -spread:
 	        set spreadit="yes"
@@ -212,15 +212,15 @@ while ("$argv[1]" != "--")
 		breaksw
         case -suffix_mesh:
                 shift argv
-                set genesis_suffix = $argv[1] 
+                set genesis_suffix = $argv[1]
                 breaksw
         case -suffix_spread:
                 shift argv
-                set spread_suffix = $argv[1] 
+                set spread_suffix = $argv[1]
                 breaksw
         case -suffix_transient:
                 shift argv
-                set exodus_suffix = $argv[1] 
+                set exodus_suffix = $argv[1]
                 breaksw
         case -No_scalar_mesh:
 	        set scalar_mesh = "no"
@@ -264,10 +264,10 @@ while ("$argv[1]" != "--")
 	case -zpinch:
 	        set decomp_method="-l zpinch"
 		breaksw
-	  
+
         default:
                 echo "ERROR: unrecognized option $argv[1]"
-                goto USAGE 
+                goto USAGE
                 breaksw
         endsw
         shift argv
@@ -331,7 +331,7 @@ set prob_dir = `pwd | sed "s/.*\///g"`
 
 echo "===========================================================" >! $output
 echo "| Sandia Engineering Analysis Access procedure for: loadbal" >> $output
-echo '| $Revision: 1.57 $, $Date: 2008/05/19 12:29:22 $'                                      >> $output   
+echo '| $Revision: 1.57 $, $Date: 2008/05/19 12:29:22 $'                                      >> $output
 echo "===========================================================" >> $output
 
 echo "Executing:"
@@ -382,7 +382,7 @@ echo -n "*         at "; date
 echo "*"
 echo "*    For details of the decomposition, see"
 echo "*        $output (output) and"
-echo "*        $error (possible errors/warnings)" 
+echo "*        $error (possible errors/warnings)"
 echo "*"
 echo "*    The following files may be required for parallel runs:"
 echo "*          $input"
@@ -450,9 +450,9 @@ set pexcmd  = $ACCESSBIN/nem_spread
 if ($subdirectory == "no") then
   set do_sub = ", nosubdirectory"
 else
-  set do_sub = 
+  set do_sub =
 endif
-  
+
 set zero = "zeros"
 set stage =
 
@@ -516,7 +516,7 @@ endif
 echo ""                                                             >> $spreed
 echo "$pexcmd $pexsh"                                               >> $spreed
 
-goto CONFIG 
+goto CONFIG
 
 # *************************************************************************
 # *************************************************************************
@@ -535,7 +535,7 @@ echo "ERROR:***************************************************"
 echo ""
 cat $error
 echo ""
-exit $load_rc 
+exit $load_rc
 
 # *************************************************************************
 # *************************************************************************
@@ -554,31 +554,31 @@ Usage:  loadbal [-h] -p <processor layout> [-n <nemslice options>]
 Decomposition methods: [0..3] = speed ranking 0=fastest
   -multikl:   [3] Multilevel KL. Gives high quality partitions.
 		  Slow, high memory use.
-  -spectral:  [2] use eigenvectors of a matrix constructed from the 
+  -spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
   -hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
   -rib:       [?] Recursive Inertial Bisection (uses Zoltan)
   -rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
   -inertial:  [1] (default) vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
-  -linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+  -linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
-  -random:    [0] vertices are assigned randomly to sets in a way that 
+  -random:    [0] vertices are assigned randomly to sets in a way that
                   preserves balance.
-  -scattered: [0] vertices are handed out in order with the next vertex 
+  -scattered: [0] vertices are handed out in order with the next vertex
                   going to whichever set is smallest.
   -brick      [-] special decomposition method; not useful for general use.
   -zpinch     [-] special decomposition method; not useful for general use.
-      (See jal.sandia.gov/SEACAS/Documentation/chaco.pdf and 
+      (See jal.sandia.gov/SEACAS/Documentation/chaco.pdf and
            www.cs.sandia.gov/Zoltan/ug_html/ug.html for details)
 
 Other options:
--slit           Do not flag error if mesh contains slit/crack/sipe 
+-slit           Do not flag error if mesh contains slit/crack/sipe
                 (two quad faces sharing 3 nodes) [Set by default now]
 -spread         Execute the {runid}.spd file automatically as part of the
                 loadbal process.
 -h              print this message
--n options      options for nem_slice. Example: -n -c    
+-n options      options for nem_slice. Example: -n -c
 -o offset       disk drive number to begin with
 -p proc_layout  select a one-, two-, three-dimensional mesh layout
                 Examples: -p 4       a one-dimensional mesh of 4 processors
@@ -590,9 +590,9 @@ Other options:
 -suffix_mesh suf      file extension on input mesh file (default = g)
 -suffix_spread suf    file extension on spread files (default = par)
 -suffix_transient suf file extension on results files (default = e)
--No_scalar_mesh       Do not use the scalar mesh in nem_join; 
+-No_scalar_mesh       Do not use the scalar mesh in nem_join;
                       use only results files.
--No_subdirectory      Do not create the 01 subdirectory; 
+-No_subdirectory      Do not create the 01 subdirectory;
                       write files in root_dir/sub_dir.
 
    help-email: SEACAS@-HELPsandia.gov (code, script)

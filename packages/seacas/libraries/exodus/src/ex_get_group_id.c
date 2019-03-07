@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_FILE_ID_MASK, etc
-#include "netcdf.h"       // for NC_NOERR, etc
 #include <stdio.h>
 #include <stdlib.h> // for NULL
 #include <string.h> // for strchr
@@ -83,6 +82,9 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
   }
   EX_FUNC_LEAVE(EX_NOERR);
 #else
+  EX_UNUSED(parent_id);
+  EX_UNUSED(group_name);
+  EX_UNUSED(group_id);
   EX_FUNC_ENTER();
   snprintf(errmsg, MAX_ERR_LENGTH,
            "ERROR: Group capabilities are not available in this netcdf "

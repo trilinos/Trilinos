@@ -1,23 +1,23 @@
 C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
 C $Id: wrex2.f,v 1.5 2000/11/13 15:39:06 gdsjaar Exp $
 C=======================================================================
@@ -125,15 +125,15 @@ C ...3-NODE BEAM
            INODE = 3
            NATTR = 1
         ELSEIF (EIGHT) THEN
-C ...8-NODE QUAD 
+C ...8-NODE QUAD
            INODE = 8
            NATTR = 0
         ELSEIF (NINE) THEN
-C ...9-NODE QUAD 
+C ...9-NODE QUAD
            INODE = 9
            NATTR = 0
         ELSE
-C ...4-NODE QUAD 
+C ...4-NODE QUAD
            INODE = 4
            NATTR = 0
         ENDIF
@@ -147,7 +147,7 @@ C     Now allocate the space.
       CALL MDRSRV('ATTR', KATRIB, maxatt)
       call mdstat(nerr, mused)
       if (nerr .gt. 0) go to 110
-      
+
       DO 100 I = 1, NUMMAT
          IF (NXK (3, MATMAP (2, I)) .EQ. 0) THEN
             INODE = 2
@@ -206,17 +206,17 @@ c         WRITE (IUNIT, ERR = 110) (ATTR, J = 1, NLOOP)
       call mddel('ATTR')
       call mdstat(nerr, mused)
       if (nerr .gt. 0) go to 110
-      
+
 C  WRITE OUT NODAL BOUNDARY FLAGS
       do 200 i = 1, nbcnod
         call expnp (iunit, nnflg(i), nnlen(i), nnlen(i), ierr)
         call expns (iunit, nnflg(i), nodes(nnptr(i)), ierr)
         call expnsd(iunit, nnflg(i), wtnode(nnptr(i)), ierr)
  200  continue
-        
+
 C  WRITE OUT SIDE BOUNDARY FLAGS
 C ... Fix up side set nodes and elements for 8 and 9 node elements.
-C ... At this point, they are treated as two linear segments, 
+C ... At this point, they are treated as two linear segments,
 C ... They should be ends followed by middle
 
 C    1-----3-----2 Now: 1 3 3 2 Correct: 1 2 3
@@ -257,13 +257,13 @@ C    1-----3-----2 Now: 1 3 3 2 Correct: 1 2 3
 C ... Convert sideset nodes to sideset sides
       if (nbcsid .gt. 0) then
          call mdrsrv('ISIDES', ksides, nslist)
-         call EXCN2S(iunit, nslen, nvlen, nsptr, nvptr, 
+         call EXCN2S(iunit, nslen, nvlen, nsptr, nvptr,
      &        nelems, nsiden, ia(ksides), IERR)
-         
+
          do 140 i=1, nbcsid
            call expsp (iunit, nsflg(i), nslen(i), nvlen(i), ierr)
            call expss (iunit, nsflg(i), nelems(nsptr(i)),
-     &          ia(ksides+nsptr(i)-1), ierr) 
+     &          ia(ksides+nsptr(i)-1), ierr)
            call expssd(iunit, nsflg(i), wtside(nvptr(i)), ierr)
  140     continue
          call mddel('ISIDES')
@@ -308,7 +308,7 @@ C     ERROR DURING WRITE PROBLEMS
       integer nxk(nnxk, *)
       integer index(*)
       logical usind
-      
+
       ii = 0
       do 20 i = ibeg, iend
         ii = ii + 1

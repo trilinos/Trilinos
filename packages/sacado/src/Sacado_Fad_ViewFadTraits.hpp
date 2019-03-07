@@ -89,10 +89,16 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsADType to ViewFad types
+  //! Specialization of %IsScalarType to ViewFad types
   template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
   struct IsScalarType< Fad::ViewFad<ValueT,Size,Stride,Base> > {
     static const bool value = false;
+  };
+
+  //! Specialization of %IsSimdType to ViewFad types
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct IsSimdType< Fad::ViewFad<ValueT,Size,Stride,Base> > {
+    static const bool value = IsSimdType<ValueT>::value;
   };
 
   //! Specialization of %Value to ViewFad types

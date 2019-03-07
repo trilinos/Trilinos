@@ -113,6 +113,14 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 
     // From StructuredAggregationFactory
+    SET_VALID_ENTRY("aggregation: mesh layout");
+    SET_VALID_ENTRY("aggregation: mode");
+    SET_VALID_ENTRY("aggregation: output type");
+    SET_VALID_ENTRY("aggregation: coarsening rate");
+    SET_VALID_ENTRY("aggregation: number of spatial dimensions");
+    SET_VALID_ENTRY("aggregation: coarsening order");
+
+    // From StructuredAggregationFactory
 #undef  SET_VALID_ENTRY
 
     /* From UncoupledAggregation */
@@ -135,16 +143,6 @@ namespace MueLu {
 
     /* From StructuredAggregation */
     // general variables needed in AggregationFactory
-    validParamList->set<std::string >           ("aggregation: mesh layout","Global Lexicographic",
-                                                 "Type of mesh ordering");
-    validParamList->set<std::string >           ("aggregation: coupling",              "uncoupled",
-                                                 "aggregation coupling mode: coupled or uncoupled");
-    validParamList->set<int>                    ("aggregation: number of spatial dimensions",    3,
-                                                  "The number of spatial dimensions in the problem");
-    validParamList->set<int>                    ("aggregation: coarsening order",                0,
-                                                  "The interpolation order used to construct grid transfer operators based off these aggregates.");
-    validParamList->set<std::string>            ("aggregation: coarsening rate",    "{3}",
-                                                  "Coarsening rate per spatial dimensions");
     validParamList->set<RCP<const FactoryBase> >("aggregation: mesh data",  Teuchos::null,
                                                  "Mesh ordering associated data");
 
@@ -215,7 +213,7 @@ namespace MueLu {
 
 
     /* StructuredAggregation */
-    std::string coupling = pL.get<std::string>("aggregation: coupling");
+    std::string coupling = pL.get<std::string>("aggregation: mode");
     const bool coupled = (coupling == "coupled" ? true : false);
     if(coupled) {
       // Request the global number of nodes per dimensions
@@ -277,7 +275,6 @@ namespace MueLu {
     RCP<const Map> fineMap      = graph->GetDomainMap();
     const int myRank            = fineMap->getComm()->getRank();
     const int numRanks          = fineMap->getComm()->getSize();
-    const GO  minGlobalIndex    = fineMap->getMinGlobalIndex();
 
     // Build aggregates
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
@@ -308,7 +305,7 @@ namespace MueLu {
       const int numDimensions      = pL.get<int>("aggregation: number of spatial dimensions");
       const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
       std::string meshLayout       = pL.get<std::string>("aggregation: mesh layout");
-      std::string coupling         = pL.get<std::string>("aggregation: coupling");
+      std::string coupling         = pL.get<std::string>("aggregation: mode");
       const bool coupled = false; //Only support uncoupled
       Array<GO> gFineNodesPerDir(3);
       Array<LO> lFineNodesPerDir(3);

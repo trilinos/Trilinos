@@ -104,7 +104,7 @@ view_type get_array_bit_count(view_type view){
   typename view_type::non_const_type out_view ("out", view.extent(0));
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.extent(0)),ppctest<view_type> (view, out_view));
+  Kokkos::parallel_for( "KokkosKernels::Common::Test::GetArrayBitCount", my_exec_space(0, view.extent(0)),ppctest<view_type> (view, out_view));
   Kokkos::fence();
   return out_view;
 }
@@ -116,7 +116,7 @@ view_type check_array_bit_count(view_type view){
   typename view_type::non_const_type  out_view ("out", view.extent(0));
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.extent(0)), ppccheck<view_type> (view, out_view));
+  Kokkos::parallel_for( "KokkosKernels::Common::Test::CheckArrayBitCount", my_exec_space(0, view.extent(0)), ppccheck<view_type> (view, out_view));
   Kokkos::fence();
   return out_view;
 }
@@ -165,7 +165,7 @@ view_type get_ffs(view_type view){
   typename view_type::non_const_type out_view ("out", view.extent(0));
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.extent(0)),  ffstest<view_type> (view, out_view));
+  Kokkos::parallel_for( "KokkosKernels::Common::Test::GetFFS", my_exec_space(0, view.extent(0)),  ffstest<view_type> (view, out_view));
   Kokkos::fence();
   return out_view;
 }
@@ -177,7 +177,7 @@ view_type check_ffs(view_type view){
   typename view_type::non_const_type  out_view ("out", view.extent(0));
 
   typedef Kokkos::RangePolicy<execution_space> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, view.extent(0)),  ffscheck<view_type> (view, out_view));
+  Kokkos::parallel_for( "KokkosKernels::Common::Test::CheckFFS", my_exec_space(0, view.extent(0)),  ffscheck<view_type> (view, out_view));
   Kokkos::fence();
   return out_view;
 }

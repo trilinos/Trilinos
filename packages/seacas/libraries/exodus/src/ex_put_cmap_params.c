@@ -61,7 +61,6 @@
 
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, ex_leavedef, etc
-#include <netcdf.h>       // for NC_NOERR, nc_def_var, etc
 #include <stddef.h>       // for size_t
 #include <stdint.h>       // for int64_t
 #include <stdio.h>

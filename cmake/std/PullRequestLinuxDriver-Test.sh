@@ -295,7 +295,18 @@ else
     echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
 
+# Set the Pull Request CDash Track. 
+# Defaults to "Pull Request" if the parameter PULLREQUEST_CDASH_TRACK does not exist or is empty
 CDASH_TRACK="Pull Request"
+
+# If PULLREQUEST_CDASH_TRACK is set and nonzero
+if [ ! -z "${PULLREQUEST_CDASH_TRACK}" ]; then
+    CDASH_TRACK=${PULLREQUEST_CDASH_TRACK:?}
+    echo -e "PULLREQUEST_CDASH_TRACK is set. Setting CDASH_TRACK=${PULLREQUEST_CDASH_TRACK:?}"
+else
+    echo -e "PULLREQUEST_CDASH_TRACK isn't set, using default value"
+fi
+
 echo -e "CDash Track = ${CDASH_TRACK:?}"
 
 
@@ -334,6 +345,19 @@ echo -e "Enabled packages:"
 cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
+weight=${JENKINS_JOB_WEIGHT:-29}
+n_cpu=$(lscpu | grep "^CPU(s):" | cut -d" " -f17)
+n_K=$(cat /proc/meminfo | grep MemTotal | cut -d" " -f8)
+let n_G=$n_K/1024000
+# this is aimed at keeping approximately 1.8G per core so we don't bottleneck
+## weight - the next bit works because the shell is only doing integer arithmetic
+let n_jobs=${n_cpu}/${weight}
+# using bc to get floating point input and integer output
+parallel_level=$(echo "$n_G/( 1.8*$n_jobs )" | bc )
+
+if [ ${parallel_level} -gt ${weight} ]; then
+    parallel_level=${weight}
+fi
 
 #This should be runnable from anywhere, but all the tests so far have been from the
 #same dir the simple_testing.cmake file was in.
@@ -365,7 +389,7 @@ ctest -S simple_testing.cmake \
     -Dskip_update_step=ON \
     -Ddashboard_model=Experimental \
     -Ddashboard_track="${CDASH_TRACK:?}" \
-    -DPARALLEL_LEVEL=18 \
+    -DPARALLEL_LEVEL=${parallel_level} \
     -Dbuild_dir="${WORKSPACE:?}/pull_request_test" \
     -Dconfigure_script=${TRILINOS_DRIVER_SRC_DIR}/cmake/std/${CONFIG_SCRIPT:?} \
     -Dpackage_enables=../packageEnables.cmake \

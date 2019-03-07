@@ -258,8 +258,7 @@ public:
    */
   OptionMaskParser()
     : m_optionMaskNameMap(),
-      m_optionMask(0),
-      m_status(true)
+      m_optionMask(0)
   {}
 
   /**
@@ -327,8 +326,7 @@ public:
 
 protected:
   OptionMaskNameMap    m_optionMaskNameMap;  ///< Mask name vector
-  mutable OptionMask    m_optionMask;    ///< Most recently parsed mask
-  mutable bool      m_status;    ///< Result of most recent parse
+  mutable OptionMask   m_optionMask;         ///< Most recently parsed mask
 };
 
 } // namespace diag

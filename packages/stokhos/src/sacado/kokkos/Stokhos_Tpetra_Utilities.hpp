@@ -179,7 +179,7 @@ namespace Stokhos {
 
     GetScalarMeanValsFunc(const ViewType& vals_) : vals(vals_) {
       const size_type nnz = vals.extent(0);
-      mean_vals = MeanViewType("mean-values", nnz, 1);
+      mean_vals = MeanViewType("mean-values", nnz);
       Kokkos::parallel_for( nnz, *this );
     }
 
@@ -213,7 +213,7 @@ namespace Stokhos {
       vals(vals_), vec_size(Kokkos::dimension_scalar(vals))
     {
       const size_type nnz = vals.extent(0);
-      mean_vals = ViewType("mean-values", nnz, 1);
+      mean_vals = ViewType("mean-values", nnz);
       Kokkos::parallel_for( nnz, *this );
     }
 

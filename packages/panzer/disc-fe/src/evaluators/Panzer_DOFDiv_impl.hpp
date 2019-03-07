@@ -62,7 +62,7 @@ class EvaluateDOFDiv_withSens {
   const bool use_shared_memory;
 
 public:
-  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
   EvaluateDOFDiv_withSens(PHX::MDField<ScalarT,Cell,IP> & in_dof_div,
                           PHX::MDField<const ScalarT,Cell,Point> & in_dof_value,
@@ -84,8 +84,16 @@ public:
 
     if (use_shared_memory) {
       // Copy reused data into fast scratch space
-      scratch_view dof_values(team.team_shmem(),num_fields,fad_size);
-      scratch_view point_values(team.team_shmem(),num_points,fad_size);
+      scratch_view dof_values;
+      scratch_view point_values;
+      if (Sacado::IsADType<ScalarT>::value) {
+        dof_values = scratch_view(team.team_shmem(),num_fields,fad_size);
+        point_values = scratch_view(team.team_shmem(),num_points,fad_size);
+      }
+      else {
+        dof_values = scratch_view(team.team_shmem(),num_fields);
+        point_values = scratch_view(team.team_shmem(),num_points);
+      }
 
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_fields), [&] (const int& dof) {
 	dof_values(dof) = dof_value(cell,dof);

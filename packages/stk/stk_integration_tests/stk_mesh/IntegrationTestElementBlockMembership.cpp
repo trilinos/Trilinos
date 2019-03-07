@@ -87,7 +87,8 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        EXPECT_TRUE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2));
+        std::vector<stk::mesh::PartOrdinal> scratch1, scratch2;
+        EXPECT_TRUE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2, scratch1, scratch2));
     }
 };
 
@@ -101,7 +102,8 @@ public:
 protected:
     virtual void check_difference(stk::mesh::Entity element1, stk::mesh::Entity element2)
     {
-        EXPECT_FALSE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2));
+        std::vector<stk::mesh::PartOrdinal> scratch1, scratch2;
+        EXPECT_FALSE(stk::mesh::impl::are_entity_element_blocks_equivalent(get_bulk(), element1, element2, scratch1, scratch2));
     }
 };
 

@@ -106,24 +106,24 @@ if (gval){ \
 } \
 }
 
-int globalFail(const RCP<const Comm<int> > &comm, int fail)
+int globalFail(const Comm<int> &comm, int fail)
 {
   int gfail=0;
-  reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &fail, &gfail);
+  reduceAll<int,int>(comm, Teuchos::REDUCE_SUM, 1, &fail, &gfail);
   return gfail;
 }
 
-void printFailureCode(const RCP<const Comm<int> > &comm, int fail)
+void printFailureCode(const Comm<int> &comm, int fail)
 {
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  comm->barrier();
+  int rank = comm.getRank();
+  int nprocs = comm.getSize();
+  comm.barrier();
   for (int p=0; p < nprocs; p++){
     if (p == rank)
       std::cout << rank << ": " << fail << std::endl;
-    comm->barrier();
+    comm.barrier();
   }
-  comm->barrier();
+  comm.barrier();
   if (rank==0) std::cout << "FAIL" << std::endl;
   exit(1);
 }

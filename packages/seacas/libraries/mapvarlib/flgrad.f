@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
 *DECK, FLGRAD
@@ -43,9 +43,9 @@ C  coefficients using the stuff that was set up in ELGRAD.
 C  Start by translating into isoparametric coords (very helpful for
 C  shells and makes some sense for continuum and is very useful for
 C  subsequent interpolation.
-C  Then do constrained least sqares to f=a0+a1eta+a2ksi+a3phi to 
+C  Then do constrained least sqares to f=a0+a1eta+a2ksi+a3phi to
 C  compute a1, a2, and a3 and stuff results into SOLGRA
-C  
+C
 C  Calls subroutines ERROR
 C
 C  Called by ELGRAD
@@ -116,7 +116,7 @@ C
         ELSE IF (ICOUNT .EQ. 2)THEN
 C
 C Check for colinearity. Create unit vector to 1st connected element
-C centroid. Create unit vector to 2nd connected element centroid. Dot 
+C centroid. Create unit vector to 2nd connected element centroid. Dot
 C 1st unit vector with 2nd unit vector. If dot product is greater than
 C 0.9, then data is colinear (IRED = 1)
 C
@@ -416,7 +416,7 @@ C Check for colinearity. Create unit vector to 1st connected element
 C centroid. Create unit vector to 2nd connected element centroid. Dot 1st
 C unit vector with 2nd unit vector. If mag of dot product is greater than
 C 0.9, then data is colinear (IRED = 1)
-C        
+C
           V11 = CNTRA(IELLST(1),1) - CNTRA(IEL,1)
           V12 = CNTRA(IELLST(1),2) - CNTRA(IEL,2)
           V13 = CNTRA(IELLST(1),3) - CNTRA(IEL,3)
@@ -483,7 +483,7 @@ C
 C
 C  Dot product of normal vector with unit vectors
 C  to the remaining element centroids. If dot product
-C  is too small, set IRED=2 and try the next vector. 
+C  is too small, set IRED=2 and try the next vector.
 C  If dot product is more than 0.1, data is not coplanar
 C  set IRED = 0 and get on with it.
 C
@@ -546,7 +546,7 @@ C
             SOLGRA(2,IEL,IVAR) = X1D * V12
             SOLGRA(3,IEL,IVAR) = X1D * V13
  350      CONTINUE
-C          
+C
         ELSE IF (IRED .EQ. 2)THEN
 C
 C Coplanar data

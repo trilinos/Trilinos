@@ -369,7 +369,7 @@ public:
   static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
-    typedef ViewMapping< traits_type, void >  DstType ;
+    typedef ViewMapping< traits_type, typename traits_type::specialize >  DstType ;
     typedef typename std::conditional< (rank==0) , ViewDimension<>
       , typename std::conditional< (rank==1) , ViewDimension<0>
       , typename std::conditional< (rank==2) , ViewDimension<0,0>
@@ -561,7 +561,7 @@ public:
   static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
-    typedef ViewMapping< traits_type, void >  DstType ;
+    typedef ViewMapping< traits_type, typename traits_type::specialize >  DstType ;
     typedef typename std::conditional< (rank==0) , ViewDimension<>
       , typename std::conditional< (rank==1) , ViewDimension<0>
       , typename std::conditional< (rank==2) , ViewDimension<0,0>
@@ -695,8 +695,8 @@ public:
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template < typename DT , typename ... DP , typename ST , typename ... SP >
   KOKKOS_INLINE_FUNCTION static
@@ -783,8 +783,8 @@ public:
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template < typename DT , typename ... DP , typename ST , typename ... SP >
   KOKKOS_INLINE_FUNCTION static

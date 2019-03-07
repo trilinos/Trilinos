@@ -991,7 +991,7 @@ public:
     const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::setAllToScalar: ";
 #endif // HAVE_TPETRA_DEBUG
 
-    if (this->template need_sync<device_type> ()) {
+    if (this->need_sync_device ()) {
       // If we need to sync to device, then the data were last
       // modified on host.  In that case, we should again modify them
       // on host.
@@ -1003,21 +1003,13 @@ public:
       this->modify_host ();
       Kokkos::deep_copy (getValuesHost (), alpha);
     }
-    else if (this->need_sync_host ()) {
+    else {
       // If we need to sync to host, then the data were last modified
       // on device.  In that case, we should again modify them on
-      // device.
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (this->template need_sync<device_type> (), std::runtime_error,
-         prefix << "The matrix's values need sync on both host and device.");
-#endif // HAVE_TPETRA_DEBUG
-      this->template modify<device_type> ();
-      Kokkos::deep_copy (this->template getValues<device_type> (), alpha);
-    }
-    else { // neither host nor device marked as modified, so modify on device
-      this->template modify<device_type> ();
-      Kokkos::deep_copy (this->template getValues<device_type> (), alpha);
+      // device.  Also, prefer modifying on device if neither side is
+      // marked as modified.
+      this->modify_device ();
+      Kokkos::deep_copy (this->getValuesDevice (), alpha);
     }
   }
 
@@ -2184,17 +2176,18 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   copyAndPermuteNew (const ::Tpetra::SrcDistObject& source,
                      const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteFromLIDs)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::ProfilingRegion;
-
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    using std::endl;
+    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::copyAndPermuteNew");
-
     const bool debug = Behavior::debug();
     const bool verbose = Behavior::verbose();
 
@@ -2203,7 +2196,7 @@ public:
     {
       std::ostringstream os;
       const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": BlockCrsMatrix::copyAndPermuteNew : " << std::endl;
+      os << "Proc " << myRank << ": BlockCrsMatrix::copyAndPermuteNew : " << endl;
       prefix = os.str();
     }
 
@@ -2212,7 +2205,7 @@ public:
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix
           << "The target object of the Import or Export is already in an error state."
-          << std::endl;
+          << endl;
       return;
     }
 
@@ -2221,9 +2214,9 @@ public:
     //
     if (verbose) {
       std::ostringstream os;
-      os << prefix << std::endl
-         << prefix << "  " << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << std::endl
-         << prefix << "  " << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << std::endl;
+      os << prefix << endl
+         << prefix << "  " << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << prefix << "  " << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
       std::cerr << os.str ();
     }
 
@@ -2235,7 +2228,14 @@ public:
       err << prefix
           << "permuteToLIDs.extent(0) = " << permuteToLIDs.extent (0)
           << " != permuteFromLIDs.extent(0) = " << permuteFromLIDs.extent(0)
-          << "." << std::endl;
+          << "." << endl;
+      return;
+    }
+    if (permuteToLIDs.need_sync_host () || permuteFromLIDs.need_sync_host ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix
+          << "Both permuteToLIDs and permuteFromLIDs must be sync'd to host."
+          << endl;
       return;
     }
 
@@ -2246,9 +2246,18 @@ public:
           << "The source (input) object of the Import or "
         "Export is either not a BlockCrsMatrix, or does not have the right "
         "template parameters.  checkSizes() should have caught this.  "
-        "Please report this bug to the Tpetra developers." << std::endl;
+        "Please report this bug to the Tpetra developers." << endl;
       return;
     }
+    else {
+      // Kyungjoo: where is val_ modified ?
+      //    When we have dual view as a member variable,
+      //    which function should make sure the val_ is upto date ?
+      //    IMO, wherever it is used, the function should check its
+      //    availability.
+      const_cast<this_type*>(src)->sync_host();
+    }
+    this->sync_host();
 
     bool lclErr = false;
 #ifdef HAVE_TPETRA_DEBUG
@@ -2281,20 +2290,11 @@ public:
          << "canUseLocalColumnIndices: "
          << (canUseLocalColumnIndices ? "true" : "false")
          << ", numPermute: " << numPermute
-         << std::endl;
+         << endl;
       std::cerr << os.str ();
     }
 
-    // work around for const object sync
-    if (permuteToLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> permuteToLIDsTemp = permuteToLIDs;
-      permuteToLIDsTemp.sync_host();
-    }
     const auto permuteToLIDsHost = permuteToLIDs.view_host();
-    if (permuteFromLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> permuteFromLIDsTemp = permuteFromLIDs;
-      permuteFromLIDsTemp.sync_host();
-    }
     const auto permuteFromLIDsHost = permuteFromLIDs.view_host();
 
     if (canUseLocalColumnIndices) {
@@ -2419,7 +2419,7 @@ public:
               const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
               os << "Proc " << myRank << ": copyAndPermute: At \"same\" localRow "
                  << localRow << ", numEntries = " << numEntries << " > maxNumEnt = "
-                 << maxNumEnt << std::endl;
+                 << maxNumEnt << endl;
               std::cerr << os.str ();
             }
           }
@@ -2457,7 +2457,7 @@ public:
                 os << "Proc " << myRank << ": copyAndPermute: At \"same\" "
                   "localRow " << localRow << ", this->replaceLocalValues "
                   "returned " << err << " instead of numEntries = "
-                   << numEntries << std::endl;
+                   << numEntries << endl;
                 std::cerr << os.str ();
               }
             }
@@ -2576,11 +2576,11 @@ public:
           err << ",";
         }
       }
-      err << "]" << std::endl;
+      err << "]" << endl;
 #else
       err << "copyAndPermute: The graph structure of the source of the "
         "Import or Export must be a subset of the graph structure of the "
-        "target." << std::endl;
+        "target." << endl;
 #endif // HAVE_TPETRA_DEBUG
     }
 
@@ -2591,7 +2591,7 @@ public:
       os << "*** Proc " << myRank << ": copyAndPermute "
          << (lclSuccess ? "succeeded" : "FAILED");
       if (lclSuccess) {
-        os << std::endl;
+        os << endl;
       } else {
         os << ": error messages: " << this->errorMessages (); // comes w/ endl
       }
@@ -2668,23 +2668,17 @@ public:
       }
       else {
         LO numEntLO = 0;
-#ifdef HAVE_TPETRA_DEBUG
         const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
-          "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
-          << ".");
-#endif // HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
+           "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
+           << ".");
         const char* const inBuf = imports.data () + offset;
         const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
-#ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          actualNumBytes > numBytes, std::logic_error, "unpackRowCount: "
-          "actualNumBytes = " << actualNumBytes << " < numBytes = " << numBytes
-          << ".");
-#else
-        (void) actualNumBytes;
-#endif // HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (actualNumBytes > numBytes, std::logic_error, "unpackRowCount: "
+           "actualNumBytes = " << actualNumBytes << " < numBytes = " << numBytes
+           << ".");
         return static_cast<size_t> (numEntLO);
       }
     }
@@ -2692,10 +2686,6 @@ public:
     /// \brief Pack the block row (stored in the input arrays).
     ///
     /// \return The number of bytes packed.
-    ///
-    /// \note This function is not called packRow, because Intel 16
-    /// has a bug that makes it confuse this packRow with
-    /// Tpetra::RowMatrix::packRow.
     template<class ST, class LO, class GO, class D>
     size_t
     packRowForBlockCrs (const typename ::Tpetra::Details::PackTraits<LO, D>::output_buffer_type exports,
@@ -2745,14 +2735,14 @@ public:
       }
 
       const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != expectedNumBytes, std::logic_error, "packRow: "
-        "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
-        << expectedNumBytes << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numBytesOut != expectedNumBytes, std::logic_error,
+         "packRowForBlockCrs: numBytesOut = " << numBytesOut
+         << " != expectedNumBytes = " << expectedNumBytes << ".");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        errorCode != 0, std::runtime_error, "packRow: "
-        "PackTraits::packArray returned a nonzero error code");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (errorCode != 0, std::runtime_error, "packRowForBlockCrs: "
+         "PackTraits::packArray returned a nonzero error code");
 
       return numBytesOut;
     }
@@ -2776,15 +2766,15 @@ public:
         return 0;
       }
       const size_t numScalarEnt = numEnt * blockSize * blockSize;
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (imports.extent (0)) <= offset,
-        std::logic_error, "unpackRow: imports.extent(0) = "
-        << imports.extent (0) << " <= offset = " << offset << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (imports.extent (0)) < offset + numBytes,
-        std::logic_error, "unpackRow: imports.extent(0) = "
-        << imports.extent (0) << " < offset + numBytes = "
-        << (offset + numBytes) << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (imports.extent (0)) <= offset,
+         std::logic_error, "unpackRowForBlockCrs: imports.extent(0) = "
+         << imports.extent (0) << " <= offset = " << offset << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (imports.extent (0)) < offset + numBytes,
+         std::logic_error, "unpackRowForBlockCrs: imports.extent(0) = "
+         << imports.extent (0) << " < offset + numBytes = "
+         << (offset + numBytes) << ".");
 
       const GO gid = 0; // packValueCount wants this
       const LO lid = 0; // packValueCount wants this
@@ -2804,10 +2794,10 @@ public:
       int errorCode = 0;
       LO numEntOut;
       numBytesOut += PackTraits<LO, D>::unpackValue (numEntOut, numEntIn);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
-        "unpackRow: Expected number of entries " << numEnt
-        << " != actual number of entries " << numEntOut << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
+         "unpackRowForBlockCrs: Expected number of entries " << numEnt
+         << " != actual number of entries " << numEntOut << ".");
 
       {
         Kokkos::pair<int, size_t> p;
@@ -2820,19 +2810,20 @@ public:
         numBytesOut += p.second;
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
-        << numBytesOut << " != numBytes = " << numBytes << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numBytesOut != numBytes, std::logic_error,
+         "unpackRowForBlockCrs: numBytesOut = " << numBytesOut
+         << " != numBytes = " << numBytes << ".");
 
       const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
-        "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
-        << expectedNumBytes << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numBytesOut != expectedNumBytes, std::logic_error,
+         "unpackRowForBlockCrs: numBytesOut = " << numBytesOut
+         << " != expectedNumBytes = " << expectedNumBytes << ".");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        errorCode != 0, std::runtime_error, "unpackRow: "
-        "PackTraits::unpackArray returned a nonzero error code");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (errorCode != 0, std::runtime_error, "unpackRowForBlockCrs: "
+         "PackTraits::unpackArray returned a nonzero error code");
 
       return numBytesOut;
     }
@@ -2842,9 +2833,12 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   packAndPrepareNew (const ::Tpetra::SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*, buffer_device_type>& exports,
-                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& exportLIDs,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type>& exports, // output
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type> numPacketsPerLID, // output
                      size_t& constantNumPackets,
                      Distributor& /* distor */)
   {
@@ -2903,6 +2897,11 @@ public:
           << "." << std::endl;
       return;
     }
+    if (exportLIDs.need_sync_host ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      err << prefix << "exportLIDs be sync'd to host." << std::endl;
+      return;
+    }
 
     const this_type* src = dynamic_cast<const this_type* > (&source);
     if (src == NULL) {
@@ -2940,16 +2939,11 @@ public:
     Impl::BlockCrsRowStruct<size_t> rowReducerStruct;
 
     // Graph information is on host; let's do this on host parallel reduce
-    // Sync necessary data to host
-
-    if (exportLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> exportLIDsTemp = exportLIDs;
-      exportLIDsTemp.sync_host();
-    }
     auto exportLIDsHost = exportLIDs.view_host();
-    auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this
+    auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this.
+    numPacketsPerLID.modify_host ();
     {
-      typedef Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec> reducer_type;
+      using reducer_type = Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec>;
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
       Kokkos::parallel_reduce
         (policy,
@@ -2958,14 +2952,11 @@ public:
           size_t numEnt = srcGraph.getNumEntriesInLocalRow (lclRow);
           numEnt = (numEnt == Teuchos::OrdinalTraits<size_t>::invalid () ? 0 : numEnt);
 
-          const size_t numBytes = packRowCount<LO, GO, host_exec> (numEnt, numBytesPerValue, blockSize);
+          const size_t numBytes =
+            packRowCount<LO, GO, host_exec> (numEnt, numBytesPerValue, blockSize);
           numPacketsPerLIDHost(i) = numBytes;
           update += typename reducer_type::value_type(numEnt, numBytes, numEnt);
         }, rowReducerStruct);
-      {
-        Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
-        numPacketsPerLIDTemp.modify_host();
-      }
     }
 
     // Compute the number of bytes ("packets") per row to pack.  While
@@ -3018,6 +3009,8 @@ public:
       const map_type& srcColMap = * (srcGraph.getColMap ());
 
       // Pack the data for each row to send, into the 'exports' buffer.
+      // exports will be modified on host.
+      exports.modify_host();
       {
         typedef Kokkos::TeamPolicy<host_exec> policy_type;
         const auto policy =
@@ -3084,13 +3077,15 @@ public:
     }
   }
 
-
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                       const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
-                       const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& importLIDs,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type> imports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
                        const size_t /* constantNumPackets */,
                        Distributor& /* distor */,
                        const CombineMode combineMode)
@@ -3099,42 +3094,38 @@ public:
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::PackTraits;
-
-    typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space host_exec;
+    using std::endl;
+    using host_exec =
+      typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombineNew");
-
-    const bool debug = Behavior::debug();
-    const bool verbose = Behavior::verbose();
+    const bool verbose = Behavior::verbose ();
 
     // Define this function prefix
     std::string prefix;
     {
       std::ostringstream os;
-      const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": BlockCrsMatrix::unpackAndCombineNew : " << std::endl;
-      prefix = os.str();
+      auto map = this->graph_.getRowMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? -1 : comm->getRank ();
+      os << "Proc " << myRank << ": Tpetra::BlockCrsMatrix::unpackAndCombineNew: ";
+      prefix = os.str ();
+      if (verbose) {
+        os << "Start" << endl;
+        std::cerr << os.str ();
+      }
     }
 
     // check if this already includes a local error
     if (* (this->localError_)) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix
-          << "The target object of the Import or Export is already in an error state."
-          << std::endl;
-      return;
-    }
-
-    //
-    // Verbose input dual view status
-    //
-    if (verbose) {
       std::ostringstream os;
-      os << prefix << std::endl
-         << prefix << "  " << dualViewStatusToString (importLIDs, "importLIDs") << std::endl
-         << prefix << "  " << dualViewStatusToString (imports, "imports") << std::endl
-         << prefix << "  " << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID") << std::endl;
-      std::cerr << os.str ();
+      os << prefix << "{Im/Ex}port target is already in error." << endl;
+      if (verbose) {
+        std::cerr << os.str ();
+      }
+      err << os.str ();
+      return;
     }
 
     ///
@@ -3142,10 +3133,14 @@ public:
     ///
     if (importLIDs.extent (0) != numPacketsPerLID.extent (0)) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix
-          << "importLIDs.extent(0) = " << importLIDs.extent (0)
-          << " != numPacketsPerLID.extent(0) = " << numPacketsPerLID.extent(0)
-          << "." << std::endl;
+      std::ostringstream os;
+      os << prefix << "importLIDs.extent(0) = " << importLIDs.extent (0)
+         << " != numPacketsPerLID.extent(0) = " << numPacketsPerLID.extent(0)
+         << "." << endl;
+      if (verbose) {
+        std::cerr << os.str ();
+      }
+      err << os.str ();
       return;
     }
 
@@ -3153,10 +3148,26 @@ public:
         combineMode != REPLACE && combineMode != ABSMAX &&
         combineMode != ZERO) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix
-          << "Invalid CombineMode value " << combineMode << ".  Valid "
-          << "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO."
-          << std::endl;
+      std::ostringstream os;
+      os << prefix
+         << "Invalid CombineMode value " << combineMode << ".  Valid "
+         << "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO."
+         << std::endl;
+      if (verbose) {
+        std::cerr << os.str ();
+      }
+      err << os.str ();
+      return;
+    }
+
+    if (this->graph_.getColMap ().is_null ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      std::ostringstream os;
+      os << prefix << "Target matrix's column Map is null." << endl;
+      if (verbose) {
+        std::cerr << os.str ();
+      }
+      err << os.str ();
       return;
     }
 
@@ -3168,110 +3179,171 @@ public:
     // Const values
     const size_t blockSize = this->getBlockSize ();
     const size_t numImportLIDs = importLIDs.extent(0);
-    const size_t numBytesPerValue
-      = PackTraits<impl_scalar_type, host_exec>
-      ::packValueCount(this->val_.extent(0) ? this->val_.view_host()(0) : impl_scalar_type());
+    // FIXME (mfh 06 Feb 2019) For scalar types with run-time sizes, a
+    // default-constructed instance could have a different size than
+    // other instances.  (We assume all nominally constructed
+    // instances have the same size; that's not the issue here.)  This
+    // could be bad if the calling process has no entries, but other
+    // processes have entries that they want to send to us.
+    const size_t numBytesPerValue =
+      PackTraits<impl_scalar_type, host_exec>::packValueCount
+        (this->val_.extent (0) ? this->val_.view_host () (0) : impl_scalar_type ());
     const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
 
-    // Early returns
-    if (combineMode == ZERO || numImportLIDs == 0) {
-      if (debug) {
-        std::ostringstream os;
-        os << prefix << "Nothing to do" << std::endl;
-        std::cerr << os.str ();
-      }
-      return; // nothing to do; no need to combine entries
-    }
-
     if (verbose) {
       std::ostringstream os;
-      os << prefix << "Getting ready" << std::endl;
+      os << prefix << "combineMode: "
+         << ::Tpetra::combineModeToString (combineMode)
+         << ", blockSize: " << blockSize
+         << ", numImportLIDs: " << numImportLIDs
+         << ", numBytesPerValue: " << numBytesPerValue
+         << ", maxRowNumEnt: " << maxRowNumEnt
+         << ", maxRowNumScalarEnt: " << maxRowNumScalarEnt << endl;
       std::cerr << os.str ();
     }
 
-    if (importLIDs.need_sync_host()) {
-      Kokkos::DualView<const local_ordinal_type*, device_type> importLIDsTemp = importLIDs;
-      importLIDsTemp.sync_host();
+    if (combineMode == ZERO || numImportLIDs == 0) {
+      if (verbose) {
+        std::ostringstream os;
+        os << prefix << "Nothing to unpack. Done!" << std::endl;
+        std::cerr << os.str ();
+      }
+      return;
     }
-    const auto importLIDsHost = importLIDs.view_host();
 
-    if (numPacketsPerLID.need_sync_host()) {
-      Kokkos::DualView<const size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
-      numPacketsPerLIDTemp.sync_host();
+    // NOTE (mfh 07 Feb 2019) If we ever implement unpack on device,
+    // we can remove this sync.
+    if (imports.need_sync_host ()) {
+      imports.sync_host ();
     }
-    const auto numPacketsPerLIDHost = numPacketsPerLID.view_host();
 
-    Kokkos::View<size_t*,host_exec> offset("offset", numImportLIDs+1);
+    // NOTE (mfh 07 Feb 2019) DistObject::doTransferNew has already
+    // sync'd numPacketsPerLID to host, since it needs to do that in
+    // order to post MPI_Irecv messages with the correct lengths.  A
+    // hypothetical device-specific boundary exchange implementation
+    // could possibly receive data without sync'ing lengths to host,
+    // but we don't need to design for that nonexistent thing yet.
+
+    if (imports.need_sync_host () || numPacketsPerLID.need_sync_host () ||
+        importLIDs.need_sync_host ()) {
+      std::ostream& err = this->markLocalErrorAndGetStream ();
+      std::ostringstream os;
+      os << prefix << "All input DualViews must be sync'd to host by now. "
+         << "imports_nc.need_sync_host()="
+         << (imports.need_sync_host () ? "true" : "false")
+         << ", numPacketsPerLID.need_sync_host()="
+         << (numPacketsPerLID.need_sync_host () ? "true" : "false")
+         << ", importLIDs.need_sync_host()="
+         << (importLIDs.need_sync_host () ? "true" : "false")
+         << "." << endl;
+      if (verbose) {
+        std::cerr << os.str ();
+      }
+      err << os.str ();
+      return;
+    }
+
+    const auto importLIDsHost = importLIDs.view_host ();
+    const auto numPacketsPerLIDHost = numPacketsPerLID.view_host ();
+
+    // FIXME (mfh 06 Feb 2019) We could fuse the scan with the unpack
+    // loop, by only unpacking on final==true (when we know the
+    // current offset's value).
+
+    Kokkos::View<size_t*, host_exec> offset ("offset", numImportLIDs+1);
     {
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numImportLIDs+1);
       Kokkos::parallel_scan
-        (policy,
-         [=](const size_t &i, size_t &update, const bool &final) {
+        ("Tpetra::BlockCrsMatrix::unpackAndCombineNew: offsets", policy,
+         [=] (const size_t &i, size_t &update, const bool &final) {
           if (final) offset(i) = update;
           update += (i == numImportLIDs ? 0 : numPacketsPerLIDHost(i));
         });
     }
 
     // this variable does not matter with a race condition (just error flag)
-    Kokkos::View<bool,host_exec,Kokkos::MemoryTraits<Kokkos::Atomic> > errorDuringUnpack("errorDuringUnpack");
-    errorDuringUnpack() = false;
+    //
+    // NOTE (mfh 06 Feb 2019) CUDA doesn't necessarily like reductions
+    // or atomics on bool, so we use int instead.  (I know we're not
+    // launching a CUDA loop here, but we could in the future, and I'd
+    // like to avoid potential trouble.)
+    Kokkos::View<int, host_exec, Kokkos::MemoryTraits<Kokkos::Atomic> >
+      errorDuringUnpack ("errorDuringUnpack");
+    errorDuringUnpack () = 0;
     {
-      typedef Kokkos::TeamPolicy<host_exec> policy_type;
-      const auto policy =
-        policy_type(numImportLIDs, 1, 1)
-        .set_scratch_size(0, Kokkos::PerTeam(sizeof(GO(0))*maxRowNumEnt+
-                                             sizeof(LO(0))*maxRowNumEnt+
-                                             sizeof(impl_scalar_type(0))*maxRowNumScalarEnt));
-
-      typedef typename host_exec::scratch_memory_space host_scratch_space;
+      using policy_type = Kokkos::TeamPolicy<host_exec>;
+      const auto policy = policy_type (numImportLIDs, 1, 1)
+        .set_scratch_size (0, Kokkos::PerTeam (sizeof (GO) * maxRowNumEnt +
+                                               sizeof (LO) * maxRowNumEnt +
+                                               numBytesPerValue * maxRowNumScalarEnt));
+      using host_scratch_space = typename host_exec::scratch_memory_space;
+      using pair_type = Kokkos::pair<size_t, size_t>;
       Kokkos::parallel_for
-        (policy,
-         [=](const typename policy_type::member_type &member) {
+        ("Tpetra::BlockCrsMatrix::unpackAndCombineNew: unpack", policy,
+         [=] (const typename policy_type::member_type& member) {
           const size_t i = member.league_rank();
-          Kokkos::View<GO*,host_scratch_space> gblColInds(member.team_scratch(0), maxRowNumEnt);
-          Kokkos::View<LO*,host_scratch_space> lclColInds(member.team_scratch(0), maxRowNumEnt);
-          Kokkos::View<impl_scalar_type*,host_scratch_space> vals(member.team_scratch(0), maxRowNumScalarEnt);
+
+          Kokkos::View<GO*, host_scratch_space> gblColInds
+            (member.team_scratch (0), maxRowNumEnt);
+          Kokkos::View<LO*, host_scratch_space> lclColInds
+            (member.team_scratch (0), maxRowNumEnt);
+          Kokkos::View<impl_scalar_type*, host_scratch_space> vals
+            (member.team_scratch (0), maxRowNumScalarEnt);
 
           const size_t offval = offset(i);
           const LO lclRow = importLIDsHost(i);
           const size_t numBytes = numPacketsPerLIDHost(i);
           const size_t numEnt =
             unpackRowCount<impl_scalar_type, LO, GO, host_exec>
-            (imports.view_host(), offval, numBytes, numBytesPerValue);
+            (imports.view_host (), offval, numBytes, numBytesPerValue);
 
           if (numBytes > 0) {
             if (numEnt > maxRowNumEnt) {
-              errorDuringUnpack() = true;
-              if (debug) {
+              errorDuringUnpack() = 1;
+              if (verbose) {
                 std::ostringstream os;
                 os << prefix
                    << "At i = " << i << ", numEnt = " << numEnt
                    << " > maxRowNumEnt = " << maxRowNumEnt
                    << std::endl;
-                std::cerr << os.str();
+                std::cerr << os.str ();
               }
+              return;
             }
           }
           const size_t numScalarEnt = numEnt*blockSize*blockSize;
-          auto gidsOut = Kokkos::subview(gblColInds, Kokkos::pair<size_t,size_t>(0, numEnt));
-          auto lidsOut = Kokkos::subview(lclColInds, Kokkos::pair<size_t,size_t>(0, numEnt));
-          auto valsOut = Kokkos::subview(vals,       Kokkos::pair<size_t,size_t>(0, numScalarEnt));
+          auto gidsOut = Kokkos::subview(gblColInds, pair_type(0, numEnt));
+          auto lidsOut = Kokkos::subview(lclColInds, pair_type(0, numEnt));
+          auto valsOut = Kokkos::subview(vals,       pair_type(0, numScalarEnt));
 
           // Kyungjoo: additional wrapping scratch view is necessary
           //   the following function interface need the same execution space
           //   host scratch space somehow is not considered same as the host_exec
-          const size_t numBytesOut =
-            unpackRowForBlockCrs<impl_scalar_type, LO, GO, host_exec>
-            (Kokkos::View<GO*,host_exec>(gidsOut.data(), numEnt),
-             Kokkos::View<impl_scalar_type*,host_exec>(valsOut.data(), numScalarEnt),
-             imports.view_host(),
-             offval, numBytes, numEnt,
-             numBytesPerValue, blockSize);
+          size_t numBytesOut = 0;
+          try {
+            numBytesOut =
+              unpackRowForBlockCrs<impl_scalar_type, LO, GO, host_exec>
+              (Kokkos::View<GO*,host_exec>(gidsOut.data(), numEnt),
+               Kokkos::View<impl_scalar_type*,host_exec>(valsOut.data(), numScalarEnt),
+               imports.view_host(),
+               offval, numBytes, numEnt,
+               numBytesPerValue, blockSize);
+          }
+          catch (std::exception& e) {
+            errorDuringUnpack() = 1;
+            if (verbose) {
+              std::ostringstream os;
+              os << prefix << "At i = " << i << ", unpackRowForBlockCrs threw: "
+                 << e.what () << endl;
+              std::cerr << os.str ();
+            }
+            return;
+          }
 
           if (numBytes != numBytesOut) {
-            errorDuringUnpack() = true;
-            if (debug) {
+            errorDuringUnpack() = 1;
+            if (verbose) {
               std::ostringstream os;
               os << prefix
                  << "At i = " << i << ", numBytes = " << numBytes
@@ -3279,14 +3351,14 @@ public:
                  << std::endl;
               std::cerr << os.str();
             }
+            return;
           }
 
           // Convert incoming global indices to local indices.
           for (size_t k = 0; k < numEnt; ++k) {
             lidsOut(k) = tgtColMap.getLocalElement (gidsOut(k));
             if (lidsOut(k) == Teuchos::OrdinalTraits<LO>::invalid ()) {
-              errorDuringUnpack() = true;
-              if (debug) {
+              if (verbose) {
                 std::ostringstream os;
                 os << prefix
                     << "At i = " << i << ", GID " << gidsOut(k)
@@ -3294,14 +3366,15 @@ public:
                     << std::endl;
                 std::cerr << os.str();
               }
+              return;
             }
           }
 
           // Combine the incoming data with the matrix's current data.
           LO numCombd = 0;
           const LO* const lidsRaw = const_cast<const LO*> (lidsOut.data ());
-          const Scalar* const valsRaw =
-            reinterpret_cast<const Scalar*> (const_cast<const impl_scalar_type*> (valsOut.data ()));
+          const Scalar* const valsRaw = reinterpret_cast<const Scalar*>
+            (const_cast<const impl_scalar_type*> (valsOut.data ()));
           if (combineMode == ADD) {
             numCombd = this->sumIntoLocalValues (lclRow, lidsRaw, valsRaw, numEnt);
           } else if (combineMode == INSERT || combineMode == REPLACE) {
@@ -3311,27 +3384,30 @@ public:
           }
 
           if (static_cast<LO> (numEnt) != numCombd) {
-            errorDuringUnpack() = true;
-            if (debug) {
-            std::ostream& err = this->markLocalErrorAndGetStream ();
-            err << prefix
-                << "At i = " << i << ", numEnt = " << numEnt
-                << " != numCombd = " << numCombd << "."
-                << std::endl;
+            errorDuringUnpack() = 1;
+            if (verbose) {
+              std::ostringstream os;
+              os << prefix << "At i = " << i << ", numEnt = " << numEnt
+                 << " != numCombd = " << numCombd << "."
+                 << endl;
+              std::cerr << os.str ();
             }
+            return;
           }
         }); // for each import LID i
     }
 
-    if (errorDuringUnpack()) {
+    if (errorDuringUnpack () != 0) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "Unpacking failed.";
-      if (!debug)
-        err << "  Please run again with a debug build to get more verbose diagnostic output.";
-      err << std::endl;
+      if (! verbose) {
+        err << "  Please run again with the environment variable setting "
+          "TPETRA_VERBOSE=1 to get more verbose diagnostic output.";
+      }
+      err << endl;
     }
 
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
       const bool lclSuccess = ! (* (this->localError_));
       os << prefix
@@ -3340,7 +3416,6 @@ public:
       std::cerr << os.str ();
     }
   }
-
 
   template<class Scalar, class LO, class GO, class Node>
   std::string

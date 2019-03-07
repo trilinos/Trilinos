@@ -131,6 +131,7 @@ struct Sum<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "RMV is not rank 0.");
     static_assert (XMV::rank == 1, "KokkosBlas::Impl::Sum<1-D>: "
                    "XMV is not rank 1.");
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::sum[ETI]":"KokkosBlas::sum[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -148,6 +149,7 @@ struct Sum<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       typedef std::int64_t index_type;
       V_Sum_Invoke<RMV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -166,7 +168,7 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
                    "RV is not rank 1.");
     static_assert (XMV::rank == 2, "KokkosBlas::Impl::Sum<2-D>: "
                    "XMV is not rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::sum[ETI]":"KokkosBlas::sum[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::sum<> ETI specialization for < %s , %s >\n",typeid(RV).name(),typeid(XMV).name());
@@ -185,6 +187,7 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
       typedef std::int64_t index_type;
       MV_Sum_Invoke<RV, XMV, index_type> (R, X);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif

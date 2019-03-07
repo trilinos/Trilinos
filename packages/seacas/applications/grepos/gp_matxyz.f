@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,13 +34,13 @@ C=======================================================================
       SUBROUTINE MATXYZ (NDIM,
      &     NUMNP, XN, YN, ZN, IX, IXNP, NMATCH, TOLER)
 C=======================================================================
-      
+
 C     --*** MATXYZ *** (GREPOS) Find matching nodes
 C     --
 C     --MATXYZ matches nodes in the database by comparing
 C     --the coordinates.  Since some slack is needed in the equality check,
-C     --the comparison may not work for all meshes.  
-C     --The nodes to be matched may be limited to nodes in two 
+C     --the comparison may not work for all meshes.
+C     --The nodes to be matched may be limited to nodes in two
 C     -- nodal point sets. (NOT IMPLEMENTED)
 C     --
 C     --Parameters:
@@ -54,9 +54,9 @@ C     --   TOLER - IN - the tolerance used for matching
       REAL XN(*), YN(*), ZN(*)
       INTEGER IX(*)
       INTEGER IXNP(*)
-      
+
       CHARACTER*80 STRING
-      
+
       IF (TOLER .LT. 0.0) THEN
          RETURN
       END IF
@@ -72,7 +72,7 @@ C     --   TOLER - IN - the tolerance used for matching
       IF (NDIM .GE. 3) THEN
          CALL MINMAX (NUMNP, ZN, ZMIN, ZMAX)
       END IF
-      
+
       DELTAX = XMAX - XMIN
       DELTAY = YMAX - YMIN
       DELTAZ = ZMAX - ZMIN
@@ -83,18 +83,18 @@ C     --   TOLER - IN - the tolerance used for matching
       YMAX = YMAX + TOLER
       ZMIN = ZMIN - TOLER
       ZMAX = ZMAX + TOLER
-      
+
 C     --Index the nodes
-      
+
       IN1 = 0
       IF (NDIM .LT. 3) Z3D = 0.0
       DO 120 INP = 1, NUMNP
         IX(INP) = INP
         IXNP(INP) = INP
  120  CONTINUE
-        
+
 C     --Find all matching nodes by comparing coordinates of nodes in overlap area
-      
+
       DELMAX = MAX(DELTAX, DELTAY, DELTAZ)
 
       imat = 0
@@ -113,7 +113,7 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
         call prterr('CMDSPEC', 'Entering Sorting Phase, Sort on Z')
       end if
       call prterr('CMDSPEC', 'Entering Comparison Phase')
-      
+
       IN1 = NUMNP
       IN2 = NUMNP
 
@@ -124,7 +124,7 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
       nout   = 0
       WRITE (*,'(A)') ' '
       WRITE (*,'(A)') ' '
-      
+
       IF (NDIM .LT. 3) Z3D = 0.0
       IF (NDIM .LT. 3) Z = 0.0
       IN1SV = IN1
@@ -137,7 +137,7 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
         IF (NDIM .GE. 3) Z = ZN(INP1)
         DMIN = 1.0E38
         NDMIN = 0
-        
+
         I2BEGS = I2BEG
         DO 160 I2 = I2BEGS, IN2SV
           NCOMP = NCOMP + 1
@@ -154,14 +154,14 @@ C     --Find all matching nodes by comparing coordinates of nodes in overlap are
      *        (imat .eq. 2 .and. (y-toler .gt. yn(inp2))) .or.
      *        (imat .eq. 3 .and. (z-toler .gt. z3d))) i2beg = i2
 
-C ... Since we are sorted on coordinate X|Y|Z, 
+C ... Since we are sorted on coordinate X|Y|Z,
 C     if set 2 X|Y|Z greater than set 1 X|Y|Z+toler, go to next X1|Y1|Z1 coord.
           if ((imat .eq. 1 .and. xn(inp2)-toler .gt. x) .or.
      *        (imat .eq. 2 .and. yn(inp2)-toler .gt. y) .or.
      *        (imat .eq. 3 .and. z3d     -toler .gt. z)) goto 165
 
           DIS = MAX (ABS (XN(INP2) - X), ABS(YN(INP2) - Y),
-     *         ABS (Z3D - Z) ) 
+     *         ABS (Z3D - Z) )
           IF (DIS .EQ. 0.0) THEN
              DISMAX = MAX(DISMAX, DIS)
              NMATCH = NMATCH + 1
@@ -191,9 +191,9 @@ C     if set 2 X|Y|Z greater than set 1 X|Y|Z+toler, go to next X1|Y1|Z1 coord.
             end if
          END IF
  170   CONTINUE
-      
+
       CALL EXCPUS(time2)
-      
+
       WRITE (*, 10050) NCOMP, NMATCH
       WRITE (*, 10021) TOLER
       IF (DISMAX .GT. -1.0E37) THEN

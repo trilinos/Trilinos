@@ -48,39 +48,6 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include "Zoltan2_Directory_Impl.hpp"
 
-// Do gid with multiple sub gids
-// Note that the testing code (things in this file) needs knowledge
-// about this structure so it's a hard coded assumption but the directory
-// class itself does not - that is why there are sub_gid references in the
-// below classes but no special handling for this in the directory.
-// as long as sizeof works and it can be returned as a function
-// type it should be ok to use as a gid_t.
-#define GID_SET_LENGTH 3 // arbitrary for testing
-struct gid_set_t {
-  gid_set_t() {}
-	// operator== is required to compare keys in case of hash collision
-  bool operator==(const gid_set_t &p) const
-  {
-    return(
-      sub_gid[0] == p.sub_gid[0] &&
-      sub_gid[1] == p.sub_gid[1] &&
-      sub_gid[2] == p.sub_gid[2]);
-  }
-
-  int sub_gid[GID_SET_LENGTH];
-};
-
-namespace std {
-  template <>
-  struct hash<gid_set_t>
-  {
-    std::size_t operator() (const gid_set_t &node) const
-    {
-      return node.sub_gid[0] ^ node.sub_gid[1] ^ node.sub_gid[2];
-    }
-  };
-}
-
 namespace Zoltan2 {
 
 // The directory also has modes but currently working with an Original mode
@@ -92,6 +59,18 @@ enum TestMode {
   Add,
   Aggregate,
   TestMode_Max  // exists to provide a loop through these modes
+};
+
+// Do gid with multiple sub gids
+// Note that the testing code (things in this file) needs knowledge
+// about this structure so it's a hard coded assumption but the directory
+// class itself does not - that is why there are sub_gid references in the
+// below classes but no special handling for this in the directory.
+// as long as sizeof works and it can be returned as a function
+// type it should be ok to use as a gid_t.
+#define GID_SET_LENGTH 3 // arbitrary for testing
+struct gid_set_t {
+  int sub_gid[GID_SET_LENGTH];
 };
 
 // same as gid above but this is for lid

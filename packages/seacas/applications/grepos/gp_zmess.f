@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,7 +31,7 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
-      SUBROUTINE ZMESS (NUMESS, ISTAT, LESSEL, LESSDL, IDESS, NEESS, 
+      SUBROUTINE ZMESS (NUMESS, ISTAT, LESSEL, LESSDL, IDESS, NEESS,
      *     NEDSS, IXEESS, IXEDSS, LTEESS, LTSSS, LTSNC, FAC, NAMES)
 C=======================================================================
 C     $Id: zmess.f,v 1.3 2007/07/20 04:07:41 gdsjaar Exp $
@@ -86,7 +86,7 @@ C     ... N     is the 'local' index within the current set.
 C     NE    is the 'global' index within the concatenated (LTEESS, LTSSS, LTSNC) lists
 C     ND1   is the FAC index of the first df for the current list.
 C     ICNT  is the number of DF for element N in the current list
-            NE = N + IXEESS(IESS) - 1 
+            NE = N + IXEESS(IESS) - 1
             ICNT = LTSNC(NE)
 C     IDFB = index of first df for local element N, global element NE
 C     IDFE = index of last  df for local element N, global element NE
@@ -110,7 +110,7 @@ C     ... There is at least 1 element remaining in the list...
             IDESS(JESS) = IDESS(IESS) ! copy the sideset id
             NAMES(JESS) = NAMES(IESS)
             NEESS(JESS) = N     ! Set the elements per list count
-            IXEESS(JESS) = JNELST + 1 ! set the index 
+            IXEESS(JESS) = JNELST + 1 ! set the index
             NEDSS(JESS) = JDF - JDFLST ! set the df per list count
             IXEDSS(JESS) = JDFLST + 1
          ELSE

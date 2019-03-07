@@ -94,7 +94,7 @@ void calculate_nodal_volume_given_elem_nodes_stkmesh(const stk::mesh::Entity* el
 typedef Kokkos::TeamPolicy<ngp::HostExecSpace, ngp::ScheduleType> HostTeamPolicyType;
 typedef HostTeamPolicyType::member_type HostTeamHandleType;
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 void calculate_nodal_volume_stkmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField, int numRepeat)
 {
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
@@ -199,6 +199,7 @@ void calculate_nodal_volume(ngp::Mesh &ngpMesh, stk::mesh::Selector selector, co
     {
         calculate_nodal_volume_device(ngpMesh, elem, coords, nodalVolume);
     });
+    nodalVolume.modify_on_device();
 }
 
 void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
@@ -216,7 +217,7 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
     for(int n=0; n<numRepeat; ++n)
         calculate_nodal_volume(ngpMesh, selector, ngpCoords, ngpNodalVolume);
 
-    ngpNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
+    ngpNodalVolume.sync_to_host();
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
     double end = stk::wall_time();
     std::cerr << "Init: " << middle - start << ", Calc: " << end - middle << std::endl;
@@ -236,7 +237,7 @@ void repeat_for_each_entity_loop_for_algorithm(stk::mesh::BulkData& mesh,
     for(int n=0; n<numRepeat; ++n)
         algorithm(ngpMesh, staticElemVolume, staticNodalVolume);
 
-    staticNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
+    staticNodalVolume.sync_to_host();
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
 }
 
@@ -268,6 +269,7 @@ void assemble_nodal_volume_from_elem_volume_bucket_field_access(ngp::Mesh &ngpMe
             assemble_nodal_volume_from_elem_volume_device(ngpMesh, elem, volumePerNodePtr[i], staticNodalVolume);
         });
     });
+    staticNodalVolume.modify_on_device();
 }
 
 void assemble_nodal_volume_bucket_field_access(stk::mesh::BulkData& mesh,
@@ -292,6 +294,7 @@ void assemble_nodal_volume_from_elem_volume_entity_field_access(ngp::Mesh &ngpMe
         double volumePerNode = elemVolumePerNode.get(elem, 0);
         assemble_nodal_volume_from_elem_volume_device(ngpMesh, elem, volumePerNode, staticNodalVolume);
     });
+    staticNodalVolume.modify_on_device();
 }
 
 void assemble_nodal_volume_entity_field_access(stk::mesh::BulkData& mesh,
@@ -431,7 +434,7 @@ protected:
         return stk::unit_test_util::get_command_line_option<int>("-n", 20);
     }
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
     void test_nodal_volume_stkmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
@@ -509,7 +512,7 @@ protected:
 TEST_F(NodalVolumeCalculator, nodalVolumeForEachEntityLoop_primerTest) {
     test_nodal_volume_entity_loop(stk::mesh::BulkData::NO_AUTO_AURA);
 }
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 TEST_F(NodalVolumeCalculator, stkMeshNodalVolume) {
     test_nodal_volume_stkmesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }

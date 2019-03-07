@@ -13,11 +13,13 @@
 #   ATDM_CONFIG_COMPILER
 #   ATDM_CONFIG_KOKKOS_ARCH
 #   ATDM_CONFIG_BUILD_TYPE
-#   ATDM_CONFIG_SHARED_LIBS
 #   ATDM_CONFIG_NODE_TYPE
 #   ATDM_CONFIG_USE_OPENMP
 #   ATDM_CONFIG_USE_CUDA
 #   ATDM_CONFIG_USE_PTHREADS
+#   ATDM_CONFIG_CUDA_RDC
+#   ATDM_CONFIG_COMPLEX
+#   ATDM_CONFIG_SHARED_LIBS
 #
 # or will error out.
 #
@@ -98,6 +100,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.8.4
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-6.1.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=GNU-6.1.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.4.0"* ]]; then
@@ -129,59 +133,59 @@ fi
 
 # Set the KOKKOS_ARCH
 if [[ $ATDM_CONFIG_BUILD_NAME == *"-AMDAVX"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=AMDAVX
+  export ATDM_CONFIG_KOKKOS_ARCH=AMDAVX
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv8-ThunderX"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=ARMv8-ThunderX
+  export ATDM_CONFIG_KOKKOS_ARCH=ARMv8-ThunderX
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv80"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=ARMv80
+  export ATDM_CONFIG_KOKKOS_ARCH=ARMv80
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-ARMv81"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=ARMv81
+  export ATDM_CONFIG_KOKKOS_ARCH=ARMv81
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BDW"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=BDW
+  export ATDM_CONFIG_KOKKOS_ARCH=BDW
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-BGQ"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=BGQ
+  export ATDM_CONFIG_KOKKOS_ARCH=BGQ
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-HSW"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=HSW
+  export ATDM_CONFIG_KOKKOS_ARCH=HSW
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler30"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Kepler30
+  export ATDM_CONFIG_KOKKOS_ARCH=Kepler30
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler32"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Kepler32
+  export ATDM_CONFIG_KOKKOS_ARCH=Kepler32
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler35"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Kepler35
+  export ATDM_CONFIG_KOKKOS_ARCH=Kepler35
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Kepler37"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Kepler37
+  export ATDM_CONFIG_KOKKOS_ARCH=Kepler37
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNC"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=KNC
+  export ATDM_CONFIG_KOKKOS_ARCH=KNC
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-KNL"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=KNL
+  export ATDM_CONFIG_KOKKOS_ARCH=KNL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell50"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Maxwell50
+  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell50
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell52"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Maxwell52
+  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell52
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Maxwell53"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Maxwell53
+  export ATDM_CONFIG_KOKKOS_ARCH=Maxwell53
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal60"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Pascal60
+  export ATDM_CONFIG_KOKKOS_ARCH=Pascal60
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Pascal61"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Pascal61
+  export ATDM_CONFIG_KOKKOS_ARCH=Pascal61
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power7"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Power7
+  export ATDM_CONFIG_KOKKOS_ARCH=Power7
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power8"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Power8
+  export ATDM_CONFIG_KOKKOS_ARCH=Power8
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Power9"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Power9
+  export ATDM_CONFIG_KOKKOS_ARCH=Power9
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SKX"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=SKX
+  export ATDM_CONFIG_KOKKOS_ARCH=SKX
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-SNB"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=SNB
+  export ATDM_CONFIG_KOKKOS_ARCH=SNB
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta70"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Volta70
+  export ATDM_CONFIG_KOKKOS_ARCH=Volta70
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-Volta72"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=Volta72
+  export ATDM_CONFIG_KOKKOS_ARCH=Volta72
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-WSM"* ]]; then
-  ATDM_CONFIG_KOKKOS_ARCH=WSM
+  export ATDM_CONFIG_KOKKOS_ARCH=WSM
 else
-  ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
+  export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
   if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
     echo "No KOKKOS_ARCH specified so using system default"
   fi
@@ -210,7 +214,7 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"dbg"* ]]; then
 fi
 
 # Set the node types default to serial
-ATDM_CONFIG_NODE_TYPE=SERIAL
+export ATDM_CONFIG_NODE_TYPE=SERIAL
 if [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
   export ATDM_CONFIG_USE_CUDA=ON
   export ATDM_CONFIG_NODE_TYPE=CUDA
@@ -229,8 +233,26 @@ fi
 # Otherwise, if one fo these are not selected and 'openmpi' is present in the
 # build name, then the default Kokkos backend will become 'openmp'!
 
+# Use CUDA RDC or not
+export ATDM_CONFIG_CUDA_RDC=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"_no-rdc"* ]]; then
+  export ATDM_CONFIG_CUDA_RDC=OFF
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
+  export ATDM_CONFIG_CUDA_RDC=ON
+fi
+
+# Enable complex (double) data-types or not
+export ATDM_CONFIG_COMPLEX=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"no-complex"* ]]; then
+  export ATDM_CONFIG_COMPLEX=OFF
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
+  export ATDM_CONFIG_COMPLEX=ON
+fi
+
 # Set 'static' or 'shared'
-ATDM_CONFIG_SHARED_LIBS=OFF
+export ATDM_CONFIG_SHARED_LIBS=OFF
 if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
   export ATDM_CONFIG_SHARED_LIBS=ON
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then

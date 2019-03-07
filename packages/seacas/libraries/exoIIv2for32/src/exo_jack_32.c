@@ -292,7 +292,10 @@ void F2C(exgini, EXGINI)(int *idexo, char *title, void_int *num_dim, void_int *n
   if (titlelen != MAX_LINE_LENGTH) {
     slen = titlelen;
   }
-  name = malloc((slen + 1) * sizeof(char));
+  if (!(name = malloc((slen + 1) * sizeof(char)))) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
   memset(name, 0, slen + 1);
 
   *ierr = ex_get_init(*idexo, name, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets,

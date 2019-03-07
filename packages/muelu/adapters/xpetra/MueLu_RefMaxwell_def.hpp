@@ -372,6 +372,7 @@ namespace MueLu {
         coarseLevel.Set("R",R11_);
         coarseLevel.Set("Coordinates",CoordsH_);
         coarseLevel.Set("number of partitions", numProcsAH);
+        coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
         coarseLevel.setlib(AH_->getDomainMap()->lib());
         fineLevel.setlib(AH_->getDomainMap()->lib());
@@ -536,6 +537,7 @@ namespace MueLu {
         if (doRebalancing) {
 
           coarseLevel.Set("number of partitions", numProcsA22);
+          coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
           // auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
           // ParameterList repartheurParams;
@@ -1779,13 +1781,13 @@ namespace MueLu {
 
     RCP<const Teuchos::Comm<int> > comm = SM_Matrix_->getDomainMap()->getComm();
 
+#ifdef HAVE_MPI
     int root;
     if (!A22_.is_null())
       root = comm->getRank();
     else
       root = -1;
 
-#ifdef HAVE_MPI
     int actualRoot;
     reduceAll(*comm, Teuchos::REDUCE_MAX, root, Teuchos::ptr(&actualRoot));
     root = actualRoot;

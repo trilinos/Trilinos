@@ -999,16 +999,23 @@ protected:
   ///   interface).
   virtual bool useNewInterface () { return true; }
 
+
+  //! Kokkos::Device specialization for DistObject communication buffers.
+  using buffer_device_type =
+    typename ::Tpetra::DistObject<char, LO, GO, NT>::buffer_device_type;
+
   /// \brief While we do use the "new" Kokkos::DualView - based
   ///   interface, we don't currently use device Views.
   virtual void
   copyAndPermuteNew (const ::Tpetra::SrcDistObject& sourceObject,
                      const size_t numSameIDs,
-                     const ::Kokkos::DualView<const LO*, device_type>& permuteToLIDs,
-                     const ::Kokkos::DualView<const LO*, device_type>& permuteFromLIDs)
+                     const Kokkos::DualView<const LO*,
+                       buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const LO*,
+                       buffer_device_type>& permuteFromLIDs)
   {
     using std::endl;
-    typedef CooMatrix<SC, LO, GO, NT> this_type;
+    using this_type = CooMatrix<SC, LO, GO, NT>;
     const char prefix[] = "Tpetra::Details::CooMatrix::copyAndPermuteNew: ";
 
     // There's no communication in this method, so it's safe just to
@@ -1022,7 +1029,7 @@ protected:
     }
 
     const this_type* src = dynamic_cast<const this_type*> (&sourceObject);
-    if (src == NULL) {
+    if (src == nullptr) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "Input argument 'sourceObject' is not a CooMatrix."
           << endl;
@@ -1045,9 +1052,6 @@ protected:
           << ", a size_t, overflows int." << endl;
       return;
     }
-
-    // TODO (mfh 19 Jan 2017) Check that permuteToLIDs and
-    // permuteFromLIDs are sync'd to host.
 
     // Even though this is an std::set, we can start with numSameIDs
     // just by iterating through the first entries of the set.
@@ -1099,9 +1103,15 @@ protected:
     // something did go wrong, we'll defer responding until the end of
     // this method, so we can print as much useful info as possible.
     LO numInvalidRowsTo = 0;
+
+    TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
+    TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
+    auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
+    auto permuteToLIDs_h = permuteToLIDs.view_host ();
+
     for (LO k = 0; k < numPermute; ++k) {
-      const LO lclRowFrom = permuteFromLIDs.h_view(k);
-      const LO lclRowTo = permuteToLIDs.h_view(k);
+      const LO lclRowFrom = permuteFromLIDs_h[k];
+      const LO lclRowTo = permuteToLIDs_h[k];
       const GO gblRowFrom = src->map_->getGlobalElement (lclRowFrom);
       const GO gblRowTo = this->map_->getGlobalElement (lclRowTo);
 
@@ -1120,7 +1130,8 @@ protected:
     }
 
     // Print info if any errors occurred.
-    if (numInvalidSameRows != 0 || numInvalidRowsFrom != 0 || numInvalidRowsTo != 0) {
+    if (numInvalidSameRows != 0 || numInvalidRowsFrom != 0 ||
+        numInvalidRowsTo != 0) {
       // Collect and print all the invalid input row indices, for the
       // "same," "from," and "to" lists.
       std::vector<std::pair<LO, GO> > invalidSameRows;
@@ -1141,8 +1152,8 @@ protected:
       }
 
       for (LO k = 0; k < numPermute; ++k) {
-        const LO lclRowFrom = permuteFromLIDs.h_view(k);
-        const LO lclRowTo = permuteToLIDs.h_view(k);
+        const LO lclRowFrom = permuteFromLIDs_h[k];
+        const LO lclRowTo = permuteToLIDs_h[k];
         const GO gblRowFrom = src->map_->getGlobalElement (lclRowFrom);
         const GO gblRowTo = this->map_->getGlobalElement (lclRowTo);
 
@@ -1195,23 +1206,23 @@ protected:
     }
   }
 
-  //! Kokkos::Device specialization for DistObject communication buffers.
-  typedef typename ::Tpetra::DistObject<char, LO, GO, NT>::buffer_device_type buffer_device_type;
-
   /// \brief While we do use the "new" Kokkos::DualView - based
   ///   interface, we don't currently use device Views.
   virtual void
   packAndPrepareNew (const ::Tpetra::SrcDistObject& sourceObject,
-                     const ::Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     ::Kokkos::DualView<packet_type*, buffer_device_type>& exports,
-                     const ::Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& exportLIDs,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type>& exports,
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type> numPacketsPerLID,
                      size_t& constantNumPackets,
                      ::Tpetra::Distributor& /* distor */)
   {
-    using ::Teuchos::Comm;
-    using ::Teuchos::RCP;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using std::endl;
-    typedef CooMatrix<SC, LO, GO, NT> this_type;
+    using this_type = CooMatrix<SC, LO, GO, NT>;
     const char prefix[] = "Tpetra::Details::CooMatrix::packAndPrepareNew: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
@@ -1221,7 +1232,7 @@ protected:
     constantNumPackets = 0;
 
     const this_type* src = dynamic_cast<const this_type*> (&sourceObject);
-    if (src == NULL) {
+    if (src == nullptr) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       err << prefix << "Input argument 'sourceObject' is not a CooMatrix."
           << endl;
@@ -1246,15 +1257,13 @@ protected:
       // Trick to get around const DualView& being const.
       {
         auto numPacketsPerLID_tmp = numPacketsPerLID;
-        numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
-        numPacketsPerLID_tmp.template modify<Kokkos::HostSpace> ();
+        numPacketsPerLID_tmp.sync_host ();
+        numPacketsPerLID_tmp.modify_host ();
       }
       // Fill numPacketsPerLID with zeros.
-      ::Kokkos::deep_copy (numPacketsPerLID.h_view, static_cast<size_t> (0));
+      Kokkos::deep_copy (numPacketsPerLID.h_view, static_cast<size_t> (0));
       return;
     }
-
-    // TODO (mfh 28 Jan 2017) pack source object's data, NOT *this's data!
 
     const size_t numExports = exportLIDs.extent (0);
     if (numExports == 0) {
@@ -1278,18 +1287,17 @@ protected:
       return;
     }
 
-    // Trick to get around const DualView& being const.
-    {
-      auto numPacketsPerLID_tmp = numPacketsPerLID;
-      numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
-      numPacketsPerLID_tmp.template modify<Kokkos::HostSpace> ();
-    }
+    numPacketsPerLID.sync_host ();
+    numPacketsPerLID.modify_host ();
+
+    TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
+    auto exportLIDs_h = exportLIDs.view_host ();
 
     int totalNumPackets = 0;
     size_t numInvalidRowInds = 0;
     std::ostringstream errStrm; // current loop iteration's error messages
     for (size_t k = 0; k < numExports; ++k) {
-      const LO lclRow = exportLIDs.h_view[k];
+      const LO lclRow = exportLIDs_h[k];
       // We're packing the source object's data, so we need to use the
       // source object's Map to convert from local to global indices.
       const GO gblRow = src->map_->getGlobalElement (lclRow);
@@ -1339,7 +1347,7 @@ protected:
     if (numInvalidRowInds != 0) {
       std::vector<std::pair<LO, GO> > invalidRowInds;
       for (size_t k = 0; k < numExports; ++k) {
-        const LO lclRow = exportLIDs.h_view[k];
+        const LO lclRow = exportLIDs_h[k];
         // We're packing the source object's data, so we need to use
         // the source object's Map to convert from local to global
         // indices.
@@ -1372,10 +1380,10 @@ protected:
         Details::reallocDualViewIfNeeded (exports, totalNumPackets,
                                           "CooMatrix exports");
       if (reallocated) {
-        exports.template sync<Kokkos::HostSpace> (); // make sure alloc'd on host
+        exports.sync_host (); // make sure alloc'd on host
       }
     }
-    exports.template modify<Kokkos::HostSpace> ();
+    exports.modify_host ();
 
     // FIXME (mfh 17 Jan 2017) packTriples wants three arrays, not a
     // single array of structs.  For now, we just copy.
@@ -1394,37 +1402,30 @@ protected:
       src->impl_.packRow (outBuf, totalNumPackets, outBufCurPos, *comm,
                           gblRowInds, gblColInds, vals, gblRow);
     }
-
-    // Keep 'exports' modified on host.
-    //exports.template sync<typename device_type::memory_space> ();
   }
 
   /// \brief While we do use the "new" Kokkos::DualView - based
   ///   interface, we don't currently use device Views.
   virtual void
-  unpackAndCombineNew (const ::Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                       const ::Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
-                       const ::Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
-                       const size_t /* constantNumPackets */, // we don't actually use this; we assume this is 0
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& importLIDs,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type> imports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
+                       const size_t /* constantNumPackets */,
                        ::Tpetra::Distributor& /* distor */,
-                       const ::Tpetra::CombineMode /* CM */)
+                       const ::Tpetra::CombineMode /* combineMode */)
   {
-    using ::Teuchos::Comm;
-    using ::Teuchos::RCP;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using std::endl;
-
-    // (MPI) communication buffers may have different memory spaces
-    // then device_type Views.  See #1088.  "CDMS" stands for
-    // "communication device memory space" and "CHMS" for
-    // "communication host memory space."
-    typedef typename Kokkos::DualView<const size_t*, buffer_device_type>::t_dev::memory_space CDMS;
-    typedef typename Kokkos::DualView<const size_t*, buffer_device_type>::t_host::memory_space CHMS;
-    typedef typename Kokkos::DualView<const LO*, device_type>::t_dev::memory_space DMS;
-    typedef typename Kokkos::DualView<const LO*, device_type>::t_host::memory_space HMS;
-
     const char prefix[] = "Tpetra::Details::CooMatrix::unpackAndCombineNew: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
+
+    TEUCHOS_ASSERT( ! importLIDs.need_sync_host () );
+    auto importLIDs_h = importLIDs.view_host ();
 
     const std::size_t numImports = importLIDs.extent (0);
     if (numImports == 0) {
@@ -1432,28 +1433,13 @@ protected:
     }
     else if (imports.extent (0) == 0) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      typename Kokkos::DualView<const LO*, device_type>::t_host importLIDs_h;
-      {
-        if (importLIDs.template need_sync<HMS> ()) {
-          // Device version of the DualView is the most recently updated.
-          // It's forbidden to sync a DualView<const T>, so we must copy.
-          auto importLIDs_d = importLIDs.template view<DMS> ();
-          typedef typename decltype (importLIDs_h)::non_const_type HVNC;
-          HVNC importLIDs_h_nc (importLIDs_d.label (), importLIDs.extent (0));
-          Kokkos::deep_copy (importLIDs_h_nc, importLIDs_d);
-          importLIDs_h = importLIDs_h_nc;
-        }
-        else { // host version of the DualView is up-to-date
-          importLIDs_h = importLIDs.h_view; // importLIDs.template view<HMS> ();
-        }
-      }
       err << prefix << "importLIDs.extent(0) = " << numImports << " != 0, "
           << "but imports.extent(0) = 0.  This doesn't make sense, because "
           << "for every incoming LID, CooMatrix packs at least the count of "
           << "triples associated with that LID, even if the count is zero.  "
           << "importLIDs = [";
       for (std::size_t k = 0; k < numImports; ++k) {
-        err << importLIDs.h_view[k];
+        err << importLIDs_h[k];
         if (k + 1 < numImports) {
           err << ", ";
         }
@@ -1490,52 +1476,14 @@ protected:
     }
     const int inBufSize = static_cast<int> (imports.extent (0));
 
-    // It's forbidden to sync a DualView<const T>, so if the input
-    // DualView are not in sync on host, we must make copies.
-
-    typename Kokkos::DualView<const LO*, device_type>::t_host importLIDs_h;
-    typename Kokkos::DualView<const packet_type*, buffer_device_type>::t_host imports_h;
-    typename Kokkos::DualView<const size_t*, buffer_device_type>::t_host numPacketsPerLID_h;
-    {
-      if (importLIDs.template need_sync<HMS> ()) {
-        // Device version of the DualView is the most recently updated.
-        auto importLIDs_d = importLIDs.template view<DMS> ();
-        typedef typename decltype (importLIDs_h)::non_const_type HVNC;
-        HVNC importLIDs_h_nc (importLIDs_d.label (),
-                              importLIDs.extent (0));
-        Kokkos::deep_copy (importLIDs_h_nc, importLIDs_d);
-        importLIDs_h = importLIDs_h_nc;
-      }
-      else { // host version of the DualView is up-to-date
-        importLIDs_h = importLIDs.h_view; // importLIDs.template view<HMS> ();
-      }
-
-      if (imports.template need_sync<CHMS> ()) {
-        // Device version of the DualView is the most recently updated.
-        auto imports_d = imports.template view<CDMS> ();
-        typedef typename decltype (imports_h)::non_const_type HVNC;
-        HVNC imports_h_nc (imports_d.label (),
-                           imports.extent (0));
-        Kokkos::deep_copy (imports_h_nc, imports_d);
-        imports_h = imports_h_nc;
-      }
-      else { // host version of the DualView is up-to-date
-        imports_h = imports.h_view; // imports.template view<HMS> ();
-      }
-
-      if (numPacketsPerLID.template need_sync<CHMS> ()) {
-        // Device version of the DualView is the most recently updated.
-        auto numPacketsPerLID_d = numPacketsPerLID.template view<CDMS> ();
-        typedef typename decltype (numPacketsPerLID_h)::non_const_type HVNC;
-        HVNC numPacketsPerLID_h_nc (numPacketsPerLID_d.label (),
-                                    numPacketsPerLID.extent (0));
-        Kokkos::deep_copy (numPacketsPerLID_h_nc, numPacketsPerLID_d);
-        numPacketsPerLID_h = numPacketsPerLID_h_nc;
-      }
-      else { // host version of the DualView is up-to-date
-        numPacketsPerLID_h = numPacketsPerLID.h_view; // numPacketsPerLID.template view<HMS> ();
-      }
+    if (imports.need_sync_host ()) {
+      imports.sync_host ();
     }
+    if (numPacketsPerLID.need_sync_host ()) {
+      numPacketsPerLID.sync_host ();
+    }
+    auto imports_h = imports.view_host ();
+    auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
 
     // FIXME (mfh 17,24 Jan 2017) packTriples wants three arrays, not a
     // single array of structs.  For now, we just copy.

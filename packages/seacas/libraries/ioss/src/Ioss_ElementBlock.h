@@ -55,6 +55,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "ElementBlock"; }
     std::string short_type_string() const override { return "block"; }
+    std::string contains_string() const override { return "Element"; }
     EntityType  type() const override { return ELEMENTBLOCK; }
 
     // Handle implicit properties -- These are calcuated from data stored

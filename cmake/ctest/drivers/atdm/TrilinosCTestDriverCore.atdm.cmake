@@ -129,9 +129,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "${THIS_LIST_FILE}"
     )
 
-  # Make the default branch 'develop' (but allow it to be overridden in
+  # Make the default branch 'atdm-nightly' (but allow it to be overridden in
   # *.cmake script)
-  SET_DEFAULT(Trilinos_BRANCH develop)
+  SET_DEFAULT(Trilinos_BRANCH atdm-nightly)
 
   # Set the default CDash Track/Group to "Specialized".  This will not trigger
   # CDash error emails for any failures.  But when the build is clean, the var

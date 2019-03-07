@@ -68,7 +68,7 @@ namespace Test {
     for(int i=0;i<N;i++)
     { expected_result += ScalarB(a*h_x(i)) * ScalarB(a*h_x(i)); }
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -82,7 +82,7 @@ namespace Test {
  
     Kokkos::deep_copy(b_y,b_org_y);
     
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -155,7 +155,7 @@ namespace Test {
 
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), a, Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
@@ -170,7 +170,7 @@ namespace Test {
 
     Kokkos::deep_copy(b_y,b_org_y);
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), a, Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );
@@ -197,7 +197,7 @@ namespace Test {
       { expected_result[j] += ScalarB((3.0+j)*h_x(i,j)) * ScalarB((3.0+j)*h_x(i,j)); }
     }
 
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), params(teamId), Kokkos::subview(x,Kokkos::ALL(),teamId));
     } );
@@ -212,7 +212,7 @@ namespace Test {
 
     Kokkos::deep_copy(b_y,b_org_y);
     
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::scal(teamMember, Kokkos::subview(y,Kokkos::ALL(),teamId), params(teamId), Kokkos::subview(c_x,Kokkos::ALL(),teamId));
     } );
@@ -239,8 +239,8 @@ int test_team_scal() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(0);
   Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(13);
-  Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(1024);
-  Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(132231);
+  Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(124);
+  //Test::impl_test_team_scal<view_type_a_ll, view_type_b_ll, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -248,8 +248,8 @@ int test_team_scal() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(0);
   Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(13);
-  Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(1024);
-  Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
+  Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(124);
+  //Test::impl_test_team_scal<view_type_a_lr, view_type_b_lr, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -257,13 +257,13 @@ int test_team_scal() {
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(0);
   Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(13);
-  Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(1024);
-  Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
+  Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(124);
+  //Test::impl_test_team_scal<view_type_a_ls, view_type_b_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_team_scal<view_type_a_ls, view_type_b_ll, Device>(1024);
-  Test::impl_test_team_scal<view_type_a_ll, view_type_b_ls, Device>(1024);
+  Test::impl_test_team_scal<view_type_a_ls, view_type_b_ll, Device>(124);
+  Test::impl_test_team_scal<view_type_a_ll, view_type_b_ls, Device>(124);
 #endif
 
   return 1;
@@ -277,8 +277,8 @@ int test_team_scal_mv() {
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device> view_type_b_ll;
   Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(0,5);
   Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(13,5);
-  Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(1024,5);
-  Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
+  Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(124,5);
+  //Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -286,8 +286,8 @@ int test_team_scal_mv() {
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device> view_type_b_lr;
   Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(0,5);
   Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(13,5);
-  Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(1024,5);
-  Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
+  Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(124,5);
+  //Test::impl_test_team_scal_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -295,13 +295,13 @@ int test_team_scal_mv() {
   typedef Kokkos::View<ScalarB**, Kokkos::LayoutStride, Device> view_type_b_ls;
   Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(0,5);
   Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(13,5);
-  Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(1024,5);
-  Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
+  Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(124,5);
+  //Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ll, Device>(1024,5);
-  Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ls, Device>(1024,5);
+  Test::impl_test_team_scal_mv<view_type_a_ls, view_type_b_ll, Device>(124,5);
+  Test::impl_test_team_scal_mv<view_type_a_ll, view_type_b_ls, Device>(124,5);
 #endif
 
   return 1;

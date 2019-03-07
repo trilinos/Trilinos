@@ -996,26 +996,26 @@ Axpby_MV_Unrolled (const AV& av, const XMV& x,
 
   if (a == 0 && b == 0) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 0, 0, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S0", policy, op);
     return;
   }
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 0 && b == -1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 0, -1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S1", policy, op);
     return;
   }
   if (a == 0 && b == 1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 0, 1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S2", policy, op);
     return;
   }
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY
 
   if (a == 0 && b == 2) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 0, 2, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S3", policy, op);
     return;
   }
 
@@ -1023,43 +1023,43 @@ Axpby_MV_Unrolled (const AV& av, const XMV& x,
   // a == -1
   if (a == -1 && b == 0) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, -1, 0, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S4", policy, op);
     return;
   }
   if (a == -1 && b == -1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, -1, -1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S5", policy, op);
     return;
   }
   if (a == -1 && b == 1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, -1, 1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S6", policy, op);
     return;
   }
   if (a == -1 && b == 2) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, -1, 2, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S7", policy, op);
     return;
   }
   // a == 1
   if (a == 1 && b == 0) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 1, 0, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S8", policy, op);
     return;
   }
   if (a == 1 && b == -1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 1, -1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S9", policy, op);
     return;
   }
   if (a == 1 && b == 1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 1, 1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S10", policy, op);
     return;
   }
   if (a == 1 && b == 2) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 1, 2, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S11", policy, op);
     return;
   }
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
@@ -1067,26 +1067,26 @@ Axpby_MV_Unrolled (const AV& av, const XMV& x,
   // a == 2
   if (a == 2 && b == 0) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 2, 0, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S12", policy, op);
     return;
   }
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 2 && b == -1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 2, -1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S13", policy, op);
     return;
   }
   if (a == 2 && b == 1) {
     Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 2, 1, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S14", policy, op);
     return;
   }
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
   // a and b arbitrary (not -1, 0, or 1)
   Axpby_MV_Unroll_Functor<AV, XMV, BV, YMV, 2, 2, UNROLL, SizeType> op (x, y, av, bv, startingColumn);
-  Kokkos::parallel_for (policy, op);
+  Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S15", policy, op);
 }
 
 // Invoke the "generic" (not unrolled) multivector functor that
@@ -1134,26 +1134,26 @@ Axpby_MV_Generic (const AV& av, const XMV& x,
 
   if (a == 0 && b == 0) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 0, 0, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S16", policy, op);
     return;
   }
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 0 && b == -1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 0, -1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S17", policy, op);
     return;
   }
   if (a == 0 && b == 1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 0, 1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S18", policy, op);
     return;
   }
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
   if (a == 0 && b == 2) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 0, 2, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S19", policy, op);
     return;
   }
 
@@ -1161,43 +1161,43 @@ Axpby_MV_Generic (const AV& av, const XMV& x,
   // a == -1
   if (a == -1 && b == 0) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, -1, 0, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S20", policy, op);
     return;
   }
   if (a == -1 && b == -1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, -1, -1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S21", policy, op);
     return;
   }
   if (a == -1 && b == 1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, -1, 1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S22", policy, op);
     return;
   }
   if (a == -1 && b == 2) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, -1, 2, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S23", policy, op);
     return;
   }
   // a == 1
   if (a == 1 && b == 0) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 1, 0, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S24", policy, op);
     return;
   }
   if (a == 1 && b == -1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 1, -1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S25", policy, op);
     return;
   }
   if (a == 1 && b == 1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 1, 1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S26", policy, op);
     return;
   }
   if (a == 1 && b == 2) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 1, 2, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S27", policy, op);
     return;
   }
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
@@ -1205,26 +1205,26 @@ Axpby_MV_Generic (const AV& av, const XMV& x,
   // a == 2
   if (a == 2 && b == 0) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 2, 0, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S28", policy, op);
     return;
   }
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
   if (a == 2 && b == -1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 2, -1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S29", policy, op);
     return;
   }
   if (a == 2 && b == 1) {
     Axpby_MV_Functor<AV, XMV, BV, YMV, 2, 1, SizeType> op (x, y, av, bv);
-    Kokkos::parallel_for (policy, op);
+    Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S30", policy, op);
     return;
   }
 #endif // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
   // a and b arbitrary (not -1, 0, or 1)
   Axpby_MV_Functor<AV, XMV, BV, YMV, 2, 2, SizeType> op (x, y, av, bv);
-  Kokkos::parallel_for (policy, op);
+  Kokkos::parallel_for ("KokkosBlas::Axpby::MV::S31", policy, op);
 }
 
 // Compute any of the following, in a way optimized for X and Y

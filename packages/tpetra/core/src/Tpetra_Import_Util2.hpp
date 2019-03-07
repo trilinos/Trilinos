@@ -214,6 +214,9 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     const std::string prefix {" Import_Util2::ReverseND:: "};
     const std::string label ("IU2::Neighbor");
 
+    // There can be no neighbor discovery if you don't have an importer
+    if(MyImporter.is_null()) return;
+
     std::ostringstream errstr;
     bool error = false;
     auto const comm             = MyDomainMap->getComm();
@@ -226,11 +229,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     auto ExportPIDs                 = RowTransfer.getExportPIDs();
     auto ExportLIDs                 = RowTransfer.getExportLIDs();
     auto NumExportLIDs              = RowTransfer.getNumExportIDs();
-
-    TEUCHOS_TEST_FOR_EXCEPTION(MyImporter.is_null(),
-                               std::logic_error,
-                               "Tpetra::reverseNeighborDiscovery "
-                               "Neighbor Discovery Should not be called with null Importer");
 
     Distributor & Distor            = MyImporter->getDistributor();
     const size_t NumRecvs           = Distor.getNumReceives();

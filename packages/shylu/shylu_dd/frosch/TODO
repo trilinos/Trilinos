@@ -32,3 +32,8 @@
     - Allow different coarse spaces for the different blocks in TwoLevelBlockPreconditioner
     - Add the possiblity to add coordinates in TwoLevelBlockPreconditioner
 
+16.01.2019 Alexander Heinlein:
+    - Use Xpetra_UseDefaultTypes.hpp and Xpetra_UseShortNames.hpp?
+    - Reorganization of the DDInterface
+    - Do we need the dimension for the DDInterface?
+    - InterfaceEntity -> Entity?

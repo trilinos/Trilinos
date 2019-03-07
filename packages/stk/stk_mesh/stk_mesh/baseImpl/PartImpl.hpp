@@ -105,8 +105,8 @@ public:
   template<class A>
   const A * attribute() const { return m_attribute.template get<A>(); }
 
-  void add_part_to_subset( Part & part);
-  void add_part_to_superset( Part & part );
+  bool add_part_to_subset( Part & part);
+  bool add_part_to_superset( Part & part );
 
   template<class T>
   const T * declare_attribute_with_delete( const T *);

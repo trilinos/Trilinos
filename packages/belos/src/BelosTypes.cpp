@@ -84,6 +84,24 @@ namespace Belos {
     }
   }
 
+  NormType
+  convertStringToNormType (const std::string& normType)
+  {
+    if (normType == "OneNorm") {
+      return Belos::OneNorm;
+    } else if (normType == "TwoNorm") {
+      return Belos::TwoNorm;
+    } else if (normType == "InfNorm") {
+       return Belos::InfNorm;
+    } else if (normType == "PreconditionerNorm") {
+      return Belos::PreconditionerNorm;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "Belos::convertStringToNormType(): Invalid norm type \""
+        << normType << "\".");
+    }
+  }
+
   ScaleType
   convertStringToScaleType (const std::string& scaleType)
   {

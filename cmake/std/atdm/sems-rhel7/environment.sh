@@ -150,6 +150,10 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
   export ATDM_CONFIG_LAPACK_LIBS="-mkl"
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   module load sems-gcc/7.2.0
   module load sems-cuda/9.2
@@ -180,6 +184,30 @@ module load sems-hdf5/1.8.12/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
 module load sems-superlu/4.3/base
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
+  [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] && \
+  [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
+  export ATDM_CONFIG_USE_NINJA=OFF
+  export ATDM_CONFIG_CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=OFF
+fi
+# NOTE: The reason for the above logic is that 'nvcc' can't handle *.rsp
+# response files that CMake switches to when the command-lines become too long
+# and there is no way to turn off the usage of response files with the CMake
+# Ninja generator as of CMake 3.14.0.  The problem is that when CUDA and
+# complex are enabled and shared libs are used, 'nvcc' is used to create the
+# kokkoskernels shared lib which has a ton of object files which triggers
+# internal CMake logic to condense these down into a single kokkoskernels.rsp
+# file that it passes to 'nvcc' to create the kokkoskernels library.  When the
+# CMake-generated *.rsp file is passed to 'nvcc', it does not know how to
+# process it and it gives the error "No input files specified".  The
+# workaround is to switch to the CMake Makefile generator which allows and
+# turning off the usage of response files for the list of object files (and
+# 'nvcc' seems to be able to handle this long command-line in this case).
+# Note that we don't yet need to switch to use the CMake Makefile generator
+# for 'static' builds since 'ar' is used to create the kokkoskernels lib which
+# does not seem to have a problem with the creation of this lib.  (See
+# TRIL-255 and TRIL-264.)
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so

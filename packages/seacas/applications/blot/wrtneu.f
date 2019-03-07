@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@ C=======================================================================
 C   --*** WRTNEU *** (XYPLOT) Write curve to neutral file
 C   --   Written by Amy Gilkey - revised 04/21/88
 C   --
-C   --WRTNEU writes the data for a curve to a neutral file which is 
+C   --WRTNEU writes the data for a curve to a neutral file which is
 C   --readable by the xmgr program.  The first
 C   --time the routine is called, the neutral file is opened.
 C   --
@@ -84,7 +84,7 @@ C      --Open the neutral file and write the title line
           GOTO 170
         END IF
         NEUOPN = .TRUE.
-        
+
         WRITE (NEU, 10000) 'Written by:  ',
      *    DRAW(1), DRAW(3)(:LENSTR(DRAW(3))), DRAW(4)(:LENSTR(DRAW(4)))
         WRITE (NEU, 10000) 'Created by:  ',
@@ -94,7 +94,7 @@ C      --Open the neutral file and write the title line
      &    MODIFY(1), MODIFY(3)(:LENSTR(MODIFY(3))),
      *    MODIFY(4)(:LENSTR(MODIFY(4)))
 10000   FORMAT ('# ',A, A, A, ' ', A, ' ', A)
-        
+
 C--Write header information.
         numgrf = 0
         numcrv = 31
@@ -120,20 +120,20 @@ C   --If numcrv >= 30, increment grf number and print header.
 C   --Get the curve name
       WRITE (CURVE, '(A1, I7)') 's', NUMCRV-1
       CALL PCKSTR (1, CURVE)
-      
+
       WRITE (*, 10090) PLTITL(:LENSTR(PLTITL)), numgrf-1, numcrv-1
 10090 FORMAT (' Writing "',A,'" to Graph ',i2,', Set ',i2)
-      
+
 C   --Write the begin curve record with the curve name
       WRITE (NEU, 10020) 'title', TITLE(:lenstr(title))
       WRITE (NEU, 10020) 'subtitle', PLTITL(:lenstr(pltitl))
-      
+
       ncol = mod(numcrv-1,15) + 1
       WRITE (NEU, 10010) CURVE, 'color', ncol
 10010 FORMAT ('@ ',A, A, I7)
-      
+
 C   --Write the title lines
-      
+
 10020 FORMAT ('@ ',A,' "', A,'"')
 
 C   --Write the X and Y labels
@@ -162,5 +162,5 @@ C   --Write the data points
       NUMCRV = NUMCRV + 1
       RETURN
       END
-      
-      
+
+

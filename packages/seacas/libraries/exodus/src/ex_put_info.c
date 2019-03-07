@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_INFO, etc
-#include "netcdf.h"       // for NC_NOERR, nc_enddef, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <string.h> // for strlen, NULL
@@ -167,10 +166,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       ex_compress_variable(rootid, varid, 3);
 
       /*   leave define mode  */
-      if ((status = nc_enddef(rootid)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to complete info record definition in file id %d", rootid);
-        ex_err_fn(exoid, __func__, errmsg, status);
+      if ((status = ex_leavedef(rootid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -216,9 +212,6 @@ int ex_put_info(int exoid, int num_info, char *info[])
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(rootid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

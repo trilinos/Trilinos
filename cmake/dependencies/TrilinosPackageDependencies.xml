@@ -1510,8 +1510,36 @@
     </EmailAddresses>
     <ParentPackage value="STK"/>
   </Package>
+  <Package name="STKNGP" dir="packages/stk/stk_ngp" type="ST">
+    <LIB_REQUIRED_DEP_PACKAGES value="Gtest,KokkosCore,STKUtil,STKTopology,STKMesh"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="stk-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="STK"/>
+  </Package>
+  <Package name="STKNGP_TEST" dir="packages/stk/stk_ngp_test" type="ST">
+    <LIB_REQUIRED_DEP_PACKAGES value="Gtest,KokkosCore"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Regression address="stk-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value="STK"/>
+  </Package>
   <Package name="STKUnit_tests" dir="packages/stk/stk_unit_tests" type="ST">
-    <LIB_REQUIRED_DEP_PACKAGES value="Gtest,Shards,STKTopology,STKUtil,STKMesh,STKIO"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Gtest,Shards,STKTopology,STKNGP_TEST,STKUtil,STKNGP,STKMesh,STKIO"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1554,7 +1582,7 @@
   </Package>
   <Package name="STK" dir="packages/stk" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="STKClassic,STKUtil,STKTopology,STKMesh,STKIO,STKSearch,STKSearchUtil,STKTransfer,STKUnit_tests,STKDoc_tests,STKExp"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="STKUtil,STKTopology,STKMesh,STKIO,STKSearch,STKSearchUtil,STKTransfer,STKUnit_tests,STKDoc_tests,STKExp"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Gtest"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="KokkosCore"/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -1848,9 +1876,9 @@
   </Package>
   <Package name="TrilinosCouplings" dir="packages/trilinoscouplings" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,STKClassic,Stokhos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,Stokhos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STKClassic,Teko,Tpetra,MueLu,KokkosCore,KokkosLinAlg,KokkosCompat,KokkosContainers,KokkosMpiComm,Stokhos"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,Teko,Tpetra,MueLu,KokkosCore,KokkosLinAlg,KokkosCompat,KokkosContainers,KokkosMpiComm,Stokhos"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

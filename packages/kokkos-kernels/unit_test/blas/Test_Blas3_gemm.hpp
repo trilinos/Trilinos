@@ -162,7 +162,7 @@ int test_gemm(const char* mode, ScalarA alpha, ScalarB beta) {
   Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],13,15,17,alpha,beta);
   Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],179,15,211,alpha,beta);
   Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],12,3071,517,alpha,beta);
-  Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],1024,1024,2048,alpha,beta);
+  //Test::impl_test_gemm<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(&mode[0],&mode[1],1024,1024,2048,alpha,beta);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -173,7 +173,7 @@ int test_gemm(const char* mode, ScalarA alpha, ScalarB beta) {
   Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],13,15,17,alpha,beta);
   Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],179,15,211,alpha,beta);
   Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],12,3071,517,alpha,beta);
-  Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],1024,1024,2048,alpha,beta);
+  //Test::impl_test_gemm<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(&mode[0],&mode[1],1024,1024,2048,alpha,beta);
 #endif
 /*
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))

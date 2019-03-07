@@ -44,7 +44,7 @@
 using namespace stk;
 using namespace stk::topology_detail;
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
 
 using namespace boost;
 

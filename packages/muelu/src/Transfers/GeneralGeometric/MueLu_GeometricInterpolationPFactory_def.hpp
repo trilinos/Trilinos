@@ -63,8 +63,8 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("gmg: interpolation order");
-    SET_VALID_ENTRY("gmg: build coarse coordinates");
+    SET_VALID_ENTRY("interp: interpolation order");
+    SET_VALID_ENTRY("interp: build coarse coordinates");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in GeometricInterpolationPFactory
@@ -82,10 +82,10 @@ namespace MueLu {
                                                  "map of the coarse coordinates' GIDs as indexed on the coarse mesh.");
     validParamList->set<RCP<const FactoryBase> >("Nullspace",                    Teuchos::null,
                                                  "Fine level nullspace used to construct the coarse level nullspace.");
+    validParamList->set<RCP<const FactoryBase> >("numDimensions",                Teuchos::null,
+                                                 "Number of spacial dimensions in the problem.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
-    validParamList->set<RCP<const FactoryBase> >("numDimensions",          Teuchos::null,
-                                                 "Number of spatial dimensions in the problem.");
 
     return validParamList;
   }
@@ -97,12 +97,12 @@ namespace MueLu {
 
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
+    Input(fineLevel, "numDimensions");
     Input(fineLevel, "prolongatorGraph");
     Input(fineLevel, "lCoarseNodesPerDim");
-    Input(fineLevel, "numDimensions");
 
-    if( pL.get<bool>("gmg: build coarse coordinates") ||
-        (pL.get<int>("gmg: interpolation order") == 1) ) {
+    if( pL.get<bool>("interp: build coarse coordinates") ||
+        (pL.get<int>("interp: interpolation order") == 1) ) {
       Input(fineLevel, "Coordinates");
       Input(fineLevel, "coarseCoordinatesFineMap");
       Input(fineLevel, "coarseCoordinatesMap");
@@ -134,19 +134,20 @@ namespace MueLu {
 
     // Get inputs from the parameter list
     const ParameterList& pL = GetParameterList();
-    const bool buildCoarseCoordinates = pL.get<bool>("gmg: build coarse coordinates");
+    const bool buildCoarseCoordinates = pL.get<bool>("interp: build coarse coordinates");
+    const int interpolationOrder      = pL.get<int> ("interp: interpolation order");
+    const int numDimensions           = Get<int>(fineLevel, "numDimensions");
 
     // Declared main input/outputs to be retrieved and placed on the fine resp. coarse level
     RCP<Matrix> A = Get<RCP<Matrix> >(fineLevel, "A");
     RCP<const CrsGraph> prolongatorGraph = Get<RCP<CrsGraph> >(fineLevel, "prolongatorGraph");
     RCP<realvaluedmultivector_type> fineCoordinates, coarseCoordinates;
     RCP<Matrix> P;
-    const int interpolationOrder = pL.get<int>("gmg: interpolation order");
-    const int numDimensions = Get<int>(fineLevel, "numDimensions");
 
     // Check if we need to build coarse coordinates as they are used if we construct
     // a linear interpolation prolongator
     if(buildCoarseCoordinates || (interpolationOrder == 1)) {
+      SubFactoryMonitor sfm(*this, "BuildCoordinates", coarseLevel);
       RCP<const Map> coarseCoordsFineMap = Get< RCP<const Map> >(fineLevel, "coarseCoordinatesFineMap");
       RCP<const Map> coarseCoordsMap = Get< RCP<const Map> >(fineLevel, "coarseCoordinatesMap");
       fineCoordinates   = Get< RCP<realvaluedmultivector_type> >(fineLevel, "Coordinates");
@@ -163,6 +164,7 @@ namespace MueLu {
     *out << "Fine and coarse coordinates have been loaded from the fine level and set on the coarse level." << std::endl;
 
     if(interpolationOrder == 0) {
+      SubFactoryMonitor sfm(*this, "BuildConstantP", coarseLevel);
       // Compute the prolongator using piece-wise constant interpolation
       BuildConstantP(P, prolongatorGraph, A);
     } else if(interpolationOrder == 1) {
@@ -175,18 +177,22 @@ namespace MueLu {
                                                              prolongatorGraph->getColMap());
       ghostCoordinates->doImport(*coarseCoordinates, *ghostImporter, Xpetra::INSERT);
 
+      SubFactoryMonitor sfm(*this, "BuildLinearP", coarseLevel);
       BuildLinearP(A, prolongatorGraph, fineCoordinates, ghostCoordinates, numDimensions, P);
     }
 
     *out << "The prolongator matrix has been built." << std::endl;
 
-    // Build the coarse nullspace
-    RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
-    RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
-                                                                 fineNullspace->getNumVectors());
-    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
-             Teuchos::ScalarTraits<SC>::zero());
-    Set(coarseLevel, "Nullspace", coarseNullspace);
+    {
+      SubFactoryMonitor sfm(*this, "BuildNullspace", coarseLevel);
+      // Build the coarse nullspace
+      RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
+      RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
+                                                                   fineNullspace->getNumVectors());
+      P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(),
+               Teuchos::ScalarTraits<SC>::zero());
+      Set(coarseLevel, "Nullspace", coarseNullspace);
+    }
 
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;
 
@@ -323,7 +329,7 @@ namespace MueLu {
         ComputeLinearInterpolationStencil(numDimensions, numInterpolationPoints, coords, stencil);
         values.resize(numInterpolationPoints);
         for(LO valueIdx = 0; valueIdx < numInterpolationPoints; ++valueIdx) {
-          values[valueIdx] = stencil[valueIdx];
+          values[valueIdx] = Teuchos::as<SC>(stencil[valueIdx]);
         }
 
         // Set values in all the rows corresponding to nodeIdx

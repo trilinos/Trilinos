@@ -102,8 +102,8 @@ namespace KokkosBatched {
         Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType>
           amat_simd("amat_simd", N, BlkSize, BlkSize); //, a("a", N, BlkSize, BlkSize);
       
-        Kokkos::parallel_for
-          (Kokkos::RangePolicy<HostSpaceType>(0, N*VectorLength),
+        Kokkos::parallel_for("KokkosBatched::PerfTest::LUHost::Pack", 
+           Kokkos::RangePolicy<HostSpaceType>(0, N*VectorLength),
            KOKKOS_LAMBDA(const int k) {
             const int k0 = k/VectorLength, k1 = k%VectorLength;
             for (int i=0;i<BlkSize;++i)
@@ -136,8 +136,8 @@ namespace KokkosBatched {
               timer.reset();
 
               Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
-              Kokkos::parallel_for
-                (policy,
+              Kokkos::parallel_for("KokkosBatched::PerfTest::LUHost::LAPACKE_dgetrfOpenMP", 
+                 policy,
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
                   auto pp = Kokkos::subview(p, k, Kokkos::ALL());
@@ -295,8 +295,8 @@ namespace KokkosBatched {
               timer.reset();
 
               Kokkos::RangePolicy<HostSpaceType,ScheduleType > policy(0, N);
-              Kokkos::parallel_for
-                (policy,
+              Kokkos::parallel_for("KokkosBatched::PerfTest::LUHost::SIMDSerialOpenMP", 
+                 policy,
                  KOKKOS_LAMBDA(const int k) {
                   auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
 

@@ -8,11 +8,16 @@ if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
   export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
 fi
 
+if [ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "white" ] ; then
+  EXCLUDE_NODES_FROM_BSUB="-R hname!=white26&&hname!=white27"
+fi
+
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
 set -x
 
 bsub -x -Is -q $ATDM_CONFIG_QUEUE -n 16 -J $JOB_NAME -W $BSUB_CTEST_TIME_LIMIT \
+  ${EXCLUDE_NODES_FROM_BSUB} \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
 
 # NOTE: Above, this bsub command should grab a single rhel7F (Firestone,

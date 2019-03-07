@@ -39,6 +39,7 @@ void calculate_centroid(const ngp::Mesh &ngpMesh, const CoordFieldType &ngpCoord
                 ngpCentroid.get(elem, dim) /= nodes.size();
         }
     });
+    ngpCentroid.modify_on_device();
 }
 
 template <typename CoordFieldType>
@@ -51,7 +52,7 @@ void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, stk::
 
     calculate_centroid(ngpMesh, ngpCoords, bulk.mesh_meta_data().locally_owned_part(), ngpCentroid);
 
-    ngpCentroid.copy_device_to_host(bulk, centroid);
+    ngpCentroid.sync_to_host();
 }
 
 std::vector<double> get_centroid_average(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid)
@@ -126,7 +127,7 @@ TEST_F(NgpFieldPerf, constFieldDataAccessIsFasterThanFieldDataAccess)
     if (stk::unit_test_util::get_command_line_option<int>("-dim",20) >= 60)
     {
 #ifdef NDEBUG
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     EXPECT_LT(constTime, nonConstTime);
 #endif
 #endif

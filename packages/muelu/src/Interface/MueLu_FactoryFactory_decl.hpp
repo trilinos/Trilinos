@@ -142,6 +142,8 @@
 #include "MueLu_VariableDofLaplacianFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
+#include "MueLu_NodePartitionInterface.hpp"
+
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
@@ -149,6 +151,7 @@
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
@@ -274,6 +277,7 @@ namespace MueLu {
       if (factoryName == "CoordinatesTransferFactory_kokkos")  return Build2<CoordinatesTransferFactory_kokkos>  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")            return Build2<NullspaceFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory_kokkos")                  return Build2<SaPFactory_kokkos>                  (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "StructuredAggregationFactory_kokkos")return Build2<StructuredAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")           return Build2<TentativePFactory_kokkos>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos") return Build2<UncoupledAggregationFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
 #endif
@@ -298,6 +302,14 @@ namespace MueLu {
 #else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
 #endif // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
+      }
+
+      if (factoryName == "NodePartitionInterface") {
+#if defined(HAVE_MPI)
+        return Build2<NodePartitionInterface>(paramList, factoryMapIn, factoryManagersIn);
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a NodePartitionInterface object: HAVE_MPI == false.");
+#endif // HAVE_MPI
       }
 
       if (factoryName == "RepartitionFactory") {

@@ -21,6 +21,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_
 #           the following relative path does not work or users should put kokkoskernels and kokkos
 #           at the same place
 SET(GTEST_SOURCE_DIR ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/../kokkos/tpls/gtest)
+# Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_PTHREAD=0")
 INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})
 
@@ -89,16 +90,16 @@ IF (Kokkos_ENABLE_OpenMP)
   
   APPEND_GLOB(OPENMP_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/openmp/Test_OpenMP_Blas*.cpp)
 
-  IF (KOKKOS_ENABLE_DEBUG)
-    SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-openmp.gemm_double")
-  ENDIF()
+  # IF (KOKKOS_ENABLE_DEBUG)
+  #   SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-openmp.gemm_double")
+  # ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_openmp
     SOURCES
       Test_Main.cpp
       ${OPENMP_BLAS_SOURCES}
-    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
+#    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
     COMM serial mpi
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
@@ -145,16 +146,16 @@ IF (Kokkos_ENABLE_Serial)
   
   APPEND_GLOB(SERIAL_BLAS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/serial/Test_Serial_Blas*.cpp)
 
-  IF (KOKKOS_ENABLE_DEBUG)
-    SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-serial.gemm_double")
-  ENDIF()
+  # IF (KOKKOS_ENABLE_DEBUG)
+  #   SET(DISABLE_SLOW_DGEMM_DOUBLE_TEST "--gtest_filter=-serial.gemm_double")
+  # ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     blas_serial
     SOURCES
       Test_Main.cpp
       ${SERIAL_BLAS_SOURCES}
-    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
+#    ARGS ${DISABLE_SLOW_DGEMM_DOUBLE_TEST}
     COMM serial mpi
     NUM_MPI_PROCS 1
     TESTONLYLIBS kokkoskernels_gtest
