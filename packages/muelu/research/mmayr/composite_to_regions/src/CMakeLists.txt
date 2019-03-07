@@ -6,7 +6,7 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 # Executables
 #
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_ML)
+IF(${PACKAGE_NAME}_ENABLE_Epetra)
 
   TRIBITS_ADD_EXECUTABLE(
     composite_to_region_driver 
