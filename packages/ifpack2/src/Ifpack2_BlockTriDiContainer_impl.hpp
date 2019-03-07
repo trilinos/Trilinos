@@ -2501,8 +2501,8 @@ namespace Ifpack2 {
     ///
     /// compute local residula vector y = b - R x 
     ///
-    int ComputeResidualVectorRecommendedCudaTeamSize(const int blksize,
-						     const int vector_size) {
+    int ComputeResidualVectorRecommendedCudaVectorSize(const int blksize,
+						       const int team_size) {
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
       else if (blksize <=  9) total_team_size =  64;
@@ -2510,7 +2510,7 @@ namespace Ifpack2 {
       else if (blksize <= 16) total_team_size = 128;
       else if (blksize <= 20) total_team_size = 160;
       else                    total_team_size = 160;
-      return 2*total_team_size/vector_size; 
+      return total_team_size/team_size; 
     }
 
     template<typename MatrixType>
@@ -2596,7 +2596,7 @@ namespace Ifpack2 {
 
       inline
       void 
-      serialGemv(const local_ordinal_type &blocksize,
+      SerialGemv(const local_ordinal_type &blocksize,
                  const impl_scalar_type * const __restrict__ AA, 
                  const impl_scalar_type * const __restrict__ xx,
                  /* */ impl_scalar_type * __restrict__ yy) const {
@@ -2618,7 +2618,7 @@ namespace Ifpack2 {
       template<typename bbViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION       
       void 
-      vectorCopy(const member_type &member,
+      VectorCopy(const member_type &member,
                  const local_ordinal_type &blocksize,
                  const bbViewType &bb, 
                  const yyViewType &yy) const {
@@ -2630,7 +2630,7 @@ namespace Ifpack2 {
       template<typename AAViewType, typename xxViewType, typename yyViewType>
       KOKKOS_INLINE_FUNCTION       
       void 
-      teamGemv(const member_type &member, 
+      TeamVectorGemv(const member_type &member, 
                const local_ordinal_type &blocksize,
                const AAViewType &AA, 
                const xxViewType &xx, 
@@ -2647,6 +2647,44 @@ namespace Ifpack2 {
 	    Kokkos::atomic_fetch_add(&yy(k0), -val);
           });
       }
+
+      template<typename AAViewType, typename xxViewType, typename yyViewType>
+      KOKKOS_INLINE_FUNCTION       
+      void 
+      VectorGemv(const member_type &member, 
+		 const local_ordinal_type &blocksize,
+		 const AAViewType &AA, 
+		 const xxViewType &xx, 
+		 const yyViewType &yy) const { 
+	Kokkos::parallel_for
+	  (Kokkos::ThreadVectorRange(member, blocksize), 
+	   [&](const local_ordinal_type &k0) {
+	    impl_scalar_type val(0);
+	    for (local_ordinal_type k1=0;k1<blocksize;++k1) {
+	      val += AA(k0,k1)*xx(k1);
+	    }
+	    Kokkos::atomic_fetch_add(&yy(k0), -val);
+	  });
+
+      }
+      // template<typename AAViewType, typename xxViewType, typename yyViewType>
+      // KOKKOS_INLINE_FUNCTION       
+      // void 
+      // VectorGemv(const member_type &member, 
+      // 		 const local_ordinal_type &blocksize,
+      // 		 const AAViewType &AA, 
+      // 		 const xxViewType &xx, 
+      // 		 const yyViewType &yy) const { 
+      // 	for (local_ordinal_type k0=0;k0<blocksize;++k0) {
+      // 	  impl_scalar_type val = 0;
+      // 	  Kokkos::parallel_for
+      // 	    (Kokkos::ThreadVectorRange(member, blocksize), 
+      // 	     [&](const local_ordinal_type &k1) {
+      // 	      val += AA(k0,k1)*xx(k1);
+      // 	    });
+      // 	  Kokkos::atomic_fetch_add(&yy(k0), -val);
+      // 	}
+      // }
 
       struct SeqTag {};
 
@@ -2672,7 +2710,7 @@ namespace Ifpack2 {
             const size_type j = A_k0 + colindsub[k];
             const impl_scalar_type * const AA = &tpetra_values(j*blocksize_square);
             const impl_scalar_type * const xx = &x(A_colind[j]*blocksize, col);
-            serialGemv(blocksize,AA,xx,yy);
+            SerialGemv(blocksize,AA,xx,yy);
           }
         }
       }
@@ -2686,7 +2724,7 @@ namespace Ifpack2 {
         const local_ordinal_type blocksize = blocksize_requested;
         const local_ordinal_type blocksize_square = blocksize*blocksize;
 
-        const local_ordinal_type i = member.league_rank();
+        const local_ordinal_type lr = member.league_rank();
         const Kokkos::pair<local_ordinal_type,local_ordinal_type> block_range(0, blocksize);
         const local_ordinal_type num_vectors = y.extent(1);
 
@@ -2696,24 +2734,26 @@ namespace Ifpack2 {
         auto yy = Kokkos::subview(y, block_range, 0);
         auto A_block = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize); 
         
-        const local_ordinal_type row = i*blocksize;
+        const local_ordinal_type row = lr*blocksize;
         for (local_ordinal_type col=0;col<num_vectors;++col) {
           // y := b
           yy.assign_data(&y(row, col));
           bb.assign_data(&b(row, col));
 	  if (member.team_rank() == 0) 
-            vectorCopy(member, blocksize, bb, yy);
+            VectorCopy(member, blocksize, bb, yy);
           member.team_barrier();
 
           // y -= Rx
-          const size_type A_k0 = A_rowptr[i];              
-          for (size_type k=rowptr[i];k<rowptr[i+1];++k) {
-            const size_type j = A_k0 + colindsub[k];
-            A_block.assign_data( &tpetra_values(j*blocksize_square) );
-            xx.assign_data( &x(A_colind[j]*blocksize, col) );
-            teamGemv(member, blocksize, A_block, xx, yy);
-          }
-        }
+          const size_type A_k0 = A_rowptr[lr];              
+	  Kokkos::parallel_for
+	    (Kokkos::TeamThreadRange(member, rowptr[lr], rowptr[lr+1]), 
+	     [&](const local_ordinal_type &k) {
+	      const size_type j = A_k0 + colindsub[k];
+	      A_block.assign_data( &tpetra_values(j*blocksize_square) );
+	      xx.assign_data( &x(A_colind[j]*blocksize, col) );
+	      VectorGemv(member, blocksize, A_block, xx, yy);
+	    });
+	}
       }
 
       template<int B>
@@ -2752,11 +2792,11 @@ namespace Ifpack2 {
             if (A_colind_at_j < num_local_rows) {
               const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
               const impl_scalar_type * const xx = &x(loc*blocksize, col);
-              serialGemv(blocksize, AA,xx,yy);
+              SerialGemv(blocksize, AA,xx,yy);
             } else {
               const auto loc = A_colind_at_j - num_local_rows;
               const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-              serialGemv(blocksize, AA,xx_remote,yy);                
+              SerialGemv(blocksize, AA,xx_remote,yy);                
             }
           }
           // move yy to y_packed
@@ -2796,26 +2836,28 @@ namespace Ifpack2 {
           bb.assign_data(&b(row, col));
           yy.assign_data(&y_packed_scalar(pri, 0, col, v));
           if (member.team_rank() == 0) 
-            vectorCopy(member, blocksize, bb, yy);
+            VectorCopy(member, blocksize, bb, yy);
           member.team_barrier();
 
           // y -= Rx
           const size_type A_k0 = A_rowptr[lr];
-          for (size_type k=rowptr[lr];k<rowptr[lr+1];++k) {
-            const size_type j = A_k0 + colindsub[k];
-            A_block.assign_data( &tpetra_values(j*blocksize_square) );
+	  Kokkos::parallel_for
+	    (Kokkos::TeamThreadRange(member, rowptr[lr], rowptr[lr+1]), 
+	     [&](const local_ordinal_type &k) {
+	      const size_type j = A_k0 + colindsub[k];
+	      A_block.assign_data( &tpetra_values(j*blocksize_square) );
               
-            const local_ordinal_type A_colind_at_j = A_colind[j];
-            if (A_colind_at_j < num_local_rows) {
-              const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-              xx.assign_data( &x(loc*blocksize, col) );
-              teamGemv(member, blocksize, A_block, xx, yy);
-            } else {
-              const auto loc = A_colind_at_j - num_local_rows;
-              xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-              teamGemv(member, blocksize, A_block, xx_remote, yy);
-            }
-          }
+	      const local_ordinal_type A_colind_at_j = A_colind[j];
+	      if (A_colind_at_j < num_local_rows) {
+		const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+		xx.assign_data( &x(loc*blocksize, col) );
+		VectorGemv(member, blocksize, A_block, xx, yy);
+	      } else {
+		const auto loc = A_colind_at_j - num_local_rows;
+		xx_remote.assign_data( &x_remote(loc*blocksize, col) );
+		VectorGemv(member, blocksize, A_block, xx_remote, yy);
+	      }
+	    });
         }
       }
       
@@ -2862,11 +2904,11 @@ namespace Ifpack2 {
             if (P == 0) {
               const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
               const impl_scalar_type * const xx = &x(loc*blocksize, col);
-              serialGemv(blocksize,AA,xx,yy);
+              SerialGemv(blocksize,AA,xx,yy);
             } else {
               const auto loc = A_colind_at_j - num_local_rows;
               const impl_scalar_type * const xx_remote = &x_remote(loc*blocksize, col);
-              serialGemv(blocksize,AA,xx_remote,yy);                
+              SerialGemv(blocksize,AA,xx_remote,yy);                
             }
           }
           // move yy to y_packed
@@ -2899,8 +2941,8 @@ namespace Ifpack2 {
 
         // subview pattern
         auto bb = Kokkos::subview(b, block_range, 0);
-        auto xx = Kokkos::subview(x, block_range, 0);
-        auto xx_remote = Kokkos::subview(x_remote, block_range, 0);
+        auto xx = bb; //Kokkos::subview(x, block_range, 0);
+        auto xx_remote = bb; //Kokkos::subview(x_remote, block_range, 0);
         auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
         auto A_block = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
         auto colindsub_used = (P == 0 ? colindsub : colindsub_remote); 
@@ -2914,27 +2956,29 @@ namespace Ifpack2 {
             // y := b
             bb.assign_data(&b(row, col));
             if (member.team_rank() == 0) 
-              vectorCopy(member, blocksize, bb, yy);
+              VectorCopy(member, blocksize, bb, yy);
             member.team_barrier();            
           } 
           
           // y -= Rx
           const size_type A_k0 = A_rowptr[lr];
-          for (size_type k=rowptr_used[lr];k<rowptr_used[lr+1];++k) {
-            const size_type j = A_k0 + colindsub_used[k];
-            A_block.assign_data( &tpetra_values(j*blocksize_square) );
-
-            const local_ordinal_type A_colind_at_j = A_colind[j];
-            if (P == 0) {
-              const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-              xx.assign_data( &x(loc*blocksize, col) );
-              teamGemv(member, blocksize, A_block, xx, yy);
-            } else {
-              const auto loc = A_colind_at_j - num_local_rows;
-              xx_remote.assign_data( &x_remote(loc*blocksize, col) );
-              teamGemv(member, blocksize, A_block, xx_remote, yy);
-            }
-          }
+	  Kokkos::parallel_for
+	    (Kokkos::TeamThreadRange(member, rowptr_used[lr], rowptr_used[lr+1]), 
+	     [&](const local_ordinal_type &k) {
+	      const size_type j = A_k0 + colindsub_used[k];
+	      A_block.assign_data( &tpetra_values(j*blocksize_square) );
+	      
+	      const local_ordinal_type A_colind_at_j = A_colind[j];
+	      if (P == 0) {
+		const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+		xx.assign_data( &x(loc*blocksize, col) );
+		VectorGemv(member, blocksize, A_block, xx, yy);
+	      } else {
+		const auto loc = A_colind_at_j - num_local_rows;
+		xx_remote.assign_data( &x_remote(loc*blocksize, col) );
+		VectorGemv(member, blocksize, A_block, xx_remote, yy);
+	      }
+	    });
         }
       }
 
@@ -2956,8 +3000,8 @@ namespace Ifpack2 {
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type blocksize = blocksize_requested;	  
-	  const local_ordinal_type vector_size = 8;
-	  const local_ordinal_type team_size = ComputeResidualVectorRecommendedCudaTeamSize(blocksize, vector_size);
+	  const local_ordinal_type team_size = 8;
+	  const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
           const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, team_size, vector_size);
           Kokkos::parallel_for
             ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
@@ -3008,8 +3052,8 @@ namespace Ifpack2 {
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type blocksize = blocksize_requested;	  
-	  const local_ordinal_type vector_size = 8;
-	  const local_ordinal_type team_size = ComputeResidualVectorRecommendedCudaTeamSize(blocksize, vector_size);
+	  const local_ordinal_type team_size = 8;
+	  const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
           // local_ordinal_type vl_power_of_two = 1;
           // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
@@ -3095,8 +3139,8 @@ namespace Ifpack2 {
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type blocksize = blocksize_requested;	  
-	  const local_ordinal_type vector_size = 8;
-	  const local_ordinal_type team_size = ComputeResidualVectorRecommendedCudaTeamSize(blocksize, vector_size);
+	  const local_ordinal_type team_size = 8;
+	  const local_ordinal_type vector_size = ComputeResidualVectorRecommendedCudaVectorSize(blocksize, team_size);
           // local_ordinal_type vl_power_of_two = 1;
           // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
           // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
@@ -3432,6 +3476,7 @@ namespace Ifpack2 {
             multivector_converter.to_packed_multivector(YY);
           } else {
             // fused y := x - R y and pmv := y(lclrow); 
+	    // real use case does not use overlap comp and comm
             if (overlap_communication_and_computation || !is_async_importer_active) {
               if (is_async_importer_active) async_importer->asyncSendRecv(YY);
               compute_residual_vector.run(pmv, XX, YY, remote_multivector, true);
