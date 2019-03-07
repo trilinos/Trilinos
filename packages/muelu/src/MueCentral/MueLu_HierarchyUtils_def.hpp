@@ -69,7 +69,7 @@ namespace MueLu {
   // calling AddNewLevel as appropriate.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
-    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,
                                          LocalOrdinal, GlobalOrdinal, Node> realvaluedmultivector_type;
 
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {

@@ -618,8 +618,9 @@ namespace MueLu {
                           ++refCoarsePointTuple[dim];
                         }
                       } else {
+                        // Note:  no need for magnitudeType here, just use double because these things are LO's
                         refCoarsePointTuple[dim] =
-                          std::ceil(static_cast<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(lNodeTuple[dim] + myOffset[dim])
+                          std::ceil(static_cast<double>(lNodeTuple[dim] + myOffset[dim])
                                     / coarseRate[dim]);
                       }
                       if((lNodeTuple[dim] + myOffset[dim]) % coarseRate[dim] > 0) {break;}
