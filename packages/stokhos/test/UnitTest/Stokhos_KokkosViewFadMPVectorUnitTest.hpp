@@ -213,7 +213,7 @@ struct ApplyView<DataType,NoLayout,ExecutionSpace> {
 //
 
 const int global_num_rows = 11;
-const int global_ensemble_size = 8;
+const int global_ensemble_size = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 const int global_fad_size = 5;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, Size, Scalar, Layout )

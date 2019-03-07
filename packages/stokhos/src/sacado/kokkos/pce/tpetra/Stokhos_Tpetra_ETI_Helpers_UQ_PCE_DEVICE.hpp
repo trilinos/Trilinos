@@ -39,24 +39,38 @@
 // ***********************************************************************
 // @HEADER
 
-#include "TpetraCore_config.h"
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// UQ::PCE includes
+#include "Stokhos_Tpetra_UQ_PCE.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE_OpenMP.hpp"
+#define INSTANTIATE_UQ_PCE_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
+  INSTMACRO( Sacado::UQ::PCE<STORAGE>, LO, GO, N )
 
-#include "Tpetra_CrsMatrix_UQ_PCE.hpp"
-#include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
+#define INSTANTIATE_UQ_PCE_DS_SLD(INSTMACRO, S, L, D, LO, GO, N)       \
+  typedef Stokhos::DynamicStorage<L,S,D::execution_space> DS_ ## L ## _ ## S ## _ ## _ ## D; \
+  INSTANTIATE_UQ_PCE_STORAGE(INSTMACRO, DS_ ## L ## _ ## S ## _ ## _ ## D, LO, GO, N)
 
-#define TPETRA_LOCAL_INST_N_1(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_UQ_PCE_SPEC, N)
+#define INSTANTIATE_UQ_PCE_S_D(INSTMACRO, D, LO, GO, N) \
+  INSTANTIATE_UQ_PCE_DS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
-#define TPETRA_LOCAL_INST_N_2(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_INSTANT, N)
+#define INSTANTIATE_UQ_PCE_S(INSTMACRO, LO, GO, N) \
+  typedef Stokhos::DeviceForNode2<N>::type DFN_ ## LO ## _ ## GO ## _ ## N; \
+  INSTANTIATE_UQ_PCE_S_D(INSTMACRO, DFN_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
-INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_1)
+#define INSTANTIATE_UQ_PCE(INSTMACRO, LO, GO, N) \
+  INSTANTIATE_UQ_PCE_S(INSTMACRO, LO, GO, N)
 
-INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_2)
+#define INSTANTIATE_TPETRA_UQ_PCE_N(INSTMACRO, N)  \
+  INSTANTIATE_UQ_PCE_S(INSTMACRO, int, int, N)
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#define INSTANTIATE_TPETRA_UQ_PCE_WRAPPER_NODES(INSTMACRO) \
+  INSTMACRO(Kokkos_Compat_Kokkos@DEVICE@WrapperNode)
+
+#define INSTANTIATE_TPETRA_UQ_PCE(INSTMACRO)                    \
+  namespace Tpetra {                                            \
+                                                                \
+  TPETRA_ETI_MANGLING_TYPEDEFS()                                \
+                                                                \
+  INSTANTIATE_TPETRA_UQ_PCE_WRAPPER_NODES(INSTMACRO)            \
+                                                                \
+}
