@@ -150,6 +150,10 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
   export ATDM_CONFIG_LAPACK_LIBS="-mkl"
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   module load sems-gcc/7.2.0
   module load sems-cuda/9.2
