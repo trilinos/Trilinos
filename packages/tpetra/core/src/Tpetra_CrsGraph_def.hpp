@@ -2094,10 +2094,12 @@ namespace Tpetra {
                            const GlobalOrdinal inputGblColInds[],
                            const size_t numInputInds)
   {
+    using Kokkos::View;
     using Kokkos::subview;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef Kokkos::pair<size_t, size_t> range_type;
+    using Kokkos::MemoryUnmanaged;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using range_type = Kokkos::pair<size_t, size_t>;
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
 #ifdef HAVE_TPETRA_DEBUG
     constexpr bool debug = true;
@@ -2108,12 +2110,14 @@ namespace Tpetra {
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
     if (this->getProfileType () == StaticProfile) {
+      using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
+      using row_view_type = View<GO*, execution_space, MemoryUnmanaged>;
       auto numEntries = rowInfo.numEntries;
       auto numAllocated = rowInfo.allocSize;
       const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
-      auto indices = subview(this->k_gblInds1D_, slice);
-      auto numInserted =
-        Details::insertCrsIndices(indices, numEntries, inputGblColInds, numInputInds);
+      row_view_type curInds = subview(this->k_gblInds1D_, slice);
+      inp_view_type inputInds(inputGblColInds, numInputInds);
+      auto numInserted = Details::insertCrsIndices(curInds, numEntries, inputInds);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
         std::runtime_error,
@@ -2171,41 +2175,50 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::subview;
     using Kokkos::View;
-    typedef LocalOrdinal LO;
+    using LO = LocalOrdinal;
     const char tfecfFuncName[] = "insertLocallIndicesImpl: ";
 
     const RowInfo rowInfo = this->getRowInfo(myRow);
-    const size_t numNewInds = indices.size();
-    const size_t newNumEntries = rowInfo.numEntries + numNewInds;
-    if (newNumEntries > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (getProfileType() == StaticProfile, std::runtime_error,
-        "New indices exceed statically allocated graph structure.");
 
-      // update allocation, doubling size to reduce number of reallocations
-      size_t newAllocSize = 2*rowInfo.allocSize;
-      if (newAllocSize < newNumEntries) {
-        newAllocSize = newNumEntries;
-      }
-      this->lclInds2D_[myRow].resize(newAllocSize);
-    }
+    size_t numNewInds = 0;
+    size_t newNumEntries = 0;
 
-    // Store the new indices at the end of row myRow.
-    if (this->k_lclInds1D_.extent (0) != 0) {
-      typedef View<const LO*, execution_space, MemoryUnmanaged> input_view_type;
-      typedef View<LO*, execution_space, MemoryUnmanaged> row_view_type;
-
-      input_view_type inputInds (indices.getRawPtr (), indices.size ());
-      const size_t start = rowInfo.offset1D + rowInfo.numEntries; // end of row
-      const std::pair<size_t, size_t> rng (start, start + newNumEntries);
-      // mfh 23 Nov 2015: Don't just create a subview of k_lclInds1D_
-      // directly, because that first creates a _managed_ subview,
-      // then returns an unmanaged version of that.  That touches the
-      // reference count, which costs performance in a measurable way.
-      row_view_type myInds = subview (row_view_type (this->k_lclInds1D_), rng);
-      Kokkos::deep_copy (myInds, inputInds);
+    if (this->getProfileType () == StaticProfile) {
+      using range_type = Kokkos::pair<size_t, size_t>;
+      using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
+      using row_view_type = View<LO*, execution_space, MemoryUnmanaged>;
+      auto numEntries = rowInfo.numEntries;
+      auto numAllocated = rowInfo.allocSize;
+      const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
+      row_view_type curInds = subview(row_view_type(this->k_lclInds1D_), slice);
+      inp_view_type inputInds(indices.getRawPtr(), indices.size());
+      auto numInserted = Details::insertCrsIndices(curInds, numEntries, inputInds);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numInserted == -1,
+        std::runtime_error,
+        "There is not enough capacity to insert indices in to row " << myRow <<
+        ".  You must either fix the upper bound on the number of entries in this row"
+        ", or switch from StaticProfile to DynamicProfile.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numInserted < 0,
+        std::logic_error,
+        "An unknown error occurred when attempting to insert indices in to row " << myRow
+        << ".  Please report this bug to Tpetra developers.\n");
+      numNewInds = numInserted;
+      newNumEntries = rowInfo.numEntries + numNewInds;
     }
     else {
+
+      numNewInds = indices.size();
+      newNumEntries = rowInfo.numEntries + numNewInds;
+      if (newNumEntries > rowInfo.allocSize) {
+        // update allocation, doubling size to reduce number of reallocations
+        size_t newAllocSize = 2*rowInfo.allocSize;
+        if (newAllocSize < newNumEntries) {
+          newAllocSize = newNumEntries;
+        }
+        this->lclInds2D_[myRow].resize(newAllocSize);
+      }
       std::copy (indices.begin (), indices.end (),
                  this->lclInds2D_[myRow].begin () + rowInfo.numEntries);
     }

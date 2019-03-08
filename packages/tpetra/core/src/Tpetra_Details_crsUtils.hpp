@@ -283,22 +283,21 @@ ind_difference(Ordinal const * const indices1, size_t const n1,
 }
 
 /// \brief Implementation of insertCrsIndices
-template<class T>
-typename std::make_signed<typename T::value_type>::type
+template <class V1, class V2>
+typename std::make_signed<typename V1::value_type>::type
 insert_crs_indices(
-    T& indices,
+    V1& indices,
     size_t const num_assigned,
-    typename T::value_type const in_indices[],
-    size_t const num_in,
+    V2 const& in_indices,
     std::function<void(const int)> fun)
 {
-  if (num_in == 0)
+  if (in_indices.size() == 0)
     return 0;
 
   auto num_avail = indices.size() - num_assigned;
-  using ordinal = typename std::make_signed<typename T::value_type>::type;
-  ordinal num_inserted = 0;
-  for (size_t i = 0; i < num_in; i++)
+  using signed_ordinal = typename std::make_signed<typename V1::value_type>::type;
+  signed_ordinal num_inserted = 0;
+  for (size_t i = 0; i < in_indices.size(); i++)
   {
     auto n = num_assigned + num_inserted;
     auto idx = ind_find(indices.data(), n, in_indices[i]);
@@ -403,27 +402,18 @@ padCrsArrays(
 /// \return numInserted [out] The number of indices inserted.
 ///    If numInserted == -1, there was not enough capacity for all of the incoming
 ///    indices and none were inserted.
-template <class T>
-typename std::make_signed<typename T::value_type>::type
+template <class V1, class V2>
+typename std::make_signed<typename V1::value_type>::type
 insertCrsIndices(
-    T& indices,
+    V1& indices,
     size_t const numAssigned,
-    typename T::value_type const inIndices[],
-    size_t const numIn,
+    V2 const& inIndices,
     std::function<void(const int)> f = std::function<void(const int)>())
 {
-  return impl::insert_crs_indices(indices, numAssigned, inIndices, numIn, f);
-}
-
-template <class T>
-typename std::make_signed<typename T::value_type>::type
-insertCrsIndicesSorted(
-    T& indices,
-    size_t const numAssigned,
-    typename T::value_type const inIndices[],
-    size_t const numIn)
-{
-  return impl::insert_crs_indices_sorted(indices, numAssigned, inIndices, numIn);
+  static_assert(std::is_same<typename std::remove_const<typename V1::value_type>::type,
+                             typename std::remove_const<typename V2::value_type>::type>::value,
+                "Expected views to have same value type");
+  return impl::insert_crs_indices(indices, numAssigned, inIndices, f);
 }
 
 } // namespace Details
