@@ -114,9 +114,25 @@ namespace Xpetra {
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements,
-                                                                               elementList, indexBase,
+                                                                               elementList,
+                                                                               indexBase,
                                                                                comm, node)))
     {}
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution passed as a Kokkos::View.
+    TpetraMap (global_size_t numGlobalElements,
+               const Kokkos::View<const GlobalOrdinal*, typename Node::device_type>& indexList,
+               GlobalOrdinal indexBase,
+               const Teuchos::RCP< const Teuchos::Comm< int > > &comm)
+      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements,
+                                                                               indexList,
+                                                                               indexBase,
+                                                                               comm)))
+    {}
+#endif
+#endif
 
     //! Destructor.
     ~TpetraMap() {  }
