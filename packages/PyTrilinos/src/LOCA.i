@@ -191,14 +191,3 @@ if 'NOX' in Abstract.__file__.split(os.path.sep):
 
 // LOCA ParameterVector class
 %include "LOCA_Parameter_Vector.H"
-
-// // LOCA.Epetra
-// #ifdef HAVE_PYTRILINOS_NOX_EPETRA
-// %pythoncode
-// %{
-
-// # Epetra namespace
-// __all__.append("Epetra")
-// from . import Epetra
-// %}
-// #endif
