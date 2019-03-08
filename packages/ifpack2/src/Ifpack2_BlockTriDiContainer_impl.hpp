@@ -2072,7 +2072,7 @@ namespace Ifpack2 {
       typedef KokkosBatched::Experimental::Mode::Serial mode_type;
       typedef KokkosBatched::Experimental::Algo::Level2::Unblocked single_vector_algo_type;
 #if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__) 
-      typedef KokkosBatched::Experimental::Algo::Level3::CompactMKL algo_type;
+      typedef KokkosBatched::Experimental::Algo::Level3::CompactMKL multi_vector_algo_type;
 #else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked multi_vector_algo_type;
 #endif
