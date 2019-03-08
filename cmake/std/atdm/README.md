@@ -791,6 +791,13 @@ this can be overridden by setting the env var
 `ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` running `source
 cmake/std/atdm/load-env.sh <build_name>`.
 
+NOTE: The default Intel compiler license server can be overridded by setting
+the env var:
+
+```
+$ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
+```
+
 
 ### CEE RHEL6 Environment
 

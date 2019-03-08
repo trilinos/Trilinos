@@ -204,7 +204,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Convenient definitions
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero();//, one = STS::one();
   typedef typename STS::coordinateType real_type;
   typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 

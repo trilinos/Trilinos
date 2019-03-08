@@ -112,7 +112,7 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
 //-----------------------------------------------------------------------------
 
 bool
-BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vector & vec )
+BroydenOperator::initialize( Teuchos::ParameterList & inNlParams, const Epetra_Vector & vec )
 {
   stepVec  = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
   yieldVec = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
@@ -128,7 +128,7 @@ BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vec
   // user's expectations.  For now we will have to create rcp without
   // ownership.  What happens if a user write their own observer?
   Teuchos::RCP<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").set("Observer", me);
+  inNlParams.sublist("Solver Options").set("Observer", me);
 
   return true;
 }

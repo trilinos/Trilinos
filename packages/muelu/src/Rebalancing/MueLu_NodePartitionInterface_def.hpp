@@ -96,7 +96,6 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", level);
     RCP<Matrix>    A      = Get<RCP<Matrix> >(level, "A");
     RCP<const Map> rowMap = A->getRowMap();
-    LO blkSize  = A->GetFixedBlockSize();
 
     int numParts = Get<int>(level, "number of partitions");
     if (numParts == 1 || numParts == -1) {
