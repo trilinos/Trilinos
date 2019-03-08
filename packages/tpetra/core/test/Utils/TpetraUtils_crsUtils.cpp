@@ -282,11 +282,13 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
     vector<int> indices{3, 6, 9, 12, -1, -1, -1};
     size_t num_assigned = 4;
     vector<int> in_indices{1, 0, 2, 2, 1, 0, 1, 2, 1};
+    vector<int> in_values{1, 1, 1, 1, 1, 1, 1, 1, 1};
     vector<int> expected{3, 6, 9, 12, 1, 0, 2};
     vector<int> values(indices.size(), 0);
     vector<int> expected_values{0, 0, 0, 0, 4, 2, 3};
-    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices,
-                                         [&](const int offset){values[offset] += 1; });
+    auto num_inserted =
+      insertCrsIndices(indices, num_assigned, in_indices,
+                       [&](const int i, const int offset){values[offset] += in_values[i]; });
     TEST_EQUALITY(num_inserted, 3);
     TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
     TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
