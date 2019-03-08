@@ -2652,21 +2652,21 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION       
       void 
       VectorGemv(const member_type &member, 
-		 const local_ordinal_type &blocksize,
-		 const AAViewType &AA, 
-		 const xxViewType &xx, 
-		 const yyViewType &yy) const { 
-	Kokkos::parallel_for
-	  (Kokkos::ThreadVectorRange(member, blocksize), 
-	   [&](const local_ordinal_type &k0) {
-	    impl_scalar_type val(0);
-	    for (local_ordinal_type k1=0;k1<blocksize;++k1) {
-	      val += AA(k0,k1)*xx(k1);
-	    }
-	    Kokkos::atomic_fetch_add(&yy(k0), -val);
-	  });
-
+      		 const local_ordinal_type &blocksize,
+      		 const AAViewType &AA, 
+      		 const xxViewType &xx, 
+      		 const yyViewType &yy) const { 
+      	Kokkos::parallel_for
+      	  (Kokkos::ThreadVectorRange(member, blocksize), 
+      	   [&](const local_ordinal_type &k0) {
+      	    impl_scalar_type val(0);
+      	    for (local_ordinal_type k1=0;k1<blocksize;++k1) {
+      	      val += AA(k0,k1)*xx(k1);
+      	    }
+      	    Kokkos::atomic_fetch_add(&yy(k0), -val);
+      	  });
       }
+
       // template<typename AAViewType, typename xxViewType, typename yyViewType>
       // KOKKOS_INLINE_FUNCTION       
       // void 
