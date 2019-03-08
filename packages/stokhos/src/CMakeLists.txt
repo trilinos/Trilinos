@@ -897,15 +897,17 @@ IF (Stokhos_ENABLE_Sacado)
         APPEND_GLOB(AMESOS2_SOURCES
           sacado/kokkos/vector/amesos2/*.cpp
           )
-        PROCESS_ENSEMBLE_ETI(
-          "${Stokhos_ETI_Ensemble_Sizes}"
-          "${AMESOS2_ETI_CLASSES}"
-          "sacado/kokkos/vector/amesos2"
-          "Amesos2"
-          TRUE
-          "${STOKHOS_DEPLIBS}"
-          DEPLIBS_OUT)
-        LIST(APPEND STOKHOS_AMESOS2_DEPLIBS ${DEPLIBS_OUT})
+        IF(AMESOS2_ETI_CLASSES) # Only process if we have classes to instantiate
+          PROCESS_ENSEMBLE_ETI(
+            "${Stokhos_ETI_Ensemble_Sizes}"
+            "${AMESOS2_ETI_CLASSES}"
+            "sacado/kokkos/vector/amesos2"
+            "Amesos2"
+            TRUE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_AMESOS2_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
       ENDIF()
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/amesos2)
