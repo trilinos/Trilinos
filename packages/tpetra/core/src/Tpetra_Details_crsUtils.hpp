@@ -77,6 +77,21 @@ argsort(Ordinal const * const a, size_t const n)
   return ix;
 }
 
+
+/// \brief Implementation of numpy.argsort
+template <class Ordinal>
+size_t
+ind_find(Ordinal const * const a, size_t const n, Ordinal const ind)
+{
+  size_t i = 0;
+  for (; i < n; ++i)
+  {
+    if (a[i] == ind)
+      return i;
+  }
+  return n;
+}
+
 /// \brief Implementation of padCrsArrays
 template<class RowPtr, class Indices, class Padding>
 void
@@ -274,6 +289,41 @@ insert_crs_indices(
     T& indices,
     size_t const num_assigned,
     typename T::value_type const in_indices[],
+    size_t const num_in,
+    std::function<void(const int)> fun)
+{
+  if (num_in == 0)
+    return 0;
+
+  auto num_avail = indices.size() - num_assigned;
+  using ordinal = typename std::make_signed<typename T::value_type>::type;
+  ordinal num_inserted = 0;
+  for (size_t i = 0; i < num_in; i++)
+  {
+    auto n = num_assigned + num_inserted;
+    auto idx = ind_find(indices.data(), n, in_indices[i]);
+    if (idx == n)
+    {
+      if (num_inserted >= num_avail)
+        // Not enough room!
+        return -1;
+      else
+        num_inserted += 1;
+      // This index is not yet in indices
+      indices[idx] = in_indices[i];
+    }
+    if (fun) fun(idx);
+  }
+  return num_inserted;
+}
+
+/// \brief Implementation of insertCrsIndices
+template<class T>
+typename std::make_signed<typename T::value_type>::type
+insert_crs_indices_sorted(
+    T& indices,
+    size_t const num_assigned,
+    typename T::value_type const in_indices[],
     size_t const num_in)
 {
   if (num_in == 0)
@@ -362,9 +412,21 @@ insertCrsIndices(
     T& indices,
     size_t const numAssigned,
     typename T::value_type const inIndices[],
+    size_t const numIn,
+    std::function<void(const int)> f = std::function<void(const int)>())
+{
+  return impl::insert_crs_indices(indices, numAssigned, inIndices, numIn, f);
+}
+
+template <class T>
+typename std::make_signed<typename T::value_type>::type
+insertCrsIndicesSorted(
+    T& indices,
+    size_t const numAssigned,
+    typename T::value_type const inIndices[],
     size_t const numIn)
 {
-  return impl::insert_crs_indices(indices, numAssigned, inIndices, numIn);
+  return impl::insert_crs_indices_sorted(indices, numAssigned, inIndices, numIn);
 }
 
 } // namespace Details
