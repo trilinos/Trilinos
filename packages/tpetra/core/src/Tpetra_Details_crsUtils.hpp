@@ -289,7 +289,7 @@ insert_crs_indices(
     V1& indices,
     size_t const num_assigned,
     V2 const& in_indices,
-    std::function<void(const int)> fun)
+    std::function<void(const int, const int)> fun)
 {
   if (in_indices.size() == 0)
     return 0;
@@ -311,7 +311,7 @@ insert_crs_indices(
       // This index is not yet in indices
       indices[idx] = in_indices[i];
     }
-    if (fun) fun(idx);
+    if (fun) fun(i, idx);
   }
   return num_inserted;
 }
@@ -408,7 +408,7 @@ insertCrsIndices(
     V1& indices,
     size_t const numAssigned,
     V2 const& inIndices,
-    std::function<void(const int)> f = std::function<void(const int)>())
+    std::function<void(const int, const int)> f = std::function<void(const int, const int)>())
 {
   static_assert(std::is_same<typename std::remove_const<typename V1::value_type>::type,
                              typename std::remove_const<typename V2::value_type>::type>::value,
