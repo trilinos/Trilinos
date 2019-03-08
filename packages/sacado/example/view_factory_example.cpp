@@ -44,6 +44,7 @@
 #if !defined(__CUDACC__)
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_ViewFactory.hpp"
+#include "Teuchos_Assert.hpp"
 
 // Example to demonstrate the use of Kokkos::ViewFactory for constructing
 // view's of Fad's without explicitly referencing the sacado dimension

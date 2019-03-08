@@ -38,7 +38,6 @@ SET(SOURCES ${SOURCES}
   Trilinos_Util_scscres.cpp
   Trilinos_Util_smsrres.cpp
   Trilinos_Util_ssrcsr.cpp
-  Trilinos_Util_svbrres.cpp
   Trilinos_Util_write_vec.cpp
 )
 
@@ -60,10 +59,11 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
   )
 
   SET(SOURCES ${SOURCES}
-    Trilinos_Util_distrib_vbr_matrix.cpp
-    Trilinos_Util_dusmm.cpp
     Trilinos_Util_create_vbr.cpp
     Trilinos_Util_distrib_msr_matrix.cpp
+    Trilinos_Util_distrib_vbr_matrix.cpp
+    Trilinos_Util_dusmm.cpp
+    Trilinos_Util_svbrres.cpp
     Trilinos_Util_ReadMatrixMarket2Epetra.cpp
     Trilinos_Util_ReadTriples2Epetra.cpp
     Trilinos_Util_CountMatrixMarket.cpp

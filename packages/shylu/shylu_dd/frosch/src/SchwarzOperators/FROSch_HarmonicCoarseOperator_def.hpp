@@ -218,6 +218,10 @@ namespace FROSch {
         
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         bool useRotations = coarseSpaceList->get("Rotations",true);
+        if (useRotations && nodeList.is_null()) {
+            useRotations = false;
+            if (this->Verbose_) std::cout << "\nWarning: Rotations cannot be used!\n";
+        }
         
         this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getEntity(0)->getNumNodes());
         this->IDofs_[blockId] = LOVecPtr(0);

@@ -143,7 +143,7 @@ template<typename scalar> class Mask
         {
             bool all = true;
             for (int i = 0; i < size; ++i) {
-                all && (this->data[i] == m2.data[i]);
+                all = all && (this->data[i] == m2.data[i]);
             }
             return all;
         }
