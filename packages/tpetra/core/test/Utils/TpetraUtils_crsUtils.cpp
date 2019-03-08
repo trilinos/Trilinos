@@ -229,7 +229,7 @@ compare_array_values(V1 const& arr1, V2 const& arr2, size_t const n)
     if (arr1[i] != arr2[i])
     {
       l_success = false;
-      std::cout << "ARR1[" << i << "] = " << arr1[i] << ", expected " << arr2[i] << "\n";
+      //std::cout << "ARR1[" << i << "] = " << arr1[i] << ", expected " << arr2[i] << "\n";
     }
   }
   return l_success;
@@ -243,25 +243,15 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
     vector<int> in_indices{0, 2, 4, 6, 8, 7, 5, 3, 1, 2, 6, 8, 4, 0};
     auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices.data(), in_indices.size());
     TEST_EQUALITY(num_inserted, 5);
-    vector<int> expected{0, 1, 2, 3, 4, 5, 6, 7, 8};
+    vector<int> expected{1, 3, 5, 7, 0, 2, 4, 6, 8};
     TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
   }
 
   {
     vector<int> indices{3, 6, 9, 12, -1, -1, -1, -1};
     size_t num_assigned = 4;
-    vector<int> in_indices{0, 1, 2};
-    vector<int> expected{0, 1, 2, 3, 6, 9, 12, -1};
-    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices.data(), in_indices.size());
-    TEST_EQUALITY(num_inserted, in_indices.size());
-    TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
-  }
-
-  {
-    vector<int> indices{3, 6, 9, 12, -1, -1, -1};
-    size_t num_assigned = 4;
     vector<int> in_indices{1, 0, 2};
-    vector<int> expected{0, 1, 2, 3, 6, 9, 12};
+    vector<int> expected{3, 6, 9, 12, 1, 0, 2, -1};
     auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices.data(), in_indices.size());
     TEST_EQUALITY(num_inserted, in_indices.size());
     TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
@@ -279,10 +269,27 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
     vector<int> indices{3, 6, 9, 12, -1, -1, -1, -1, -1};
     size_t num_assigned = 4;
     vector<int> in_indices{0, 4, 7, 10, 13};
-    vector<int> expected{0, 3, 4, 6, 7, 9, 10, 12, 13};
+    vector<int> expected{3, 6, 9, 12, 0, 4, 7, 10, 13};
     auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices.data(), in_indices.size());
     TEST_EQUALITY(num_inserted, in_indices.size());
     TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
+  }
+}
+
+TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
+{
+  {
+    vector<int> indices{3, 6, 9, 12, -1, -1, -1};
+    size_t num_assigned = 4;
+    vector<int> in_indices{1, 0, 2, 2, 1, 0, 1, 2, 1};
+    vector<int> expected{3, 6, 9, 12, 1, 0, 2};
+    vector<int> values(indices.size(), 0);
+    vector<int> expected_values{0, 0, 0, 0, 4, 2, 3};
+    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices.data(), in_indices.size(),
+                                         [&](const int offset){values[offset] += 1; });
+    TEST_EQUALITY(num_inserted, 3);
+    TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
   }
 }
 
