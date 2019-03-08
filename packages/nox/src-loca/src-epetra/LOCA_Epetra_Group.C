@@ -327,7 +327,7 @@ LOCA::Epetra::Group::computeJacobian()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::applyJacobianTransposeInverse(
-                    Teuchos::ParameterList& params,
+                    Teuchos::ParameterList& inParams,
                     const NOX::Abstract::Vector& input,
                     NOX::Abstract::Vector& result) const
 {
@@ -346,18 +346,18 @@ LOCA::Epetra::Group::applyJacobianTransposeInverse(
   // Instantiate transpose solver
   LOCA::Epetra::TransposeLinearSystem::Factory tls_factory(globalData);
   if (tls_strategy == Teuchos::null)
-    tls_strategy = tls_factory.create(Teuchos::rcp(&params, false), linSys);
+    tls_strategy = tls_factory.create(Teuchos::rcp(&inParams, false), linSys);
 
   // Compute Jacobian transpose J^T
   tls_strategy->createJacobianTranspose();
 
   // Now compute preconditioner for J^T
-  tls_strategy->createTransposePreconditioner(xVector, params);
+  tls_strategy->createTransposePreconditioner(xVector, inParams);
 
   // Solve
   bool stat =
     tls_strategy->applyJacobianTransposeInverse(
-              params,
+              inParams,
               dynamic_cast<const NOX::Epetra::Vector&>(input),
               dynamic_cast<NOX::Epetra::Vector&>(result));
   if (stat == true)
@@ -375,7 +375,7 @@ LOCA::Epetra::Group::applyJacobianTransposeInverse(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector(
-                    Teuchos::ParameterList& params,
+                    Teuchos::ParameterList& inParams,
                     const NOX::Abstract::MultiVector& input,
                     NOX::Abstract::MultiVector& result) const
 {
@@ -395,20 +395,20 @@ LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector(
   // Instantiate transpose solver
   LOCA::Epetra::TransposeLinearSystem::Factory tls_factory(globalData);
   if (tls_strategy == Teuchos::null)
-    tls_strategy = tls_factory.create(Teuchos::rcp(&params, false), linSys);
+    tls_strategy = tls_factory.create(Teuchos::rcp(&inParams, false), linSys);
 
   // Compute Jacobian transpose J^T
   tls_strategy->createJacobianTranspose();
 
   // Now compute preconditioner for J^T
-  tls_strategy->createTransposePreconditioner(xVector, params);
+  tls_strategy->createTransposePreconditioner(xVector, inParams);
 
   // Solve for each RHS
   int m = input.numVectors();
   for (int i=0; i<m; i++) {
     bool stat =
       tls_strategy->applyJacobianTransposeInverse(
-              params,
+              inParams,
               dynamic_cast<const NOX::Epetra::Vector&>(input[i]),
               dynamic_cast<NOX::Epetra::Vector&>(result[i]));
     if (stat == true)

@@ -78,7 +78,6 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm) :
 
   // Here we assume a 2-species Brusselator model, ie 2 dofs per node
   // Note that this needs to be echoed in thew anonymous enum for NUMSPECIES.
-  NumSpecies = 2;
   NumGlobalUnknowns = NumSpecies * NumGlobalNodes;
 
   // Construct a Source Map that puts approximately the same
@@ -254,7 +253,7 @@ bool Brusselator::evaluate(FillType fType,
   double term1, term2;
   double jac11, jac12, jac21, jac22;
   double xx[2];
-  double uu[2*NUMSPECIES] = {0.0}; // Use of the anonymous enum is needed for SGI builds
+  double uu[2*NumSpecies] = {0.0};
   Basis basis(NumSpecies);
 
 
