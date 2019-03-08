@@ -53,6 +53,8 @@ public:
     actual_procCoords = new pcoord_t *[actual_networkDim];
     transformed_procCoords = new pcoord_t *[transformed_networkDim];
     
+    std::cout << "\nDef About to allocate Actual coord memory\n";
+    
     for (int i = 0; i < actual_networkDim; ++i) {
       actual_procCoords[i] = new pcoord_t[this->numRanks];
       memset(actual_procCoords[i], 0, 
@@ -65,9 +67,13 @@ public:
       actual_procCoords[i][this->myRank] = xyz[i];
     delete [] xyz;
 
+    std::cout << "\nDef About to gather coords\n";
+    
     // reduceAll the coordinates of each processor.
     gatherMachineCoordinates(this->actual_procCoords,
         this->actual_networkDim, comm);
+
+    std::cout << "\nDef gathered: " << actual_procCoords[1][0] << "\n";
   }
 
   // No necessary wrap arounds for dragonfly networks. Groups
@@ -112,12 +118,14 @@ public:
     const Teuchos::ParameterEntry *pe2 = 
       this->pl->getEntryPtr("Machine_Optimization_Level");
 
+    std::cout << "\nRead PLIST\n";
+
     // Transform with mach opt level
     if (pe2) {
       int optimization_level;
       optimization_level = pe2->getValue<int>(&optimization_level);
 
-      if (optimization_level == 1) {
+      if (optimization_level > 0) {
         is_transformed = true;
 
         if (this->myRank == 0) 
@@ -130,6 +138,8 @@ public:
 
         transformed_procCoords = new pcoord_t *[transformed_networkDim];
 
+    std::cout << "\nAbout to allocate Trans coord memory\n";
+    
         // Allocate memory for transformed coordinates
         for (int i = 0; i < transformed_networkDim; ++i) {
           transformed_procCoords[i] = new pcoord_t[this->numRanks];
@@ -172,6 +182,8 @@ public:
             (nz - 1) + (nx - 1) * ny * nz;
         }
 
+    std::cout << "\nAbout to gather coords\n";
+          
         // reduceAll the transformed coordinates of each processor.
         gatherMachineCoordinates(this->transformed_procCoords, 
           this->transformed_networkDim, comm);    
@@ -220,11 +232,12 @@ public:
 
   bool hasMachineCoordinates() const { return true; }
 
-  int getTransformedMachineDim() const { 
-    return this->transformed_networkDim; 
+  int getMachineDim() const {
+    if (is_transformed) 
+      return this->transformed_networkDim;
+    else
+      return this->actual_networkDim;
   }
-
-  int getActualMachineDim() const { return this->actual_networkDim; }
 
   bool getTransformedMachineExtent(int *nxyz) const {
     if (is_transformed) {
@@ -255,10 +268,19 @@ public:
 */
     
     nxyz[0] = 11; // X - group
-    nxyz[1] = 6;  // Y - row within group
-    nxyz[2] = 16; // Z - col within group
+    nxyz[1] = 1;  // Y - row within group
+    nxyz[2] = 1; // Z - col within group
    
     return true; 
+  }
+
+  bool getMachineExtent(int *nxyz) const {
+    if (is_transformed) 
+      this->getTransformedMachineExtent(nxyz);
+    else
+      this->getActualMachineExtent(nxyz);
+    
+    return true;
   }
 
   void printAllocation() {
@@ -333,37 +355,38 @@ public:
     return false;
 #endif
 */
+    srand(this->myRank);
+
     xyz[0] = rand() % 11;
-    xyz[1] = rand() % 6;
-    xyz[2] = rand() % 16;
+    xyz[1] = rand() % 1;
+    xyz[2] = rand() % 1;
  
     return true; 
   }
 
-  inline bool getTransformedMachineCoordinate(const int rank,
-                                        pcoord_t *xyz) const {
+  bool getMyMachineCoordinate(pcoord_t *xyz) {
+    if (is_transformed) 
+      this->getMyTransformedMachineCoordinate(xyz);
+    else
+      this->getMyActualMachineCoordinate(xyz);
+  
+    return true;
+  }
+
+  inline bool getMachineCoordinate(const int rank,
+                                   pcoord_t *xyz) const {
     if (is_transformed) {
       for (int i = 0; i < this->transformed_networkDim; ++i) {
         xyz[i] = transformed_procCoords[i][rank];
       }
-      
-      return true;
     }
-    else
-      return false;
-  }
-
-  inline bool getActualMachineCoordinate(const int rank,
-                                   pcoord_t *xyz) const {
-    if (!is_transformed) {
+    else {
       for (int i = 0; i < this->actual_networkDim; ++i) {
         xyz[i] = actual_procCoords[i][rank];
       }
-      
-      return true;
     }
-    else
-      return false;
+
+    return true;   
   }
 
   bool getMachineCoordinate(const char *nodename, pcoord_t *xyz) {
@@ -389,7 +412,7 @@ public:
     if (is_transformed) {     
       // Case: ranks in different groups
       // Does not account for location of group to group connection. 
-      // (Nearly all group to group messages will take 5 hops)
+      // (Most group to group messages will take 5 hops)
       if (transformed_procCoords[0][rank1] != 
           transformed_procCoords[0][rank2]) 
       {
@@ -408,6 +431,17 @@ public:
       hops /= 2;
     }
     else {
+
+      std::cout << "\nRank1: " << rank1
+        << " Coords: " << actual_procCoords[0][rank1]
+        << actual_procCoords[1][rank1]
+        << actual_procCoords[2][rank1]
+        << " Rank2: " << rank2 
+        << " Coords: " << actual_procCoords[0][rank2]
+        << actual_procCoords[1][rank2]
+        << actual_procCoords[2][rank2];
+
+
       // Case: ranks in different groups
       // Does not account for location of group to group connection. 
       // (Nearly all group to group messages will take 5 hops)
@@ -415,6 +449,9 @@ public:
           actual_procCoords[0][rank2]) 
       {
         hops = 5;
+
+        std::cout << " Hops: 5\n";
+
         return true;
       }
       
@@ -426,6 +463,7 @@ public:
             actual_procCoords[i][rank2]) 
           ++hops;
       }
+      std::cout << " Hops: " << hops << "\n";
     }
 
     return true;
@@ -452,7 +490,7 @@ private:
   pcoord_t **transformed_coordinates;
 */
 
-  void gatherMachineCoordinates(pcoord_t **coords, int netDim, 
+  void gatherMachineCoordinates(pcoord_t **&coords, int netDim, 
       const Teuchos::Comm<int> &comm) {
     // Reduces and stores all machine coordinates.
     pcoord_t *tmpVect = new pcoord_t [this->numRanks];

@@ -378,30 +378,20 @@ public:
 #endif
   }
 
-  inline bool getTransformedMachineCoordinate(const int rank,
-                                        pcoord_t *xyz) const {
+  inline bool getMachineCoordinate(const int rank,
+                                   pcoord_t *xyz) const {
     if (is_transformed) {
       for (int i = 0; i < this->transformed_networkDim; ++i) {
         xyz[i] = transformed_procCoords[i][rank];
       }
-      
-      return true;
     }
-    else
-      return false;
-  }
-
-  inline bool getActualMachineCoordinate(const int rank,
-                                   pcoord_t *xyz) const {
-    if (!is_transformed) {
+    else {
       for (int i = 0; i < this->actual_networkDim; ++i) {
         xyz[i] = actual_procCoords[i][rank];
       }
-      
-      return true;
     }
-    else
-      return false;
+    
+    return true;
   }
 
   bool getMachineCoordinate(const char *nodename, pcoord_t *xyz) {
