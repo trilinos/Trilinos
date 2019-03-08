@@ -389,19 +389,16 @@ padCrsArrays(
 
 /// \brief Insert new indices in \c inIndices in to \c indices
 ///
-///   On input, inIndices need not be sorted, but indices must be sorted. The
-///   intended use case is inIndices contains new elements to insert in to the
-///   existing CRS indices contained in indices - which should already be
-///   sorted.
-///
 ///   Only elements in inIndices that are not already in indices are inserted
 ///   (duplicates are skipped).
 ///
-/// \param indices [in/out] CRS indices. The CRS indices must be sorted on input
+/// \param indices [in/out] CRS indices.
 /// \param numAssigned [in].The number of indices that have already been assigned.
 /// \param inIndices [in] The indices to insert. Only those entries not already
 ///    present in \c indices will be inserted.
 /// \param numIn [in] The length of in_indices
+/// \param f [in] Optional callback function. If provided, it is called with the
+///    relative offset to the inserted index.
 ///
 /// \return numInserted [out] The number of indices inserted.
 ///    If numInserted == -1, there was not enough capacity for all of the incoming
