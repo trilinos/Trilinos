@@ -155,7 +155,8 @@ namespace { // (anonymous)
          * the number of replaced diagonal entries to match the
          * local number of rows.
          */
-        TEST_EQUALITY(numReplacedDiagEntries, matrix->getNodeNumRows());
+	const LO lclNumRows = static_cast<LO> (matrix->getNodeNumRows ());
+        TEST_EQUALITY(numReplacedDiagEntries, lclNumRows);
 
         /* Test for successful replacement
          *
@@ -163,13 +164,20 @@ namespace { // (anonymous)
          * 2. Test if diagonal element matches rank ID the we intended to set
          */
 
-        RCP<vec_type> diagCopy = rcp(new vec_type(matrix->getRowMap()));
-        matrix->getLocalDiagCopy(*diagCopy);
+        vec_type diagCopy (matrix->getRowMap ());
+        matrix->getLocalDiagCopy (diagCopy);
+	diagCopy.sync_host ();
+	auto diagCopyData = diagCopy.getLocalViewHost ();
 
-        Teuchos::ArrayRCP<const Scalar> diagCopyData = diagCopy->getData();
-
-        for (size_t i = 0; i < diagCopyData.size(); ++i)
-          TEST_EQUALITY_CONST(diagCopyData[i], rankAsScalar);
+	using impl_scalar_type = typename vec_type::impl_scalar_type;
+	// If Scalar is std::complex<T>, impl_scalar_type is
+	// Kokkos::complex<T>.  Otherwise, Scalar and impl_scalar_type
+	// are the same.
+	const impl_scalar_type rankAsImplScalarType =
+	  static_cast<impl_scalar_type> (rankAsScalar);
+        for (size_t i = 0; i < diagCopyData.size(); ++i) {
+          TEST_EQUALITY_CONST(diagCopyData(i,0), rankAsImplScalarType);
+	}
       }
     }
 

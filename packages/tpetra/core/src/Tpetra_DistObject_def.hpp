@@ -1307,7 +1307,6 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
     using std::endl;
-    using LO = LocalOrdinal;
     using DT = device_type;
     using DES = typename DT::execution_space;
 
@@ -1856,13 +1855,7 @@ namespace Tpetra {
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input)
   {
-    using Teuchos::RCP;
-    typedef typename DistObjectType::local_ordinal_type LO;
-    typedef typename DistObjectType::global_ordinal_type GO;
-    typedef typename DistObjectType::node_type NT;
-    typedef Map<LO, GO, NT> map_type;
-
-    RCP<const map_type> newMap = input->getMap ()->removeEmptyProcesses ();
+    auto newMap = input->getMap ()->removeEmptyProcesses ();
     removeEmptyProcessesInPlace<DistObjectType> (input, newMap);
   }
 
