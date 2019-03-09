@@ -39,24 +39,35 @@
 // ***********************************************************************
 // @HEADER
 
-#include "TpetraCore_config.h"
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+// MP::Vector includes
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE_OpenMP.hpp"
+#define INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, STORAGE, LO, GO, N)      \
+  INSTMACRO( Sacado::MP::Vector<STORAGE>, LO, GO, N )
 
-#include "Tpetra_CrsMatrix_UQ_PCE.hpp"
-#include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
+#define INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, NUM, D, LO, GO, N) \
+  typedef Stokhos::StaticFixedStorage<L,S,NUM,D::execution_space> SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D; \
+  INSTANTIATE_MP_VECTOR_STORAGE(INSTMACRO, SFS_ ## L ## _ ## S ## _ ## NUM ## _ ## D, LO, GO, N)
 
-#define TPETRA_LOCAL_INST_N_1(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_UQ_PCE_SPEC, N)
+#define INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, S, L, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  @ENSEMBLE_SIZE@, D, LO, GO, N)
 
-#define TPETRA_LOCAL_INST_N_2(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_INSTANT, N)
+#define INSTANTIATE_MP_VECTOR_S_D(INSTMACRO, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLD(INSTMACRO, double, int, D, LO, GO, N)
 
-INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_1)
+#define INSTANTIATE_MP_VECTOR_S(INSTMACRO, LO, GO, N) \
+  typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## LO ## _ ## GO ## _ ## N; \
+  INSTANTIATE_MP_VECTOR_S_D(INSTMACRO, DFN_CPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
-INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_2)
+#define INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO)           \
+  INSTANTIATE_MP_VECTOR_S(INSTMACRO, int, int, Kokkos_Compat_Kokkos@DEVICE@WrapperNode)
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#define INSTANTIATE_TPETRA_MP_VECTOR(INSTMACRO)                 \
+  namespace Tpetra {                                            \
+                                                                \
+  TPETRA_ETI_MANGLING_TYPEDEFS()                                \
+                                                                \
+  INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO)         \
+                                                                \
+}

@@ -115,12 +115,7 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
-// Vector size used in tests -- Needs to be what is instantiated for CPU/MIC/GPU
-#if defined(__CUDACC__)
-const int VectorSize = 16;
-#else
-const int VectorSize = 16;
-#endif
+const int VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 //
 // Test vector addition

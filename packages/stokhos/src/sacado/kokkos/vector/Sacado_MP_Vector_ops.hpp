@@ -224,6 +224,7 @@ MP_UNARYOP_MACRO(asinh, ASinhOp, std::asinh)
 MP_UNARYOP_MACRO(atanh, ATanhOp, std::atanh)
 MP_UNARYOP_MACRO(abs, AbsOp, std::abs)
 MP_UNARYOP_MACRO(fabs, FAbsOp, std::fabs)
+MP_UNARYOP_MACRO(ceil, CeilOp, std::ceil)
 
 #undef MP_UNARYOP_MACRO
 
