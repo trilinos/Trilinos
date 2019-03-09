@@ -751,11 +751,15 @@ testEquilibration (Teuchos::FancyOStream& out,
     auto result2 =
       Tpetra::computeRowAndColumnOneNorms (static_cast<row_matrix_type&> (* (test.A)),
                                            assumeSymmetric);
+
     {
       out << "Test whether assumeSymmetric got communicated" << endl;
       Teuchos::OSTab tab3 (out);
       TEST_EQUALITY( assumeSymmetric, result2.assumeSymmetric );
     }
+
+    out << "Call computeRowOneNorms (we'll test that too)" << endl;
+    auto result3 = Tpetra::computeRowOneNorms (* (test.A));
 
     {
       out << "Test detection of global error conditions" << endl;
@@ -765,13 +769,37 @@ testEquilibration (Teuchos::FancyOStream& out,
       TEST_EQUALITY( test.gblFoundNan, result2.foundNan );
       TEST_EQUALITY( test.gblFoundZeroDiag, result2.foundZeroDiag );
       TEST_EQUALITY( test.gblFoundZeroRowNorm, result2.foundZeroRowNorm );
+
+      TEST_EQUALITY( test.gblFoundInf, result3.foundInf );
+      TEST_EQUALITY( test.gblFoundNan, result3.foundNan );
+      TEST_EQUALITY( test.gblFoundZeroDiag, result3.foundZeroDiag );
+      TEST_EQUALITY( test.gblFoundZeroRowNorm, result3.foundZeroRowNorm );
     }
 
     {
-      out << "Test global row norms" << endl;
+      out << "Test global row norms computed by computeRowAndColumnOneNorms"
+	  << endl;
       Teuchos::OSTab tab3 (out);
       auto rowNorms_h = Kokkos::create_mirror_view (result2.rowNorms);
       Kokkos::deep_copy (rowNorms_h, result2.rowNorms);
+
+      bool ok = true;
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        if (! near (rowNorms_h[lclRow],
+                    test.gblRowNorms[lclRow],
+                    toleranceFactor)) {
+          ok = false;
+          break;
+        }
+      }
+      TEST_ASSERT( ok );
+    } // test global row norms
+
+    {
+      out << "Test global row norms computed by computeRowOneNorms" << endl;
+      Teuchos::OSTab tab3 (out);
+      auto rowNorms_h = Kokkos::create_mirror_view (result3.rowNorms);
+      Kokkos::deep_copy (rowNorms_h, result3.rowNorms);
 
       bool ok = true;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -2106,4 +2134,3 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
-
