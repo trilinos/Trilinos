@@ -1448,9 +1448,9 @@ namespace Ifpack2 {
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
-    int ExtractAndFactorizeRecommendedCudaTeamSize(const int blksize,
-						   const int vector_length,
-						   const int internal_vector_length) {      
+    static inline int ExtractAndFactorizeRecommendedCudaTeamSize(const int blksize,
+                                                                 const int vector_length,
+                                                                 const int internal_vector_length) {      
       const int vector_size = vector_length/internal_vector_length;
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
@@ -2084,9 +2084,9 @@ namespace Ifpack2 {
     };
     
 #if defined(KOKKOS_ENABLE_CUDA) 
-    int SolveTridiagsRecommendedCudaTeamSize(const int blksize,
-					     const int vector_length,
-					     const int internal_vector_length) {      
+    static inline int SolveTridiagsRecommendedCudaTeamSize(const int blksize,
+                                                           const int vector_length,
+                                                           const int internal_vector_length) {      
       const int vector_size = vector_length/internal_vector_length;
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
@@ -2501,8 +2501,8 @@ namespace Ifpack2 {
     ///
     /// compute local residula vector y = b - R x 
     ///
-    int ComputeResidualVectorRecommendedCudaVectorSize(const int blksize,
-						       const int team_size) {
+    static inline int ComputeResidualVectorRecommendedCudaVectorSize(const int blksize,
+                                                                     const int team_size) {
       int total_team_size(0);
       if      (blksize <=  5) total_team_size =  32;
       else if (blksize <=  9) total_team_size =  64;
