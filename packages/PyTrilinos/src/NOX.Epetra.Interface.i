@@ -63,6 +63,8 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 %define %nox_epetra_interface_importcode
 "
+if not __package__:
+    __package__ = 'PyTrilinos.NOX.Epetra'
 from . import _Interface
 try:
     from .. import Abstract
