@@ -99,15 +99,20 @@ def main():
     # Check the atexit module for instances of the Epetra or Teuchos
     # finalization functions
     import atexit
-    ncallbacks = 0
+    fails = 0
     if ${TPL_ENABLE_MPI}:
-        ncallbacks += atexit._ncallbacks()
+        if hasattr(atexit, '_exithandlers'):
+            for handler in atexit._exithandlers:
+                if handler[0] is Epetra.Epetra_MPI_Finalize:   fails += 1
+                if handler[0] is Teuchos.Teuchos_MPI_Finalize: fails += 1
+        if hasattr(atexit, '_ncallbacks'):
+            fails += atexit._ncallbacks() - 1
 
     # Output the results
-    totalCallbacks = comm.reduce(ncallbacks)
+    totalCallbacks = comm.reduce(fails)
     if iAmRoot:
         print("End Result: TEST", end=" ")
-        if totalCallbacks > comm.Get_size():
+        if totalCallbacks > 0:
             print("FAILED\n")
             print("This often indicates that PyTrilinos and mpi4py are")
             print("compiled against different versions or flavors of MPI.")
