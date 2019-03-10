@@ -2596,9 +2596,9 @@ namespace Ifpack2 {
       inline
       void 
       SerialGemv(const local_ordinal_type &blocksize,
-                 const impl_scalar_type * const __restrict__ AA, 
-                 const impl_scalar_type * const __restrict__ xx,
-                 /* */ impl_scalar_type * __restrict__ yy) const {
+                 const impl_scalar_type * const KOKKOS_RESTRICT AA, 
+                 const impl_scalar_type * const KOKKOS_RESTRICT xx,
+                 /* */ impl_scalar_type * KOKKOS_RESTRICT yy) const {
         for (local_ordinal_type k0=0;k0<blocksize;++k0) {
           impl_scalar_type val = 0;
           const local_ordinal_type offset = k0*blocksize;
