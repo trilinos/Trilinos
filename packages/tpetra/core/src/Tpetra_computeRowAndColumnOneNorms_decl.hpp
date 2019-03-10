@@ -52,11 +52,26 @@
 
 namespace Tpetra {
 
+/// \brief Compute global row one-norms ("row sums") of the input
+///   sparse matrix A, in a way suitable for one-sided (left only)
+///   equilibration.
+///
+/// \note This function is collective over A's communicator, and may
+///   need to communicate, depending on A's Maps.
+///
+/// \param A [in] The input sparse matrix A.
+///
+/// \return Input to leftAndOrRightScaleCrsMatrix (which see).  The
+///   result is only safe to use for left scaling, not for right
+///   scaling.
+template<class SC, class LO, class GO, class NT>
+Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
+                           typename NT::device_type>
+computeRowOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
+
 /// \brief Compute global row and column one-norms ("row sums" and
 ///   "column sums") of the input sparse matrix A, in a way suitable
-///   for equilibration.
-///
-/// \note USERS: This is a function you want.
+///   for two-sided (left and right) equilibration.
 ///
 /// \note For AztecOO users: If you set assumeSymmetric=true, this
 ///   function should behave like setting the <tt>AZ_scaling</tt>

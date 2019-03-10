@@ -122,5 +122,14 @@
 /* Define if ensemble scalar type is enabled */
 #cmakedefine HAVE_STOKHOS_ENSEMBLE_SCALAR_TYPE
 
+/* Default ensemble size to use in tests */
+#cmakedefine STOKHOS_DEFAULT_ENSEMBLE_SIZE @STOKHOS_DEFAULT_ENSEMBLE_SIZE@
+
+/* Ensemble sizes used in some code */
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_SIZE_4
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_SIZE_8
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_SIZE_16
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_SIZE_32
+
 /* Define if pce scalar type is enabled */
 #cmakedefine HAVE_STOKHOS_PCE_SCALAR_TYPE

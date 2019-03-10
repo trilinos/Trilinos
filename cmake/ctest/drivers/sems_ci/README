@@ -12,10 +12,7 @@ To get this set up on a new machine, just do:
 
   mkdir <ci_base_dir>
   cd <ci_base_dir>/
-  git clone git@github.com:trilinos/Trilinos.git
-  cd Trilinos/
-  git checkout --track origin/develop
-  git branch -d master
+  git clone -b develop git@github.com:trilinos/Trilinos.git
 
 Then create a cronjob (or Jenkins job) that does:
 
@@ -45,7 +42,25 @@ loops.
 
 That is it!
 
-There are a few major weaknesses to this approach:
+To debug the setup, run the script with:
+
+  cd <ci_base_dir>/
+
+  env \
+    Trilinos_PACKAGES=Kokkos,Teuchos \
+    CTEST_DO_UPDATES=OFF \
+    CTEST_DO_SUBMIT=OFF \
+    TRILINOS_CI_SKIP_EMAILS=1 \
+  ./Trilinos/cmake/ctest/drivers/sems_ci/trilinos_ci_sever.sh \
+    &> trilinos_ci_sever.out
+
+and then kill the command once you see what you need to see.
+
+To have the CI build do a rebuild from scratch at the start, set the env var:
+
+  TRILINOS_CI_DO_INITIAL_REBUILD=1
+
+NOTE: There are a few major weaknesses to this approach:
 
 1) If a change is made to the build systems for Trilinos (i.e. in Trilinos or
 TriBITS), then the you may get an error since the version of

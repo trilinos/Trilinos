@@ -96,7 +96,7 @@ EpetraOperatorOrthogPoly(
   const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) : 
   ProductContainer<Epetra_Operator>(block_map),
   VectorOrthogPoly<Epetra_Operator>(basis, block_map),
-  ProductEpetraOperator(block_map, product_comm) 
+  ProductEpetraOperator(block_map, product_comm_) 
 {
 }
 
