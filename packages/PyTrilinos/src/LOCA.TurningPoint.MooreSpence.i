@@ -69,11 +69,13 @@ LOCA.TurningPoint.MooreSpence supports the following classes:
 
 %define %loca_turningpoint_moorespence_importcode
 "
+if not __package__:
+    __package__ = 'PyTrilinos.LOCA.TurningPoint'
 from . import _MooreSpence
 import PyTrilinos.Teuchos.Base
 import PyTrilinos.NOX.Abstract
 import PyTrilinos.Epetra
-from PyTrilinos.LOCA import MultiContinuation
+from   PyTrilinos.LOCA import MultiContinuation
 import PyTrilinos.LOCA.Parameter
 "
 %enddef

@@ -150,6 +150,17 @@ if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
 
+// The %import directives that follow generate an 'import Interface'
+// python command that does not work in python 3.  Add the current
+// directory to the search path so that it does work.
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
+del sys, op
+%}
+
 // Include typemaps for Abstract base classes
 %ignore *::getXPtr;
 %ignore *::getFPtr;
