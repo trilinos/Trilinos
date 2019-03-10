@@ -1761,7 +1761,6 @@ namespace Ifpack2 {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
-	const local_ordinal_type blocksize = internal_vector_values.extent(1);
 	const local_ordinal_type team_size = 
 	  ExtractAndFactorizeTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
 	  recommended_team_size(blocksize, vector_length, internal_vector_length);
