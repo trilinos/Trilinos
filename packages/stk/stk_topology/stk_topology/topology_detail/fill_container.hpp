@@ -39,12 +39,28 @@
 namespace stk { namespace topology_detail {
 
 template <typename OrdinalOutputIterator>
-struct fill_ordinal_container {
+struct host_fill_ordinal_container {
 
   template <typename Ordinal>
   void operator()(Ordinal i)
   { *m_itr = i; ++m_itr; }
 
+  host_fill_ordinal_container( OrdinalOutputIterator itr)
+    : m_itr(itr)
+  {}
+
+  OrdinalOutputIterator m_itr;
+};
+
+template <typename OrdinalOutputIterator>
+struct fill_ordinal_container {
+
+  template <typename Ordinal>
+  STK_INLINE_FUNCTION
+  void operator()(Ordinal i)
+  { *m_itr = i; ++m_itr; }
+
+  STK_FUNCTION
   fill_ordinal_container( OrdinalOutputIterator itr)
     : m_itr(itr)
   {}
@@ -68,12 +84,30 @@ struct fill_ordinal_container< std::vector<T,A> >
 };
 
 template <typename NodeArray, typename NodeOutputIterator>
-struct fill_node_container {
+struct host_fill_node_container {
 
   template <typename Ordinal>
   void operator()(Ordinal i)
   { *m_itr = m_nodes[i]; ++m_itr; }
 
+  host_fill_node_container( const NodeArray & nodes, NodeOutputIterator itr)
+    : m_nodes(nodes)
+    , m_itr(itr)
+  {}
+
+  const NodeArray    & m_nodes;
+  NodeOutputIterator   m_itr;
+};
+
+template <typename NodeArray, typename NodeOutputIterator>
+struct fill_node_container {
+
+  template <typename Ordinal>
+  STK_INLINE_FUNCTION
+  void operator()(Ordinal i)
+  { *m_itr = m_nodes[i]; ++m_itr; }
+
+  STK_FUNCTION
   fill_node_container( const NodeArray & nodes, NodeOutputIterator itr)
     : m_nodes(nodes)
     , m_itr(itr)

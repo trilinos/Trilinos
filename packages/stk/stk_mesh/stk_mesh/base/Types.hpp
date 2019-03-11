@@ -38,9 +38,8 @@
 
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
-#include <ostream>
-#include <iosfwd>                       // for ostream
 #include <limits>                       // for numeric_limits
+#include <stk_util/stk_config.h>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
@@ -49,9 +48,6 @@
 #include <vector>                       // for vector, etc
 #include <set>
 #include <map>
-#ifndef STK_BUILT_IN_SIERRA
-#include "STKMesh_config.h"
-#endif // STK_BUILT_IN_SIERRA
 
 
 namespace stk { namespace mesh { class Bucket; } }
@@ -114,9 +110,6 @@ enum class Operation
  *  \{
  */
 
-class BulkData ; // Bulk-data of a mesh
-class Ghosting ;
-
 /** Change log to reflect change from before 'modification_begin'
   *  to the current status.
   */
@@ -124,29 +117,6 @@ enum EntityState : char { Unchanged = 0 ,
                    Created  = 1 ,
                    Modified = 2 ,
                    Deleted  = 3 };
-
-inline std::ostream & operator<<(std::ostream &out, EntityState state)
-{
-  switch (state)
-  {
-      case EntityState::Unchanged:
-          out << "Unchanged";
-          break;
-      case EntityState::Created:
-          out << "Created  ";
-          break;
-      case EntityState::Modified:
-          out << "Modified ";
-          break;
-      case EntityState::Deleted:
-          out << "Deleted  ";
-          break;
-      default:
-          out << "Unknown  ";
-  }
-  return out;
-}
-
 
 template< class FieldType > struct FieldTraits ;
 
@@ -308,109 +278,20 @@ enum ConnectivityType
   INVALID_CONNECTIVITY_TYPE
 };
 
-inline std::ostream & operator<<(std::ostream &out, ConnectivityType type)
-{
-  switch (type)
-  {
-      case ConnectivityType::FIXED_CONNECTIVITY:
-          out << "Fixed  ";
-          break;
-      case ConnectivityType::DYNAMIC_CONNECTIVITY:
-          out << "Dynamic";
-          break;
-      case ConnectivityType::INVALID_CONNECTIVITY_TYPE:
-          out << "Invalid";
-          break;
-      default:
-          out << "Unknown";
-  }
-  return out;
-}
-
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #ifdef STK_16BIT_CONNECTIVITY_ORDINAL
-enum ConnectivityOrdinal : uint16_t
-{
-  INVALID_CONNECTIVITY_ORDINAL = 65535
-};
+using ConnectivityOrdinal = uint16_t;
+constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = 65535;
 #else
-enum ConnectivityOrdinal : uint32_t
-{
-  INVALID_CONNECTIVITY_ORDINAL = ~0U
-};
+using ConnectivityOrdinal = uint32_t;
+constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = ~0U;
 #endif
-
-inline std::ostream & operator<<(std::ostream &out, ConnectivityOrdinal ordinal)
-{
-#ifdef STK_16BIT_CONNECTIVITY_ORDINAL
-  out << static_cast<uint16_t>(ordinal);
-#else
-  out << static_cast<uint32_t>(ordinal);
-#endif
-  return out;
-}
-
-inline
-ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
-{
-  ord = static_cast<ConnectivityOrdinal>(ord + 1);
-  return ord;
-}
 
 enum Permutation
 {
   DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128
 };
-
-//----------------------------------------------------------------------
-
-// Use macro below to deprecate functions (place at beginning of function or class method)
-// This is basically copied from the Trilinos version in Tribits to maintain some compatibility
-/* Usage Example
- * #ifndef STK_HIDE_DEPRECATED_CODE // Delete after FILL_IN_DATE_TWO_SPRINTS_AFTER_END_OF_THIS_SPRINT_HERE
- * STK_DEPRECATED bool modification_end(impl::MeshModification::modification_optimization opt)
- * {
- *     if (impl::MeshModification::MOD_END_SORT == opt) {
- *         return m_meshModification.modification_end();
- *     } else {
- *         return m_meshModification.modification_end_with_compress();
- *     }
- * }
- * #endif // STK_HIDE_DEPRECATED_CODE
- */
-#ifdef STK_SHOW_DEPRECATED_WARNINGS
-#  ifndef STK_DEPRECATED
-#    if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#      define STK_DEPRECATED  __attribute__((__deprecated__))
-#    else
-#      define STK_DEPRECATED
-#    endif
-#  endif
-#  ifndef STK_DEPRECATED_MSG
-#    if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
-#      define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__ (#MSG) ))
-#    elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#      define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__))
-#    else
-#      define STK_DEPRECATED_MSG(MSG)
-#    endif
-#  endif
-#else
-#  ifndef STK_DEPRECATED
-#    define STK_DEPRECATED
-#    define STK_DEPRECATED_MSG(MSG)
-#  endif
-#endif
-
-class EntitySorterBase
-{
-public:
-    virtual ~EntitySorterBase() {}
-    virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const = 0;
-};
-
-
 
 } // namespace mesh
 } // namespace stk

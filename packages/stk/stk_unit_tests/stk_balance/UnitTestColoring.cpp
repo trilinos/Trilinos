@@ -40,14 +40,45 @@ void test_adjacent_elements_have_different_coloring(const stk::mesh::BulkData& b
     }
 }
 
-TEST_F(BasicColoring, Zoltan2Coloring)
+TEST_F(BasicColoring, checkAdjacentElementsHaveDifferentColors)
 {
     if (stk::parallel_machine_size(get_comm()) > 3) return;
     setup_mesh("generated:3x3x3", stk::mesh::BulkData::AUTO_AURA);
 
     stk::balance::BasicColoringSettings coloringSettings;
-    stk::balance::balanceStkMesh(coloringSettings, *bulkData);
+    bool meshIsColored = stk::balance::colorStkMesh(coloringSettings, *bulkData);
+    EXPECT_TRUE(meshIsColored);
     test_adjacent_elements_have_different_coloring(*bulkData);
 }
 
+TEST_F(BasicColoring, checkForCorrectColors)
+{
+    if (stk::parallel_machine_size(get_comm()) > 1) return;
+    setup_mesh("generated:3x3x3", stk::mesh::BulkData::AUTO_AURA);
+
+    stk::balance::BasicColoringSettings coloringSettings;
+    bool meshIsColored = stk::balance::colorStkMesh(coloringSettings, *bulkData);
+    EXPECT_TRUE(meshIsColored);
+
+    stk::mesh::PartVector coloringParts;
+    stk::balance::fill_coloring_parts(*metaData, coloringParts);
+
+    size_t goldNumberOfColors = 9;
+    EXPECT_EQ(goldNumberOfColors, coloringParts.size());
+
+    for (size_t i = 1; i <= goldNumberOfColors; ++i)
+    {
+        std::string goldPartName = stk::balance::construct_coloring_part_name(i);
+        bool colorFound = false;
+        for (stk::mesh::Part* part : coloringParts)
+        {
+          if (part->name() == goldPartName)
+          {
+            colorFound = true;
+            break;
+          }
+        }
+        EXPECT_TRUE(colorFound);
+    }
+}
 }

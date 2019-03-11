@@ -34,17 +34,16 @@
 #define _STK_NGP_MESH_HPP_
 
 #include <stk_util/stk_config.h>
-#include <Kokkos_Core.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
+#include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_topology/topology.hpp"
+#include <Kokkos_Core.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/ModificationObserver.hpp>
 #include <string>
-
-#include "stk_mesh/base/Bucket.hpp"
-#include "stk_mesh/base/Field.hpp"
+#include <memory>
 
 #include <stk_ngp/NgpSpaces.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
@@ -184,6 +183,8 @@ struct StkMeshAdapterIndex
     size_t bucketOrd;
 };
 
+class StkMeshAdapterUpdater;
+
 class StkMeshAdapter
 {
 public:
@@ -196,13 +197,23 @@ public:
     typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
     typedef Entities<const stk::mesh::Permutation> Permutations;
 
+    void register_observer();
+    void unregister_observer();
+
     StkMeshAdapter() : bulk(nullptr), modificationCount(0)
     {
+
     }
 
     StkMeshAdapter(const stk::mesh::BulkData& b) : bulk(&b), modificationCount(0)
     {
+        register_observer();
         update_buckets();
+    }
+
+    ~StkMeshAdapter()
+    {
+        unregister_observer();
     }
 
     void update_buckets() const
@@ -346,7 +357,6 @@ public:
     const BucketType & get_bucket(stk::mesh::EntityRank rank, unsigned i) const
     {
         update_buckets();
-
 #ifndef NDEBUG
         stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
         NGP_ThrowAssert(rank < numRanks);
@@ -360,12 +370,45 @@ private:
     typedef std::vector<StkBucketAdapter> StkBucketAdapterVector;
     mutable std::vector<StkBucketAdapterVector> bucketAdapters;
     mutable size_t modificationCount;
+    std::shared_ptr<StkMeshAdapterUpdater> updater;
 };
+
+
+class StkMeshAdapterUpdater : public stk::mesh::ModificationObserver
+{
+public:
+
+    StkMeshAdapterUpdater(StkMeshAdapter* adapter)
+    : m_adapter(adapter)
+    {
+    }
+
+    void finished_modification_end_notification() override {
+        m_adapter->update_buckets();
+    }
+
+private:
+    StkMeshAdapter* m_adapter;
+};
+
+inline void StkMeshAdapter::register_observer()
+{
+    updater = std::make_shared<StkMeshAdapterUpdater>(this);
+    bulk->register_observer(updater);
+}
+
+inline void StkMeshAdapter::unregister_observer()
+{
+    if(nullptr != updater.get()) {
+        bulk->unregister_observer(updater);
+    }
+}
 
 typedef Kokkos::View<stk::mesh::EntityKey*, MemSpace> EntityKeyViewType;
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
 typedef Kokkos::View<unsigned*, MemSpace> UnsignedViewType;
+typedef Kokkos::View<bool*, MemSpace> BoolViewType;
 typedef Kokkos::View<stk::mesh::ConnectivityOrdinal*, MemSpace> OrdinalViewType;
 typedef Kokkos::View<stk::mesh::PartOrdinal*, MemSpace> PartOrdinalViewType;
 typedef Kokkos::View<stk::mesh::Permutation*, MemSpace> PermutationViewType;

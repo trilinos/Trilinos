@@ -71,11 +71,6 @@ public:
     {
     }
 
-    bool should_notifier_delete() const override
-    {
-        return true;
-    }
-
     void fill_sidesets_element_belongs_to(stk::mesh::Entity elem);
 
     virtual void entity_added(stk::mesh::Entity entity);

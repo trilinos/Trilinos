@@ -198,8 +198,7 @@ bool checkIfSideIsNotCollapsed(stk::mesh::EntityVector& sideNodes, const stk::me
     if(dim==1) return true;
 
     sideNodes.resize(bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal).num_nodes());
-    stk::mesh::EntityVector nodes(bulkData.begin_nodes(element), bulkData.end_nodes(element));
-    bucket.topology().side_nodes(nodes, sideOrdinal, sideNodes.begin());
+    bucket.topology().side_nodes(bulkData.begin_nodes(element), sideOrdinal, sideNodes.data());
     stk::util::sort_and_unique(sideNodes);
     return sideNodes.size() >= dim;
 }

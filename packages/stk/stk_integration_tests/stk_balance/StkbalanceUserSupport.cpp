@@ -20,7 +20,7 @@
 
 #include <stk_balance/balance.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include "../stk_balance/internal/LastStepFieldWriter.hpp"
+#include "stk_balance/internal/LastStepFieldWriter.hpp"
 
 #include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
 
