@@ -20,8 +20,6 @@ set (Trilinos_ENABLE_TESTS ON CACHE BOOL "Set by default for PR testing")
 set (Trilinos_TEST_CATEGORIES BASIC CACHE STRING "Set by default for PR testing")
 set (Trilinos_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "Set by default for PR testing")
 set (Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON CACHE BOOL "Set by default for PR testing")
-set (Trilinos_CTEST_USE_NEW_AAO_FEATURES ON CACHE BOOL "Set by default for PR testing")
-
 
 # Options from cmake/std/MpiReleaseDebugSharedPtSettings.cmake
 
