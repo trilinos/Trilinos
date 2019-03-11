@@ -1,15 +1,24 @@
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  PinT_TimeStampCoarsening
-#  SOURCES test_01.cpp
-#  ARGS PrintItAll
-#  NUM_MPI_PROCS 4
-#  PASS_REGULAR_EXPRESSION "TEST PASSED"
-#  ADD_DIR_TO_NAME
-#  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PinT_TimeStampCoarsening
+  SOURCES test_timestamp_coarsening.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 4
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PinT_RestrictProlong
   SOURCES test_restrict_prolong.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 4
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PinT_HiearchyRebalance
+  SOURCES test_hierarchy_coarse_rebalance.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 4
   PASS_REGULAR_EXPRESSION "TEST PASSED"

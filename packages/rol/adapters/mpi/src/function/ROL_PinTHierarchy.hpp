@@ -83,7 +83,7 @@ private:
   std::vector<Ptr<const PinTCommunicators>> communicators_;
   Ptr<const PinTVectorCommunication<Real>> vectorComm_; // object for sending whole vectors between processors
 
-  bool useRepart_;
+  bool rebalance_;
 
   /**
    * \brief Get the time stamps for by level
@@ -91,7 +91,8 @@ private:
    * The current implementation is recursive and expensive, but its the easiest
    * way to do this right now. 
    */
-  Ptr<std::vector<TimeStamp<Real>>> buildTimeStampsByLevel(int level) const
+  Ptr<std::vector<TimeStamp<Real>>> buildTimeStampsByLevel(int level,
+                                                           const ROL::Ptr<const PinTCommunicators> & comm) const
   {
     assert(level>=0); // precondition
 
@@ -99,7 +100,6 @@ private:
     if(level==0)
       return timeStamps_;
 
-    auto comm = getLevelCommunicators(level);
     int timeRank = comm->getTimeRank();
 
     Ptr<std::vector<TimeStamp<Real>>> higherLevel = getTimeStampsByLevel(level-1);
@@ -166,7 +166,7 @@ public:
   PinTHierarchy()
     : isInitialized_(false)
     , maxLevels_(-1)
-    , useRepart_(false)
+    , rebalance_(false)
   { }
 
   /**
@@ -182,7 +182,7 @@ public:
   PinTHierarchy(const Ptr<std::vector<TimeStamp<Real>>> & timeStamps)
     : isInitialized_(false)
     , maxLevels_(-1)
-    , useRepart_(false)
+    , rebalance_(false)
   { 
     initialize(timeStamps);
   }
@@ -233,8 +233,10 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////
    
    ROL::Ptr<const PinTCommunicators> getLevelCommunicators(int level) const
-   { return communicators_[0]; }
-   // { return communicators_[level]; }
+   { 
+      if(not rebalance_) return communicators_[0]; 
+      else               return communicators_[level]; 
+   }
 
    /** 
     * \brief Builds up communicators and time stamps for each level
@@ -246,8 +248,11 @@ public:
     *                        devices.
     */
    void buildLevels(const ROL::Ptr<const ROL::PinTCommunicators> & pintComm,
-                    const ROL::Ptr<const ROL::PinTVectorCommunication<Real>> & vectorComm)
+                    const ROL::Ptr<const ROL::PinTVectorCommunication<Real>> & vectorComm,
+                    bool rebalance=false)
    {
+     rebalance_ = rebalance;
+
      // set the vector communicator
      vectorComm_ = vectorComm;
 
@@ -260,8 +265,6 @@ public:
      stamps_[0] = timeStamps_;
 
      buildLevelDataStructures(1);
-
-     useRepart_ = true;
    }
 
    //! Recursive function that builds up the communicators and time stamps on coarse grids
@@ -275,15 +278,31 @@ public:
        return;
      }
 
-     stamps_[level] = buildTimeStampsByLevel(level);
-    
-     // // this processor is no longer participating (base case)
-     // if(ROL::is_nullPtr(communicators_[level-1])) {
-     //   return;
-     // }
+     auto comm = getLevelCommunicators(level-1);
+ 
+     if(comm==ROL::nullPtr)
+       return;
 
-     // this will subdivide the communicators by two
-     // communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
+     int rank = comm->getTimeRank();
+
+     stamps_[level] = buildTimeStampsByLevel(level,comm);
+
+     if(rebalance_) {
+       // this processor is no longer participating (base case)
+       if(ROL::is_nullPtr(comm)) {
+         return;
+       }
+
+       // this will subdivide the communicators by two
+       communicators_[level] = comm->buildCoarseCommunicators();
+
+       // rebalance the coarse stamps
+       ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> coarseStamps 
+         = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>();
+       bool value = ROL::PinT::exportToCoarseDistribution_TimeStamps(*stamps_[level],*coarseStamps,*comm,0);
+
+       stamps_[level] = coarseStamps;
+     }
 
      buildLevelDataStructures(level+1);
    }

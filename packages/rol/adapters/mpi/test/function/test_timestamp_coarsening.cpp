@@ -84,11 +84,11 @@ int main(int argc, char* argv[])
     (*outStream) << "Running TimeStamp test" << std::endl;
     run_TimeStamp_test(MPI_COMM_WORLD, outStream,numSteps);
 
-    (*outStream) << "Running VectorExportToCoarse test" << std::endl;
-    run_VectorExportToCoarse_test(MPI_COMM_WORLD, outStream,numSteps);
+    // (*outStream) << "Running VectorExportToCoarse test" << std::endl;
+    // run_VectorExportToCoarse_test(MPI_COMM_WORLD, outStream,numSteps);
 
-    (*outStream) << "Running VectorExportToFine test" << std::endl;
-    run_VectorExportToFine_test(MPI_COMM_WORLD, outStream,numSteps);
+    // (*outStream) << "Running VectorExportToFine test" << std::endl;
+    // run_VectorExportToFine_test(MPI_COMM_WORLD, outStream,numSteps);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
@@ -152,6 +152,8 @@ void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,
     timeStamps.at(k).t.at(1) = (k+1)*dt+timeOffset;
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+
   printSerializedTimeStamps(timeStamps,myRank,*outStream);
 
   // build the coarse communicators
@@ -170,10 +172,6 @@ void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,
       throw std::logic_error(ss.str());
     }  
   }
-
-  // print out a line
-  if(myRank==0)
-    (*outStream) << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
 

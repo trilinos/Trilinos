@@ -127,9 +127,12 @@ public:
       MPI_Comm_size(parentComm_, &globalProcs);
       MPI_Comm_rank(parentComm_, &myGlobalRank);
 
+      if(globalProcs  % 2 != 0) 
+        throw std::logic_error("Building coarse communicators requires a power of two.");
+
       int halfCount = globalProcs / subdivide;
       
-      // split the communicator in half, using only the lower alf
+      // split the communicator in half, using only the lower half
       MPI_Comm halfComm;
       if(myGlobalRank<halfCount) {
         MPI_Comm_split(parentComm_,0,myGlobalRank,&halfComm); 
