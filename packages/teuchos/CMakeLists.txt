@@ -14,7 +14,7 @@ IF (TRIBITS_PROCESSING_PACKAGE)
 #
 
 #
-# A) Forward delcare the package so that certain options are also defined for
+# A) Forward declare the package so that certain options are also defined for
 # subpackages
 #
 
@@ -30,8 +30,16 @@ TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
-INCLUDE(CheckForAbiDemangle)
-CHECK_FOR_ABI_DEMANGLE(HAVE_GCC_ABI_DEMANGLE)
+#
+# The check needs to run code, so give cross-compiling users a bypass.
+#
+IF (DEFINED HAVE_GCC_ABI_DEMANGLE)
+  MESSAGE(STATUS "You set HAVE_GCC_ABI_DEMANGLE=${HAVE_GCC_ABI_DEMANGLE}; this suggests you are cross compiling.  If you're not cross compiling, best practice is not to set this; Trilinos will figure it out for you.")
+ELSE()
+  INCLUDE(CheckForAbiDemangle)
+  CHECK_FOR_ABI_DEMANGLE(HAVE_GCC_ABI_DEMANGLE)
+ENDIF()
+ASSERT_DEFINED(HAVE_GCC_ABI_DEMANGLE)
 
 ASSERT_DEFINED(TPL_ENABLE_BinUtils CMAKE_CXX_COMPILER_ID)
 IF(TPL_ENABLE_BinUtils)
@@ -48,7 +56,7 @@ IF(TPL_ENABLE_BinUtils)
     "Enable Teuchos to show stack track for GCC (or Intel) on segfaults and uncaught exceptions."
     ${${PACKAGE_NAME}_ENABLE_STACKTRACE_DEFAULT}
     )
-  
+
   IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
     SET(HAVE_TEUCHOS_LINK ON)
     SET(HAVE_TEUCHOS_BFD ON)
@@ -79,44 +87,58 @@ ENDIF()
 
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}Numerics)
 IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}Numerics)
-
-  INCLUDE(CheckBlasFloat)
-  CHECK_BLAS_FLOAT(HAVE_TEUCHOS_BLASFLOAT)
-  IF(NOT HAVE_TEUCHOS_BLASFLOAT)
-    # try apple veclib first
-    IF(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-      INCLUDE(CheckBlasFloatAppleVeclibBugfix)
-      CHECK_BLAS_FLOAT_APPLE_VECLIB_BUGFIX(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
-      IF(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
-        GLOBAL_SET(HAVE_TEUCHOS_BLASFLOAT 1)
-      ENDIF()
-    ENDIF()
-    # if veclib failed, general purpose solution
+  #
+  # The check needs to run code, so give cross-compiling users a bypass.
+  #
+  IF (DEFINED HAVE_TEUCHOS_BLASFLOAT)
+    MESSAGE(STATUS "You set HAVE_TEUCHOS_BLASFLOAT=${HAVE_TEUCHOS_BLASFLOAT}; this suggests you are cross compiling.  If you're not cross compiling, best practice is not to set this; Trilinos will figure it out for you.")
+  ELSE()
+    INCLUDE(CheckBlasFloat)
+    CHECK_BLAS_FLOAT(HAVE_TEUCHOS_BLASFLOAT)
     IF(NOT HAVE_TEUCHOS_BLASFLOAT)
-      INCLUDE(CheckBlasFloatReturnsDouble)
-      CHECK_BLAS_FLOAT_DOUBLE_RETURN(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
-      IF(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
-        GLOBAL_SET(HAVE_TEUCHOS_BLASFLOAT 1)
+      # try apple veclib first
+      IF(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        INCLUDE(CheckBlasFloatAppleVeclibBugfix)
+        CHECK_BLAS_FLOAT_APPLE_VECLIB_BUGFIX(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
+        IF(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
+          GLOBAL_SET(HAVE_TEUCHOS_BLASFLOAT 1)
+        ENDIF()
+      ENDIF()
+      # if veclib failed, general purpose solution
+      IF(NOT HAVE_TEUCHOS_BLASFLOAT)
+        INCLUDE(CheckBlasFloatReturnsDouble)
+        CHECK_BLAS_FLOAT_DOUBLE_RETURN(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
+        IF(HAVE_TEUCHOS_BLASFLOAT_DOUBLE_RETURN)
+          GLOBAL_SET(HAVE_TEUCHOS_BLASFLOAT 1)
+        ENDIF()
+      ENDIF()
+    ENDIF()
+
+    IF (HAVE_TEUCHOS_BLASFLOAT)
+      INCLUDE(CheckSlapy2Problem)
+      CHECK_SLAPY2_PROBLEM(HAVE_SLAPY2_PROBLEM)
+      IF (HAVE_SLAPY2_PROBLEM)
+        INCLUDE(CheckSlapy2ReturnsDouble)
+        CHECK_SLAPY2_RETURNS_DOUBLE(HAVE_SLAPY2_DOUBLE_RETURN)
+        IF(NOT HAVE_SLAPY2_DOUBLE_RETURN)
+          GLOBAL_SET(HAVE_TEUCHOS_BLASFLOAT OFF)
+          MESSAGE(STATUS "SLAPY2 failure: setting HAVE_TEUCHOS_BLASFLOAT to OFF")
+        ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
+  ASSERT_DEFINED(HAVE_TEUCHOS_BLASFLOAT)
 
-  IF (HAVE_TEUCHOS_BLASFLOAT)
-    INCLUDE(CheckSlapy2Problem)
-    CHECK_SLAPY2_PROBLEM(HAVE_SLAPY2_PROBLEM)
-    IF (HAVE_SLAPY2_PROBLEM) 
-      INCLUDE(CheckSlapy2ReturnsDouble)
-      CHECK_SLAPY2_RETURNS_DOUBLE(HAVE_SLAPY2_DOUBLE_RETURN)
-      IF(NOT HAVE_SLAPY2_DOUBLE_RETURN)
-        GLOBAL_SET(HAVE_TEUCHOS_BLASFLOAT OFF)
-        MESSAGE(STATUS "SLAPY2 failure: setting HAVE_TEUCHOS_BLASFLOAT to OFF")
-      ENDIF()
-    ENDIF()
+  #
+  # The check needs to run code, so give cross-compiling users a bypass.
+  #
+  IF (DEFINED HAVE_TEUCHOS_LAPACKLARND)
+    MESSAGE(STATUS "You set HAVE_TEUCHOS_LAPACKLARND=${HAVE_TEUCHOS_LAPACKLARND}; this suggests you are cross compiling.  If you're not cross compiling, best practice is not to set this; Trilinos will figure it out for you.")
+  ELSE()
+    INCLUDE(CheckLapackLARND)
+    CHECK_LAPACK_LARND(HAVE_TEUCHOS_LAPACKLARND)
   ENDIF()
-
-  INCLUDE(CheckLapackLARND)
-  CHECK_LAPACK_LARND(HAVE_TEUCHOS_LAPACKLARND)
-
+  ASSERT_DEFINED(HAVE_TEUCHOS_LAPACKLARND)
 ENDIF()
 
 SET( ${PACKAGE_NAME}_ORDINAL_TYPE ptrdiff_t
@@ -164,7 +186,7 @@ IF(NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
 ENDIF()
 
 IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
-  # Can only provide __int64 support if it will not clash with 
+  # Can only provide __int64 support if it will not clash with
   # long long int (see Trilinos bug 5801).
   INCLUDE(CheckFor__int64)
   CHECK_FOR___INT64(HAVE_TEUCHOS___INT64)
@@ -226,19 +248,37 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
+  #
+  # The check needs to run code, so give cross-compiling users a
+  # bypass.  This is not a complete check, but we have an error test
+  # below that explains the required settings.  (In the cross
+  # compilation case, running code here could get the wrong answer.
+  # Thus, it's better to error out than to continue.)
+  #
+  IF (DEFINED HAVE_COMPLEX_BLAS_PROBLEM)
+    MESSAGE(STATUS "You set HAVE_COMPLEX_BLAS_PROBLEM=${HAVE_COMPLEX_BLAS_PROBLEM}; this suggests you are cross compiling.  If you're not cross compiling, best practice is not to set this; Trilinos will figure it out for you.")
+  ELSE()
+    INCLUDE(CheckCXXComplexBlasProblem)
+    CHECK_CXX_COMPLEX_BLAS_PROBLEM(HAVE_COMPLEX_BLAS_PROBLEM)
 
-  INCLUDE(CheckCXXComplexBlasProblem)
-  CHECK_CXX_COMPLEX_BLAS_PROBLEM(HAVE_COMPLEX_BLAS_PROBLEM)
-
-  IF (HAVE_COMPLEX_BLAS_PROBLEM)
-    INCLUDE(CheckCXXComplexBlasProblemCanBeFixed)
-    IF(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
-      CHECK_COMPLEX_BLAS_VECLIB_OKAY(HAVE_VECLIB_COMPLEX_BLAS)
-    ELSE()
-      CHECK_CXX_COMPLEX_BLAS_PROBLEM_CAN_BE_FIXED(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+    IF (HAVE_COMPLEX_BLAS_PROBLEM)
+      INCLUDE(CheckCXXComplexBlasProblemCanBeFixed)
+      IF(HAVE_TEUCHOS_BLASFLOAT_APPLE_VECLIB_BUGFIX)
+        CHECK_COMPLEX_BLAS_VECLIB_OKAY(HAVE_VECLIB_COMPLEX_BLAS)
+      ELSE()
+        CHECK_CXX_COMPLEX_BLAS_PROBLEM_CAN_BE_FIXED(HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)
+      ENDIF()
     ENDIF()
   ENDIF()
-  GLOBAL_SET(HAVE_COMPLEX_BLAS 
+  ASSERT_DEFINED(HAVE_COMPLEX_BLAS_PROBLEM)
+  IF (HAVE_COMPLEX_BLAS_PROBLEM)
+    IF ((NOT (DEFINED HAVE_VECLIB_COMPLEX_BLAS)) AND
+        (NOT (DEFINED HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM)))
+      MESSAGE(FATAL_ERROR "IF HAVE_COMPLEX_BLAS_PROBLEM is defined and TRUE, then you must define at least one of HAVE_VECLIB_COMPLEX_BLAS or HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM.  This is most likely to happen if you are cross compiling and setting these options yourself, rather than relying on CMake to set the options.")
+    ENDIF()
+  ENDIF()
+
+  GLOBAL_SET(HAVE_COMPLEX_BLAS
              NOT HAVE_COMPLEX_BLAS_PROBLEM OR HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM OR HAVE_VECLIB_COMPLEX_BLAS)
 
 ELSE() # NOT ${PACKAGE_NAME}_ENABLE_COMPLEX
@@ -319,7 +359,7 @@ IF (Teuchos_ENABLE_ARPREC)
     )
 ENDIF()
 
-IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD) 
+IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD)
     MESSAGE("Cannot promote double to both ARPREC and QD. Will use ARPREC.")
     SET(HAVE_TEUCHOS_DOUBLE_TO_QD OFF)
 ENDIF()
