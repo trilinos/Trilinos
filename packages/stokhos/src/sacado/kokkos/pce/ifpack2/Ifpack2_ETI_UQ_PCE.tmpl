@@ -39,24 +39,25 @@
 // ***********************************************************************
 // @HEADER
 
-#include "TpetraCore_config.h"
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE_OpenMP.hpp"
+#include "Ifpack2_config.h"
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Tpetra_CrsMatrix_UQ_PCE.hpp"
-#include "Tpetra_CrsMatrix_UQ_PCE_def.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE_@DEVICE@.hpp"
+#include "Stokhos_Ifpack2_UQ_PCE.hpp"
 
-#define TPETRA_LOCAL_INST_N_1(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_UQ_PCE_SPEC, N)
+#include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
+#include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
 
-#define TPETRA_LOCAL_INST_N_2(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(TPETRA_CRSMATRIX_INSTANT, N)
+#define IFPACK2_LOCAL_INSTANT(S,LO,GO,N) \
+  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(S,LO,GO,N)
 
-INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_1)
+#define IFPACK2_INSTANT_UQ_PCE_N(N)                             \
+  INSTANTIATE_TPETRA_UQ_PCE_N(IFPACK2_LOCAL_INSTANT, N)
 
-INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N_2)
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+INSTANTIATE_TPETRA_UQ_PCE_WRAPPER_NODES(IFPACK2_INSTANT_UQ_PCE_N)
+
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

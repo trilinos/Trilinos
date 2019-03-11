@@ -1185,6 +1185,16 @@ abs(const PCE<Storage>& a)
   return c;
 }
 
+template <typename Storage>
+KOKKOS_INLINE_FUNCTION
+PCE<Storage>
+ceil(const PCE<Storage>& a)
+{
+  PCE<Storage> c(a.cijk(), 1);
+  c.fastAccessCoeff(0) = std::ceil( a.fastAccessCoeff(0) );
+  return c;
+}
+
 // template <typename Storage>
 // KOKKOS_INLINE_FUNCTION
 // PCE<Storage>

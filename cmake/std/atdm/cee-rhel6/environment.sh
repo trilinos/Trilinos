@@ -77,6 +77,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1_OPENMPI-1.10.2" ]]; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
   fi
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
   export OMPI_CXX=`which g++`
@@ -88,6 +89,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-1.10.2" ]] ; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
   fi
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core"
@@ -103,6 +105,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_GNU_CXX_WARNINGS}"
   fi
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
   # Still uses old 
   export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
@@ -118,6 +121,19 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
   fi
+  # Replace Intel MKL 18.0.2 wiht 18.0.5 which fixes some LAPACK bugs (see #3499, #3914)
+  export ATDM_CONFIG_MKL_ROOT=/sierra/sntools/SDK/compilers/intel/composer_xe_2018.5.274/compilers_and_libraries/linux/
+  LD_LIBRARY_PATH_TMP=
+  for a_path in `echo ${LD_LIBRARY_PATH} | sed 's/:/ /g'` ; do
+    #echo "a_path='${a_path}'"
+    if [[ "${a_path}" == "/sierra/sntools/SDK/compilers/intel/composer_xe_2018.2.199/compilers_and_libraries/linux/mkl/lib/intel64" ]] ; then
+      LD_LIBRARY_PATH_TMP=${LD_LIBRARY_PATH_TMP}:/sierra/sntools/SDK/compilers/intel/composer_xe_2018.5.274/compilers_and_libraries/linux/mkl/lib/intel64
+    else
+      LD_LIBRARY_PATH_TMP=${LD_LIBRARY_PATH_TMP}:${a_path}
+    fi
+  done
+  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH_TMP}
+  #
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core" # Critical to perforamnce!
@@ -135,6 +151,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1_INTELMPI-5.1.2" ]; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
   fi
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
@@ -166,17 +183,17 @@ export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 
 # BLAS and LAPACK
 
-#export ATDM_CONFIG_BLAS_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/lib/intel64;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
-#export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64"
+#export ATDM_CONFIG_BLAS_LIBS="-L${ATDM_CONFIG_MKL_ROOT}/mkl/lib/intel64;-L${ATDM_CONFIG_MKL_ROOT}/lib/intel64;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
+#export ATDM_CONFIG_LAPACK_LIBS="-L${ATDM_CONFIG_MKL_ROOT}/mkl/lib/intel64"
 
 # NOTE: The above does not work.  For some reason, the library 'iomp5' can't
 # be found at runtime.  Instead, you have to explicitly list out the library
 # files in order as shown below.  Very sad.
 
-atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/mkl/lib/intel64 .so \
+atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${ATDM_CONFIG_MKL_ROOT}/mkl/lib/intel64 .so \
   mkl_intel_lp64 mkl_intel_thread mkl_core
 
-atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/lib/intel64 .so \
+atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${ATDM_CONFIG_MKL_ROOT}/lib/intel64 .so \
   iomp5
 
 export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}

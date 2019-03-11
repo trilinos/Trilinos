@@ -344,8 +344,7 @@ struct AddDiagonalValuesAtomicKernel {
   }
 };
 
-const unsigned VectorSize = 16;  // Currently must be a multiple of 8 based on
-                                 // alignment assumptions for SFS
+const unsigned VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, ReplaceValues, MatrixScalar )

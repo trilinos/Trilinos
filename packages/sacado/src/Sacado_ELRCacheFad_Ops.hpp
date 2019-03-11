@@ -2573,11 +2573,11 @@ namespace Sacado {
         const value_type_1 v1 = expr1.val();
         const value_type_2 v2 = expr2.val();
         v = std::pow(v1,v2);
-        if (v1 == scalar_type(0.0) || v2 == scalar_type(0.0)) {
+        if (v1 == scalar_type(0.0)) {
           a = scalar_type(0.0);
         }
         else {
-          a = v2*std::pow(v1,v2-scalar_type(1.0));
+          a = v*v2/v1;
         }
       }
 

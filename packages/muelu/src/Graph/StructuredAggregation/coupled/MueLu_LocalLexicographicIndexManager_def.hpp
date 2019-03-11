@@ -200,7 +200,6 @@ namespace MueLu {
     ArrayView<const GO> fineNodeGIDs = fineCoordinatesMap->getNodeElementList();
 
     Array<GO> coarseStartIndices(3);
-    GO tmp;
     for(int dim = 0; dim < 3; ++dim) {
       coarseStartIndices[dim] = this->coarseMeshData[myRankIndex][2*dim + 3];
     }

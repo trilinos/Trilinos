@@ -275,7 +275,6 @@ namespace MueLu {
     RCP<const Map> fineMap      = graph->GetDomainMap();
     const int myRank            = fineMap->getComm()->getRank();
     const int numRanks          = fineMap->getComm()->getSize();
-    const GO  minGlobalIndex    = fineMap->getMinGlobalIndex();
 
     // Build aggregates
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
