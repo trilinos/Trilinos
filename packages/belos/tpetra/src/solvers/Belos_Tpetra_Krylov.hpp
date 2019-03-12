@@ -61,9 +61,7 @@ private:
   using device_type = typename MV::device_type;
 
 public:
-  Krylov () :
-    verbosity_ (0)
-  {}
+  Krylov () = default;
 
   Krylov (const Teuchos::RCP<const OP>& A) :
     Krylov ()
@@ -71,7 +69,7 @@ public:
     A_ = A;
   }
 
-  virtual ~Krylov () {}
+  virtual ~Krylov () = default;
 
   //! Set the matrix A in the linear system to solve.
   void setMatrix (const Teuchos::RCP<const OP>& A) {
@@ -385,7 +383,7 @@ private:
   Teuchos::RCP<const OP> A_;
   std::string precoType_;
   Teuchos::RCP<const OP> M_;
-  int verbosity_;
+  int verbosity_ = 0;
 };
 
 } // namespace Impl
