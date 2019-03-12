@@ -45,6 +45,8 @@
 #ifndef ROL_PINTHIERARCHY_HPP
 #define ROL_PINTHIERARCHY_HPP
 
+#include <unordered_map>
+
 #include "ROL_TimeStamp.hpp"
 #include "ROL_PinTVector.hpp"
 #include "ROL_StdVector.hpp"
@@ -84,6 +86,27 @@ private:
   Ptr<const PinTVectorCommunication<Real>> vectorComm_; // object for sending whole vectors between processors
 
   bool rebalance_;
+
+  // This class encapsulates the processor redistribution required
+  // for both restriction and prolongation of a vector
+  struct TimeStepCommMap {
+    // This vector is a map from the locally computed vector
+    // to its place on another processor. For instance if there are
+    // three time steps locally on a processor
+    // hen this vector will have 3 processor destinations, one for
+    // each coarse vector.
+    std::vector<int> sendToProc_;
+
+    // This vector is a map from the coarse vector on the reciving processor
+    // to where it is computed on another processor. For instance if there are
+    // three time steps in the coarse vector on this processor, 
+    // then this vector will have 3 processor destinations, one for
+    // each coarse vector.
+    std::vector<int> recvFromProc_;
+  };
+
+  std::vector<TimeStepCommMap> restrictOptMap_;
+  std::vector<TimeStepCommMap> prolongOptMap_;
 
   /**
    * \brief Get the time stamps for by level
@@ -166,119 +189,115 @@ private:
     * "recv" methods which when not rebalanced, end up doing nothing.
     */
   ROL::Ptr<ROL::Vector<Real>>
-  getLocalCoarseVector(int k,
+  getLocalVector(int k,
+                       int myRank,
                        const ROL::Ptr<ROL::PinTVector<Real>> & pint_output,
-                       const ROL::Ptr<ROL::Vector<Real>> & scratch) const
+                       const ROL::Ptr<ROL::Vector<Real>> & scratch,
+                       const TimeStepCommMap & commMap) const
   {
-    if(rebalance_)
-      return scratch;
+    if(commMap.sendToProc_[k]!=myRank)
+      return scratch->clone();
     else 
       return pint_output->getVectorPtr(k);
   }
 
-  /** This method sends a vector to the coarse processor it should belong to.
+  /** This method sends a vector to a processor it should belong to.
     *
     * \param[in] vec Vector to send to the coarse processor
     * \param[in] index Local coarse index if a straightforward coarsening had been used
     * \param[in] communicators Communicators for the time domain
     * \param[in] vectorComm Object to communicate entire vector between processors
     */
-  void sendToCoarseProcs(ROL::Vector<Real> & vec,
+  void sendToProcs(ROL::Vector<Real> & vec,
                          int index,
                          const ROL::PinTCommunicators & communicators,
-                         const ROL::PinTVectorCommunication<Real> & vectorComm)
+                         const ROL::PinTVectorCommunication<Real> & vectorComm,
+                         const TimeStepCommMap & commMap) const
   {
-    // nothing to do if reblance isn't on (a no-op)
-    if(not rebalance_)
-      return;
-
-    MPI_Comm comm = communicators.getTimeCommunicator();
     int myRank    = communicators.getTimeRank();
 
-    int targetRank = -1;
-    if(myRank % 2 == 0) {
-      targetRank = myRank/2;
-    } else {
-      targetRank = (myRank-1)/2;
-    }
+    // nothing to do, all in place
+    if(commMap.sendToProc_[index]==myRank)
+      return;
+    
+    // nothing to do if reblance isn't on (a no-op
+    MPI_Comm comm = communicators.getTimeCommunicator();
+
+    int targetRank = commMap.sendToProc_[index];
 
     vectorComm.send(comm,targetRank,vec,index);
   }
 
-  /** This method communicates how many vectors it sends to the coarse processors
+  /** This method sends a vector to a processor it should belong to.
     *
-    * \param[in] coarseSize Number of processors that is being sent
+    * \param[in] vec Vector to send to the coarse processor
+    * \param[in] index Local coarse index if a straightforward coarsening had been used
     * \param[in] communicators Communicators for the time domain
+    * \param[in] vectorComm Object to communicate entire vector between processors
     */
-  void sendCoarseSize(int coarseSize,
-                      const ROL::PinTCommunicators & communicators)
+  void sendToAllProcs(const std::vector<ROL::Ptr<ROL::Vector<Real>>> & input,
+                      const ROL::PinTCommunicators & communicators,
+                      const ROL::PinTVectorCommunication<Real> & vectorComm,
+                      const TimeStepCommMap & commMap) const
   {
-    // nothing to do if reblance isn't on (a no-op)
-    if(not rebalance_)
-      return;
-
-    const int COARSE_SIZE_TAG = INT_MAX; // flag indicating this communication is a coarse size
-
     MPI_Comm comm = communicators.getTimeCommunicator();
     int myRank    = communicators.getTimeRank();
 
-    int targetRank = -1;
-    if(myRank % 2 == 0) {
-      targetRank = myRank/2;
-    } else {
-      targetRank = (myRank-1)/2;
+    // this little bit of trickery is used to make sure the default value is 0 (e.g. index 0)
+    struct DefaultInt { int value=0; };
+    std::unordered_map<int,DefaultInt> procToIndex;
+
+    // loop over all vectors you need to recieve, and recieve them
+    for(int i=0;i<commMap.sendToProc_.size();i++) {
+      int proc = commMap.sendToProc_[i];
+ 
+      if(proc==myRank) continue;
+
+      int index = procToIndex[proc].value;
+
+      ROL::Ptr<Vector<Real>> vec = input[i];
+
+      vectorComm.send(comm,proc,*vec,index /* the tag */);
+
+      // increment the index value for this processor (this is used as the tag
+      procToIndex[proc].value++;
     }
-
-    MPI_Send(&coarseSize,1,MPI_INT,targetRank,COARSE_SIZE_TAG,comm);
-  }
-
-  /** This method recives how many coarse vectors it will recive
-    *
-    * \param[in] communicators Communicators for the time domain
-    *
-    * \returns A vector of size 2 with the coarse vectors that are sent.
-    */
-  std::vector<int> recvCoarseSize(const ROL::PinTCommunicators & communicators)
-  {
-    const int COARSE_SIZE_TAG = INT_MAX; // flag indicating this communication is a coarse size
-
-    MPI_Comm comm = communicators.getTimeCommunicator();
-    int myRank    = communicators.getTimeRank();
-    int procSize  = communicators.getTimeSize();
-
-    std::vector<int> sizes(2);
-    MPI_Recv(&sizes[0],1,MPI_INT,2*myRank  ,COARSE_SIZE_TAG,comm,MPI_STATUS_IGNORE);
-    MPI_Recv(&sizes[1],1,MPI_INT,2*myRank+1,COARSE_SIZE_TAG,comm,MPI_STATUS_IGNORE);
-
-    return sizes;
   }
 
   /** Recieve a set of vectors that have already been sent.
     *
-    * \param[in] vec Vector to fill
-    * \param[in] index Local index of vectors being sent
-    * \param[in] sizes Distribution of vectors by processors sending
+    * \param[in] pint_output Vector to fill
     * \param[in] communicators Communicators for the time domain
     * \param[in] vectorComm Object to communicate entire vector between processors
+    * \param[in] commMap Object describing how the coarse vectors are distributed.
     */
-  void recvFromFineProcs(ROL::Vector<Real> & vec,
-                         int index,
-                         const std::vector<int> & sizes,
-                         const ROL::PinTCommunicators & communicators,
-                         const ROL::PinTVectorCommunication<Real> & vectorComm)
+  void recvAllFromProcs(ROL::PinTVector<Real> & pint_output,
+                        const ROL::PinTCommunicators & communicators,
+                        const ROL::PinTVectorCommunication<Real> & vectorComm,
+                        const TimeStepCommMap & commMap) const
   {
-    // nothing to do if reblance isn't on (a no-op)
-    if(not rebalance_)
-      return;
-
     MPI_Comm comm = communicators.getTimeCommunicator();
     int myRank    = communicators.getTimeRank();
-    int procSize  = communicators.getTimeSize();
 
-    if(index<sizes[0])
-      vectorComm.recv(comm,2*myRank  ,vec,index);
-    else if(index<sizes[1+sizes[0]])
-      vectorComm.recv(comm,2*myRank+1,vec,index-sizes[0]);
+    // this little bit of trickery is used to make sure the default value is 0 (e.g. index 0)
+    struct DefaultInt { int value=0; };
+    std::unordered_map<int,DefaultInt> procToIndex;
+
+    // loop over all vectors you need to recieve, and recieve them
+    for(int i=0;i<commMap.recvFromProc_.size();i++) {
+      int proc = commMap.recvFromProc_[i];
+ 
+      if(proc==myRank) continue;
+
+      int index = procToIndex[proc].value;
+
+      ROL::Ptr<Vector<Real>> coarseVec = pint_output.getVectorPtr(i);
+
+      vectorComm.recv(comm,proc,*coarseVec,index /* the tag */);
+
+      // increment the index value for this processor (this is used as the tag
+      procToIndex[proc].value++;
+    }
   }
 
 public:
@@ -396,6 +415,48 @@ public:
      stamps_.resize(maxLevels_);
      stamps_[0] = timeStamps_;
 
+     // allocate the restriction/prolognation maps
+     restrictOptMap_.resize(maxLevels_);
+     // restrictOptMap_[0] = default; This is a deliberate empty space for ease of indexing
+    
+     prolongOptMap_.resize(maxLevels_);
+     if(rebalance_) {
+       int procSize = pintComm->getTimeSize();
+       int rank = pintComm->getTimeRank();
+       MPI_Comm mpiComm = pintComm->getTimeCommunicator();
+       TimeStepCommMap & commMap = prolongOptMap_[0];
+
+       int recvSize = stamps_[0]->size();
+       int recvTarget = -1;
+       if(rank % 2 == 0)
+         recvTarget = rank/2;
+       else
+         recvTarget = (rank-1)/2;
+       MPI_Send(&recvSize,1,MPI_INT,recvTarget,0,mpiComm);
+
+       commMap.recvFromProc_.resize(stamps_[0]->size(),recvTarget);
+
+       if(2*rank+1<procSize) {
+         int sizeA = -1;
+         int sizeB = -1;
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,0,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,0,mpiComm,MPI_STATUS_IGNORE);
+
+         commMap.sendToProc_.resize(sizeA+sizeB,-1);
+
+         for(int i=0;i<sizeA;i++) 
+           commMap.sendToProc_[i      ] = 2*rank;
+         for(int i=0;i<sizeB;i++) 
+           commMap.sendToProc_[i+sizeA] = 2*rank+1;
+       }
+     }
+     else {
+       int rank = pintComm->getTimeRank();
+       TimeStepCommMap & commMap = prolongOptMap_[0];
+       commMap.recvFromProc_.resize(stamps_[0]->size(),rank);
+       commMap.sendToProc_.resize(stamps_[0]->size(),rank);
+     }
+
      buildLevelDataStructures(1);
    }
 
@@ -418,6 +479,7 @@ public:
      int rank = comm->getTimeRank();
 
      stamps_[level] = buildTimeStampsByLevel(level,comm);
+     int origSize = stamps_[level]->size();
 
      if(rebalance_) {
        // this processor is no longer participating (base case)
@@ -434,6 +496,82 @@ public:
        bool value = ROL::PinT::exportToCoarseDistribution_TimeStamps(*stamps_[level],*coarseStamps,*comm,0);
 
        stamps_[level] = coarseStamps;
+     }
+
+     // build restriction optimization maps
+     if(rebalance_) {
+       MPI_Comm mpiComm = comm->getTimeCommunicator();
+       TimeStepCommMap & commMap = restrictOptMap_[level];
+
+       int sendTarget = -1;
+       if(rank % 2 == 0)
+         sendTarget = rank/2;
+       else
+         sendTarget = (rank-1)/2;
+
+       commMap.sendToProc_.resize(origSize,sendTarget);
+
+       MPI_Send(&origSize,1,MPI_INT,sendTarget,0,mpiComm);
+
+       commMap.recvFromProc_.resize(stamps_[level]->size(),-1);
+
+       if(commMap.recvFromProc_.size()>0) {
+         int sizeA = -1;
+         int sizeB = -1;
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,0,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,0,mpiComm,MPI_STATUS_IGNORE);
+
+         TEUCHOS_ASSERT(sizeA+sizeB==stamps_[level]->size());
+
+         for(int i=0;i<sizeA;i++) 
+           commMap.recvFromProc_[i      ] = 2*rank;
+         for(int i=0;i<sizeB;i++) 
+           commMap.recvFromProc_[i+sizeA] = 2*rank+1;
+       }
+     }
+     else {
+       TimeStepCommMap & commMap = restrictOptMap_[level];
+ 
+       commMap.sendToProc_.resize(stamps_[level]->size(),rank);
+       commMap.recvFromProc_.resize(stamps_[level]->size(),rank);
+     }
+
+     // build prolongation optimization maps
+     if(rebalance_) {
+       int procSize = comm->getTimeSize();
+       MPI_Comm mpiComm = comm->getTimeCommunicator();
+       TimeStepCommMap & commMap = prolongOptMap_[level];
+
+       int recvTarget = -1;
+       if(rank % 2 == 0)
+         recvTarget = rank/2;
+       else
+         recvTarget = (rank-1)/2;
+
+       commMap.recvFromProc_.resize(stamps_[level]->size(),recvTarget);
+
+       int recvSize = stamps_[level]->size();
+       MPI_Send(&recvSize,1,MPI_INT,recvTarget,0,mpiComm);
+
+       if(2*rank+1<procSize) {
+         int sizeA = -1;
+         int sizeB = -1;
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,0,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,0,mpiComm,MPI_STATUS_IGNORE);
+
+         commMap.sendToProc_.resize(sizeA+sizeB,-1);
+
+         for(int i=0;i<sizeA;i++) 
+           commMap.sendToProc_[i      ] = 2*rank;
+         for(int i=0;i<sizeB;i++) 
+           commMap.sendToProc_[i+sizeA] = 2*rank+1;
+       }
+     }
+     else {
+       TimeStepCommMap & commMap = prolongOptMap_[level];
+ 
+       commMap.sendToProc_.resize(stamps_[level]->size(),rank);
+       commMap.recvFromProc_.resize(stamps_[level]->size(),rank);
      }
 
      buildLevelDataStructures(level+1);
@@ -545,18 +683,16 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
   return ss.str();
 }
 
-
-   /**
-    * \brief Restrict a control space vector
-    *
-    * Currently assumes a piecewise constant control
-    *
-    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
-    * \param[in] input The input vector to be "restricted" 
-    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
-    */
    void restrictOptVector(const ROL::Ptr<const ROL::PinTVector<Real>> & pint_input,
                           const ROL::Ptr<      ROL::PinTVector<Real>> & pint_output,
+                          int inputLevel)
+   {
+     restrictOptVector(pint_input,pint_output,restrictOptMap_[inputLevel+1],inputLevel); 
+   }
+
+   void restrictOptVector(const ROL::Ptr<const ROL::PinTVector<Real>> & pint_input,
+                          const ROL::Ptr<      ROL::PinTVector<Real>> & pint_output,
+                          const TimeStepCommMap & commMap,
                           int inputLevel)
    {
      // nothing to do in this case
@@ -578,57 +714,38 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
      for(int fineLocal=0;fineLocal<pint_input->numOwnedSteps();fineLocal++) {
        int fineIndex = fineLocal+fneRange.first;
  
-       ROL::Ptr<Vector<Real>> coarseVec = getLocalCoarseVector(crsLocal,pint_output,scratch);
+       ROL::Ptr<Vector<Real>> output = getLocalVector(crsLocal,fineRank,pint_output,scratch,commMap);
 
        if(fineIndex == 0) {
-         coarseVec->set(*pint_input->getVectorPtr(0));
+         output->set(*pint_input->getVectorPtr(0));
        }
        else {
          if(fineLocal>=0)
-           coarseVec->set(     *pint_input->getVectorPtr(fineLocal));
+           output->set(     *pint_input->getVectorPtr(fineLocal));
          else
-           coarseVec->set(     *leftStart);
+           output->set(     *leftStart);
 
-         coarseVec->axpy(1.0,*pint_input->getVectorPtr(fineLocal+1));
-         coarseVec->scale(1.0/2.0);
+         output->axpy(1.0,*pint_input->getVectorPtr(fineLocal+1));
+         output->scale(1.0/2.0);
 
          fineLocal++;
        }
 
        // send to coarse
-       if(rebalance_) {
-         sendToCoarseProcs(*coarseVec,                            // what to communicate
-                           crsLocal,                              // where to send it: there is an mapping from crsLocal to parallel
-                           pint_input->communicators(),           // how to send it
-                           *pint_input->vectorCommunicationPtr()); // how to send it
-       }
-       
+       sendToProcs(*output,                   
+                    crsLocal,                  
+                    pint_input->communicators(),
+                    *pint_input->vectorCommunicationPtr(),
+                    commMap); 
        crsLocal++;
      }
 
-     // no need for the next step, no work to do
-     if(not rebalance_) 
-       return;
-
-     // see what size the coarse grid is
-     sendCoarseSize(crsLocal,pint_input->communicators());
-
      // if the coarse level is inactive on this proccessor skip the recieve step
      if(levelIsActiveOnMyRank(inputLevel+1)) {
-
-       std::vector<int> sizes = recvCoarseSize(pint_input->communicators());
-
-       for(int k=0;k<pint_output->numOwnedSteps();k++) {
-
-         ROL::Ptr<Vector<Real>> coarseVec = pint_output->getVectorPtr(k);
-
-         // recv from fine 
-         recvFromFineProcs(*coarseVec,
-             k,
-             sizes,
-             pint_input->communicators(),           // how to send it
-             *pint_input->vectorCommunicationPtr()); // how to send it
-       }
+       recvAllFromProcs(*pint_output,
+                         pint_input->communicators(),          
+                         *pint_input->vectorCommunicationPtr(),
+                         commMap);
      }
    }
 
@@ -646,7 +763,7 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     restrictOptVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),inputLevel); 
+     restrictOptVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),restrictOptMap_[inputLevel+1],inputLevel); 
    }
 
    /**
@@ -751,42 +868,91 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
     *
     * Currently assumes a piecewise constant control
     *
-    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
-    * \param[in] input The input vector to be "restricted" 
-    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    * \param[in] inputLevel Multigrid level of the input vector 
+    * \param[in] input The input vector to be "prolonged" 
+    * \param[in] output The output vector resulting from prolongation, must be at level inputLevel-1
     */
    void prolongOptVector(const ROL::Ptr<const PinTVector<Real>> & pint_input,
                          const ROL::Ptr<PinTVector<Real>> & pint_output,
+                         const TimeStepCommMap & commMap,
                          int inputLevel)
    {
-     // communicate points on the right of this interval
-     pint_input->boundaryExchangeRightToLeft();
-     auto rightStart = pint_input->getRemoteBufferPtr(0)->clone();
-     rightStart->set(*pint_input->getRemoteBufferPtr(0));
+     // nothing to do in this case
+     if(levelIsActiveOnMyRank(inputLevel)) {
+       int timeRank = pint_output->communicators().getTimeRank();
+       int fineRank = pint_output->communicators().getTimeRank();
 
-     int offset = 0;
-     std::pair<int,int> crsRange = pint_input->ownedStepRange();
-     std::pair<int,int> fneRange = pint_output->ownedStepRange();
+       // communicate points on the right of this interval
+       pint_input->boundaryExchangeRightToLeft();
+       auto rightStart = pint_input->getRemoteBufferPtr(0)->clone();
+       rightStart->set(*pint_input->getRemoteBufferPtr(0));
+       auto scratch = rightStart->clone();
 
-     int timeRank = pint_output->communicators().getTimeRank();
+       int offset = 0;
+       std::pair<int,int> crsRange = pint_input->ownedStepRange();
+       std::pair<int,int> fneRange = pint_output->ownedStepRange();
 
-     // handle interior
-     for(int k=0;k<pint_output->numOwnedSteps();k++) {
-       int fineIndex = fneRange.first+k;
 
-       if(fineIndex==0) {
-         pint_output->getVectorPtr(0)->set(*pint_input->getVectorPtr(0)); 
+       // handle interior
+       int fineLocal = 0;
+
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> local_store;
+
+       for(int crsLocal=0;crsLocal<pint_input->numOwnedSteps();crsLocal++) {
+         int crsIndex = crsLocal+crsRange.first;
+
+         ROL::Ptr<Vector<Real>> output;
+
+         if(crsIndex==0) {
+           output = getLocalVector(fineLocal,fineRank,pint_output,scratch,commMap);
+           local_store.push_back(output);
+
+           output->set(*pint_input->getVectorPtr(0)); 
+
+           fineLocal++;
+         }
+         else {
+           // send the first time step
+           output = getLocalVector(fineLocal,fineRank,pint_output,scratch,commMap);
+           local_store.push_back(output);
+
+           if(crsLocal<pint_input->numOwnedSteps())
+             output->set(*pint_input->getVectorPtr(crsLocal)); 
+           else
+             output->set(*rightStart);
+
+           fineLocal++;
+
+           /////////////////////////////////////////////////////////
+
+           // send the second time step
+           output = getLocalVector(fineLocal,fineRank,pint_output,scratch,commMap);
+           local_store.push_back(output);
+
+           if(crsLocal<pint_input->numOwnedSteps())
+             output->set(*pint_input->getVectorPtr(crsLocal)); 
+           else
+             output->set(*rightStart);
+
+           fineLocal++;
+         }
        }
-       else {
-         int crsIndex = (fineIndex+1)/2 - crsRange.first;
-         if(crsIndex<0)
-           throw std::logic_error("uh oh... didn't think this could happen");
 
-         if(crsIndex<pint_input->numOwnedSteps())
-           pint_output->getVectorPtr(k)->set(*pint_input->getVectorPtr(crsIndex)); 
-         else
-           pint_output->getVectorPtr(k)->set(*rightStart);
-       }
+
+       sendToAllProcs(local_store,
+           pint_output->communicators(),          
+           *pint_output->vectorCommunicationPtr(),
+           commMap);
+     }
+
+     // if the fine level is inactive on this proccessor skip the recieve step
+     if(levelIsActiveOnMyRank(inputLevel-1)) {
+       int timeRank = pint_output->communicators().getTimeRank();
+       std::cout << timeRank << " RECVING " << inputLevel << std::endl;
+       recvAllFromProcs(*pint_output,
+                         pint_output->communicators(),          
+                         *pint_output->vectorCommunicationPtr(),
+                         commMap);
      }
    }
 
@@ -795,9 +961,25 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
     *
     * Currently assumes a piecewise constant control
     *
-    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
-    * \param[in] input The input vector to be "restricted" 
-    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    * \param[in] inputLevel Multigrid level of the input vector 
+    * \param[in] input The input vector to be "prolonged" 
+    * \param[in] output The output vector resulting from prolongation, must be at level inputLevel-1
+    */
+   void prolongOptVector(const ROL::Ptr<const PinTVector<Real>> & pint_input,
+                         const ROL::Ptr<PinTVector<Real>> & pint_output,
+                         int inputLevel)
+   {
+     prolongOptVector(pint_input,pint_output,prolongOptMap_[inputLevel-1],inputLevel); 
+   }
+
+   /**
+    * \brief Prolong a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] inputLevel Multigrid level of the input vector 
+    * \param[in] input The input vector to be "prolonged" 
+    * \param[in] output The output vector resulting from prolongation, must be at level inputLevel-1
     */
    void prolongOptVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
