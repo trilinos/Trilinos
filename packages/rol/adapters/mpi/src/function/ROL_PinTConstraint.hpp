@@ -1434,7 +1434,7 @@ public:
        }
 
        hierarchy_.prolongSimVector(*crs_correction_u,*dx_u,level);
-       hierarchy_.prolongOptVector(*crs_correction_z,*dx_z,level);
+       hierarchy_.prolongOptVector(*crs_correction_z,*dx_z,level+1);
        hierarchy_.prolongSimVector(*crs_correction_v,*dx_v,level);
 
        x.axpy(1.0,*dx);

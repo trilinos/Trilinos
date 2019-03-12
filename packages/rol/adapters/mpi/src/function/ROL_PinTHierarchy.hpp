@@ -670,19 +670,6 @@ public:
      }
    }
 
-
-std::string printVector_Control(const ROL::Vector<Real> & vec)
-{
-  std::stringstream ss;
-
-  ss << std::setprecision(3);
-  ss << std::fixed;
-  Real value = dynamic_cast<const ROL::StdVector<Real>&>(vec).getVector()->at(0);
-  ss << std::setw(6) << value << " ";
-
-  return ss.str();
-}
-
    void restrictOptVector(const ROL::Ptr<const ROL::PinTVector<Real>> & pint_input,
                           const ROL::Ptr<      ROL::PinTVector<Real>> & pint_output,
                           int inputLevel)
@@ -696,8 +683,9 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
                           int inputLevel)
    {
      // nothing to do in this case
-     if(not levelIsActiveOnMyRank(inputLevel))
+     if(not levelIsActiveOnMyRank(inputLevel)) {
        return;
+     }
 
      int fineRank = pint_input->communicators().getTimeRank();
 
@@ -938,7 +926,6 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
          }
        }
 
-
        sendToAllProcs(local_store,
            pint_output->communicators(),          
            *pint_output->vectorCommunicationPtr(),
@@ -948,7 +935,6 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
      // if the fine level is inactive on this proccessor skip the recieve step
      if(levelIsActiveOnMyRank(inputLevel-1)) {
        int timeRank = pint_output->communicators().getTimeRank();
-       std::cout << timeRank << " RECVING " << inputLevel << std::endl;
        recvAllFromProcs(*pint_output,
                          pint_output->communicators(),          
                          *pint_output->vectorCommunicationPtr(),
@@ -961,14 +947,15 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
     *
     * Currently assumes a piecewise constant control
     *
-    * \param[in] inputLevel Multigrid level of the input vector 
     * \param[in] input The input vector to be "prolonged" 
     * \param[in] output The output vector resulting from prolongation, must be at level inputLevel-1
+    * \param[in] inputLevel Multigrid level of the input vector 
     */
    void prolongOptVector(const ROL::Ptr<const PinTVector<Real>> & pint_input,
                          const ROL::Ptr<PinTVector<Real>> & pint_output,
                          int inputLevel)
    {
+     int rank = pint_output->communicators().getTimeRank();
      prolongOptVector(pint_input,pint_output,prolongOptMap_[inputLevel-1],inputLevel); 
    }
 
@@ -987,38 +974,6 @@ std::string printVector_Control(const ROL::Vector<Real> & vec)
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
      prolongOptVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),inputLevel); 
-
-/*
-     // communicate points on the right of this interval
-     pint_input.boundaryExchangeRightToLeft();
-     auto rightStart = pint_input.getRemoteBufferPtr(0)->clone();
-     rightStart->set(*pint_input.getRemoteBufferPtr(0));
-
-     int offset = 0;
-     std::pair<int,int> crsRange = pint_input.ownedStepRange();
-     std::pair<int,int> fneRange = pint_output.ownedStepRange();
-
-     int timeRank = pint_output.communicators().getTimeRank();
-
-     // handle interior
-     for(int k=0;k<pint_output.numOwnedSteps();k++) {
-       int fineIndex = fneRange.first+k;
-
-       if(fineIndex==0) {
-         pint_output.getVectorPtr(0)->set(*pint_input.getVectorPtr(0)); 
-       }
-       else {
-         int crsIndex = (fineIndex+1)/2 - crsRange.first;
-         if(crsIndex<0)
-           throw std::logic_error("uh oh... didn't think this could happen");
-
-         if(crsIndex<pint_input.numOwnedSteps())
-           pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(crsIndex)); 
-         else
-           pint_output.getVectorPtr(k)->set(*rightStart);
-       }
-     }
-*/
    }
 
 }; // ROL::PinTConstraint
