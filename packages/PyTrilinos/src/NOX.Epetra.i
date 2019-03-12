@@ -57,8 +57,7 @@ import PyTrilinos.EpetraExt
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %nox_epetra_base_importcode,
-	docstring    = %nox_epetra_base_docstring) Base
+        moduleimport = %nox_epetra_base_importcode) Base
 
 %{
 // System include files
