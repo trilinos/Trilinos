@@ -140,8 +140,7 @@ public:
     this->input_.computeRitzValues = true;
   }
 
-  virtual ~GmresSstep ()
-  {}
+  virtual ~GmresSstep () = default;
 
   virtual void
   getParameters (Teuchos::ParameterList& params,
