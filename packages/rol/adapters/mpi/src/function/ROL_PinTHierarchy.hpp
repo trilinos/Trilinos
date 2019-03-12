@@ -160,6 +160,127 @@ private:
     return currentLevel;
   }
 
+  /** This method is used to hide the details of rebalancing or not. It's
+    * goal is to provide the user an abstraction that seperates the pointer
+    * from the restriction algorithm. This is usually paired with "send" and
+    * "recv" methods which when not rebalanced, end up doing nothing.
+    */
+  ROL::Ptr<ROL::Vector<Real>>
+  getLocalCoarseVector(int k,
+                       const ROL::Ptr<ROL::PinTVector<Real>> & pint_output,
+                       const ROL::Ptr<ROL::Vector<Real>> & scratch) const
+  {
+    if(rebalance_)
+      return scratch;
+    else 
+      return pint_output->getVectorPtr(k);
+  }
+
+  /** This method sends a vector to the coarse processor it should belong to.
+    *
+    * \param[in] vec Vector to send to the coarse processor
+    * \param[in] index Local coarse index if a straightforward coarsening had been used
+    * \param[in] communicators Communicators for the time domain
+    * \param[in] vectorComm Object to communicate entire vector between processors
+    */
+  void sendToCoarseProcs(ROL::Vector<Real> & vec,
+                         int index,
+                         const ROL::PinTCommunicators & communicators,
+                         const ROL::PinTVectorCommunication<Real> & vectorComm)
+  {
+    // nothing to do if reblance isn't on (a no-op)
+    if(not rebalance_)
+      return;
+
+    MPI_Comm comm = communicators.getTimeCommunicator();
+    int myRank    = communicators.getTimeRank();
+
+    int targetRank = -1;
+    if(myRank % 2 == 0) {
+      targetRank = myRank/2;
+    } else {
+      targetRank = (myRank-1)/2;
+    }
+
+    vectorComm.send(comm,targetRank,vec,index);
+  }
+
+  /** This method communicates how many vectors it sends to the coarse processors
+    *
+    * \param[in] coarseSize Number of processors that is being sent
+    * \param[in] communicators Communicators for the time domain
+    */
+  void sendCoarseSize(int coarseSize,
+                      const ROL::PinTCommunicators & communicators)
+  {
+    // nothing to do if reblance isn't on (a no-op)
+    if(not rebalance_)
+      return;
+
+    const int COARSE_SIZE_TAG = INT_MAX; // flag indicating this communication is a coarse size
+
+    MPI_Comm comm = communicators.getTimeCommunicator();
+    int myRank    = communicators.getTimeRank();
+
+    int targetRank = -1;
+    if(myRank % 2 == 0) {
+      targetRank = myRank/2;
+    } else {
+      targetRank = (myRank-1)/2;
+    }
+
+    MPI_Send(&coarseSize,1,MPI_INT,targetRank,COARSE_SIZE_TAG,comm);
+  }
+
+  /** This method recives how many coarse vectors it will recive
+    *
+    * \param[in] communicators Communicators for the time domain
+    *
+    * \returns A vector of size 2 with the coarse vectors that are sent.
+    */
+  std::vector<int> recvCoarseSize(const ROL::PinTCommunicators & communicators)
+  {
+    const int COARSE_SIZE_TAG = INT_MAX; // flag indicating this communication is a coarse size
+
+    MPI_Comm comm = communicators.getTimeCommunicator();
+    int myRank    = communicators.getTimeRank();
+    int procSize  = communicators.getTimeSize();
+
+    std::vector<int> sizes(2);
+    MPI_Recv(&sizes[0],1,MPI_INT,2*myRank  ,COARSE_SIZE_TAG,comm,MPI_STATUS_IGNORE);
+    MPI_Recv(&sizes[1],1,MPI_INT,2*myRank+1,COARSE_SIZE_TAG,comm,MPI_STATUS_IGNORE);
+
+    return sizes;
+  }
+
+  /** Recieve a set of vectors that have already been sent.
+    *
+    * \param[in] vec Vector to fill
+    * \param[in] index Local index of vectors being sent
+    * \param[in] sizes Distribution of vectors by processors sending
+    * \param[in] communicators Communicators for the time domain
+    * \param[in] vectorComm Object to communicate entire vector between processors
+    */
+  void recvFromFineProcs(ROL::Vector<Real> & vec,
+                         int index,
+                         const std::vector<int> & sizes,
+                         const ROL::PinTCommunicators & communicators,
+                         const ROL::PinTVectorCommunication<Real> & vectorComm)
+  {
+    // nothing to do if reblance isn't on (a no-op)
+    if(not rebalance_)
+      return;
+
+    MPI_Comm comm = communicators.getTimeCommunicator();
+    int myRank    = communicators.getTimeRank();
+    int procSize  = communicators.getTimeSize();
+
+    if(index<sizes[0])
+      vectorComm.recv(comm,2*myRank  ,vec,index);
+    else if(index<sizes[1+sizes[0]])
+      vectorComm.recv(comm,2*myRank+1,vec,index-sizes[0]);
+  }
+
 public:
 
   //! Default constructor
@@ -234,8 +355,19 @@ public:
    
    ROL::Ptr<const PinTCommunicators> getLevelCommunicators(int level) const
    { 
-      if(not rebalance_) return communicators_[0]; 
-      else               return communicators_[level]; 
+     if(not rebalance_) return communicators_[0]; 
+     else               return communicators_[level]; 
+   }
+
+   /** Indicator if a specified level is active on this rank.
+     */
+   bool levelIsActiveOnMyRank(int level) const
+   { 
+     // all levels are active when not rebalanced
+     if(not rebalance_) 
+       return true;
+
+     return communicators_[level]!=ROL::nullPtr; 
    }
 
    /** 
@@ -312,6 +444,10 @@ public:
     */
    Ptr<Vector<Real>> allocateSimVector(const Vector<Real> & level_0_ref,int level) const
    {
+     // when rebalnacing these are null as we coarsen
+     if(not levelIsActiveOnMyRank(level))
+       return ROL::nullPtr;
+
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      ROL::Ptr<const PinTCommunicators> comm = getLevelCommunicators(level);
      auto vectorComm = pint_ref.vectorCommunicationPtr();
@@ -327,10 +463,17 @@ public:
    /**
     * \brief Allocate a optimization space vector at a particular multigrid level.
     */
-   Ptr<Vector<Real>> allocateOptVector(const Vector<Real> & level_0_ref,int level) const
+   Ptr<PinTVector<Real>> allocateOptVector(const Vector<Real> & level_0_ref,int level) const
    {
-     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     // when rebalanacing these are null as we coarsen
+     if(not levelIsActiveOnMyRank(level))
+       return ROL::nullPtr;
+
      ROL::Ptr<const PinTCommunicators> comm = getLevelCommunicators(level);
+  
+     TEUCHOS_ASSERT(comm!=Teuchos::null);
+
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      auto vectorComm = pint_ref.vectorCommunicationPtr();
      
      int totalSteps = 0;
@@ -389,6 +532,106 @@ public:
      }
    }
 
+
+std::string printVector_Control(const ROL::Vector<Real> & vec)
+{
+  std::stringstream ss;
+
+  ss << std::setprecision(3);
+  ss << std::fixed;
+  Real value = dynamic_cast<const ROL::StdVector<Real>&>(vec).getVector()->at(0);
+  ss << std::setw(6) << value << " ";
+
+  return ss.str();
+}
+
+
+   /**
+    * \brief Restrict a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
+    * \param[in] input The input vector to be "restricted" 
+    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    */
+   void restrictOptVector(const ROL::Ptr<const ROL::PinTVector<Real>> & pint_input,
+                          const ROL::Ptr<      ROL::PinTVector<Real>> & pint_output,
+                          int inputLevel)
+   {
+     // nothing to do in this case
+     if(not levelIsActiveOnMyRank(inputLevel))
+       return;
+
+     int fineRank = pint_input->communicators().getTimeRank();
+
+     // communicate points on the left of this interval
+     pint_input->boundaryExchangeLeftToRight();
+     auto leftStart = pint_input->getRemoteBufferPtr(0)->clone();
+     auto scratch = leftStart->clone();
+     leftStart->set(*pint_input->getRemoteBufferPtr(0));
+
+     std::pair<int,int> fneRange = pint_input->ownedStepRange();
+
+     // handle interior
+     int crsLocal = 0;
+     for(int fineLocal=0;fineLocal<pint_input->numOwnedSteps();fineLocal++) {
+       int fineIndex = fineLocal+fneRange.first;
+ 
+       ROL::Ptr<Vector<Real>> coarseVec = getLocalCoarseVector(crsLocal,pint_output,scratch);
+
+       if(fineIndex == 0) {
+         coarseVec->set(*pint_input->getVectorPtr(0));
+       }
+       else {
+         if(fineLocal>=0)
+           coarseVec->set(     *pint_input->getVectorPtr(fineLocal));
+         else
+           coarseVec->set(     *leftStart);
+
+         coarseVec->axpy(1.0,*pint_input->getVectorPtr(fineLocal+1));
+         coarseVec->scale(1.0/2.0);
+
+         fineLocal++;
+       }
+
+       // send to coarse
+       if(rebalance_) {
+         sendToCoarseProcs(*coarseVec,                            // what to communicate
+                           crsLocal,                              // where to send it: there is an mapping from crsLocal to parallel
+                           pint_input->communicators(),           // how to send it
+                           *pint_input->vectorCommunicationPtr()); // how to send it
+       }
+       
+       crsLocal++;
+     }
+
+     // no need for the next step, no work to do
+     if(not rebalance_) 
+       return;
+
+     // see what size the coarse grid is
+     sendCoarseSize(crsLocal,pint_input->communicators());
+
+     // if the coarse level is inactive on this proccessor skip the recieve step
+     if(levelIsActiveOnMyRank(inputLevel+1)) {
+
+       std::vector<int> sizes = recvCoarseSize(pint_input->communicators());
+
+       for(int k=0;k<pint_output->numOwnedSteps();k++) {
+
+         ROL::Ptr<Vector<Real>> coarseVec = pint_output->getVectorPtr(k);
+
+         // recv from fine 
+         recvFromFineProcs(*coarseVec,
+             k,
+             sizes,
+             pint_input->communicators(),           // how to send it
+             *pint_input->vectorCommunicationPtr()); // how to send it
+       }
+     }
+   }
+
    /**
     * \brief Restrict a control space vector
     *
@@ -403,33 +646,7 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     int timeRank = pint_output.communicators().getTimeRank();
-
-     // communicate points on the left of this interval
-     pint_input.boundaryExchangeLeftToRight();
-     auto leftStart = pint_input.getRemoteBufferPtr(0)->clone();
-     leftStart->set(*pint_input.getRemoteBufferPtr(0));
-
-     std::pair<int,int> fneRange = pint_input.ownedStepRange();
-     std::pair<int,int> crsRange = pint_output.ownedStepRange();
-
-     // handle interior
-     for(int k=0;k<pint_output.numOwnedSteps();k++) {
-       int crsIndex = crsRange.first+k;
-       if(crsIndex == 0) {
-         pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(0));
-       }
-       else {
-         int fineLocal = 2*crsIndex-1-fneRange.first;
-                          
-         if(fineLocal>=0)
-           pint_output.getVectorPtr(k)->set(     *pint_input.getVectorPtr(fineLocal));
-         else
-           pint_output.getVectorPtr(k)->set(     *leftStart);
-         pint_output.getVectorPtr(k)->axpy(1.0,*pint_input.getVectorPtr(fineLocal+1));
-         pint_output.getVectorPtr(k)->scale(1.0/2.0);
-       }
-     }
+     restrictOptVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),inputLevel); 
    }
 
    /**
@@ -538,11 +755,58 @@ public:
     * \param[in] input The input vector to be "restricted" 
     * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
     */
+   void prolongOptVector(const ROL::Ptr<const PinTVector<Real>> & pint_input,
+                         const ROL::Ptr<PinTVector<Real>> & pint_output,
+                         int inputLevel)
+   {
+     // communicate points on the right of this interval
+     pint_input->boundaryExchangeRightToLeft();
+     auto rightStart = pint_input->getRemoteBufferPtr(0)->clone();
+     rightStart->set(*pint_input->getRemoteBufferPtr(0));
+
+     int offset = 0;
+     std::pair<int,int> crsRange = pint_input->ownedStepRange();
+     std::pair<int,int> fneRange = pint_output->ownedStepRange();
+
+     int timeRank = pint_output->communicators().getTimeRank();
+
+     // handle interior
+     for(int k=0;k<pint_output->numOwnedSteps();k++) {
+       int fineIndex = fneRange.first+k;
+
+       if(fineIndex==0) {
+         pint_output->getVectorPtr(0)->set(*pint_input->getVectorPtr(0)); 
+       }
+       else {
+         int crsIndex = (fineIndex+1)/2 - crsRange.first;
+         if(crsIndex<0)
+           throw std::logic_error("uh oh... didn't think this could happen");
+
+         if(crsIndex<pint_input->numOwnedSteps())
+           pint_output->getVectorPtr(k)->set(*pint_input->getVectorPtr(crsIndex)); 
+         else
+           pint_output->getVectorPtr(k)->set(*rightStart);
+       }
+     }
+   }
+
+   /**
+    * \brief Prolong a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
+    * \param[in] input The input vector to be "restricted" 
+    * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    */
    void prolongOptVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
+     prolongOptVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),inputLevel); 
+
+/*
      // communicate points on the right of this interval
      pint_input.boundaryExchangeRightToLeft();
      auto rightStart = pint_input.getRemoteBufferPtr(0)->clone();
@@ -572,6 +836,7 @@ public:
            pint_output.getVectorPtr(k)->set(*rightStart);
        }
      }
+*/
    }
 
 }; // ROL::PinTConstraint
