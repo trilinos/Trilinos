@@ -64,8 +64,8 @@ Umfpack<Matrix,Vector>::Umfpack(
   , rowind_()
   , colptr_()
 {
-  data_.Symbolic = 0;
-  data_.Numeric = 0;
+  data_.Symbolic = NULL;
+  data_.Numeric = NULL;
 }
 
 
