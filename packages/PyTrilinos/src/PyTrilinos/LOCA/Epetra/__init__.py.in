@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra of
 the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Epetra is to provide an extension of the
 NOX.Epetra.Group to LOCA.  The python version of LOCA.Epetra supports

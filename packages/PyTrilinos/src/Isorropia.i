@@ -42,18 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-%define %isorropia_docstring
-"
-PyTrilinos.Isorropia is the python interface to the Trilinos
-partitioning and load balancing package Isorropia:
-
-    http://trilinos.sandia.gov/packages/isorropia
-
-The purpose of Isorropia is to ....
-
-"
-%enddef
-
 %define %isorropia_importcode
 "
 if not __package__:
@@ -64,8 +52,7 @@ from . import _Base
 
 %module(package      = "PyTrilinos.Isorropia",
 	autodoc      = "1",
-        moduleimport = %isorropia_importcode,
-        docstring    = %isorropia_docstring) Base
+        moduleimport = %isorropia_importcode) Base
 
 %{
 // Teuchos include files

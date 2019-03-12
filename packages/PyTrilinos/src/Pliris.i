@@ -47,7 +47,7 @@
 PyTrilinos.Pliris is the python interface to the Trilinos package
 Pliris, an LU solver for dense matrices:
 
-    http://trilinos.sandia.gov/packages/pliris
+    https://trilinos.org/docs/dev/packages/pliris/doc/html/index.html
 
 The purpose of Pliris is to provide an object-oriented interface to an
 LU solver for dense matrices on parallel platforms. These matrices are

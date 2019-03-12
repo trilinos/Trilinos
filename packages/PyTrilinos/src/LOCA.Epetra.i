@@ -42,17 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_epetra_base_docstring
-"
-PyTrilinos.LOCA.Epetra is the python interface to namespace Epetra of
-the Trilinos continuation algorithm package LOCA:
-
-    http://trilinos.sandia.gov/packages/nox
-
-See the documentation for PyTrilinos.LOCA.Epetra
-"
-%enddef
-
 %define %loca_epetra_base_importcode
 "
 from . import _Base
@@ -80,8 +69,7 @@ from . import Interface
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %loca_epetra_base_importcode,
-	docstring    = %loca_epetra_base_docstring) Base
+        moduleimport = %loca_epetra_base_importcode) Base
 
 %{
 // System include files

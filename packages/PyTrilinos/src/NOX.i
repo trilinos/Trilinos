@@ -41,16 +41,6 @@
 //
 // ***********************************************************************
 // @HEADER
-%define %nox_base_docstring
-"
-PyTrilinos.NOX is the python interface to the Trilinos nonlinear
-solver package NOX:
-
-    http://trilinos.sandia.gov/packages/nox
-
-See the documentation for python module PyTrilinos.NOX
-"
-%enddef
 
 %define %nox_base_importcode
 "
@@ -60,8 +50,7 @@ from . import _Base
 
 %module(package      = "PyTrilinos.NOX",
 	autodoc      = "1",
-        moduleimport = %nox_base_importcode,
-        docstring    = %nox_base_docstring) Base
+        moduleimport = %nox_base_importcode) Base
 
 %{
 // System include files

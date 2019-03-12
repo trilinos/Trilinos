@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Hopf is the python interface to namespace Hopf of the
 Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Hopf is to provide groups and vectors for Hopf
 bifurcations.  The python version of LOCA.Hopf supports the following

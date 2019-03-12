@@ -47,7 +47,7 @@
 PyTrilinos.Isorropia.Epetra is the python interface to namespace Epetra for
 the Trilinos package Isorropia:
 
-    http://trilinos.sandia.gov/packages/isorropia
+    https://trilinos.org/docs/dev/packages/isorropia/doc/html/index.html
 
 The purpose of Isorropia.Epetra is to ....
 "

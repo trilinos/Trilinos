@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Hopf.MooreSpence is the python interface to namespace
 Hopf::MooreSpence of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Hopf.MooreSpence is to provide ***.  The python
 version of LOCA.Hopf.MooreSpence supports the following classes:

@@ -42,17 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-%define %teuchos_base_docstring
-"
-PyTrilinos.Teuchos.Base is a utility space for the python interface to
-the Trilinos tools and utilities package Teuchos:
-
-    http://trilinos.sandia.gov/packages/teuchos
-
-See the documentation for python module PyTrilinos.Teuchos
-"
-%enddef
-
 %define %teuchos_base_importcode
 "
 from . import _Base
@@ -63,8 +52,7 @@ from . import _Base
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %teuchos_base_importcode,
-	docstring    = %teuchos_base_docstring) Base
+        moduleimport = %teuchos_base_importcode) Base
 
 // Include Files
 %{

@@ -42,17 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_turningpoint_base_docstring
-"
-PyTrilinos.LOCA.TurningPoint is the python interface to namespace
-TurningPoint of the Trilinos continuation algorithm package LOCA:
-
-    http://trilinos.sandia.gov/packages/nox
-
-See the PyTrilinos.LOCA.TurningPoint module for documentation
-"
-%enddef
-
 %define %loca_turningpoint_base_importcode
 "
 from . import _Base
@@ -60,5 +49,4 @@ from . import _Base
 %enddef
 
 %module(package       = "PyTrilinos.LOCA.TurningPoint",
-        moduleinclude = %loca_turningpoint_base_importcode,
-        docstring     = %loca_turningpoint_base_docstring) Base
+        moduleinclude = %loca_turningpoint_base_importcode) Base

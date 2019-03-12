@@ -47,7 +47,7 @@
 PyTrilinos.Isorropia is the python interface to the Trilinos
 partitioning and load balancing package Isorropia:
 
-    http://trilinos.sandia.gov/packages/isorropia
+    https://trilinos.org/docs/dev/packages/isorropia/doc/html/index.html
 
 The purpose of Isorropia is to ....
 

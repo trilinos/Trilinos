@@ -42,17 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_base_docstring
-"
-PyTrilinos.LOCA is the python interface to the Trilinos continuation
-algorithm package LOCA:
-
-    http://trilinos.sandia.gov/packages/nox
-
-See the documentation for python module PyTrilinos.LOCA
-"
-%enddef
-
 %define %loca_base_importcode
 "
 from . import _Base
@@ -63,8 +52,7 @@ from . import _Base
         directors     = "1",
 	autodoc       = "1",
 	implicitconv  = "1",
-        moduleinclude = %loca_base_importcode,
-	docstring     = %loca_base_docstring) Base
+        moduleinclude = %loca_base_importcode) Base
 
 %{
 // System include files

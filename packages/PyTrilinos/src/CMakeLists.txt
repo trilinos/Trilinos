@@ -304,12 +304,6 @@ IF(PyTrilinos_ENABLE_Domi)
 ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
-# Helper script for generating sub-packages
-SET(FIX_PACKAGE_FILES fix_package_files.py)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${FIX_PACKAGE_FILES}.in
-  ${CMAKE_CURRENT_BINARY_DIR}/${FIX_PACKAGE_FILES})
-
-#
 # Teuchos.RCP.i has to be generated. For this reason, it has to be
 # handled separately
 SET(TEUCHOS_RCP_SCRIPT gen_teuchos_rcp.py    )

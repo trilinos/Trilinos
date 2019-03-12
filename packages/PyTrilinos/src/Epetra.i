@@ -47,7 +47,7 @@
 PyTrilinos.Epetra is the python interface to the Trilinos linear
 algebra services package Epetra:
 
-    http://trilinos.sandia.gov/packages/epetra
+    https://trilinos.org/docs/dev/packages/epetra/doc/html/index.html
 
 The purpose of Epetra is to provide fundamental linear algebra
 services to the rest of Trilinos.  These services include parallel

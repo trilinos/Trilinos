@@ -615,7 +615,7 @@ MpiComm = MpiComm_int
 /////////////////////////////////
 // Teuchos.DefaultComm support //
 /////////////////////////////////
-#define MPI_VERSION 2
+#define MPI_VERSION 3
 %warnfilter(302) Teuchos::Details::mpiFreeDefaultComm;
 %warnfilter(302) Teuchos::Details::mpiFreeDefaultSerialComm;
 %include "Teuchos_DefaultComm.hpp"

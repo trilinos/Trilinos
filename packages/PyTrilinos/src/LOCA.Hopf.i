@@ -42,17 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_hopf_base_docstring
-"
-PyTrilinos.LOCA.Hopf is the python interface to namespace Hopf of the
-Trilinos continuation algorithm package LOCA:
-
-    http://trilinos.sandia.gov/packages/nox
-
-See the PyTrilinos.LOCA.Hopf module for documentation
-"
-%enddef
-
 %define %loca_hopf_base_importcode
 "
 from . import _Base
@@ -64,8 +53,7 @@ from PyTrilinos.LOCA import Extended
 %enddef
 
 %module(package      = "PyTrilinos.LOCA.Hopf",
-        moduleimport = %loca_hopf_base_importcode,
-        docstring    = %loca_hopf_base_docstring) Base
+        moduleimport = %loca_hopf_base_importcode) Base
 
 %{
 // PyTrilinos include files

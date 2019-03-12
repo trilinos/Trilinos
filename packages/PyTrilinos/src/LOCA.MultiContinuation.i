@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.MultiContinuation is the python interface to namespace
 MultiContinuation of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.MultiContinuation is to provide groups and vectors
 for multi-parameter continuation.  The python version of

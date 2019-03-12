@@ -48,7 +48,7 @@ PyTrilinos.LOCA.TurningPoint.MooreSpence is the python interface to
 namespace TurningPoint::MooreSpence of the Trilinos continuation
 algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.TurningPoint.MooreSpence is to provide groups and
 vectors for locating turning point bifurcations using the Moore-

@@ -48,7 +48,7 @@ PyTrilinos.LOCA.Hopf.MinimallyAugmented is the python interface to
 namespace Hopf::MinimallyAugmented of the Trilinos continuation
 algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Hopf.MinimallyAugmented is to provide groups and
 vectors for locating Hopf bifurcations using the minimally augmented

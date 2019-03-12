@@ -47,7 +47,7 @@
 PyTrilinos.NOX.Abstract is the python interface to namespace Abstract
 of the Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.Abstract is to provide base classes from which
 concrete NOX interfaces can be derived.  Currently, the only concrete
