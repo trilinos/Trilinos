@@ -563,6 +563,7 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
 
   /*
   // THIS NEEDS TO BE TESTED, BUT ITS COMPLICATED SO I'M SKIPPING FOR NOW: Code works as of 3/12/2019
+  //    see SHA1 84afc4dc4a56837387cdeea7955f7779554df608
 
   // check errors on the finest level
   for(size_t i=0;i<stamps_0->size();i++) {

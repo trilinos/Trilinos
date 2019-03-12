@@ -1425,8 +1425,10 @@ public:
        hierarchy_.restrictOptVector(z,*crs_z,level);               // restrict the control to the coarse level
 
        {
-         auto crs_correction = makePtr<PartitionedVector>({crs_correction_u,crs_correction_z,crs_correction_v});
-         auto crs_residual   = makePtr<PartitionedVector>({  crs_residual_u,  crs_residual_z,  crs_residual_v});
+         typedef std::vector<ROL::Ptr<ROL::Vector<Real>>> vector;
+
+         auto crs_correction = makePtr<PartitionedVector>(vector({crs_correction_u,crs_correction_z,crs_correction_v}));
+         auto crs_residual   = makePtr<PartitionedVector>(vector({  crs_residual_u,  crs_residual_z,  crs_residual_v}));
 
          applyMultigridAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
        }
