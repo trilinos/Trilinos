@@ -1751,8 +1751,10 @@ namespace Ifpack2 {
           Kokkos::parallel_for
             (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
-	      extract(member, partidx+vbeg, npacks, vbeg);
-              factorize(member, i0, nrows, v, internal_vector_values, WW);
+              if (vbeg < npacks) {
+                extract(member, partidx+vbeg, npacks, vbeg);
+                factorize(member, i0, nrows, v, internal_vector_values, WW);
+              }
             });
         }
       }
