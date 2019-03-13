@@ -181,25 +181,6 @@ getStatic2dDualView (const size_t num_rows, const size_t num_cols)
       typename h_view_type::device_type> (num_rows, num_cols);
   }
 
-  // mfh 25 Mar 2019: Save this for the actual MultiVector --
-  // we'll need a separate function that creates a MultiVector
-  // with static storage for its DualView.
-#if 0
-  const bool debug_mode = ::Tpetra::Details::Behavior::debug ();
-  if (debug_mode) {
-    // Filling with NaN is a cheap and effective way to tell if
-    // downstream code is trying to use a MultiVector's data without
-    // them having been initialized.  ArithTraits lets us call nan()
-    // even if the scalar type doesn't define it; it just returns some
-    // undefined value in the latter case.
-    const ValueType nan = Kokkos::ArithTraits<ValueType>::nan ();
-    Kokkos::deep_copy (d_view, nan);
-    if (h_view.data () != d_view.data ()) {
-      Kokkos::deep_copy (h_view, nan);
-    }
-  }
-#endif // 0
-
   return dual_view_type (d_view, h_view);
 }
 
