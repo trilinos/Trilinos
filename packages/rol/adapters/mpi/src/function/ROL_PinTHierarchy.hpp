@@ -955,7 +955,6 @@ public:
                          const ROL::Ptr<PinTVector<Real>> & pint_output,
                          int inputLevel)
    {
-     int rank = pint_output->communicators().getTimeRank();
      prolongOptVector(pint_input,pint_output,prolongOptMap_[inputLevel-1],inputLevel); 
    }
 
