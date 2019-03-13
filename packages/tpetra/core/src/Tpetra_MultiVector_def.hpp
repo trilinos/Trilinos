@@ -1511,7 +1511,7 @@ namespace Tpetra {
 
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
       // custom combine modes, start editing here.
-      
+
       if (CM == INSERT || CM == REPLACE) {
 	using op_type = KokkosRefactor::Details::InsertOp<IST>;
         if (isConstantStride ()) {
@@ -3263,7 +3263,7 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using Teuchos::outArg;    
+    using Teuchos::outArg;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::reduceAll;
@@ -3273,7 +3273,7 @@ namespace Tpetra {
     const char prefix[] = "Tpetra::MultiVector constructor (offsetView): ";
     const char suffix[] = "Please report this bug to the Tpetra developers.";
     int lclGood = 1;
-    int gblGood = 1;    
+    int gblGood = 1;
     std::unique_ptr<std::ostringstream> errStrm;
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
@@ -3677,77 +3677,72 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dCopy (const Teuchos::ArrayView<Scalar>& A, const size_t LDA) const
   {
-    typedef decltype (this->template getLocalView<device_type> ())
-      dev_view_type;
-    typedef decltype (getDualView().view_host ())
-      host_view_type;
-    typedef impl_scalar_type IST;
-    typedef Kokkos::View<IST*, typename host_view_type::array_layout,
-      Kokkos::HostSpace, Kokkos::MemoryUnmanaged> input_col_type;
+    using dev_view_type = typename dual_view_type::t_dev;
+    using host_view_type = typename dual_view_type::t_host;
+    using IST = impl_scalar_type;
+    using input_view_type = Kokkos::View<IST**, Kokkos::LayoutLeft,
+					 Kokkos::HostSpace,
+					 Kokkos::MemoryUnmanaged>;
     const char tfecfFuncName[] = "get1dCopy: ";
 
     const size_t numRows = this->getLocalLength ();
     const size_t numCols = this->getNumVectors ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (LDA < numRows, std::runtime_error,
+       "LDA = " << LDA << " < numRows = " << numRows << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numRows > size_t (0) && numCols > size_t (0) &&
+       size_t (A.size ()) < LDA * (numCols - 1) + numRows,
+       std::runtime_error,
+       "A.size() = " << A.size () << ", but its size must be at least "
+       << (LDA * (numCols - 1) + numRows) << " to hold all the entries.");
+
     const std::pair<size_t, size_t> rowRange (0, numRows);
+    const std::pair<size_t, size_t> colRange (0, numCols);
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      LDA < numRows, std::runtime_error,
-      "LDA = " << LDA << " < numRows = " << numRows << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      numRows > static_cast<size_t> (0) &&
-      numCols > static_cast<size_t> (0) &&
-      static_cast<size_t> (A.size ()) < LDA * (numCols - 1) + numRows,
-      std::runtime_error,
-      "A.size() = " << A.size () << ", but its size must be at least "
-      << (LDA * (numCols - 1) + numRows) << " to hold all the entries.");
-
-    // FIXME (mfh 22 Jul 2014, 10 Dec 2014) Currently, it doesn't work
-    // to do a 2-D copy, even if this MultiVector has constant stride.
-    // This is because Kokkos can't currently tell the difference
-    // between padding (which permits a single deep_copy for the whole
-    // 2-D View) and stride > numRows (which does NOT permit a single
-    // deep_copy for the whole 2-D View).  Carter is working on this,
-    // but for now, the temporary fix is to copy one column at a time.
+    input_view_type A_view_orig (reinterpret_cast<IST*> (A.getRawPtr ()),
+				 LDA, numCols);
+    auto A_view = Kokkos::subview (A_view_orig, rowRange, colRange);
 
     // Use the most recently updated version of this MultiVector's
     // data.  This avoids sync'ing, which could violate users'
     // expectations.
     //
     // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->template need_sync<device_type> ();
+    const bool useHostVersion = this->need_sync_device ();
 
     dev_view_type srcView_dev;
     host_view_type srcView_host;
     if (useHostVersion) {
-      srcView_host = getDualView().view_host ();
+      srcView_host = this->getLocalViewHost ();
     }
     else {
-      srcView_dev = this->template getLocalView<device_type> ();
+      srcView_dev = this->getLocalViewDevice ();
     }
 
-    for (size_t j = 0; j < numCols; ++j) {
-      const size_t srcCol =
-        this->isConstantStride () ? j : this->whichVectors_[j];
-      const size_t dstCol = j;
-      IST* const dstColRaw =
-        reinterpret_cast<IST*> (A.getRawPtr () + LDA * dstCol);
-      input_col_type dstColView (dstColRaw, numRows);
-
+    if (this->isConstantStride ()) {
       if (useHostVersion) {
-        auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstColView.extent (0) != srcColView_host.extent (0),
-          std::logic_error, ": srcColView and dstColView_host have different "
-          "dimensions.  Please report this bug to the Tpetra developers.");
-        Kokkos::deep_copy (dstColView, srcColView_host);
+	Kokkos::deep_copy (A_view, srcView_host);
       }
       else {
-        auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          dstColView.extent (0) != srcColView_dev.extent (0),
-          std::logic_error, ": srcColView and dstColView_dev have different "
-          "dimensions.  Please report this bug to the Tpetra developers.");
-        Kokkos::deep_copy (dstColView, srcColView_dev);
+	Kokkos::deep_copy (A_view, srcView_dev);
+      }
+    }
+    else {
+      for (size_t j = 0; j < numCols; ++j) {
+	const size_t srcCol = this->whichVectors_[j];
+	const size_t dstCol = j;
+	auto dstColView = Kokkos::subview (A_view, rowRange, j);
+
+	if (useHostVersion) {
+	  auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
+	  Kokkos::deep_copy (dstColView, srcColView_host);
+	}
+	else {
+	  auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
+	  Kokkos::deep_copy (dstColView, srcColView_dev);
+	}
       }
     }
   }
@@ -4037,7 +4032,7 @@ namespace Tpetra {
              << alpha << "*A"
              << (transA == Teuchos::TRANS ? "^T" :
                  (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
-             << "(" << (A_is_local ? "local" : "distr") << ") + "
+             << "(" << (A_is_local ? "local" : "distr") << ") * "
              << beta << "*B"
              << (transA == Teuchos::TRANS ? "^T" :
                  (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
