@@ -229,6 +229,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createVectorSpace,
     rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(vs, true);
   TEST_EQUALITY(vs_spmd->localSubDim(), g_localDim);
   TEST_EQUALITY(vs->dim(), as<Ordinal>(tpetraMap->getGlobalNumElements()));
+
+  // Checked the wrapped tpetra map is the same as the initial one
+  using LO = TpetraMap_t::local_ordinal_type;
+  using GO = TpetraMap_t::global_ordinal_type;
+  using NO = TpetraMap_t::node_type;
+  RCP<const Thyra::TpetraVectorSpace<Scalar,LO,GO,NO>> tvs;
+  tvs = rcp_dynamic_cast<const Thyra::TpetraVectorSpace<Scalar,LO,GO,NO>>(vs);
+  TEST_ASSERT (!tvs.is_null());
+  TEST_ASSERT (tvs->getTpetraMap()->isSameAs(*tpetraMap));
 }
 
 
