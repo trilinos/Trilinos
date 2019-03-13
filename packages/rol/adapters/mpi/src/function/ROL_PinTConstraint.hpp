@@ -1433,9 +1433,9 @@ public:
          applyMultigridAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
        }
 
-       hierarchy_.prolongSimVector(*crs_correction_u,*dx_u,level);
+       hierarchy_.prolongSimVector(*crs_correction_u,*dx_u,level+1);
        hierarchy_.prolongOptVector(*crs_correction_z,*dx_z,level+1);
-       hierarchy_.prolongSimVector(*crs_correction_v,*dx_v,level);
+       hierarchy_.prolongSimVector(*crs_correction_v,*dx_v,level+1);
 
        x.axpy(1.0,*dx);
      }
