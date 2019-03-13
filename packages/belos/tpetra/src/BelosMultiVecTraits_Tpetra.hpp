@@ -48,13 +48,244 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosTypes.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "KokkosBlas.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include "Tpetra_TsqrAdaptor.hpp"
 #endif // HAVE_BELOS_TSQR
+
+#include <memory>
+
+namespace { // (anonymous)
+
+template<class MapType>
+Teuchos::RCP<const MapType>
+makeLocalMap (const MapType& inputMap,
+	      const typename MapType::local_ordinal_type lclNumRows)
+{
+  Teuchos::RCP<MapType> map (new MapType (lclNumRows,
+					  inputMap.getIndexBase (),
+					  inputMap.getComm (),
+					  Tpetra::LocallyReplicated));
+  return Teuchos::rcp_const_cast<const MapType> (map);
+}
+
+template<class DualViewType, class SizeType>
+DualViewType
+makeUninitializedDualView (const SizeType numRows, const SizeType numCols)
+{
+  using Kokkos::view_alloc;
+  using Kokkos::WithoutInitializing;
+  using dual_view_type = DualViewType;
+  using dev_view_type = typename dual_view_type::t_dev;
+
+  // This needs to be a string and not a char*, if given as an
+  // argument to Kokkos::view_alloc.  This is because view_alloc also
+  // allows a raw pointer as its first argument.  See
+  // https://github.com/kokkos/kokkos/issues/434.
+  const std::string label ("MV::DualView");
+
+  // NOTE (mfh 18 Feb 2015, 12 Apr 2015, 22 Sep 2016, 12 Mar 2019)
+  // Separate creation of the DualView's Views works around
+  // Kokkos::DualView's current inability to accept an
+  // AllocationProperties initial argument (as Kokkos::View does).
+  // However, the work-around is harmless, since it does what the
+  // (currently nonexistent) equivalent DualView constructor would
+  // have done anyway.
+  dev_view_type d_view (view_alloc (label, WithoutInitializing),
+			numRows, numCols);
+
+  if (::Tpetra::Details::Behavior::debug ()) {
+    // Filling with NaN is a cheap and effective way to tell if
+    // downstream code is trying to use a MultiVector's data without
+    // them having been initialized.  ArithTraits lets us call nan()
+    // even if the scalar type doesn't define it; it just returns some
+    // undefined value in the latter case.
+    using IST = typename DualViewType::non_const_value_type;
+    const IST nan = Kokkos::ArithTraits<IST>::nan ();
+    KokkosBlas::fill (d_view, nan);
+  }
+  auto h_view = Kokkos::create_mirror_view (d_view);
+
+  dual_view_type dv (d_view, h_view);
+  // Whether or not the user cares about the initial contents of the
+  // MultiVector, the device and host views are out of sync.  We
+  // prefer to work in device memory.  The way to ensure this happens
+  // is to mark the device view as modified.
+  dv.modify_device ();
+  return dv;
+}
+
+// NOTE (mfh 14 Mar 2019) Complication avoids "you let a View persist
+// after Kokkos::finalize" run-time warnings.  Note also that
+// assigning an empty DualView to an existing DualView won't actually
+// deallocate the modified flags View.
+template<class DualViewType, class SizeType>
+class DualViewPool {
+private:
+  DualViewType* dualViewPtr_ = nullptr;
+
+  static DualViewType
+  makeDualView (const SizeType numRows, const SizeType numCols)
+  {
+    // Motivating use cases for these initial sizes:
+    //
+    // 1. GMRES (need restart length number of rows)
+    // 2. Single reduce CG (need 2 x 2)
+    constexpr SizeType initNumRows = 30;
+    constexpr SizeType initNumCols = 2;
+    return makeUninitializedDualView<DualViewType, SizeType>
+      (std::max (initNumRows, numRows),
+       std::max (initNumCols, numCols));
+  }
+
+public:
+  DualViewPool () : dualViewPtr_ (new DualViewType ()) {
+    DualViewType* dvp = dualViewPtr_; // Avoid 'this' capture concerns.
+    // Don't let DualView instances persist after Kokkos::finalize.
+    Kokkos::push_finalize_hook ([=] () { delete dvp; });
+  }
+
+  DualViewPool (const DualViewPool&) = delete;
+  DualViewPool& operator= (const DualViewPool&) = delete;
+  ~DualViewPool () = default;
+
+  DualViewType get (const SizeType numRows, const SizeType numCols)
+  {
+    TEUCHOS_ASSERT( dualViewPtr_ != nullptr );
+
+    if (SizeType (dualViewPtr_->extent (0)) < numRows ||
+	SizeType (dualViewPtr_->extent (1)) < numCols) {
+      *dualViewPtr_ = DualViewType ();
+      *dualViewPtr_ = makeDualView (numRows, numCols);
+    }
+    TEUCHOS_ASSERT( SizeType (dualViewPtr_->extent (0)) >= numRows );
+    TEUCHOS_ASSERT( SizeType (dualViewPtr_->extent (1)) >= numCols );
+
+    using pair_type = std::pair<SizeType, SizeType>;
+    return Kokkos::subview (*dualViewPtr_, pair_type (0, numRows),
+			    pair_type (0, numCols));
+  }
+};
+
+template<class MultiVectorType>
+MultiVectorType
+makeLocalMultiVector (const MultiVectorType& gblMv,
+		      const typename MultiVectorType::local_ordinal_type lclNumRows,
+		      const typename MultiVectorType::local_ordinal_type numCols)
+{
+  using dual_view_type = typename MultiVectorType::dual_view_type;
+  using LO = typename MultiVectorType::local_ordinal_type;
+
+  static DualViewPool<dual_view_type, LO> dualViewPool;
+  dual_view_type dv = dualViewPool.get (lclNumRows, numCols);
+
+  TEUCHOS_ASSERT( LO (dv.extent (0)) == lclNumRows );
+  TEUCHOS_ASSERT( LO (dv.extent (1)) == numCols );
+  TEUCHOS_ASSERT( LO (dv.d_view.extent (0)) == lclNumRows );
+  TEUCHOS_ASSERT( LO (dv.d_view.extent (1)) == numCols );
+  TEUCHOS_ASSERT( LO (dv.h_view.extent (0)) == lclNumRows );
+  TEUCHOS_ASSERT( LO (dv.h_view.extent (1)) == numCols );
+
+  auto lclMap = makeLocalMap (* (gblMv.getMap ()), lclNumRows);
+  TEUCHOS_ASSERT( LO (lclMap->getNodeNumElements ()) == lclNumRows );
+  MultiVectorType X (lclMap, dv);
+  TEUCHOS_ASSERT( LO (X.getLocalLength ()) == lclNumRows );
+  TEUCHOS_ASSERT( LO (X.getNumVectors ()) == numCols );
+  TEUCHOS_ASSERT( X.isConstantStride () );
+
+  if (LO (X.getStride ()) != LO (dv.d_view.stride (1)) ||
+      LO (X.getStride ()) != LO (dv.h_view.stride (1))) {
+    using std::endl;
+    std::ostringstream os;
+    os << "*** makeLocalMultiVector:" << endl
+       << "X: {lclNumRows: " << X.getLocalLength ()
+       << ", numCols: " << X.getNumVectors ()
+       << ", stride: " << X.getStride ()
+       << "}" << endl
+       << "dv.d_view.stride(0): " << dv.d_view.stride (0) << endl
+       << "dv.d_view.stride(1): " << dv.d_view.stride (1) << endl      
+       << "dv.h_view.stride(0): " << dv.h_view.stride (0) << endl
+       << "dv.h_view.stride(1): " << dv.h_view.stride (1) << endl;    
+    std::cerr << os.str ();
+    MPI_Abort (MPI_COMM_WORLD, -1);
+  }
+  TEUCHOS_ASSERT( LO (X.getStride ()) == LO (dv.d_view.stride (1)) );
+  TEUCHOS_ASSERT( LO (X.getStride ()) == LO (dv.h_view.stride (1)) );  
+  return X;
+}
+
+template<class MultiVectorType>
+void
+copyMultiVectorToSerialDenseMatrix
+(Teuchos::SerialDenseMatrix<int, typename MultiVectorType::scalar_type>& X_out,
+ const MultiVectorType& X_in)
+{
+  using IST = typename MultiVectorType::impl_scalar_type;
+  using output_view_type =
+    Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
+		 Kokkos::MemoryUnmanaged>;
+  using LO = typename MultiVectorType::local_ordinal_type;
+  using pair_type = std::pair<LO, LO>;
+
+  const LO numRows = static_cast<LO> (X_out.numRows ());
+  const LO numCols = static_cast<LO> (X_out.numCols ());
+  TEUCHOS_ASSERT( numRows == LO (X_in.getLocalLength ()) );
+  TEUCHOS_ASSERT( numCols == LO (X_in.getNumVectors ()) );
+
+  output_view_type X_out_orig (reinterpret_cast<IST*> (X_out.values ()),
+			       X_out.stride (), numCols);
+  auto X_out_lcl =
+    Kokkos::subview (X_out_orig, pair_type (0, numRows), Kokkos::ALL ());
+  if (X_in.need_sync_device ()) {
+    Kokkos::deep_copy (X_out_lcl, X_in.getLocalViewHost ());
+  }
+  else {
+    Kokkos::deep_copy (X_out_lcl, X_in.getLocalViewDevice ());
+  }
+}
+
+template<class MultiVectorType>
+void
+copySerialDenseMatrixToMultiVector
+(MultiVectorType& X_out,
+ const Teuchos::SerialDenseMatrix<int, typename MultiVectorType::scalar_type>& X_in)
+{
+  using IST = typename MultiVectorType::impl_scalar_type;
+  using input_view_type =
+    Kokkos::View<const IST**, Kokkos::LayoutLeft, Kokkos::HostSpace,
+		 Kokkos::MemoryUnmanaged>;
+  using LO = typename MultiVectorType::local_ordinal_type;
+  using pair_type = std::pair<LO, LO>;
+
+  const LO numRows = static_cast<LO> (X_in.numRows ());
+  const LO numCols = static_cast<LO> (X_in.numCols ());
+  TEUCHOS_ASSERT( numRows == LO (X_out.getLocalLength ()) );
+  TEUCHOS_ASSERT( numCols == LO (X_out.getNumVectors ()) );
+
+  input_view_type X_in_orig
+    (reinterpret_cast<const IST*> (X_in.values ()),
+     X_in.stride (), numCols);
+  auto X_in_lcl =
+    Kokkos::subview (X_in_orig, pair_type (0, numRows),
+		     pair_type (0, numCols));
+  if (X_out.need_sync_device ()) {
+    X_out.modify_host ();
+    Kokkos::deep_copy (X_out.getLocalViewHost (), X_in_lcl);
+    // Make sure that the output MV is up-to-date on device.
+    X_out.sync_device ();
+  }
+  else {
+    X_out.modify_device ();
+    Kokkos::deep_copy (X_out.getLocalViewDevice (), X_in_lcl);
+  }
+}
+
+} // namespace (anonymous)
 
 namespace Belos {
 
@@ -326,44 +557,25 @@ namespace Belos {
                      Scalar beta,
                      MV& mv)
     {
-      using Teuchos::ArrayView;
-      using Teuchos::Comm;
-      using Teuchos::rcpFromRef;
-      typedef ::Tpetra::Map<LO, GO, Node> map_type;
-
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
-      Teuchos::RCP<Teuchos::Time> timer =
-        Teuchos::TimeMonitor::lookupCounter (timerName);
-      if (timer.is_null ()) {
-        timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error,
-        "Belos::MultiVecTraits::MvTimesMatAddMv: "
-        "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
-
-      // This starts the timer.  It will be stopped on scope exit.
+      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
       Teuchos::TimeMonitor timeMon (*timer);
 #endif // HAVE_BELOS_TPETRA_TIMERS
 
-      // Check if B is 1-by-1, in which case we can just call update()
-      if (B.numRows () == 1 && B.numCols () == 1) {
-        mv.update (alpha*B(0,0), A, beta);
-        return;
-      }
+      const LO B_numRows = static_cast<LO> (B.numRows ());
+      const LO B_numCols = static_cast<LO> (B.numCols ());
 
-      // Create local map
-      Teuchos::SerialComm<int> serialComm;
-      map_type LocalMap (B.numRows (), A.getMap ()->getIndexBase (),
-                         rcpFromRef<const Comm<int> > (serialComm),
-                         ::Tpetra::LocallyReplicated);
-      // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
-      ArrayView<const Scalar> Bvalues (B.values (), B.stride () * B.numCols ());
-      // create locally replicated MultiVector with a copy of this data
-      MV B_mv (rcpFromRef (LocalMap), Bvalues, B.stride (), B.numCols ());
-      mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, B_mv, beta);
+      // Check if B is 1-by-1, in which case we can just call update()
+      if (B_numRows == LO (1) && B_numCols == LO (1)) {
+        mv.update (alpha*B(0,0), A, beta);
+      }
+      else {
+	MV B_mv = makeLocalMultiVector (A, B_numRows, B_numCols);
+	copySerialDenseMatrixToMultiVector (B_mv, B);
+	mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+		     alpha, A, B_mv, beta);
+      }
     }
 
     /// \brief <tt>mv := alpha*A + beta*B</tt>
@@ -397,43 +609,19 @@ namespace Belos {
                const MV& B,
                Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
-      using ::Tpetra::LocallyReplicated;
-      using Teuchos::Comm;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      using Teuchos::TimeMonitor;
-      typedef ::Tpetra::Map<LO,GO,Node> map_type;
-
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTransMv");
-      RCP<Teuchos::Time> timer = TimeMonitor::lookupCounter (timerName);
-      if (timer.is_null ()) {
-        timer = TimeMonitor::getNewCounter (timerName);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error, "Belos::MvTransMv: "
-        "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
-
-      // This starts the timer.  It will be stopped on scope exit.
-      TimeMonitor timeMon (*timer);
+      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+      Teuchos::TimeMonitor timeMon (*timer);
 #endif // HAVE_BELOS_TPETRA_TIMERS
 
-      // Form alpha * A^H * B, then copy into the SerialDenseMatrix.
-      // We will create a multivector C_mv from a a local map.  This
-      // map has a serial comm, the purpose being to short-circuit the
-      // MultiVector::reduce() call at the end of
-      // MultiVector::multiply().  Otherwise, the reduced multivector
-      // data would be copied back to the GPU, only to turn around and
-      // have to get it back here.  This saves us a round trip for
-      // this data.
+      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
       const int numRowsC = C.numRows ();
       const int numColsC = C.numCols ();
-      const int strideC  = C.stride ();
 
-      // Check if numRowsC == numColsC == 1, in which case we can call dot()
+      // If numRowsC == numColsC == 1, then we can call dot().
       if (numRowsC == 1 && numColsC == 1) {
-        if (alpha == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        if (alpha == ZERO) {
           // Short-circuit, as required by BLAS semantics.
           C(0,0) = alpha;
           return;
@@ -445,29 +633,137 @@ namespace Belos {
         return;
       }
 
-      // get comm
-      RCP<const Comm<int> > pcomm = A.getMap ()->getComm ();
-
-      // create local map with comm
-      RCP<const map_type> LocalMap =
-        rcp (new map_type (numRowsC, 0, pcomm, LocallyReplicated));
+#if 1
+      auto LocalMap = makeLocalMap (* (A.getMap ()), numRowsC);
 
       // create local multivector to hold the result
       const bool INIT_TO_ZERO = true;
       MV C_mv (LocalMap, numColsC, INIT_TO_ZERO);
+#else
+      MV C_mv = makeLocalMultiVector (A, numRowsC, numColsC);
+#endif
 
-      // multiply result into local multivector
-      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B,
-                     Teuchos::ScalarTraits<Scalar>::zero ());
+      TEUCHOS_ASSERT( C_mv.getLocalLength () == numRowsC );
+      TEUCHOS_ASSERT( C_mv.getNumVectors () == numColsC );
+      auto C_mv_map = C_mv.getMap ();
+      TEUCHOS_ASSERT( C_mv_map->getComm ()->getSize () == 1 || ! C_mv_map->isDistributed () );
 
-      // create arrayview encapsulating the Teuchos::SerialDenseMatrix
-      Teuchos::ArrayView<Scalar> C_view (C.values (), strideC * numColsC);
+      // FIXME (mfh 14 Mar 2019) Remove these checks before pushing.
+      auto newLocalMap = makeLocalMap (* (A.getMap ()), numRowsC);
+      TEUCHOS_ASSERT( newLocalMap->isSameAs (*C_mv_map) );
 
-      // No accumulation to do (since Tpetra has already done it);
-      // simply extract the multivector data into C.
-      // Extract a copy of the result into the array view
-      // (and therefore, the SerialDenseMatrix).
-      C_mv.get1dCopy (C_view, strideC);
+      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
+      copyMultiVectorToSerialDenseMatrix (C, C_mv);
+
+      bool failed_somewhere = false;
+
+      // FIXME (mfh 14 Mar 2019) Remove these checks before pushing.
+      {
+	MV C_mv2 = makeLocalMultiVector (A, numRowsC, numColsC);
+	C_mv2.putScalar (ZERO); // appears to be necessary, else C_mv2 is full of NaN after the multiply
+	C_mv2.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
+
+	{
+	  C_mv2.sync_host ();
+	  auto C_mv2_view = C_mv2.getLocalViewHost ();
+
+	  bool same = true;
+	  for (int j = 0; j < numColsC; ++j) {
+	    for (int i = 0; i < numRowsC; ++i) {
+	      if (C(i,j) != C_mv2_view(i,j)) {
+		same = false;
+		break;
+	      }
+	    }
+	  }
+
+	  if (! same) {
+	    using std::endl;
+
+	    failed_somewhere = true;
+	    const int myRank = A.getMap ()->getComm ()->getRank ();
+	    std::ostringstream os;
+	    os << "*** Proc " << myRank << ": FAILED: MvTransMv MV wrong: " << endl;
+	    C.print (os);
+	    os << endl;
+
+	    for (int i = 0; i < numRowsC; ++i) {
+	      for (int j = 0; j < numColsC; ++j) {
+		os << C_mv2_view(i,j);
+		if (j + 1 < numColsC) {
+		  os << " ";
+		}
+	      }
+	      os << endl;
+	    }
+	    std::cerr << os.str ();
+	  }
+	}
+
+	Teuchos::SerialDenseMatrix<int, Scalar> C2 (numRowsC, numColsC);
+	copyMultiVectorToSerialDenseMatrix (C2, C_mv2);
+
+	bool same = true;
+	for (int j = 0; j < numColsC; ++j) {
+	  for (int i = 0; i < numRowsC; ++i) {
+	    if (C(i,j) != C2(i,j)) {
+	      same = false;
+	      break;
+	    }
+	  }
+	}
+
+	if (! same) {
+	  using std::endl;
+
+	  failed_somewhere = true;
+	  const int myRank = A.getMap ()->getComm ()->getRank ();
+	  std::ostringstream os;
+	  os << "*** Proc " << myRank << ": FAILED: MvTransMv copy wrong: " << endl;
+	  C.print (os);
+	  os << endl;
+	  C2.print (os);
+	  os << endl;
+	  std::cerr << os.str ();
+	}
+      }
+
+      // FIXME (mfh 14 Mar 2019) Remove these checks before pushing.
+      {
+	MV C_mv2 (makeLocalMap (* (A.getMap ()), numRowsC), numColsC);
+	C_mv2.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
+
+	Teuchos::SerialDenseMatrix<int, Scalar> C2 (numRowsC, numColsC);
+	copyMultiVectorToSerialDenseMatrix (C2, C_mv2);
+
+	bool same = true;
+	for (int j = 0; j < numColsC; ++j) {
+	  for (int i = 0; i < numRowsC; ++i) {
+	    if (C(i,j) != C2(i,j)) {
+	      same = false;
+	      break;
+	    }
+	  }
+	}
+
+	if (! same) {
+	  using std::endl;
+
+	  failed_somewhere = true;
+	  const int myRank = A.getMap ()->getComm ()->getRank ();
+	  std::ostringstream os;
+	  os << "*** Proc " << myRank << ": FAILED: MvTransMv wrong AGAIN: " << endl;
+	  C.print (os);
+	  os << endl;
+	  C2.print (os);
+	  os << endl;
+	  std::cerr << os.str ();
+	}
+      }
+
+      if (failed_somewhere) {
+	MPI_Abort (MPI_COMM_WORLD, -1);
+      }
     }
 
     //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
