@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   int errorFlag  = 0;
 
   try {
-    // testRestrictionProlong_SimVector(MPI_COMM_WORLD,outStream);
+    testRestrictionProlong_SimVector(MPI_COMM_WORLD,outStream);
     testRestrictionProlong_OptVector(MPI_COMM_WORLD,outStream);
   }
   catch (std::logic_error& err) {

@@ -106,7 +106,9 @@ private:
   };
 
   std::vector<TimeStepCommMap> restrictOptMap_;
+  std::vector<TimeStepCommMap> restrictSimMap_;
   std::vector<TimeStepCommMap> prolongOptMap_;
+  std::vector<TimeStepCommMap> prolongSimMap_;
 
   /**
    * \brief Get the time stamps for by level
@@ -415,10 +417,11 @@ public:
      stamps_.resize(maxLevels_);
      stamps_[0] = timeStamps_;
 
-     // allocate the restriction/prolognation maps
+     // allocate the restriction/prolognation maps (on the zeroth level they are empty)
      restrictOptMap_.resize(maxLevels_);
-     // restrictOptMap_[0] = default; This is a deliberate empty space for ease of indexing
+     restrictSimMap_.resize(maxLevels_);
     
+     // build prolong optimization variable map
      prolongOptMap_.resize(maxLevels_);
      if(rebalance_) {
        int procSize = pintComm->getTimeSize();
@@ -455,6 +458,46 @@ public:
        TimeStepCommMap & commMap = prolongOptMap_[0];
        commMap.recvFromProc_.resize(stamps_[0]->size(),rank);
        commMap.sendToProc_.resize(stamps_[0]->size(),rank);
+     }
+
+     // build prolong simulation variable map
+     prolongSimMap_.resize(maxLevels_);
+     if(rebalance_) {
+       int procSize = pintComm->getTimeSize();
+       int rank = pintComm->getTimeRank();
+       MPI_Comm mpiComm = pintComm->getTimeCommunicator();
+       TimeStepCommMap & commMap = prolongSimMap_[0];
+
+       int recvSize = 2*stamps_[0]->size();
+       int recvTarget = -1;
+       if(rank % 2 == 0)
+         recvTarget = rank/2;
+       else
+         recvTarget = (rank-1)/2;
+
+       MPI_Send(&recvSize,1,MPI_INT,recvTarget,0,mpiComm);
+
+       commMap.recvFromProc_.resize(2*stamps_[0]->size(),recvTarget);
+
+       if(2*rank+1<procSize) {
+         int sizeA = -1;
+         int sizeB = -1;
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,0,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,0,mpiComm,MPI_STATUS_IGNORE);
+
+         commMap.sendToProc_.resize(sizeA+sizeB,-1);
+
+         for(int i=0;i<sizeA;i++) 
+           commMap.sendToProc_[i      ] = 2*rank;
+         for(int i=0;i<sizeB;i++) 
+           commMap.sendToProc_[i+sizeA] = 2*rank+1;
+       }
+     }
+     else {
+       int rank = pintComm->getTimeRank();
+       TimeStepCommMap & commMap = prolongSimMap_[0];
+       commMap.recvFromProc_.resize(2*stamps_[0]->size(),rank);
+       commMap.sendToProc_.resize(2*stamps_[0]->size(),rank);
      }
 
      buildLevelDataStructures(1);
@@ -511,15 +554,15 @@ public:
 
        commMap.sendToProc_.resize(origSize,sendTarget);
 
-       MPI_Send(&origSize,1,MPI_INT,sendTarget,0,mpiComm);
+       MPI_Send(&origSize,1,MPI_INT,sendTarget,level,mpiComm);
 
        commMap.recvFromProc_.resize(stamps_[level]->size(),-1);
 
        if(commMap.recvFromProc_.size()>0) {
          int sizeA = -1;
          int sizeB = -1;
-         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,0,mpiComm,MPI_STATUS_IGNORE);
-         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,0,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
 
          TEUCHOS_ASSERT(sizeA+sizeB==stamps_[level]->size());
 
@@ -534,6 +577,45 @@ public:
  
        commMap.sendToProc_.resize(stamps_[level]->size(),rank);
        commMap.recvFromProc_.resize(stamps_[level]->size(),rank);
+     }
+
+     // build restriction simulation maps
+     if(rebalance_) {
+       MPI_Comm mpiComm = comm->getTimeCommunicator();
+       TimeStepCommMap & commMap = restrictSimMap_[level];
+
+       int sendTarget = -1;
+       if(rank % 2 == 0)
+         sendTarget = rank/2;
+       else
+         sendTarget = (rank-1)/2;
+
+       int simSize = 2*origSize;
+       commMap.sendToProc_.resize(simSize,sendTarget);
+
+       MPI_Send(&simSize,1,MPI_INT,sendTarget,level,mpiComm);
+
+       commMap.recvFromProc_.resize(2*stamps_[level]->size(),-1);
+
+       if(commMap.recvFromProc_.size()>0) {
+         int sizeA = -1;
+         int sizeB = -1;
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
+
+         TEUCHOS_ASSERT(sizeA+sizeB==2*stamps_[level]->size());
+
+         for(int i=0;i<sizeA;i++) 
+           commMap.recvFromProc_[i      ] = 2*rank;
+         for(int i=0;i<sizeB;i++) 
+           commMap.recvFromProc_[i+sizeA] = 2*rank+1;
+       }
+     }
+     else {
+       TimeStepCommMap & commMap = restrictSimMap_[level];
+ 
+       commMap.sendToProc_.resize(2*stamps_[level]->size(),rank);
+       commMap.recvFromProc_.resize(2*stamps_[level]->size(),rank);
      }
 
      // build prolongation optimization maps
@@ -551,13 +633,13 @@ public:
        commMap.recvFromProc_.resize(stamps_[level]->size(),recvTarget);
 
        int recvSize = stamps_[level]->size();
-       MPI_Send(&recvSize,1,MPI_INT,recvTarget,0,mpiComm);
+       MPI_Send(&recvSize,1,MPI_INT,recvTarget,level,mpiComm);
 
        if(2*rank+1<procSize) {
          int sizeA = -1;
          int sizeB = -1;
-         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,0,mpiComm,MPI_STATUS_IGNORE);
-         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,0,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
 
          commMap.sendToProc_.resize(sizeA+sizeB,-1);
 
@@ -574,13 +656,55 @@ public:
        commMap.recvFromProc_.resize(stamps_[level]->size(),rank);
      }
 
+     // build prolongation simulation maps
+     if(rebalance_) {
+       int procSize = comm->getTimeSize();
+       MPI_Comm mpiComm = comm->getTimeCommunicator();
+       TimeStepCommMap & commMap = prolongSimMap_[level];
+
+       int recvTarget = -1;
+       if(rank % 2 == 0)
+         recvTarget = rank/2;
+       else
+         recvTarget = (rank-1)/2;
+
+       commMap.recvFromProc_.resize(2*stamps_[level]->size(),recvTarget);
+
+       int recvSize = 2*stamps_[level]->size();
+       MPI_Send(&recvSize,1,MPI_INT,recvTarget,level,mpiComm);
+
+       std::cout << rank << " SEND SIZE " << recvSize << std::endl;
+
+       if(2*rank+1<procSize) {
+         int sizeA = -1;
+         int sizeB = -1;
+         MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
+         MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
+
+       std::cout << rank << " RECV SIZE " << sizeA << " " << sizeB << std::endl;
+
+         commMap.sendToProc_.resize(sizeA+sizeB,-1);
+
+         for(int i=0;i<sizeA;i++) 
+           commMap.sendToProc_[i      ] = 2*rank;
+         for(int i=0;i<sizeB;i++) 
+           commMap.sendToProc_[i+sizeA] = 2*rank+1;
+       }
+     }
+     else {
+       TimeStepCommMap & commMap = prolongSimMap_[level];
+ 
+       commMap.sendToProc_.resize(2*stamps_[level]->size(),rank);
+       commMap.recvFromProc_.resize(2*stamps_[level]->size(),rank);
+     }
+
      buildLevelDataStructures(level+1);
    }
 
    /**
     * \brief Allocate a simulation space vector at a particular multigrid level.
     */
-   Ptr<Vector<Real>> allocateSimVector(const Vector<Real> & level_0_ref,int level) const
+   Ptr<PinTVector<Real>> allocateSimVector(const Vector<Real> & level_0_ref,int level) const
    {
      // when rebalnacing these are null as we coarsen
      if(not levelIsActiveOnMyRank(level))
@@ -649,10 +773,31 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     int numSteps = pint_input.numOwnedSteps();
-     std::pair<int,int> fneRange = pint_input.ownedStepRange();
+     restrictSimVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),restrictSimMap_[inputLevel+1],inputLevel); 
+   }
 
-     int timeRank = pint_output.communicators().getTimeRank();
+   void restrictSimVector(const ROL::Ptr<const ROL::PinTVector<Real>> & pint_input,
+                          const ROL::Ptr<      ROL::PinTVector<Real>> & pint_output,
+                          int inputLevel)
+   {
+     restrictSimVector(pint_input,pint_output,restrictSimMap_[inputLevel+1],inputLevel); 
+   }
+
+   void restrictSimVector(const ROL::Ptr<const ROL::PinTVector<Real>> & pint_input,
+                          const ROL::Ptr<      ROL::PinTVector<Real>> & pint_output,
+                          const TimeStepCommMap & commMap,
+                          int inputLevel)
+   {
+     // nothing to do in this case
+     if(not levelIsActiveOnMyRank(inputLevel)) {
+       return;
+     }
+
+     int timeRank = pint_input->communicators().getTimeRank();
+     int numSteps = pint_input->numOwnedSteps();
+     std::pair<int,int> fneRange = pint_input->ownedStepRange();
+
+     auto scratch = pint_input->getRemoteBufferPtr(0)->clone();
 
      int crs_i = 0;
      for(int i=0;i<numSteps;i++) {
@@ -660,13 +805,35 @@ public:
        if((i+fneRange.first) % 2 != 0) 
          continue;
 
-       ROL::Vector<Real> & out_u = *pint_output.getVectorPtr(2*crs_i);
-       out_u.axpy(1.0,*pint_input.getVectorPtr(2*i)); 
+       ROL::Ptr<Vector<Real>> output_u = getLocalVector(2*crs_i,timeRank,pint_output,scratch,commMap);
+       output_u->axpy(1.0,*pint_input->getVectorPtr(2*i)); 
 
-       ROL::Vector<Real> & out_v = *pint_output.getVectorPtr(2*crs_i+1);
-       out_v.axpy(1.0,*pint_input.getVectorPtr(2*i+1)); 
+       // send to coarse
+       sendToProcs(*output_u,                   
+                    2*crs_i,                  
+                    pint_input->communicators(),
+                    *pint_input->vectorCommunicationPtr(),
+                    commMap); 
+
+       ROL::Ptr<Vector<Real>> output_v = getLocalVector(2*crs_i+1,timeRank,pint_output,scratch,commMap);
+       output_v->axpy(1.0,*pint_input->getVectorPtr(2*i+1)); 
+
+       // send to coarse
+       sendToProcs(*output_v,                   
+                    2*crs_i+1,                  
+                    pint_input->communicators(),
+                    *pint_input->vectorCommunicationPtr(),
+                    commMap); 
 
        crs_i++;
+     }
+
+     // if the coarse level is inactive on this proccessor skip the recieve step
+     if(levelIsActiveOnMyRank(inputLevel+1)) {
+       recvAllFromProcs(*pint_output,
+                         pint_input->communicators(),          
+                         *pint_input->vectorCommunicationPtr(),
+                         commMap);
      }
    }
 
@@ -755,6 +922,151 @@ public:
    }
 
    /**
+    * \brief Prolong a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] inputLevel Multigrid level of the input vector 
+    * \param[in] input The input vector to be "prolonged" 
+    * \param[in] output The output vector resulting from prolongation, must be at level inputLevel-1
+    */
+   void prolongSimVector(const ROL::Ptr<const PinTVector<Real>> & pint_input,
+                         const ROL::Ptr<PinTVector<Real>> & pint_output,
+                         const TimeStepCommMap & commMap,
+                         int inputLevel)
+   {
+     // nothing to do in this case
+     if(levelIsActiveOnMyRank(inputLevel)) {
+       int timeRank = pint_output->communicators().getTimeRank();
+
+       int fineSteps = pint_output->numOwnedSteps();
+
+       // communicate points on the left of this interval
+       pint_input->boundaryExchangeLeftToRight();
+       auto u_fineStart = pint_input->getRemoteBufferPtr(0)->clone();
+       auto v_fineStart = pint_input->getRemoteBufferPtr(1)->clone();
+       u_fineStart->set(*pint_input->getRemoteBufferPtr(0));             // this is a little unpalatable since we are
+       v_fineStart->set(*pint_input->getRemoteBufferPtr(1));             // allocating more memory. it might be better for
+       // the user to pass in a buffer
+       //
+       auto scratch = u_fineStart->clone();
+
+       // communicate points on the right of this interval
+       pint_input->boundaryExchangeRightToLeft();
+       auto u_fineEnd = pint_input->getRemoteBufferPtr(0);
+       auto v_fineEnd = pint_input->getRemoteBufferPtr(1);
+
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> local_store;
+
+       // for(int fne_i=0;fne_i<fineSteps;fne_i++) {
+       int fne_i = 0;
+       std::pair<int,int> fneRange = pint_output->ownedStepRange();
+       std::pair<int,int> crsRange = pint_input->ownedStepRange();
+       for(int crs_i=0;crs_i<pint_input->numOwnedSteps();crs_i++) {
+         int crsIndex = crs_i+crsRange.first;
+
+         // fine indices
+         ROL::Ptr<Vector<Real>> output_u;
+         ROL::Ptr<Vector<Real>> output_v;
+
+         if(crsIndex>0) {
+           int u_fne_index = 2*fne_i;   
+           int v_fne_index = 2*fne_i+1;   
+
+           int u_crs_index = -1; 
+           int v_crs_index = -1; 
+
+           int coarse_si_0 = crs_i-1;     // coarse step index
+           int coarse_si_1 = coarse_si_0+1;
+
+           u_crs_index = 2*coarse_si_0;
+           v_crs_index = 2*coarse_si_0+1;
+
+           output_u = getLocalVector(u_fne_index,timeRank,pint_output,scratch,commMap);
+           output_v = getLocalVector(v_fne_index,timeRank,pint_output,scratch,commMap);
+
+           local_store.push_back(output_u);
+           local_store.push_back(output_v);
+
+           // this special case is used when the first fine time step does not belong to the 
+           // coarse grid
+           if(coarse_si_0 < 0) {
+             output_u->set(*u_fineStart);
+             output_v->set(*v_fineStart);
+           }
+           else {
+             output_u->set(*pint_input->getVectorPtr(u_crs_index));
+             output_v->set(*pint_input->getVectorPtr(v_crs_index));
+           }
+
+           u_crs_index += 2;
+           v_crs_index += 2;
+
+           output_u->axpy(1.0,*pint_input->getVectorPtr(u_crs_index));
+           output_v->axpy(1.0,*pint_input->getVectorPtr(v_crs_index));
+
+           // average the two points
+           output_u->scale(0.5);
+           output_v->scale(0.5);
+ 
+           fne_i++;
+         }
+
+         // inject into the fine index
+         {
+           int u_fne_index = 2*fne_i;   
+           int v_fne_index = 2*fne_i+1;   
+
+           int u_crs_index = 2*crs_i;
+           int v_crs_index = 2*crs_i+1;
+
+           output_u = getLocalVector(u_fne_index,timeRank,pint_output,scratch,commMap);
+           output_v = getLocalVector(v_fne_index,timeRank,pint_output,scratch,commMap);
+
+           local_store.push_back(output_u);
+           local_store.push_back(output_v);
+
+           output_u->set(*pint_input->getVectorPtr(u_crs_index));
+           output_v->set(*pint_input->getVectorPtr(v_crs_index));
+
+           fne_i++;
+         }
+       }
+
+       sendToAllProcs(local_store,
+           pint_output->communicators(),          
+           *pint_output->vectorCommunicationPtr(),
+           commMap);
+     }
+
+     // if the fine level is inactive on this proccessor skip the recieve step
+     if(levelIsActiveOnMyRank(inputLevel-1)) {
+       int timeRank = pint_output->communicators().getTimeRank();
+
+       recvAllFromProcs(*pint_output,
+                         pint_output->communicators(),          
+                         *pint_output->vectorCommunicationPtr(),
+                         commMap);
+     }
+   }
+
+   /**
+    * \brief Prolong a control space vector
+    *
+    * Currently assumes a piecewise constant control
+    *
+    * \param[in] input The input vector to be "prolonged" 
+    * \param[in] output The output vector resulting from prolongation, must be at level inputLevel-1
+    * \param[in] inputLevel Multigrid level of the input vector 
+    */
+   void prolongSimVector(const ROL::Ptr<const PinTVector<Real>> & pint_input,
+                         const ROL::Ptr<PinTVector<Real>> & pint_output,
+                         int inputLevel)
+   {
+     prolongSimVector(pint_input,pint_output,prolongSimMap_[inputLevel-1],inputLevel); 
+   }
+
+   /**
     * \brief Prolong a simulation space vector
     *
     *   X_{2*i+1} = x_i                           -1 <= i < Np      (injection variables, including virtual variable)
@@ -768,87 +1080,10 @@ public:
     */
    void prolongSimVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
-     const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input); // coarse vector
+     const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     std::pair<int,int> fneRange = pint_output.ownedStepRange();
-
-     int timeRank = pint_output.communicators().getTimeRank();
-     int fineSteps = pint_output.numOwnedSteps();
-
-     // communicate points on the left of this interval
-     pint_input.boundaryExchangeLeftToRight();
-     auto u_fineStart = pint_input.getRemoteBufferPtr(0)->clone();
-     auto v_fineStart = pint_input.getRemoteBufferPtr(1)->clone();
-     u_fineStart->set(*pint_input.getRemoteBufferPtr(0));             // this is a little unpalatable since we are
-     v_fineStart->set(*pint_input.getRemoteBufferPtr(1));             // allocating more memory. it might be better for
-                                                                      // the user to pass in a buffer
-
-     // communicate points on the right of this interval
-     pint_input.boundaryExchangeRightToLeft();
-     auto u_fineEnd = pint_input.getRemoteBufferPtr(0);
-     auto v_fineEnd = pint_input.getRemoteBufferPtr(1);
-     
-     for(int fne_i=0;fne_i<fineSteps;fne_i++) {
-       int fneIndex = fne_i+fneRange.first;
-
-       // fine indices
-       int u_fne_index = 2*fne_i;   
-       int v_fne_index = 2*fne_i+1;   
-
-       if(fneIndex % 2 == 0) {
-         int crs_i = fne_i/2;   // here fne_i can be odd, but it still works out ... right?
-         int u_crs_index = 2*crs_i;
-         int v_crs_index = 2*crs_i+1;
-
-         pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getVectorPtr(u_crs_index));
-         pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getVectorPtr(v_crs_index));
-       }
-       else {
-         
-         int coarse_si_0 = (fne_i-1)/2;     // coarse step index
-         int coarse_si_1 = coarse_si_0+1;
-         if(fne_i-1 < 0) {
-           coarse_si_0 = -1;
-           coarse_si_1 = 0;
-         }
-
-         int u_crs_index = -1; 
-         int v_crs_index = -1;
- 
-         u_crs_index = 2*coarse_si_0;
-         v_crs_index = 2*coarse_si_0+1;
-
-         // this special case is used when the first fine time step does not belong to the 
-         // coarse grid
-         if(coarse_si_0 < 0) {
-           pint_output.getVectorPtr(u_fne_index)->set(*u_fineStart);
-           pint_output.getVectorPtr(v_fne_index)->set(*v_fineStart);
-         }
-         else {
-           pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getVectorPtr(u_crs_index));
-           pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getVectorPtr(v_crs_index));
-         }
-
-         u_crs_index = 2*coarse_si_1;
-         v_crs_index = 2*coarse_si_1+1;
-
-         // this special case is used when the last fine time step does not belong to the 
-         // coarse grid
-         if(coarse_si_1 >= pint_input.numOwnedSteps()) {
-           pint_output.getVectorPtr(u_fne_index)->axpy(1.0,*u_fineEnd);
-           pint_output.getVectorPtr(v_fne_index)->axpy(1.0,*v_fineEnd);
-         }
-         else {
-           pint_output.getVectorPtr(u_fne_index)->axpy(1.0,*pint_input.getVectorPtr(u_crs_index));
-           pint_output.getVectorPtr(v_fne_index)->axpy(1.0,*pint_input.getVectorPtr(v_crs_index));
-         }
-
-         // average the two points
-         pint_output.getVectorPtr(u_fne_index)->scale(0.5);
-         pint_output.getVectorPtr(v_fne_index)->scale(0.5);
-       }
-     }
+     prolongSimVector(ROL::makePtrFromRef(pint_input),ROL::makePtrFromRef(pint_output),inputLevel); 
    }
 
    /**
