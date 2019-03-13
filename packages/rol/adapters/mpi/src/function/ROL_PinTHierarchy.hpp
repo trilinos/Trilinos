@@ -673,15 +673,11 @@ public:
        int recvSize = 2*stamps_[level]->size();
        MPI_Send(&recvSize,1,MPI_INT,recvTarget,level,mpiComm);
 
-       std::cout << rank << " SEND SIZE " << recvSize << std::endl;
-
        if(2*rank+1<procSize) {
          int sizeA = -1;
          int sizeB = -1;
          MPI_Recv(&sizeA,1,MPI_INT,2*rank  ,level,mpiComm,MPI_STATUS_IGNORE);
          MPI_Recv(&sizeB,1,MPI_INT,2*rank+1,level,mpiComm,MPI_STATUS_IGNORE);
-
-       std::cout << rank << " RECV SIZE " << sizeA << " " << sizeB << std::endl;
 
          commMap.sendToProc_.resize(sizeA+sizeB,-1);
 

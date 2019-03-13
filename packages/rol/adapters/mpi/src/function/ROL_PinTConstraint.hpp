@@ -291,13 +291,14 @@ public:
    */
   void applyMultigrid(int maxLevels,
                       const ROL::Ptr<const ROL::PinTCommunicators> & pintComm,
-                      const ROL::Ptr<const ROL::PinTVectorCommunication<Real>> & vectorComm)
+                      const ROL::Ptr<const ROL::PinTVectorCommunication<Real>> & vectorComm,
+                      bool rebalance=false)
   {
     applyMultigrid_ = true;
     maxLevels_ = maxLevels;
 
     hierarchy_.setMaxLevels(maxLevels_);
-    hierarchy_.buildLevels(pintComm,vectorComm);
+    hierarchy_.buildLevels(pintComm,vectorComm,rebalance);
   }
 
   /**
@@ -1395,36 +1396,36 @@ public:
      // solve the coarse system
      timer->start("applyMGAugmentedKKT-coarse");
      {
-       auto pint_u = dynamic_cast<const PinTVector<Real>&>(u);
-       auto pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+       auto pint_u = ROL::makePtrFromRef(dynamic_cast<const PinTVector<Real>&>(u));
+       auto pint_z = ROL::makePtrFromRef(dynamic_cast<const PinTVector<Real>&>(z));
 
-       auto dx_u = dynamic_cast<PartitionedVector&>(*dx).get(0);
-       auto dx_z = dynamic_cast<PartitionedVector&>(*dx).get(1);
-       auto dx_v = dynamic_cast<PartitionedVector&>(*dx).get(2);
+       auto dx_u = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*dx).get(0));
+       auto dx_z = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*dx).get(1));
+       auto dx_v = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*dx).get(2));
 
-       auto residual_u = dynamic_cast<PartitionedVector&>(*residual).get(0);
-       auto residual_z = dynamic_cast<PartitionedVector&>(*residual).get(1);
-       auto residual_v = dynamic_cast<PartitionedVector&>(*residual).get(2);
+       auto residual_u = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*residual).get(0));
+       auto residual_z = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*residual).get(1));
+       auto residual_v = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*residual).get(2));
 
-       auto crs_u            = hierarchy_.allocateSimVector(pint_u,level+1);
+       auto crs_u            = hierarchy_.allocateSimVector(*pint_u,level+1);
 
-       auto crs_residual_u   = hierarchy_.allocateSimVector(pint_u,level+1);
-       auto crs_residual_v   = hierarchy_.allocateSimVector(pint_u,level+1);
-       auto crs_correction_u = hierarchy_.allocateSimVector(pint_u,level+1);
-       auto crs_correction_v = hierarchy_.allocateSimVector(pint_u,level+1);
+       auto crs_residual_u   = hierarchy_.allocateSimVector(*pint_u,level+1);
+       auto crs_residual_v   = hierarchy_.allocateSimVector(*pint_u,level+1);
+       auto crs_correction_u = hierarchy_.allocateSimVector(*pint_u,level+1);
+       auto crs_correction_v = hierarchy_.allocateSimVector(*pint_u,level+1);
 
-       auto crs_z            = hierarchy_.allocateOptVector(pint_z,level+1);
-       auto crs_residual_z   = hierarchy_.allocateOptVector(pint_z,level+1);
-       auto crs_correction_z = hierarchy_.allocateOptVector(pint_z,level+1);
+       auto crs_z            = hierarchy_.allocateOptVector(*pint_z,level+1);
+       auto crs_residual_z   = hierarchy_.allocateOptVector(*pint_z,level+1);
+       auto crs_correction_z = hierarchy_.allocateOptVector(*pint_z,level+1);
 
-       hierarchy_.restrictSimVector(*residual_u,*crs_residual_u,level);
-       hierarchy_.restrictOptVector(*residual_z,*crs_residual_z,level);
-       hierarchy_.restrictSimVector(*residual_v,*crs_residual_v,level);
+       hierarchy_.restrictSimVector(residual_u,crs_residual_u,level);
+       hierarchy_.restrictOptVector(residual_z,crs_residual_z,level);
+       hierarchy_.restrictSimVector(residual_v,crs_residual_v,level);
 
-       hierarchy_.restrictSimVector(u,*crs_u,level);               // restrict the state to the coarse level
-       hierarchy_.restrictOptVector(z,*crs_z,level);               // restrict the control to the coarse level
+       hierarchy_.restrictSimVector(pint_u,crs_u,level);               // restrict the state to the coarse level
+       hierarchy_.restrictOptVector(pint_z,crs_z,level);               // restrict the control to the coarse level
 
-       {
+       if(hierarchy_.levelIsActiveOnMyRank(level+1)) {
          typedef std::vector<ROL::Ptr<ROL::Vector<Real>>> vector;
 
          auto crs_correction = makePtr<PartitionedVector>(vector({crs_correction_u,crs_correction_z,crs_correction_v}));
@@ -1433,9 +1434,9 @@ public:
          applyMultigridAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
        }
 
-       hierarchy_.prolongSimVector(*crs_correction_u,*dx_u,level+1);
-       hierarchy_.prolongOptVector(*crs_correction_z,*dx_z,level+1);
-       hierarchy_.prolongSimVector(*crs_correction_v,*dx_v,level+1);
+       hierarchy_.prolongSimVector(crs_correction_u,dx_u,level+1);
+       hierarchy_.prolongOptVector(crs_correction_z,dx_z,level+1);
+       hierarchy_.prolongSimVector(crs_correction_v,dx_v,level+1);
 
        x.axpy(1.0,*dx);
      }

@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
     double absTol      = parlist->get("MGRIT Krylov Absolute Tolerance",1e-4);
     int spaceProc      = parlist->get("MGRIT Spatial Procs",1);
     double globalScale = parlist->get("MGRIT Global Scale",1.0);
+    bool rebalance     = parlist->get("MGRIT Rebalance",false);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
     ROL::Ptr<const Teuchos::Comm<int>> mpiSpaceComm = ROL::makePtr<Teuchos::MpiComm<int>>(communicators->getSpaceCommunicator());
@@ -267,17 +268,18 @@ int main(int argc, char *argv[])
     }
 
     if(myRank==0) {
-      (*outStream) << "Sweeps = " << sweeps       << std::endl;
-      (*outStream) << "Omega = "  << omega        << std::endl;
-      (*outStream) << "Levels = " << numLevels    << std::endl;
-      (*outStream) << "Sweeps = " << coarseSweeps << std::endl;
-      (*outStream) << "Omega = "  << coarseOmega  << std::endl;
-      (*outStream) << "Global Scale = "  << globalScale  << std::endl;
+      (*outStream) << "Sweeps        = " << sweeps       << std::endl;
+      (*outStream) << "Omega         = " << omega        << std::endl;
+      (*outStream) << "Levels        = " << numLevels    << std::endl;
+      (*outStream) << "Coarse Sweeps = " << coarseSweeps << std::endl;
+      (*outStream) << "Coarse Omega  = " << coarseOmega  << std::endl;
+      (*outStream) << "Global Scale  = " << globalScale  << std::endl;
+      (*outStream) << "Rebalance     = " << rebalance    << std::endl;
     }
 
     // build the parallel in time constraint from the user constraint
     ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con = ROL::makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-    pint_con->applyMultigrid(numLevels,communicators,vectorComm);
+    pint_con->applyMultigrid(numLevels,communicators,vectorComm,rebalance);
     pint_con->setSweeps(sweeps);
     pint_con->setRelaxation(omega);
     pint_con->setCoarseSweeps(coarseSweeps);
