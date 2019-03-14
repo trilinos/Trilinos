@@ -1,5 +1,5 @@
-#ifndef _ZOLTAN2_MACHINE_TOPOMANAGERTEST_HPP_
-#define _ZOLTAN2_MACHINE_TOPOMANAGERTEST_HPP_
+#ifndef _ZOLTAN2_MACHINE_TORUS_TOPOMANAGERTEST_HPP_
+#define _ZOLTAN2_MACHINE_TORUS_TOPOMANAGERTEST_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -13,14 +13,14 @@ namespace Zoltan2{
  */
 
 template <typename pcoord_t, typename part_t>
-class MachineBGQTest : public Machine <pcoord_t, part_t> {
+class MachineTorusBGQTest : public Machine <pcoord_t, part_t> {
 
 public:
   /*! \brief Constructor: A BlueGeneQ network machine description;
    *  \param comm Communication object.
    */
 
-  MachineBGQTest(const Teuchos::Comm<int> &comm ):
+  MachineTorusBGQTest(const Teuchos::Comm<int> &comm ):
       Machine<pcoord_t,part_t>(comm),
       networkDim(6),
       procCoords(NULL),machine_extent(NULL),
@@ -54,7 +54,7 @@ public:
 
   }
 
-  MachineBGQTest(const Teuchos::Comm<int> &comm, 
+  MachineTorusBGQTest(const Teuchos::Comm<int> &comm, 
                  const Teuchos::ParameterList &pl_):
     Machine<pcoord_t,part_t>(comm),
     networkDim(6),
@@ -108,7 +108,7 @@ public:
   }
 
 
-  virtual ~MachineBGQTest() {
+  virtual ~MachineTorusBGQTest() {
     for (int i = 0; i < networkDim; i++) {
       delete [] procCoords[i];
     }

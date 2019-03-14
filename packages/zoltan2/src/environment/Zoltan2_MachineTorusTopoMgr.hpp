@@ -1,5 +1,5 @@
-#ifndef _ZOLTAN2_MACHINE_TOPOMANAGER_HPP_
-#define _ZOLTAN2_MACHINE_TOPOMANAGER_HPP_
+#ifndef _ZOLTAN2_MACHINE_TORUS_TOPOMANAGER_HPP_
+#define _ZOLTAN2_MACHINE_TORUS_TOPOMANAGER_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -15,14 +15,14 @@ namespace Zoltan2{
  */
 
 template <typename pcoord_t, typename part_t>
-class MachineTopoMgr : public Machine <pcoord_t, part_t> {
+class MachineTorusTopoMgr : public Machine <pcoord_t, part_t> {
 
 public:
   /*! \brief Constructor: A BlueGeneQ network machine description;
    *  \param comm Communication object.
    */
 
-  MachineTopoMgr(const Teuchos::Comm<int> &comm):
+  MachineTorusTopoMgr(const Teuchos::Comm<int> &comm):
     Machine<pcoord_t,part_t>(comm),
 #if defined (CMK_BLUEGENEQ)
     networkDim(6),  tmgr(comm.getSize()),
@@ -60,7 +60,7 @@ public:
 
   }
 
-  MachineTopoMgr(const Teuchos::Comm<int> &comm, 
+  MachineTorusTopoMgr(const Teuchos::Comm<int> &comm, 
                  const Teuchos::ParameterList &pl_ ):
     Machine<pcoord_t,part_t>(comm),
 #if defined (CMK_BLUEGENEQ)
@@ -119,7 +119,7 @@ public:
 
   }
 
-  virtual ~MachineTopoMgr() {
+  virtual ~MachineTorusTopoMgr() {
     for (int i = 0; i < networkDim; i++) {
       delete [] procCoords[i];
     }
