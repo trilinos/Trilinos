@@ -110,36 +110,7 @@ extern void fillCircleSquareData(int ArowPtr[], int Acols[], int ownedX, int own
 
 extern LocalOrdinal LIDregionCircleSquare(void *ptr, int compLID,int whichGrp);
 
-// Input data is read into a generic vector.
-// Use these enums to access entries in this vector.
-enum InputDataIndices
-{
-  inpData_isStructured,
-  inpData_ownedX,
-  inpData_ownedY,
-  inpData_regionX,
-  inpData_regionY,
-  inpData_cornerX,
-  inpData_cornerY,
-  inpData_nGhosts,
-  inpData_firstLIDsOfGhosts
-};
-
-//! Print an object in regional layout to screen
-template <class T>
-void printRegionalObject(const std::string objName, ///< string to be used for screen output
-    const std::vector<Teuchos::RCP<T> > regObj, ///< regional object to be printed to screen
-    const int myRank, ///< rank of calling proc
-    Teuchos::FancyOStream& outstream ///< output stream
-    )
-{
-  for (int j = 0; j < (int) regObj.size(); j++) {
-    outstream << myRank << ": " << objName << " " << j << std::endl;
-    regObj[j]->describe(outstream, Teuchos::VERB_EXTREME);
-  }
-}
-
-Teuchos::Array<LocalOrdinal> setLocalNodesPerDim(const std::string& problemType,
+Teuchos::Array<LocalOrdinal> setLocalNodesPerDim(const std::string& problemType, const std::string& caseName,
     const bool doing1D, const Map& rowMap, const LocalOrdinal dimX, const LocalOrdinal dimY, const LocalOrdinal dimZ = 1)
 {
   // Number of nodes per x/y/z-direction per processor
@@ -153,39 +124,39 @@ Teuchos::Array<LocalOrdinal> setLocalNodesPerDim(const std::string& problemType,
     }
     else { // Two-dimensional problems
 
-      // caseFifteen
-//      {
-//        lNodesPerDim[0] = 4;
-//        lNodesPerDim[1] = 4;
-//        lNodesPerDim[2] = 1;
-//      }
-//
-//      // caseSixteen
-//      {
-//        lNodesPerDim[0] = 7;
-//        lNodesPerDim[1] = 7;
-//        lNodesPerDim[2] = 1;
-//      }
-//
-//      // caseSeventeen
-//      {
-//        lNodesPerDim[0] = 31;
-//        lNodesPerDim[1] = 31;
-//        lNodesPerDim[2] = 1;
-//      }
-//
-//      // caseEightteen / caseNineteen
-//      {
-//        lNodesPerDim[0] = 16;
-//        lNodesPerDim[1] = 16;
-//        lNodesPerDim[2] = 1;
-//      }
-
-      // caseTwenty
+      if (caseName == "caseFifteen")
+      {
+        lNodesPerDim[0] = 4;
+        lNodesPerDim[1] = 4;
+        lNodesPerDim[2] = 1;
+      }
+      else if (caseName == "caseSixteen")
+      {
+        lNodesPerDim[0] = 7;
+        lNodesPerDim[1] = 7;
+        lNodesPerDim[2] = 1;
+      }
+      else if (caseName == "caseSeventeen")
+      {
+        lNodesPerDim[0] = 31;
+        lNodesPerDim[1] = 31;
+        lNodesPerDim[2] = 1;
+      }
+      else if (caseName == "caseEightteen" || caseName == "caseNineteen")
+      {
+        lNodesPerDim[0] = 16;
+        lNodesPerDim[1] = 16;
+        lNodesPerDim[2] = 1;
+      }
+      else if (caseName == "caseTwenty")
       {
         lNodesPerDim[0] = 10;
         lNodesPerDim[1] = 10;
         lNodesPerDim[2] = 1;
+      }
+      else
+      {
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Unknown caseName. Cannot set 'lNodesPerDim' without knowing the spefic case.\n");
       }
     }
   }
@@ -269,6 +240,7 @@ int main(int argc, char *argv[]) {
   std::string xmlFileName;
   std::string problemType;
   std::string regionDataDirectory;
+  std::string caseName;
 
   myRank = Comm->getRank();
 
@@ -294,6 +266,7 @@ int main(int argc, char *argv[]) {
     clp.setOption("xml", &xmlFileName, "filename of xml-file with MueLu configuration", true);
     clp.setOption("probType", &problemType, "Problem type [structured, hybrid]", true);
     clp.setOption("regDataDir", &regionDataDirectory, "directory with all region information/files", true);
+    clp.setOption("caseName", &caseName, "name of case file", true);
 
     // force user to specify all options
     clp.recogniseAllOptions(true);
@@ -390,7 +363,6 @@ int main(int argc, char *argv[]) {
 
   std::vector<LocalOrdinal> myRegions; // regions that myRank owns
   Teuchos::RCP<CrsMatrixWrap> AComp = Teuchos::null; // composite form of matrix
-  Teuchos::RCP<Matrix> ACompSplit = Teuchos::null; // composite form of matrix
   Teuchos::RCP<Map> mapComp = Teuchos::null; // composite map used to build AComp
 
   // regionsPerGID[i] lists all regions that share the ith composite GID
@@ -519,7 +491,7 @@ int main(int argc, char *argv[]) {
     std::stringstream fileNameSS;
     fileNameSS << regionDataDirectory << "/Amat.mm";
 
-    AComp = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(IO::Read(fileNameSS.str(), lib, Comm, false));
+    AComp = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(IO::Read(fileNameSS.str(), mapComp));
 //    AComp->describe(*fos, Teuchos::VERB_EXTREME);
   }
 
@@ -723,7 +695,6 @@ int main(int argc, char *argv[]) {
 
   // Make quasiRegion matrices
   MakeQuasiregionMatrices(AComp,
-                          ACompSplit,
                           appData,
                           rowMapPerGrp,
                           colMapPerGrp,
@@ -750,7 +721,7 @@ int main(int argc, char *argv[]) {
   Array<RCP<MultiVector> > nullspace(maxRegPerProc);
   Array<RCP<RealValuedMultiVector> > coordinates(maxRegPerProc);
   for(int j = 0; j < maxRegPerProc; ++j) {
-    lNodesPerDim[j] = setLocalNodesPerDim(problemType, doing1D,
+    lNodesPerDim[j] = setLocalNodesPerDim(problemType, caseName, doing1D,
                                                   *revisedRowMapPerGrp[j],
                                                   genericVector[inpData_regionX],
                                                   genericVector[inpData_regionY]);

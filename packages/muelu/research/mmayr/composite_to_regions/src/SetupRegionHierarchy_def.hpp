@@ -42,6 +42,8 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_SETUPREGIONHIERARCHY_DEF_HPP
+#define MUELU_SETUPREGIONHIERARCHY_DEF_HPP
 
 #include <vector>
 #include <iostream>
@@ -1330,34 +1332,42 @@ void vCycle(const int l, ///< ID of current level
                   regRowMaps[l], regRowImporters[l]);
   } else {
 
-    // create row and column maps with continuous GIDs
-    RCP<Map> contigRowMap = Teuchos::null; //= MapFactory::Build(coarseCompMat->getRowMap());
-    RCP<Map> contigColMap = Teuchos::null; //MapFactory::Build(coarseCompMat->getColMap());
-    createContinuousCoarseLevelMaps(coarseCompMat->getRowMap(),
-                                    coarseCompMat->getColMap(),
-                                    contigRowMap, contigColMap);
+//    // create row and column maps with continuous GIDs
+//    RCP<Map> contigRowMap = Teuchos::null; //= MapFactory::Build(coarseCompMat->getRowMap());
+//    RCP<Map> contigColMap = Teuchos::null; //MapFactory::Build(coarseCompMat->getColMap());
+//    createContinuousCoarseLevelMaps(coarseCompMat->getRowMap(),
+//                                    coarseCompMat->getColMap(),
+//                                    contigRowMap, contigColMap);
+//
+//    // Store non contiguous maps for later
+//    RCP<const Map> noncontigRowMap = coarseCompMat->getRowMap();
+//    RCP<const Map> noncontigColMap = coarseCompMat->getColMap();
+//
+//    // Create composite error vector (zero initial guess)
+//    RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+//
+//    // Create composite right-hand side vector
+//    RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+//    {
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
+//        inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
+//        fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
+//      }
+//
+//      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+//        regRowImporters[l], Xpetra::ADD);
+//    }
 
-    // Store non contiguous maps for later
-    RCP<const Map> noncontigRowMap = coarseCompMat->getRowMap();
-    RCP<const Map> noncontigColMap = coarseCompMat->getColMap();
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    fos->setOutputToRootOnly(0);
+    *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
+         << "+ Coarse level solver has not been migrated to Xpetra, yet. +\n"
+         << "+ We skip it for now.                                       +\n"
+         << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
+        << std::endl;
 
-    // Create composite error vector (zero initial guess)
-    RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-
-    // Create composite right-hand side vector
-    RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-    {
-      for (int j = 0; j < maxRegPerProc; j++) {
-        RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
-        inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
-        fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
-      }
-
-      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
-        regRowImporters[l], Xpetra::ADD);
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Coarse level solver not migrated to Xpetra, yet.");
+//    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Coarse level solver not migrated to Xpetra, yet.");
 
 //    {
 //      Level level;
@@ -1442,3 +1452,5 @@ void vCycle(const int l, ///< ID of current level
 
   return;
 }
+
+#endif // MUELU_SETUPREGIONHIERARCHY_DEF_HPP
