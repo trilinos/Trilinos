@@ -130,8 +130,21 @@ namespace MueLu {
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
+      bool isEpetra = A->getRowMap()->lib() == Xpetra::UseEpetra;
+#ifdef KOKKOS_ENABLE_CUDA
+      bool isCuda = typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name();
+#else
+      bool isCuda = false;
+#endif
 
-      if (pL.get<bool>("rap: triple product") == false) {
+      if (pL.get<bool>("rap: triple product") == false || isEpetra || isCuda) {
+        if (pL.get<bool>("rap: triple product") && isEpetra)
+          GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for Epetra.\n";
+#ifdef KOKKOS_ENABLE_CUDA
+        if (pL.get<bool>("rap: triple product") && isCuda)
+          GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for Cuda.\n";
+#endif
+
         // Reuse pattern if available (multiple solve)
         RCP<ParameterList> APparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
