@@ -42,49 +42,19 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_petsc_docstring
-"
-PyTrilinos.NOX.PETSc is the python interface to namespace PETSc for
-the Trilinos package NOX:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of NOX.PETSc is to provide a concrete interface beteen
-NOX and PETSc.
-
-NOX.PETSC provides the following user-level classes:
-
-    * Group                    - PETSc implementation of Abstract.Group
-    * Vector                   - PETSc implementation of Abstract.Vector
-    * SharedJacobian           - PETSc implementation of SharedJacobian
-"
-%enddef
-
-%define %nox_petsc_import_code
+%define %nox_petsc_importcode
 "
 from .. import Abstract
 from .  import Interface
-from .  import ___init__
+from .  import _Base
 "
 %enddef
-
-// Allow import from the parent directory
-// %pythoncode
-// %{
-// import sys, os.path as op
-// thisDir   = op.dirname(op.abspath(__file__))
-// parentDir = op.normpath(op.join(thisDir,".."))
-// if not thisDir   in sys.path: sys.path.append(thisDir  )
-// if not parentDir in sys.path: sys.path.append(parentDir)
-// del sys, op
-// %}
 
 %module(package      = "PyTrilinos.NOX.PETSc",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %nox_petsc_import_code,
-	docstring    = %nox_petsc_docstring) __init__
+        moduleimport = %nox_petsc_importcode) Base
 
 %{
 // Configuration

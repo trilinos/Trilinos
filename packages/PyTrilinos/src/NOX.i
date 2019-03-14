@@ -41,44 +41,16 @@
 //
 // ***********************************************************************
 // @HEADER
-%define %nox_docstring
+
+%define %nox_base_importcode
 "
-PyTrilinos.NOX is the python interface to the Trilinos nonlinear
-solver package NOX:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of NOX is to provide robust nonlinear solvers for the
-problem of finding x such that F(x)=0.  In C++, NOX supports several
-namespaces, some of which are sub-modules in python:
-
-    * Abstract          - Base classes for abstract interface to NOX
-    * Epetra            - Epetra implementation
-    * Epetra.Interface  - Concrete interface for Epetra
-    * Solver            - Solver manager class and supporting utilities
-    * StatusTest        - Support for customizable stopping criteria
-
-The top-level NOX module provides the following user-level class:
-
-    * Utils  - Various utilities
-
-For an example of usage of all of NOX, please consult the following
-script in the example subdirectory of the PyTrilinos package:
-
-    * exNOX_1Dfem.py
-"
-%enddef
-
-%define %nox_import_code
-"
-from . import ___init__
+from . import _Base
 "
 %enddef
 
 %module(package      = "PyTrilinos.NOX",
 	autodoc      = "1",
-        moduleimport = %nox_import_code,
-        docstring    = %nox_docstring) __init__
+        moduleimport = %nox_base_importcode) Base
 
 %{
 // System include files
@@ -118,7 +90,7 @@ from . import ___init__
 // PyTrilinos configuration support //
 //////////////////////////////////////
 %include "PyTrilinos_config.h"
-#ifdef HAVE_PYTRILINOS_NOX_EPETRA
+#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
 %constant bool Have_Epetra = true;
 #else
 %constant bool Have_Epetra = false;
@@ -128,41 +100,3 @@ from . import ___init__
 // NOX Utils support //
 ///////////////////////
 %include "NOX_Utils.i"
-
-// NOX namespace imports
-%pythoncode
-%{
-
-# Import sys module
-import sys
-
-# Abstract, Solver, and StatusTest namespaces
-__all__ = ['Abstract', 'Solver', 'StatusTest']
-from . import Abstract
-from . import Solver
-from . import StatusTest
-%}
-
-// NOX.Epetra namespace
-#ifdef HAVE_PYTRILINOS_NOX_EPETRA
-%pythoncode
-%{
-
-# Epetra namespace
-__all__.append('Epetra')
-from . import Epetra
-%}
-#endif
-
-// NOX.PETSc namespace
-#ifdef HAVE_PYTRILINOS_NOX_PETSC
-%pythoncode
-%{
-
-# PETSc namespace
-__all__.append('PETSc')
-from . import PETSc
-sys.modules["PyTrilinos.NOX.PETSc.___init__"] = sys.modules["___init__"]
-del sys.modules["___init__"]
-%}
-#endif

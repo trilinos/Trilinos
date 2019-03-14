@@ -42,32 +42,14 @@
 // ***********************************************************************
 // @HEADER
 
-%define %nox_epetra_docstring
+%define %nox_epetra_base_importcode
 "
-PyTrilinos.NOX.Epetra is the python interface to namespace Epetra for
-the Trilinos package NOX:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of NOX.Epetra is to provide a concrete interface beteen
-NOX and Epetra.
-
-NOX.Epetra provides the following user-level classes:
-
-    * Group                    - Epetra implementation of Abstract.Group
-    * Vector                   - Epetra implementation of Abstract.Vector
-    * FiniteDifference         - Class for estimating Jacobian w/finite differences
-    * FiniteDifferenceColoring - FiniteDifference class, w/coloring efficiencies
-    * MatrixFree               - Base class for Jacobian-free algorithms
-    * Scaling                  - Class for controlling scalling of algebraic objects
-    * LinearSystem             - Base class for interface to linear solvers
-    * LinearSystemAztecOO      - Concrete implementation of LinearSystem
-"
-%enddef
-
-%define %nox_epetra_import_code
-"
-from . import ___init__
+from . import _Base
+import PyTrilinos.Teuchos.Base
+from PyTrilinos.NOX import Abstract
+from . import Interface
+import PyTrilinos.Epetra
+import PyTrilinos.EpetraExt
 "
 %enddef
 
@@ -75,8 +57,7 @@ from . import ___init__
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %nox_epetra_import_code,
-	docstring    = %nox_epetra_docstring) __init__
+        moduleimport = %nox_epetra_base_importcode) Base
 
 %{
 // System include files
@@ -136,15 +117,23 @@ using namespace NOX::Epetra;
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
-// Allow import from the this directory and its parent, and force
-// correct import of ___init__
+// Allow import from the this directory's parent
 %pythoncode
 %{
 import sys, os.path as op
-thisDir   = op.dirname(op.abspath(__file__))
-parentDir = op.normpath(op.join(thisDir,".."))
-if not thisDir   in sys.path: sys.path.append(thisDir)
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+%}
+
+// The %import directives that follow generate an 'import Interface'
+// python command that does not work in python 3.  Add the current
+// directory to the search path so that it does work.
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
 del sys, op
 %}
 

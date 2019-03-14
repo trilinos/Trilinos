@@ -42,37 +42,25 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_hopf_docstring
+%define %loca_base_importcode
 "
-PyTrilinos.LOCA.Hopf is the python interface to namespace Hopf of the
-Trilinos continuation algorithm package LOCA:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of LOCA.Hopf is to provide groups and vectors for Hopf
-bifurcations.  The python version of LOCA.Hopf supports the following
-sub-modules:
-
-    * MooreSpence         - Groups and vectors for locating Hopf bifurcations
-                            using the Moore-Spence formulation
-    * MinimallyAugmented  - Groups and vectors for locating Hopf bifurcations
-                            using the minimally augmented Hopf formulation
-
-and classes:
-
-    * ComplexMultiVector  - Multi-vector class to hold two multi-vectors to
-                            represent a complex multi-vector
-    * ComplexVector       - Vector class to hold two vectors to represent a
-                            complex vector
+from . import _Base
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Hopf",
-        docstring = %loca_hopf_docstring) __init__
+%module(package       = "PyTrilinos.LOCA",
+        directors     = "1",
+	autodoc       = "1",
+	implicitconv  = "1",
+        moduleinclude = %loca_base_importcode) Base
 
 %{
+// System include files
+#include <sstream>
+
 // PyTrilinos include files
 #include "PyTrilinos_config.h"
+#include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_LinearProblem.hpp"
 
 // Teuchos include files
@@ -81,19 +69,6 @@ and classes:
 // Epetra include files
 #ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
-#endif
-
-// NOX-Epetra include files
-#ifdef HAVE_PYTRILINOS_NOX_EPETRA
-//#include "Epetra_Vector.h"
-#include "NOX_Epetra_Group.H"
-#include "NOX_Epetra_Vector.H"
-#endif
-
-// NOX-PETSc include files
-#include "NOX_Abstract_Vector.H"
-#ifdef HAVE_PYTRILINOS_NOX_PETSC
-#include "NOX_Petsc_Vector.H"
 #endif
 
 // LOCA include files
@@ -105,54 +80,102 @@ and classes:
 #include "numpy_include.hpp"
 %}
 
-// PETSc4Py support
-%include "PyTrilinos_config.h"
-#ifdef HAVE_PYTRILINOS_NOX_PETSC
-%include "petsc4py/petsc4py.i"
-#endif
+// Ignore/renames
+%ignore *::operator=;
+%ignore *::operator[];
+%ignore operator<<(ostream&, const LOCA::ParameterVector&);
+%rename(Print) LOCA::ParameterVector::print(ostream& stream) const;
 
-// Standard exception handling
+// SWIG library include files
+%include "stl.i"
+
+// Trilinos interface import.  Note: Teuchos.i turns off warnings for
+// nested classes, so we do not have to do it again.
+%import "Teuchos.i"
+
+// Exception handling
 %include "exception.i"
 
 // Include LOCA documentation
 %feature("autodoc", "1");
 %include "LOCA_dox.i"
 
-// Ignore/renames
-%ignore *::operator=;
-%ignore *::operator[];
-%ignore operator[];
+// Director exception handling
+%feature("director:except")
+{
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
 
-// Trilinos module imports
-%import "Teuchos.i"
-
-// Base class imports
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-if "delete_ComplexMultiVector" not in dir(___init__):
-    del ___init__
-    from . import ___init__
-%}
+// NOX interface file imports.
 %import "NOX.Abstract.i"
-%import(module="Extended") "LOCA_Extended_MultiVector.H"
-%import(module="Extended") "LOCA_Extended_Vector.H"
+%import "NOX.StatusTest.i"
 
-// Import the sub-modules
+// General exception handling
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(PyTrilinos::PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
+
+// Techos::RCP handling
+%teuchos_rcp(LOCA::GlobalData)
+%teuchos_rcp(LOCA::ErrorCheck)
+%teuchos_rcp(LOCA::Factory)
+%teuchos_rcp(LOCA::Stepper)
+%teuchos_rcp(LOCA::DerivUtils)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+
+// LOCA GlobalData class
+%include "LOCA_GlobalData.H"
+
+// LOCA ErrorCheck class
+%include "LOCA_ErrorCheck.H"
+
+// LOCA Factory class
+%include "LOCA_Factory.H"
+
+// LOCA DerivUtils class
+%include "LOCA_DerivUtils.H"
+
+// The LOCA::Stepper class derives from LOCA::Abstract::Iterator, so
+// import it here
+%teuchos_rcp(LOCA::Abstract::Iterator)
+%import(module="Abstract") "LOCA_Abstract_Iterator.H"
+
+// At this point, 'Abstract' might be 'NOX.Abstract' (depending on the
+// Python version and related import rules), but we need it to be
+// 'LOCA.Abstract'
 %pythoncode
 %{
-__all__ = ['MooreSpence',
-           'MinimallyAugmented'
-           ]
-import MooreSpence
-import MinimallyAugmented
+import os.path
+if 'NOX' in Abstract.__file__.split(os.path.sep):
+  del Abstract
+  from . import Abstract
 %}
 
-// LOCA::Hopf ComplexMultiVector class
-%include "LOCA_Hopf_ComplexMultiVector.H"
+// LOCA Stepper class
+%teuchos_rcp(LOCA::Stepper)
+%feature("director") LOCA::Stepper;
+%include "LOCA_Stepper.H"
 
-// LOCA::Hopf ComplexVector class
-%include "LOCA_Hopf_ComplexVector.H"
+// LOCA ParameterVector class
+%include "LOCA_Parameter_Vector.H"

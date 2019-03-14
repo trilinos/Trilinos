@@ -42,24 +42,11 @@
 # ***********************************************************************
 # @HEADER
 
-# Create the PyTrilinos_LIST string
-SET(PyTrilinos_LIST "")
-FOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
-  SET(PyTrilinos_LIST "${PyTrilinos_LIST}    ${TRIBITS_PACKAGE}\n")
-ENDFOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
-
-# Create the PyTrilinos_ALL string
-SET(PyTrilinos_ALL "__all__ = [")
-FOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
-  SET(PyTrilinos_ALL "${PyTrilinos_ALL}'${TRIBITS_PACKAGE}',\n          ")
-ENDFOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
-SET(PyTrilinos_ALL "${PyTrilinos_ALL}]")
-
 # Define a trigger target
-ADD_CUSTOM_TARGET(PyTrilinos_Pure_Python_Modules ALL)
+ADD_CUSTOM_TARGET(PyTrilinos_LOCA_Pitchfork_Pure_Python_Modules ALL)
 
 # Define the list of local modules
-SET(LOCAL_MODULES __init__ PropertyBase typed_tuple typed_list typed_dict)
+SET(LOCAL_MODULES __init__)
 
 # Initialize the additional "make clean" files
 SET(ADDITIONAL_CLEAN_FILES "")
@@ -70,9 +57,9 @@ FOREACH(MODULE ${LOCAL_MODULES})
 
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
-  ADD_CUSTOM_COMMAND(TARGET PyTrilinos_Pure_Python_Modules
+  ADD_CUSTOM_COMMAND(TARGET PyTrilinos_LOCA_Pitchfork_Pure_Python_Modules
     COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py', '${MODULE}.pyc')"
-    COMMENT "Byte compiling ${MODULE}.py"
+    COMMENT "Byte compiling LOCA/Pitchfork/${MODULE}.py"
     BYPRODUCTS ${MODULE}.pyc
     VERBATIM)
   INSTALL(FILES
@@ -89,22 +76,3 @@ LIST(APPEND            clean_files ${ADDITIONAL_CLEAN_FILES})
 LIST(REMOVE_DUPLICATES clean_files)
 LIST(REMOVE_ITEM       clean_files "")
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
-
-# The Teuchos module employs namespaces, so include the Teuchos directory
-ADD_SUBDIRECTORY(Teuchos)
-
-# The Isorropia module employs namespaces, so include the Isorropia
-# directory
-IF(PyTrilinos_ENABLE_Isorropia)
-  ADD_SUBDIRECTORY(Isorropia)
-ENDIF(PyTrilinos_ENABLE_Isorropia)
-
-# The NOX module employs namespaces, so include the NOX directory
-IF(PyTrilinos_ENABLE_NOX)
-  ADD_SUBDIRECTORY(NOX)
-ENDIF(PyTrilinos_ENABLE_NOX)
-
-# The LOCA module employs namespaces, so include the LOCA directory
-IF(NOX_ENABLE_LOCA)
-  ADD_SUBDIRECTORY(LOCA)
-ENDIF(NOX_ENABLE_LOCA)
