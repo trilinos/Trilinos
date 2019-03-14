@@ -69,6 +69,7 @@
 #include "ROL_PinTConstraint.hpp"
 #include "ROL_PinTVectorCommunication.hpp"
 #include "ROL_PinTVectorCommunication_Tpetra.hpp"
+#include "ROL_PinTVectorCommunication_StdTpetraComposite.hpp"
 
 #include "../../TOOLS/dynconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
@@ -238,7 +239,8 @@ int main(int argc, char *argv[])
     u0 = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u0_ptr,pde,*assembler,*parlist);
     zk = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zk_ptr,pde,*assembler,*parlist);
 
-    ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_Tpetra<RealT>>();
+    // ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_Tpetra<RealT>>();
+    ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdTpetraComposite<RealT>>();
     ROL::Ptr<ROL::PinTVector<RealT>> state   = ROL::buildStatePinTVector<RealT>(   communicators, vectorComm, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
     ROL::Ptr<ROL::PinTVector<RealT>> control = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, nt,     zk); // time discontinous, stencil = [0]
 
