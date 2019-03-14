@@ -57,6 +57,9 @@ set (Zoltan2_orderingTestDriverExample_MPI_1_DISABLE ON CACHE BOOL "Set by defau
 # Disable long-failing Piro test until it can be fixed (#826)
 set (Piro_EpetraSolver_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testing")
 
+# Disable tests that timeout in PR testing until it can be fixed (#4614)
+set (PanzerAdaptersSTK_PoissonInterfaceExample_2d_diffsideids_MPI_1_DISABLE ON CACHE BOOL "Set by default for PR testing")
+
 # Options from SEMSDevEnv.cmake
 
 SET(CMAKE_C_COMPILER "$ENV{MPICC}" CACHE FILEPATH "Set by default for PR testing")
