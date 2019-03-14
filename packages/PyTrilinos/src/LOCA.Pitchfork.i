@@ -42,31 +42,11 @@
 // ***********************************************************************
 // @HEADER
 
-%define %loca_pitchfork_docstring
+%define %loca_pitchfork_base_importcode
 "
-PyTrilinos.LOCA.Pitchfork is the python interface to namespace
-Pitchfork of the Trilinos continuation algorithm package LOCA:
-
-    http://trilinos.sandia.gov/packages/nox
-
-The purpose of LOCA.Pitchfork is to provide groups and vectors for
-pitchfork bifurcations.  The python version of LOCA.Pitchfork supports
-the following sub-modules:
-
-    * MooreSpence         - Groups and vectors for locating pitchfork
-                            bifurcations using the Moore-Spence formulation
-    * MinimallyAugmented  - Groups and vectors for locating pitchfork
-                            bifurcations using the minimally augmented
-                            formulation
+from . import _Base
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA.Pitchfork",
-        docstring = %loca_pitchfork_docstring) __init__
-
-%pythoncode
-%{
-__all__ = ['MooreSpence', 'MinimallyAugmented']
-import MooreSpence
-import MinimallyAugmented
-%}
+%module(package       = "PyTrilinos.LOCA.Pitchfork",
+        moduleinclude = %loca_pitchfork_base_importcode) Base

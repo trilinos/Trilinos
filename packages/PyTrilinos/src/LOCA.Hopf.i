@@ -1,4 +1,5 @@
-/*
+// -*- c++ -*-
+
 // @HEADER
 // ***********************************************************************
 //
@@ -40,5 +41,82 @@
 //
 // ***********************************************************************
 // @HEADER
-*/
 
+%define %loca_hopf_base_importcode
+"
+from . import _Base
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import Extended
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA.Hopf",
+        moduleimport = %loca_hopf_base_importcode) Base
+
+%{
+// PyTrilinos include files
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_LinearProblem.hpp"
+
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// Epetra include files
+#ifdef HAVE_PYTRILINOS_EPETRA
+#include "PyTrilinos_Epetra_Headers.hpp"
+#endif
+
+// NOX-Epetra include files
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
+#include "NOX_Epetra_Group.H"
+#include "NOX_Epetra_Vector.H"
+#endif
+
+// NOX-PETSc include files
+#include "NOX_Abstract_Vector.H"
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
+#include "NOX_Petsc_Vector.H"
+#endif
+
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
+
+// Local include files
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
+
+// PETSc4Py support
+%include "PyTrilinos_config.h"
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
+%include "petsc4py/petsc4py.i"
+#endif
+
+// Standard exception handling
+%include "exception.i"
+
+// Include LOCA documentation
+%feature("autodoc", "1");
+%include "LOCA_dox.i"
+
+// Ignore/renames
+%ignore *::operator=;
+%ignore *::operator[];
+%ignore operator[];
+
+// Trilinos module imports
+%import "Teuchos.i"
+
+// Base class imports
+%import "NOX.Abstract.i"
+%import(module="Extended") "LOCA_Extended_MultiVector.H"
+%import(module="Extended") "LOCA_Extended_Vector.H"
+
+// LOCA::Hopf ComplexMultiVector class
+%include "LOCA_Hopf_ComplexMultiVector.H"
+
+// LOCA::Hopf ComplexVector class
+%include "LOCA_Hopf_ComplexVector.H"
