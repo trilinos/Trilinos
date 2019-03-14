@@ -40,11 +40,12 @@ namespace tsl {
    *
    * For operations modifying the hash map (insert, erase, rehash, ...), the strong exception
    * guarantee is only guaranteed when the expression
-   * `std::is_nothrow_swappable<std::pair<Key,T>>::value &&
-   * std::is_nothrow_move_constructible<std::pair<Key, T>>::value` is true, otherwise if an
+   * `std::is_nothrow_swappable<std::pair<Key,T>>\:\:value &&
+   * std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value`
+   * is true, otherwise if an
    * exception is thrown during the swap or the move, the hash map may end up in a undefined state.
    * Per the standard a `Key` or `T` with a noexcept copy constructor and no move constructor also
-   * satisfies the `std::is_nothrow_move_constructible<std::pair<Key, T>>::value` criterion (and
+   * satisfies the `std::is_nothrow_move_constructible<std::pair<Key, T>>\:\:value` criterion (and
    * will thus guarantee the strong exception for the map).
    *
    * When `StoreHash` is true, 32 bits of the hash are stored alongside the values. It can improve

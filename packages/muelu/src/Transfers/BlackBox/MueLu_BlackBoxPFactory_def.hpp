@@ -88,7 +88,6 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<std::string>            ("axisPermutation",         "", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
     validParamList->set<std::string>            ("stencil type",            "full", "You can use two type of stencils: full and reduced, that correspond to 27 and 7 points stencils respectively in 3D.");
     validParamList->set<std::string>            ("block strategy",          "coupled", "The strategy used to handle systems of PDEs can be: coupled or uncoupled.");
 
@@ -552,8 +551,8 @@ namespace MueLu {
           glElementCoarseNodeCG[7] += 1;
 
           LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
-          LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
-            + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
+          // LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
+          //   + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
 
           // Compute the element prolongator
           Teuchos::SerialDenseMatrix<LO,SC> Pi, Pf, Pe;
@@ -619,8 +618,9 @@ namespace MueLu {
                           ++refCoarsePointTuple[dim];
                         }
                       } else {
+                        // Note:  no need for magnitudeType here, just use double because these things are LO's
                         refCoarsePointTuple[dim] =
-                          std::ceil(static_cast<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(lNodeTuple[dim] + myOffset[dim])
+                          std::ceil(static_cast<double>(lNodeTuple[dim] + myOffset[dim])
                                     / coarseRate[dim]);
                       }
                       if((lNodeTuple[dim] + myOffset[dim]) % coarseRate[dim] > 0) {break;}

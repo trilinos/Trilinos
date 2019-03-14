@@ -143,5 +143,5 @@ C ... Read names (if they exist)
       CALL WDBERR (IERR, ERRMSG)
       ISEOF = .TRUE.
 
-10000  FORMAT (A,' in nodeset ', I10)
+10000  FORMAT (A,' in nodeset ', I12)
       END

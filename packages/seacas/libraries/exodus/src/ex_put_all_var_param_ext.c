@@ -47,7 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_get_dimension, etc
-#include "netcdf.h"       // for NC_NOERR, nc_def_var, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
 #include <stdio.h>
@@ -290,9 +289,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   /* leave define mode  */
 
   in_define = 0;
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
     goto error_ret;
   }
 
@@ -350,11 +347,7 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 /* Fatal error: exit definition mode and return */
 error_ret:
   if (in_define == 1) {
-    if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
-               exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
-    }
+    ex_leavedef(exoid, __func__);
   }
   free(eblk_ids);
   free(edblk_ids);

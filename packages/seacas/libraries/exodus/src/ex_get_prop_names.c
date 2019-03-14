@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ATT_PROP_NAME, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 

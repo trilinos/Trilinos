@@ -40,6 +40,13 @@
 
 namespace {
 
+  struct my_numpunct : std::numpunct<char>
+  {
+  protected:
+    char        do_thousands_sep() const override { return ','; }
+    std::string do_grouping() const override { return "\3"; }
+  };
+
   // Data space shared by most field input/output routines...
   std::vector<char> data;
 
@@ -164,6 +171,9 @@ namespace {
 
   void file_info(const Info::Interface &interface)
   {
+    std::cout.imbue(std::locale(std::locale(), new my_numpunct));
+    std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
+
     std::string inpfile    = interface.filename();
     std::string input_type = interface.type();
 
@@ -196,14 +206,14 @@ namespace {
       }
       OUTPUT << " Number of spatial dimensions =" << std::setw(12) << degree << "\n";
       OUTPUT << " Number of nodeblocks         =" << std::setw(12) << nbs.size() << "\t";
-      OUTPUT << " Number of nodes            =" << std::setw(12) << total_num_nodes << "\n";
+      OUTPUT << " Number of nodes            =" << std::setw(14) << total_num_nodes << "\n";
     }
     else {
       for (auto nb : nbs) {
         int64_t num_nodes  = nb->entity_count();
         int64_t num_attrib = nb->get_property("attribute_count").get_int();
         OUTPUT << '\n'
-               << name(nb) << std::setw(12) << num_nodes << " nodes, " << std::setw(3) << num_attrib
+               << name(nb) << std::setw(14) << num_nodes << " nodes, " << std::setw(3) << num_attrib
                << " attributes.\n";
         if (interface.check_node_status()) {
           std::vector<char>    node_status;
@@ -272,7 +282,7 @@ namespace {
                      << sb->get_property("offset_k").get_int() << "] ";
             }
 
-            OUTPUT << std::setw(12) << num_cell << " cells, " << std::setw(12) << num_node
+            OUTPUT << std::setw(14) << num_cell << " cells, " << std::setw(14) << num_node
                    << " nodes ";
 
             info_aliases(region, sb, true, false);
@@ -307,7 +317,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of structured blocks  =" << std::setw(12) << sbs.size() << "\t";
-      OUTPUT << " Number of cells            =" << std::setw(12) << total_cells << "\n";
+      OUTPUT << " Number of cells            =" << std::setw(14) << total_cells << "\n";
     }
   }
 
@@ -324,7 +334,7 @@ namespace {
         int64_t     num_attrib = eb->get_property("attribute_count").get_int();
         OUTPUT << '\n'
                << name(eb) << " id: " << std::setw(6) << id(eb) << ", topology: " << std::setw(10)
-               << type << ", " << std::setw(12) << num_elem << " elements, " << std::setw(3)
+               << type << ", " << std::setw(14) << num_elem << " elements, " << std::setw(3)
                << num_attrib << " attributes.";
 
         info_aliases(region, eb, true, false);
@@ -354,7 +364,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of element blocks     =" << std::setw(12) << ebs.size() << "\t";
-      OUTPUT << " Number of elements         =" << std::setw(12) << total_elements << "\n";
+      OUTPUT << " Number of elements         =" << std::setw(14) << total_elements << "\n";
     }
   }
 
@@ -371,7 +381,7 @@ namespace {
         int64_t     num_attrib = eb->get_property("attribute_count").get_int();
         OUTPUT << '\n'
                << name(eb) << " id: " << std::setw(6) << id(eb) << ", topology: " << std::setw(10)
-               << type << ", " << std::setw(12) << num_edge << " edges, " << std::setw(3)
+               << type << ", " << std::setw(14) << num_edge << " edges, " << std::setw(3)
                << num_attrib << " attributes.\n";
 
         info_aliases(region, eb, false, true);
@@ -391,7 +401,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of edge blocks        =" << std::setw(12) << ebs.size() << "\t";
-      OUTPUT << " Number of edges            =" << std::setw(12) << total_edges << "\n";
+      OUTPUT << " Number of edges            =" << std::setw(14) << total_edges << "\n";
     }
   }
 
@@ -408,7 +418,7 @@ namespace {
         int64_t     num_attrib = eb->get_property("attribute_count").get_int();
         OUTPUT << '\n'
                << name(eb) << " id: " << std::setw(6) << id(eb) << ", topology: " << std::setw(10)
-               << type << ", " << std::setw(12) << num_face << " faces, " << std::setw(3)
+               << type << ", " << std::setw(14) << num_face << " faces, " << std::setw(3)
                << num_attrib << " attributes.\n";
 
         info_aliases(region, eb, false, true);
@@ -428,7 +438,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of face blocks        =" << std::setw(12) << ebs.size() << "\t";
-      OUTPUT << " Number of faces            =" << std::setw(12) << total_faces << "\n";
+      OUTPUT << " Number of faces            =" << std::setw(14) << total_faces << "\n";
     }
   }
 
@@ -494,7 +504,7 @@ namespace {
 
     if (summary) {
       OUTPUT << " Number of side sets          =" << std::setw(12) << fss.size() << "\t";
-      OUTPUT << " Number of element sides    =" << std::setw(12) << total_sides << "\n";
+      OUTPUT << " Number of element sides    =" << std::setw(14) << total_sides << "\n";
     }
   }
 
@@ -520,7 +530,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of nodal point sets   =" << std::setw(12) << nss.size() << "\t";
-      OUTPUT << " Length of node list        =" << std::setw(12) << total_nodes << "\n";
+      OUTPUT << " Length of node list        =" << std::setw(14) << total_nodes << "\n";
     }
     OUTPUT << '\n';
   }
@@ -545,7 +555,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of edge sets          =" << std::setw(12) << nss.size() << "\t";
-      OUTPUT << " Length of edge list        =" << std::setw(12) << total_edges << "\n";
+      OUTPUT << " Length of edge list        =" << std::setw(14) << total_edges << "\n";
     }
   }
 
@@ -569,7 +579,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of face sets          =" << std::setw(12) << fss.size() << "\t";
-      OUTPUT << " Length of face list        =" << std::setw(12) << total_faces << "\n";
+      OUTPUT << " Length of face list        =" << std::setw(14) << total_faces << "\n";
     }
   }
 
@@ -593,7 +603,7 @@ namespace {
     }
     if (summary) {
       OUTPUT << " Number of element sets       =" << std::setw(12) << ess.size() << "\t";
-      OUTPUT << " Length of element list     =" << std::setw(12) << total_elements << "\n";
+      OUTPUT << " Length of element list     =" << std::setw(14) << total_elements << "\n";
     }
   }
 

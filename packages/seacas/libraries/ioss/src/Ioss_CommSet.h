@@ -56,6 +56,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "CommSet"; }
     std::string short_type_string() const override { return "commlist"; }
+    std::string contains_string() const override { return "Entity/Processor pair"; }
     EntityType  type() const override { return COMMSET; }
 
     // Handle implicit properties -- These are calcuated from data stored

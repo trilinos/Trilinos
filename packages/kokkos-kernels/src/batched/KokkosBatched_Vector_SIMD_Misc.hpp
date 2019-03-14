@@ -164,7 +164,8 @@ namespace KokkosBatched {
     T
     min(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
-          return min(left,right);
+          const auto tmp = left < right;
+          return tmp*left + !tmp*right;
         });
     } 
 
@@ -174,7 +175,8 @@ namespace KokkosBatched {
     T
     max(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
-          return max(left,right);
+          const auto tmp = left > right;
+          return tmp*left + !tmp*right;
         });
     } 
 

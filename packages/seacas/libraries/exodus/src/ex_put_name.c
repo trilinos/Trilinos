@@ -54,7 +54,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
-#include "netcdf.h"       // for nc_inq_varid, NC_NOERR
 #include <inttypes.h>     // for PRId64
 #include <stdio.h>
 

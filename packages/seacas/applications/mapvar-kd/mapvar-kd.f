@@ -115,8 +115,6 @@ C
       include 'varnpt.blk'
       include 'varept.blk'
 C
-      EXTERNAL INITLZ
-C
       DIMENSION A(1),IA(1)
       EQUIVALENCE (A(1),IA(1))
 C
@@ -136,8 +134,6 @@ C            "SUPES", FOR DETAILS OF THE MEMORY MANAGER.
 C
 C     ******************************************************************
 C
-      call initbd
-
 C
 C disable netcdf warning messages
 C
@@ -1472,4 +1468,67 @@ C
   430 FORMAT (/,5X,'MESH-B NODE NUMBER ',I9,/
      &       ,5x,' ELEMENT BLOCK     ',I9,/
      &       ,5X,' WAS NOT FOUND IN MESH-A BY SRCHQ')
+      END
+      BLOCK DATA INITLZ
+C
+C     ******************************************************************
+C
+C     BLOCK DATA SUBROUTINE TO INITIALIZE VARIABLES STORED IN
+C     NAMED COMMON BLOCKS
+C
+C     ******************************************************************
+C
+C...NOTE: Cannot include exodusII.inc in a block data routine.
+      PARAMETER (MXSTLN=32)
+c      CHARACTER*10 ELTYPE
+C
+      include 'header.blk'
+      include 'ntpdat.blk'
+      include 'contrl.blk'
+      include 'amesh.blk'
+      include 'bmesh.blk'
+      include 'aexds1.blk'
+      include 'schdat.blk'
+      include 'tapes.blk'
+      include 'toldat.blk'
+      include 'varnpt.blk'
+      include 'varept.blk'
+      include 'debg.blk'
+      include 'inival.blk'
+C
+      DATA HED/' '/
+      DATA NOUT,NTPOUT,NTP2,NTP3,NTP4/
+     1     6,7,12,13,14/
+      DATA (IFILES(I),I=1,5)/5*0/
+      DATA ISCHEM/1/
+      DATA IDEF/1/
+      DATA IDEBUG/0/
+      DATA IACCU/0/
+      DATA IXDIS,IYDIS,IZDIS,IXVEL,IYVEL,IZVEL/6*0/
+      DATA ISXX,ISYY,ISZZ,ISXY,ISYZ,ISZX,IELMS,IDENS/8*0/
+      DATA NUMELA,NODESA,NBLKSA,NDIMA,NELNDA/5*0/
+      DATA NUMELB,NODESB,NBLKSB,NDIMB,NELNDB/5*0/
+      DATA NQAREC,NVARGP,NVARNP,NVAREL/4*0/
+c      DATA (ELTYPE(I),I=1,13)/'TRI3','TRI6','QUAD4','QUAD8','QUAD9',
+c     1     'TETRA4','TETRA10','PRISM6','PRISM15','HEX8','HEX20',
+c     2     'HEX27','SHELL'/
+C      DATA (NNELM(I),I=1,13)/3,6,4,8,9,4,10,6,15,8,20,27,4/
+C
+      DATA VALINI /0.0/
+      DATA TOLSHL,TOLQAD,TOLHEX,TOLTET,NISS,NRSS
+     *  /0.01,0.01,0.01,0.01, 5,10/
+C
+C TOLSHL=extension of box around MESH-A shell element
+C TOLQAD=extension of box around MESH-A quad element
+C TOLHEX=extension of box around MESH-A hex element
+C NISS=number of integer search scratch  (=5)
+C NRSS=number of    real search scratch (=10)
+C
+      DATA TOL,EPS,STRLMT,ITERMX/0.01,0.01,20.,20/
+C
+C TOL=difference in isoparametric coords after newton iteration (dont change)
+C EPS=tolerance used in checking if point is within element or coincident
+C     with a node
+C STRLMT=tolerance for isoparametric coords to lie within an element
+C
       END

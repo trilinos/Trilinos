@@ -127,7 +127,7 @@ namespace MueLu {
 
     if (minRowsPerThread > 0)
       // We ignore the value given by minRowsPerProcess and repartition based on threads instead
-      minRowsPerProcess *= minRowsPerThread*thread_per_mpi_rank;
+      minRowsPerProcess = minRowsPerThread*thread_per_mpi_rank;
 
     if (targetRowsPerThread == 0)
       targetRowsPerThread = minRowsPerThread;

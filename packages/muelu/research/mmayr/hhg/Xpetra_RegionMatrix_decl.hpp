@@ -2,7 +2,7 @@
 #define XPETRA_REGION_MATRIX_DECL_HPP_
 
 //Ifpack2
-#include "Ifpack2_OverlappingRowMatrix_def.hpp"
+#include "Ifpack2_OverlappingRowMatrix.hpp"
 
 //MueLu
 #include <MueLu_Utilities.hpp>

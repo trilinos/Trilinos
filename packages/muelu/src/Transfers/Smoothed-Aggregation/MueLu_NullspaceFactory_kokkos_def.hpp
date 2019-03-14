@@ -167,7 +167,6 @@ namespace MueLu {
 
         int numBlocks = nullspace->getLocalLength() / numPDEs;
 
-        SC one = Teuchos::ScalarTraits<SC>::one();
         NullspaceFunctor<decltype(nullspaceView), LO> nullspaceFunctor(nullspaceView, numPDEs);
         Kokkos::parallel_for("MueLu:NullspaceF:Build:for", range_type(0,numBlocks), nullspaceFunctor);
         // TODO extend null space factory for blocked multi vectors

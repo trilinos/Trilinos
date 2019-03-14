@@ -35,8 +35,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20180828'
-      QAINFO(3)(:8) = '    3.02'
+      QAINFO(2)(:8) = '20190204'
+      QAINFO(3)(:8) = '    3.03'
 C
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors

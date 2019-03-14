@@ -415,11 +415,17 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
   return minmax;
 }
 
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(double, std::vector<double> &) const;
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
@@ -508,8 +514,10 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
   }
 }
 
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(std::vector<int> &my_values,
                                           std::vector<int> &result) const;
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(std::vector<int64_t> &my_values,
                                           std::vector<int64_t> &result) const;
 template <typename T>
@@ -537,9 +545,11 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
 #endif
 }
 
+/// \relates Ioss::ParallelUtils::gather
 template int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                          std::vector<int> &my_values,
                                          std::vector<int> &result) const;
+/// \relates Ioss::ParallelUtils::gather
 template int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                          std::vector<char> &my_values,
                                          std::vector<char> &result) const;

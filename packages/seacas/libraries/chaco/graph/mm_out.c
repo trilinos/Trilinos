@@ -48,9 +48,6 @@ void mm_out(struct vtx_data **graph,       /* graph data structure */
   FILE *file;   /* output file */
   int   nedges; /* number of edges in graph */
   int   i, j;   /* loop counter */
-  int   DIAG;
-
-  DIAG = TRUE;
 
   if (file_name != NULL) {
     file = fopen(file_name, "w");
@@ -64,22 +61,18 @@ void mm_out(struct vtx_data **graph,       /* graph data structure */
   for (i = 1; i <= nvtxs; i++) {
     nedges += graph[i]->nedges - 1;
   }
-  if (DIAG) {
-    nedges += nvtxs;
-  }
+  nedges += nvtxs;
 
   if (tag != NULL) {
     fprintf(file, "%% graph_out: %s\n", tag);
   }
   fprintf(file, " %d %d %d\n", nvtxs, nvtxs, nedges);
   for (i = 1; i <= nvtxs; i++) {
-    if (DIAG) {
-      if (!using_ewgts) {
-        fprintf(file, "%d %d\n", i, i);
-      }
-      else {
-        fprintf(file, "%d %d %.9f\n", i, i, 1.0);
-      }
+    if (!using_ewgts) {
+      fprintf(file, "%d %d\n", i, i);
+    }
+    else {
+      fprintf(file, "%d %d %.9f\n", i, i, 1.0);
     }
     for (j = 1; j < graph[i]->nedges; j++) {
       if (!using_ewgts) {

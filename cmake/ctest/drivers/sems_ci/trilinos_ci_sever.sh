@@ -34,16 +34,25 @@ source /etc/bashrc
 HOSTNAME=`hostname`
 MAILMSG=$TRILINOS_DIR/cmake/tribits/python_utils/mailmsg.py
 
-if [ "$TRILINOS_SKIP_CI_EMAILS" == "" ] ; then
+if [ "$TRILINOS_CI_SKIP_EMAILS" == "" ] ; then
   $MAILMSG "Starting Trilinos standrad CI testing server on '$HOSTNAME'"
 fi
 
 # A) Run the first build starting from scratch
 
-env CI_FIRST_ITERATION=1 \
-  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-  CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=OFF \
-  $BASE_COMMAND
+if [[ "${TRILINOS_CI_DO_INITIAL_REBUILD}" == "1" ]] ; then
+  echo
+  echo "Running initial build from scratch since TRILINOS_CI_DO_INITIAL_REBUILD='${TRILINOS_CI_DO_INITIAL_REBUILD}'"
+  echo
+  env CI_FIRST_ITERATION=1 \
+    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+    CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=OFF \
+    $BASE_COMMAND
+else
+  echo
+  echo "Skipping initial build from scratch since TRILINOS_CI_DO_INITIAL_REBUILD='${TRILINOS_CI_DO_INITIAL_REBUILD}'"
+  echo
+fi
 
 # B) Run a CI loop that will terminate on time
 
@@ -54,16 +63,16 @@ echo "CI_COMMAND = $CI_COMMAND"
 
 # B.2) Run the CI loop
 
-if [ "$TRILINOS_SKIP_CI_ITERATION" == "" ] ; then
+if [ "$TRILINOS_CI_SKIP_ITERATION" == "" ] ; then
   $TRILINOS_DIR/cmake/tribits/python_utils/generic-looping-demon.py \
   --command="$CI_COMMAND" \
   --today-run-till=$TODAY_RUN_TILL \
   --loop-interval=$LOOP_INTERVAL \
   --pause-file=$PAUSE_FILE
 else
-  echo "Skipping CI iterations because TRILINOS_SKIP_CI_ITERATION = '$TRILINOS_SKIP_CI_ITERATION' != ''"
+  echo "Skipping CI iterations because TRILINOS_CI_SKIP_ITERATION='$TRILINOS_CI_SKIP_ITERATION' != ''"
 fi
 
-if [ "$TRILINOS_SKIP_CI_EMAILS" == "" ] ; then
+if [ "$TRILINOS_CI_SKIP_EMAILS" == "" ] ; then
   $MAILMSG "Ending Trilinos standrad CI testing server on '$HOSTNAME'"
 fi

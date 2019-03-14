@@ -1940,9 +1940,7 @@ namespace {
     // variables are to be output
     if (variable_list.empty() ||
         (variable_list.size() == 1 && case_compare(variable_list[0].first, "all") == 0)) {
-      for (size_t i = 0; i < vars.index_.size(); i++) {
-        vars.index_[i] = i + 1;
-      }
+      std::iota(vars.index_.begin(), vars.index_.end(), 1);
       vars.outputCount = num_vars + extra;
       return;
     }

@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.MultiContinuation is the python interface to namespace
 MultiContinuation of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.MultiContinuation is to provide groups and vectors
 for multi-parameter continuation.  The python version of
@@ -77,9 +77,22 @@ LOCA.MultiContinuation supports the following classes:
 "
 %enddef
 
-%module(package   = "PyTrilinos.LOCA",
-        directors = "1",
-        docstring = %loca_multicontinuation_docstring) MultiContinuation
+%define %loca_multicontinuation_importcode
+"
+if not __package__:
+    __package__ = 'PyTrilinos.LOCA'
+from . import _MultiContinuation
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import Extended
+"
+%enddef
+
+%module(package      = "PyTrilinos.LOCA",
+        directors    = "1",
+        moduleimport = %loca_multicontinuation_importcode,
+        docstring    = %loca_multicontinuation_docstring) MultiContinuation
 
 %{
 // PyTrilinos include files
@@ -144,7 +157,9 @@ LOCA.MultiContinuation supports the following classes:
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
 %teuchos_rcp(LOCA::MultiContinuation::Factory)
 
-// Allow import from this directory
+// The %import directives that follow generate an 'import Extended'
+// python command that does not work in python 3.  Add the current
+// directory to the search path so that it does work.
 %pythoncode
 %{
 import sys, os.path as op

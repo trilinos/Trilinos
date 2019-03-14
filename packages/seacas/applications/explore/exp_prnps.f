@@ -118,7 +118,7 @@ C   --   LISVAR  - SCRATCH - size = NVAR (if 'V' in OPTION)
       CALL PCKSTR (1, STRA)
       LSTRA = LENSTR (STRA)
       WRITE (STRB, 10010, IOSTAT=IDUM) LNPSNL
-10010 FORMAT ('(index=', I10, ')')
+10010 FORMAT ('(index=', I12, ')')
       CALL PCKSTR (1, STRB)
       LSTRB = LENSTR (STRB)
 
@@ -241,9 +241,9 @@ C ... See if all values are the same
 
 10005 FORMAT (1X, 'Nodal ids are Global')
 10020 FORMAT (/, 1X, 'NODAL POINT SETS', :, ' - ', A)
-10030 FORMAT (1X, 'Set', I10, 1X, A, ':',
-     &  I10, ' nodes', 1X, A, '     name = "',A,'"')
-10040 FORMAT ((1X, 8I10))
+10030 FORMAT (1X, 'Set', I12, 1X, A, ':',
+     &  I12, ' nodes', 1X, A, '     name = "',A,'"')
+10040 FORMAT ((1X, 8I12))
 10050 FORMAT ((1X, 6 (1X, 1pE11.4)))
 10055 FORMAT (10x, 'All distribution factors are equal to ', 1pe11.4)
 10060 FORMAT (10x, 'Distribution factors not stored in file.')

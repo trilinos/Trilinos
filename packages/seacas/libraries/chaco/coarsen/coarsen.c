@@ -336,7 +336,7 @@ void coarsen(
       /* Solve extended eigen problem */
 
       /* If not coarsening ewgts, then need care with term_wgts. */
-      if (!using_ewgts && term_wgts[1] != NULL && step != 0) {
+      if (!using_ewgts && step != 0) {
         twptr      = smalloc((nvtxs + 1) * (nsets - 1) * sizeof(float));
         twptr_save = twptr;
         for (j = 1; j < nsets; j++) {

@@ -60,6 +60,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "NodeBlock"; }
     std::string short_type_string() const override { return "nodeblock"; }
+    std::string contains_string() const override { return "Node"; }
     EntityType  type() const override { return NODEBLOCK; }
 
     // Handle implicit properties -- These are calcuated from data stored

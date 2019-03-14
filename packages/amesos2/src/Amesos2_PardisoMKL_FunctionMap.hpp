@@ -67,7 +67,10 @@
 namespace Amesos2 {
 
   namespace PMKL {
-#   include "mkl_pardiso.h"
+    #ifdef __MKL_PARDISO_H
+      #undef __MKL_PARDISO_H
+    #endif
+    #include "mkl_pardiso.h"
   }
 
   /** \internal

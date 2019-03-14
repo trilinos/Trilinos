@@ -61,8 +61,7 @@ namespace SEAMS {
 
  %}
 
-/* Require bison 2.4 or later */
-%require "3.0"
+%require "3.2"
 
 /* add debug output code to generated parser. disable this for release
  * versions. */
@@ -75,12 +74,12 @@ namespace SEAMS {
 %skeleton "lalr1.cc"
 
 /* namespace to enclose parser in */
-%name-prefix "SEAMS"
+%define api.prefix {SEAMS}
 
 /* set the parser's class identifier */
-%define "parser_class_name" {Parser}
+%define api.parser.class {Parser}
 
-%error-verbose
+%define parse.error verbose
 
 /* aprepro is passed by reference to the parser and to the scanner. This
  * provides a simple but effective pure interface, not relying on global

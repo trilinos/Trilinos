@@ -18,6 +18,7 @@
 #   ATDM_CONFIG_USE_CUDA
 #   ATDM_CONFIG_USE_PTHREADS
 #   ATDM_CONFIG_CUDA_RDC
+#   ATDM_CONFIG_COMPLEX
 #   ATDM_CONFIG_SHARED_LIBS
 #
 # or will error out.
@@ -99,6 +100,8 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.8.4
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-6.1.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=GNU-6.1.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.4.0"* ]]; then
@@ -238,6 +241,14 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
   export ATDM_CONFIG_CUDA_RDC=ON
+fi
+
+# Enable complex (double) data-types or not
+export ATDM_CONFIG_COMPLEX=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"no-complex"* ]]; then
+  export ATDM_CONFIG_COMPLEX=OFF
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"complex"* ]]; then
+  export ATDM_CONFIG_COMPLEX=ON
 fi
 
 # Set 'static' or 'shared'

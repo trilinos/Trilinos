@@ -120,7 +120,11 @@ if [ "${ATDM_ARRAY_OF_BUILDS}" == "all" ] ; then
 fi
 
 echo
-echo "Running builds: ${ATDM_ARRAY_OF_BUILDS[@]}"
+echo "Running builds:"
+for build_name in ${ATDM_ARRAY_OF_BUILDS[@]} ; do
+  echo "    ${build_name}"
+done
+echo
 
 #
 # Run the builds using the ctest -S driver script

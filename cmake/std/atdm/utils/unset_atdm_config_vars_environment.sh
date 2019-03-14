@@ -1,5 +1,5 @@
 #
-# unset the ATDM_CONFIG_ env vars that are set by the
+# Unset the ATDM_CONFIG_ env vars that can be set by the
 # <system_name>/enviornment.sh script
 #
 
@@ -11,6 +11,7 @@ unset OMPI_CXX
 unset OMPI_FC
 unset ATDM_CONFIG_ENABLE_SPARC_SETTINGS
 unset ATDM_CONFIG_USE_NINJA
+unset ATDM_CONFIG_CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS
 unset ATDM_CONFIG_NUM_CORES_ON_MACHINE
 unset ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 unset ATDM_CONFIG_BUILD_COUNT
