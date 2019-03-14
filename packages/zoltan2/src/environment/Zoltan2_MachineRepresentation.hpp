@@ -6,12 +6,13 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Zoltan2_MachineForTesting.hpp>
-#include <Zoltan2_MachineTopoMgr.hpp>
-#include <Zoltan2_MachineTopoMgrForTesting.hpp>
-#include <Zoltan2_MachineDragonfly.hpp>
-#include <Zoltan2_MachineDragonflyForTesting.hpp>
-#include <Zoltan2_MachineRCA.hpp>
-#include <Zoltan2_MachineRCAForTesting.hpp>
+#include <Zoltan2_MachineTorusLDMS.hpp>
+#include <Zoltan2_MachineTorusTopoMgr.hpp>
+#include <Zoltan2_MachineTorusTopoMgrForTesting.hpp>
+#include <Zoltan2_MachineTorusRCA.hpp>
+#include <Zoltan2_MachineTorusRCAForTesting.hpp>
+#include <Zoltan2_MachineDragonflyRCA.hpp>
+#include <Zoltan2_MachineDragonflyRCAForTesting.hpp>
 #include <Zoltan2_Environment.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
@@ -27,31 +28,54 @@ public:
     typedef pcoord_t machine_pcoord_t;
     typedef part_t machine_part_t;
 #if defined(HAVE_ZOLTAN2_LDMS)
-    typedef MachineLDMS<pcoord_t, part_t> machine_t;
+  #if defined(ZOLTAN2_MACHINE_TORUS)
+    // TODO: Full LDMS Implementation 
+    typedef MachineTorusLDMS<pcoord_t, part_t> machine_t;
+  #else 
+    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+  #endif
+
 #elif defined(HAVE_ZOLTAN2_RCALIB) 
-    // JAE Should Machine types be built off of MachineRCA?
-    typedef MachineDragonfly<pcoord_t, part_t> machine_t;
-//    typedef MachineRCA<pcoord_t, part_t> machine_t;
+  #if defined(ZOLTAN2_MACHINE_TORUS)
+    typedef MachineTorusRCA<pcoord_t, part_t> machine_t;
+  #elif TRUE || defined(ZOLTAN2_MACHINE_DRAGONFLY)  
+    typedef MachineDragonflyRCA<pcoord_t, part_t> machine_t;
+  #else
+    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+  #endif
+
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
-    typedef MachineTopoMgr<pcoord_t, part_t> machine_t;
+  #if defined(ZOLTAN2_MACHINE_TORUS)
+    typedef MachineTorusTopoMgr<pcoord_t, part_t> machine_t;
+  #else 
+    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+  #endif
+
 #elif defined(HAVE_ZOLTAN2_BGQTEST)
-    typedef MachineBGQTest<pcoord_t, part_t> machine_t;
+  #if defined(ZOLTAN2_MACHINE_TORUS)
+    typedef MachineTorusBGQTest<pcoord_t, part_t> machine_t;
+  #else 
+    typedef MachineForTesting<pcoord_t, part_t> machine_t;
+  #endif
+    
 #else
+  #if defined(ZOLTAN2_MACHINE_TORUS)
+    typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
+  #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
+    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
+  #else 
 //    typedef MachineForTesting<pcoord_t, part_t> machine_t;
-    typedef MachineDragonflyForTesting<pcoord_t, part_t> machine_t;
-//    typedef MachineBGQTest<pcoord_t, part_t> machine_t;
-//    typedef MachineRCAForTesting<pcoord_t, part_t> machine_t;
+//    typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
+    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
+  #endif
 #endif
 
     /*! \brief Constructor MachineRepresentation Class
      *  \param comm_ Communication object.
      */
-
     MachineRepresentation(const Teuchos::Comm<int> &comm) :
       machine(new machine_t(comm)) {
     }
-
-
 
     MachineRepresentation(const Teuchos::Comm<int> &comm, 
                           const Teuchos::ParameterList &pl) :
