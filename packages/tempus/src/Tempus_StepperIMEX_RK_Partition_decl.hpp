@@ -229,15 +229,24 @@ class StepperIMEX_RK_Partition : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /// Constructor to use default Stepper parameters.
-  StepperIMEX_RK_Partition(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "Partitioned IMEX RK SSP2");
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperIMEX_RK_Partition();
 
   /// Constructor to specialize Stepper parameters.
   StepperIMEX_RK_Partition(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor to use default Stepper parameters.
+  StepperIMEX_RK_Partition(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "Partitioned IMEX RK SSP2");
 
   /// Constructor for StepperFactory.
   StepperIMEX_RK_Partition(
@@ -304,6 +313,15 @@ public:
 
   //@}
 
+    /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A = implicitTableau_->A();
+    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+  }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+
   /// Pass initial guess to Newton solver (only relevant for implicit solvers)
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
      {initial_guess_ = initial_guess;}
@@ -334,11 +352,6 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     Scalar time, Scalar stepSize, Scalar stageNumber,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
-
-private:
-
-  /// Default Constructor -- not allowed
-  StepperIMEX_RK_Partition();
 
 protected:
 
