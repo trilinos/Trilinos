@@ -26,6 +26,8 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -53,26 +55,23 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
 
   // Setup the explicit VanDerPol ModelEvaluator
   RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-  RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-    Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+  auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
   // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-  RCP<VanDerPol_IMEX_ImplicitModel<double> > implicitModel =
-    Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+  auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
   // Setup the IMEX Pair ModelEvaluator
-  RCP<Tempus::WrapperModelEvaluatorPairIMEX_Basic<double> > model =
-      Teuchos::rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
+  auto model = rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
                                              explicitModel, implicitModel));
 
 
   // Setup Stepper for field solve ----------------------------
-  RCP<Tempus::StepperIMEX_RK<double> > stepper =
-    Teuchos::rcp(new Tempus::StepperIMEX_RK<double>(model));
+  auto stepper = rcp(new Tempus::StepperIMEX_RK<double>());
+  stepper->setModel(model);
+  stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
-  RCP<Tempus::TimeStepControl<double> > timeStepControl =
-    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
   timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
@@ -85,10 +84,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
-  RCP<Thyra::VectorBase<double> > icSolution =
-    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -96,8 +93,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
-  RCP<Tempus::SolutionHistory<double> > solutionHistory =
-    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
@@ -194,16 +190,13 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 
       // Setup the explicit VanDerPol ModelEvaluator
       RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-      RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-        Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+      auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
       // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-      RCP<VanDerPol_IMEX_ImplicitModel<double> > implicitModel =
-        Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+      auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
       // Setup the IMEX Pair ModelEvaluator
-      RCP<Tempus::WrapperModelEvaluatorPairIMEX_Basic<double> > model =
-          Teuchos::rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
+      auto model = rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
                                                  explicitModel, implicitModel));
 
       // Set the Stepper

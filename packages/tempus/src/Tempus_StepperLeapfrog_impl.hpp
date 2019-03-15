@@ -15,16 +15,27 @@
 
 namespace Tempus {
 
-// StepperLeapfrog definitions:
+template<class Scalar>
+StepperLeapfrog<Scalar>::StepperLeapfrog()
+{
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>
