@@ -28,7 +28,7 @@ def set_reference_date():
     newReferenceDate = datetime.now()
     date_file_name = os.path.join(os.path.sep, 'ascldap', 'users',
                                   'trilinos', '.cleanAllWorkspacesDatefile')
-    with open(date_file_name) as pickleFile:
+    with open(date_file_name, "w") as pickleFile:
         pickle.dump(newReferenceDate, pickleFile)
 
 

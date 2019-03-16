@@ -52,9 +52,9 @@ from   types      import *
 import unittest
 
 from testutil import fromPyTrilinosImport
-Epetra      = fromPyTrilinosImport('Epetra'     , True)
-Isorropia   = fromPyTrilinosImport('Isorropia'  , True)
-Teuchos     = fromPyTrilinosImport('Teuchos'    , True)
+Epetra      = fromPyTrilinosImport('Epetra'   , True)
+Isorropia   = fromPyTrilinosImport('Isorropia', True)
+Teuchos     = fromPyTrilinosImport('Teuchos'  , True)
 
 ################################################################################
 

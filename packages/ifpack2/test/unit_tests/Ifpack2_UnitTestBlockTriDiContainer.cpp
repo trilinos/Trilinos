@@ -328,6 +328,10 @@ static Teuchos::RCP<const Teuchos::Comm<int> > make_comm () {
 }
 
 int main (int argc, char** argv) {
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+  cudaProfilerStop();
+#endif
+
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
   int ret = 0;

@@ -208,6 +208,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   //std::cout << std::endl << response << std::endl;
 
+  Kokkos::setGlobalCijkTensor(typename Scalar::cijk_type());
+
   if ( 0 == comm_rank ) {
     print_perf_value( std::cout , cmd , widths , perf );
   }
@@ -237,6 +239,9 @@ int main( int argc , char ** argv )
   //--------------------------------------------------------------------------
   CMD cmdline;
   clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm, true );
+
+  {
+  Kokkos::initialize(argc, argv);
 
   // Print a warning if we are using the non-mean-based preconditioner
   if (cmdline.USE_MUELU && !cmdline.USE_MEANBASED &&
@@ -290,6 +295,9 @@ int main( int argc , char ** argv )
 #endif
 
   }
+
+  }
+  Kokkos::finalize();
 
   //--------------------------------------------------------------------------
 

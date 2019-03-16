@@ -168,8 +168,7 @@ struct ApplyView<DataType,NoLayout,ExecutionSpace> {
 //
 
 const int global_num_rows = 11;
-const int global_num_cols = 8;  // Currently must be a multiple of 8 based on
-                                // alignment assumptions for SFS
+const int global_num_cols = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Size, Storage, Layout )
 {

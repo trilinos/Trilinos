@@ -39,7 +39,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load sems-hdf5/1.8.12/parallel
     module load sems-netcdf/4.4.1/exo_parallel 
     module load sems-yaml_cpp/0.5.3/base 
-    module load sems-boost/1.59.0/base  
+    module load sems-boost/1.59.0/base
+    module unload sems-python/2.7.9
     module load intel/17.0.4.196
     module load mkl/17.0.4.196
     export BOOST_ROOT=$SEMS_BOOST_ROOT

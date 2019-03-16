@@ -204,7 +204,7 @@ namespace MatrixFreeOperatorUnitTest {
     diff.Update(1.0, result1, -1.0, result2, 0.0);
     double nrm;
     diff.NormInf(&nrm);
-    success = std::abs(nrm < setup.tol);
+    success = std::fabs(nrm) < setup.tol;
     out << "Apply infinity norm of difference:  " << nrm << std::endl;
     out << "Matrix-free result = " << std::endl << result1 << std::endl
 	<< "Assebled result = " << std::endl << result2 << std::endl;
@@ -222,7 +222,7 @@ namespace MatrixFreeOperatorUnitTest {
     diff.Update(1.0, result1, -1.0, result2, 0.0);
     double nrm;
     diff.NormInf(&nrm);
-    success = std::abs(nrm < setup.tol);
+    success = std::fabs(nrm) < setup.tol;
     out << "Apply-transpose infinity norm of difference:  " << nrm << std::endl;
     out << "Matrix-free result = " << std::endl << result1 << std::endl
 	<< "Assebled result = " << std::endl << result2 << std::endl;

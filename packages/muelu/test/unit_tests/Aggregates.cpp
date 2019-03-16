@@ -657,8 +657,6 @@ class AggregateGenerator {
 
     // Get MPI parameters
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    LO numRanks = comm->getSize();
-    LO myRank   = comm->getRank();
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
 
@@ -676,7 +674,6 @@ class AggregateGenerator {
 
     RCP<AmalgamationInfo> amalgInfo;
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeInterfaceAggregates(A, amalgInfo,nodeOnInterface);
-    GO numAggs = aggregates->GetNumAggregates();
 
 
     // Check to see if specified nodes are root nodes
@@ -698,7 +695,6 @@ class AggregateGenerator {
 
     // Get MPI parameters
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    LO numRanks = comm->getSize();
     LO myRank   = comm->getRank();
 
     // Set global geometric data
@@ -752,7 +748,6 @@ class AggregateGenerator {
     // Get MPI parameter
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     LO numRanks = comm->getSize();
-    LO myRank   = comm->getRank();
 
     // Set global geometric data
     const bool coupled = true;

@@ -828,7 +828,6 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
-    using DMS = typename device_type::memory_space;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermuteNew");
@@ -2280,11 +2279,8 @@ namespace Tpetra {
   {
     using Kokkos::create_mirror_view;
     using Kokkos::subview;
-    using Teuchos::Comm;
-    using Teuchos::null;
-    using Teuchos::RCP;
     // View of all the norm results.
-    typedef Kokkos::View<mag_type*, Kokkos::HostSpace> RV;
+    using RV = Kokkos::View<mag_type*, Kokkos::HostSpace>;
 
     const size_t numVecs = this->getNumVectors ();
     if (numVecs == 0) {
@@ -2310,18 +2306,17 @@ namespace Tpetra {
       lclNormType = IMPL_NORM_INF;
     }
 
-    RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
-      this->getMap ()->getComm ();
+    auto map = this->getMap ();
+    auto comm = map.is_null () ? Teuchos::null : map->getComm ();
 
     // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->template need_sync<device_type> ();
-    if (useHostVersion) {
+    const bool runOnHost = this->need_sync_device ();
+    if (runOnHost) {
       // DualView was last modified on host, so run the local kernel there.
       // This means we need a host mirror of the array of norms too.
-      typedef typename dual_view_type::t_host XMV;
-      typedef typename XMV::memory_space cur_memory_space;
+      using XMV = typename dual_view_type::t_host;
 
-      auto thisView = this->template getLocalView<cur_memory_space> ();
+      auto thisView = this->getLocalViewHost ();
       lclNormImpl<RV, XMV> (normsOut, thisView, lclNumRows, numVecs,
                             this->whichVectors_, this->isConstantStride (),
                             lclNormType);
@@ -2329,10 +2324,9 @@ namespace Tpetra {
     }
     else {
       // DualView was last modified on device, so run the local kernel there.
-      typedef typename dual_view_type::t_dev XMV;
-      typedef typename XMV::memory_space cur_memory_space;
+      using XMV = typename dual_view_type::t_dev;
 
-      auto thisView = this->template getLocalView<cur_memory_space> ();
+      auto thisView = this->getLocalViewDevice ();
       lclNormImpl<RV, XMV> (normsOut, thisView, lclNumRows, numVecs,
                             this->whichVectors_, this->isConstantStride (),
                             lclNormType);
@@ -2520,10 +2514,9 @@ namespace Tpetra {
   {
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::Blas::fill;
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_dev::execution_space DES;
-    typedef typename dual_view_type::t_host::execution_space HES;
-    typedef LocalOrdinal LO;
+    using DES = typename dual_view_type::t_dev::execution_space;
+    using HES = typename dual_view_type::t_host::execution_space;
+    using LO = LocalOrdinal;
     ProfilingRegion region ("Tpetra::MultiVector::putScalar");
 
     // We need this cast for cases like Scalar = std::complex<T> but
@@ -2536,11 +2529,11 @@ namespace Tpetra {
     // avoids sync'ing, which could violate users' expectations.
     //
     // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->template need_sync<DMS> ();
+    const bool runOnHost = this->need_sync_device ();
 
-    if (! useHostVersion) { // last modified in device memory
-      this->template modify<DMS> (); // we are about to modify on the device
-      auto X = this->template getLocalView<DMS> ();
+    if (! runOnHost) { // last modified in device memory
+      this->modify_device ();
+      auto X = this->getLocalViewDevice ();
       if (this->isConstantStride ()) {
         fill (DES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2550,8 +2543,8 @@ namespace Tpetra {
       }
     }
     else { // last modified in host memory, so modify data there.
-      this->modify_host (); // we are about to modify on the host
-      auto X = getDualView().view_host();
+      this->modify_host ();
+      auto X = this->getLocalViewHost ();
       if (this->isConstantStride ()) {
         fill (HES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -4338,11 +4331,25 @@ namespace Tpetra {
     // pointers.
     dev_view_type tgtBuf_dev;
     host_view_type tgtBuf_host;
+    const bool commIsInterComm = ::Tpetra::Details::isInterComm (comm);
+    // If comm is an intercomm, then we may not alias input and
+    // output buffers, so we have to make a copy of the local
+    // sum.
     if (useHostVersion) {
-      tgtBuf_host = host_view_type ("tgtBuf", lclNumRows, numCols);
+      if (commIsInterComm || !contig) {
+        tgtBuf_host = host_view_type (Kokkos::ViewAllocateWithoutInitializing ("tgtBuf"), lclNumRows, numCols);
+      }
+      else {
+        tgtBuf_host = srcBuf_host;
+      }
     }
     else {
-      tgtBuf_dev = dev_view_type ("tgtBuf", lclNumRows, numCols);
+      if (commIsInterComm || !contig) {
+        tgtBuf_dev = dev_view_type (Kokkos::ViewAllocateWithoutInitializing ("tgtBuf"), lclNumRows, numCols);
+      }
+      else {
+        tgtBuf_dev = srcBuf_dev;
+      }
     }
 
     const int reduceCount = static_cast<int> (totalAllocSize);
@@ -4371,7 +4378,9 @@ namespace Tpetra {
     if (useHostVersion) {
       this->modify_host ();
       if (contig || isConstantStride ()) {
-        Kokkos::deep_copy (srcView_host, tgtBuf_host);
+        if (commIsInterComm) {
+          Kokkos::deep_copy (srcView_host, tgtBuf_host);
+        }
       }
       else { // need to copy one column at a time
         for (size_t j = 0; j < numCols; ++j) {
@@ -4384,7 +4393,9 @@ namespace Tpetra {
     else { // use device version
       this->template modify<device_type> ();
       if (contig || isConstantStride ()) {
-        Kokkos::deep_copy (srcView_dev, tgtBuf_dev);
+        if (commIsInterComm) {
+          Kokkos::deep_copy (srcView_dev, tgtBuf_dev);
+        }
       }
       else { // need to copy one column at a time
         for (size_t j = 0; j < numCols; ++j) {

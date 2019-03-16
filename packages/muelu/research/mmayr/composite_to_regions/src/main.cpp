@@ -55,7 +55,6 @@
 
 #define RegionsSpanProcs  1
 #define MultipleRegionsPerProc  2
-#include "ml_config.h"
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"

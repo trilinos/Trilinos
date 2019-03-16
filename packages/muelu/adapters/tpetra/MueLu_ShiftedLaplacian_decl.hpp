@@ -217,7 +217,7 @@ namespace MueLu {
     void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B,
 			 RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
-    double GetResidual();
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType GetResidual();
 
     RCP<FactoryManager>               Manager_;
 

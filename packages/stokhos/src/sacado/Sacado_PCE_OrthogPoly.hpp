@@ -54,6 +54,7 @@
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
+#include "Stokhos_ConstantOrthogPolyExpansion.hpp"
 
 #include <cmath>
 #include <algorithm>	// for std::min and std::max
@@ -342,6 +343,11 @@ namespace Sacado {
       Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type,Storage> > th;
 
     }; // class Hermite
+
+    template <typename T, typename Storage>
+    Teuchos::RCP<typename OrthogPoly<T, Storage>::expansion_type>
+    OrthogPoly<T,Storage>::const_expansion_ =
+      Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 
     // Operations
     template <typename T, typename Storage> OrthogPoly<T,Storage> 
