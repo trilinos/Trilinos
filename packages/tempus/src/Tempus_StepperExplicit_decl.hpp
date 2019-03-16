@@ -39,7 +39,7 @@ public:
 
     /// Set the initial conditions, make them consistent, and set needed memory.
     virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Set solver via ParameterList solver name.
     virtual void setSolver(std::string solverName);

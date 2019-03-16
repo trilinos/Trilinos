@@ -426,7 +426,6 @@ void StepperIMEX_RK<Scalar>::setInitialConditions(
     initialState->setX(x);
   }
 
-
   // Perform IC Consistency
   std::string icConsistency = this->getICConsistency();
   TEUCHOS_TEST_FOR_EXCEPTION(icConsistency != "None", std::logic_error,
@@ -540,7 +539,6 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    Thyra::SolveStatus<Scalar> sStatus;
     stageX_ = workingState->getX();
     Thyra::assign(stageX_.ptr(), *(currentState->getX()));
 

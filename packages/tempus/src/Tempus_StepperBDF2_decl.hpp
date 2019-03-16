@@ -88,6 +88,8 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return false;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
   /// Compute the first time step given the supplied startup stepper

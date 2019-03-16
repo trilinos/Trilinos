@@ -221,7 +221,6 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
-  stepper->setInitialConditions(solutionHistory); // Make x and xDot consistent.
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =

@@ -65,113 +65,13 @@ void StepperLeapfrog<Scalar>::setInitialConditions(
 {
   using Teuchos::RCP;
 
-  int numStates = solutionHistory->getNumStates();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
-    "Error - setInitialConditions() needs at least one SolutionState\n"
-    "        to set the initial condition.  Number of States = " << numStates);
-
-  if (numStates > 1) {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setInitialConditions()");
-    *out << "Warning -- SolutionHistory has more than one state!\n"
-         << "Setting the initial conditions on the currentState.\n"<<std::endl;
-  }
-
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
-  RCP<Thyra::VectorBase<Scalar> > x    = initialState->getX();
-  RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
-
-  // If initialState has x and xDot set, treat them as the initial conditions.
-  // Otherwise use the x and xDot from getNominalValues() as the ICs.
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !((x != Teuchos::null && xDot != Teuchos::null) ||
-      (this->inArgs_.get_x() != Teuchos::null &&
-       this->inArgs_.get_x_dot() != Teuchos::null)), std::logic_error,
-    "Error - We need to set the initial conditions for x and xDot from\n"
-    "        either initialState or appModel_->getNominalValues::InArgs\n"
-    "        (but not from a mixture of the two).\n");
-
-  this->inArgs_ = this->appModel_->getNominalValues();
-  using Teuchos::rcp_const_cast;
-  // Use the x and xDot from getNominalValues() as the ICs.
-  if ( initialState->getX() == Teuchos::null ||
-       initialState->getXDot() == Teuchos::null ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (this->inArgs_.get_x() == Teuchos::null) ||
-      (this->inArgs_.get_x_dot() == Teuchos::null), std::logic_error,
-      "Error - setInitialConditions() needs the ICs from the initialState\n"
-      "        or getNominalValues()!\n");
-    x    =rcp_const_cast<Thyra::VectorBase<Scalar> >(this->inArgs_.get_x());
-    initialState->setX(x);
-    xDot =rcp_const_cast<Thyra::VectorBase<Scalar> >(this->inArgs_.get_x_dot());
-    initialState->setXDot(xDot);
-  }
 
   // Check if we need Stepper storage for xDotDot
   if (initialState->getXDotDot() == Teuchos::null)
-    initialState->setXDotDot(initialState->getX()->clone_v());
+    this->setStepperXDotDot(initialState->getX()->clone_v());
 
-  // Perform IC Consistency
-  std::string icConsistency = this->getICConsistency();
-  if (icConsistency == "None") {
-    if (initialState->getXDotDot() == Teuchos::null) {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setInitialConditions()");
-      *out << "Warning -- Requested IC consistency of 'None' but\n"
-           << "           initialState does not have an xDotDot.\n"
-           << "           Setting a 'Consistent' xDotDot!\n" << std::endl;
-      this->evaluateExplicitODE(initialState->getXDotDot(), x,
-                                Teuchos::null, initialState->getTime());
-      initialState->setIsSynced(true);
-    }
-  }
-  else if (icConsistency == "Zero")
-    Thyra::assign(initialState->getXDotDot().ptr(), Scalar(0.0));
-  else if (icConsistency == "App") {
-    auto xDotDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
-                     this->inArgs_.get_x_dot_dot());
-    TEUCHOS_TEST_FOR_EXCEPTION(xDotDot == Teuchos::null, std::logic_error,
-      "Error - setInitialConditions() requested 'App' for IC consistency,\n"
-      "        but 'App' returned a null pointer for xDotDot!\n");
-    Thyra::assign(initialState->getXDotDot().ptr(), *xDotDot);
-  }
-  else if (icConsistency == "Consistent") {
-    // Evaluate xDotDot = f(x,t).
-    this->evaluateExplicitODE(initialState->getXDotDot(), x,
-                              Teuchos::null, initialState->getTime());
-
-    // At this point, x, xDot and xDotDot are sync'ed or consistent
-    // at the same time level for the initialState.
-    initialState->setIsSynced(true);
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "Error - setInitialConditions() invalid IC consistency, "
-      << icConsistency << ".\n");
-  }
-
-  // Test for consistency.
-  if (this->getICConsistencyCheck()) {
-    auto xDotDot = initialState->getXDotDot();
-    auto f       = initialState->getX()->clone_v();
-    this->evaluateExplicitODE(f, x, Teuchos::null, initialState->getTime());
-    Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
-    Scalar reldiff = Thyra::norm(*f)/Thyra::norm(*xDotDot);
-
-    Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-    if (reldiff > eps) {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setInitialConditions()");
-      *out << "Warning -- Failed consistency check but continuing!\n"
-         << "  ||xDotDot-f(x,t)||/||xDotDot|| > eps" << std::endl
-         << "  ||xDotDot-f(x,t)||             = " << Thyra::norm(*f)
-         << std::endl
-         << "  ||xDotDot||                    = " << Thyra::norm(*xDotDot)
-         << std::endl
-         << "  ||xDotDot-f(x,t)||/||xDotDot|| = " << reldiff << std::endl
-         << "                             eps = " << eps     << std::endl;
-    }
-  }
+  StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 
   if (this->getUseFSAL()) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();

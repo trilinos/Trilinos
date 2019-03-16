@@ -116,8 +116,6 @@ void StepperNewmarkImplicitAForm<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                               "Newmark Implicit a-Form"));
   this->wrapperModel_ = wrapperModel;
-  inArgs_  = this->wrapperModel_->getNominalValues();
-  outArgs_ = this->wrapperModel_->createOutArgs();
 }
 
 
@@ -160,25 +158,25 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
   RCP<Thyra::VectorBase<Scalar> > x    = initialState->getX();
   RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
 
+  auto inArgs = this->wrapperModel_->getNominalValues();
   TEUCHOS_TEST_FOR_EXCEPTION(
     !((x != Teuchos::null && xDot != Teuchos::null) ||
-      (this->inArgs_.get_x() != Teuchos::null &&
-       this->inArgs_.get_x_dot() != Teuchos::null)), std::logic_error,
+      (inArgs.get_x() != Teuchos::null &&
+       inArgs.get_x_dot() != Teuchos::null)), std::logic_error,
     "Error - We need to set the initial conditions for x and xDot from\n"
     "        either initialState or appModel_->getNominalValues::InArgs\n"
     "        (but not from a mixture of the two).\n");
 
   // Use x and xDot from inArgs as ICs, if needed.
-  this->inArgs_ = this->wrapperModel_->getNominalValues();
-  using Teuchos::rcp_const_cast;
   if ( x == Teuchos::null || xDot == Teuchos::null ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (this->inArgs_.get_x() == Teuchos::null) ||
-      (this->inArgs_.get_x_dot() == Teuchos::null), std::logic_error,
+    using Teuchos::rcp_const_cast;
+    TEUCHOS_TEST_FOR_EXCEPTION( (inArgs.get_x() == Teuchos::null) ||
+      (inArgs.get_x_dot() == Teuchos::null), std::logic_error,
       "Error - setInitialConditions() needs the ICs from the initialState\n"
       "        or getNominalValues()!\n");
-    x    =rcp_const_cast<Thyra::VectorBase<Scalar> >(this->inArgs_.get_x());
+    x    = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
     initialState->setX(x);
-    xDot =rcp_const_cast<Thyra::VectorBase<Scalar> >(this->inArgs_.get_x_dot());
+    xDot = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
     initialState->setXDot(xDot);
   }
 
@@ -189,7 +187,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
   // Perform IC Consistency
   std::string icConsistency = this->getICConsistency();
   if (icConsistency == "None") {
-    if (initialState->getXDot() == Teuchos::null) {
+    if (initialState->getXDotDot() == Teuchos::null) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,
         "StepperNewmarkImplicitAForm::setInitialConditions()");
@@ -197,18 +195,18 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
            << "           initialState does not have an xDot.\n"
            << "           Setting a 'Zero' xDot!\n" << std::endl;
 
-      Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
+      Thyra::assign(this->getStepperXDotDot(initialState).ptr(), Scalar(0.0));
     }
   }
   else if (icConsistency == "Zero")
-    Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
+    Thyra::assign(this->getStepperXDotDot(initialState).ptr(), Scalar(0.0));
   else if (icConsistency == "App") {
-    xDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
-             this->inArgs_.get_x_dot());
-    TEUCHOS_TEST_FOR_EXCEPTION(xDot == Teuchos::null, std::logic_error,
+    auto xDotDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
+                inArgs.get_x_dot_dot());
+    TEUCHOS_TEST_FOR_EXCEPTION(xDotDot == Teuchos::null, std::logic_error,
       "Error - setInitialConditions() requested 'App' for IC consistency,\n"
-      "        but 'App' returned a null pointer for xDot!\n");
-    Thyra::assign(this->getStepperXDot(initialState).ptr(), *xDot);
+      "        but 'App' returned a null pointer for xDotDot!\n");
+    Thyra::assign(this->getStepperXDotDot(initialState).ptr(), *xDotDot);
   }
   else if (icConsistency == "Consistent") {
     // Solve f(x, xDot, xDotDot, t) = 0.

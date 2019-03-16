@@ -28,6 +28,10 @@
 
 namespace Tempus {
 
+enum OrderODE {
+  FIRST_ORDER_ODE  = 1,  ///< Stepper integrates first-order ODEs
+  SECOND_ORDER_ODE = 2,  ///< Stepper integrates second-order ODEs
+};
 
 /** \brief Thyra Base interface for time steppers.
  *
@@ -98,7 +102,7 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;
 
-    /// Set the initial conditions, make them consistent, and set needed memory.
+    /// Set initial conditions, make them consistent, and set stepper memory.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
@@ -128,6 +132,8 @@ public:
 
     virtual bool isOneStepMethod() const = 0;
     virtual bool isMultiStepMethod() const = 0;
+
+    virtual OrderODE getOrderODE() const = 0;
 
     virtual void setUseFSAL(bool a) = 0;
     virtual bool getUseFSAL() const = 0;

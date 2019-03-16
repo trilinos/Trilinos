@@ -56,6 +56,10 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   virtual void
   initialize();
 
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions (
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
+
   /// Take the specified timestep, dt, and return true if successful.
   virtual void
   takeStep(const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory);
@@ -84,6 +88,8 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
     {return isExplicit() and isImplicit();}
   virtual bool isOneStepMethod()   const {return true;}
   virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+  virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   /// \name ParameterList methods

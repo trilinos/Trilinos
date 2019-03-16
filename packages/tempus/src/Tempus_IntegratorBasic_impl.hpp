@@ -318,6 +318,9 @@ void IntegratorBasic<Scalar>::initialize()
   this->setSolutionHistory();
   this->setObserver();
 
+  // Set initial conditions, make them consistent, and set stepper memory.
+  stepper_->setInitialConditions(solutionHistory_);
+
   // Ensure TimeStepControl orders match the Stepper orders.
   if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())
       timeStepControl_->setMinOrder(stepper_->getOrderMin());

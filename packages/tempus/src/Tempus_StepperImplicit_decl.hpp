@@ -75,7 +75,7 @@ public:
 
      /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Solve problem using x in-place.  (Needs to be deprecated!)
     const Thyra::SolveStatus<Scalar> solveImplicitODE(

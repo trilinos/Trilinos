@@ -107,9 +107,6 @@ TEUCHOS_UNIT_TEST(Leapfrog, ConstructingFromDefaults)
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
 
-  // Make x, xDot and xDotDot consistent.
-  stepper->setInitialConditions(solutionHistory);
-
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
     Tempus::integratorBasic<double>();

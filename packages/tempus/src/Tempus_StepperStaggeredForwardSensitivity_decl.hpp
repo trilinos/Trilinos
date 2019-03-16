@@ -124,6 +124,8 @@ public:
               sensitivityStepper_->isOneStepMethod();}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+
     virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
     virtual bool getUseFSAL() const
       {return stepperPL_->get<bool>("Use FSAL", false);}

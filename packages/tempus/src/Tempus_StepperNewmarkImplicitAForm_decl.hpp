@@ -115,6 +115,8 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   /// \name ParameterList methods
@@ -160,9 +162,6 @@ private:
   StepperNewmarkImplicitAForm();
 
 private:
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>                inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>               outArgs_;
 
   Scalar beta_;
   Scalar gamma_;
