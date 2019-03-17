@@ -52,6 +52,7 @@
 
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_allReduceView.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -4246,191 +4247,36 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reduce ()
   {
-    using Teuchos::reduceAll;
-    using Teuchos::REDUCE_SUM;
-    using dev_view_type = decltype (this->getLocalViewDevice ());
-    using host_view_type = decltype (this->getLocalViewHost ());
+    using ::Tpetra::Details::allReduceView;
+    using ::Tpetra::Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::MV::reduce");
 
-    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::reduce");
-
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (this->isDistributed (), std::runtime_error,
-      "Tpetra::MultiVector::reduce should only be called with locally "
-      "replicated or otherwise not distributed MultiVector objects.");
-    const Teuchos::Comm<int>& comm = * (this->getMap ()->getComm ());
-    if (comm.getSize () == 1) {
-      return; // MultiVector is already "reduced" to one process
+    const auto map = this->getMap ();
+    if (map.get () == nullptr) {
+      return;
+    }
+    const auto comm = map->getComm ();
+    if (comm.get () == nullptr) {
+      return;
     }
 
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numCols = getNumVectors ();
-    const size_t totalAllocSize = lclNumRows * numCols;
-
-    // FIXME (mfh 16 June 2014) This exception will cause deadlock if
-    // it triggers on only some processes.  We don't have a good way
-    // to pack this result into the all-reduce below, but this would
-    // be a good reason to set a "local error flag" and find other
-    // opportunities to let it propagate.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclNumRows > static_cast<size_t> (std::numeric_limits<int>::max ()),
-      std::runtime_error, "Tpetra::MultiVector::reduce: On Process " <<
-      comm.getRank () << ", the number of local rows " << lclNumRows <<
-      " does not fit in int.");
-
-    //
-    // Use MPI to sum the entries across all local blocks.
-    //
-
-    // Get the most recently updated version of the data.
-    //
-    // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->need_sync_device ();
-    // Only one of these (the most recently updated one) is active.
-    dev_view_type srcView_dev;
-    host_view_type srcView_host;
-    if (useHostVersion) {
-      srcView_host = this->getLocalViewHost ();
-      if (lclNumRows != static_cast<size_t> (srcView_host.extent (0))) {
-        // Make sure the number of rows is correct.  If not, take a subview.
-        const Kokkos::pair<size_t, size_t> rowRng (0, lclNumRows);
-        srcView_host = Kokkos::subview (srcView_host, rowRng, Kokkos::ALL ());
-      }
-    }
-    else {
-      srcView_dev = this->getLocalViewDevice ();
-      if (lclNumRows != static_cast<size_t> (srcView_dev.extent (0))) {
-        // Make sure the number of rows is correct.  If not, take a subview.
-        const Kokkos::pair<size_t, size_t> rowRng (0, lclNumRows);
-        srcView_dev = Kokkos::subview (srcView_dev, rowRng, Kokkos::ALL ());
-      }
-    }
-
-    // If this MultiVector's local data are stored contiguously, we
-    // can use the local View as the source buffer in the
-    // MPI_Allreduce.  Otherwise, we have to allocate a temporary
-    // source buffer and pack.
-    const bool contig = isConstantStride () && getStride () == lclNumRows;
-    dev_view_type srcBuf_dev;
-    host_view_type srcBuf_host;
-    if (useHostVersion) {
-      if (contig) {
-        srcBuf_host = srcView_host; // use the View as-is
-      }
-      else { // need to repack into a contiguous buffer
-        srcBuf_host = decltype (srcBuf_host) ("srcBuf", lclNumRows, numCols);
-        Kokkos::deep_copy (srcBuf_host, srcView_host);
-      }
-    }
-    else { // use device version
-      if (contig) {
-        srcBuf_dev = srcView_dev; // use the View as-is
-      }
-      else { // need to repack into a contiguous buffer
-        srcBuf_dev = decltype (srcBuf_dev) ("srcBuf", lclNumRows, numCols);
-        Kokkos::deep_copy (srcBuf_dev, srcView_dev);
-      }
-    }
-
-    // Check expected invariant of the above block of code.  At this
-    // point, either the srcBuf of choice points to the srcView of
-    // choice, or it has the right allocation size.
-    {
-      // Use >=, not ==, because if srcBuf just points to srcView,
-      // then srcView may actually be bigger than what we need.
-      const bool correct =
-        (useHostVersion && static_cast<size_t> (srcBuf_host.size ()) >= totalAllocSize) ||
-        (! useHostVersion && static_cast<size_t> (srcBuf_dev.size ()) >= totalAllocSize);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! correct, std::logic_error, "Tpetra::MultiVector::reduce: Violated "
-         "invariant of temporary source buffer construction.  Please report "
-         "this bug to the Tpetra developers.");
-    }
-
-    // MPI requires that the send and receive buffers don't alias one
-    // another, so we have to copy temporary storage for the result.
-    //
-    // We expect that MPI implementations will know how to read device
-    // pointers.
-    dev_view_type tgtBuf_dev;
-    host_view_type tgtBuf_host;
-    const bool commIsInterComm = ::Tpetra::Details::isInterComm (comm);
-    // If comm is an intercomm, then we may not alias input and
-    // output buffers, so we have to make a copy of the local
-    // sum.
-    if (useHostVersion) {
-      if (commIsInterComm || !contig) {
-        tgtBuf_host = host_view_type (Kokkos::ViewAllocateWithoutInitializing ("tgtBuf"), lclNumRows, numCols);
-      }
-      else {
-        tgtBuf_host = srcBuf_host;
-      }
-    }
-    else {
-      if (commIsInterComm || !contig) {
-        tgtBuf_dev = dev_view_type (Kokkos::ViewAllocateWithoutInitializing ("tgtBuf"), lclNumRows, numCols);
-      }
-      else {
-        tgtBuf_dev = srcBuf_dev;
-      }
-    }
-
-    const int reduceCount = static_cast<int> (totalAllocSize);
-    if (useHostVersion) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (tgtBuf_host.size ()) < totalAllocSize,
-         std::logic_error, "Tpetra::MultiVector::reduce: tgtBuf_host.size() = "
-         << tgtBuf_host.size () << " < lclNumRows*numCols = " << totalAllocSize
-         << ".  Please report this bug to the Tpetra developers.");
-      reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
-                                        srcBuf_host.data (),
-                                        tgtBuf_host.data ());
-    }
-    else { // use device version
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (tgtBuf_dev.size ()) < totalAllocSize,
-         std::logic_error, "Tpetra::MultiVector::reduce: tgtBuf_dev.size() = "
-         << tgtBuf_dev.size () << " < lclNumRows*numCols = " << totalAllocSize
-         << ".  Please report this bug to the Tpetra developers.");
-      reduceAll<int, impl_scalar_type> (comm, REDUCE_SUM, reduceCount,
-                                        srcBuf_dev.data (),
-                                        tgtBuf_dev.data ());
-    }
-
-    // Write back the results to *this.
-    if (useHostVersion) {
-      this->modify_host ();
-      if (contig || isConstantStride ()) {
-        if (commIsInterComm) {
-          Kokkos::deep_copy (srcView_host, tgtBuf_host);
-        }
-      }
-      else { // need to copy one column at a time
-        for (size_t j = 0; j < numCols; ++j) {
-          auto X_j_out = Kokkos::subview (srcView_host, Kokkos::ALL (), j);
-          auto X_j_in = Kokkos::subview (tgtBuf_host, Kokkos::ALL (), j);
-          Kokkos::deep_copy (X_j_out, X_j_in);
-        }
-      }
-    }
-    else { // use device version
+    // Avoid giving device buffers to MPI.  Even if MPI handles them
+    // correctly, doing so may not perform well.
+    const bool changed_on_device = this->need_sync_host ();
+    if (changed_on_device) {
+      // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
+      // and host will be separate allocations.  In that case, it may
+      // pay to do the all-reduce from device to host.
       this->modify_device ();
-      if (contig || isConstantStride ()) {
-        if (commIsInterComm) {
-          Kokkos::deep_copy (srcView_dev, tgtBuf_dev);
-        }
-      }
-      else { // need to copy one column at a time
-        for (size_t j = 0; j < numCols; ++j) {
-          auto X_j_out = Kokkos::subview (srcView_dev, Kokkos::ALL (), j);
-          auto X_j_in = Kokkos::subview (tgtBuf_dev, Kokkos::ALL (), j);
-          Kokkos::deep_copy (X_j_out, X_j_in);
-        }
-      }
+      auto X_lcl = this->getLocalViewDevice ();
+      allReduceView (X_lcl, X_lcl, *comm);
     }
-
-    // We leave *this unsynchronized.
+    else {
+      this->modify_host ();
+      auto X_lcl = this->getLocalViewHost ();
+      allReduceView (X_lcl, X_lcl, *comm);
+    }
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
