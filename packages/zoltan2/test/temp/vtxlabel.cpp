@@ -118,7 +118,7 @@ namespace Kokkos {
 // provided serialization of vtxLabel into char*.
 namespace Teuchos {
 template<typename Ordinal>
-struct Teuchos::SerializationTraits<Ordinal, allGood::vtxLabel> :
+struct SerializationTraits<Ordinal, allGood::vtxLabel> :
        public Teuchos::DirectSerializationTraits<Ordinal, allGood::vtxLabel>
 {};
 }  // end namespace Teuchos
