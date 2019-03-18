@@ -63,7 +63,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   importer_(ownedPlusSharedToOwnedimporter),
   domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
-{  
+{ 
   Teuchos::RCP<const map_type> dummy;
   setup(ownedRowMap,ownedPlusSharedRowMap,dummy,params);
 }
@@ -134,10 +134,11 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap.is_null (), std::runtime_error, "ownedPlusSharedRowMap is null.");
 
- activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
+ // If we have a colMap, we're local, otherwise global
+ if(ownedPlusSharedColMap.is_null()) this->allocateIndices(GlobalIndices);
+ else this->allocateIndices(LocalIndices);
 
- // NOTE: We're forcing the CrsGraph to be in global index mode 
- this->allocateIndices(GlobalIndices);
+ activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
  
  // Use a very strong map equivalence check
  bool maps_are_the_same = ownedRowMap->isSameAs(*ownedPlusSharedRowMap);
@@ -196,8 +197,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
 
     // Under the "if you own an element, you own at least one of its nodes" assumption, 
     // we can start by making a columnmap for ownedPlusShared
-    Teuchos::Array<int> remotePIDs (0);
-    this->makeColMap(remotePIDs);
+    if(!this->hasColMap()) {
+      Teuchos::Array<int> remotePIDs (0);
+      this->makeColMap(remotePIDs);
+    }
     
     // Now run CrsGraph's fillComplete to get the final importer
     crs_graph_type::fillComplete(domainMap_,this->getRowMap());
@@ -232,7 +235,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
 
     // Build the inactive guy
     // NOTE: We can't use the local_graph_type constructor, because it does not allow us to provide an importer
-    inactiveCrsGraph_->replaceColMap(this->getColMap());
+    if(!inactiveCrsGraph_->hasColMap()) inactiveCrsGraph_->replaceColMap(this->getColMap());
     inactiveCrsGraph_->setAllIndices(Kokkos::subview(ownedPlusSharedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1)),
                                      Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros)));
     // This will generate an exporter if we need one.

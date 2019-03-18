@@ -232,8 +232,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal_LocalIndex, LO, GO, Node
     Tpetra::beginFill(g2);
     for(size_t i=0; i<numLocal; i++) {
       GO gid = map->getGlobalElement(i);
+      LO lid = (LO) i;
       g1.insertGlobalIndices(gid,1,&gid);
-      g2.insertLocalIndices(i,1,&i);
+      g2.insertLocalIndices(lid,1,&lid);
     }
     Tpetra::endFill(g2);
     g1.fillComplete();
@@ -290,7 +291,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
 {
   typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
   typedef Tpetra::CrsGraph<LO,GO,Node> CG;
-  
+
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
   
@@ -305,6 +306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
   // Comparative assembly
   // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
   // not being handled correctly.
+
   CG g1(pack.uniqueMap,4,StaticProfile);
   FEG g2(pack.uniqueMap,pack.overlapMap,pack.overlapMap,4);
 
@@ -312,11 +314,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
-      LO lid_j = pack.overlapMap.getLocalElement(gid_j);
+      LO lid_j = pack.overlapMap->getLocalElement(gid_j);
       for(size_t k=0; k<pack.element2node[i].size(); k++) {
         GO gid_k = pack.element2node[i][k];
-        LO lid_k = pack.overlapMap.getLocalElement(lid_k);
-        //        printf("Inserting (%d,%d)\n",gid_j,gid_k);
+        LO lid_k = pack.overlapMap->getLocalElement(gid_k);
+        //        printf("[%d] Inserting gid (%d,%d) lid (%d,%d)\n",comm->getRank(),gid_j,gid_k,lid_j,lid_k);fflush(stdout);
         g1.insertGlobalIndices(gid_j,1,&gid_k);
         g2.insertLocalIndices(lid_j,1,&lid_k);
       }
