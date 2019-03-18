@@ -210,7 +210,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
+////
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal_LocalIndex, LO, GO, Node )
+{
+    typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+    typedef Tpetra::CrsGraph<LO,GO,Node> CG;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
 
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    // create a Map
+    const size_t numLocal = 10;
+    RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+
+
+    // Trivial test that makes sure a diagonal graph can be built
+    CG g1(map,1,StaticProfile);
+    FEG g2(map,map,map,1);
+
+    Tpetra::beginFill(g2);
+    for(size_t i=0; i<numLocal; i++) {
+      GO gid = map->getGlobalElement(i);
+      g1.insertGlobalIndices(gid,1,&gid);
+      g2.insertLocalIndices(i,1,&i);
+    }
+    Tpetra::endFill(g2);
+    g1.fillComplete();
+
+    success = compare_final_graph_structure(out,g1,g2);
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
+}
+
+
+////
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
 {
   typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
@@ -252,13 +285,60 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
+////
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, Node )
+{
+  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+  typedef Tpetra::CrsGraph<LO,GO,Node> CG;
+  
+  // get a comm
+  RCP<const Comm<int> > comm = getDefaultComm();
+  
+  // create a Map
+  const size_t numLocal = 10;
+
+  // Generate a mesh
+  GraphPack<LO,GO,Node> pack;
+  generate_fem1d_graph(numLocal,comm,pack);
+  //  pack.print(comm->getRank(),std::cout);
+
+  // Comparative assembly
+  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
+  // not being handled correctly.
+  CG g1(pack.uniqueMap,4,StaticProfile);
+  FEG g2(pack.uniqueMap,pack.overlapMap,pack.overlapMap,4);
+
+  g2.beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      LO lid_j = pack.overlapMap.getLocalElement(gid_j);
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        LO lid_k = pack.overlapMap.getLocalElement(lid_k);
+        //        printf("Inserting (%d,%d)\n",gid_j,gid_k);
+        g1.insertGlobalIndices(gid_j,1,&gid_k);
+        g2.insertLocalIndices(lid_j,1,&lid_k);
+      }
+    }
+  }
+  g1.fillComplete();
+  g2.endFill();
+
+  success = compare_final_graph_structure(out,g1,g2);
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
+}
+
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Diagonal, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Assemble1D, LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Diagonal_LocalIndex, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Assemble1D, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Assemble1D_LocalIndex, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

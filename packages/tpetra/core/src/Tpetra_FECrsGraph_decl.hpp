@@ -152,7 +152,7 @@ namespace Tpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    /// \brief Constructor specifying a single upper bound for the
+    /// \brief Constructorfor globally-indexed assembly specifying a single upper bound for the
     ///   number of entries in all rows on the calling process.
     ///
     /// \param ownedRowMap [in] Distribution of rows of the owned graph.
@@ -183,7 +183,7 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying a (possibly different) upper
+    /// \brief Constructor for globally-indexed assembly specifying a (possibly different) upper
     ///   bound for the number of entries in each row.
     ///
     /// \param ownedRowMap [in] Distribution of rows of the owned graph.
@@ -213,6 +213,75 @@ namespace Tpetra {
                 const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
                 const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,  
                 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    
+    /// \brief Constructor for locally-indexed assembly specifying a single upper bound for the
+    ///   number of entries in all rows on the calling process.
+    ///
+    /// \param ownedRowMap [in] Distribution of rows of the owned graph.
+    ///
+    /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
+    ///
+    /// \param ownedPlusSharedColMap [in] list of owned and shared columns into which assertion is allowed. 
+    ///
+    /// \param maxNumEntriesPerRow [in] Maximum number of graph
+    ///   entries per row.  You cannot exceed this number of
+    ///   entries in any row.
+    ///
+    /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
+    ///   This will be calculated by FECrsGraph if it is not provided
+    ///
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    ///   will be used for the domainMap in the call to endFill()
+    ///
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    ///   will be used for the domainMap in the call to endFill()
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
+               const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,
+               const Teuchos::RCP<const map_type> & ownedPlusSharedColMap,
+               const size_t maxNumEntriesPerRow,
+               const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter = Teuchos::null,
+               const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
+               const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+
+    /// \brief Constructor for locally-indexed assembly specifying a (possibly different) upper
+    ///   bound for the number of entries in each row.
+    ///
+    /// \param ownedRowMap [in] Distribution of rows of the owned graph.
+    ///
+    /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
+    ///
+    /// \param numEntPerRow [in] Maximum number of graph entries to
+    ///   allocate for each row.  You cannot exceed the allocated
+    ///   number of entries for any row.
+    ///
+    /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
+    ///   This will be calculated by FECrsGraph if it is not provided
+    ///
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    ///   will be used for the domainMap in the call to endFill()
+    ///
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    ///   will be used for the domainMap in the call to endFill()
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
+                const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,
+                const Teuchos::RCP<const map_type> & ownedPlusSharedColMap,
+                const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+                const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter = Teuchos::null,
+                const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
+                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,  
+                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
 
     //! Destructor.
     virtual ~FECrsGraph () = default;
@@ -357,8 +426,11 @@ namespace Tpetra {
 
   private:
 
-    // Common core guts of the constructor   
-    void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params);
+    // Common core guts of the constructor (the colMap argument is Teuchos::null if we're globally-indexed)
+    void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+
+
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.

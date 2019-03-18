@@ -88,7 +88,45 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params) {
+FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
+           const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap, 
+           const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, 
+           const size_t maxNumEntriesPerRow,
+           const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
+           const Teuchos::RCP<const map_type> & domainMap,
+           const Teuchos::RCP<const map_type> & rangeMap,
+           const Teuchos::RCP<Teuchos::ParameterList>& params): 
+  crs_graph_type(ownedPlusSharedRowMap, ownedPlusSharedColMap,maxNumEntriesPerRow, StaticProfile, params),
+  importer_(ownedPlusSharedToOwnedimporter),
+  domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
+  rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
+{  
+  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+}
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
+            const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap, 
+            const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, 
+            const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+            const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
+            const Teuchos::RCP<const map_type> & domainMap,
+            const Teuchos::RCP<const map_type> & rangeMap,
+            const Teuchos::RCP<Teuchos::ParameterList>& params):
+  crs_graph_type(ownedPlusSharedRowMap, ownedPlusSharedColMap, numEntPerRow, StaticProfile, params),
+  importer_(ownedPlusSharedToOwnedimporter),
+  domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
+  rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
+
+{  
+  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+}
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedColMap,const Teuchos::RCP<Teuchos::ParameterList>& params) {
  const char tfecfFuncName[] = "FECrsGraph::setup(): ";
 
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
@@ -127,7 +165,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    }
 
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
-   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
+   if(ownedPlusSharedColMap.is_null())
+     inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
+   else
+     inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ownedPlusSharedColMap,0,StaticProfile,params));
  }
 
 }
