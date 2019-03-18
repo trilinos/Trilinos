@@ -18,13 +18,11 @@
 namespace Tempus {
 
 template<class Scalar>
-StepperExplicitRK<Scalar>::StepperExplicitRK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
+StepperExplicitRK<Scalar>::StepperExplicitRK()
 {
-  this->setTableau(stepperType);
-  this->setModel(appModel);
-  this->initialize();
+  this->setTableau();
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
 }
 
 template<class Scalar>
@@ -34,8 +32,30 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
 {
   this->setTableau(pList);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+
+template<class Scalar>
+StepperExplicitRK<Scalar>::StepperExplicitRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableau(stepperType);
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>
@@ -46,8 +66,14 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
 {
   this->setTableau(stepperType);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>
