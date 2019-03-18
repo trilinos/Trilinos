@@ -266,7 +266,7 @@ TEST(LoadBalance, DISABLED_Zoltan2Parmetis)
     {
         stk::balance::internal::logMessage(communicator, "Creating mesh");
 
-        stk::io::StkMeshIoBroker ioBroker(communicator, &stk::mesh::ConnectivityMap::minimal_upward_connectivity_map());
+        stk::io::StkMeshIoBroker ioBroker(communicator);
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
 
         stk::balance::internal::logMessage(communicator, "Finished creating mesh");
@@ -331,7 +331,7 @@ TEST(LoadBalance, zoltan2Coloring)
     {
         stk::balance::internal::logMessage(communicator, "Creating mesh");
 
-        stk::io::StkMeshIoBroker ioBroker(communicator, &stk::mesh::ConnectivityMap::minimal_upward_connectivity_map());
+        stk::io::StkMeshIoBroker ioBroker(communicator);
         fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
 
         stk::balance::internal::logMessage(communicator, "Finished creating mesh");

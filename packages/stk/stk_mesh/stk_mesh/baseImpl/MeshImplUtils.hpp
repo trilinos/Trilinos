@@ -383,14 +383,14 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
     bool should_connect = false;
     if(face_nodes.size() == element_side_nodes.size()) 
     {
-        const std::pair<bool, unsigned> equiv_result = element_side_topology.equivalent(face_nodes, element_side_nodes);
-        const bool nodes_match = equiv_result.first;
+        const stk::EquivalentPermutation equiv_result = element_side_topology.is_equivalent(face_nodes.data(), element_side_nodes.data());
+        const bool nodes_match = equiv_result.is_equivalent;
         if (nodes_match) {
            if (NO_SHELLS == shell_status) {
                should_connect = true;
            }
            else {
-               const unsigned permutation_of_element_side = equiv_result.second;
+               const unsigned permutation_of_element_side = equiv_result.permutation_number;
                const bool element_side_polarity_matches_face_nodes = permutation_of_element_side < element_side_topology.num_positive_permutations();
                if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
                    should_connect = !element_side_polarity_matches_face_nodes;

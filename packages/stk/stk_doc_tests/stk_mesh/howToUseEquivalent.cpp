@@ -28,9 +28,9 @@ TEST_F(MeshWithSide, whenCheckingSideEquivalency_returnsCorrectPermutation)
         const stk::mesh::Entity* sideNodes = get_bulk().begin_nodes(side);
         unsigned numNodes = get_bulk().num_nodes(side);
 
-        std::pair<bool,unsigned> equivAndPermutation = stk::mesh::side_equivalent(get_bulk(), elem1, ordinal, sideNodes);
-        EXPECT_TRUE(equivAndPermutation.first);
-        EXPECT_EQ(perm, static_cast<stk::mesh::Permutation>(equivAndPermutation.second));
+        stk::EquivalentPermutation equivAndPermutation = stk::mesh::side_equivalent(get_bulk(), elem1, ordinal, sideNodes);
+        EXPECT_TRUE(equivAndPermutation.is_equivalent);
+        EXPECT_EQ(perm, static_cast<stk::mesh::Permutation>(equivAndPermutation.permutation_number));
 
         EXPECT_TRUE(stk::mesh::is_side_equivalent(get_bulk(), elem1, ordinal, sideNodes));
 

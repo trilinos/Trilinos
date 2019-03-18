@@ -152,8 +152,8 @@ TEST(UnitTestTopology, testUnit)
 
     int current_error = testElement(elements[i], spatialDim);
     if (elements[i] != "node" &&
-        elements[i] != "bar2" &&
-        elements[i] != "bar3") {
+	elements[i] != "bar2" &&
+	elements[i] != "bar3") {
       errors += current_error;
     }
     else {
@@ -163,4 +163,3 @@ TEST(UnitTestTopology, testUnit)
   }
   ASSERT_TRUE(errors == 0);
 }
-

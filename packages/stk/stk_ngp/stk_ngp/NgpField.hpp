@@ -34,6 +34,9 @@
 #define STK_NGP_NGPFIELD_H_
 
 #include <stk_util/stk_config.h>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <stk_ngp/NgpMesh.hpp>
@@ -69,6 +72,10 @@ public:
         field(&f) { }
 
     virtual ~StkFieldAdapter() = default;
+
+    unsigned get_num_components_per_entity(stk::mesh::FastMeshIndex entity) const {
+        return stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
+    }
 
     T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
@@ -118,9 +125,9 @@ private:
 
     void copy_device_to_host() { };
 #ifndef STK_HIDE_DEPRECATED_CODE
-    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& f) { };
 
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& field) { };
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase& f) { };
 private:
 #endif
 
@@ -241,8 +248,10 @@ public:
         deviceData = FieldDataType(name, numBuckets, bucketSize, numPerEntity);
 #endif
         hostData = Kokkos::create_mirror_view(deviceData);
-
         fieldData = FieldDataDualViewType(deviceData, hostData);
+
+        deviceFieldExistsOnBucket = BoolViewType(name + "_exists_on_bucket", numBuckets);
+        hostFieldExistsOnBucket = Kokkos::create_mirror_view(deviceFieldExistsOnBucket);
     }
 
     StaticField(stk::mesh::EntityRank r, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
@@ -274,8 +283,13 @@ public:
         construct_view("deviceData_"+field.name(), allBuckets.size(), numPerEntity);
 
         copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
-
         Kokkos::deep_copy(deviceData, hostData);
+
+        Kokkos::deep_copy(hostFieldExistsOnBucket, false);
+        for (size_t i = 0; i < buckets.size(); ++i) {
+          hostFieldExistsOnBucket(buckets[i]->bucket_id()) = true;
+        }
+        Kokkos::deep_copy(deviceFieldExistsOnBucket, hostFieldExistsOnBucket);
     }
 
     void sync_to_host()
@@ -294,21 +308,42 @@ public:
 
     void modify_on_host()
     {
+#ifdef STK_BUILT_IN_SIERRA
         ThrowRequire(fieldData.modified_host() >= fieldData.modified_device());  // Old Kokkos API
         fieldData.modified_host()++;                                             // Old Kokkos API
-//        fieldData.modify_host();  // New Kokkos API
+#else
+        fieldData.modify_host();  // New Kokkos API
+#endif
     }
 
     void modify_on_device()
     {
+#ifdef STK_BUILT_IN_SIERRA
         ThrowRequire(fieldData.modified_device() >= fieldData.modified_host());  // Old Kokkos API
         fieldData.modified_device()++;                                           // Old Kokkos API
-//        fieldData.modify_device();  // New Kokkos API
+#else
+        fieldData.modify_device();  // New Kokkos API
+#endif
     }
 
     STK_FUNCTION StaticField(const StaticField &) = default;
 
     STK_FUNCTION virtual ~StaticField() {}
+
+    STK_FUNCTION
+    unsigned get_num_components_per_entity(stk::mesh::FastMeshIndex entityIndex) const {
+      const unsigned bucketId = entityIndex.bucket_id;
+      if (deviceFieldExistsOnBucket[bucketId]) {
+#ifdef KOKKOS_ENABLE_CUDA
+        return deviceData.extent(1);
+#else
+        return deviceData.extent(2);
+#endif
+      }
+      else {
+        return 0;
+      }
+    }
 
     template <typename Mesh> STK_FUNCTION
     T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
@@ -350,9 +385,12 @@ private:
 #endif
     void copy_device_to_host()
     {
+#ifdef STK_BUILT_IN_SIERRA
         Kokkos::deep_copy(hostData, deviceData);  // Old Kokkos API
         clear_sync_state();                       // Old Kokkos API
-//        fieldData.sync_host();  // New Kokkos API
+#else
+        fieldData.sync_host();  // New Kokkos API
+#endif
 
         if (hostField) {
           stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
@@ -369,9 +407,12 @@ private:
           copy_data(buckets, [](T &hostFieldData, T &stkFieldData){hostFieldData = stkFieldData;});
         }
 
+#ifdef STK_BUILT_IN_SIERRA
         Kokkos::deep_copy(deviceData, hostData);  // Old Kokkos API
         clear_sync_state();                       // Old Kokkos API
-//        fieldData.sync_device();  // New Kokkos API
+#else
+        fieldData.sync_device();  // New Kokkos API
+#endif
     }
 
 #ifndef STK_HIDE_DEPRECATED_CODE
@@ -382,21 +423,30 @@ private:
 #endif
     bool need_sync_to_host() const
     {
+#ifdef STK_BUILT_IN_SIERRA
         return fieldData.modified_device() > fieldData.modified_host();  // Old Kokkos API
-//        return fieldData.need_sync_host();  // New Kokkos API
+#else
+        return fieldData.need_sync_host();  // New Kokkos API
+#endif
     }
 
     bool need_sync_to_device() const
     {
+#ifdef STK_BUILT_IN_SIERRA
         return fieldData.modified_host() > fieldData.modified_device();  // Old Kokkos API
-//        return fieldData.need_sync_device();  // New Kokkos API
+#else
+        return fieldData.need_sync_device();  // New Kokkos API
+#endif
     }
 
     void clear_sync_state()
     {
+#ifdef STK_BUILT_IN_SIERRA
         fieldData.modified_host() = 0;    // Old Kokkos API
         fieldData.modified_device() = 0;  // Old Kokkos API
-//        fieldData.clear_sync_state();  // New Kokkos API
+#else
+        fieldData.clear_sync_state();  // New Kokkos API
+#endif
     }
 
     template <typename ViewType>
@@ -432,7 +482,7 @@ private:
     template <typename Assigner>
     void copy_data(const stk::mesh::BucketVector& buckets, const Assigner &assigner)
     {
-        unsigned numPerEntity = get_num_components_per_entity();
+        unsigned numPerEntity = get_max_num_components_per_entity();
         for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
         {
             const stk::mesh::Bucket &bucket = *buckets[iBucket];
@@ -448,7 +498,7 @@ private:
         }
     }
 
-    unsigned get_num_components_per_entity() const {
+    unsigned get_max_num_components_per_entity() const {
 #ifdef KOKKOS_ENABLE_CUDA
         return hostData.extent(1);
 #else
@@ -468,8 +518,10 @@ private:
 
     FieldDataHostType hostData;
     FieldDataType deviceData;
-    
     FieldDataDualViewType fieldData;
+
+    typename BoolViewType::HostMirror hostFieldExistsOnBucket;
+    BoolViewType deviceFieldExistsOnBucket;
 
     stk::mesh::EntityRank rank;
     unsigned ordinal;

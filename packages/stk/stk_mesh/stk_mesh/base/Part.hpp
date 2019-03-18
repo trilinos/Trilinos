@@ -46,6 +46,7 @@
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_topology/topology.hpp"    // for topology
 namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
 
 

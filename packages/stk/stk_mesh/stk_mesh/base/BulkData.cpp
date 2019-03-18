@@ -452,13 +452,108 @@ void check_size_of_types()
 #endif
 }
 //----------------------------------------------------------------------
-BulkData::BulkData( MetaData & mesh_meta_data
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED BulkData::BulkData( MetaData & mesh_meta_data
                     , ParallelMachine parallel
                     , enum AutomaticAuraOption auto_aura_option
 #ifdef SIERRA_MIGRATION
                     , bool add_fmwk_data
 #endif
                     , ConnectivityMap const* /*arg_connectivity_map*/
+                    , FieldDataManager *field_data_manager
+                    , unsigned bucket_capacity
+                    )
+  :
+#ifdef SIERRA_MIGRATION
+    m_check_invalid_rels(true),
+#endif
+    m_entity_comm_map(),
+    m_ghosting(),
+    m_mesh_meta_data( mesh_meta_data ),
+    m_mark_entity(),
+    m_add_node_sharing_called(false),
+    m_closure_count(),
+    m_mesh_indexes(),
+    m_entity_repo(new impl::EntityRepository()),
+    m_entity_comm_list(),
+    m_comm_list_updater(m_entity_comm_list),
+    m_deleted_entities_current_modification_cycle(),
+    m_ghost_reuse_map(),
+    m_entity_keys(),
+#ifdef SIERRA_MIGRATION
+    m_add_fmwk_data(add_fmwk_data),
+    m_fmwk_global_ids(),
+    m_fmwk_aux_relations(),
+    m_shouldSortFacesByNodeIds(false),
+#endif
+    m_autoAuraOption(auto_aura_option),
+    m_meshModification(*this),
+    m_parallel( parallel ),
+    m_volatile_fast_shared_comm_map(),
+    m_all_sharing_procs(mesh_meta_data.entity_rank_count()),
+    m_ghost_parts(),
+    m_deleted_entities(),
+    m_num_fields(-1), // meta data not necessarily committed yet
+    m_keep_fields_updated(true),
+    m_local_ids(),
+    m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
+    m_field_data_manager(field_data_manager),
+    m_selector_to_buckets_map(),
+    m_bucket_repository(
+        *this,
+        mesh_meta_data.entity_rank_count(),
+        (mesh_meta_data.spatial_dimension() == 2 ? ConnectivityMap::default_map_2d() : ConnectivityMap::default_map()),
+        bucket_capacity),
+    m_use_identifiers_for_resolving_sharing(false),
+    m_modSummary(*this),
+    m_meshDiagnosticObserver(std::make_shared<stk::mesh::MeshDiagnosticObserver>(*this)),
+    m_sideSetData(*this),
+    m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
+    m_supportsLargeIds(false)
+{
+  try {
+     mesh_meta_data.set_mesh_bulk_data(this);
+  }
+  catch(...) {
+      delete m_entity_repo;
+      throw;
+  }
+
+  m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
+
+  if (m_field_data_manager == NULL)
+  {
+      m_field_data_manager = &m_default_field_data_manager;
+  }
+
+  initialize_arrays();
+
+  m_ghost_parts.clear();
+  internal_create_ghosting( "shared" );
+  //shared part should reside in m_ghost_parts[0]
+  internal_create_ghosting( "shared_aura" );
+
+  check_size_of_types();
+
+  register_observer(m_meshDiagnosticObserver);
+
+//  m_meshDiagnosticObserver->enable_rule(stk::mesh::RULE_3);
+//  m_meshDiagnosticObserver->enable_rule(stk::mesh::SOLO_SIDES);
+
+#ifndef NDEBUG
+  //m_meshDiagnosticObserver->enable_rule(stk::mesh::RULE_3);
+#endif
+
+  m_meshModification.set_sync_state_synchronized();
+}
+#endif
+
+BulkData::BulkData( MetaData & mesh_meta_data
+                    , ParallelMachine parallel
+                    , enum AutomaticAuraOption auto_aura_option
+#ifdef SIERRA_MIGRATION
+                    , bool add_fmwk_data
+#endif
                     , FieldDataManager *field_data_manager
                     , unsigned bucket_capacity
                     )
@@ -1765,12 +1860,12 @@ void BulkData::allocate_field_data()
   }
 }
 
-void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer)
+void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer) const
 {
     notifier.register_observer(observer);
 }
 
-void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observer)
+void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observer) const
 {
     notifier.unregister_observer(observer);
 }
@@ -2074,7 +2169,8 @@ void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex,
         const int num_conn         = bucket->num_connectivity(b_ord, r);
         for (int c_itr = 0; c_itr < num_conn; ++c_itr) {
             Entity target_entity = entities[c_itr];
-            out << "          [" << ordinals[c_itr] << "]  " << mesh.entity_key(target_entity) << "  ";
+            uint32_t ord = ordinals[c_itr];
+            out << "          [" << ord << "]  " << mesh.entity_key(target_entity) << "  ";
             if (r != stk::topology::NODE_RANK) {
                 out << mesh.bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
@@ -2284,7 +2380,7 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
 
   const MeshIndex& idx = mesh_index(e_from);
 
-  ThrowAssertMsg(local_id <= INVALID_CONNECTIVITY_ORDINAL, "local_id = " << local_id << ", max = " << INVALID_CONNECTIVITY_ORDINAL);
+  ThrowAssertMsg(local_id <= INVALID_CONNECTIVITY_ORDINAL, "local_id = " << local_id << ", max = " << (uint32_t)INVALID_CONNECTIVITY_ORDINAL);
   bool modified = idx.bucket->declare_relation(idx.bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id), permut);
 
   if (modified)
@@ -2525,7 +2621,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
 
         for (int j = 0; j < num_rels; ++j) {
           ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " with key " << entity_key(e_to) << " has invalid back-relation for ordinal: "
-                         << rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
+                         << (uint32_t)rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
           if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
           {
             impl::get_part_ordinals_to_induce_on_lower_ranks(*this, rel_entities[j], e_to_entity_rank, keep);
@@ -4022,9 +4118,9 @@ void BulkData::update_side_elem_permutations(Entity side)
     const stk::mesh::ConnectivityOrdinal* side_elem_ords = begin_element_ordinals(side);
     const stk::mesh::Permutation* side_elem_perms = begin_element_permutations(side);
     for(unsigned i=0; i<numElems; ++i) {
-        std::pair<bool,unsigned> equiv = stk::mesh::side_equivalent(*this, elems[i], side_elem_ords[i], sideNodes);
-        ThrowRequireMsg(equiv.first,"ERROR, side not equivalent to element-side");
-        stk::mesh::Permutation correctPerm = static_cast<stk::mesh::Permutation>(equiv.second);
+        stk::EquivalentPermutation equiv = stk::mesh::side_equivalent(*this, elems[i], side_elem_ords[i], sideNodes);
+        ThrowRequireMsg(equiv.is_equivalent,"ERROR, side not equivalent to element-side");
+        stk::mesh::Permutation correctPerm = static_cast<stk::mesh::Permutation>(equiv.permutation_number);
         internal_declare_relation(elems[i], side, side_elem_ords[i], correctPerm);
         ThrowRequireMsg(side_elem_perms[i] == correctPerm, "ERROR, failed to set permutation");
     }
