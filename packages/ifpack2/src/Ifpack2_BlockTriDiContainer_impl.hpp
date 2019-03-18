@@ -1769,11 +1769,19 @@ namespace Ifpack2 {
 	const local_ordinal_type per_team_scratch = internal_vector_scratch_type_3d_view::
 	  shmem_size(blocksize, blocksize, vector_loop_size);
 
-	Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeTag>
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE)
+	const Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeTag>
 	  policy(packptr.extent(0)-1, team_size, vector_loop_size); 
 	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run<ExtractAndFactorizeTag>", 
-			     policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this);
-	
+                             policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this);
+#else
+	Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeTag>
+	  policy(packptr.extent(0)-1, team_size, vector_loop_size); 
+        policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch));
+	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run<ExtractAndFactorizeTag>", 
+                             policy, *this);
+#endif
+
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStop();
 #endif
@@ -2462,7 +2470,7 @@ namespace Ifpack2 {
 	  recommended_team_size(blocksize, vector_length, internal_vector_length);
 	const int per_team_scratch = internal_vector_scratch_type_3d_view
 	  ::shmem_size(blocksize, num_vectors, vector_loop_size);
-	
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE)
 #define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)			\
 	if (num_vectors == 1) {						\
 	  const Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> > \
@@ -2477,7 +2485,24 @@ namespace Ifpack2 {
 	    ("SolveTridiags::TeamPolicy::run<MultiVector>",		\
 	     policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)), *this); \
 	} break
-	
+#else
+#define BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS(B)			\
+	if (num_vectors == 1) {						\
+	  Kokkos::TeamPolicy<execution_space,SingleVectorTag<B> >       \
+	    policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+          policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)); \
+	  Kokkos::parallel_for						\
+	    ("SolveTridiags::TeamPolicy::run<SingleVector>",		\
+             policy, *this);                                            \
+	} else {							\
+          Kokkos::TeamPolicy<execution_space,MultiVectorTag<B> >        \
+            policy(packptr.extent(0) - 1, team_size, vector_loop_size); \
+          policy.set_scratch_size(0,Kokkos::PerTeam(per_team_scratch)); \
+	  Kokkos::parallel_for						\
+	    ("SolveTridiags::TeamPolicy::run<MultiVector>",		\
+             policy, *this);                                            \
+	} break
+#endif
 	switch (blocksize) {
 	case   3: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 3);
 	case   5: BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 5);
