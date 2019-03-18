@@ -191,8 +191,12 @@ do
     if [ $stdcxx_applied -eq 1 ]; then
        echo "nvcc_wrapper - *warning* you have set multiple optimization flags (-std=c++1* or --std=c++1*), only the first is used because nvcc can only accept a single std setting"
     else
-       shared_args="$shared_args $1"
-       stdcxx_applied=1
+      if [ "$1" == "--std=c++1z" ] | [ "$1" == "-std=c++1z" ]; then
+        shared_args="$shared_args --std=c++14"
+      else
+        shared_args="$shared_args $1"
+      fi
+      stdcxx_applied=1
     fi
     ;;
 
