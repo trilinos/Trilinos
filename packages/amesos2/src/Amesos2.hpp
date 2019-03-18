@@ -272,6 +272,10 @@
  * \subsection lapack_parameters LAPACK
  *
  * \copydetails Amesos2::Lapack::setParameters_impl()
+ *
+ * \subsection umfpack_parameters Umfpack
+ *
+ * \copydetails Amesos2::Umfpack::setParameters_impl()
  */
 
 
