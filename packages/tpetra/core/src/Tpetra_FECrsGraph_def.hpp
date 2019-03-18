@@ -64,7 +64,8 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 {  
-  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+  Teuchos::RCP<const map_type> dummy;
+  setup(ownedRowMap,ownedPlusSharedRowMap,dummy,params);
 }
 
 
@@ -83,7 +84,8 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 
 {  
-  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+  Teuchos::RCP<const map_type> dummy;
+  setup(ownedRowMap,ownedPlusSharedRowMap,dummy,params);
 }
 
 
@@ -102,7 +104,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 {  
-  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+  setup(ownedRowMap,ownedPlusSharedRowMap, ownedPlusSharedColMap,params);
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -121,7 +123,7 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 
 {  
-  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+  setup(ownedRowMap,ownedPlusSharedRowMap, ownedPlusSharedColMap,params);
 }
 
 
