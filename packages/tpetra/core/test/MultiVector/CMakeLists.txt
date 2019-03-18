@@ -118,16 +118,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ${MAXNP}
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MV_DualViewPool
-  SOURCES
-    MV_DualViewPool
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  NUM_MPI_PROCS 2-4
-  STANDARD_PASS_OUTPUT
-  )
-
+# Regression test for Trilinos GitHub Issue #4639.
+# It must run with at least 2 MPI processes to exercise
+# the fix for that issue.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MV_reduce_strided
   SOURCES
