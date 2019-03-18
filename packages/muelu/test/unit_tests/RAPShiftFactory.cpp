@@ -662,10 +662,10 @@ namespace MueLuTests {
 
     // The pretty way of managing input decks
     double shift = 2.0;
-    Teuchos::ArrayRCP<double> shifts(2) = {shift,1.0};
+    Teuchos::Array<double> shifts(2); shifts[0]=1.0; shifts[1]=shifts[0]+shift;
     RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
     Params->set("rap: algorithm","shift");    
-    Params->set("rap: shift list",shifts);
+    Params->set("rap: shift array",shifts);
     Params->set("rap: shift diagonal M",true);
     Params->set("rap: shift low storage",true);
     Params->set("coarse: max size",1000);

@@ -78,13 +78,10 @@ namespace MueLu {
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: fix zero diagonals");
     SET_VALID_ENTRY("rap: shift");
+    SET_VALID_ENTRY("rap: shift array");
     SET_VALID_ENTRY("rap: shift diagonal M");
     SET_VALID_ENTRY("rap: shift low storage");
 #undef  SET_VALID_ENTRY
-
-    Teuchos::ArrayRCP<double> ad_dummy;
-    validParamList->set("rap: shift array",ad_dummy,"List of shifts including the effective shift of the initial matrix");
-
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("M",              Teuchos::null, "Generating factory of the matrix M used during the non-Galerkin RAP");
@@ -155,9 +152,9 @@ namespace MueLu {
       }
 
       // Do we have an array of shifts?  If so, we set doubleShifts_
-      Teuchos::ArrayRCP<double> doubleShifts;
+      Teuchos::ArrayView<const double> doubleShifts;
       if(pL.isParameter("rap: shift array")) {
-        doubleShifts = pL.get<Teuchos::ArrayRCP<double> >("rap: shift array");
+        doubleShifts = pL.get<Teuchos::Array<double> >("rap: shift array")();
       }
       
       // Inputs: K, M, P
