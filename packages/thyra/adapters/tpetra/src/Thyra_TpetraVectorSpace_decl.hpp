@@ -86,6 +86,11 @@ public:
     ) const;
   /** \brief . */
   RCP< const VectorSpaceBase<Scalar> > clone() const;
+
+  /** \brief Get the embedded Tpetra::Map. */
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraMap() const;
+
   //@}
 
 protected:
