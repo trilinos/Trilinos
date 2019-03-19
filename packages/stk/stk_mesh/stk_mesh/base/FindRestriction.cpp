@@ -117,7 +117,8 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
   return empty_field_restriction();
 }
 
-const FieldBase::Restriction& find_restriction(const FieldBase& field,
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                const Bucket & bucket)
 {
   if(static_cast<unsigned>(field.entity_rank()) == bucket.entity_rank())
@@ -133,6 +134,7 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
 
   return empty_field_restriction();
 }
+#endif
 
 const FieldBase::Restriction& find_and_check_restriction(const FieldBase& field,
                                                          EntityRank erank,

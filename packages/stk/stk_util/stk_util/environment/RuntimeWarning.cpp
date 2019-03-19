@@ -118,7 +118,7 @@ RuntimeWarningSymmetric::~RuntimeWarningSymmetric()
   {}
 }
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE
 RuntimeWarningDeferred::RuntimeWarningDeferred(
   const MessageCode &   message_code)
   : m_messageCode(message_code)
@@ -133,5 +133,6 @@ RuntimeWarningDeferred::~RuntimeWarningDeferred()
   catch (std::exception &)
   {}
 }
+#endif
 
 } // namespace stk

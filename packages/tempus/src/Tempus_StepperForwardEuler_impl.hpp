@@ -15,15 +15,27 @@
 
 namespace Tempus {
 
-// StepperForwardEuler definitions:
+template<class Scalar>
+StepperForwardEuler<Scalar>::StepperForwardEuler()
+{
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>

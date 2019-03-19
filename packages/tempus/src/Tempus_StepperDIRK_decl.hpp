@@ -87,15 +87,25 @@ template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
-  /// Constructor to use default Stepper parameters.
-  StepperDIRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "SDIRK 2 Stage 2nd order");
+
+   /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperDIRK();
 
   /// Constructor to specialize Stepper parameters.
   StepperDIRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor to use default Stepper parameters.
+  StepperDIRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "SDIRK 2 Stage 2nd order");
 
   /// Constructor for StepperFactory.
   StepperDIRK(
@@ -146,6 +156,15 @@ public:
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=DIRK_ButcherTableau_->A();
+    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+  }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -161,11 +180,6 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
-
-private:
-
-  /// Default Constructor -- not allowed
-  StepperDIRK();
 
 protected:
 

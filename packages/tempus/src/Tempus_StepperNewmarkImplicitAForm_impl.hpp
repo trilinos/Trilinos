@@ -22,6 +22,7 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
+
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::
 predictVelocity(Thyra::VectorBase<Scalar>& vPred,
@@ -86,6 +87,19 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 
 
 template<class Scalar>
+StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
+  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
+
+template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
@@ -94,13 +108,16 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
 
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 

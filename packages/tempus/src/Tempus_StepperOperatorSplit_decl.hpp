@@ -40,15 +40,19 @@ class StepperOperatorSplit : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent addStepper() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperOperatorSplit();
+
   /// Constructor
   StepperOperatorSplit(
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     Teuchos::RCP<Teuchos::ParameterList> pList);
-
-  /** \brief Constructor which is setup except for models and steppers
-   * (i.e., addStepper()), and an initialize() before being used.
-   */
-  StepperOperatorSplit();
 
   /// \name Basic stepper methods
   //@{

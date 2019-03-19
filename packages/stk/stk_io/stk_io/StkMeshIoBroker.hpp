@@ -40,6 +40,7 @@
 #include <stddef.h>                                // for size_t
 #include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
 #include <algorithm>                               // for swap
+#include <stk_util/stk_config.h>
 #include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/InputFile.hpp>
@@ -90,8 +91,11 @@ namespace stk {
 
       // \param[in] comm MPI Communicator to be used for all
       // parallel communication needed to generate the mesh.
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
       StkMeshIoBroker(stk::ParallelMachine comm,
-		      const stk::mesh::ConnectivityMap *connectivity_map = nullptr);
+		      const stk::mesh::ConnectivityMap *connectivity_map);
+#endif
+      StkMeshIoBroker(stk::ParallelMachine comm);
       StkMeshIoBroker();
 
       virtual ~StkMeshIoBroker();
@@ -710,7 +714,6 @@ namespace stk {
       stk::mesh::Selector m_activeSelector;
       Teuchos::RCP<stk::mesh::Selector> m_deprecatedSelector;
 
-      const stk::mesh::ConnectivityMap* m_connectivityMap;
     protected:
       std::vector<std::vector<int>> attributeFieldOrderingByPartOrdinal;
       std::vector<Teuchos::RCP<impl::OutputFile> > m_outputFiles;

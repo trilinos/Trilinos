@@ -31,6 +31,15 @@ class StepperStaggeredForwardSensitivity :
 {
 public:
 
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperStaggeredForwardSensitivity();
+
   /// Constructor
   /*!
    * The first parameter list argument supplies supplies regular stepper
@@ -167,13 +176,10 @@ public:
 
 private:
 
-  /// Default Constructor -- not allowed
-  StepperStaggeredForwardSensitivity();
-
   void setParams(const Teuchos::RCP<Teuchos::ParameterList> & pl,
                  const Teuchos::RCP<Teuchos::ParameterList> & spl);
 
-private:
+protected:
 
   Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
   Teuchos::RCP<Teuchos::ParameterList>               sensPL_;

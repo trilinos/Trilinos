@@ -39,6 +39,15 @@ class StepperBackwardEuler :
 {
 public:
 
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperBackwardEuler();
+
   /// Constructor
   StepperBackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -79,6 +88,11 @@ public:
 
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+    /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const { return Scalar(1.0)/dt; }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// Compute predictor given the supplied stepper
   virtual void computePredictor(
@@ -131,9 +145,6 @@ public:
   //@}
 
 private:
-
-  /// Default Constructor -- not allowed
-  StepperBackwardEuler();
 
   /// Implementation of computeStep*() methods
   void computeStepResidDerivImpl(

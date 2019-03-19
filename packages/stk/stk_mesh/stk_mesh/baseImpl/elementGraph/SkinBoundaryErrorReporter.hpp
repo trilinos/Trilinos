@@ -131,7 +131,7 @@ private:
         int count = 0;
         for(const SideSetEntry & entry : setList)
         {
-            os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << entry.side << ")"<< std::endl;
+            os << "            Sideset Info[" << count << "] = (" << m_bulkData.identifier(entry.element) << "," << (uint32_t)entry.side << ")"<< std::endl;
             count++;
         }
     }

@@ -45,6 +45,15 @@ class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperHHTAlpha();
+
   /// Constructor
   StepperHHTAlpha(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -87,6 +96,14 @@ public:
 
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
+
+  /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
+  virtual Scalar getW_xDotDot_coeff (const Scalar dt) const
+    { return Scalar(1.0)/(beta_*dt*dt); }
+  /// Return alpha = d(xDot)/d(x).
+  virtual Scalar getAlpha(const Scalar dt) const { return gamma_/(beta_*dt); }
+  /// Return beta  = d(x)/d(x).
+  virtual Scalar getBeta (const Scalar ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -133,11 +150,6 @@ public:
                                const Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
-
-private:
-
-  /// Default Constructor -- not allowed
-  StepperHHTAlpha();
 
 private:
 

@@ -24,13 +24,11 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 template<class Scalar>
-StepperDIRK<Scalar>::StepperDIRK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
+StepperDIRK<Scalar>::StepperDIRK()
 {
-  this->setTableau(stepperType);
-  this->setModel(appModel);
-  this->initialize();
+  this->setTableau();
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
 }
 
 template<class Scalar>
@@ -40,8 +38,30 @@ StepperDIRK<Scalar>::StepperDIRK(
 {
   this->setTableau(pList);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+
+template<class Scalar>
+StepperDIRK<Scalar>::StepperDIRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableau(stepperType);
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>
@@ -52,8 +72,14 @@ StepperDIRK<Scalar>::StepperDIRK(
 {
   this->setTableau(stepperType);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -381,7 +407,14 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  *pl = *(DIRK_ButcherTableau_->getValidParameters());
+  if (DIRK_ButcherTableau_ == Teuchos::null) {
+    auto DIRK_ButcherTableau =
+      createRKBT<Scalar>("SDIRK 2 Stage 2nd order", Teuchos::null);
+    pl->setParameters(*(DIRK_ButcherTableau->getValidParameters()));
+  } else {
+    pl->setParameters(*(DIRK_ButcherTableau_->getValidParameters()));
+  }
+
   this->getValidParametersBasic(pl);
   pl->set<bool>("Initial Condition Consistency Check", false);
   pl->set<bool>("Zero Initial Guess", false);
@@ -398,14 +431,6 @@ StepperDIRK<Scalar>::getDefaultParameters() const
 
   RCP<ParameterList> pl =
     rcp_const_cast<ParameterList>(this->getValidParameters());
-
-  if (DIRK_ButcherTableau_ == Teuchos::null) {
-    auto DIRK_ButcherTableau =
-      createRKBT<Scalar>("SDIRK 2 Stage 2nd order", Teuchos::null);
-    pl->setParameters(*(DIRK_ButcherTableau->getValidParameters()));
-  } else {
-    pl->setParameters(*(DIRK_ButcherTableau_->getValidParameters()));
-  }
 
   pl->set<std::string>("Solver Name", "Default Solver");
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
