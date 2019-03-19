@@ -3747,7 +3747,6 @@ namespace Tpetra {
     else {
       for (size_t j = 0; j < numCols; ++j) {
 	const size_t srcCol = this->whichVectors_[j];
-	const size_t dstCol = j;
 	auto dstColView = Kokkos::subview (A_view, rowRange, j);
 
 	if (useHostVersion) {
