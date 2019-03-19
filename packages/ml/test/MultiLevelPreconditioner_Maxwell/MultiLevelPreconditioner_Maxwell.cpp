@@ -144,17 +144,26 @@ int main(int argc, char *argv[])
   // ========================= //
 
   Epetra_Vector RHScomp(Epetra_Ke->DomainMap());
+#ifndef NDEBUG
   int ierr;
-  ierr = Epetra_Ke->Multiply(false, LHS, RHScomp);
+  ierr =
+#endif
+  Epetra_Ke->Multiply(false, LHS, RHScomp);
   assert(ierr==0);
 
   Epetra_Vector resid(Epetra_Ke->DomainMap());
 
-  ierr = resid.Update(1.0, RHS, -1.0, RHScomp, 0.0);
+#ifndef NDEBUG
+  ierr =
+#endif
+  resid.Update(1.0, RHS, -1.0, RHScomp, 0.0);
   assert(ierr==0);
 
   double residual;
-  ierr = resid.Norm2(&residual);
+#ifndef NDEBUG
+  ierr =
+#endif
+  resid.Norm2(&residual);
   assert(ierr==0);
   if (proc_config[AZ_node] == 0) {
     std::cout << std::endl;
