@@ -382,6 +382,9 @@ namespace Tpetra {
       // ParameterListAcceptor semantics require pointer identity of the
       // sublist passed to setParameterList(), so we save the pointer.
       this->setMyParamList (plist);
+
+      if (!reverseDistributor_.is_null())
+        reverseDistributor_->setParameterList (plist);
     }
   }
 
