@@ -254,6 +254,8 @@ namespace MueLu {
           else shift = Teuchos::as<Scalar>(pow(base_shift,level) - pow(base_shift,level-1));
         }
       }
+      GetOStream(Runtime0) << "RAPShiftFactory: Using shift " << shift << std::endl;
+
         
       // recombine to get K+shift*M
       {
