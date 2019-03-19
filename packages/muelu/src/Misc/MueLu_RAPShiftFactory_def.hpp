@@ -78,6 +78,7 @@ namespace MueLu {
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: fix zero diagonals");
     SET_VALID_ENTRY("rap: shift");
+    SET_VALID_ENTRY("rap: shift array");
     SET_VALID_ENTRY("rap: shift diagonal M");
     SET_VALID_ENTRY("rap: shift low storage");
 #undef  SET_VALID_ENTRY
@@ -149,7 +150,12 @@ namespace MueLu {
         use_low_storage = pL.get<bool>("rap: shift low storage");
         M_is_diagonal = use_low_storage ? true : M_is_diagonal;
       }
-      
+
+      // Do we have an array of shifts?  If so, we set doubleShifts_
+      Teuchos::ArrayView<const double> doubleShifts;
+      if(pL.isParameter("rap: shift array")) {
+        doubleShifts = pL.get<Teuchos::Array<double> >("rap: shift array")();
+      }
       
       // Inputs: K, M, P
       // Note: In the low-storage case we do not keep a separate "K", we just use A
@@ -168,7 +174,7 @@ namespace MueLu {
       RCP<Matrix> KP, MP;
 
       // Reuse pattern if available (multiple solve)
-      // FIXME: Old style reuse doesn't work any kore
+      // FIXME: Old style reuse doesn't work any more
       //      if (IsAvailable(coarseLevel, "AP Pattern")) {
       //        KP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
       //        MP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
@@ -213,8 +219,8 @@ namespace MueLu {
       // FIXME - We should really get rid of the shifts array and drive this the same way everything else works
       // If we're using the recursive "low storage" version, we need to shift by ( \prod_{i=1}^k shift[i] - \prod_{i=1}^{k-1} shift[i]) to
       // get the recursive relationships correct
-      int level     = coarseLevel.GetLevelID();
-      Scalar shift  = Teuchos::ScalarTraits<Scalar>::zero();
+      int level      = coarseLevel.GetLevelID();
+      Scalar shift   = Teuchos::ScalarTraits<Scalar>::zero();
       if(!use_low_storage) {
         // High Storage version
         if(level < (int)shifts_.size()) shift = shifts_[level];
@@ -232,14 +238,25 @@ namespace MueLu {
             shift = (prod1 * shifts_[level] - prod1);
           }
         }
+        else if(doubleShifts.size() != 0) {
+          double d_shift = 0.0;
+          if(level < doubleShifts.size())
+            d_shift = doubleShifts[level] - doubleShifts[level-1];
+
+          if(d_shift < 0.0) 
+            GetOStream(Warnings1) << "WARNING: RAPShiftFactory has detected a negative shift... This implies a less stable coarse grid."<<std::endl;
+          shift = Teuchos::as<Scalar>(d_shift);
+        }
+
         else {
           double base_shift = pL.get<double>("rap: shift");
           if(level == 1) shift = Teuchos::as<Scalar>(base_shift);
           else shift = Teuchos::as<Scalar>(pow(base_shift,level) - pow(base_shift,level-1));
         }
       }
+      GetOStream(Runtime0) << "RAPShiftFactory: Using shift " << shift << std::endl;
 
-
+        
       // recombine to get K+shift*M
       {
 	SubFactoryMonitor m2(*this, "Add: RKP + s*RMP", coarseLevel);
