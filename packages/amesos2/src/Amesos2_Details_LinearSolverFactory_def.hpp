@@ -207,6 +207,9 @@ public:
       else if (Amesos2::query ("lapack")) {
         solverName_ = "lapack";
       }
+      else if (Amesos2::query ("umfpack")) {
+        solverName_ = "umfpack";
+      }
       // We don't have to try to rescue the user if their empty solver
       // name didn't catch any of the above choices.
     }

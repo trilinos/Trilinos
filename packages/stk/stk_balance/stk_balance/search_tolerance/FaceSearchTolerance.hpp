@@ -12,6 +12,11 @@
 #include "stk_mesh/base/Types.hpp"
 
 namespace stk {
+
+namespace mesh { class BulkData; }
+namespace mesh { class FieldBase; }
+namespace mesh { class Entity; }
+
 namespace balance {
 
 class FaceSearchTolerance

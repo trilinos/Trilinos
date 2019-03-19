@@ -40,7 +40,7 @@ namespace {
 //EquivalentElements
 TEST(stk_topology_understanding, equivalent_elements)
 {
-    std::pair<bool, unsigned> areElementsEquivalent;
+    stk::EquivalentPermutation areElementsEquivalent;
 
     {
         if (stk::topology::topology_type<stk::topology::HEX_8>::num_permutations > 1) {
@@ -50,10 +50,10 @@ TEST(stk_topology_understanding, equivalent_elements)
 
             stk::topology hex8 = stk::topology::HEX_8;
 
-            areElementsEquivalent = hex8.equivalent((unsigned*)hex1, (unsigned*)hex2);
-            EXPECT_TRUE(areElementsEquivalent.first);
-            areElementsEquivalent = hex8.equivalent((unsigned*)hex1, (unsigned*)hex3);
-            EXPECT_FALSE(areElementsEquivalent.first);
+            areElementsEquivalent = hex8.is_equivalent((unsigned*)hex1, (unsigned*)hex2);
+            EXPECT_TRUE(areElementsEquivalent.is_equivalent);
+            areElementsEquivalent = hex8.is_equivalent((unsigned*)hex1, (unsigned*)hex3);
+            EXPECT_FALSE(areElementsEquivalent.is_equivalent);
         }
     }
 
@@ -63,11 +63,11 @@ TEST(stk_topology_understanding, equivalent_elements)
 
         stk::topology triangular_shell = stk::topology::SHELL_TRIANGLE_3;
 
-        areElementsEquivalent = triangular_shell.equivalent((unsigned*)triangle_1, (unsigned*)triangle_2);
+        areElementsEquivalent = triangular_shell.is_equivalent((unsigned*)triangle_1, (unsigned*)triangle_2);
 
-        EXPECT_TRUE(areElementsEquivalent.first);
+        EXPECT_TRUE(areElementsEquivalent.is_equivalent);
 
-        unsigned permutation_index = areElementsEquivalent.second;
+        unsigned permutation_index = areElementsEquivalent.permutation_number;
         unsigned goldValue = 3;
         EXPECT_EQ(goldValue, permutation_index); // From previous unit test, this is the 4th permutation
     }

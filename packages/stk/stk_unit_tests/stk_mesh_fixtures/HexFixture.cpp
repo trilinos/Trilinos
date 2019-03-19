@@ -92,7 +92,7 @@ HexFixture::HexFixture(   MetaData& meta
               , size_t nx
               , size_t ny
               , size_t nz
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -105,7 +105,7 @@ HexFixture::HexFixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -128,7 +128,7 @@ HexFixture::HexFixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , const std::string& coordinate_name
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -141,7 +141,7 @@ HexFixture::HexFixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -162,7 +162,7 @@ HexFixture::HexFixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , bool auraOn
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -175,7 +175,7 @@ HexFixture::HexFixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),

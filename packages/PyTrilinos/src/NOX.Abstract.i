@@ -47,7 +47,7 @@
 PyTrilinos.NOX.Abstract is the python interface to namespace Abstract
 of the Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.Abstract is to provide base classes from which
 concrete NOX interfaces can be derived.  Currently, the only concrete
@@ -59,6 +59,14 @@ NOX.Abstract provides the following user-level classes:
     * PrePostOperator  - Pre- and post-iteration operators
     * MultiVector      - Multivector class
     * Vector           - Vector class
+"
+%enddef
+
+%define %nox_abstract_codeimport
+"
+from . import _Abstract
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.Epetra
 "
 %enddef
 
@@ -107,15 +115,6 @@ NOX.Abstract provides the following user-level classes:
 // General ignore directives
 %ignore *::operator=;
 %ignore *::operator[];
-
-// Allow import from the parent directory
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 
 // Trilinos module imports
 %import "Teuchos.i"

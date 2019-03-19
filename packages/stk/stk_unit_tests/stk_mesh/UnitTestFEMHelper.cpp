@@ -288,12 +288,12 @@ void verify_unbuildable_element(stk::mesh::BulkData &bulk,
 
     if (sides_connectibility_check[i])
     {
-      EXPECT_NE(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_NE(ordinalAndPermutation.first, stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
       EXPECT_NE(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
     }
     else
     {
-      EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
       EXPECT_EQ(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
     }
   }
@@ -324,12 +324,12 @@ void verify_unbuildable_element(stk::mesh::BulkData &bulk,
 
     if (edges_connectibility_check[i])
     {
-      EXPECT_NE(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_NE(ordinalAndPermutation.first, stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
       EXPECT_NE(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
     }
     else
     {
-      EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL);
+      EXPECT_EQ(ordinalAndPermutation.first, stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
       EXPECT_EQ(ordinalAndPermutation.second, stk::mesh::Permutation::INVALID_PERMUTATION);
     }
   }

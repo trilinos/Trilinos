@@ -64,11 +64,11 @@ bool is_positive_permutation(stk::mesh::BulkData & mesh,
     for (unsigned face_node_count=0; face_node_count < mesh.num_nodes(face); ++face_node_count) {
         face_nodes[face_node_count] = mesh.begin_nodes(face)[face_node_count];
     }
-    std::pair<bool, unsigned> permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
+    stk::EquivalentPermutation permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
 
-    bool is_a_valid_permutation = permutation.first;
+    bool is_a_valid_permutation = permutation.is_equivalent;
     EXPECT_TRUE(is_a_valid_permutation);
-    bool is_positive_permutation = permutation.second < faceTopology.num_positive_permutations();
+    bool is_positive_permutation = permutation.permutation_number < faceTopology.num_positive_permutations();
     return is_positive_permutation;
 }
 

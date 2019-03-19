@@ -57,7 +57,7 @@ inline int does_entity_exist_in_list(const std::vector<stk::mesh::shared_entity_
         size_t num_nodes1 = shared_entities_this_proc[i].nodes.size();
         if (topo1 == topo2 && num_nodes1 == num_nodes2)
         {
-            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes.data(), shared_entity_from_other_proc.nodes.data()).first;
+            bool sameType = topo1.is_equivalent(shared_entities_this_proc[i].nodes.data(), shared_entity_from_other_proc.nodes.data()).is_equivalent;
             if (sameType)
             {
                 matching_index = i;
@@ -73,28 +73,44 @@ class BulkDataTester : public stk::mesh::BulkData
 public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(mesh_meta_data, comm)
+            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option)
+            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr)
     {
     }
 
-    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &conn_map) :
-            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA, false, &conn_map)
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, stk::mesh::ConnectivityMap const &/*conn_map*/) :
+            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data,
                    MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option,
-                   bool add_fmwk_data,
-                   stk::mesh::ConnectivityMap const* arg_connectivity_map,
+                   bool _add_fmwk_data,
+                   stk::mesh::ConnectivityMap const* /*arg_connectivity_map*/,
                    stk::mesh::FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option, add_fmwk_data, arg_connectivity_map, field_data_manager, bucket_capacity)
+            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
+#ifdef SIERRA_MIGRATION
+, _add_fmwk_data
+#endif
+  , field_data_manager, bucket_capacity)
     {
     }
 

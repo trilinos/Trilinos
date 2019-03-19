@@ -64,6 +64,46 @@
 #define STK_PACKAGE stk
 #define STK_HAS_SNL_EXODUSII
 
+//----------------------------------------------------------------------
+
+// Use macro below to deprecate functions (place at beginning of function or class method)
+// This is basically copied from the Trilinos version in Tribits to maintain some compatibility
+/* Usage Example
+ * #ifndef STK_HIDE_DEPRECATED_CODE // Delete after FILL_IN_DATE_TWO_SPRINTS_AFTER_END_OF_THIS_SPRINT_HERE
+ * STK_DEPRECATED bool modification_end(impl::MeshModification::modification_optimization opt)
+ * {
+ *     if (impl::MeshModification::MOD_END_SORT == opt) {
+ *         return m_meshModification.modification_end();
+ *     } else {
+ *         return m_meshModification.modification_end_with_compress();
+ *     }
+ * }
+ * #endif // STK_HIDE_DEPRECATED_CODE
+ */
+#ifdef STK_SHOW_DEPRECATED_WARNINGS
+#  ifndef STK_DEPRECATED
+#    if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#      define STK_DEPRECATED  __attribute__((__deprecated__))
+#    else
+#      define STK_DEPRECATED
+#    endif
+#  endif
+#  ifndef STK_DEPRECATED_MSG
+#    if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#      define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__ (#MSG) ))
+#    elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#      define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__))
+#    else
+#      define STK_DEPRECATED_MSG(MSG)
+#    endif
+#  endif
+#else
+#  ifndef STK_DEPRECATED
+#    define STK_DEPRECATED
+#    define STK_DEPRECATED_MSG(MSG)
+#  endif
+#endif
+
 #include <stk_util/stk_kokkos_macros.h>
 
 #endif /* stk_util_config_h */

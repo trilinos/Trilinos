@@ -47,7 +47,7 @@
 PyTrilinos.Tpetra is the python interface to the Trilinos linear
 algebra services package Tpetra:
 
-    http://trilinos.sandia.gov/packages/tpetra
+    https://trilinos.org/docs/dev/packages/tpetra/doc/html/index.html
 
 The purpose of Tpetra is to provide fundamental linear algebra
 services to the rest of Trilinos.  These services include parallel

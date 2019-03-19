@@ -32,7 +32,9 @@
 // 
 
 #include <gtest/gtest.h>
+#include <stk_ngp_test/ngp_test.hpp>
 #include <stk_topology/topology.hpp>
+#include "topology_test_utils.hpp"
 
 TEST( stk_topology, tri_3)
 {
@@ -46,6 +48,7 @@ TEST( stk_topology, tri_3)
 
   EXPECT_EQ(t.rank(),topology::FACE_RANK);
   EXPECT_EQ(t.side_rank(),topology::EDGE_RANK);
+  EXPECT_EQ(t.num_sides(),3u);
 
   EXPECT_EQ(t.dimension(),2u);
   EXPECT_EQ(t.num_nodes(),3u);
@@ -61,43 +64,84 @@ TEST( stk_topology, tri_3)
 
   EXPECT_EQ(t.base(),topology::TRI_3);
 
-  const char a[] = "abc";
+  EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  {
-    const char b[] = "abc";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
-  }
+  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1},
+                                                                 {1, 2},
+                                                                 {2, 0} };
+  check_side_node_ordinals(t, gold_edge_node_ordinals);
+  check_edge_node_ordinals(t, gold_edge_node_ordinals);
+  check_side_nodes(t, gold_edge_node_ordinals);
+  check_edge_nodes(t, gold_edge_node_ordinals);
 
-  {
-    const char b[] = "cab";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
-  }
+  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2},
+                                                                        {2, 0, 1},
+                                                                        {1, 2, 0},
+                                                                        {0, 2, 1},
+                                                                        {2, 1, 0},
+                                                                        {1, 0, 2} };
+  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
+  check_permutation_nodes(t, gold_permutation_node_ordinals);
 
-  {
-    const char b[] = "bca";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,2u);
-  }
+  check_equivalent(t, gold_permutation_node_ordinals);
+  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+}
 
+void check_tri3_on_device()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
-    const char b[] = "acb";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,3u);
-  }
+    stk::topology t = stk::topology::TRI_3;
 
-  {
-    const char b[] = "cba";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,4u);
-  }
+    NGP_EXPECT_TRUE(t.is_valid());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.is_shell());
 
-  {
-    const char b[] = "bac";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,5u);
-  }
+    NGP_EXPECT_EQ(t.rank(),stk::topology::FACE_RANK);
+    NGP_EXPECT_EQ(t.side_rank(),stk::topology::EDGE_RANK);
+    NGP_EXPECT_EQ(t.num_sides(),3u);
+
+    NGP_EXPECT_EQ(t.dimension(),2u);
+    NGP_EXPECT_EQ(t.num_nodes(),3u);
+    NGP_EXPECT_EQ(t.num_vertices(),3u);
+    NGP_EXPECT_EQ(t.num_edges(),3u);
+    NGP_EXPECT_EQ(t.num_faces(),0u);
+    NGP_EXPECT_EQ(t.num_permutations(),6u);
+    NGP_EXPECT_EQ(t.num_positive_permutations(),3u);
+
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+    NGP_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+
+    NGP_EXPECT_EQ(t.base(),stk::topology::TRI_3);
+
+    NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
+
+    unsigned gold_edge_node_ordinals[3][2] = { {0, 1},
+                                               {1, 2},
+                                               {2, 0} };
+    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_side_nodes_ngp(t, gold_edge_node_ordinals);
+    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+
+    unsigned gold_permutation_node_ordinals[6][3] = { {0, 1, 2},
+                                                      {2, 0, 1},
+                                                      {1, 2, 0},
+                                                      {0, 2, 1},
+                                                      {2, 1, 0},
+                                                      {1, 0, 2} };
+    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+
+    check_equivalent_ngp(t, gold_permutation_node_ordinals);
+    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+  });
+}
+
+NGP_TEST(stk_topology_ngp, tri_3)
+{
+  check_tri3_on_device();
 }
 
 TEST( stk_topology, tri_4)
@@ -112,6 +156,7 @@ TEST( stk_topology, tri_4)
 
   EXPECT_EQ(t.rank(),topology::FACE_RANK);
   EXPECT_EQ(t.side_rank(),topology::EDGE_RANK);
+  EXPECT_EQ(t.num_sides(),3u);
 
   EXPECT_EQ(t.dimension(),2u);
   EXPECT_EQ(t.num_nodes(),4u);
@@ -126,43 +171,85 @@ TEST( stk_topology, tri_4)
   EXPECT_TRUE(t.defined_on_spatial_dimension(3));
 
   EXPECT_EQ(t.base(),topology::TRI_3);
-  const char a[] = "abcd";
 
-  {
-    const char b[] = "abcd";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
-  }
+  EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  {
-    const char b[] = "cabd";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
-  }
+  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1},
+                                                                 {1, 2},
+                                                                 {2, 0} };
+  check_side_node_ordinals(t, gold_edge_node_ordinals);
+  check_edge_node_ordinals(t, gold_edge_node_ordinals);
+  check_side_nodes(t, gold_edge_node_ordinals);
+  check_edge_nodes(t, gold_edge_node_ordinals);
 
-  {
-    const char b[] = "bcad";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,2u);
-  }
+  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2, 3},
+                                                                        {2, 0, 1, 3},
+                                                                        {1, 2, 0, 3},
+                                                                        {0, 2, 1, 3},
+                                                                        {2, 1, 0, 3},
+                                                                        {1, 0, 2, 3} };
+  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
+  check_permutation_nodes(t, gold_permutation_node_ordinals);
 
-  {
-    const char b[] = "acbd";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,3u);
-  }
+  check_equivalent(t, gold_permutation_node_ordinals);
+  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+}
 
+void check_tri4_on_device()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
-    const char b[] = "cbad";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,4u);
-  }
+    stk::topology t = stk::topology::TRI_4;
 
-  {
-    const char b[] = "bacd";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,5u);
-  }
+    NGP_EXPECT_TRUE(t.is_valid());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.is_shell());
+
+    NGP_EXPECT_EQ(t.rank(),stk::topology::FACE_RANK);
+    NGP_EXPECT_EQ(t.side_rank(),stk::topology::EDGE_RANK);
+    NGP_EXPECT_EQ(t.num_sides(),3u);
+
+    NGP_EXPECT_EQ(t.dimension(),2u);
+    NGP_EXPECT_EQ(t.num_nodes(),4u);
+    NGP_EXPECT_EQ(t.num_vertices(),3u);
+    NGP_EXPECT_EQ(t.num_edges(),3u);
+    NGP_EXPECT_EQ(t.num_faces(),0u);
+    NGP_EXPECT_EQ(t.num_permutations(),6u);
+    NGP_EXPECT_EQ(t.num_positive_permutations(),3u);
+
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+    NGP_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+
+    NGP_EXPECT_EQ(t.base(),stk::topology::TRI_3);
+
+    NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
+
+    unsigned gold_edge_node_ordinals[3][2] = { {0, 1},
+                                               {1, 2},
+                                               {2, 0} };
+    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_side_nodes_ngp(t, gold_edge_node_ordinals);
+    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+
+    unsigned gold_permutation_node_ordinals[6][4] = { {0, 1, 2, 3},
+                                                      {2, 0, 1, 3},
+                                                      {1, 2, 0, 3},
+                                                      {0, 2, 1, 3},
+                                                      {2, 1, 0, 3},
+                                                      {1, 0, 2, 3} };
+    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+
+    check_equivalent_ngp(t, gold_permutation_node_ordinals);
+    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+  });
+}
+
+NGP_TEST(stk_topology_ngp, tri_4)
+{
+  check_tri4_on_device();
 }
 
 TEST( stk_topology, tri_6)
@@ -177,6 +264,7 @@ TEST( stk_topology, tri_6)
 
   EXPECT_EQ(t.rank(),topology::FACE_RANK);
   EXPECT_EQ(t.side_rank(),topology::EDGE_RANK);
+  EXPECT_EQ(t.num_sides(),3u);
 
   EXPECT_EQ(t.dimension(),2u);
   EXPECT_EQ(t.num_nodes(),6u);
@@ -190,42 +278,80 @@ TEST( stk_topology, tri_6)
   EXPECT_FALSE(t.defined_on_spatial_dimension(2));
   EXPECT_TRUE(t.defined_on_spatial_dimension(3));
 
-  const char a[] = "abc012";
+  EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  {
-    const char b[] = "abc012";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
-  }
+  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1, 3},
+                                                                 {1, 2, 4},
+                                                                 {2, 0, 5} };
+  check_side_node_ordinals(t, gold_edge_node_ordinals);
+  check_edge_node_ordinals(t, gold_edge_node_ordinals);
+  check_side_nodes(t, gold_edge_node_ordinals);
+  check_edge_nodes(t, gold_edge_node_ordinals);
 
-  {
-    const char b[] = "cab201";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
-  }
+  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2, 3, 4, 5},
+                                                                        {2, 0, 1, 5, 3, 4},
+                                                                        {1, 2, 0, 4, 5, 3},
+                                                                        {0, 2, 1, 5, 4, 3},
+                                                                        {2, 1, 0, 4, 3, 5},
+                                                                        {1, 0, 2, 3, 5, 4} };
+  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
+  check_permutation_nodes(t, gold_permutation_node_ordinals);
 
-  {
-    const char b[] = "bca120";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,2u);
-  }
-
-  {
-    const char b[] = "acb210";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,3u);
-  }
-
-  {
-    const char b[] = "cba102";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,4u);
-  }
-
-  {
-    const char b[] = "bac021";
-    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
-    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,5u);
-  }
+  check_equivalent(t, gold_permutation_node_ordinals);
+  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
 }
 
+void check_tri6_on_device()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  {
+    stk::topology t = stk::topology::TRI_6;
+
+    NGP_EXPECT_TRUE(t.is_valid());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.is_shell());
+
+    NGP_EXPECT_EQ(t.rank(),stk::topology::FACE_RANK);
+    NGP_EXPECT_EQ(t.side_rank(),stk::topology::EDGE_RANK);
+    NGP_EXPECT_EQ(t.num_sides(),3u);
+
+    NGP_EXPECT_EQ(t.dimension(),2u);
+    NGP_EXPECT_EQ(t.num_nodes(),6u);
+    NGP_EXPECT_EQ(t.num_vertices(),3u);
+    NGP_EXPECT_EQ(t.num_edges(),3u);
+    NGP_EXPECT_EQ(t.num_faces(),0u);
+    NGP_EXPECT_EQ(t.num_permutations(),6u);
+    NGP_EXPECT_EQ(t.num_positive_permutations(),3u);
+
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+    NGP_EXPECT_TRUE(t.defined_on_spatial_dimension(3));
+
+    NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
+
+    unsigned gold_edge_node_ordinals[3][3] = { {0, 1, 3},
+                                               {1, 2, 4},
+                                               {2, 0, 5} };
+    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
+    check_side_nodes_ngp(t, gold_edge_node_ordinals);
+    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+
+    unsigned gold_permutation_node_ordinals[6][6] = { {0, 1, 2, 3, 4, 5},
+                                                      {2, 0, 1, 5, 3, 4},
+                                                      {1, 2, 0, 4, 5, 3},
+                                                      {0, 2, 1, 5, 4, 3},
+                                                      {2, 1, 0, 4, 3, 5},
+                                                      {1, 0, 2, 3, 5, 4} };
+    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+
+    check_equivalent_ngp(t, gold_permutation_node_ordinals);
+    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+  });
+}
+
+NGP_TEST(stk_topology_ngp, tri_6)
+{
+  check_tri6_on_device();
+}

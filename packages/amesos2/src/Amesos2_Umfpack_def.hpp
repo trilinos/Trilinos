@@ -65,8 +65,8 @@ Umfpack<Matrix,Vector>::Umfpack(
   , colptr_()
   , is_contiguous_(true)
 {
-  data_.Symbolic = 0;
-  data_.Numeric = 0;
+  data_.Symbolic = NULL;
+  data_.Numeric = NULL;
 }
 
 

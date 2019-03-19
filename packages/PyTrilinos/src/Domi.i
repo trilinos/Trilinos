@@ -47,7 +47,7 @@
 PyTrilinos.Domi is the python interface to the Trilinos structured,
 multi-dimensional, distrivuted linear algebra servise package Domi:
 
-    http://trilinos.sandia.gov/packages/domi
+    https://trilinos.org/docs/dev/packages/domi/doc/html/index.html
 
 Domi supports the structured decomposition of structured vectors
 (arrays), maps, and communicators.  It also supports the conversion of

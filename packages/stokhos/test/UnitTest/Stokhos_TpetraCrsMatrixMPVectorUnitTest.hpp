@@ -41,6 +41,7 @@
 
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 
 // Teuchos
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"

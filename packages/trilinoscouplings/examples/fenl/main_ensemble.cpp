@@ -1,6 +1,8 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
+#include "Sacado_mpl_for_each.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -31,6 +33,9 @@
 #endif
 
 #include "VPS_ensemble.hpp"
+
+// For unit-testing
+#include "Teuchos_TestingHelpers.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -965,10 +970,59 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
      print_memory_usage(std::cout, *comm);
   }
 
+  // If we are running as a unit-test, check mean and variance
+  if (cmd.UNIT_TEST) {
+    TEUCHOS_TEST_FLOATING_EQUALITY( perf_total.response_mean, cmd.TEST_MEAN, cmd.TEST_TOL, std::cout, success );
+    TEUCHOS_TEST_FLOATING_EQUALITY( perf_total.response_std_dev, cmd.TEST_STD_DEV, cmd.TEST_TOL, std::cout, success );
+    if (success)
+      std::cout << "Test Passed!" << std::endl;
+    else
+      std::cout << "Test Failed!" << std::endl;
+  }
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   return success;
+}
+
+template <typename ExecSpace>
+struct RunOp {
+public:
+  const CMD& cmdline;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm;
+  mutable bool ran;
+
+  RunOp(const CMD& cmdline_,
+        const Teuchos::RCP<const Teuchos::Comm<int> >& comm_) :
+    cmdline(cmdline_), comm(comm_), ran(false) {}
+
+  template <typename EnsembleSizeType>
+  void operator()(const EnsembleSizeType arg) const {
+    if (EnsembleSizeType::value == cmdline.USE_UQ_ENSEMBLE) {
+      run<ExecSpace,EnsembleSizeType::value>( comm , cmdline );
+      ran = true;
+    }
+  }
+};
+
+template <typename ExecSpace>
+void driver(const CMD& cmdline,
+            const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+{
+  if ( cmdline.USE_UQ_ENSEMBLE == 0 ) {
+    // Run without ensembles (one at a time)
+    run<ExecSpace, STOKHOS_DEFAULT_ENSEMBLE_SIZE>(comm, cmdline);
+  }
+  else {
+    // Run with requested ensemble size, if possible
+    // Search over all enabled ensemble sizes and run it if it matches the
+    // requested one
+    RunOp<ExecSpace> run_op(cmdline,comm);
+    Sacado::mpl::for_each< Stokhos::ETI_Ensemble_Sizes > f(run_op);
+    if (!run_op.ran)
+      std::cout << "Invalid ensemble size!" << std::endl;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -999,96 +1053,29 @@ int main( int argc , char ** argv )
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
 
+    // If execution space not specified, use the default
+    if (!cmdline.USE_SERIAL && !cmdline.USE_THREADS && !cmdline.USE_OPENMP &&
+        !cmdline.USE_CUDA)
+      driver<Kokkos::DefaultExecutionSpace>(cmdline, comm);
+
 #if defined( HAVE_TPETRA_SERIAL )
-    if ( cmdline.USE_SERIAL ) {
-      if ( cmdline.USE_UQ_ENSEMBLE == 0 )
-        run< Kokkos::Serial ,  STOKHOS_DEFAULT_ENSEMBLE_SIZE >( comm , cmdline );
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_4
-      else if ( cmdline.USE_UQ_ENSEMBLE == 4 )
-        run< Kokkos::Serial ,  4 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_8
-      else if ( cmdline.USE_UQ_ENSEMBLE == 8 )
-        run< Kokkos::Serial ,  8 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_16
-      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
-        run< Kokkos::Serial , 16 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_32
-      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
-        run< Kokkos::Serial , 32 >( comm , cmdline );
-#endif
-      else
-        std::cout << "Invalid ensemble size!" << std::endl;
-    }
+    if ( cmdline.USE_SERIAL )
+      driver<Kokkos::Serial>(cmdline, comm);
 #endif
 
 #if defined( HAVE_TPETRA_PTHREAD )
-    if ( cmdline.USE_THREADS ) {
-      if ( cmdline.USE_UQ_ENSEMBLE == 0 )
-        run< Kokkos::Threads ,  STOKHOS_DEFAULT_ENSEMBLE_SIZE >( comm , cmdline );
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_4
-      else if ( cmdline.USE_UQ_ENSEMBLE == 4 )
-        run< Kokkos::Threads ,  4 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_8
-      else if ( cmdline.USE_UQ_ENSEMBLE == 8 )
-        run< Kokkos::Threads ,  8 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_16
-      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
-        run< Kokkos::Threads , 16 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_32
-      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
-        run< Kokkos::Threads , 32 >( comm , cmdline );
-#endif
-      else
-        std::cout << "Invalid ensemble size!" << std::endl;
-    }
+    if ( cmdline.USE_THREADS )
+      driver<Kokkos::Threads>(cmdline, comm);
 #endif
 
 #if defined( HAVE_TPETRA_OPENMP )
-    if ( cmdline.USE_OPENMP ) {
-      if ( cmdline.USE_UQ_ENSEMBLE == 0 )
-        run< Kokkos::OpenMP ,  STOKHOS_DEFAULT_ENSEMBLE_SIZE >( comm , cmdline );
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_4
-      else if ( cmdline.USE_UQ_ENSEMBLE == 4 )
-        run< Kokkos::OpenMP ,  4 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_8
-      else if ( cmdline.USE_UQ_ENSEMBLE == 8 )
-        run< Kokkos::OpenMP ,  8 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_16
-      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
-        run< Kokkos::OpenMP , 16 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_32
-      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
-        run< Kokkos::OpenMP , 32 >( comm , cmdline );
-#endif
-      else
-        std::cout << "Invalid ensemble size!" << std::endl;
-    }
+    if ( cmdline.USE_OPENMP )
+      driver<Kokkos::OpenMP>(cmdline, comm);
 #endif
 
 #if defined( HAVE_TPETRA_CUDA )
-    if ( cmdline.USE_CUDA ) {
-      if ( cmdline.USE_UQ_ENSEMBLE == 0 )
-        run< Kokkos::Cuda ,  STOKHOS_DEFAULT_ENSEMBLE_SIZE >( comm , cmdline );
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_16
-      else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
-        run< Kokkos::Cuda , 16 >( comm , cmdline );
-#endif
-#ifdef HAVE_STOKHOS_ENSEMBLE_SIZE_32
-      else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
-        run< Kokkos::Cuda , 32 >( comm , cmdline );
-#endif
-      else
-        std::cout << "Invalid ensemble size!" << std::endl;
-    }
+    if ( cmdline.USE_CUDA )
+      driver<Kokkos::Cuda>(cmdline, comm);
 #endif
 
   }

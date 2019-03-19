@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.BorderedSolver is the python interface to namespace
 BorderedSolver of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.BorderedSolver is to provide strategies for
 solving bordered systems of equations.  The python version of
