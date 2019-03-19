@@ -170,6 +170,9 @@ public:
     d_view_ptr_ (new d_view_type ()),
     h_view_ptr_ (new h_view_type ())
   {
+    TEUCHOS_ASSERT( d_view_ptr_ != nullptr );
+    TEUCHOS_ASSERT( h_view_ptr_ != nullptr );
+
     d_view_type* d_view_ptr2 = d_view_ptr_; // Avoid 'this' capture concerns.
     h_view_type* h_view_ptr2 = h_view_ptr_;
 
