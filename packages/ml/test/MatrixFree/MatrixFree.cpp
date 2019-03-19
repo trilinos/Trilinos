@@ -202,7 +202,9 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MFP);
   solver.Iterate(200, 1e-5);
 
+#ifndef NDEBUG
   int MFPIters = solver.NumIters();
+#endif
 
   delete MFP;
 

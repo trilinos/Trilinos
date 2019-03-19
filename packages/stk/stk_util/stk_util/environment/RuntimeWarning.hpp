@@ -272,7 +272,7 @@ private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5, 2019
 /**
  * @brief Class <b>RuntimeWarningDeferred</b> reports a deferred warning message to the report
  * system.
@@ -367,6 +367,7 @@ public:
 private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
+#endif
 
 using RuntimeWarningP0 = stk::RuntimeWarningSymmetric;
 using RuntimeWarning   = stk::RuntimeWarningAdHoc;

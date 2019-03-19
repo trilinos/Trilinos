@@ -166,7 +166,7 @@ public:
     void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { m_perm = perm; }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return m_sideNodes.begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
 
 private:
     LocalId m_elementLocalId;
@@ -202,7 +202,7 @@ struct ParallelElementData
     void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { serialElementData.set_element_side_nodes(nodes); }
     void set_permutation(stk::mesh::Permutation perm) { serialElementData.set_permutation(perm); }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return serialElementData.side_nodes_begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return serialElementData.side_nodes_begin(); }
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 

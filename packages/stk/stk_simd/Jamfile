@@ -52,8 +52,8 @@ project votd
     <architecture>knl:<define>USE_STK_SIMD_AVX512
     <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
     <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE
+
     <architecture>cray,<toolset>cray:<define>USE_STK_SIMD_NONE
-    <cuda>on:<define>KOKKOS_ENABLE_CUDA_LAMBDA=1
   : usage-requirements
     <include>$(stk_simd-root)
     <define>USE_STK_SIMD_AUTO

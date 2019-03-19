@@ -33,8 +33,8 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/environment/Env.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <Ionit_Initializer.h>                       // for Initializer
 #include <assert.h>                                  // for assert
 #include <stdlib.h>                                  // for exit, etc
@@ -152,7 +152,6 @@ stk::mesh::FieldVector get_fields_by_name(const stk::mesh::MetaData &meta, const
 
 StkMeshIoBroker::StkMeshIoBroker()
 : m_communicator(MPI_COMM_NULL),
-  m_connectivityMap(nullptr),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true)
@@ -160,9 +159,19 @@ StkMeshIoBroker::StkMeshIoBroker()
     Ioss::Init::Initializer::initialize_ioss();
 }
 
-StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, const stk::mesh::ConnectivityMap * connectivity_map)
+#ifndef STK_HIDE_DEPRECATED_CODE
+STK_DEPRECATED StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, const stk::mesh::ConnectivityMap * /*connectivity_map*/)
 : m_communicator(comm),
-  m_connectivityMap(connectivity_map),
+  m_activeMeshIndex(0),
+  m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
+  m_autoLoadAttributes(true)
+{
+    Ioss::Init::Initializer::initialize_ioss();
+}
+#endif
+
+StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
+: m_communicator(comm),
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true)
@@ -712,14 +721,14 @@ void StkMeshIoBroker::create_bulk_data()
 
     // Check if bulk_data is null; if so, create a new one...
     if (Teuchos::is_null(m_bulkData)) {
+        stk::mesh::FieldDataManager* fieldDataManager = nullptr;
         set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
                                                                , region->get_database()->util().communicator()
                                                                , stk::mesh::BulkData::AUTO_AURA
 #ifdef SIERRA_MIGRATION
                                                                , false
 #endif
-                                                               , m_connectivityMap
-        )));
+       , fieldDataManager)));
     }
 }
 

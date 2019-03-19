@@ -127,7 +127,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
       << NumImagEigenvectors << " imaginary eigenvector(s)" << std::endl;
   }
 
+#ifndef NDEBUG
   int size = NumRealEigenvectors+NumImagEigenvectors;
+#endif
 
   assert (size < 2 * NumEigenvalues + 1);
 

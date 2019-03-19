@@ -167,13 +167,24 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
+  STK_DEPRECATED BulkData(   MetaData & mesh_meta_data
+            , ParallelMachine parallel
+            , enum AutomaticAuraOption auto_aura_option
+#ifdef SIERRA_MIGRATION
+            , bool add_fmwk_data
+#endif
+            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated
+            , FieldDataManager *field_dataManager
+            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
+            );
+#endif
   BulkData(   MetaData & mesh_meta_data
             , ParallelMachine parallel
             , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated = NULL
             , FieldDataManager *field_dataManager = NULL
             , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
@@ -194,7 +205,9 @@ public:
   /** \brief  Rank of the parallel machine's local processor */
   int parallel_rank()   const { return m_parallel.parallel_rank() ; }
 
-  const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
+#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5 2019
+  STK_DEPRECATED const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
+#endif
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -801,8 +814,8 @@ public:
 
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
-  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer);
-  void unregister_observer(std::shared_ptr<ModificationObserver> observer);
+  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer) const;
+  void unregister_observer(std::shared_ptr<ModificationObserver> observer) const;
   template<typename ObserverType>
   bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }
   template<typename ObserverType>
@@ -1457,9 +1470,9 @@ private:
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
-  ModificationNotifier notifier;
 
 protected: //data
+  mutable ModificationNotifier notifier;
   static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;

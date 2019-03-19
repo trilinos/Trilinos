@@ -21,7 +21,7 @@
 #include <unistd.h>                     // for unlink
 #include <limits>                       // for std::numeric_limits<double>::epsilon
 
-#include "../stk_balance/internal/LastStepFieldWriter.hpp"
+#include "stk_balance/internal/LastStepFieldWriter.hpp"
 
 namespace
 {

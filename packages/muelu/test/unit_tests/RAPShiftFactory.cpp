@@ -585,7 +585,91 @@ namespace MueLuTests {
     Params->set("rap: shift low storage",true);
     Params->set("coarse: max size",1000);
     Params->set("verbosity","none");
-    Params->set("use kokkos refactor",false);
+    Params->set("coarse: max size",10);
+    Params->set("max levels",2);
+    Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
+    pLevel0.set("Mdiag",Mdiag);
+
+    // Build hierarchy
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
+
+    // Ready the test vector
+    RCP<Level> Level1 = H->GetLevel(1);
+    RCP<Matrix> P = Level1->Get< RCP<Matrix> >("P");
+    RCP<Matrix> R = Level1->Get< RCP<Matrix> >("R");
+    RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
+    RCP<MultiVector> workVec2 = MultiVectorFactory::Build(A->getRangeMap(),1);
+    RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
+    RCP<MultiVector> result1a = MultiVectorFactory::Build(P->getDomainMap(),1);
+    RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
+    RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
+    X->randomize();
+
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+    //Calculate result1 = (P^T*(A+shift*M)*P)*X
+    P->apply(*X,*workVec1);
+    A->apply(*workVec1,*workVec2);
+    workVec2->elementWiseMultiply((Scalar)shift,*Mdiag,*workVec1,one);
+    P->apply(*workVec2,*result1,Teuchos::TRANS);
+
+    //Calculate result2 = (R*A*P)*X
+    RCP<Matrix> coarseOp = Level1->Get< RCP<Matrix> >("A");
+    coarseOp->apply(*X,*result2);
+
+    Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    X->norm2(normX);
+    out << "This test checks the correctness of the (Non-)Galerkin triple "
+      << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
+    out << "||X||_2 = " << normX << std::endl;
+    result1->norm2(normResult1);
+    result2->norm2(normResult2);
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1000*Teuchos::ScalarTraits<Scalar>::eps());
+  }
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory,CreatePreconditioner_Low_Storage_ShiftList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
+    using Teuchos::RCP;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    GO nx = 1999*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
+    // Extract the diagonal of A 
+    RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
+    A->getLocalDiagCopy(*Mdiag);
+
+    // The pretty way of managing input decks
+    double shift = 2.0;
+    Teuchos::Array<double> shifts(2); shifts[0]=1.0; shifts[1]=shifts[0]+shift;
+    RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
+    Params->set("rap: algorithm","shift");    
+    Params->set("rap: shift array",shifts);
+    Params->set("rap: shift diagonal M",true);
+    Params->set("rap: shift low storage",true);
+    Params->set("coarse: max size",1000);
+    Params->set("verbosity","none");
     Params->set("coarse: max size",10);
     Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
@@ -629,7 +713,6 @@ namespace MueLuTests {
   }
 
 
-
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Constructor,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Correctness,Scalar,LO,GO,Node) \
@@ -637,7 +720,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditioner_Factory,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditioner_Easy,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditioner_Easy_Diagonal,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditioner_Low_Storage,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditioner_Low_Storage,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditioner_Low_Storage_ShiftList,Scalar,LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests

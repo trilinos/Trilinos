@@ -214,6 +214,15 @@ Thyra::createConstLinearOp(
 
 namespace Thyra {
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getTpetraMap(const RCP<const VectorSpaceBase<Scalar> > &vs)
+{
+  typedef TpetraVectorSpace<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraVectorSpace_t;
+  return Teuchos::rcp_dynamic_cast<const TpetraVectorSpace_t>(vs, true)->getTpetraMap();
+}
+
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >

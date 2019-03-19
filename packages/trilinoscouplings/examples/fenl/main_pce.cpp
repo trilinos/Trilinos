@@ -21,6 +21,9 @@
 
 //----------------------------------------------------------------------------
 
+// For unit-testing
+#include "Teuchos_TestingHelpers.hpp"
+
 template< class Device >
 bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
           const CMD & cmd)
@@ -219,6 +222,16 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     print_memory_usage(std::cout, *comm);
   }
 
+  // If we are running as a unit-test, check mean and variance
+  if (cmd.UNIT_TEST) {
+    TEUCHOS_TEST_FLOATING_EQUALITY( perf.response_mean, cmd.TEST_MEAN, cmd.TEST_TOL, std::cout, success );
+    TEUCHOS_TEST_FLOATING_EQUALITY( perf.response_std_dev, cmd.TEST_STD_DEV, cmd.TEST_TOL, std::cout, success );
+    if (success)
+      std::cout << "Test Passed!" << std::endl;
+    else
+      std::cout << "Test Failed!" << std::endl;
+  }
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
@@ -269,6 +282,11 @@ int main( int argc , char ** argv )
   }
 
   if ( ! cmdline.ERROR  && ! cmdline.ECHO  ) {
+
+    // If execution space not specified, use the default
+    if (!cmdline.USE_SERIAL && !cmdline.USE_THREADS && !cmdline.USE_OPENMP &&
+        !cmdline.USE_CUDA)
+      run< Kokkos::DefaultExecutionSpace >( comm , cmdline );
 
 #if defined( HAVE_TPETRA_SERIAL )
     if ( cmdline.USE_SERIAL ) {
