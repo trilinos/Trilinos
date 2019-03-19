@@ -22,8 +22,6 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/FaceCreationTestUtils.hpp>
 
-#include <stk_io/StkMeshIoBroker.hpp>
-
 namespace
 {
 
@@ -205,7 +203,7 @@ class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 public:
 
     StkMeshIoBrokerTester(stk::ParallelMachine comm) :
-        stk::io::StkMeshIoBroker(comm, nullptr)
+        stk::io::StkMeshIoBroker(comm)
     {
         this->set_sideset_face_creation_behavior_for_testing(STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
     }

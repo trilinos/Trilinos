@@ -25,13 +25,11 @@ template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
-StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
 {
-  this->setTableaus(Teuchos::null, stepperType);
-  this->setModel(appModel);
-  this->initialize();
+  this->setTableaus(Teuchos::null, "Partitioned IMEX RK SSP2");
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
 }
 
 
@@ -42,8 +40,31 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
 {
   this->setTableaus(pList, "Partitioned IMEX RK SSP2");
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+
+
+template<class Scalar>
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableaus(Teuchos::null, stepperType);
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -55,8 +76,14 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
 {
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -675,8 +702,8 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set("Stepper Type", "IMEX RK SSP2");
+  pl->setName("Default Stepper - Partitioned IMEX RK SSP2");
+  pl->set("Stepper Type", "Partitioned IMEX RK SSP2");
   pl->set("Zero Initial Guess", false);
   pl->set("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
@@ -689,8 +716,8 @@ Teuchos::RCP<Teuchos::ParameterList>
 StepperIMEX_RK_Partition<Scalar>::getDefaultParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
+  pl->setName("Default Stepper - Partitioned IMEX RK SSP2");
+  pl->set<std::string>("Stepper Type", "Partitioned IMEX RK SSP2");
   pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
   Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();

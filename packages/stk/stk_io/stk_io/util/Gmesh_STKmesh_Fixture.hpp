@@ -66,10 +66,16 @@ class Gmesh_STKmesh_Fixture
    * @param gmesh_spec The specification for the mesh. See Iogn::GeneratedMesh
    * for documentation on how to specify meshes.
    */
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
+  STK_DEPRECATED Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
+                         , const std::string& gmesh_spec
+                         , bool use_64bit_int_IO_api
+                         , stk::mesh::ConnectivityMap * connectivity_map
+                       );
+#endif
   Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
                          , const std::string& gmesh_spec
                          , bool use_64bit_int_IO_api=false
-                         , stk::mesh::ConnectivityMap * connectivity_map = nullptr
                        );
 
   /**

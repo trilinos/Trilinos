@@ -50,16 +50,7 @@
 #include "Thyra_BelosLinearOpWithSolve.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
 
-#include "BelosBlockGmresSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
-#include "BelosBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockStochasticCGSolMgr.hpp"
-#include "BelosGCRODRSolMgr.hpp"
-#include "BelosRCGSolMgr.hpp"
-#include "BelosMinresSolMgr.hpp"
-#include "BelosTFQMRSolMgr.hpp"
-
+#include "Thyra_BelosSolverFactory.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -77,27 +68,9 @@ namespace Thyra {
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solver Type";
 template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "Pseudo Block GMRES";
+const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "PSEUDO BLOCK GMRES";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverTypes_name = "Solver Types";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockGMRES_name = "Block GMRES";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockGMRES_name = "Pseudo Block GMRES";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockCG_name = "Block CG";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "Pseudo Block CG";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockStochasticCG_name = "Pseudo Block Stochastic CG";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::RCG_name = "RCG";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::MINRES_name = "MINRES";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::TFQMR_name = "TFQMR";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
 
@@ -110,8 +83,8 @@ const std::string LeftPreconditionerIfUnspecified_name = "Left Preconditioner If
 
 template<class Scalar>
 BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory()
-  :solverType_(SOLVER_TYPE_PSEUDO_BLOCK_GMRES),
-   convergenceTestFrequency_(1)
+  : solverName_(SolverType_default),
+    convergenceTestFrequency_(1)
 {
   updateThisValidParamList();
 }
@@ -121,7 +94,7 @@ template<class Scalar>
 BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory(
   const RCP<PreconditionerFactoryBase<Scalar> > &precFactory
   )
-  :solverType_(SOLVER_TYPE_PSEUDO_BLOCK_GMRES)
+  : solverName_(SolverType_default)
 {
   this->setPreconditionerFactory(precFactory, "");
 }
@@ -299,10 +272,23 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
+  std::string solverName, solverNameUC;
+  solverName = paramList->get<std::string>(SolverType_name, SolverType_default);
+  solverNameUC = Belos::Impl::upperCase (solverName);
+  paramList->set(SolverType_name, solverNameUC);
+
+  Teuchos::ParameterList SL;
+  for (auto it = paramList->sublist(SolverTypes_name).begin(); it != paramList->sublist(SolverTypes_name).end(); it++) {
+    solverName = it->first;
+    solverNameUC = Belos::Impl::upperCase (solverName);
+    SL.sublist(solverNameUC).setParameters(paramList->sublist(SolverTypes_name).sublist(solverName));
+  }
+  paramList->remove(SolverTypes_name);
+  paramList->sublist(SolverTypes_name) = SL;
+
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 0);
   paramList_ = paramList;
-  solverType_ =
-    Teuchos::getIntegralValue<EBelosSolverType>(*paramList_, SolverType_name);
+  solverName_ = paramList_->get<std::string>(SolverType_name);
   convergenceTestFrequency_ =
     Teuchos::getParameter<int>(*paramList_, ConvergenceTestFrequency_name);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
@@ -367,87 +353,12 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 {
   using Teuchos::as;
   using Teuchos::tuple;
-  using Teuchos::setStringToIntegralParameter;
-Teuchos::ValidatorXMLConverterDB::addConverter(
-  Teuchos::DummyObjectGetter<
-    Teuchos::StringToIntegralParameterEntryValidator<EBelosSolverType> 
-  >::getDummyObject(),
-  Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
-    EBelosSolverType> >::getDummyObject());
 
   typedef MultiVectorBase<Scalar> MV_t;
   typedef LinearOpBase<Scalar> LO_t;
   static RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
-    setStringToIntegralParameter<EBelosSolverType>(
-      SolverType_name, SolverType_default,
-      "Type of linear solver algorithm to use.",
-      tuple<std::string>(
-        "Block GMRES",
-        "Pseudo Block GMRES",
-        "Block CG",
-        "Pseudo Block CG",
-        "Pseudo Block Stochastic CG",
-        "GCRODR",
-        "RCG",
-        "MINRES",
-        "TFQMR"
-        ),
-      tuple<std::string>(
-        "Block GMRES solver for nonsymmetric linear systems.  It can also solve "
-        "single right-hand side systems, and can also perform Flexible GMRES "
-        "(where the preconditioner may change at every iteration, for example "
-        "for inner-outer iterations), by setting options in the \"Block GMRES\" "
-        "sublist.",
-
-        "GMRES solver for nonsymmetric linear systems, that performs single "
-        "right-hand side solves on multiple right-hand sides at once.  It "
-        "exploits operator multivector multiplication in order to amortize "
-        "global communication costs.  Individual linear systems are deflated "
-        "out as they are solved.",
-
-        "Block CG solver for symmetric (Hermitian in complex arithmetic) "
-        "positive definite linear systems.  It can also solve single "
-        "right-hand-side systems.",
-
-        "CG solver that performs single right-hand side CG on multiple right-hand "
-        "sides at once.  It exploits operator multivector multiplication in order "
-        "to amortize global communication costs.  Individual linear systems are "
-        "deflated out as they are solved.",
-
-        "stochastic CG solver that performs single right-hand side CG on multiple right-hand "
-        "sides at once.  It exploits operator multivector multiplication in order "
-        "to amortize global communication costs.  Individual linear systems are "
-        "deflated out as they are solved. [EXPERIMENTAL]",
-
-        "Variant of GMRES that performs subspace recycling to accelerate "
-        "convergence for sequences of solves with related linear systems.  "
-	"Individual linear systems are deflated out as they are solved.  "
-	"The current implementation only supports real-valued Scalar types.",
-
-        "CG solver for symmetric (Hermitian in complex arithmetic) positive "
-        "definite linear systems, that performs subspace recycling to "
-        "accelerate convergence for sequences of related linear systems.",
-
-        "MINRES solver for symmetric indefinite linear systems.  It performs "
-        "single-right-hand-side solves on multiple right-hand sides sequentially.",
-
-        "TFQMR (Transpose-Free QMR) solver for nonsymmetric linear systems."
-        ),
-      tuple<EBelosSolverType>(
-        SOLVER_TYPE_BLOCK_GMRES,
-        SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
-        SOLVER_TYPE_BLOCK_CG,
-        SOLVER_TYPE_PSEUDO_BLOCK_CG,
-        SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
-        SOLVER_TYPE_GCRODR,
-        SOLVER_TYPE_RCG,
-        SOLVER_TYPE_MINRES,
-        SOLVER_TYPE_TFQMR
-        ),
-      &*validParamList
-      );
     validParamList->set(ConvergenceTestFrequency_name, as<int>(1),
       "Number of linear solver iterations to skip between applying"
       " user-defined convergence test.");
@@ -459,60 +370,21 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
       "support left preconditioning.");
     Teuchos::ParameterList
       &solverTypesSL = validParamList->sublist(SolverTypes_name);
-    {
-      Belos::BlockGmresSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(BlockGMRES_name).setParameters(
-        *mgr.getValidParameters()
-        );
+
+    validParamList->set(SolverType_name, SolverType_default);
+
+    Belos::ThyraSolverFactory<Scalar> factory;
+    Teuchos::Array<std::string> supportedSolvers = factory.supportedSolverNames();
+    typedef Belos::SolverManager<Scalar,MV_t,LO_t> IterativeSolver_t;
+    for (size_t i = 0; i < supportedSolvers.size(); i++) {
+      try {
+        RCP<IterativeSolver_t> iterativeSolver = factory.create ( supportedSolvers[i], Teuchos::null );
+        solverTypesSL.sublist(supportedSolvers[i]) = *(iterativeSolver->getValidParameters());
+      } catch (std::invalid_argument) {
+        // pass
+      }
     }
-    {
-      Belos::PseudoBlockGmresSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(PseudoBlockGMRES_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::BlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(BlockCG_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(PseudoBlockCG_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::PseudoBlockStochasticCGSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(PseudoBlockStochasticCG_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(GCRODR_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::RCGSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(RCG_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::MinresSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(MINRES_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
-    {
-      Belos::TFQMRSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(TFQMR_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
+    validParamList->sublist(SolverTypes_name).setParameters(solverTypesSL);
   }
   return validParamList;
 }
@@ -691,193 +563,21 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   // Generate the parameter list.
   //
 
+  Belos::ThyraSolverFactory<Scalar> factory;
   typedef Belos::SolverManager<Scalar,MV_t,LO_t> IterativeSolver_t;
   RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
-  RCP<Teuchos::ParameterList> solverPL = Teuchos::rcp( new Teuchos::ParameterList() );
-  
-  switch(solverType_) {
-    case SOLVER_TYPE_BLOCK_GMRES: 
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &gmresPL = solverTypesPL.sublist(BlockGMRES_name);
-        solverPL = Teuchos::rcp( &gmresPL, false );
-      }
-      // Create the solver
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      } 
-      else {
-        iterativeSolver = rcp(new Belos::BlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_PSEUDO_BLOCK_GMRES:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &pbgmresPL = solverTypesPL.sublist(PseudoBlockGMRES_name);
-        solverPL = Teuchos::rcp( &pbgmresPL, false );
-      }
-      // 
-      // Create the solver
-      // 
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      }
-      else {
-        iterativeSolver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_BLOCK_CG:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &cgPL = solverTypesPL.sublist(BlockCG_name);
-        solverPL = Teuchos::rcp( &cgPL, false );
-      }
-      // Create the solver
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      }
-      else {
-        iterativeSolver = rcp(new Belos::BlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_PSEUDO_BLOCK_CG:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &pbcgPL = solverTypesPL.sublist(PseudoBlockCG_name);
-        solverPL = Teuchos::rcp( &pbcgPL, false );
-      }
-      // 
-      // Create the solver
-      // 
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      }
-      else {
-        iterativeSolver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &pbcgPL = solverTypesPL.sublist(PseudoBlockStochasticCG_name);
-        solverPL = Teuchos::rcp( &pbcgPL, false );
-      }
-      // 
-      // Create the solver
-      // 
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      }
-      else {
-        iterativeSolver = rcp(new Belos::PseudoBlockStochasticCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_GCRODR:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &gcrodrPL = solverTypesPL.sublist(GCRODR_name);
-        solverPL = Teuchos::rcp( &gcrodrPL, false );
-      }
-      // Create the solver
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      } 
-      else {
-        iterativeSolver = rcp(new Belos::GCRODRSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_RCG:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &rcgPL = solverTypesPL.sublist(RCG_name);
-        solverPL = Teuchos::rcp( &rcgPL, false );
-      }
-      // Create the solver
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      } 
-      else {
-        iterativeSolver = rcp(new Belos::RCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_MINRES:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(MINRES_name);
-        solverPL = Teuchos::rcp( &minresPL, false );
-      }
-      // Create the solver
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      }
-      else {
-        iterativeSolver = rcp(new Belos::MinresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
-    case SOLVER_TYPE_TFQMR:
-    {
-      // Set the PL
-      if(paramList_.get()) {
-        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
-        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(TFQMR_name);
-        solverPL = Teuchos::rcp( &minresPL, false );
-      }
-      // Create the solver
-      if (oldIterSolver != Teuchos::null) {
-        iterativeSolver = oldIterSolver;
-        iterativeSolver->setProblem( lp );
-        iterativeSolver->setParameters( solverPL );
-      }
-      else {
-        iterativeSolver = rcp(new Belos::TFQMRSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-      }
-      break;
-    }
+  Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+  RCP<Teuchos::ParameterList> solverPL = Teuchos::rcpFromRef(solverTypesPL.sublist(solverName_));
 
-    default:
-    {
-      TEUCHOS_TEST_FOR_EXCEPT(true);
-    }
+  // Create the solver
+  if (oldIterSolver != Teuchos::null) {
+    iterativeSolver = oldIterSolver;
+    iterativeSolver->setProblem( lp );
+    iterativeSolver->setParameters( solverPL );
+  }
+  else {
+    iterativeSolver = factory.create ( solverName_, solverPL );
+    iterativeSolver->setProblem ( lp );
   }
 
   //

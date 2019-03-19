@@ -1,4 +1,5 @@
 #include "mpi.h"
+#include <stk_util/stk_config.h>
 #include <stk_tools/block_extractor/ExtractBlocks.hpp>
 #include <stk_io/WriteMesh.hpp>
 #include <stk_io/FillMesh.hpp>
@@ -17,14 +18,22 @@ void extract_blocks_from_file(const std::string &inFile,
                               MPI_Comm comm)
 {
     stk::mesh::MetaData inMeta;
-    stk::mesh::BulkData inBulk(inMeta, comm);
+    stk::mesh::BulkData inBulk(inMeta, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
 
     int numSteps = 9;
     double maxTime = 0;
     stk::io::fill_mesh_save_step_info(inFile, inBulk, numSteps, maxTime);
 
     stk::mesh::MetaData outMeta;
-    stk::mesh::BulkData outBulk(outMeta, comm);
+    stk::mesh::BulkData outBulk(outMeta, comm, stk::mesh::BulkData::AUTO_AURA
+#ifdef SIERRA_MIGRATION
+, false
+#endif
+, (stk::mesh::FieldDataManager*)nullptr);
     extract_blocks(inBulk, outBulk, blockNames);
 
     stk::io::write_mesh_with_fields(outFile, outBulk, numSteps, maxTime);

@@ -65,8 +65,72 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
     set_field_on_device_and_copy_back(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
 
     for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, shellQuadPart))
+    {
         for(stk::mesh::Entity elem : *bucket)
+        {
             EXPECT_EQ(fieldVal, *stk::mesh::field_data(shellQuadField, elem));
+        }
+    }
+}
+
+template<typename MeshType, typename FieldType>
+void test_field_on_subset_of_mesh(const stk::mesh::BulkData& bulk, const FieldType& field,
+                                  stk::mesh::PartOrdinal partThatHasField,
+                                  stk::mesh::PartOrdinal partThatDoesntHaveField)
+{
+    MeshType ngpMesh(bulk);
+
+    typedef Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
+    const auto& teamPolicy = Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK), Kokkos::AUTO);
+
+    Kokkos::parallel_for(teamPolicy, KOKKOS_LAMBDA (const TeamHandleType& team)
+    {
+        const typename MeshType::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, team.league_rank());
+        unsigned numElems = bucket.size();
+
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
+        {
+            stk::mesh::Entity elem = bucket[i];
+            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
+            if (bucket.member(partThatHasField)) {
+                NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) > 0);
+            }
+            if (bucket.member(partThatDoesntHaveField)) {
+                NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) == 0);
+            }
+        });
+    });
+}
+
+TEST_F(NgpHowTo, fieldOnSubsetOfMesh)
+{
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::Part &shellQuadPart = get_meta().get_topology_root_part(stk::topology::SHELL_QUAD_4);
+    const stk::mesh::Part &hex8Part = get_meta().get_topology_root_part(stk::topology::HEX_8);
+
+    auto &shellQuadField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
+    double init = 0.0;
+    stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, &init);
+    std::string meshDesc =
+        "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+         0,2,SHELL_QUAD_4,5,6,7,8";
+    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+
+    double fieldVal = 13.0;
+    set_field_on_device_and_copy_back(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
+
+#ifndef KOKKOS_ENABLE_CUDA
+    ngp::StkFieldAdapter<double> ngpShellFieldAdapter(get_bulk(), shellQuadField);
+
+    test_field_on_subset_of_mesh<ngp::StkMeshAdapter,ngp::StkFieldAdapter<double> >(
+                      get_bulk(), ngpShellFieldAdapter,
+                      shellQuadPart.mesh_meta_data_ordinal(), hex8Part.mesh_meta_data_ordinal());
+#endif
+
+    ngp::StaticField<double> ngpShellField(get_bulk(), shellQuadField);
+    test_field_on_subset_of_mesh<ngp::StaticMesh, ngp::StaticField<double> >(
+                      get_bulk(), ngpShellField,
+                      shellQuadPart.mesh_meta_data_ordinal(), hex8Part.mesh_meta_data_ordinal());
 }
 
 TEST_F(NgpHowTo, loopOverAllMeshNodes)

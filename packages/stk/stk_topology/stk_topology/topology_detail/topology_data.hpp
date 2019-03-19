@@ -35,11 +35,7 @@
 #define STKTOPOLOGY_DETAIL_TOPOLOGY_DATA_HPP
 
 #include <stk_topology/topology.hpp>
-
-#include <boost/mpl/vector.hpp>
-#include <boost/mpl/vector_c.hpp>
-#include <boost/mpl/vector/vector30_c.hpp>
-#include <boost/utility.hpp>
+#include <type_traits>
 
 //TODO implement permutations for tets, pyramids, wedges and hexes
 //TODO implement permutations polarity
@@ -81,12 +77,15 @@ struct topology_data<topology::INVALID_TOPOLOGY>
                                                        false,  // 2d
                                                        false}; // 3d
 
-  typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::INVALID_TOPOLOGY};
 
-  typedef boost::mpl::vector<> edge_node_ordinals_vector;
-  typedef boost::mpl::vector<> face_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0};
 
-  typedef boost::mpl::vector<> permutation_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0};
+  static constexpr unsigned face_node_ordinals_vector[] = {0};
+
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0};
 };
 
 //***************************************************************************
@@ -120,13 +119,15 @@ struct topology_data<topology::NODE>
                                                        true,   // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::INVALID_TOPOLOGY};
 
-  typedef boost::mpl::vector<> edge_node_ordinals_vector;
-  typedef boost::mpl::vector<> face_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0};
 
-  typedef boost::mpl::vector<> permutation_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0};
+  static constexpr unsigned face_node_ordinals_vector[] = {0};
 
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0};
 };
 
 
@@ -162,15 +163,15 @@ struct topology_data<topology::PARTICLE>
                                                        true,   // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::INVALID_TOPOLOGY};
 
-  typedef boost::mpl::vector<> edge_node_ordinals_vector;
-  typedef boost::mpl::vector<> face_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0};
+  static constexpr unsigned face_node_ordinals_vector[] = {0};
 
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0};
 };
 
 
@@ -210,16 +211,16 @@ struct topology_data<topology::LINE_2>
                                                        true,   // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::INVALID_TOPOLOGY};
 
-  typedef boost::mpl::vector<> edge_node_ordinals_vector;
-  typedef boost::mpl::vector<> face_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 0>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0};
+  static constexpr unsigned face_node_ordinals_vector[] = {0};
 
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1,
+                                                                  1, 0};
 };
 
 
@@ -230,10 +231,8 @@ struct topology_data<topology::LINE_3>
   static constexpr topology::topology_t value = topology::LINE_3;
   static constexpr unsigned num_nodes = 3;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2>
-    , boost::mpl::vector_c<unsigned, 1, 0, 2>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1,  2,
+                                                                  1, 0,  2};
 };
 
 //***************************************************************************
@@ -299,10 +298,8 @@ struct topology_data<topology::BEAM_2>
   static constexpr unsigned dimension = 2;
   static constexpr unsigned num_edges = 1;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-                            > edge_node_ordinals_vector;
-
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1};
 };
 
 template <>
@@ -320,9 +317,8 @@ struct topology_data<topology::BEAM_3>
   static constexpr unsigned dimension = 2;
   static constexpr unsigned num_edges = 1;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  2};
 };
 
 //***************************************************************************
@@ -358,11 +354,9 @@ struct topology_data<topology::SHELL_LINE_2>
                                                        true,    // 2d
                                                        false};  // 3d
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 0>
-                            > edge_node_ordinals_vector;
-
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 0};
 };
 
 template <>
@@ -385,11 +379,9 @@ struct topology_data<topology::SHELL_LINE_3>
                                                        true,    // 2d
                                                        false};  // 3d
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2>
-    , boost::mpl::vector_c<unsigned, 1, 0, 2>
-                            > edge_node_ordinals_vector;
-
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  2,
+                                                           1, 0,  2};
 };
 
 //***************************************************************************
@@ -457,25 +449,22 @@ struct topology_data<topology::TRI_3>
                                                        false,  // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::INVALID_TOPOLOGY};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 0>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4, 6};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 2,
+                                                           2, 0};
 
-  typedef boost::mpl::vector<> face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0};
+  static constexpr unsigned face_node_ordinals_vector[] = {0};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1>
-    , boost::mpl::vector_c<unsigned, 2, 1, 0>
-    , boost::mpl::vector_c<unsigned, 1, 0, 2>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2,
+                                                                  2, 0, 1,
+                                                                  1, 2, 0,
+                                                                  0, 2, 1,
+                                                                  2, 1, 0,
+                                                                  1, 0, 2};
 };
 
 template <>
@@ -485,15 +474,12 @@ struct topology_data<topology::TRI_4>
   static constexpr topology::topology_t value = topology::TRI_4;
   static constexpr unsigned num_nodes = 4;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2,  3>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1,  3>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0,  3>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1,  3>
-    , boost::mpl::vector_c<unsigned, 2, 1, 0,  3>
-    , boost::mpl::vector_c<unsigned, 1, 0, 2,  3>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2,  3,
+                                                                  2, 0, 1,  3,
+                                                                  1, 2, 0,  3,
+                                                                  0, 2, 1,  3,
+                                                                  2, 1, 0,  3,
+                                                                  1, 0, 2,  3};
 };
 
 template <>
@@ -505,20 +491,17 @@ struct topology_data<topology::TRI_6>
 
   static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1,  3>
-    , boost::mpl::vector_c<unsigned, 1, 2,  4>
-    , boost::mpl::vector_c<unsigned, 2, 0,  5>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  3,
+                                                           1, 2,  4,
+                                                           2, 0,  5};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2,  3, 4, 5>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1,  5, 3, 4>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0,  4, 5, 3>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1,  5, 4, 3>
-    , boost::mpl::vector_c<unsigned, 2, 1, 0,  4, 3, 5>
-    , boost::mpl::vector_c<unsigned, 1, 0, 2,  3, 5, 4>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2,  3, 4, 5,
+                                                                  2, 0, 1,  5, 3, 4,
+                                                                  1, 2, 0,  4, 5, 3,
+                                                                  0, 2, 1,  5, 4, 3,
+                                                                  2, 1, 0,  4, 3, 5,
+                                                                  1, 0, 2,  3, 5, 4};
 };
 
 //***************************************************************************
@@ -664,15 +647,12 @@ struct topology_data<topology::SHELL_TRI_3>
   static constexpr unsigned dimension = 3;
   static constexpr unsigned num_faces = 2;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_3
-                                , topology::TRI_3
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_3,
+                                                                  topology::TRI_3};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 3, 6};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 2,
+                                                           0, 2, 1};
 };
 
 template <>
@@ -690,15 +670,12 @@ struct topology_data<topology::SHELL_TRI_4>
   static constexpr unsigned dimension = 3;
   static constexpr unsigned num_faces = 2;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_4
-                                , topology::TRI_4
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_4,
+                                                                  topology::TRI_4};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1, 3>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 4, 8};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 2,  3,
+                                                           0, 2, 1,  3};
 };
 
 template <>
@@ -716,15 +693,12 @@ struct topology_data<topology::SHELL_TRI_6>
   static constexpr unsigned dimension = 3;
   static constexpr unsigned num_faces = 2;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_6
-                                , topology::TRI_6
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
+                                                                  topology::TRI_6};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4, 5>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1, 5, 4, 3>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 6, 12};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 2,  3, 4, 5,
+                                                           0, 2, 1,  5, 4, 3};
 };
 
 //***************************************************************************
@@ -777,28 +751,25 @@ struct topology_data<topology::QUAD_4>
                                                        false,  // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<topology::topology_t> face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::INVALID_TOPOLOGY};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 3>
-    , boost::mpl::vector_c<unsigned, 3, 0>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4, 6, 8};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 2,
+                                                           2, 3,
+                                                           3, 0};
 
-  typedef boost::mpl::vector<> face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0};
+  static constexpr unsigned face_node_ordinals_vector[] = {0};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1>
-    , boost::mpl::vector_c<unsigned, 3, 2, 1, 0>
-    , boost::mpl::vector_c<unsigned, 2, 1, 0, 3>
-    , boost::mpl::vector_c<unsigned, 1, 0, 3, 2>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2, 3,
+                                                                  3, 0, 1, 2,
+                                                                  2, 3, 0, 1,
+                                                                  1, 2, 3, 0,
+                                                                  0, 3, 2, 1,
+                                                                  3, 2, 1, 0,
+                                                                  2, 1, 0, 3,
+                                                                  1, 0, 3, 2};
 };
 
 template <>
@@ -810,23 +781,22 @@ struct topology_data<topology::QUAD_8>
 
   static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1,  4>
-    , boost::mpl::vector_c<unsigned, 1, 2,  5>
-    , boost::mpl::vector_c<unsigned, 2, 3,  6>
-    , boost::mpl::vector_c<unsigned, 3, 0,  7>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  4,
+                                                           1, 2,  5,
+                                                           2, 3,  6,
+                                                           3, 0,  7};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2,  7, 4, 5, 6>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1,  6, 7, 4, 5>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0,  5, 6, 7, 4>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  7, 6, 5, 4>
-    , boost::mpl::vector_c<unsigned, 3, 2, 1, 0,  6, 5, 4, 7>
-    , boost::mpl::vector_c<unsigned, 2, 1, 0, 3,  5, 4, 7, 6>
-    , boost::mpl::vector_c<unsigned, 1, 0, 3, 2,  4, 7, 6, 5>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3,  4, 5, 6, 7,
+    3, 0, 1, 2,  7, 4, 5, 6,
+    2, 3, 0, 1,  6, 7, 4, 5,
+    1, 2, 3, 0,  5, 6, 7, 4,
+    0, 3, 2, 1,  7, 6, 5, 4,
+    3, 2, 1, 0,  6, 5, 4, 7,
+    2, 1, 0, 3,  5, 4, 7, 6,
+    1, 0, 3, 2,  4, 7, 6, 5
+  };
 };
 
 template <>
@@ -836,16 +806,16 @@ struct topology_data<topology::QUAD_9>
   static constexpr topology::topology_t value = topology::QUAD_9;
   static constexpr unsigned num_nodes = 9;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7,  8>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2,  7, 4, 5, 6,  8>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1,  6, 7, 4, 5,  8>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0,  5, 6, 7, 4,  8>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  7, 6, 5, 4,  8>
-    , boost::mpl::vector_c<unsigned, 3, 2, 1, 0,  6, 5, 4, 7,  8>
-    , boost::mpl::vector_c<unsigned, 2, 1, 0, 3,  5, 4, 7, 6,  8>
-    , boost::mpl::vector_c<unsigned, 1, 0, 3, 2,  4, 7, 6, 5,  8>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3,  4, 5, 6, 7,  8,
+    3, 0, 1, 2,  7, 4, 5, 6,  8,
+    2, 3, 0, 1,  6, 7, 4, 5,  8,
+    1, 2, 3, 0,  5, 6, 7, 4,  8,
+    0, 3, 2, 1,  7, 6, 5, 4,  8,
+    3, 2, 1, 0,  6, 5, 4, 7,  8,
+    2, 1, 0, 3,  5, 4, 7, 6,  8,
+    1, 0, 3, 2,  4, 7, 6, 5,  8
+  };
 };
 
 //***************************************************************************
@@ -957,15 +927,12 @@ struct topology_data<topology::SHELL_QUAD_4>
   static constexpr unsigned dimension = 3;
   static constexpr unsigned num_faces = 2;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_4,
+                                                                  topology::QUAD_4};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 4, 8};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 2, 3,
+                                                           0, 3, 2, 1};
 };
 
 template <>
@@ -983,15 +950,12 @@ struct topology_data<topology::SHELL_QUAD_8>
   static constexpr unsigned dimension = 3;
   static constexpr unsigned num_faces = 2;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
+                                                                  topology::QUAD_8};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  7, 6, 5, 4>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 8, 16};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 2, 3,  4, 5, 6, 7,
+                                                           0, 3, 2, 1,  7, 6, 5, 4};
 };
 
 template <>
@@ -1009,15 +973,12 @@ struct topology_data<topology::SHELL_QUAD_9>
   static constexpr unsigned dimension = 3;
   static constexpr unsigned num_faces = 2;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_9,
+                                                                  topology::QUAD_9};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7,  8>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  7, 6, 5, 4,  8>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 9, 18};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 2, 3,  4, 5, 6, 7,  8,
+                                                           0, 3, 2, 1,  7, 6, 5, 4,  8};
 };
 
 //***************************************************************************
@@ -1051,45 +1012,37 @@ struct topology_data<topology::TET_4>
                                                        false,  // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_3
-                                , topology::TRI_3
-                                , topology::TRI_3
-                                , topology::TRI_3
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_3,
+                                                                  topology::TRI_3,
+                                                                  topology::TRI_3,
+                                                                  topology::TRI_3};
 
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4, 6, 8, 10, 12};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 2,
+                                                           2, 0,
+                                                           0, 3,
+                                                           1, 3,
+                                                           2, 3};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 0>
-    , boost::mpl::vector_c<unsigned, 0, 3>
-    , boost::mpl::vector_c<unsigned, 1, 3>
-    , boost::mpl::vector_c<unsigned, 2, 3>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 3, 6, 9, 12};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 3,
+                                                           1, 2, 3,
+                                                           0, 3, 2,
+                                                           0, 2, 1};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 3>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2,  3>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0,  3>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1,  3>
-    , boost::mpl::vector_c<unsigned, 0, 3, 1,  2>
-    , boost::mpl::vector_c<unsigned, 3, 1, 0,  2>
-    , boost::mpl::vector_c<unsigned, 1, 0, 3,  2>
-    , boost::mpl::vector_c<unsigned, 0, 2, 3,  1>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0,  1>
-    , boost::mpl::vector_c<unsigned, 3, 0, 2,  1>
-    , boost::mpl::vector_c<unsigned, 1, 3, 2,  0>
-    , boost::mpl::vector_c<unsigned, 3, 2, 1,  0>
-    , boost::mpl::vector_c<unsigned, 2, 1, 3,  0>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2, 3,
+                                                                  1, 2, 0, 3,
+                                                                  2, 0, 1, 3,
+                                                                  0, 3, 1, 2,
+                                                                  3, 1, 0, 2,
+                                                                  1, 0, 3, 2,
+                                                                  0, 2, 3, 1,
+                                                                  2, 3, 0, 1,
+                                                                  3, 0, 2, 1,
+                                                                  1, 3, 2, 0,
+                                                                  3, 2, 1, 0,
+                                                                  2, 1, 3, 0};
 };
 
 //TODO: Delete TET_8
@@ -1103,24 +1056,18 @@ struct topology_data<topology::TET_8>
   static constexpr unsigned num_permutations = 1;
   static constexpr unsigned num_positive_permutations = 1;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_4
-                                , topology::TRI_4
-                                , topology::TRI_4
-                                , topology::TRI_4
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_4,
+                                                                  topology::TRI_4,
+                                                                  topology::TRI_4,
+                                                                  topology::TRI_4};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 3,  4>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3,  5>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2,  7>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1,  6>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 4, 8, 12, 16};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 3,  4,
+                                                           1, 2, 3,  5,
+                                                           0, 3, 2,  7,
+                                                           0, 2, 1,  6};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2, 3,  4, 5, 6, 7};
 };
 
 template <>
@@ -1132,44 +1079,39 @@ struct topology_data<topology::TET_10>
 
   static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::TRI_6
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1,  4>
-    , boost::mpl::vector_c<unsigned, 1, 2,  5>
-    , boost::mpl::vector_c<unsigned, 2, 0,  6>
-    , boost::mpl::vector_c<unsigned, 0, 3,  7>
-    , boost::mpl::vector_c<unsigned, 1, 3,  8>
-    , boost::mpl::vector_c<unsigned, 2, 3,  9>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12, 15, 18};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  4,
+                                                           1, 2,  5,
+                                                           2, 0,  6,
+                                                           0, 3,  7,
+                                                           1, 3,  8,
+                                                           2, 3,  9};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 3,  4, 8, 7>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3,  5, 9, 8>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2,  7, 9, 6>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1,  6, 5, 4>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 6, 12, 18, 24};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 3,  4, 8, 7,
+                                                           1, 2, 3,  5, 9, 8,
+                                                           0, 3, 2,  7, 9, 6,
+                                                           0, 2, 1,  6, 5, 4};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7, 8, 9>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0, 3,  5, 6, 4, 8, 9, 7>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1, 3,  6, 4, 5, 9, 7, 8>
-    , boost::mpl::vector_c<unsigned, 0, 3, 1, 2,  7, 8, 4, 6, 9, 5>
-    , boost::mpl::vector_c<unsigned, 3, 1, 0, 2,  8, 4, 7, 9, 5, 6>
-    , boost::mpl::vector_c<unsigned, 1, 0, 3, 2,  4, 7, 8, 5, 6, 9>
-    , boost::mpl::vector_c<unsigned, 0, 2, 3, 1,  6, 9, 7, 4, 5, 8>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1,  9, 7, 6, 5, 8, 4>
-    , boost::mpl::vector_c<unsigned, 3, 0, 2, 1,  7, 6, 9, 8, 4, 5>
-    , boost::mpl::vector_c<unsigned, 1, 3, 2, 0,  8, 9, 5, 4, 7, 6>
-    , boost::mpl::vector_c<unsigned, 3, 2, 1, 0,  9, 5, 8, 7, 6, 4>
-    , boost::mpl::vector_c<unsigned, 2, 1, 3, 0,  5, 8, 9, 6, 4, 7>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3,  4, 5, 6, 7, 8, 9,
+    1, 2, 0, 3,  5, 6, 4, 8, 9, 7,
+    2, 0, 1, 3,  6, 4, 5, 9, 7, 8,
+    0, 3, 1, 2,  7, 8, 4, 6, 9, 5,
+    3, 1, 0, 2,  8, 4, 7, 9, 5, 6,
+    1, 0, 3, 2,  4, 7, 8, 5, 6, 9,
+    0, 2, 3, 1,  6, 9, 7, 4, 5, 8,
+    2, 3, 0, 1,  9, 7, 6, 5, 8, 4,
+    3, 0, 2, 1,  7, 6, 9, 8, 4, 5,
+    1, 3, 2, 0,  8, 9, 5, 4, 7, 6,
+    3, 2, 1, 0,  9, 5, 8, 7, 6, 4,
+    2, 1, 3, 0,  5, 8, 9, 6, 4, 7
+  };
 };
 
 template <>
@@ -1179,20 +1121,20 @@ struct topology_data<topology::TET_11>
   static constexpr topology::topology_t value = topology::TET_11;
   static constexpr unsigned num_nodes = 11;
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3,  4, 5, 6, 7, 8, 9,  10>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0, 3,  5, 6, 4, 8, 9, 7,  10>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1, 3,  6, 4, 5, 9, 7, 8,  10>
-    , boost::mpl::vector_c<unsigned, 0, 3, 1, 2,  7, 8, 4, 6, 9, 5,  10>
-    , boost::mpl::vector_c<unsigned, 3, 1, 0, 2,  8, 4, 7, 9, 5, 6,  10>
-    , boost::mpl::vector_c<unsigned, 1, 0, 3, 2,  4, 7, 8, 5, 6, 9,  10>
-    , boost::mpl::vector_c<unsigned, 0, 2, 3, 1,  6, 9, 7, 4, 5, 8,  10>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1,  9, 7, 6, 5, 8, 4,  10>
-    , boost::mpl::vector_c<unsigned, 3, 0, 2, 1,  7, 6, 9, 8, 4, 5,  10>
-    , boost::mpl::vector_c<unsigned, 1, 3, 2, 0,  8, 9, 5, 4, 7, 6,  10>
-    , boost::mpl::vector_c<unsigned, 3, 2, 1, 0,  9, 5, 8, 7, 6, 4,  10>
-    , boost::mpl::vector_c<unsigned, 2, 1, 3, 0,  5, 8, 9, 6, 4, 7,  10>
-                            > permutation_node_ordinals_vector;
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3,  4, 5, 6, 7, 8, 9,  10,
+    1, 2, 0, 3,  5, 6, 4, 8, 9, 7,  10,
+    2, 0, 1, 3,  6, 4, 5, 9, 7, 8,  10,
+    0, 3, 1, 2,  7, 8, 4, 6, 9, 5,  10,
+    3, 1, 0, 2,  8, 4, 7, 9, 5, 6,  10,
+    1, 0, 3, 2,  4, 7, 8, 5, 6, 9,  10,
+    0, 2, 3, 1,  6, 9, 7, 4, 5, 8,  10,
+    2, 3, 0, 1,  9, 7, 6, 5, 8, 4,  10,
+    3, 0, 2, 1,  7, 6, 9, 8, 4, 5,  10,
+    1, 3, 2, 0,  8, 9, 5, 4, 7, 6,  10,
+    3, 2, 1, 0,  9, 5, 8, 7, 6, 4,  10,
+    2, 1, 3, 0,  5, 8, 9, 6, 4, 7,  10
+  };
 };
 
 //***************************************************************************
@@ -1225,41 +1167,33 @@ struct topology_data<topology::PYRAMID_5>
                                                        false,  // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_3
-                                , topology::TRI_3
-                                , topology::TRI_3
-                                , topology::TRI_3
-                                , topology::QUAD_4
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_3,
+                                                                  topology::TRI_3,
+                                                                  topology::TRI_3,
+                                                                  topology::TRI_3,
+                                                                  topology::QUAD_4};
 
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4, 6, 8, 10, 12, 14, 16};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 2,
+                                                           2, 3,
+                                                           3, 0,
+                                                           0, 4,
+                                                           1, 4,
+                                                           2, 4,
+                                                           3, 4};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 3>
-    , boost::mpl::vector_c<unsigned, 3, 0>
-    , boost::mpl::vector_c<unsigned, 0, 4>
-    , boost::mpl::vector_c<unsigned, 1, 4>
-    , boost::mpl::vector_c<unsigned, 2, 4>
-    , boost::mpl::vector_c<unsigned, 3, 4>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 3, 6, 9, 12, 16};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4,
+                                                           1, 2, 4,
+                                                           2, 3, 4,
+                                                           0, 4, 3,
+                                                           0, 3, 2, 1};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 4>
-    , boost::mpl::vector_c<unsigned, 1, 2, 4>
-    , boost::mpl::vector_c<unsigned, 2, 3, 4>
-    , boost::mpl::vector_c<unsigned, 0, 4, 3>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0, 4>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1, 4>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2, 4>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2, 3, 4,
+                                                                  1, 2, 3, 0, 4,
+                                                                  2, 3, 0, 1, 4,
+                                                                  3, 0, 1, 2, 4};
 };
 
 template <>
@@ -1271,40 +1205,35 @@ struct topology_data<topology::PYRAMID_13>
 
   static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::QUAD_8
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::QUAD_8};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1,  5>
-    , boost::mpl::vector_c<unsigned, 1, 2,  6>
-    , boost::mpl::vector_c<unsigned, 2, 3,  7>
-    , boost::mpl::vector_c<unsigned, 3, 0,  8>
-    , boost::mpl::vector_c<unsigned, 0, 4,  9>
-    , boost::mpl::vector_c<unsigned, 1, 4,  10>
-    , boost::mpl::vector_c<unsigned, 2, 4,  11>
-    , boost::mpl::vector_c<unsigned, 3, 4,  12>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12, 15, 18, 21, 24};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  5,
+                                                           1, 2,  6,
+                                                           2, 3,  7,
+                                                           3, 0,  8,
+                                                           0, 4,  9,
+                                                           1, 4,  10,
+                                                           2, 4,  11,
+                                                           3, 4,  12};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 4,  5, 10, 9>
-    , boost::mpl::vector_c<unsigned, 1, 2, 4,  6, 11, 10>
-    , boost::mpl::vector_c<unsigned, 2, 3, 4,  7, 12, 11>
-    , boost::mpl::vector_c<unsigned, 3, 0, 4,  8, 9,  12>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  8, 7, 6, 5>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 6, 12, 18, 24, 32};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4,  5, 10,  9,
+                                                           1, 2, 4,  6, 11, 10,
+                                                           2, 3, 4,  7, 12, 11,
+                                                           3, 0, 4,  8,  9, 12,
+                                                           0, 3, 2, 1,  8, 7, 6, 5};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4,  5, 6, 7, 8,   9, 10, 11, 12>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0, 4,  6, 7, 8, 5,  10, 11, 12,  9>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1, 4,  7, 8, 5, 6,  11, 12,  9, 10>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2, 4,  8, 5, 6, 7,  12,  9, 10, 11>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4,  5, 6, 7, 8,   9, 10, 11, 12,
+    1, 2, 3, 0, 4,  6, 7, 8, 5,  10, 11, 12,  9,
+    2, 3, 0, 1, 4,  7, 8, 5, 6,  11, 12,  9, 10,
+    3, 0, 1, 2, 4,  8, 5, 6, 7,  12,  9, 10, 11
+  };
 };
 
 template <>
@@ -1314,31 +1243,26 @@ struct topology_data<topology::PYRAMID_14>
   static constexpr topology::topology_t value = topology::PYRAMID_14;
   static constexpr unsigned num_nodes = 14;
 
+  static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6,
+                                                                  topology::QUAD_9};
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::TRI_6
-                                , topology::QUAD_9
-                              > face_topology_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 6, 12, 18, 24, 33};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4,  5, 10,  9,
+                                                           1, 2, 4,  6, 11, 10,
+                                                           2, 3, 4,  7, 12, 11,
+                                                           3, 0, 4,  8,  9, 12,
+                                                           0, 3, 2, 1,  8, 7, 6, 5,  13};
 
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 4,  5, 10, 9>
-    , boost::mpl::vector_c<unsigned, 1, 2, 4,  6, 11, 10>
-    , boost::mpl::vector_c<unsigned, 2, 3, 4,  7, 12, 11>
-    , boost::mpl::vector_c<unsigned, 3, 0, 4,  8, 9,  12>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  8, 7, 6, 5,  13>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4,  5, 6, 7, 8,   9, 10, 11, 12,  13>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0, 4,  6, 7, 8, 5,  10, 11, 12,  9,  13>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1, 4,  7, 8, 5, 6,  11, 12,  9, 10,  13>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2, 4,  8, 5, 6, 7,  12,  9, 10, 11,  13>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4,  5, 6, 7, 8,   9, 10, 11, 12,  13,
+    1, 2, 3, 0, 4,  6, 7, 8, 5,  10, 11, 12,  9,  13,
+    2, 3, 0, 1, 4,  7, 8, 5, 6,  11, 12,  9, 10,  13,
+    3, 0, 1, 2, 4,  8, 5, 6, 7,  12,  9, 10, 11,  13
+  };
 };
 
 //***************************************************************************
@@ -1371,45 +1295,36 @@ struct topology_data<topology::WEDGE_6>
                                                        false,  // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<   topology::topology_t
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::TRI_3,
+                                                                  topology::TRI_3};
 
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                                , topology::TRI_3
-                                , topology::TRI_3
-                              > face_topology_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 2,
+                                                           2, 0,
+                                                           3, 4,
+                                                           4, 5,
+                                                           5, 3,
+                                                           0, 3,
+                                                           1, 4,
+                                                           2, 5};
 
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 4, 8, 12, 15, 18};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4, 3,
+                                                           1, 2, 5, 4,
+                                                           0, 3, 5, 2,
+                                                           0, 2, 1,
+                                                           3, 4, 5};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 0>
-    , boost::mpl::vector_c<unsigned, 3, 4>
-    , boost::mpl::vector_c<unsigned, 4, 5>
-    , boost::mpl::vector_c<unsigned, 5, 3>
-    , boost::mpl::vector_c<unsigned, 0, 3>
-    , boost::mpl::vector_c<unsigned, 1, 4>
-    , boost::mpl::vector_c<unsigned, 2, 5>
-                            > edge_node_ordinals_vector;
-
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 4, 3>
-    , boost::mpl::vector_c<unsigned, 1, 2, 5, 4>
-    , boost::mpl::vector_c<unsigned, 0, 3, 5, 2>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1>
-    , boost::mpl::vector_c<unsigned, 3, 4, 5>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4, 5>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0, 4, 5, 3>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1, 5, 3, 4>
-    , boost::mpl::vector_c<unsigned, 3, 5, 4, 0, 2, 1>
-    , boost::mpl::vector_c<unsigned, 5, 4, 3, 2, 1, 0>
-    , boost::mpl::vector_c<unsigned, 4, 3, 5, 1, 0, 2>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2, 3, 4, 5,
+                                                                  1, 2, 0, 4, 5, 3,
+                                                                  2, 0, 1, 5, 3, 4,
+                                                                  3, 5, 4, 0, 2, 1,
+                                                                  5, 4, 3, 2, 1, 0,
+                                                                  4, 3, 5, 1, 0, 2};
 };
 
 template <>
@@ -1421,43 +1336,38 @@ struct topology_data<topology::WEDGE_15>
 
   static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                                , topology::TRI_6
-                                , topology::TRI_6
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1,  6>
-    , boost::mpl::vector_c<unsigned, 1, 2,  7>
-    , boost::mpl::vector_c<unsigned, 2, 0,  8>
-    , boost::mpl::vector_c<unsigned, 3, 4,  12>
-    , boost::mpl::vector_c<unsigned, 4, 5,  13>
-    , boost::mpl::vector_c<unsigned, 5, 3,  14>
-    , boost::mpl::vector_c<unsigned, 0, 3,  9>
-    , boost::mpl::vector_c<unsigned, 1, 4,  10>
-    , boost::mpl::vector_c<unsigned, 2, 5,  11>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  6,
+                                                           1, 2,  7,
+                                                           2, 0,  8,
+                                                           3, 4,  12,
+                                                           4, 5,  13,
+                                                           5, 3,  14,
+                                                           0, 3,  9,
+                                                           1, 4,  10,
+                                                           2, 5,  11};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 4, 3,  6, 10, 12,  9>
-    , boost::mpl::vector_c<unsigned, 1, 2, 5, 4,  7, 11, 13, 10>
-    , boost::mpl::vector_c<unsigned, 0, 3, 5, 2,  9, 14, 11,  8>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1,   8,  7, 6>
-    , boost::mpl::vector_c<unsigned, 3, 4, 5,  12, 13, 14>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 8, 16, 24, 30, 36};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4, 3,  6, 10, 12,  9,
+                                                           1, 2, 5, 4,  7, 11, 13, 10,
+                                                           0, 3, 5, 2,  9, 14, 11,  8,
+                                                           0, 2, 1,   8,  7,  6,
+                                                           3, 4, 5,  12, 13, 14};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11, 12, 13, 14>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9, 13, 14, 12>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10, 14, 12, 13>
-    , boost::mpl::vector_c<unsigned, 3, 5, 4, 0, 2, 1, 14, 13, 12,  9, 11, 10,  8,  7,  6>
-    , boost::mpl::vector_c<unsigned, 5, 4, 3, 2, 1, 0, 13, 12, 14, 11, 10,  9,  7,  6,  8>
-    , boost::mpl::vector_c<unsigned, 4, 3, 5, 1, 0, 2, 12, 14, 13, 10,  9, 11,  6,  8,  7>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+    1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9, 13, 14, 12,
+    2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10, 14, 12, 13,
+    3, 5, 4, 0, 2, 1, 14, 13, 12,  9, 11, 10,  8,  7,  6,
+    5, 4, 3, 2, 1, 0, 13, 12, 14, 11, 10,  9,  7,  6,  8,
+    4, 3, 5, 1, 0, 2, 12, 14, 13, 10,  9, 11,  6,  8,  7
+  };
 };
 
 template <>
@@ -1467,31 +1377,27 @@ struct topology_data<topology::WEDGE_18>
   static constexpr topology::topology_t value = topology::WEDGE_18;
   static constexpr unsigned num_nodes = 18;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                                , topology::TRI_6
-                                , topology::TRI_6
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 4, 3,  6, 10, 12,  9,  15>
-    , boost::mpl::vector_c<unsigned, 1, 2, 5, 4,  7, 11, 13, 10,  16>
-    , boost::mpl::vector_c<unsigned, 0, 3, 5, 2,  9, 14, 11,  8,  17>
-    , boost::mpl::vector_c<unsigned, 0, 2, 1,   8,  7, 6>
-    , boost::mpl::vector_c<unsigned, 3, 4, 5,  12, 13, 14>
-                            > face_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 9, 18, 27, 33, 39};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4, 3,  6, 10, 12,  9,  15,
+                                                           1, 2, 5, 4,  7, 11, 13, 10,  16,
+                                                           0, 3, 5, 2,  9, 14, 11,  8,  17,
+                                                           0, 2, 1,   8,  7,  6,
+                                                           3, 4, 5,  12, 13, 14};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17>
-    , boost::mpl::vector_c<unsigned, 1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9, 13, 14, 12, 16, 17, 15>
-    , boost::mpl::vector_c<unsigned, 2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10, 14, 12, 13, 17, 15, 16>
-    , boost::mpl::vector_c<unsigned, 3, 5, 4, 0, 2, 1, 14, 13, 12,  9, 11, 10,  8,  7,  6, 17, 16, 15>
-    , boost::mpl::vector_c<unsigned, 5, 4, 3, 2, 1, 0, 13, 12, 14, 11, 10,  9,  7,  6,  8, 16, 15, 17>
-    , boost::mpl::vector_c<unsigned, 4, 3, 5, 1, 0, 2, 12, 14, 13, 10,  9, 11,  6,  8,  7, 15, 17, 16>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+    1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9, 13, 14, 12, 16, 17, 15,
+    2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10, 14, 12, 13, 17, 15, 16,
+    3, 5, 4, 0, 2, 1, 14, 13, 12,  9, 11, 10,  8,  7,  6, 17, 16, 15,
+    5, 4, 3, 2, 1, 0, 13, 12, 14, 11, 10,  9,  7,  6,  8, 16, 15, 17,
+    4, 3, 5, 1, 0, 2, 12, 14, 13, 10,  9, 11,  6,  8,  7, 15, 17, 16
+  };
 };
 
 //***************************************************************************
@@ -1599,67 +1505,59 @@ struct topology_data<topology::HEX_8>
                                                        false,  // 2d
                                                        true};  // 3d
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                                , topology::QUAD_4
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::QUAD_4,
+                                                                  topology::QUAD_4};
 
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,
+                                                           1, 2,
+                                                           2, 3,
+                                                           3, 0,
+                                                           4, 5,
+                                                           5, 6,
+                                                           6, 7,
+                                                           7, 4,
+                                                           0, 4,
+                                                           1, 5,
+                                                           2, 6,
+                                                           3, 7};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1>
-    , boost::mpl::vector_c<unsigned, 1, 2>
-    , boost::mpl::vector_c<unsigned, 2, 3>
-    , boost::mpl::vector_c<unsigned, 3, 0>
-    , boost::mpl::vector_c<unsigned, 4, 5>
-    , boost::mpl::vector_c<unsigned, 5, 6>
-    , boost::mpl::vector_c<unsigned, 6, 7>
-    , boost::mpl::vector_c<unsigned, 7, 4>
-    , boost::mpl::vector_c<unsigned, 0, 4>
-    , boost::mpl::vector_c<unsigned, 1, 5>
-    , boost::mpl::vector_c<unsigned, 2, 6>
-    , boost::mpl::vector_c<unsigned, 3, 7>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 4, 8, 12, 16, 20, 24};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 5, 4,
+                                                           1, 2, 6, 5,
+                                                           2, 3, 7, 6,
+                                                           0, 4, 7, 3,
+                                                           0, 3, 2, 1,
+                                                           4, 5, 6, 7};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 5, 4>
-    , boost::mpl::vector_c<unsigned, 1, 2, 6, 5>
-    , boost::mpl::vector_c<unsigned, 2, 3, 7, 6>
-    , boost::mpl::vector_c<unsigned, 0, 4, 7, 3>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1>
-    , boost::mpl::vector_c<unsigned, 4, 5, 6, 7>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector24<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4, 5, 6, 7>
-    , boost::mpl::vector_c<unsigned, 0, 1, 5, 4, 3, 2, 6, 7>
-    , boost::mpl::vector_c<unsigned, 0, 4, 7, 3, 1, 5, 6, 2>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0, 5, 6, 7, 4>
-    , boost::mpl::vector_c<unsigned, 1, 2, 6, 5, 0, 3, 7, 4>
-    , boost::mpl::vector_c<unsigned, 1, 5, 4, 0, 2, 6, 7, 3>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1, 6, 7, 4, 5>
-    , boost::mpl::vector_c<unsigned, 2, 3, 7, 6, 1, 0, 4, 5>
-    , boost::mpl::vector_c<unsigned, 2, 6, 5, 1, 3, 7, 4, 0>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2, 7, 4, 5, 6>
-    , boost::mpl::vector_c<unsigned, 3, 0, 4, 7, 2, 1, 5, 6>
-    , boost::mpl::vector_c<unsigned, 3, 7, 6, 2, 0, 4, 5, 1>
-    , boost::mpl::vector_c<unsigned, 4, 0, 1, 5, 7, 3, 2, 6>
-    , boost::mpl::vector_c<unsigned, 4, 7, 3, 0, 5, 6, 2, 1>
-    , boost::mpl::vector_c<unsigned, 4, 7, 6, 5, 0, 3, 2, 1>
-    , boost::mpl::vector_c<unsigned, 5, 1, 2, 6, 4, 0, 3, 7>
-    , boost::mpl::vector_c<unsigned, 5, 4, 0, 1, 6, 7, 3, 2>
-    , boost::mpl::vector_c<unsigned, 5, 4, 7, 6, 1, 0, 3, 2>
-    , boost::mpl::vector_c<unsigned, 6, 2, 3, 7, 5, 1, 0, 4>
-    , boost::mpl::vector_c<unsigned, 6, 5, 1, 2, 7, 4, 0, 3>
-    , boost::mpl::vector_c<unsigned, 6, 5, 4, 7, 2, 1, 0, 3>
-    , boost::mpl::vector_c<unsigned, 7, 3, 0, 4, 6, 2, 1, 5>
-    , boost::mpl::vector_c<unsigned, 7, 6, 2, 3, 4, 5, 1, 0>
-    , boost::mpl::vector_c<unsigned, 7, 6, 5, 4, 3, 2, 1, 0>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {0, 1, 2, 3, 4, 5, 6, 7,
+                                                                  0, 1, 5, 4, 3, 2, 6, 7,
+                                                                  0, 4, 7, 3, 1, 5, 6, 2,
+                                                                  1, 2, 3, 0, 5, 6, 7, 4,
+                                                                  1, 2, 6, 5, 0, 3, 7, 4,
+                                                                  1, 5, 4, 0, 2, 6, 7, 3,
+                                                                  2, 3, 0, 1, 6, 7, 4, 5,
+                                                                  2, 3, 7, 6, 1, 0, 4, 5,
+                                                                  2, 6, 5, 1, 3, 7, 4, 0,
+                                                                  3, 0, 1, 2, 7, 4, 5, 6,
+                                                                  3, 0, 4, 7, 2, 1, 5, 6,
+                                                                  3, 7, 6, 2, 0, 4, 5, 1,
+                                                                  4, 0, 1, 5, 7, 3, 2, 6,
+                                                                  4, 7, 3, 0, 5, 6, 2, 1,
+                                                                  4, 7, 6, 5, 0, 3, 2, 1,
+                                                                  5, 1, 2, 6, 4, 0, 3, 7,
+                                                                  5, 4, 0, 1, 6, 7, 3, 2,
+                                                                  5, 4, 7, 6, 1, 0, 3, 2,
+                                                                  6, 2, 3, 7, 5, 1, 0, 4,
+                                                                  6, 5, 1, 2, 7, 4, 0, 3,
+                                                                  6, 5, 4, 7, 2, 1, 0, 3,
+                                                                  7, 3, 0, 4, 6, 2, 1, 5,
+                                                                  7, 6, 2, 3, 4, 5, 1, 0,
+                                                                  7, 6, 5, 4, 3, 2, 1, 0};
 };
 
 template <>
@@ -1673,67 +1571,61 @@ struct topology_data<topology::HEX_20>
 
   static constexpr topology::topology_t edge_topology = topology::LINE_3;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                                , topology::QUAD_8
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::QUAD_8,
+                                                                  topology::QUAD_8};
 
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  8,
+                                                           1, 2,  9,
+                                                           2, 3,  10,
+                                                           3, 0,  11,
+                                                           4, 5,  16,
+                                                           5, 6,  17,
+                                                           6, 7,  18,
+                                                           7, 4,  19,
+                                                           0, 4,  12,
+                                                           1, 5,  13,
+                                                           2, 6,  14,
+                                                           3, 7,  15};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1,  8>
-    , boost::mpl::vector_c<unsigned, 1, 2,  9>
-    , boost::mpl::vector_c<unsigned, 2, 3,  10>
-    , boost::mpl::vector_c<unsigned, 3, 0,  11>
-    , boost::mpl::vector_c<unsigned, 4, 5,  16>
-    , boost::mpl::vector_c<unsigned, 5, 6,  17>
-    , boost::mpl::vector_c<unsigned, 6, 7,  18>
-    , boost::mpl::vector_c<unsigned, 7, 4,  19>
-    , boost::mpl::vector_c<unsigned, 0, 4,  12>
-    , boost::mpl::vector_c<unsigned, 1, 5,  13>
-    , boost::mpl::vector_c<unsigned, 2, 6,  14>
-    , boost::mpl::vector_c<unsigned, 3, 7,  15>
-                            > edge_node_ordinals_vector;
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 8, 16, 24, 32, 40, 48};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 5, 4,   8, 13, 16, 12,
+                                                           1, 2, 6, 5,   9, 14, 17, 13,
+                                                           2, 3, 7, 6,  10, 15, 18, 14,
+                                                           0, 4, 7, 3,  12, 19, 15, 11,
+                                                           0, 3, 2, 1,  11, 10,  9,  8,
+                                                           4, 5, 6, 7,  16, 17, 18, 19};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 5, 4,   8, 13, 16, 12>
-    , boost::mpl::vector_c<unsigned, 1, 2, 6, 5,   9, 14, 17, 13>
-    , boost::mpl::vector_c<unsigned, 2, 3, 7, 6,  10, 15, 18, 14>
-    , boost::mpl::vector_c<unsigned, 0, 4, 7, 3,  12, 19, 15, 11>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  11, 10,  9,  8>
-    , boost::mpl::vector_c<unsigned, 4, 5, 6, 7,  16, 17, 18, 19>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector24<
-      boost::mpl::vector_c<unsigned, 0, 1, 2, 3, 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19>
-    , boost::mpl::vector_c<unsigned, 0, 1, 5, 4, 3, 2, 6, 7,  8, 13, 16, 12, 11,  9, 17, 19, 10, 14, 18, 15>
-    , boost::mpl::vector_c<unsigned, 0, 4, 7, 3, 1, 5, 6, 2, 12, 19, 15, 11,  8, 16, 18, 10, 13, 17, 14,  9>
-    , boost::mpl::vector_c<unsigned, 1, 2, 3, 0, 5, 6, 7, 4,  9, 10, 11,  8, 13, 14, 15, 12, 17, 18, 19, 16>
-    , boost::mpl::vector_c<unsigned, 1, 2, 6, 5, 0, 3, 7, 4,  9, 14, 17, 13,  8, 10, 18, 16, 11, 15, 19, 12>
-    , boost::mpl::vector_c<unsigned, 1, 5, 4, 0, 2, 6, 7, 3, 13, 16, 12,  8,  9, 17, 19, 11, 14, 18, 15, 10>
-    , boost::mpl::vector_c<unsigned, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11,  8,  9, 14, 15, 12, 13, 18, 19, 16, 17>
-    , boost::mpl::vector_c<unsigned, 2, 3, 7, 6, 1, 0, 4, 5, 10, 15, 18, 14,  9, 11, 19, 17,  8, 12, 16, 13>
-    , boost::mpl::vector_c<unsigned, 2, 6, 5, 1, 3, 7, 4, 0, 14, 17, 13,  9, 10, 18, 16,  8, 15, 19, 12, 11>
-    , boost::mpl::vector_c<unsigned, 3, 0, 1, 2, 7, 4, 5, 6, 11,  8,  9, 10, 15, 12, 13, 14, 19, 16, 17, 18>
-    , boost::mpl::vector_c<unsigned, 3, 0, 4, 7, 2, 1, 5, 6, 11, 12, 19, 15, 10,  8, 16, 18,  9, 13, 17, 14>
-    , boost::mpl::vector_c<unsigned, 3, 7, 6, 2, 0, 4, 5, 1, 15, 18, 14, 10, 11, 19, 17,  9, 12, 16, 13,  8>
-    , boost::mpl::vector_c<unsigned, 4, 0, 1, 5, 7, 3, 2, 6, 12,  8, 13, 16, 19, 11,  9, 17, 15, 10, 14, 18>
-    , boost::mpl::vector_c<unsigned, 4, 7, 3, 0, 5, 6, 2, 1, 19, 15, 11, 12, 16, 18, 10,  8, 17, 14,  9, 13>
-    , boost::mpl::vector_c<unsigned, 4, 7, 6, 5, 0, 3, 2, 1, 19, 18, 17, 16, 12, 15, 14, 13, 11, 10,  9,  8>
-    , boost::mpl::vector_c<unsigned, 5, 1, 2, 6, 4, 0, 3, 7, 13,  9, 14, 17, 16,  8, 10, 18, 12, 11, 15, 19>
-    , boost::mpl::vector_c<unsigned, 5, 4, 0, 1, 6, 7, 3, 2, 16, 12,  8, 13, 17, 19, 11,  9, 18, 15, 10, 14>
-    , boost::mpl::vector_c<unsigned, 5, 4, 7, 6, 1, 0, 3, 2, 16, 19, 18, 17, 13, 12, 15, 14,  8, 11, 10,  9>
-    , boost::mpl::vector_c<unsigned, 6, 2, 3, 7, 5, 1, 0, 4, 14, 10, 15, 18, 17,  9, 11, 19, 13,  8, 12, 16>
-    , boost::mpl::vector_c<unsigned, 6, 5, 1, 2, 7, 4, 0, 3, 17, 13,  9, 14, 18, 16,  8, 10, 19, 12, 11, 15>
-    , boost::mpl::vector_c<unsigned, 6, 5, 4, 7, 2, 1, 0, 3, 17, 16, 19, 18, 14, 13, 12, 15,  9,  8, 11, 10>
-    , boost::mpl::vector_c<unsigned, 7, 3, 0, 4, 6, 2, 1, 5, 15, 11, 12, 19, 18, 10,  8, 16, 14,  9, 13, 17>
-    , boost::mpl::vector_c<unsigned, 7, 6, 2, 3, 4, 5, 1, 0, 18, 14, 10, 15, 19, 17,  9, 11, 16, 13,  8, 12>
-    , boost::mpl::vector_c<unsigned, 7, 6, 5, 4, 3, 2, 1, 0, 18, 17, 16, 19, 15, 14, 13, 12, 10,  9,  8, 11>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4, 5, 6, 7,   8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    0, 1, 5, 4, 3, 2, 6, 7,   8, 13, 16, 12, 11,  9, 17, 19, 10, 14, 18, 15,
+    0, 4, 7, 3, 1, 5, 6, 2,  12, 19, 15, 11,  8, 16, 18, 10, 13, 17, 14,  9,
+    1, 2, 3, 0, 5, 6, 7, 4,   9, 10, 11,  8, 13, 14, 15, 12, 17, 18, 19, 16,
+    1, 2, 6, 5, 0, 3, 7, 4,   9, 14, 17, 13,  8, 10, 18, 16, 11, 15, 19, 12,
+    1, 5, 4, 0, 2, 6, 7, 3,  13, 16, 12,  8,  9, 17, 19, 11, 14, 18, 15, 10,
+    2, 3, 0, 1, 6, 7, 4, 5,  10, 11,  8,  9, 14, 15, 12, 13, 18, 19, 16, 17,
+    2, 3, 7, 6, 1, 0, 4, 5,  10, 15, 18, 14,  9, 11, 19, 17,  8, 12, 16, 13,
+    2, 6, 5, 1, 3, 7, 4, 0,  14, 17, 13,  9, 10, 18, 16,  8, 15, 19, 12, 11,
+    3, 0, 1, 2, 7, 4, 5, 6,  11,  8,  9, 10, 15, 12, 13, 14, 19, 16, 17, 18,
+    3, 0, 4, 7, 2, 1, 5, 6,  11, 12, 19, 15, 10,  8, 16, 18,  9, 13, 17, 14,
+    3, 7, 6, 2, 0, 4, 5, 1,  15, 18, 14, 10, 11, 19, 17,  9, 12, 16, 13,  8,
+    4, 0, 1, 5, 7, 3, 2, 6,  12,  8, 13, 16, 19, 11,  9, 17, 15, 10, 14, 18,
+    4, 7, 3, 0, 5, 6, 2, 1,  19, 15, 11, 12, 16, 18, 10,  8, 17, 14,  9, 13,
+    4, 7, 6, 5, 0, 3, 2, 1,  19, 18, 17, 16, 12, 15, 14, 13, 11, 10,  9,  8,
+    5, 1, 2, 6, 4, 0, 3, 7,  13,  9, 14, 17, 16,  8, 10, 18, 12, 11, 15, 19,
+    5, 4, 0, 1, 6, 7, 3, 2,  16, 12,  8, 13, 17, 19, 11,  9, 18, 15, 10, 14,
+    5, 4, 7, 6, 1, 0, 3, 2,  16, 19, 18, 17, 13, 12, 15, 14,  8, 11, 10,  9,
+    6, 2, 3, 7, 5, 1, 0, 4,  14, 10, 15, 18, 17,  9, 11, 19, 13,  8, 12, 16,
+    6, 5, 1, 2, 7, 4, 0, 3,  17, 13,  9, 14, 18, 16,  8, 10, 19, 12, 11, 15,
+    6, 5, 4, 7, 2, 1, 0, 3,  17, 16, 19, 18, 14, 13, 12, 15,  9,  8, 11, 10,
+    7, 3, 0, 4, 6, 2, 1, 5,  15, 11, 12, 19, 18, 10,  8, 16, 14,  9, 13, 17,
+    7, 6, 2, 3, 4, 5, 1, 0,  18, 14, 10, 15, 19, 17,  9, 11, 16, 13,  8, 12,
+    7, 6, 5, 4, 3, 2, 1, 0,  18, 17, 16, 19, 15, 14, 13, 12, 10,  9,  8, 11
+  };
 };
 
 template <>
@@ -1743,52 +1635,47 @@ struct topology_data<topology::HEX_27>
   static constexpr topology::topology_t value = topology::HEX_27;
   static constexpr unsigned num_nodes = 27;
 
-  typedef boost::mpl::vector_c<   topology::topology_t
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                                , topology::QUAD_9
-                              > face_topology_vector;
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::QUAD_9,
+                                                                  topology::QUAD_9};
 
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 9, 18, 27, 36, 45, 54};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 5, 4,   8, 13, 16, 12,  25,
+                                                           1, 2, 6, 5,   9, 14, 17, 13,  24,
+                                                           2, 3, 7, 6,  10, 15, 18, 14,  26,
+                                                           0, 4, 7, 3,  12, 19, 15, 11,  23,
+                                                           0, 3, 2, 1,  11, 10,  9,  8,  21,
+                                                           4, 5, 6, 7,  16, 17, 18, 19,  22};
 
-  typedef boost::mpl::vector<
-      boost::mpl::vector_c<unsigned, 0, 1, 5, 4,   8, 13, 16, 12,  25>
-    , boost::mpl::vector_c<unsigned, 1, 2, 6, 5,   9, 14, 17, 13,  24>
-    , boost::mpl::vector_c<unsigned, 2, 3, 7, 6,  10, 15, 18, 14,  26>
-    , boost::mpl::vector_c<unsigned, 0, 4, 7, 3,  12, 19, 15, 11,  23>
-    , boost::mpl::vector_c<unsigned, 0, 3, 2, 1,  11, 10,  9,  8,  21>
-    , boost::mpl::vector_c<unsigned, 4, 5, 6, 7,  16, 17, 18, 19,  22>
-                            > face_node_ordinals_vector;
-
-  typedef boost::mpl::vector24<
-      boost::mpl::vector27_c<unsigned, 0, 1, 2, 3, 4, 5, 6, 7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,  20, 21, 22, 23, 24, 25, 26>
-    , boost::mpl::vector27_c<unsigned, 0, 1, 5, 4, 3, 2, 6, 7,  8, 13, 16, 12, 11,  9, 17, 19, 10, 14, 18, 15,  20, 25, 26, 23, 24, 21, 22>
-    , boost::mpl::vector27_c<unsigned, 0, 4, 7, 3, 1, 5, 6, 2, 12, 19, 15, 11,  8, 16, 18, 10, 13, 17, 14,  9,  20, 23, 24, 21, 22, 25, 26>
-    , boost::mpl::vector27_c<unsigned, 1, 2, 3, 0, 5, 6, 7, 4,  9, 10, 11,  8, 13, 14, 15, 12, 17, 18, 19, 16,  20, 21, 22, 25, 26, 24, 23>
-    , boost::mpl::vector27_c<unsigned, 1, 2, 6, 5, 0, 3, 7, 4,  9, 14, 17, 13,  8, 10, 18, 16, 11, 15, 19, 12,  20, 24, 23, 25, 26, 21, 22>
-    , boost::mpl::vector27_c<unsigned, 1, 5, 4, 0, 2, 6, 7, 3, 13, 16, 12,  8,  9, 17, 19, 11, 14, 18, 15, 10,  20, 25, 26, 21, 22, 24, 23>
-    , boost::mpl::vector27_c<unsigned, 2, 3, 0, 1, 6, 7, 4, 5, 10, 11,  8,  9, 14, 15, 12, 13, 18, 19, 16, 17,  20, 21, 22, 24, 23, 26, 25>
-    , boost::mpl::vector27_c<unsigned, 2, 3, 7, 6, 1, 0, 4, 5, 10, 15, 18, 14,  9, 11, 19, 17,  8, 12, 16, 13,  20, 26, 25, 24, 23, 21, 22>
-    , boost::mpl::vector27_c<unsigned, 2, 6, 5, 1, 3, 7, 4, 0, 14, 17, 13,  9, 10, 18, 16,  8, 15, 19, 12, 11,  20, 24, 23, 21, 22, 26, 25>
-    , boost::mpl::vector27_c<unsigned, 3, 0, 1, 2, 7, 4, 5, 6, 11,  8,  9, 10, 15, 12, 13, 14, 19, 16, 17, 18,  20, 21, 22, 26, 25, 23, 24>
-    , boost::mpl::vector27_c<unsigned, 3, 0, 4, 7, 2, 1, 5, 6, 11, 12, 19, 15, 10,  8, 16, 18,  9, 13, 17, 14,  20, 23, 24, 26, 25, 21, 22>
-    , boost::mpl::vector27_c<unsigned, 3, 7, 6, 2, 0, 4, 5, 1, 15, 18, 14, 10, 11, 19, 17,  9, 12, 16, 13,  8,  20, 26, 25, 21, 22, 23, 24>
-    , boost::mpl::vector27_c<unsigned, 4, 0, 1, 5, 7, 3, 2, 6, 12,  8, 13, 16, 19, 11,  9, 17, 15, 10, 14, 18,  20, 25, 26, 22, 21, 23, 24>
-    , boost::mpl::vector27_c<unsigned, 4, 7, 3, 0, 5, 6, 2, 1, 19, 15, 11, 12, 16, 18, 10,  8, 17, 14,  9, 13,  20, 23, 24, 25, 26, 22, 21>
-    , boost::mpl::vector27_c<unsigned, 4, 7, 6, 5, 0, 3, 2, 1, 19, 18, 17, 16, 12, 15, 14, 13, 11, 10,  9,  8,  20, 22, 21, 25, 26, 23, 24>
-    , boost::mpl::vector27_c<unsigned, 5, 1, 2, 6, 4, 0, 3, 7, 13,  9, 14, 17, 16,  8, 10, 18, 12, 11, 15, 19,  20, 24, 23, 22, 21, 25, 26>
-    , boost::mpl::vector27_c<unsigned, 5, 4, 0, 1, 6, 7, 3, 2, 16, 12,  8, 13, 17, 19, 11,  9, 18, 15, 10, 14,  20, 25, 26, 24, 23, 22, 21>
-    , boost::mpl::vector27_c<unsigned, 5, 4, 7, 6, 1, 0, 3, 2, 16, 19, 18, 17, 13, 12, 15, 14,  8, 11, 10,  9,  20, 22, 21, 24, 23, 25, 26>
-    , boost::mpl::vector27_c<unsigned, 6, 2, 3, 7, 5, 1, 0, 4, 14, 10, 15, 18, 17,  9, 11, 19, 13,  8, 12, 16,  20, 26, 25, 22, 21, 24, 23>
-    , boost::mpl::vector27_c<unsigned, 6, 5, 1, 2, 7, 4, 0, 3, 17, 13,  9, 14, 18, 16,  8, 10, 19, 12, 11, 15,  20, 24, 23, 26, 25, 22, 21>
-    , boost::mpl::vector27_c<unsigned, 6, 5, 4, 7, 2, 1, 0, 3, 17, 16, 19, 18, 14, 13, 12, 15,  9,  8, 11, 10,  20, 22, 21, 26, 25, 24, 23>
-    , boost::mpl::vector27_c<unsigned, 7, 3, 0, 4, 6, 2, 1, 5, 15, 11, 12, 19, 18, 10,  8, 16, 14,  9, 13, 17,  20, 23, 24, 22, 21, 26, 25>
-    , boost::mpl::vector27_c<unsigned, 7, 6, 2, 3, 4, 5, 1, 0, 18, 14, 10, 15, 19, 17,  9, 11, 16, 13,  8, 12,  20, 26, 25, 23, 24, 22, 21>
-    , boost::mpl::vector27_c<unsigned, 7, 6, 5, 4, 3, 2, 1, 0, 18, 17, 16, 19, 15, 14, 13, 12, 10,  9,  8, 11,  20, 22, 21, 23, 24, 26, 25>
-                            > permutation_node_ordinals_vector;
-
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4, 5, 6, 7,   8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,  20, 21, 22, 23, 24, 25, 26,
+    0, 1, 5, 4, 3, 2, 6, 7,   8, 13, 16, 12, 11,  9, 17, 19, 10, 14, 18, 15,  20, 25, 26, 23, 24, 21, 22,
+    0, 4, 7, 3, 1, 5, 6, 2,  12, 19, 15, 11,  8, 16, 18, 10, 13, 17, 14,  9,  20, 23, 24, 21, 22, 25, 26,
+    1, 2, 3, 0, 5, 6, 7, 4,   9, 10, 11,  8, 13, 14, 15, 12, 17, 18, 19, 16,  20, 21, 22, 25, 26, 24, 23,
+    1, 2, 6, 5, 0, 3, 7, 4,   9, 14, 17, 13,  8, 10, 18, 16, 11, 15, 19, 12,  20, 24, 23, 25, 26, 21, 22,
+    1, 5, 4, 0, 2, 6, 7, 3,  13, 16, 12,  8,  9, 17, 19, 11, 14, 18, 15, 10,  20, 25, 26, 21, 22, 24, 23,
+    2, 3, 0, 1, 6, 7, 4, 5,  10, 11,  8,  9, 14, 15, 12, 13, 18, 19, 16, 17,  20, 21, 22, 24, 23, 26, 25,
+    2, 3, 7, 6, 1, 0, 4, 5,  10, 15, 18, 14,  9, 11, 19, 17,  8, 12, 16, 13,  20, 26, 25, 24, 23, 21, 22,
+    2, 6, 5, 1, 3, 7, 4, 0,  14, 17, 13,  9, 10, 18, 16,  8, 15, 19, 12, 11,  20, 24, 23, 21, 22, 26, 25,
+    3, 0, 1, 2, 7, 4, 5, 6,  11,  8,  9, 10, 15, 12, 13, 14, 19, 16, 17, 18,  20, 21, 22, 26, 25, 23, 24,
+    3, 0, 4, 7, 2, 1, 5, 6,  11, 12, 19, 15, 10,  8, 16, 18,  9, 13, 17, 14,  20, 23, 24, 26, 25, 21, 22,
+    3, 7, 6, 2, 0, 4, 5, 1,  15, 18, 14, 10, 11, 19, 17,  9, 12, 16, 13,  8,  20, 26, 25, 21, 22, 23, 24,
+    4, 0, 1, 5, 7, 3, 2, 6,  12,  8, 13, 16, 19, 11,  9, 17, 15, 10, 14, 18,  20, 25, 26, 22, 21, 23, 24,
+    4, 7, 3, 0, 5, 6, 2, 1,  19, 15, 11, 12, 16, 18, 10,  8, 17, 14,  9, 13,  20, 23, 24, 25, 26, 22, 21,
+    4, 7, 6, 5, 0, 3, 2, 1,  19, 18, 17, 16, 12, 15, 14, 13, 11, 10,  9,  8,  20, 22, 21, 25, 26, 23, 24,
+    5, 1, 2, 6, 4, 0, 3, 7,  13,  9, 14, 17, 16,  8, 10, 18, 12, 11, 15, 19,  20, 24, 23, 22, 21, 25, 26,
+    5, 4, 0, 1, 6, 7, 3, 2,  16, 12,  8, 13, 17, 19, 11,  9, 18, 15, 10, 14,  20, 25, 26, 24, 23, 22, 21,
+    5, 4, 7, 6, 1, 0, 3, 2,  16, 19, 18, 17, 13, 12, 15, 14,  8, 11, 10,  9,  20, 22, 21, 24, 23, 25, 26,
+    6, 2, 3, 7, 5, 1, 0, 4,  14, 10, 15, 18, 17,  9, 11, 19, 13,  8, 12, 16,  20, 26, 25, 22, 21, 24, 23,
+    6, 5, 1, 2, 7, 4, 0, 3,  17, 13,  9, 14, 18, 16,  8, 10, 19, 12, 11, 15,  20, 24, 23, 26, 25, 22, 21,
+    6, 5, 4, 7, 2, 1, 0, 3,  17, 16, 19, 18, 14, 13, 12, 15,  9,  8, 11, 10,  20, 22, 21, 26, 25, 24, 23,
+    7, 3, 0, 4, 6, 2, 1, 5,  15, 11, 12, 19, 18, 10,  8, 16, 14,  9, 13, 17,  20, 23, 24, 22, 21, 26, 25,
+    7, 6, 2, 3, 4, 5, 1, 0,  18, 14, 10, 15, 19, 17,  9, 11, 16, 13,  8, 12,  20, 26, 25, 23, 24, 22, 21,
+    7, 6, 5, 4, 3, 2, 1, 0,  18, 17, 16, 19, 15, 14, 13, 12, 10,  9,  8, 11,  20, 22, 21, 23, 24, 26, 25
+  };
 };
 
 //***************************************************************************
@@ -1796,7 +1683,7 @@ struct topology_data<topology::HEX_27>
 //***************************************************************************
 
 template <topology::topology_t Topology>
-struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPEREDGE_START && Topology < topology::SUPEREDGE_END) >::type >
+struct topology_data<Topology, typename std::enable_if< (Topology > topology::SUPEREDGE_START && Topology < topology::SUPEREDGE_END) >::type >
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   static constexpr topology::topology_t value = Topology;
@@ -1813,7 +1700,7 @@ struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology
 };
 
 template <topology::topology_t Topology>
-struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPERFACE_START && Topology < topology::SUPERFACE_END) >::type >
+struct topology_data<Topology, typename std::enable_if< (Topology > topology::SUPERFACE_START && Topology < topology::SUPERFACE_END) >::type >
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   static constexpr topology::topology_t value = Topology;
@@ -1834,7 +1721,7 @@ struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology
 //***************************************************************************
 
 template <topology::topology_t Topology>
-struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPERELEMENT_START) >::type >
+struct topology_data<Topology, typename std::enable_if< (Topology > topology::SUPERELEMENT_START) >::type >
   : public topology_data<topology::INVALID_TOPOLOGY>
 {
   static constexpr topology::topology_t value = Topology;

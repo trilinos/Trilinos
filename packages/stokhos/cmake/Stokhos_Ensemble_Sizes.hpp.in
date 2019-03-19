@@ -1,0 +1,15 @@
+#include "Sacado_mpl_vector.hpp"
+#include "Sacado_mpl_integral_c.hpp"
+
+/* Ensemble Sizes Stokhos is configured to support */
+#cmakedefine HAVE_STOKHOS_ENSEMBLE_SIZES "@HAVE_STOKHOS_ENSEMBLE_SIZES@"
+
+/* Default ensemble size to use in examples/tests */
+#cmakedefine STOKHOS_DEFAULT_ENSEMBLE_SIZE @STOKHOS_DEFAULT_ENSEMBLE_SIZE@
+
+namespace Stokhos {
+
+  /* MPL list of ensemble sizes */
+  @STOKHOS_MPL_ENSEMBLE_SIZES@
+
+}

@@ -264,7 +264,7 @@ evaluate(FillType f,
                 basis.phi[i]);
 #ifdef HAVE_NOX_DEBUG
             ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
-            assert(ierr == 0);
+            TEUCHOS_ASSERT(ierr == 0);
 #else
             A->SumIntoGlobalValues(row, 1, &jac, &column);
 #endif

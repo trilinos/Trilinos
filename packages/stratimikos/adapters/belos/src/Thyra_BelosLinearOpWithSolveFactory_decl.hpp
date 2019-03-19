@@ -53,28 +53,6 @@ namespace Teuchos { class ParameterList; }
 
 namespace Thyra {
 
-  enum EBelosSolverType {
-    SOLVER_TYPE_BLOCK_GMRES,
-    SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
-    SOLVER_TYPE_BLOCK_CG,
-    SOLVER_TYPE_PSEUDO_BLOCK_CG,
-    SOLVER_TYPE_PSEUDO_BLOCK_STOCHASTIC_CG,
-    SOLVER_TYPE_GCRODR,
-    SOLVER_TYPE_RCG,
-    SOLVER_TYPE_MINRES,
-    SOLVER_TYPE_TFQMR
-  };
-
-  inline std::istream& operator>>(
-    std::istream& is, EBelosSolverType& sType)
-  {
-    int intval;
-    is >> intval;
-    sType = (EBelosSolverType)intval;
-    return is;
-  }
-
-
 /** \brief <tt>LinearOpWithSolveFactoryBase</tt> subclass implemented in terms
  * of <tt>Belos</tt>.
  *
@@ -103,24 +81,6 @@ public:
   static const std::string  SolverType_default;
   /** \brief . */
   static const std::string  SolverTypes_name;
-  /** \brief . */
-  static const std::string  BlockGMRES_name;
-  /** \brief . */
-  static const std::string  PseudoBlockGMRES_name;
-  /** \brief . */
-  static const std::string  BlockCG_name;
-  /** \brief . */
-  static const std::string  PseudoBlockCG_name;
-  /** \brief . */
-  static const std::string  PseudoBlockStochasticCG_name;
-  /** \brief . */
-  static const std::string  GCRODR_name;
-  /** \brief . */
-  static const std::string  RCG_name;
-  /** \brief . */
-  static const std::string  MINRES_name;
-  /** \brief . */
-  static const std::string  TFQMR_name;
   /** \brief . */
   static const std::string  ConvergenceTestFrequency_name;
 
@@ -233,7 +193,7 @@ private:
   std::string                                       precFactoryName_;
   Teuchos::RCP<Teuchos::ParameterList>              thisValidParamList_;
   Teuchos::RCP<Teuchos::ParameterList>              paramList_;
-  EBelosSolverType solverType_;
+  std::string  solverName_;
   int convergenceTestFrequency_;
 
   // /////////////////////////
