@@ -485,7 +485,7 @@ namespace Tpetra {
           (! myMapLocallyFittedTransferTgtMap , std::invalid_argument,
            "Tpetra::DistObject::" << modeString << ": For forward-mode "
            "communication using restricted mode, Export/Import object's target Map "
-           " must be the same Tpetra::Map::isLocallyFitted to target DistObject's Map");
+           " must be locally fitted (in the sense of Tpetra::Map::isLocallyFitted) to target DistObject's Map");
       }
       else { // if (restrictedMode && revOp == DoReverse) {
         const bool myMapLocallyFittedTransferSrcMap =
@@ -494,7 +494,7 @@ namespace Tpetra {
           (! myMapLocallyFittedTransferSrcMap, std::invalid_argument,
            "Tpetra::DistObject::" << modeString << ": For reverse-mode "
            "communication using restricted mode, Export/Import object's source Map "
-           " must be the same Tpetra::Map::isLocallyFitted to target DistObject's Map");
+           " must be  locally fitted (in the sense of Tpetra::Map::isLocallyFitted) to target DistObject's Map");
       }
 
       // SrcDistObject need not even _have_ Maps.  However, if the

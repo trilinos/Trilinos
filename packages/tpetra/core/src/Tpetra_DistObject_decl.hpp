@@ -401,6 +401,13 @@ namespace Tpetra {
     /// with your precomputed Import object if you want to do an
     /// Import, else use doExport() with a precomputed Export object.
     ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
+    ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.
     ///   Its source Map must be the same as the input DistObject's Map,
@@ -423,6 +430,13 @@ namespace Tpetra {
     /// mode, then you probably want forward mode.  Use this method
     /// with your precomputed Export object if you want to do an
     /// Export, else use doImport() with a precomputed Import object.
+    ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
@@ -447,6 +461,13 @@ namespace Tpetra {
     /// doImport() that takes a precomputed Import object in that
     /// case.
     ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
+    ///  
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
     ///   Its <i>target</i> Map must be the same as the input DistObject's Map,
@@ -470,6 +491,13 @@ namespace Tpetra {
     /// mode, then you probably want forward mode.  Use the version of
     /// doExport() that takes a precomputed Export object in that
     /// case.
+    ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.

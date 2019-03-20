@@ -734,7 +734,7 @@ namespace Tpetra {
     ///
     /// This method must be called collectively (that is, like any MPI
     /// collective) over all processes in the graph's communicator.
-    void globalAssemble ();
+    virtual void globalAssemble ();
 
     /// \brief Resume fill operations.
     ///
