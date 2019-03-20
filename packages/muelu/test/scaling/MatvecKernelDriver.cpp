@@ -103,10 +103,17 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
 // =========================================================================
 // CuSparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_CUDA) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
 #include <cuda_runtime.h>
 #include <cusparse.h>
 #include <cublas_v2.h>
+
+// The cuda examples provide a nice helper function that does all
+// of this error checking
+// helper_cuda.h
+// I am tempted to place it into our repo... but I'll need to read the license first.
+// Worst case, we could replicate here (the following is essentially part of the funcitonality
+// but they do it better.
 
 std::string cusparse_error(cusparseStatus_t code) {
   switch(code) {
@@ -130,9 +137,9 @@ std::string cusparse_error(cusparseStatus_t code) {
 }
 
 
-template<typename Scalar, typename LocalOrdinal, typename, GlobalOrdinal, typename Node>
-class CuSparse_SpmV_Pack<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
-  // typedefs shared among other TPLs
+template<typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class CuSparse_SpmV_Pack {
+  typedef double Scalar;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_type    KCRS;
@@ -147,20 +154,50 @@ class CuSparse_SpmV_Pack<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   typedef typename Kokkos::View<int*,
                                 typename lno_nnz_view_t::array_layout,
                                 typename lno_nnz_view_t::device_type> cusparse_int_type;
-  
+public:
+  CuSparse_SpmV_Pack (const crs_matrix_type& A,
+                      const vector_type& X,
+                            vector_type& Y)
+  {}
+
+ ~CuSparse_SpmV_Pack() {};
+
+  cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) { return CUSPARSE_STATUS_SUCCESS; }
+};
+
+template<typename LocalOrdinal, typename GlobalOrdinal>
+class CuSparse_SpmV_Pack<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+  // typedefs shared among other TPLs
+  typedef double Scalar;
+  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+  typedef typename crs_matrix_type::local_matrix_type    KCRS;
+  typedef typename KCRS::StaticCrsGraphType              graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type     scalar_view_t;
+  typedef typename Node::device_type device_type;
+
+  typedef typename Kokkos::View<int*,
+                                typename lno_nnz_view_t::array_layout,
+                                typename lno_nnz_view_t::device_type> cusparse_int_type;
+public:
   CuSparse_SpmV_Pack (const crs_matrix_type& A,
                       const vector_type& X,
                             vector_type& Y)
   {
     // data access common to other TPLs
-    const KCRS & Amat = At->getLocalMatrix();
+    const KCRS & Amat = A.getLocalMatrix();
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
       
      
-    Arowptr_cusparse("Arowptr", Arowptr.extent(0));
-    Acolind_cusparse("Acolind", Acolind.extent(0));
+    Arowptr_cusparse = cusparse_int_type("Arowptr", Arowptr.extent(0));
+    Acolind_cusparse = cusparse_int_type("Acolind", Acolind.extent(0));
     // copy the ordinals into the local view (type conversion)
     copy_view(Arowptr,Arowptr_cusparse);
     copy_view(Acolind,Acolind_cusparse);
@@ -189,7 +226,7 @@ class CuSparse_SpmV_Pack<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
     cusparseStatus = cusparseCreate(&cusparseHandle);
 
     //checkCudaErrors(cusparseStatus);
-    cusparseStatus = cusparseCreateMatDescr(&descr);
+    cusparseStatus = cusparseCreateMatDescr(&descrA);
 
     //checkCudaErrors(cusparseStatus);
 
@@ -227,10 +264,10 @@ class CuSparse_SpmV_Pack<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
           &alpha,
           descrA,
           vals,
-          rowptr
+          rowptr,
           cols,
           x,
-          beta,
+          &beta,
           y);
     }
 //    else if (Kokkos::Impl::is_same<Scalar,float>::value) {
@@ -252,6 +289,7 @@ class CuSparse_SpmV_Pack<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 
     return (rc);
   }
+private:
   cublasHandle_t     cublasHandle   = 0;
   cusparseHandle_t   cusparseHandle = 0;
   cusparseMatDescr_t descrA         = 0;
@@ -387,10 +425,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     bool do_kk       = true;
     bool do_cusparse = true;
 
+    bool report_error_norms = false;
     #ifndef HAVE_MUELU_MKL
       do_mkl = false;
     #endif
-    #if ! defined(HAVE_MUELU_CUDA)
+    #if ! defined(HAVE_MUELU_CUSPARSE)
       do_cusparse = false;
     #endif
     
@@ -398,6 +437,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("tpetra",   "notpetra",   &do_tpetra,     "Evaluate Tpetra");
     clp.setOption("kk",       "nokk",       &do_kk,         "Evaluate KokkosKernels");
     clp.setOption("cusparse", "nocusparse", &do_cusparse,   "Evaluate CuSparse");
+    clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms,   "Report L2 norms for the solution");
 
     std::ostringstream galeriStream;
     std::string rhsFile,coordFile,nullFile; //unused
@@ -409,9 +449,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     RCP<const Map> map;
    
     switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
@@ -428,11 +468,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
     #endif
 
-    #if ! defined(HAVE_MUELU_CUDA)
+    #if ! defined(HAVE_MUELU_CUSPARSE)
     if (do_cusparse) {
       out << "CuSparse was requested, but this kernel is not available. Disabling..." << endl;
       do_cusparse = false;
     }
+    #else
+    if(! std::is_same<NO, Kokkos::Compat::KokkosCudaWrapperNode>::value) do_cusparse = false;
     #endif
 
     // simple hack to randomize order of experiments
@@ -444,7 +486,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (do_mkl) my_experiments.push_back(Experiments::MKL);   // MKL
     #endif
 
-    #ifdef HAVE_MUELU_CUDA
+    #ifdef HAVE_MUELU_CUSPARSE
     if (do_cusparse) my_experiments.push_back(Experiments::CUSPARSE);   // CuSparse
     #endif
  
@@ -491,8 +533,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
     RCP<MultiVector> y = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(A->getRowMap());
+    RCP<MultiVector> y_baseline = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(A->getRowMap());
     x->putScalar(Teuchos::ScalarTraits<Scalar>::one());
-    y->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
+    y_baseline->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
 
 
 #ifdef HAVE_MUELU_TPETRA
@@ -514,9 +558,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     }
     if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);     
 
-  #if defined(HAVE_MUELU_CUDA)
-    typedef CuSparse_SpmV_Pack<Scalar,LocalOrdinal,GlobalOrdinal,Node> CuSparse_thing_t;
-    CuSparse_thing_t cusparse_spmv(*At, *xt, *yt);
+  #if defined(HAVE_MUELU_CUSPARSE)
+    typedef CuSparse_SpmV_Pack<LocalOrdinal,GlobalOrdinal,Node> CuSparse_thing_t;
+    CuSparse_thing_t cusparse_spmv(*At, xt, yt);
   #endif
  
   #if defined(HAVE_MUELU_MKL)
@@ -583,10 +627,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::random_device rd;
     std::mt19937 random_source (rd());
 
-    
+    #ifdef HAVE_MUELU_TPETRA
+    // compute the baseline
+    vector_type yt_baseline = Xpetra::toTpetra(*y_baseline);
+    if (report_error_norms) MV_Tpetra(*At,xt,yt_baseline);
+    const bool error_check_y = true;
+    #else
+    const bool error_check_y = false;
+    #endif
+    std::vector<typename Teuchos::ScalarTraits< Scalar >::magnitudeType> dummy;
+    dummy.resize(1);
+    Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > y_norms (dummy.data(), 1);
 
     // no need for a barrier, because the randomization process uses a collective.
     if ( !my_experiments.empty() ) {
+
 
     for (int i=0; i<nrepeat; i++) {
       
@@ -631,7 +686,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           break;
         #endif
 
-        #ifdef HAVE_MUELU_CUDA
+        #ifdef HAVE_MUELU_CUSPARSE
         // MKL 
         case Experiments::CUSPARSE:
         {
@@ -647,7 +702,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           std::cerr << "Unknown experiment ID encountered: " << (int) experiment_id << std::endl;
         }
         //TODO: add a correctness check
-        //
+        // For now, all things alias x/y, so we can test yt (flakey and scary, but you only live once)
+        if (error_check_y && report_error_norms) {
+          // compute ||y||_2
+          y_norms[0] = -1;
+          y->norm2(y_norms);
+          const auto y_norm2 = y_norms[0];
+
+          y->update(-Teuchos::ScalarTraits<Scalar>::one(), *y_baseline, Teuchos::ScalarTraits<Scalar>::one());
+
+          y_norms[0] = -1;
+          y->norm2(y_norms);
+          y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());;
+          std::cout << "ExperimentID: " << (int) experiment_id << ", ||y-y_hat||_2 = " 
+                    << std::setprecision(std::numeric_limits<Scalar>::digits10 + 1)
+                    << std::scientific << y_norms[0] 
+                    << ", ||y||_2 = " << y_norm2 << "\n";
+        }
         comm->barrier();
       }// end random exp loop
     } // end repeat
