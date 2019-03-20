@@ -2154,33 +2154,51 @@ namespace Ifpack2 {
       using internal_vector_type =typename impl_type::internal_vector_type;
       static constexpr int vector_length = impl_type::vector_length;
       static constexpr int internal_vector_length = impl_type::internal_vector_length;
+      
+      /// multivector view
+      using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
 
       /// team policy member type (used in cuda)
       using team_policy_type = Kokkos::TeamPolicy<execution_space>;
       using member_type = typename team_policy_type::member_type;      
  
+
+
     private:
       // part interface
       const ConstUnmanaged<local_ordinal_type_1d_view> partptr;
       const ConstUnmanaged<local_ordinal_type_1d_view> packptr;
       const ConstUnmanaged<local_ordinal_type_1d_view> part2packrowidx0;
+      const ConstUnmanaged<local_ordinal_type_1d_view> lclrow;
+
       // block tridiags 
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr;
+
       // block tridiags values
       const ConstUnmanaged<internal_vector_type_4d_view> D_internal_vector_values;
       const Unmanaged<internal_vector_type_4d_view> X_internal_vector_values;
-      
+
+      // vector loop size (vector_length/internal_vector_length)
       const local_ordinal_type vector_loop_size;
+
+      // copy to multivectors : damping factor and Y_scalar_multivector
+      Unmanaged<impl_scalar_type_2d_view> Y_scalar_multivector;
+      impl_scalar_type df;
+
+      // copy mode
+      bool is_y_zero;
+      bool compute_diff;
 
     public:
       SolveTridiags(const PartInterface<MatrixType> &interf,                    
                     const BlockTridiags<MatrixType> &btdm, 
-                    const vector_type_3d_view &pmv) 
+                    const vector_type_3d_view &pmv)
         :
         // interface
         partptr(interf.partptr), 
         packptr(interf.packptr),
         part2packrowidx0(interf.part2packrowidx0),
+	lclrow(interf.lclrow),
         // block tridiags and  multivector
         pack_td_ptr(btdm.pack_td_ptr), 
         D_internal_vector_values((internal_vector_type*)btdm.values.data(),
@@ -2193,23 +2211,66 @@ namespace Ifpack2 {
                                  pmv.extent(1), 
                                  pmv.extent(2), 
                                  vector_length/internal_vector_length),
-	vector_loop_size(vector_length/internal_vector_length)
+	vector_loop_size(vector_length/internal_vector_length),
+	Y_scalar_multivector(),
+	df(impl_scalar_type(1)),
+	is_y_zero(false),
+	compute_diff(false)
       {}
 
     public:
 
-      ///
-      /// cuda team vectorization
-      ///
+      /// move packed multi vector into flat multi vector for computing residuals
+      KOKKOS_INLINE_FUNCTION
+      void
+      copyToFlatMultiVector(const member_type &member,
+			    const local_ordinal_type partidxbeg, // partidx for v = 0
+			    const local_ordinal_type npacks,
+			    const local_ordinal_type pri0,
+			    const local_ordinal_type v, // index with a loop of vector_loop_size
+			    const local_ordinal_type blocksize,
+			    const local_ordinal_type num_vectors) const {
+	const local_ordinal_type vbeg = v*internal_vector_length;
+	if (vbeg < npacks) {
+	  local_ordinal_type ri0_vals[internal_vector_length] = {};
+	  local_ordinal_type nrows_vals[internal_vector_length] = {};
+	  for (local_ordinal_type vv=vbeg,vi=0;vv<npacks && vi<internal_vector_length;++vv,++vi) {	
+	    const local_ordinal_type partidx = partidxbeg+vv;
+	    ri0_vals[vi] = partptr(partidx);
+	    nrows_vals[vi] = partptr(partidx+1) - ri0_vals[vi];
+	  }
+	  
+	  Kokkos::parallel_for
+            (Kokkos::TeamThreadRange(member, nrows_vals[0]), 
+	     [&](const local_ordinal_type &j) {
+	      const local_ordinal_type pri = pri0 + j;
+	      for (local_ordinal_type vv=vbeg,vi=0;vv<npacks && vi<internal_vector_length;++vv,++vi) {		    
+		const local_ordinal_type ri0 = ri0_vals[vi];
+		const local_ordinal_type nrows = nrows_vals[vi];
+		if (j < nrows) {
+		  for (local_ordinal_type col=0;col<num_vectors;++col) {
+		    for (local_ordinal_type i=0;i<blocksize;++i) {
+		      impl_scalar_type &y = Y_scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+		      const impl_scalar_type yc = X_internal_vector_values(pri, i, col, v)[vi];
+		      const impl_scalar_type yd = yc - y;
+		      y  = is_y_zero ? df*yc : y+df*yd;
+		    }
+		  }
+		}
+	      }
+	    });
+	}
+      }
+      
       template<typename WWViewType>
       KOKKOS_INLINE_FUNCTION 
       void 
       solveSingleVector(const member_type &member, 
-                        const local_ordinal_type &blocksize,
-                        const local_ordinal_type &i0,
-                        const local_ordinal_type &r0,
-                        const local_ordinal_type &nrows,
-                        const local_ordinal_type &v,
+                        const local_ordinal_type blocksize,
+                        const local_ordinal_type i0,
+                        const local_ordinal_type r0,
+                        const local_ordinal_type nrows,
+                        const local_ordinal_type v,
 			const WWViewType &WW) const {
         namespace KB = KokkosBatched::Experimental;
         typedef SolveTridiagsDefaultModeAndAlgo
@@ -2334,11 +2395,11 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       solveMultiVector(const member_type &member, 
-                       const local_ordinal_type &blocksize,
-                       const local_ordinal_type &i0,
-                       const local_ordinal_type &r0,
-                       const local_ordinal_type &nrows,
-                       const local_ordinal_type &v,
+                       const local_ordinal_type blocksize,
+                       const local_ordinal_type i0,
+                       const local_ordinal_type r0,
+                       const local_ordinal_type nrows,
+                       const local_ordinal_type v,
 		       const WWViewType &WW) const {
         namespace KB = KokkosBatched::Experimental;
         typedef SolveTridiagsDefaultModeAndAlgo
@@ -2420,16 +2481,19 @@ namespace Ifpack2 {
       operator() (const SingleVectorTag<B> &, const member_type &member) const {
 	const local_ordinal_type packidx = member.league_rank();
 	const local_ordinal_type partidx = packptr(packidx);	
+        const local_ordinal_type npacks = packptr(packidx+1) - partidx;
+        const local_ordinal_type pri0 = part2packrowidx0(partidx);
 	const local_ordinal_type i0 = pack_td_ptr(partidx);
 	const local_ordinal_type r0 = part2packrowidx0(partidx);
         const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
         const local_ordinal_type blocksize = (B == 0 ? D_internal_vector_values.extent(1) : B);      
-
-       internal_vector_scratch_type_3d_view
-	 WW(member.team_scratch(0), blocksize, 1, vector_loop_size);
+	const local_ordinal_type num_vectors = 1;
+	internal_vector_scratch_type_3d_view
+	  WW(member.team_scratch(0), blocksize, 1, vector_loop_size);
 	Kokkos::parallel_for
 	  (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
 	    solveSingleVector(member, blocksize, i0, r0, nrows, v, WW);
+	    copyToFlatMultiVector(member, partidx, npacks, pri0, v, blocksize, num_vectors);
 	  });
       }      
 
@@ -2439,6 +2503,8 @@ namespace Ifpack2 {
       operator() (const MultiVectorTag<B> &, const member_type &member) const {
 	const local_ordinal_type packidx = member.league_rank();
 	const local_ordinal_type partidx = packptr(packidx);	
+        const local_ordinal_type npacks = packptr(packidx+1) - partidx;
+        const local_ordinal_type pri0 = part2packrowidx0(partidx);
 	const local_ordinal_type i0 = pack_td_ptr(partidx);
 	const local_ordinal_type r0 = part2packrowidx0(partidx);
         const local_ordinal_type nrows = partptr(partidx+1) - partptr(partidx);
@@ -2450,10 +2516,13 @@ namespace Ifpack2 {
 	Kokkos::parallel_for
 	  (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
 	    solveMultiVector(member, blocksize, i0, r0, nrows, v, WW);
+	    //copyToFlatMultiVector(member, partidx, npacks, pri0, v, blocksize, num_vectors);
 	  });
       }      
 
-      void run() {
+      void run(const impl_scalar_type_2d_view &Y,
+	       const impl_scalar_type damping_factor,
+	       const bool is_y_zero) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
@@ -2461,6 +2530,10 @@ namespace Ifpack2 {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
 #endif   
+	/// set compute mode
+	this->Y_scalar_multivector = Y;
+	this->df = damping_factor;
+	this->is_y_zero = is_y_zero;
 
 	const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);
 	const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
@@ -3523,12 +3596,12 @@ namespace Ifpack2 {
           }
         }
         
-        // pmv := inv(D) pmv.
-        solve_tridiags.run();
+        // pmv := inv(D) pmv and pmv -> Y
+        solve_tridiags.run(YY, damping_factor, is_y_zero);
         
         // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-        multivector_converter.to_scalar_multivector(YY, damping_factor, is_y_zero,
-                                                    is_norm_manager_active ? norm_manager.getBuffer() : NULL);
+        //multivector_converter.to_scalar_multivector(YY, damping_factor, is_y_zero,
+	//is_norm_manager_active ? norm_manager.getBuffer() : NULL);
         
         if (is_norm_manager_active) {
           if (sweep + 1 == max_num_sweeps) {
