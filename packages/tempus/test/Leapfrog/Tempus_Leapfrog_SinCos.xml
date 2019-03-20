@@ -37,7 +37,7 @@
 
     <ParameterList name="Default Stepper">
       <Parameter name="Stepper Type"           type="string" value="Leapfrog"/>
-      <Parameter name="Is xDotDot Initialized" type="bool"   value="false"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
     </ParameterList>
 
   </ParameterList>
