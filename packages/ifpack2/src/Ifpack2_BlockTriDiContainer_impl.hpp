@@ -2183,11 +2183,8 @@ namespace Ifpack2 {
 
       // copy to multivectors : damping factor and Y_scalar_multivector
       Unmanaged<impl_scalar_type_2d_view> Y_scalar_multivector;
+      Unmanaged<impl_scalar_type_2d_view> Z_scalar_multivector;
       impl_scalar_type df;
-
-      // copy mode
-      bool is_y_zero;
-      bool compute_diff;
 
     public:
       SolveTridiags(const PartInterface<MatrixType> &interf,                    
@@ -2213,9 +2210,8 @@ namespace Ifpack2 {
                                  vector_length/internal_vector_length),
 	vector_loop_size(vector_length/internal_vector_length),
 	Y_scalar_multivector(),
-	df(impl_scalar_type(1)),
-	is_y_zero(false),
-	compute_diff(false)
+	Z_scalar_multivector(),
+	df(impl_scalar_type(1))
       {}
 
     public:
@@ -2239,26 +2235,54 @@ namespace Ifpack2 {
 	    ri0_vals[vi] = partptr(partidx);
 	    nrows_vals[vi] = partptr(partidx+1) - ri0_vals[vi];
 	  }
-	  
-	  Kokkos::parallel_for
-            (Kokkos::TeamThreadRange(member, nrows_vals[0]), 
-	     [&](const local_ordinal_type &j) {
-	      const local_ordinal_type pri = pri0 + j;
+
+	  if (nrows_vals[0] == 1) {
+	    for (local_ordinal_type j=0,pri=pri0;j<nrows_vals[0];++j,++pri) {
 	      for (local_ordinal_type vv=vbeg,vi=0;vv<npacks && vi<internal_vector_length;++vv,++vi) {		    
 		const local_ordinal_type ri0 = ri0_vals[vi];
 		const local_ordinal_type nrows = nrows_vals[vi];
 		if (j < nrows) {
-		  for (local_ordinal_type col=0;col<num_vectors;++col) {
-		    for (local_ordinal_type i=0;i<blocksize;++i) {
-		      impl_scalar_type &y = Y_scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
-		      const impl_scalar_type yc = X_internal_vector_values(pri, i, col, v)[vi];
-		      const impl_scalar_type yd = yc - y;
-		      y  = is_y_zero ? df*yc : y+df*yd;
+		  Kokkos::parallel_for
+		    (Kokkos::TeamThreadRange(member, blocksize), 
+		     [&](const local_ordinal_type &i) {
+		      const local_ordinal_type row = blocksize*lclrow(ri0+j)+i;
+		      for (local_ordinal_type col=0;col<num_vectors;++col) {
+			impl_scalar_type &y = Y_scalar_multivector(row,col);
+			const impl_scalar_type yd = X_internal_vector_values(pri, i, col, v)[vi] - y;
+			y  += df*yd;
+
+			// impl_scalar_type &z = Z_scalar_multivector(row,col);
+			// const magnitude_type abs_yd = Kokkos::ArithTraits<impl_scalar_type>::abs(yd); 
+			// z = abs_yd*abs_yd;
+		      }
+		    });
+		}
+	      }
+	    }
+	  } else {
+	    Kokkos::parallel_for
+	      (Kokkos::TeamThreadRange(member, nrows_vals[0]), 
+	       [&](const local_ordinal_type &j) {
+		const local_ordinal_type pri = pri0 + j;
+		for (local_ordinal_type vv=vbeg,vi=0;vv<npacks && vi<internal_vector_length;++vv,++vi) {
+		  const local_ordinal_type ri0 = ri0_vals[vi];
+		  const local_ordinal_type nrows = nrows_vals[vi];
+		  if (j < nrows) {
+		    for (local_ordinal_type col=0;col<num_vectors;++col) {
+		      for (local_ordinal_type i=0;i<blocksize;++i) {
+			impl_scalar_type &y = Y_scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+			const impl_scalar_type yd = X_internal_vector_values(pri, i, col, v)[vi] - y;
+			y += df*yd;
+
+			// impl_scalar_type &z = Z_scalar_multivector(row,col);
+			// const magnitude_type abs_yd = Kokkos::ArithTraits<impl_scalar_type>::abs(yd); 
+			// z = abs_yd*abs_yd;
+		      }
 		    }
 		  }
 		}
-	      }
-	    });
+	      });
+	  }
 	}
       }
       
@@ -2521,8 +2545,8 @@ namespace Ifpack2 {
       }      
 
       void run(const impl_scalar_type_2d_view &Y,
-	       const impl_scalar_type damping_factor,
-	       const bool is_y_zero) {
+	       const impl_scalar_type_2d_view &Z,
+	       const impl_scalar_type damping_factor) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
 #endif
@@ -2532,8 +2556,8 @@ namespace Ifpack2 {
 #endif   
 	/// set compute mode
 	this->Y_scalar_multivector = Y;
+	this->Z_scalar_multivector = Z;
 	this->df = damping_factor;
-	this->is_y_zero = is_y_zero;
 
 	const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);
 	const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
@@ -3308,6 +3332,103 @@ namespace Ifpack2 {
       }
     }; 
 
+
+//     template<typename MatrixType>
+//     struct ReduceResidualVector {
+//     public:
+//       using impl_type = ImplType<MatrixType>;
+//       using execution_space = typename impl_type::execution_space;
+
+//       using local_ordinal_type = typename impl_type::local_ordinal_type;
+//       using impl_scalar_type = typename impl_type::impl_scalar_type;
+
+//       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; 
+
+//     private:
+//       Unmanaged<impl_scalar_type_2d_view> z;
+//       local_ordinal_type jbeg, jend;
+      
+//     public:
+//       ReduceResidualVector()
+// 	: z(), jbeg(0), jend(0) 
+//       {}
+
+//       struct SingleVectorTag {};
+//       struct MultiVectorTag  {};
+
+//       static constexpr int max_ncols_per_iteration = 10;
+//       typedef SumReducer<impl_scalar_type,max_ncols_per_iteration,execution_space> sum_reducer_type;	
+      
+//       KOKKOS_INLINE_FUNCTION
+//       void
+//       operator()(const SingleVectorTag &, 
+// 		 const local_ordinal_type &i, 
+// 		 impl_scalar_type &update) const {
+// 	update += z(i,jbeg);
+//       }
+      
+//       KOKKOS_INLINE_FUNCTION
+//       void
+//       operator()(const MultiVectorTag &, 
+// 		 const local_ordinal_type &i,
+// 		 typename sum_reducer_type::value_type &update) { 
+// 	for (local_ordinal_type j=jbeg,k=0;j<jend;++j,++k)
+// 	  update.v[k] += z(i,j);
+//       }
+	
+//       void run(const impl_scalar_type_2d_view &zz,
+// 	       impl_scalar_type *vals) {
+
+// #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+//         cudaProfilerStart();
+// #endif
+
+// #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+//         TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ReduceResidualVector::Run");
+// #endif   
+
+// 	this->z = zz;
+
+// 	const local_ordinal_type nrows = zz.extent(0);
+// 	const local_ordinal_type ncols = zz.extent(1);
+
+// 	for (local_ordinal_type j=0;j<ncols;++j) {
+// 	  this->jbeg = j;
+// 	  impl_scalar_type reduced_value(0);
+// 	  Kokkos::RangePolicy<execution_space,SingleVectorTag> policy(0, nrows);
+// 	  Kokkos::parallel_reduce("ReduceSingleResidualVector",
+// 				  policy, *this, reduced_value);
+// 	  vals[j] = reduced_value;
+// 	}
+
+// 	// if (ncols == 1) {
+// 	//   impl_scalar_type reduced_value(0);
+// 	//   Kokkos::RangePolicy<execution_space,SingleVectorTag> policy(0, nrows);
+// 	//   Kokkos::parallel_reduce("ReduceSingleResidualVector",
+// 	// 			  policy, *this, reduced_value);
+// 	//   vals[0] = reduced_value;
+// 	// } else {
+// 	//   Kokkos::RangePolicy<execution_space,MultiVectorTag> policy(0, nrows);
+// 	//   for (local_ordinal_type iter=0,iterend=ncols/max_ncols_per_iteration+1;iter<iterend;++iter) {
+// 	//     const local_ordinal_type jtmp = (iter+1)*max_ncols_per_iteration;
+// 	//     this->jbeg = iter*max_ncols_per_iteration;
+// 	//     this->jend = ncols < jtmp ? ncols : jtmp;
+// 	//     if (this->jbeg < this->jend) {
+// 	//       typename sum_reducer_type::value_type sum_reducer_value;	  
+// 	//       Kokkos::parallel_reduce
+// 	//   	("ReduceMultiResidualVector",
+// 	//   	 policy, *this, sum_reducer_type(sum_reducer_value));
+// 	//       for (local_ordinal_type j=jbeg,k=0;j<jend;++j,++k)
+// 	//   	vals[j] = sum_reducer_value.v[k];
+// 	//     }
+// 	//   }
+// 	// }
+// #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+//         cudaProfilerStop();
+// #endif	
+//       }
+//     };
+
     ///
     /// Manage the distributed part of the computation of residual norms.
     ///
@@ -3491,9 +3612,11 @@ namespace Ifpack2 {
 #endif
       using impl_type = ImplType<MatrixType>;
       using memory_space = typename impl_type::memory_space;
-
+      using execution_space = typename impl_type::execution_space;
+      
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using size_type = typename impl_type::size_type;
+      using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_1d_view = typename impl_type::vector_type_1d_view;
@@ -3527,17 +3650,17 @@ namespace Ifpack2 {
         work = vector_type_1d_view("vector workspace 1d view", work_span_required);
      
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
-      if (is_seq_method_requested) {
-        // construct copy of Y again if num vectors are different
-        if (static_cast<local_ordinal_type>(Z.getNumVectors()) != num_vectors) 
-          Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);
-      } else {
-        if (is_async_importer_active) {
-          // create comm data buffer and keep it here
-          async_importer->createDataBuffer(num_vectors);
-          remote_multivector = async_importer->getRemoteMultiVectorLocalView();
-        }
+
+      // construct copy of Y again if num vectors are different
+      if (static_cast<local_ordinal_type>(Z.getNumVectors()) != num_vectors) 
+	Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);
+      
+      if (is_async_importer_active) {
+	// create comm data buffer and keep it here
+	async_importer->createDataBuffer(num_vectors);
+	remote_multivector = async_importer->getRemoteMultiVectorLocalView();
       }
+      
 
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
@@ -3565,11 +3688,15 @@ namespace Ifpack2 {
         if (is_y_zero) {
           // pmv := x(lclrow)
           multivector_converter.to_packed_multivector(XX);
+	  Kokkos::deep_copy(YY, impl_scalar_type(0));
         } else {
           if (is_seq_method_requested) {
             // y := x - R y
             Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
             compute_residual_vector.run(YY, XX, ZZ);
+
+	    // for passing tests,
+	    Kokkos::deep_copy(ZZ, impl_scalar_type(0));
 
             // pmv := y(lclrow).
             multivector_converter.to_packed_multivector(YY);
@@ -3597,21 +3724,18 @@ namespace Ifpack2 {
         }
         
         // pmv := inv(D) pmv and pmv -> Y
-        solve_tridiags.run(YY, damping_factor, is_y_zero);
-        
-        // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-        //multivector_converter.to_scalar_multivector(YY, damping_factor, is_y_zero,
-	//is_norm_manager_active ? norm_manager.getBuffer() : NULL);
-        
+        solve_tridiags.run(YY, ZZ, damping_factor);
+
         if (is_norm_manager_active) {
-          if (sweep + 1 == max_num_sweeps) {
-            norm_manager.ireduce(sweep, true);
-            norm_manager.checkDone(sweep + 1, tolerance, true);
-          } else {
+	  // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
+	  //ReduceResidualVector<MatrixType>().run(ZZ, norm_manager.getBuffer());
+	  if (sweep + 1 == max_num_sweeps) {
+	    norm_manager.ireduce(sweep, true);
+	    norm_manager.checkDone(sweep + 1, tolerance, true);
+	  } else {
             norm_manager.ireduce(sweep);
           }
-        }
-
+	}	
         is_y_zero = false;
       }
 
