@@ -86,13 +86,6 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
 }
 
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
-{
-  return *this;
-}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {

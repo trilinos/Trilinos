@@ -365,10 +365,11 @@ namespace Tpetra {
     void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
+    // We forbid assignment (operator=) and copy construction
     FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>& rhs);
+    operator= (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    FECrsGraph (const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&) = delete;
 
 
     // Enum for activity

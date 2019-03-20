@@ -74,7 +74,7 @@ public:
 
     /// \brief This class' first template parameter; the type of each
     ///        entry in the matrix.
-    typedef Scalar scalar_type;
+    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scalar_type scalar_type;
 
     /// \brief The type used internally in place of \c Scalar.
     ///
@@ -88,13 +88,13 @@ public:
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type impl_scalar_type;
 
     //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
+    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_ordinal_type local_ordinal_type;
 
     //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
+    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_ordinal_type global_ordinal_type;
 
     //! This class' fourth template parameter; the Kokkos device type.
-    typedef Node node_type;
+    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
 
     //! The Kokkos device type.
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type device_type;
@@ -223,16 +223,13 @@ public:
     //@}
   
   private:
-#if 0
-    // We forbid copy construction by declaring this method private
-    // and not implementing it.
-    FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
-#endif
+    // We forbid assignment (operator=) and copy construction
+    FECrsMatrix<Scalar,LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
 
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
-    FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
+    FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+
 
 
     // Enum for activity

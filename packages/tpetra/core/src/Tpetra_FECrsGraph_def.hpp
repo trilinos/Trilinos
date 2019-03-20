@@ -176,16 +176,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 
 }
 
-
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>&
-FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-operator=(const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>& rhs)
-{
-  return *this;
-}
-
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   const char tfecfFuncName[] = "FECrsGraph::doOwnedPlusSharedToOwned(CombineMode): ";
@@ -281,7 +271,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
      3) rowptr & (local) colinds are aliased between the two graphs
      4) The OWNED_PLUS_SHARED graph has been fillCompleted with a column map whose first chunk
         is the column map for the OWNED graph.  
-        If we assume that (a) if you own an element, you also own at least one of the connecte nodes and (b) elements are cliques, then
+        If we assume that (a) if you own an element, you also own at least one of the connected nodes and (b) elements are cliques, then
         the columnMap is the same for both graphs!!! 
 
      5) The OWNED_PLUS_SHARED graph has neither an importer nor exporter.  Making these is expensive and we don't need them.       
