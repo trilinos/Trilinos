@@ -149,6 +149,12 @@ public:
 
   /// Wait on this request (a blocking operation).
   virtual RCP<CommStatus<OrdinalType> > wait () = 0;
+
+  //! Start this request.
+  virtual void start () = 0;
+
+  //! Free this request.
+  virtual void free () = 0;
 };
 
 /// \class Comm
@@ -606,6 +612,54 @@ public:
             const int sourceRank,
             const int tag) const = 0;
 
+
+  /** \brief Persistent send.
+   *
+   * \param sendBuffer [in] The data buffer to be sent.
+   *
+   * \param destRank [in] The rank of the process to receive the data.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
+   * <li><tt>destRank != this->getRank()</tt>
+   * </ul>
+   */
+  virtual RCP<CommRequest<Ordinal> > sendInit(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const = 0;
+
+  //! Variant of isend() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> >
+  sendInit (const ArrayView<const char> &sendBuffer,
+         const int destRank,
+         const int tag) const = 0;
+
+  /** \brief Persistent receive.
+   *
+   * \param recvBuffer [out] The location for storing the received data.
+   *
+   * \param sourceRank [in] The rank of the process to receive the data from.
+   * If <tt>sourceRank < 0</tt> then data will be received from any process.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li>[<tt>sourceRank >= 0] <tt>sourceRank < this->getSize()</tt>
+   * <li><tt>sourceRank != this->getRank()</tt>
+   * </ul>
+   *
+   * \return Returns the senders rank.
+   */
+  virtual RCP<CommRequest<Ordinal> > receiveInit(
+    const ArrayView<char> &recvBuffer,
+    const int sourceRank
+    ) const = 0;
+
+  //! Variant of ireceive that takes a tag.
+  virtual RCP<CommRequest<Ordinal> >
+  receiveInit (const ArrayView<char> &recvBuffer,
+            const int sourceRank,
+            const int tag) const = 0;
+
   /** \brief Wait on a set of communication requests.
    *
    * <b>Preconditions:</b><ul>
@@ -617,7 +671,8 @@ public:
    * </ul>
    */
   virtual void waitAll(
-    const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+    const ArrayView<RCP<CommRequest<Ordinal> > > &requests,
+    bool releaseRequests=true
     ) const = 0;
 
   /// \brief Wait on communication requests, and return their statuses.
@@ -638,7 +693,8 @@ public:
   ///   requests.
   virtual void
   waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-           const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
+           const ArrayView<RCP<CommStatus<Ordinal> > >& statuses,
+           bool releaseRequests=true) const = 0;
 
   /// \brief Wait on a single communication request, and return its status.
   ///
@@ -665,6 +721,34 @@ public:
   /// associated with the CommRequest object has completed.
   virtual RCP<CommStatus<Ordinal> >
   wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const = 0;
+
+  /// \brief Start a single communication request.
+  ///
+  /// \param request [in/out] On input: request is not null, and
+  /// <tt>*request</tt> is either null (in which case this function
+  /// does nothing and returns null) or an RCP of a valid CommRequest
+  /// instance representing an outstanding communication request.
+  virtual void
+  start (const Ptr<RCP<CommRequest<Ordinal> > >& request) const = 0;
+
+  /** \brief Start on a set of communication requests.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>requests.size() > 0</tt>
+   * </ul>
+   *
+   */
+  virtual void
+  startAll(const ArrayView<RCP<CommRequest<Ordinal> > > &requests) const = 0;
+
+  /// \brief Free a single communication request.
+  ///
+  /// \param request [in/out] On input: request is not null, and
+  /// <tt>*request</tt> is either null (in which case this function
+  /// does nothing and returns null) or an RCP of a valid CommRequest
+  /// instance representing an communication request.
+  virtual void
+  free (const Ptr<RCP<CommRequest<Ordinal> > >& request) const = 0;
 
   //@}
 

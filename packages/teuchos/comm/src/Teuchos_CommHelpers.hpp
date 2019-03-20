@@ -756,6 +756,107 @@ RCP<CommRequest<Ordinal> > ireceive(
 // 2008/07/29: rabartl: ToDo: Add reference semantics version of ireceive!
 
 
+/** \brief Send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> > sendInit(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  );
+
+//! Variant of sendInit() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> >
+sendInit (const ArrayRCP<const Packet>& sendBuffer,
+       const int destRank,
+       const int tag,
+       const Comm<Ordinal>& comm);
+
+/** \brief Send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> > sendInit(
+  const Comm<Ordinal>& comm,
+  const RCP<const Packet> &send,
+  const int destRank
+  );
+
+/** \brief Send objects that use values semantics to another process
+ * using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+RCP<CommRequest<Ordinal> > sendInit(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  );
+
+
+/// \brief Receive one or more objects (that use values semantics) from another process.
+/// \relates Comm
+///
+/// \param comm [in] The communicator.
+/// \param recvBuffer [out] The buffer into which to receive the data.
+/// \param sourceRank [in] The rank of the sending process.  A
+///   negative source rank means that this will accept an incoming
+///   message from any process on the given communicator.  (This is
+///   the equivalent of MPI_ANY_SOURCE.)
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> > receiveInit(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  );
+
+//! Variant of receiveInit that takes a tag argument (and restores the correct order of arguments).
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> >
+receiveInit (const ArrayRCP<Packet> &recvBuffer,
+          const int sourceRank,
+          const int tag,
+          const Comm<Ordinal>& comm);
+
+/// \brief Receive one object (that uses values semantics) from another process.
+/// \relates Comm
+///
+/// \param comm [in] The communicator.
+/// \param recv [out] The buffer into which to receive the object.
+/// \param sourceRank [in] The rank of the sending process.  A
+///   negative source rank means that this will accept an incoming
+///   message from any process on the given communicator.
+///
+/// \note To implementers: A negative source rank is the equivalent of
+///   MPI_ANY_SOURCE, if the given Comm is an MpiComm.
+template<typename Ordinal, typename Packet>
+RCP<CommRequest<Ordinal> > receiveInit(
+  const Comm<Ordinal>& comm,
+  const RCP<Packet> &recv,
+  const int sourceRank
+  );
+
+/** \brief Send objects that use values semantics to another process
+ * using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+RCP<CommRequest<Ordinal> > receiveInit(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  );
+
+
+
 /** \brief Wait for an array of Teuchos::CommRequest objects.
  *
  * Blocks until all communication operations associated with the CommRequest
@@ -766,7 +867,8 @@ RCP<CommRequest<Ordinal> > ireceive(
 template<typename Ordinal>
 void waitAll(
   const Comm<Ordinal>& comm,
-  const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+  const ArrayView<RCP<CommRequest<Ordinal> > > &requests,
+  bool releaseRequests=true
   );
 
 /// \brief Wait on one or more communication requests, and return their statuses.
@@ -802,7 +904,8 @@ template<typename Ordinal>
 void
 waitAll (const Comm<Ordinal>& comm,
          const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-         const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
+         const ArrayView<RCP<CommStatus<Ordinal> > >& statuses,
+         bool releaseRequests=true);
 
 /// \brief Wait on a single communication request, and return its status.
 /// \relates Comm
@@ -830,6 +933,29 @@ waitAll (const Comm<Ordinal>& comm,
 template<typename Ordinal>
 RCP<CommStatus<Ordinal> >
 wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest<Ordinal> > >& request);
+
+/// \brief Start a single communication request.
+/// \relates Comm
+template<typename Ordinal>
+void
+start (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest<Ordinal> > >& request);
+
+/** \brief Start an array of Teuchos::CommRequest objects.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal>
+void startAll(
+  const Comm<Ordinal>& comm,
+  const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+  );
+
+/// \brief Free a single communication request.
+/// \relates Comm
+template<typename Ordinal>
+void
+free (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest<Ordinal> > >& request);
+
 
 //
 // Standard reduction subclasses for objects that use value semantics
@@ -2711,13 +2837,163 @@ Teuchos::ireceive(
   return commRequest;
 }
 
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::sendInit(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: sendInit<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr());
+  RCP<CommRequest<Ordinal> > commRequest = comm.sendInit(
+    charSendBuffer.getCharBufferView(), destRank );
+  set_extra_data( sendBuffer, "buffer", inOutArg(commRequest) );
+  return commRequest;
+}
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::sendInit (const ArrayRCP<const Packet> &sendBuffer,
+                const int destRank,
+                const int tag,
+                const Comm<Ordinal>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::sendInit<" << OrdinalTraits<Ordinal>::name () << ","
+    << TypeNameTraits<Packet>::name () << ">");
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer (sendBuffer.size (), sendBuffer.getRawPtr ());
+  RCP<CommRequest<Ordinal> > commRequest =
+    comm.sendInit (charSendBuffer.getCharBufferView (), destRank, tag);
+  set_extra_data (sendBuffer, "buffer", inOutArg (commRequest));
+  return commRequest;
+}
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::sendInit(
+  const Comm<Ordinal>& comm,
+  const RCP<const Packet> &send,
+  const int destRank
+  )
+{
+  const ArrayRCP<const Packet> sendBuffer =
+    arcpWithEmbeddedObj( send.get(), 0, 1, send, false );
+  // 2008/07/29: rabartl: Above: I need to write a helper function to create
+  // new ArrayRCP object given a single object to copy.
+  return sendInit<Ordinal, Packet>( comm, sendBuffer, destRank );
+}
+
+template<typename Ordinal, typename Packet, typename Serializer>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::sendInit(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: sendInit<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr(), serializer);
+  RCP<CommRequest<Ordinal> > commRequest = comm.sendInit(
+    charSendBuffer.getCharBufferView(), destRank );
+  set_extra_data( sendBuffer, "buffer", inOutArg(commRequest) );
+  return commRequest;
+}
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::receiveInit(
+  const Comm<Ordinal>& comm,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::receiveInit<int, " << "," << TypeNameTraits<Packet>::name () << ">");
+  ValueTypeSerializationBuffer<Ordinal,Packet>
+    charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr());
+  RCP<CommRequest<Ordinal> > commRequest = comm.receiveInit(
+    charRecvBuffer.getCharBufferView(), sourceRank );
+  set_extra_data( recvBuffer, "buffer", inOutArg(commRequest) );
+  return commRequest;
+}
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::receiveInit (const Teuchos::ArrayRCP<Packet> &recvBuffer,
+                   const int sourceRank,
+                   const int tag,
+                   const Teuchos::Comm<Ordinal>& comm)
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::receiveInit<int, " << "," << TypeNameTraits<Packet>::name () << ">");
+  ValueTypeSerializationBuffer<int, Packet>
+    charRecvBuffer (recvBuffer.size (), recvBuffer.getRawPtr ());
+  RCP<CommRequest<int> > commRequest =
+    comm.receiveInit (charRecvBuffer.getCharBufferView (), sourceRank, tag);
+  set_extra_data (recvBuffer, "buffer", inOutArg (commRequest));
+  return commRequest;
+}
+
+template<typename Ordinal, typename Packet>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::receiveInit(
+  const Comm<Ordinal>& comm,
+  const RCP<Packet> &recv,
+  const int sourceRank
+  )
+{
+  const ArrayRCP<Packet> recvBuffer =
+    arcpWithEmbeddedObj( recv.get(), 0, 1, recv, false );
+  // 2008/07/29: rabartl: Above: I need to write a helper function to create
+  // new ArrayRCP object given a single object to copy.
+  return receiveInit<Ordinal, Packet>( comm, recvBuffer, sourceRank );
+}
+
+template<typename Ordinal, typename Packet, typename Serializer>
+Teuchos::RCP<Teuchos::CommRequest<Ordinal> >
+Teuchos::receiveInit(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: receiveInit<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr(), serializer);
+  RCP<CommRequest<Ordinal> > commRequest = comm.receiveInit(
+    charRecvBuffer.getCharBufferView(), sourceRank );
+  set_extra_data( recvBuffer, "buffer", inOutArg(commRequest) );
+  return commRequest;
+}
+
+
 template<typename Ordinal>
 void Teuchos::waitAll(
   const Comm<Ordinal>& comm,
-  const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+  const ArrayView<RCP<CommRequest<Ordinal> > > &requests,
+  bool releaseRequests
   )
 {
-  comm.waitAll(requests);
+  comm.waitAll(requests, releaseRequests);
 }
 
 
@@ -2725,9 +3001,10 @@ template<typename Ordinal>
 void
 Teuchos::waitAll (const Comm<Ordinal>& comm,
                   const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-                  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
+                  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses,
+                  bool releaseRequests)
 {
-  comm.waitAll (requests, statuses);
+  comm.waitAll (requests, statuses, releaseRequests);
 }
 
 
@@ -2737,6 +3014,34 @@ Teuchos::wait (const Comm<Ordinal>& comm,
                const Ptr<RCP<CommRequest<Ordinal> > > &request)
 {
   return comm.wait (request);
+}
+
+
+template<typename Ordinal>
+void
+Teuchos::start (const Comm<Ordinal>& comm,
+                const Ptr<RCP<CommRequest<Ordinal> > > &request)
+{
+  comm.start (request);
+}
+
+
+template<typename Ordinal>
+void Teuchos::startAll(
+  const Comm<Ordinal>& comm,
+  const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+  )
+{
+  comm.startAll(requests);
+}
+
+
+template<typename Ordinal>
+void
+Teuchos::free (const Comm<Ordinal>& comm,
+               const Ptr<RCP<CommRequest<Ordinal> > > &request)
+{
+  comm.free (request);
 }
 
 
