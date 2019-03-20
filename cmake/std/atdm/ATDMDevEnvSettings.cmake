@@ -371,16 +371,23 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
 
 #
-# G) Test Disables
+# G) Package and Test Disables
 #
-# There are some tests that have to be disabled for a braod set of builds
-# for example, if all openmp builds are failing a certain test then it 
+# There are some package tests that have to be disabled for a braod set of
+# builds for example, if all openmp builds are failing a certain test then it
 # makes more sense to disbale it once in this file instead of in every openmp
 # buid's tweaks file
 #
 
-# issue 3638
+# Issue #3638
 ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
+
+# Disable MueLu for all cuda+complex builds for now since there are build
+# errors in the MueLu library that takes out everything downstream that
+# depends on MueLu (see #4599).
+IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
+ENDIF()
 
 #
 # H) ATDM env config install hooks
