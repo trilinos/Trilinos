@@ -281,7 +281,7 @@ int TestMultiLevelPreconditioner(char                        ProblemType[],
  */
 
 void getBasis(Teuchos::RCP<Intrepid::Basis<double,IntrepidFieldContainer > > &basis,
-               const shards::CellTopology & cellTopology,
+               const ShardsCellTopology & cellTopology,
                int order);
 
 /**********************************************************************************/
@@ -523,8 +523,7 @@ int main(int argc, char *argv[]) {
   stk::mesh::Part* const part = metaData.get_part("block_1");
 
   // get the topology of this part
-  //  (stk::mesh::CellTopology is shards::CellTopology)
-  stk::mesh::CellTopology cellType = metaData.get_cell_topology( *part );
+  ShardsCellTopology cellType = metaData.get_cell_topology( *part );
 
   // Get dimensions
   int numNodesPerElem = cellType.getNodeCount();
@@ -1281,7 +1280,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 
 
 void getBasis(Teuchos::RCP<Intrepid::Basis<double,IntrepidFieldContainer > > &basis,
-               const shards::CellTopology & cellTopology,
+               const ShardsCellTopology & cellTopology,
                int order)  {
 
 
