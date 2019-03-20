@@ -154,6 +154,9 @@ class TpetraExport
     //! The target Map used to construct this Export.
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getTargetMap() const;
 
+    //! Set distributor parameters.
+    void setDistributorParameters(const Teuchos::RCP<Teuchos::ParameterList> params) const;
+
 
     //@}
 
