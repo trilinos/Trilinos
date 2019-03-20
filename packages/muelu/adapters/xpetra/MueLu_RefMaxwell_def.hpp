@@ -976,6 +976,57 @@ namespace MueLu {
         Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
 
+    if (parameterList_.isSublist("matvec params"))
+    {
+      RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
+
+      {
+        RCP<const Import> xpImporter = SM_Matrix_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = SM_Matrix_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = D0_Matrix_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = D0_Matrix_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = D0_T_Matrix_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = D0_T_Matrix_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = R11_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = R11_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      {
+        RCP<const Import> xpImporter = P11_->getCrsGraph()->getImporter();
+        if (!xpImporter.is_null())
+          xpImporter->setDistributorParameters(matvecParams);
+        RCP<const Export> xpExporter = P11_->getCrsGraph()->getExporter();
+        if (!xpExporter.is_null())
+          xpExporter->setDistributorParameters(matvecParams);
+      }
+      if (!ImporterH_.is_null())
+        ImporterH_->setDistributorParameters(matvecParams);
+      if (!Importer22_.is_null())
+        Importer22_->setDistributorParameters(matvecParams);
+    }
+
+
     VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }
 

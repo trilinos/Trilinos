@@ -246,6 +246,8 @@ namespace MueLu {
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
       }
+      if (!matvecParams_.is_null())
+        H.SetMatvecParams(matvecParams_);
       // FIXME: Should allow specification of NumVectors on parameterlist
       H.AllocateLevelMultiVectors(1);
       H.describe(H.GetOStream(Runtime0), verbosity_);
@@ -321,6 +323,7 @@ namespace MueLu {
     Teuchos::Array<int>   nullspaceToPrint_;
     Teuchos::Array<int>   coordinatesToPrint_;
     Teuchos::Array<int>   elementToNodeMapsToPrint_;
+    Teuchos::RCP<Teuchos::ParameterList> matvecParams_;
 
     std::map<int, std::vector<keep_pair> > keep_;
 

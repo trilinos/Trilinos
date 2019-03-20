@@ -117,6 +117,14 @@
        <visible>true</visible>
      </parameter>
 
+     <parameter>
+      <name>matvec params</name>
+      <type>\parameterlist</type>
+      <description>Pass parameters to the underlying linear algebra</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </general>
 
   <smoothing_and_coarse>
