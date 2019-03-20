@@ -65,6 +65,9 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"spack-rhel6"* ]] ; then
+  ATDM_HOSTNAME=spack-rhel6
+  ATDM_SYSTEM_NAME=spack-rhel6
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   # This machine has the SEMS modules!
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
