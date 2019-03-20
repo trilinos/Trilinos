@@ -2,8 +2,17 @@
   <Parameter name="Matrix File" type="string" value="FourByFour.mtx"/>
   <ParameterList name="Linear Solver Builder">
     <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="Pseudo Block GMRES">
+            <Parameter name="Convergence Tolerance" type="double" value="1.0e-14"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
     <Parameter name="Preconditioner Type" type="string" value="None"/>
   </ParameterList>
   <ParameterList name="LinearOpWithSolveTester"/>
 </ParameterList>
-
