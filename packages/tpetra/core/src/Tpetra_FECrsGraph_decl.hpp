@@ -73,45 +73,7 @@ namespace Tpetra {
   /// This class has an interface like that of Epetra_CrsGraph, but
   /// also allows insertion of data into nonowned rows, much like
   /// Epetra_FECrsGraph.
-  ///
-  /// \section Tpetra_FECrsGraph_prereq Prerequisites
-  ///
-  /// Before reading the rest of this documentation, it helps to know
-  /// something about the Teuchos memory management classes, in
-  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
-  /// Teuchos::ArrayView.  You should also know a little bit about MPI
-  /// (the Message Passing Interface for distributed-memory
-  /// programming).  You won't have to use MPI directly to use
-  /// CrsGraph, but it helps to be familiar with the general idea of
-  /// distributed storage of data over a communicator.  Finally, you
-  /// should read the documentation of Map.
-  ///
-  /// \section Tpetra_FECrsGraph_local_vs_global Local vs. global indices and nonlocal insertion
-  ///
-  /// Graph entries can be added using either local or global coordinates
-  /// for the indices. The accessors isGloballyIndexed() and
-  /// isLocallyIndexed() indicate whether the indices are currently
-  /// stored as global or local indices. Many of the class methods are
-  /// divided into global and local versions, which differ only in
-  /// whether they accept/return indices in the global or local
-  /// coordinate space. Some of these methods may only be used if the
-  /// graph coordinates are in the appropriate coordinates.  For example,
-  /// getGlobalRowView() returns a View to the indices in global
-  /// coordinates; if the indices are not in global coordinates, then no
-  /// such View can be created.
-  ///
-  /// The global/local distinction does distinguish between operation
-  /// on the global/local graph. Almost all methods operate on the
-  /// local graph, i.e., the rows of the graph associated with the
-  /// local node, per the distribution specified by the row
-  /// map. Access to non-local rows requires performing an explicit
-  /// communication via the import/export capabilities of the CrsGraph
-  /// object; see DistObject. However, the method
-  /// insertGlobalIndices() is an exception to this rule, as non-local
-  /// rows are allowed to be added via the local graph. These rows are
-  /// stored in the local graph and communicated to the appropriate
-  /// node on the next call to globalAssemble() or fillComplete() (the
-  /// latter calls the former).
+
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class Node>
@@ -169,7 +131,7 @@ namespace Tpetra {
     /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -200,7 +162,7 @@ namespace Tpetra {
     /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -234,7 +196,7 @@ namespace Tpetra {
     /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
@@ -267,7 +229,7 @@ namespace Tpetra {
     /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
-    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
     ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
