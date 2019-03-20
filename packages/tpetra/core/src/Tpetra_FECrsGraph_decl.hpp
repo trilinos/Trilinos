@@ -267,31 +267,6 @@ namespace Tpetra {
     //! Activates the owned+shared mode for assembly.  This can only be called once.
     void beginFill();
 
- 
-#if 0 // CMS: Do I need these?
-    /// \brief Resume fill operations.
-    ///
-    /// After calling fillComplete(), resumeFill() must be called
-    /// before initiating any changes to the graph.
-    ///
-    /// resumeFill() may be called repeatedly.
-    ///
-    /// \warning A CrsGraph instance does not currently (as of 23 Jul
-    ///   2017) and never did support arbitrary structure changes
-    ///   after the first fillComplete call on that instance.  The
-    ///   safest thing to do is not to change structure at all after
-    ///   first fillComplete.
-    ///
-    /// \post <tt>isFillActive() == true<tt>
-    /// \post <tt>isFillComplete() == false<tt>
-    ///
-    /// This method must be called collectively (that is, like any MPI
-    /// collective) over all processes in the graph's communicator.
-    void
-    resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params =
-                  Teuchos::null);
-#endif
-
     /// \brief Tell the graph that you are done changing its structure.
     ///
     /// This tells the graph to optimize its data structures for
@@ -369,7 +344,7 @@ namespace Tpetra {
     fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {endFill();}
 
 
-  protected:
+  private:
     /// \brief Migrate data from the owned+shared to the owned graph
     /// Since this is non-unique -> unique, we need a combine mode.
     /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode
@@ -379,9 +354,7 @@ namespace Tpetra {
     /// Precondition: Must be FE_ACTIVE_OWNED mode
     void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
-
-
-  public:  // HAQ
+  public: 
     //! Switches which CrsGraph is active (without migrating data)
     void switchActiveCrsGraph();
     //@}
@@ -390,8 +363,6 @@ namespace Tpetra {
 
     // Common core guts of the constructor (the colMap argument is Teuchos::null if we're globally-indexed)
     void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<const map_type> & ownedPlusSharedColMap, const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-
 
 
     // We forbid assignment (operator=) by declaring this method
