@@ -147,9 +147,12 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
-  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
-  export ATDM_CONFIG_BLAS_LIBS="-mkl"
+#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
+#  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+#  export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LAPACK_ROOT=/usr/lib64/atlas
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
   export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
   if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
     export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
