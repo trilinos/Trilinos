@@ -72,7 +72,14 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -84,7 +91,13 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 }
 #endif // TEST_PARAMETERLIST
@@ -226,10 +239,10 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -389,18 +402,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   // xDot not yet available for Forward Euler.
   //TEST_FLOATING_EQUALITY( xDotSlope,       1.74898, 0.10   );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 1.0038, 1.0e-4 );
-
-  // Calculate the error - use the most temporally refined mesh for
-  // the reference solution.
-  auto ref_solution = solutions[solutions.size()-1];
-  std::vector<double> StepSizeCheck;
-  for (std::size_t i=0; i < (solutions.size()-1); ++i) {
-    auto tmp = solutions[i];
-    Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solution);
-    const double L2norm = Thyra::norm_2(*tmp);
-    StepSizeCheck.push_back(StepSize[i]);
-    xErrorNorm.push_back(L2norm);
-  }
 
   Teuchos::TimeMonitor::summarize();
 }

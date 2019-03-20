@@ -126,6 +126,7 @@
 
         <ParameterList name="Bogacki Shampine Stepper">
             <Parameter name="Stepper Type" type="string" value="Bogacki-Shampine 3(2) Pair"/>
+            <Parameter name="Use FSAL"       type="bool" value="true"/>
             <Parameter name="Use Embedded" type="bool" value="false"/>
         </ParameterList>
 

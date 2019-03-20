@@ -55,6 +55,9 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
@@ -108,14 +111,17 @@
         </ParameterList>
       </ParameterList>
 
-  </ParameterList>
+    </ParameterList>
 
-  <ParameterList name="General IMEX RK">
+    <ParameterList name="General IMEX RK">
 
       <Parameter name="Stepper Type" type="string" value="General Partitioned IMEX RK"/>
       <Parameter name="overall order" type="int" value="2"/>
       <ParameterList name ="IMEX-RK Explicit Stepper">
           <Parameter name="Stepper Type" type="string" value="General ERK"/>
+          <Parameter name="Use FSAL"       type="bool" value="false"/>
+          <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+          <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
           <ParameterList name="Tableau">
               <Parameter name="A" type="string"  
                   value="0.000000000000000 0.000000000000000 0.000000000000000;
@@ -131,6 +137,9 @@
 
       <ParameterList name="IMEX-RK Implicit Stepper">
           <Parameter name="Stepper Type" type="string" value="General DIRK"/>
+          <Parameter name="Use FSAL"       type="bool" value="false"/>
+          <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+          <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
           <ParameterList name="Tableau">
               <Parameter name="A" type="string"  
                   value="0.181818181818182 0.000000000000000 0.000000000000000;
@@ -144,61 +153,62 @@
           </ParameterList>
       </ParameterList>
 
-  <Parameter name="Solver Name"    type="string" value="Default Solver"/>
-  <Parameter name="Zero Initial Guess" type="bool" value="0"/>
-  <ParameterList name="Default Solver">
-      <ParameterList name="NOX">
-          <ParameterList name="Direction">
-              <Parameter name="Method" type="string" value="Newton"/>
-              <ParameterList name="Newton">
-                  <Parameter name="Forcing Term Method" type="string" value="Constant"/>
-                  <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
-              </ParameterList>
-          </ParameterList>
-          <ParameterList name="Line Search">
-              <ParameterList name="Full Step">
-                  <Parameter name="Full Step" type="double" value="1"/>
-              </ParameterList>
-              <Parameter name="Method" type="string" value="Full Step"/>
-          </ParameterList>
-          <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
-          <ParameterList name="Printing">
-              <Parameter name="Output Precision" type="int" value="3"/>
-              <Parameter name="Output Processor" type="int" value="0"/>
-              <ParameterList name="Output Information">
-                  <Parameter name="Error" type="bool" value="1"/>
-                  <Parameter name="Warning" type="bool" value="1"/>
-                  <Parameter name="Outer Iteration" type="bool" value="0"/>
-                  <Parameter name="Parameters" type="bool" value="0"/>
-                  <Parameter name="Details" type="bool" value="0"/>
-                  <Parameter name="Linear Solver Details" type="bool" value="1"/>
-                  <Parameter name="Stepper Iteration" type="bool" value="1"/>
-                  <Parameter name="Stepper Details" type="bool" value="1"/>
-                  <Parameter name="Stepper Parameters" type="bool" value="1"/>
-              </ParameterList>
-          </ParameterList>
-          <ParameterList name="Solver Options">
-              <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
-          </ParameterList>
-          <ParameterList name="Status Tests">
-              <Parameter name="Test Type" type="string" value="Combo"/>
-              <Parameter name="Combo Type" type="string" value="OR"/>
-              <Parameter name="Number of Tests" type="int" value="2"/>
-              <ParameterList name="Test 0">
-                  <Parameter name="Test Type" type="string" value="NormF"/>
-                  <Parameter name="Tolerance" type="double" value="1.0e-8"/>
-              </ParameterList>
-              <ParameterList name="Test 1">
-                  <Parameter name="Test Type" type="string" value="MaxIters"/>
-                  <Parameter name="Maximum Iterations" type="int" value="10"/>
-              </ParameterList>
-          </ParameterList>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+      <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <ParameterList name="Default Solver">
+        <ParameterList name="NOX">
+            <ParameterList name="Direction">
+                <Parameter name="Method" type="string" value="Newton"/>
+                <ParameterList name="Newton">
+                    <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+                    <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+                </ParameterList>
+            </ParameterList>
+            <ParameterList name="Line Search">
+                <ParameterList name="Full Step">
+                    <Parameter name="Full Step" type="double" value="1"/>
+                </ParameterList>
+                <Parameter name="Method" type="string" value="Full Step"/>
+            </ParameterList>
+            <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+            <ParameterList name="Printing">
+                <Parameter name="Output Precision" type="int" value="3"/>
+                <Parameter name="Output Processor" type="int" value="0"/>
+                <ParameterList name="Output Information">
+                    <Parameter name="Error" type="bool" value="1"/>
+                    <Parameter name="Warning" type="bool" value="1"/>
+                    <Parameter name="Outer Iteration" type="bool" value="0"/>
+                    <Parameter name="Parameters" type="bool" value="0"/>
+                    <Parameter name="Details" type="bool" value="0"/>
+                    <Parameter name="Linear Solver Details" type="bool" value="1"/>
+                    <Parameter name="Stepper Iteration" type="bool" value="1"/>
+                    <Parameter name="Stepper Details" type="bool" value="1"/>
+                    <Parameter name="Stepper Parameters" type="bool" value="1"/>
+                </ParameterList>
+            </ParameterList>
+            <ParameterList name="Solver Options">
+                <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+            </ParameterList>
+            <ParameterList name="Status Tests">
+                <Parameter name="Test Type" type="string" value="Combo"/>
+                <Parameter name="Combo Type" type="string" value="OR"/>
+                <Parameter name="Number of Tests" type="int" value="2"/>
+                <ParameterList name="Test 0">
+                    <Parameter name="Test Type" type="string" value="NormF"/>
+                    <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+                </ParameterList>
+                <ParameterList name="Test 1">
+                    <Parameter name="Test Type" type="string" value="MaxIters"/>
+                    <Parameter name="Maximum Iterations" type="int" value="10"/>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
       </ParameterList>
-  </ParameterList>
 
-  </ParameterList>
-
-
+    </ParameterList>
 
   </ParameterList>
 
