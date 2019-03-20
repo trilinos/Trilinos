@@ -55,9 +55,11 @@
 #include "MueLu_TestHelpers_Common.hpp"
 
 // need this to have the ETI defined macros
+#if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
 #include <MueLu_ExplicitInstantiation.hpp>
+#endif 
 
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA)
 #include <TpetraCore_config.h>
 #endif
 
