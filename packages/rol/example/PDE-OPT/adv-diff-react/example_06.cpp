@@ -47,7 +47,7 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include <iostream>
@@ -76,17 +76,25 @@ int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
 
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint = argc - 1;
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
+
   /*** Initialize communicator. ***/
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   ROL::Ptr<const Teuchos::Comm<int>> comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
+    = Tpetra::getDefaultComm();
+  ROL::Ptr<const Teuchos::Comm<int>> serial_comm
     = ROL::makePtr<Teuchos::SerialComm<int>>();
 
-  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   const int myRank = comm->getRank();
-  ROL::Ptr<std::ostream> outStream = ROL::makeStreamPtr( std::cout, (argc > 1) && (myRank==0) );
-
+  if ((iprint > 0) && (myRank == 0)) {
+    outStream = ROL::makePtrFromRef(std::cout);
+  }
+  else {
+    outStream = ROL::makePtrFromRef(bhs);
+  }
   int errorFlag  = 0;
 
   // *** Example body.
@@ -193,7 +201,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** OUTPUT RESULTS ****************************************/
     /*************************************************************************/
-    std::clock_t timer_print = std::clock();
+    //std::clock_t timer_print = std::clock();
     // Output control to file
     if ( myRank == 0 ) {
       std::ofstream zfile;
