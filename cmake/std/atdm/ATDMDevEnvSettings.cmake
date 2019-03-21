@@ -430,10 +430,10 @@ IF (COMMAND INSTALL AND NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
     CACHE STRING
     "Name of env var set to <CMAKE_INSTALL_PREFIX> set in installed script <ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME>." )
   
-  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/load_matching_env.sh.in
-    ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh @ONLY )
+  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/utils/load_matching_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh @ONLY )
   
-  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh
+  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh
     DESTINATION ${CMAKE_INSTALL_PREFIX}
     RENAME ${ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME} )
 
