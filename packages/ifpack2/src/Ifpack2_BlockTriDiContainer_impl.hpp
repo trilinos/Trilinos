@@ -1834,76 +1834,19 @@ namespace Ifpack2 {
       // packed multivector output (or input)
       Unmanaged<vector_type_3d_view> packed_multivector;
       Unmanaged<impl_scalar_type_2d_view> scalar_multivector;
-      impl_scalar_type damping_factor;
 
       template<typename TagType>
       KOKKOS_INLINE_FUNCTION
       void copy_multivectors(const local_ordinal_type &j, 
                              const local_ordinal_type &vi, 
                              const local_ordinal_type &pri, 
-                             const local_ordinal_type &/* nrow */,  
                              const local_ordinal_type &ri0) const {
-        if (TagType::id == 0) { // ToPackedMultiVectorTag
-          for (local_ordinal_type col=0;col<num_vectors;++col) 
-            for (local_ordinal_type i=0;i<blocksize;++i)
-              packed_multivector(pri, i, col)[vi] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
-        } else if (TagType::id > 0) { //ToScalarMultiVector
-          const impl_scalar_type df = damping_factor;
-          for (local_ordinal_type col=0;col<num_vectors;++col) 
-            for (local_ordinal_type i=0;i<blocksize;++i) {
-              impl_scalar_type &y = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
-              const impl_scalar_type yc = packed_multivector(pri, i, col)[vi];
-              if (TagType::id == 1) y  = df*yc;
-              else                  y += df*(yc - y); 
-            }
-        }
-      }
-
-      template<typename TagType>
-      KOKKOS_INLINE_FUNCTION
-      void copy_multivectors_with_norm(const local_ordinal_type &j, 
-                                       const local_ordinal_type &vi, 
-                                       const local_ordinal_type &pri, 
-                                       const local_ordinal_type &/* nrow */,  
-                                       const local_ordinal_type &ri0,
-                                       /* */ magnitude_type *norm) const {
-        if (TagType::id > 0) { //ToScalarMultiVector
-          const impl_scalar_type df = damping_factor;
-          for (local_ordinal_type col=0;col<num_vectors;++col) {
-            const local_ordinal_type offset = col*blocksize;
-            for (local_ordinal_type i=0;i<blocksize;++i) {
-              impl_scalar_type &y = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
-              const impl_scalar_type yc = packed_multivector(pri, i, col)[vi];
-              const impl_scalar_type yd = TagType::id == 1 ? yc : yc - y;
-              const magnitude_type abs_yd = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
-              norm[offset+i] += abs_yd*abs_yd;
-              if (TagType::id == 1) y  = df*yc;
-              else                  y += df*yd; 
-            }
-          }
-        }
+	for (local_ordinal_type col=0;col<num_vectors;++col) 
+	  for (local_ordinal_type i=0;i<blocksize;++i)
+	    packed_multivector(pri, i, col)[vi] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
       }
 
     public:
-
-      // local reduction of norms with runtime array 
-      // this value type and value_count is required for Kokkos
-      typedef magnitude_type value_type[];
-      int value_count;
-
-      KOKKOS_INLINE_FUNCTION
-      void 
-      init(magnitude_type *dst) const {
-        for (int i=0;i<value_count;++i)         
-          dst[i] = Kokkos::reduction_identity<magnitude_type>::sum();
-      }
-
-      KOKKOS_INLINE_FUNCTION
-      void 
-      join(volatile magnitude_type *dst, const volatile magnitude_type *src) const {
-        for (int i=0;i<value_count;++i) 
-          dst[i] += src[i];
-      }          
 
       MultiVectorConverter() = delete;
       MultiVectorConverter(const MultiVectorConverter &b) = default;
@@ -1919,10 +1862,9 @@ namespace Ifpack2 {
           packed_multivector(pmv) {}
 
       // TODO:: modify this routine similar to the team level functions
-      template<typename TagType>
       inline
       void 
-      operator() (const TagType&, const local_ordinal_type &packidx, magnitude_type* const norm = NULL) const {
+      operator() (const local_ordinal_type &packidx) const {
         local_ordinal_type partidx = packptr(packidx);
         local_ordinal_type npacks = packptr(packidx+1) - partidx;
         const local_ordinal_type pri0 = part2packrowidx0(partidx);
@@ -1938,17 +1880,16 @@ namespace Ifpack2 {
           for (;cnt<npacks && j!= nrows[cnt];++cnt);
           npacks = cnt;
           const local_ordinal_type pri = pri0 + j;
-          for (local_ordinal_type v=0;v<npacks;++v) {
-            if (norm == NULL) copy_multivectors<TagType>(j, v, pri, nrows[v], ri0[v]);
-            else              copy_multivectors_with_norm<TagType>(j, v, pri, nrows[v], ri0[v], norm);
-          }
+	  for (local_ordinal_type col=0;col<num_vectors;++col) 
+	    for (local_ordinal_type i=0;i<blocksize;++i)
+	      for (local_ordinal_type v=0;v<npacks;++v) 
+		packed_multivector(pri, i, col)[v] = scalar_multivector(blocksize*lclrow(ri0[v]+j)+i,col);
         }
       }
 
-      template<typename TagType>
       KOKKOS_INLINE_FUNCTION
       void 
-      operator() (const TagType&, const member_type &member, magnitude_type* const norm = NULL) const {
+      operator() (const member_type &member) const {
         const local_ordinal_type packidx = member.league_rank();
         const local_ordinal_type partidx_begin = packptr(packidx);
         const local_ordinal_type npacks = packptr(packidx+1) - partidx_begin;
@@ -1957,111 +1898,45 @@ namespace Ifpack2 {
 	    const local_ordinal_type partidx = partidx_begin + v;
 	    const local_ordinal_type ri0 = part2rowidx0(partidx);
 	    const local_ordinal_type nrows = part2rowidx0(partidx+1) - ri0;
-	    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, nrows), [&](const local_ordinal_type &j) {
-		const local_ordinal_type pri = pri0 + j;
-                if (norm == NULL) copy_multivectors<TagType>(j, v, pri, nrows, ri0);
-                else              copy_multivectors_with_norm<TagType>(j, v, pri, nrows, ri0, norm);
-              });
+	    
+	    if (nrows == 1) {
+	      const local_ordinal_type pri = pri0;
+	      for (local_ordinal_type col=0;col<num_vectors;++col) {
+		Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize), [&](const local_ordinal_type &i) {
+		    packed_multivector(pri, i, col)[v] = scalar_multivector(blocksize*lclrow(ri0)+i,col);
+		  });
+	      }
+	    } else {
+	      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, nrows), [&](const local_ordinal_type &j) {
+		  const local_ordinal_type pri = pri0 + j;
+		  for (local_ordinal_type col=0;col<num_vectors;++col) 
+		    for (local_ordinal_type i=0;i<blocksize;++i)
+		      packed_multivector(pri, i, col)[v] = scalar_multivector(blocksize*lclrow(ri0+j)+i,col);
+		});
+	    }
           });
       }
       
-      struct ToPackedMultiVectorTag       { enum : int { id = 0 }; };
-      struct ToScalarMultiVectorFirstTag  { enum : int { id = 1 }; };
-      struct ToScalarMultiVectorSecondTag { enum : int { id = 2 }; };
-      
       template<typename TpetraLocalViewType>
-      void to_packed_multivector(const TpetraLocalViewType &scalar_multivector_) {
+      void run(const TpetraLocalViewType &scalar_multivector_) {
 #ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::MultiVectorConverter::ToPackedMultiVector");
+        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::MultiVectorConverter");
 #endif
-        value_count = 0;
         scalar_multivector = scalar_multivector_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
 	  const local_ordinal_type vl = vector_length;
-          const Kokkos::TeamPolicy<execution_space,ToPackedMultiVectorTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
           Kokkos::parallel_for
-            ("MultiVectorConverter::TeamPolicy::to_packed_multivector",
-             policy, *this);
+            ("MultiVectorConverter::TeamPolicy", policy, *this);
 #endif
         } else {
 #if defined(__CUDA_ARCH__)
           TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
 #else
-          const Kokkos::RangePolicy<execution_space,ToPackedMultiVectorTag> policy(0, packptr.extent(0) - 1);
+          const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
           Kokkos::parallel_for
-            ("MultiVectorConverter::RangePolicy::to_packed_multivector",
-             policy, *this);
-#endif
-        }
-      }
-      
-      template<typename TpetraLocalViewType>
-      void to_scalar_multivector(const TpetraLocalViewType &scalar_multivector_, 
-                                 const impl_scalar_type &damping_factor_,
-                                 const bool &is_vectors_zero,
-                                 /* */ magnitude_type *norm = NULL) {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::MultiVectorConverter::ToScalarMultiVector");
-#endif
-        scalar_multivector = scalar_multivector_;
-        damping_factor = damping_factor_;
-        if (norm != NULL) {
-          value_count = blocksize*num_vectors;
-          for (int i=0;i<value_count;++i)
-          norm[i] = Kokkos::ArithTraits<magnitude_type>::zero();
-        } else {
-          value_count = 0;
-        }
-        
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
-          // dynamic reduce does not support for vl > 1 
-	  const local_ordinal_type vl = norm == NULL ? vector_length : 1;
-
-          if (is_vectors_zero) {
-            const Kokkos::TeamPolicy
-              <execution_space,ToScalarMultiVectorFirstTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-            if (norm == NULL)  
-              Kokkos::parallel_for
-                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::fist", policy, *this);
-            else               
-              Kokkos::parallel_reduce
-                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::fist_w_norm", policy, *this, norm);
-          } else {
-            const Kokkos::TeamPolicy
-              <execution_space,ToScalarMultiVectorSecondTag> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
-            if (norm == NULL)  
-              Kokkos::parallel_for
-                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::second", policy, *this);
-            else               
-              Kokkos::parallel_reduce
-                ("MultiVectorConverter::TeamPolicy::to_scalar_multivector::second_w_norm", policy, *this, norm);              
-          }
-#endif
-        } else {
-#if defined(__CUDA_ARCH__)        
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code"); 
-#else
-          if (is_vectors_zero) {
-            const Kokkos::RangePolicy
-              <execution_space,ToScalarMultiVectorFirstTag> policy(0, packptr.extent(0) - 1);
-            if (norm == NULL)  
-              Kokkos::parallel_for
-                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::fist", policy, *this);
-            else               
-              Kokkos::parallel_reduce
-                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::fist_w_norm", policy, *this, norm);              
-          } else {
-            const Kokkos::RangePolicy
-              <execution_space,ToScalarMultiVectorSecondTag> policy(0, packptr.extent(0) - 1);
-            if (norm == NULL)  
-              Kokkos::parallel_for
-                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::second", policy, *this);
-            else               
-              Kokkos::parallel_reduce
-                ("MultiVectorConverter::RangePolicy::to_scalar_multivector::second_w_norm", policy, *this, norm);              
-          }
+            ("MultiVectorConverter::RangePolicy", policy, *this);
 #endif
         }
       }
@@ -2235,7 +2110,8 @@ namespace Ifpack2 {
 	  }
 
 	  if (nrows_vals[0] == 1) {
-	    for (local_ordinal_type j=0,pri=pri0;j<nrows_vals[0];++j,++pri) {
+	    const local_ordinal_type j=0, pri=pri0;
+	    {
 	      for (local_ordinal_type vv=vbeg,vi=0;vv<npacks && vi<internal_vector_length;++vv,++vi) {
 		const local_ordinal_type ri0 = ri0_vals[vi];
 		const local_ordinal_type nrows = nrows_vals[vi];
@@ -2259,8 +2135,7 @@ namespace Ifpack2 {
 		}
 	      }
 	    }
-	  } 
-	  else {
+	  } else {
 	    Kokkos::parallel_for
 	      (Kokkos::TeamThreadRange(member, nrows_vals[0]), 
 	       [&](const local_ordinal_type &j) {
@@ -3622,15 +3497,12 @@ namespace Ifpack2 {
         work = vector_type_1d_view("vector workspace 1d view", work_span_required);
 
       // construct copy of Y again if num vectors are different
-      if (static_cast<local_ordinal_type>(Z.getNumVectors()) != num_vectors) 
+      if (Z.getLocalLength() != Y.getLocalLength() ||
+	  Z.getNumVectors()  != Y.getNumVectors()) 
 	Z = tpetra_multivector_type(Y.getMap(), num_vectors, false);
      
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
-      if (is_seq_method_requested) {
-        // construct copy of Y again if num vectors are different
-        //if (static_cast<local_ordinal_type>(Z.getNumVectors()) != num_vectors) 
-        //  Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);
-      } else {
+      if (!is_seq_method_requested) {
         if (is_async_importer_active) {
           // create comm data buffer and keep it here
           async_importer->createDataBuffer(num_vectors);
@@ -3664,7 +3536,7 @@ namespace Ifpack2 {
       for (;sweep<max_num_sweeps;++sweep) {
         if (is_y_zero) {
           // pmv := x(lclrow)
-          multivector_converter.to_packed_multivector(XX);
+          multivector_converter.run(XX);
 	  Kokkos::deep_copy(YY, zero);
         } else {
           if (is_seq_method_requested) {
@@ -3673,7 +3545,7 @@ namespace Ifpack2 {
             compute_residual_vector.run(YY, XX, ZZ);
 
             // pmv := y(lclrow).
-            multivector_converter.to_packed_multivector(YY);
+            multivector_converter.run(YY);
 	    Kokkos::deep_copy(ZZ, zero);
           } else {
             // fused y := x - R y and pmv := y(lclrow); 
