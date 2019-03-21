@@ -187,17 +187,18 @@ do
     cuda_args="$cuda_args $1"
     ;;
   #Handle c++11
-  --std=c++11|-std=c++11|--std=c++14|-std=c++14|--std=c++1y|-std=c++1y|--std=c++17|-std=c++17|--std=c++1z|-std=c++1z)
+  --std=c++11|-std=c++11|--std=c++14|-std=c++14|--std=gnu++14|-std=gnu++14|--std=c++1y|-std=c++1y|--std=c++17|-std=c++17|--std=c++1z|-std=c++1z)
     if [ $stdcxx_applied -eq 1 ]; then
-       echo "nvcc_wrapper - *warning* you have set multiple optimization flags (-std=c++1* or --std=c++1*), only the first is used because nvcc can only accept a single std setting"
-    else
-      if [ "$1" == "--std=c++1z" ] | [ "$1" == "-std=c++1z" ]; then
-        shared_args="$shared_args --std=c++14"
-      else
-        shared_args="$shared_args $1"
-      fi
-      stdcxx_applied=1
+       echo "nvcc_wrapper - *warning* you have set multiple optimization flags (-std=c++1* or --std=c++1*), overriding with the last one used because nvcc can only accept a single std setting"
+       shared_args=`echo $shared_args | sed s/$last_cxx_applied//`
     fi
+    applied=$1
+    if [ "$1" == "--std=gnu++14" ] || [ "$1" == "-std=gnu++14" ] || [ "$1" == "--std=c++1z" ] || [ "$1" == "-std=c++1z" ]; then
+      applied="--std=c++14"
+    fi
+    shared_args="$shared_args $applied"
+    stdcxx_applied=1
+    last_cxx_applied=$applied
     ;;
 
   #strip of -std=c++98 due to nvcc warnings and Tribits will place both -std=c++11 and -std=c++98
