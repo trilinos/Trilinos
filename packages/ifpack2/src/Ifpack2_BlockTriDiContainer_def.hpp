@@ -115,6 +115,7 @@ namespace Ifpack2 {
     impl_->overlap_communication_and_computation = overlapCommAndComp;
     
     impl_->Z = typename impl_type::tpetra_multivector_type();
+    impl_->W = typename impl_type::tpetra_multivector_type();
 
     impl_->part_interface  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(impl_->A, partitions);
     impl_->block_tridiags  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(impl_->part_interface);
@@ -137,6 +138,7 @@ namespace Ifpack2 {
     impl_->async_importer  = Teuchos::null;
 
     impl_->Z = typename impl_type::tpetra_multivector_type();
+    impl_->W = typename impl_type::tpetra_multivector_type();
 
     impl_->part_interface  = part_interface_type();
     impl_->block_tridiags  = block_tridiags_type();
@@ -261,7 +263,7 @@ namespace Ifpack2 {
        impl_->tpetra_importer, 
        impl_->async_importer, 
        impl_->overlap_communication_and_computation,
-       X, Y, impl_->Z,
+       X, Y, impl_->Z, impl_->W,
        impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
        impl_->work,
        impl_->norm_manager,
@@ -320,7 +322,7 @@ namespace Ifpack2 {
          impl_->tpetra_importer, 
          impl_->async_importer,
          impl_->overlap_communication_and_computation,
-         X, Y, impl_->Z,
+         X, Y, impl_->Z, impl_->W,
          impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
          impl_->work,
          impl_->norm_manager,

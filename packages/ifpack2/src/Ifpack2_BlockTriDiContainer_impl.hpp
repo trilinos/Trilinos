@@ -3446,7 +3446,8 @@ namespace Ifpack2 {
                        // tpetra interface
                        const typename ImplType<MatrixType>::tpetra_multivector_type &X,  // tpetra interface
                        /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Y,  // tpetra interface
-                       /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Z,  // temporary tpetra interface
+                       /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Z,  // temporary tpetra interface (seq_method)
+                       /* */ typename ImplType<MatrixType>::tpetra_multivector_type &W,  // temporary tpetra interface (diff)
                        // local object interface
                        const PartInterface<MatrixType> &interf, // mesh interface
                        const BlockTridiags<MatrixType> &btdm, // packed block tridiagonal matrices
@@ -3503,13 +3504,15 @@ namespace Ifpack2 {
       if (work.span() < work_span_required) 
         work = vector_type_1d_view("vector workspace 1d view", work_span_required);
 
-      // construct copy of Y again if num vectors are different
-      if (Z.getLocalLength() != Y.getLocalLength() ||
-	  Z.getNumVectors()  != Y.getNumVectors()) 
-	Z = tpetra_multivector_type(Y.getMap(), num_vectors, false);
+      // construct W
+      if (W.getLocalLength() != Y.getLocalLength() || W.getNumVectors()  != Y.getNumVectors()) 
+	W = tpetra_multivector_type(Y.getMap(), num_vectors, false);
      
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
-      if (!is_seq_method_requested) {
+      if (is_seq_method_requested) {
+	if (Z.getNumVectors() != Y.getNumVectors()) 
+	  Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);                   
+      } else {
         if (is_async_importer_active) {
           // create comm data buffer and keep it here
           async_importer->createDataBuffer(num_vectors);
@@ -3521,7 +3524,8 @@ namespace Ifpack2 {
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
       const auto XX = X.template getLocalView<memory_space>();
       const auto YY = Y.template getLocalView<memory_space>();
-      const auto ZZ = Z.template getLocalView<memory_space>();
+      const auto ZZ = Z.template getLocalView<memory_space>();      
+      const auto WW = W.template getLocalView<memory_space>();
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
       SolveTridiags<MatrixType> solve_tridiags(interf, btdm, pmv, 
@@ -3545,6 +3549,7 @@ namespace Ifpack2 {
           // pmv := x(lclrow)
           multivector_converter.run(XX);
 	  Kokkos::deep_copy(YY, zero);
+	  //Kokkos::deep_copy(WW, zero);
         } else {
           if (is_seq_method_requested) {
             // y := x - R y
@@ -3553,7 +3558,6 @@ namespace Ifpack2 {
 
             // pmv := y(lclrow).
             multivector_converter.run(YY);
-	    Kokkos::deep_copy(ZZ, zero);
           } else {
             // fused y := x - R y and pmv := y(lclrow); 
 	    // real use case does not use overlap comp and comm
@@ -3578,11 +3582,11 @@ namespace Ifpack2 {
 	}
         
         // pmv := inv(D) pmv.
-	solve_tridiags.run(YY, ZZ);
+	solve_tridiags.run(YY, WW);
 	
         if (is_norm_manager_active) {	  
 	  // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-	  ReduceMultiVector<MatrixType>().run(ZZ,blocksize,norm_manager.getBuffer());
+	  ReduceMultiVector<MatrixType>().run(WW,blocksize,norm_manager.getBuffer());
 	  if (sweep + 1 == max_num_sweeps) {
             norm_manager.ireduce(sweep, true);
             norm_manager.checkDone(sweep + 1, tolerance, true);
@@ -3618,6 +3622,7 @@ namespace Ifpack2 {
       
       // copy of Y (mutable to penentrate const)
       mutable typename impl_type::tpetra_multivector_type Z;
+      mutable typename impl_type::tpetra_multivector_type W;
       
       // local objects
       part_interface_type part_interface;
