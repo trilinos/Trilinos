@@ -3222,6 +3222,7 @@ namespace Ifpack2 {
       
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
+      using magnitude_type = typename impl_type::magnitude_type;
       
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; 
 
@@ -3245,7 +3246,8 @@ namespace Ifpack2 {
       }
       
       void run(const impl_scalar_type_2d_view &zz,
-	       impl_scalar_type *vals) {
+	       const local_ordinal_type blocksize,
+	       magnitude_type *vals) {
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
         cudaProfilerStart();
@@ -3266,7 +3268,12 @@ namespace Ifpack2 {
 	  Kokkos::RangePolicy<execution_space,SingleVectorTag> policy(0, nrows);
 	  Kokkos::parallel_reduce("ReduceMultiVector::SingleVetor",
 				  policy, *this, reduced_value);
-	  vals[j] = reduced_value;
+	  /// I don't know why we compute norms element-wisely...
+	  /// SPARC needs to change the interface (compute a norm per rhs)
+	  const magnitude_type norm
+	    = Kokkos::ArithTraits<impl_scalar_type>::abs(reduced_value)/magnitude_type(blocksize ? blocksize : 1);
+	  for (local_ordinal_type i=0;i<blocksize;++i)
+	    vals[j*blocksize+i] = norm;
 	}
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
@@ -3575,7 +3582,7 @@ namespace Ifpack2 {
 	
         if (is_norm_manager_active) {	  
 	  // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-	  ReduceMultiVector<MatrixType>().run(ZZ,norm_manager.getBuffer());
+	  ReduceMultiVector<MatrixType>().run(ZZ,blocksize,norm_manager.getBuffer());
 	  if (sweep + 1 == max_num_sweeps) {
             norm_manager.ireduce(sweep, true);
             norm_manager.checkDone(sweep + 1, tolerance, true);
