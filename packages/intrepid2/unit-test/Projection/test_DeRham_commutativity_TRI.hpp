@@ -260,7 +260,6 @@ int DeRhamCommutativityTri(const bool verbose) {
     degree() {return 5;}
   };
 
-  typedef std::array<ordinal_type,2> edgeType;
   typedef CellTools<DeviceSpaceType> ct;
   typedef OrientationTools<DeviceSpaceType> ots;
   typedef Experimental::ProjectionTools<DeviceSpaceType> pts;
