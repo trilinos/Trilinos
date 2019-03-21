@@ -68,6 +68,19 @@
 
 namespace ROL {
 
+template <class Real>
+struct OptimizationProblemCheckData {
+  std::vector<Real> checkSolutionVector;
+  std::vector<std::vector<Real>> checkGradient;
+  std::vector<std::vector<Real>> checkHessVec;
+  std::vector<Real> checkHessSym;
+  std::vector<Real> checkMultiplierVector;
+  std::vector<std::vector<Real>> checkApplyJacobian;
+  std::vector<std::vector<Real>> checkApplyAdjointJacobian;
+  std::vector<std::vector<Real>> checkApplyAdjointHessian;
+  Real checkAdjointConsistencyJacobian;
+};
+
 /* Represents optimization problems in Type-EB form 
  */
 
@@ -1028,6 +1041,16 @@ public:
                             Vector<Real> &y, // Optimization space
                             Vector<Real> &u, // Optimization space
                             std::ostream &outStream = std::cout ) {
+    OptimizationProblemCheckData<Real> data;
+    checkSolutionVector(data,x,y,u,outStream);
+    
+  }
+
+  void checkSolutionVector( OptimizationProblemCheckData<Real> &data,
+                            Vector<Real> &x, // Optimization space
+                            Vector<Real> &y, // Optimization space
+                            Vector<Real> &u, // Optimization space
+                            std::ostream &outStream = std::cout ) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
@@ -1035,7 +1058,7 @@ public:
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking vector operations in optimization vector space X." << std::endl;
-      x.checkVector(y,u,true,outStream);
+      data.checkSolutionVector = x.checkVector(y,u,true,outStream);
     }
   }
 
@@ -1045,19 +1068,43 @@ public:
                        std::ostream &outStream = std::cout,
                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
                        const int order = 1 ) {
+    OptimizationProblemCheckData<Real> data;
+    checkObjective(data,x,u,v,outStream,numSteps,order);
+  }
+
+  void checkObjective( OptimizationProblemCheckData<Real> &data,
+                       Vector<Real> &x, // Optimization space
+                       Vector<Real> &u, // Optimization space
+                       Vector<Real> &v, // Optimization space
+                       std::ostream &outStream = std::cout,
+                       const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                       const int order = 1 ) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
     if (obj_ != nullPtr) {
-      outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
-
+      outStream << std::endl << "Performing OptimizationProblem diagnostics."
+                << std::endl << std::endl;
       outStream << "Checking objective function." << std::endl;
-      obj_->checkGradient(x,v,true,outStream,numSteps,order); outStream << std::endl;
-      obj_->checkHessVec(x,u,true,outStream,numSteps,order);  outStream << std::endl;
-      obj_->checkHessSym(x,u,v,true,outStream);               outStream << std::endl;}
-}
+      data.checkGradient = obj_->checkGradient(x,v,true,outStream,numSteps,order);
+      outStream << std::endl;
+      data.checkHessVec  = obj_->checkHessVec(x,u,true,outStream,numSteps,order);
+      outStream << std::endl;
+      data.checkHessSym  = obj_->checkHessSym(x,u,v,true,outStream);
+      outStream << std::endl;
+    }
+  }
 
   void checkMultiplierVector( Vector<Real> &w, // Dual constraint space
+                              Vector<Real> &q, // Dual constraint space
+                              Vector<Real> &l, // Dual constraint space
+                              std::ostream &outStream = std::cout ) {
+    OptimizationProblemCheckData<Real> data;
+    checkMultiplierVector(data,w,q,l,outStream);
+  }
+
+  void checkMultiplierVector( OptimizationProblemCheckData<Real> &data,
+                              Vector<Real> &w, // Dual constraint space
                               Vector<Real> &q, // Dual constraint space
                               Vector<Real> &l, // Dual constraint space
                               std::ostream &outStream = std::cout ) {
@@ -1068,11 +1115,24 @@ public:
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking vector operations in constraint multiplier space C*." << std::endl;
-      l.checkVector(q,w,true,outStream);
+      data.checkMultiplierVector = l.checkVector(q,w,true,outStream);
     }
   }
 
   void checkConstraint( Vector<Real> &x, // Optimization space
+                        Vector<Real> &u, // Optimization space
+                        Vector<Real> &v, // Optimization space
+                        Vector<Real> &c, // Constraint space
+                        Vector<Real> &l, // Dual constraint space
+                        std::ostream &outStream = std::cout,
+                        const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+                        const int order = 1 ) {
+    OptimizationProblemCheckData<Real> data;
+    checkConstraint(data,x,u,v,c,l,outStream,numSteps,order);
+  }
+
+  void checkConstraint( OptimizationProblemCheckData<Real> &data,
+                        Vector<Real> &x, // Optimization space
                         Vector<Real> &u, // Optimization space
                         Vector<Real> &v, // Optimization space
                         Vector<Real> &c, // Constraint space
@@ -1087,14 +1147,25 @@ public:
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking equality constraint." << std::endl;
-      con_->checkApplyJacobian(x,v,c,true,outStream,numSteps,order);         outStream << std::endl;
-      con_->checkAdjointConsistencyJacobian(l,u,x,true,outStream);           outStream << std::endl;
-      con_->checkApplyAdjointHessian(x,l,v,u,true,outStream,numSteps,order); outStream << std::endl;  
+      data.checkApplyJacobian = con_->checkApplyJacobian(x,v,c,true,outStream,numSteps,order);
+      outStream << std::endl;
+      data.checkAdjointConsistencyJacobian = con_->checkAdjointConsistencyJacobian(l,u,x,true,outStream);
+      outStream << std::endl;
+      data.checkApplyAdjointHessian = con_->checkApplyAdjointHessian(x,l,v,u,true,outStream,numSteps,order);
+      outStream << std::endl;  
     }
   }
 
   // Check derivatives, and consistency 
   void check( std::ostream &outStream = std::cout,
+              const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
+              const int order = 1 ) {
+    OptimizationProblemCheckData<Real> data;
+    check(data,outStream,numSteps,order);
+  }
+
+  void check( OptimizationProblemCheckData<Real> &data,
+              std::ostream &outStream = std::cout,
               const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
               const int order = 1 ) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
@@ -1108,8 +1179,8 @@ public:
       u = sol_->clone(); u->randomize();
       v = sol_->clone(); v->randomize();
 
-      checkSolutionVector(*x,*y,*u,outStream);
-      checkObjective(*x,*u,*v,outStream,numSteps,order);
+      checkSolutionVector(data,*x,*y,*u,outStream);
+      checkObjective(data,*x,*u,*v,outStream,numSteps,order);
     }
     catch (std::exception &e) {
 //      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::check: Elementwise is not implemented for optimization space vectors");
@@ -1123,8 +1194,8 @@ public:
         w = mul_->clone();        w->randomize();
         q = mul_->clone();        q->randomize();
 
-        checkMultiplierVector(*w,*q,*l,outStream);
-        checkConstraint(*x,*u,*v,*c,*l,outStream,numSteps,order);
+        checkMultiplierVector(data,*w,*q,*l,outStream);
+        checkConstraint(data,*x,*u,*v,*c,*l,outStream,numSteps,order);
       }
       catch (std::exception &e) {
         throw Exception::NotImplemented(">>> ROL::OptimizationProblem::check: Elementwise is not implemented for constraint space vectors");
