@@ -119,7 +119,10 @@ ProjectToFaces(const Teuchos::ParameterList& p)
     this->addDependentField(vector_values[0]);
   }
 
-  this->setName("Project To Faces");
+  if (use_fast_method_on_rectangular_hex_mesh)
+    this->setName("Project To Faces (Fast Rectangular Hex)");
+  else
+    this->setName("Project To Faces");
 }
 
 // **********************************************************************
