@@ -63,8 +63,8 @@ template <class Real>
 class ProbabilityVector : public BatchStdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 public:
-  ProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
-                    const ROL::Ptr<BatchManager<Real> > &bman)
+  ProbabilityVector(const ROL::Ptr<std::vector<Real>> &vec,
+                    const ROL::Ptr<BatchManager<Real>> &bman)
    : BatchStdVector<Real>(vec,bman) {}
 
   const Real getProbability(const int i) const {
