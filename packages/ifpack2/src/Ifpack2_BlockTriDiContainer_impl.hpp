@@ -73,6 +73,8 @@
 #include <KokkosBatched_LU_Serial_Impl.hpp>
 #include <KokkosBatched_LU_Team_Impl.hpp>
 
+#include <KokkosBlas1_nrm1.hpp>
+
 #include <memory>
 
 // need to interface this into cmake variable (or only use this flag when it is necessary)
@@ -208,6 +210,31 @@ namespace Ifpack2 {
         return result_view_type(value);
       }
     };
+
+    enum : bool {
+      EnableProfiler = true,
+      DisableProfiler = false
+    };
+
+#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS)
+#define IFPACK2_BLOCKTRIDICONTAINER_TIMER(label) TEUCHOS_FUNC_TIME_MONITOR(label);
+#else 
+#define IFPACK2_BLOCKTRIDICONTAINER_TIMER(label) 
+#endif
+    
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
+#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(useProfiler,label)	\
+    constexpr bool cudaProfiler = useProfiler;					\
+    if (cudaProfiler == true) { cudaProfilerStart(); }			\
+    IFPACK2_BLOCKTRIDICONTAINER_TIMER(label)    
+#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END	\
+    if (cudaProfiler == true) { cudaProfilerStop(); }
+#else 
+    /// later put vtune profiler region
+#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(useProfiler,label)	\
+    IFPACK2_BLOCKTRIDICONTAINER_TIMER(label)
+#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END    
+#endif
     
     /// 
     /// implementation typedefs
@@ -599,9 +626,8 @@ namespace Ifpack2 {
       }
 
       void asyncSendRecv(const impl_scalar_type_2d_view &mv) {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Setup::AsyncSendRecv");
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::AsyncSendRecv");
+
 #ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
         const local_ordinal_type num_vectors = mv.extent(1);
@@ -637,6 +663,7 @@ namespace Ifpack2 {
           MPI_Iprobe(pids.recv[i], 42, comm, &flag, &stat);
         }
 #endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
 
       void cancel () {
@@ -647,9 +674,8 @@ namespace Ifpack2 {
       }
 
       void syncRecv() {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::Setup::SyncRecv");
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::SyncRecv");
+
 #ifdef HAVE_IFPACK2_MPI
         // receive async.
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
@@ -661,6 +687,7 @@ namespace Ifpack2 {
         // wait on the sends to match all Isends with a cleanup operation.
         waitall(reqs.send.size(), reqs.send.data());
 #endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
 
       void syncExchange(const impl_scalar_type_2d_view &mv) {
@@ -1137,10 +1164,8 @@ namespace Ifpack2 {
                          BlockTridiags<MatrixType> &btdm,
                          AmD<MatrixType> &amd,
                          const bool overlap_communication_and_computation) {
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::SymbolicPhase");
 
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SymbolicPhase");
-#endif
       using impl_type = ImplType<MatrixType>;
       using memory_space = typename impl_type::memory_space;
       using host_execution_space = typename impl_type::host_execution_space;
@@ -1423,6 +1448,7 @@ namespace Ifpack2 {
                                template getValues<memory_space>());
         }
       }
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
     }
     
     ///
@@ -1759,9 +1785,6 @@ namespace Ifpack2 {
       }
 
       void run() {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStart();
-#endif
 	const local_ordinal_type team_size = 
 	  ExtractAndFactorizeTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
 	  recommended_team_size(blocksize, vector_length, internal_vector_length);
@@ -1778,10 +1801,6 @@ namespace Ifpack2 {
 	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run<ExtractAndFactorizeTag>", 
                              policy, *this);
 #endif
-
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStop();
-#endif
       }
     }; 
     
@@ -1794,11 +1813,10 @@ namespace Ifpack2 {
                         const PartInterface<MatrixType> &interf,
                         BlockTridiags<MatrixType> &btdm,
                         const typename ImplType<MatrixType>::magnitude_type tiny) {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NumericPhase");
-#endif
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::NumericPhase");
       ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, tiny);
       function.run();
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
     }
     
     ///
@@ -1848,8 +1866,6 @@ namespace Ifpack2 {
 
     public:
 
-      MultiVectorConverter() = delete;
-      MultiVectorConverter(const MultiVectorConverter &b) = default;
       MultiVectorConverter(const PartInterface<MatrixType> &interf,                    
                            const vector_type_3d_view &pmv) 
         : partptr(interf.partptr),
@@ -1919,9 +1935,8 @@ namespace Ifpack2 {
       
       template<typename TpetraLocalViewType>
       void run(const TpetraLocalViewType &scalar_multivector_) {
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::MultiVectorConverter");
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::MultiVectorConverter");
+
         scalar_multivector = scalar_multivector_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1939,6 +1954,7 @@ namespace Ifpack2 {
             ("MultiVectorConverter::RangePolicy", policy, *this);
 #endif
         }
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
     };
 
@@ -2428,13 +2444,8 @@ namespace Ifpack2 {
 
       void run(const impl_scalar_type_2d_view &Y,
 	       const impl_scalar_type_2d_view &Z) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStart();
-#endif
-
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::SolveTridiags::Run");
-#endif   
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::SolveTridiags::Run");
+	
 	/// set vectors 
 	this->Y_scalar_multivector = Y;
 	this->Z_scalar_multivector = Z;
@@ -2494,12 +2505,9 @@ namespace Ifpack2 {
 	default : BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS( 0);            
 	}
 #undef BLOCKTRIDICONTAINER_DETAILS_SOLVETRIDIAGS
-	
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStop();
-#endif
-      }
 
+        IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;  	
+      }
     }; 
     
     ///
@@ -2993,13 +3001,8 @@ namespace Ifpack2 {
       void run(const MultiVectorLocalViewTypeY &y_, 
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStart();
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ComputeResidual::Run<SeqTag>");
 
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-	TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ComputeResidual::Run<SeqTag>");
-#endif
         y = y_; b = b_; x = x_; 
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -3019,10 +3022,7 @@ namespace Ifpack2 {
             ("ComputeResidual::RangePolicy::run<SeqTag>", policy, *this);
 #endif
         }
-
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStop();
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
 
       // y = b - R (x , x_remote)
@@ -3033,13 +3033,8 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStart();
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ComputeResidual::Run<AsyncTag>");
 
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-	TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ComputeResidual::Run<AsyncTag>");
-#endif
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -3106,9 +3101,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
         }
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStop();
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
       
       // y = b - R (y , y_remote)
@@ -3120,13 +3113,8 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_,
                const bool compute_owned) {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStart();
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ComputeResidual::Run<OverlapTag>");
 
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-	TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ComputeResidual::Run<OverlapTag>");
-#endif
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -3207,9 +3195,7 @@ namespace Ifpack2 {
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
         }
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStop();
-#endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
     }; 
 
@@ -3218,67 +3204,44 @@ namespace Ifpack2 {
     struct ReduceMultiVector {
     public:
       using impl_type = ImplType<MatrixType>;
-      using execution_space = typename impl_type::execution_space;
+      using device_type = typename impl_type::device_type;
+      using host_execution_space = typename impl_type::host_execution_space;
       
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
-      
-      using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; 
 
-    private:
-      Unmanaged<impl_scalar_type_2d_view> z;
-      local_ordinal_type colidx;
+      using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
+      using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; 
       
-    public:
-      ReduceMultiVector()
-	: z(), colidx(0)
-      {}
-      
-      struct SingleVectorTag {};
-      
-      KOKKOS_INLINE_FUNCTION
-      void
-      operator()(const SingleVectorTag &, 
-		 const local_ordinal_type &i, 
-		 impl_scalar_type &update) const {
-	update += z(i,colidx);
-      }
-      
+    public:      
       void run(const impl_scalar_type_2d_view &zz,
 	       const local_ordinal_type blocksize,
 	       magnitude_type *vals) {
-
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStart();
-#endif
-
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ReduceMultiVector::Run");
-#endif   
-
-	this->z = zz;
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ReduceMultiVector::Run");
 
 	const local_ordinal_type nrows = zz.extent(0);
 	const local_ordinal_type ncols = zz.extent(1);
 
-	for (local_ordinal_type j=0;j<ncols;++j) {
-	  this->colidx = j;
-	  impl_scalar_type reduced_value(0);
-	  Kokkos::RangePolicy<execution_space,SingleVectorTag> policy(0, nrows);
-	  Kokkos::parallel_reduce("ReduceMultiVector::SingleVetor",
-				  policy, *this, reduced_value);
-	  /// I don't know why we compute norms element-wisely...
-	  /// SPARC needs to change the interface (compute a norm per rhs)
-	  const magnitude_type norm
-	    = Kokkos::ArithTraits<impl_scalar_type>::abs(reduced_value)/magnitude_type(blocksize ? blocksize : 1);
+	/// currently the norm manager interface asks elementwise norm in a block multi vector
+	/// this is not necessary and we will address this later
+	/// right now evenly distribute the multivector nomr over block entries
+	if (ncols == 1) {
+	  const auto norm = KokkosBlas::nrm1(Kokkos::subview(zz, Kokkos::ALL(), 0))/magnitude_type(blocksize);
 	  for (local_ordinal_type i=0;i<blocksize;++i)
-	    vals[j*blocksize+i] = norm;
+	    vals[i] = norm;
+	} else {	  
+	  Kokkos::View<magnitude_type*,device_type> rv("rv", ncols);
+	  KokkosBlas::nrm1(rv, zz);
+	  const auto rv_host = Kokkos::create_mirror_view_and_copy
+	    (typename host_execution_space::memory_space(), rv);
+	  for (local_ordinal_type j=0;j<ncols;++j) {
+	    const auto norm = rv_host(j)/magnitude_type(blocksize);
+	    for (local_ordinal_type i=0;i<blocksize;++i)
+	      vals[j*blocksize+i] = norm;
+	  }
 	}
-
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-        cudaProfilerStop();
-#endif	
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
     };
     
@@ -3365,11 +3328,9 @@ namespace Ifpack2 {
       // ireduce to complete, then checks the global norm against the tolerance.
       bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
         // early return 
-        if (sweep <= 0) return false;
-
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::NormManager::CheckDone");
-#endif
+        if (sweep <= 0) return false;	
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::NormManager::CheckDone");
+	
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
         if (collective_) {
@@ -3381,6 +3342,7 @@ namespace Ifpack2 {
 # endif
 #endif
         }
+	bool r_val = false;
         const auto n = blocksize_*num_vectors_;
         if (sweep == 1) {
           magnitude_type* const n0 = work_.data() + 2*n;
@@ -3391,7 +3353,6 @@ namespace Ifpack2 {
               mdn0 = std::max(mdn0, dn0[i]);
             n0[v] = mdn0;
           }
-          return false;
         } else {
           const auto n0 = work_.data() + 2*n;
           bool done = true;
@@ -3405,8 +3366,10 @@ namespace Ifpack2 {
               break;
             }
           }
-          return done;
+	  r_val = done;
         }
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+	return r_val;
       }
       
       // After termination has occurred, finalize the norms for use in
@@ -3432,7 +3395,7 @@ namespace Ifpack2 {
       const magnitude_type* getNorms0 () const { return work_.data() + 2*blocksize_*num_vectors_; }
       const magnitude_type* getNormsFinal () const { return work_.data(); }
     };
-
+	
     ///
     /// top level apply interface
     ///
@@ -3460,10 +3423,8 @@ namespace Ifpack2 {
                        const int max_num_sweeps, 
                        const typename ImplType<MatrixType>::magnitude_type tol,
                        const int check_tol_every) { 
-      
-#ifdef HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
-      TEUCHOS_FUNC_TIME_MONITOR("BlockTriDi::ApplyInverseJacobi");
-#endif
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::ApplyInverseJacobi");
+
       using impl_type = ImplType<MatrixType>;
       using memory_space = typename impl_type::memory_space;
 
@@ -3600,7 +3561,9 @@ namespace Ifpack2 {
 
       //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();
-      
+
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+
       return sweep;
     }
 
