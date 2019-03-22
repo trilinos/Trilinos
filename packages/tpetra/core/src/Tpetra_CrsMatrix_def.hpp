@@ -160,6 +160,15 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    if (pftype == DynamicProfile) {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+      #else
+        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    }
+#endif
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
       "ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
@@ -195,6 +204,16 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    if (pftype == DynamicProfile) {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+      #else
+        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    }
+#endif
+
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
@@ -231,6 +250,16 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    if (pftype == DynamicProfile) {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+      #else
+        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    }
+#endif
+
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "size_t, ProfileType[, RCP<ParameterList>]): ";
 
@@ -281,6 +310,16 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    if (pftype == DynamicProfile) {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+      #else
+        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    }
+#endif
+
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
