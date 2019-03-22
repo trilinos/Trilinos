@@ -60,10 +60,13 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
+#include <cstring>
+
 template<typename EvalT,typename Traits>
 panzer::ProjectToFaces<EvalT, Traits>::
-ProjectToFaces(
-  const Teuchos::ParameterList& p)
+ProjectToFaces(const Teuchos::ParameterList& p)
+  : quad_degree(1),
+    use_fast_method_on_rectangular_hex_mesh(false)
 { 
   dof_name = (p.get< std::string >("DOF Name"));
 
@@ -72,10 +75,12 @@ ProjectToFaces(
   else
     basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
  
-  quad_degree = 0;
   if(p.isType<int>("Quadrature Order"))
     quad_degree = p.get<int>("Quadrature Order");
-    
+
+  if(p.isType<bool>("Use Fast Method for Rectangular Hex Mesh"))
+    use_fast_method_on_rectangular_hex_mesh = p.get<bool>("Use Fast Method for Rectangular Hex Mesh");
+
   Teuchos::RCP<PHX::DataLayout> basis_layout  = basis->functional;
   Teuchos::RCP<PHX::DataLayout> vector_layout  = basis->functional_grad;
 
@@ -88,7 +93,7 @@ ProjectToFaces(
   normals = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Normals",vector_layout);
   this->addDependentField(normals);
 
-  if(quad_degree > 0){
+  if(not use_fast_method_on_rectangular_hex_mesh){
     const shards::CellTopology & parentCell = *basis->getCellTopology();                                                                                    
     Intrepid2::DefaultCubatureFactory quadFactory;
     Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > quadRule                    
@@ -106,12 +111,18 @@ ProjectToFaces(
     this->addEvaluatedField(gatherFieldNormals);
 
   } else {
+    TEUCHOS_ASSERT(quad_degree == 1); // One pt quadrature for fast method
+    TEUCHOS_ASSERT(std::strstr(basis->getCellTopology()->getBaseName(),"Hexahedron") != nullptr);
+
     vector_values.resize(1);
     vector_values[0] = PHX::MDField<const ScalarT,Cell,BASIS,Dim>(dof_name+"_Vector",vector_layout);
     this->addDependentField(vector_values[0]);
   }
 
-  this->setName("Project To Faces");
+  if (use_fast_method_on_rectangular_hex_mesh)
+    this->setName("Project To Faces (Fast Rectangular Hex)");
+  else
+    this->setName("Project To Faces");
 }
 
 // **********************************************************************
@@ -145,8 +156,11 @@ evaluateFields(typename Traits::EvalData workset)
   Intrepid2::DefaultCubatureFactory quadFactory;
   Teuchos::RCP< Intrepid2::Cubature<PHX::exec_space,double,double> > faceQuad;
 
-  // One point quadrature if higher order quadrature not requested
-  if (quad_degree == 0){
+  // Fast Method: One point quadrature on hex mesh. Assumes that the
+  // face area can be computed from two edge normals. This is only
+  // true if the mesh is square or rectangular. Will not work for
+  // paved meshes.
+  if (use_fast_method_on_rectangular_hex_mesh){
 
     // Collect the reference face information. For now, do nothing with the quadPts.
     const unsigned num_faces = parentCell.getFaceCount();
@@ -160,7 +174,6 @@ evaluateFields(typename Traits::EvalData workset)
       for (int q=0; q<numQPoints; q++)
         refFaceWt[f] += quadWts(q);
     }
-  
     
     // Loop over the faces of the workset cells.
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {

@@ -55,6 +55,7 @@
     <ParameterList name="Demo Stepper">
 
       <Parameter name="Stepper Type"  type="string" value="Operator Split"/>
+      <Parameter name="Use FSAL"      type="bool"   value="false"/>
       <Parameter name="Minimum Order" type="int"    value="1"/>
       <Parameter name="Order"         type="int"    value="1"/>
       <Parameter name="Maximum Order" type="int"    value="1"/>
@@ -67,6 +68,9 @@
       <ParameterList name="Operator 2">
 
         <Parameter name="Stepper Type"   type="string" value="Backward Euler"/>
+        <Parameter name="Use FSAL"       type="bool" value="false"/>
+        <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+        <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
         <Parameter name="Zero Initial Guess" type="bool" value="0"/>
         <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
 

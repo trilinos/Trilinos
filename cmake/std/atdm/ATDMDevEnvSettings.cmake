@@ -371,16 +371,23 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
 
 #
-# G) Test Disables
+# G) Package and Test Disables
 #
-# There are some tests that have to be disabled for a braod set of builds
-# for example, if all openmp builds are failing a certain test then it 
+# There are some package tests that have to be disabled for a braod set of
+# builds for example, if all openmp builds are failing a certain test then it
 # makes more sense to disbale it once in this file instead of in every openmp
 # buid's tweaks file
 #
 
-# issue 3638
+# Issue #3638
 ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
+
+# Disable MueLu for all cuda+complex builds for now since there are build
+# errors in the MueLu library that takes out everything downstream that
+# depends on MueLu (see #4599).
+IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
+ENDIF()
 
 #
 # H) ATDM env config install hooks
@@ -389,7 +396,7 @@ ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
 # else!
 #
 
-IF (COMMAND INSTALL)
+IF (COMMAND INSTALL AND NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
 
   IF (NOT "$ENV{ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX}" STREQUAL "")
     ATDM_SET_CACHE_FORCE(CMAKE_INSTALL_PREFIX
@@ -423,10 +430,10 @@ IF (COMMAND INSTALL)
     CACHE STRING
     "Name of env var set to <CMAKE_INSTALL_PREFIX> set in installed script <ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME>." )
   
-  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/load_matching_env.sh.in
-    ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh @ONLY )
+  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/utils/load_matching_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh @ONLY )
   
-  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh
+  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh
     DESTINATION ${CMAKE_INSTALL_PREFIX}
     RENAME ${ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME} )
 

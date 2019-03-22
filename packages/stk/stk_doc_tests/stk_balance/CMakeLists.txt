@@ -40,6 +40,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_balance_doc_tester
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1-4
