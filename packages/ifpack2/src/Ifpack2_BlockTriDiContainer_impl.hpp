@@ -85,6 +85,11 @@
 #include "cuda_profiler_api.h"
 #endif
 
+// I am not 100% sure about the mpi 3 on cuda
+#if MPI_VERSION >= 3
+#define IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3
+#endif
+
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
@@ -3202,7 +3207,6 @@ namespace Ifpack2 {
       
     public:      
       void run(const impl_scalar_type_2d_view &zz,
-	       const local_ordinal_type blocksize,
 	       magnitude_type *vals) {
 	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");	
 	const local_ordinal_type nrows = zz.extent(0);
@@ -3223,10 +3227,9 @@ namespace Ifpack2 {
 	    update += val*val;
 	  }, norm2);
 #endif	
-	const auto norm = norm2*norm2/magnitude_type(blocksize*ncols);
-	for (local_ordinal_type j=0;j<ncols;++j) 
-	  for (local_ordinal_type i=0;i<blocksize;++i)
-	    vals[j*blocksize+i] = norm;
+	const auto norm = norm2*norm2/magnitude_type(ncols);
+	for (local_ordinal_type j=0;j<ncols;++j) vals[j] = norm;
+
 	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
     };
@@ -3242,7 +3245,7 @@ namespace Ifpack2 {
 
     private:
       bool collective_;
-      int sweep_step_, blocksize_, num_vectors_;
+      int sweep_step_, num_vectors_;
 #ifdef HAVE_IFPACK2_MPI
       MPI_Request mpi_request_;
       MPI_Comm comm_;
@@ -3254,7 +3257,6 @@ namespace Ifpack2 {
       NormManager(const NormManager &b) = default;
       NormManager(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
         sweep_step_ = 1;
-        blocksize_ = 0;
         num_vectors_ = 0;
 
         collective_ = comm->getSize() > 1;
@@ -3267,19 +3269,17 @@ namespace Ifpack2 {
         }
       }
 
-      int getBlocksize() const { return blocksize_; }
       int getNumVectors() const { return num_vectors_; }
 
       // Resize the buffer to accommodate nvec vectors in the multivector, for a
       // matrix having block size block_size.
-      void resize(const int& blocksize, const int& num_vectors) {
-        blocksize_ = blocksize;
+      void resize(const int num_vectors) {
         num_vectors_ = num_vectors;
-        work_.resize((2*blocksize_ + 1)*num_vectors_);
+        work_.resize(3*num_vectors_); // reduced values, tmp for comm, previous values
       }
       
       // Check the norm every sweep_step sweeps.
-      void setCheckFrequency(const int& sweep_step) {
+      void setCheckFrequency(const int sweep_step) {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(sweep_step < 1, "sweep step must be >= 1");
         sweep_step_ = sweep_step;
       }
@@ -3288,18 +3288,22 @@ namespace Ifpack2 {
       magnitude_type* getBuffer() { return work_.data(); }
 
       // Call MPI_Iallreduce to find the global squared norms.
-      void ireduce(const int& sweep, const bool force = false) {
+      void ireduce(const int sweep, const bool force = false) {
         if ( ! force && sweep % sweep_step_) return;
-        const int n = blocksize_*num_vectors_;
+
+	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::ireduce");
+        const int n = num_vectors_;
+	auto send_data = work_.data() + n;
+	auto recv_data = work_.data();
         if (collective_) {
-          std::copy(work_.begin(), work_.begin() + n, work_.begin() + n);
+          std::copy(recv_data, send_data, send_data);
 #ifdef HAVE_IFPACK2_MPI
-# if MPI_VERSION >= 3
-          MPI_Iallreduce(work_.data() + n, work_.data(), n,
+# if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3) 
+          MPI_Iallreduce(send_data, recv_data, n,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_, &mpi_request_);
 # else
-          MPI_Allreduce (work_.data() + n, work_.data(), n,
+          MPI_Allreduce (send_data, recv_data, n,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_);
 # endif
@@ -3312,17 +3316,17 @@ namespace Ifpack2 {
       // being checked, this function immediately returns false. If a check must
       // be done at this iteration, it waits for the reduction triggered by
       // ireduce to complete, then checks the global norm against the tolerance.
-      bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
+      bool checkDone (const int sweep, const magnitude_type tol2, const bool force = false) {
         // early return 
         if (sweep <= 0) return false;	
-
+	
 	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::CheckDone");
 	
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
         if (collective_) {
 #ifdef HAVE_IFPACK2_MPI
-# if MPI_VERSION >= 3
+# if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3) 
           MPI_Wait(&mpi_request_, MPI_STATUS_IGNORE);
 # else
           // Do nothing.
@@ -3330,24 +3334,15 @@ namespace Ifpack2 {
 #endif
         }
 	bool r_val = false;
-        const auto n = blocksize_*num_vectors_;
+        const auto n = num_vectors_;
         if (sweep == 1) {
-          magnitude_type* const n0 = work_.data() + 2*n;
-          for (int v = 0; v < num_vectors_; ++v) {
-            const magnitude_type* const dn0 = work_.data() + v*blocksize_;
-            magnitude_type mdn0 = 0;
-            for (int i = 0; i < blocksize_; ++i)
-              mdn0 = std::max(mdn0, dn0[i]);
-            n0[v] = mdn0;
-          }
+          std::copy(work_.data(), work_.data()+n, work_.data()+2*n);
         } else {
           const auto n0 = work_.data() + 2*n;
           bool done = true;
           for (int v = 0; v < num_vectors_; ++v) {
-            const magnitude_type* const dnf = work_.data() + v*blocksize_;
-            magnitude_type mdnf = 0;
-            for (int i = 0; i < blocksize_; ++i)
-              mdnf = std::max(mdnf, dnf[i]);
+	    work_[v];
+            const magnitude_type mdnf = work_[v];
             if (mdnf > tol2*n0[v]) {
               done = false;
               break;
@@ -3361,24 +3356,15 @@ namespace Ifpack2 {
       // After termination has occurred, finalize the norms for use in
       // get_norms{0,final}.
       void finalize () {
+        magnitude_type* const nf = work_.data() + 2*num_vectors_;
         for (int v = 0; v < num_vectors_; ++v) {
-          const magnitude_type* const dnf = work_.data() + v*blocksize_;
-          magnitude_type mdnf = 0;
-          for (int i = 0; i < blocksize_; ++i)
-            mdnf = std::max(mdnf, dnf[i]);
-          // This overwrites the receive buffer, but that's OK; at the time of
-          // this write, we no longer need the data in this slot.
-          work_[v] = mdnf;
-        }
-        for (int i = 0; i < num_vectors_; ++i)
-          work_[i] = std::sqrt(work_[i]);
-        magnitude_type* const nf = work_.data() + 2*blocksize_*num_vectors_;
-        for (int v = 0; v < num_vectors_; ++v)
-          nf[v] = std::sqrt(nf[v]);
+          work_[v] = std::sqrt(work_[v]); // after converged
+          nf[v] = std::sqrt(nf[v]); // first norm 
+	}
       }
       
       // Report norms to the caller.
-      const magnitude_type* getNorms0 () const { return work_.data() + 2*blocksize_*num_vectors_; }
+      const magnitude_type* getNorms0 () const { return work_.data() + 2*num_vectors_; }
       const magnitude_type* getNormsFinal () const { return work_.data(); }
     };
 	
@@ -3460,15 +3446,20 @@ namespace Ifpack2 {
 	W = impl_scalar_type_1d_view("W", Y_size);
      
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
-      if (is_seq_method_requested) {
-	if (Z.getNumVectors() != Y.getNumVectors()) 
-	  Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);                   
-      } else {
-        if (is_async_importer_active) {
-          // create comm data buffer and keep it here
-          async_importer->createDataBuffer(num_vectors);
-          remote_multivector = async_importer->getRemoteMultiVectorLocalView();
-        }
+      {
+	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_0");
+	if (is_seq_method_requested) {
+	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_0_0");
+	  if (Z.getNumVectors() != Y.getNumVectors()) 
+	    Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);                   
+	} else {
+	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_0_1");
+	  if (is_async_importer_active) {
+	    // create comm data buffer and keep it here
+	    async_importer->createDataBuffer(num_vectors);
+	    remote_multivector = async_importer->getRemoteMultiVectorLocalView();
+	  }
+	}
       }
 
       // wrap the workspace with 3d view
@@ -3484,24 +3475,27 @@ namespace Ifpack2 {
 
       const local_ordinal_type_1d_view dummy_local_ordinal_type_1d_view;
       ComputeResidualVector<MatrixType> 
-        compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf, 
-                                is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
+	compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf, 
+				is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
       
       // norm manager workspace resize
       if (is_norm_manager_active) {
-        norm_manager.resize(blocksize, num_vectors);
-        norm_manager.setCheckFrequency(check_tol_every);
-      }
+	norm_manager.resize(num_vectors);
+	norm_manager.setCheckFrequency(check_tol_every);
+      }       
 
       // iterate
       int sweep = 0;
       for (;sweep<max_num_sweeps;++sweep) {
         if (is_y_zero) {
+	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1");
           // pmv := x(lclrow)
           multivector_converter.run(XX);
 	  Kokkos::deep_copy(YY, zero);
         } else {
+	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_2");
           if (is_seq_method_requested) {
+	    IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_2_0");
             // y := x - R y
             Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
             compute_residual_vector.run(YY, XX, ZZ);
@@ -3509,6 +3503,7 @@ namespace Ifpack2 {
             // pmv := y(lclrow).
             multivector_converter.run(YY);
           } else {
+	    IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_2_1");
             // fused y := x - R y and pmv := y(lclrow); 
 	    // real use case does not use overlap comp and comm
             if (overlap_communication_and_computation || !is_async_importer_active) {
@@ -3536,7 +3531,7 @@ namespace Ifpack2 {
 	
         if (is_norm_manager_active) {	  
 	  // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-	  ReduceMultiVector<MatrixType>().run(WW,blocksize,norm_manager.getBuffer());
+	  ReduceMultiVector<MatrixType>().run(WW, norm_manager.getBuffer());
 	  if (sweep + 1 == max_num_sweeps) {
             norm_manager.ireduce(sweep, true);
             norm_manager.checkDone(sweep + 1, tolerance, true);
@@ -3547,6 +3542,7 @@ namespace Ifpack2 {
 
         is_y_zero = false;
       }
+      
 
       //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();
