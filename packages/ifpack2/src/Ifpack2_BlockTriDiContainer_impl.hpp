@@ -74,6 +74,7 @@
 #include <KokkosBatched_LU_Team_Impl.hpp>
 
 #include <KokkosBlas1_nrm1.hpp>
+#include <KokkosBlas1_nrm2.hpp>
 
 #include <memory>
 
@@ -2133,11 +2134,8 @@ namespace Ifpack2 {
 			const impl_scalar_type yd = X_internal_vector_values(pri, i, col, v)[vi] - y;
 			y  += df*yd;
 			
-			if (compute_diff) {
-			  impl_scalar_type &z = Z_scalar_multivector(row,col);
-			  const magnitude_type abs_yd = Kokkos::ArithTraits<impl_scalar_type>::abs(yd); 
-			  z = abs_yd*abs_yd;
-			}
+			if (compute_diff) 
+			  Z_scalar_multivector(row,col) = yd;
 		      }
 		    });
 		}
@@ -2159,11 +2157,8 @@ namespace Ifpack2 {
 	  		const impl_scalar_type yd = X_internal_vector_values(pri, i, col, v)[vi] - y;
 	  		y += df*yd;
 
-			if (compute_diff) {
-			  impl_scalar_type &z = Z_scalar_multivector(row,col);
-			  const magnitude_type abs_yd = Kokkos::ArithTraits<impl_scalar_type>::abs(yd); 
-			  z = abs_yd*abs_yd;
-			}
+			if (compute_diff) 
+			  Z_scalar_multivector(row,col) = yd;
 	  	      }
 	  	    }
 	  	  }
@@ -3196,8 +3191,7 @@ namespace Ifpack2 {
     struct ReduceMultiVector {
     public:
       using impl_type = ImplType<MatrixType>;
-      using device_type = typename impl_type::device_type;
-      using host_execution_space = typename impl_type::host_execution_space;
+      using execution_space = typename impl_type::execution_space;
       
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
@@ -3210,29 +3204,29 @@ namespace Ifpack2 {
       void run(const impl_scalar_type_2d_view &zz,
 	       const local_ordinal_type blocksize,
 	       magnitude_type *vals) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");
-
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");	
 	const local_ordinal_type nrows = zz.extent(0);
 	const local_ordinal_type ncols = zz.extent(1);
 
-	/// currently the norm manager interface asks elementwise norm in a block multi vector
-	/// this is not necessary and we will address this later
-	/// right now evenly distribute the multivector nomr over block entries
-	if (ncols == 1) {
-	  const auto norm = KokkosBlas::nrm1(Kokkos::subview(zz, Kokkos::ALL(), 0))/magnitude_type(blocksize);
+	impl_scalar_type_1d_view rz(zz.data(), nrows*ncols);
+#if 0
+	// this is expensive when I use cublas with uvm memory...
+	// no clue yet.
+	const auto norm2 = KokkosBlas::nrm2(rz);
+#else
+        const Kokkos::RangePolicy<execution_space> policy(0,rz.extent(0));
+	magnitude_type norm2;
+	Kokkos::parallel_reduce
+	  (" ReduceMultiVector",
+	   policy, KOKKOS_LAMBDA(const local_ordinal_type &i, magnitude_type &update) {
+	    const magnitude_type val = Kokkos::ArithTraits<impl_scalar_type>::abs(rz(i));
+	    update += val*val;
+	  }, norm2);
+#endif	
+	const auto norm = norm2*norm2/magnitude_type(blocksize*ncols);
+	for (local_ordinal_type j=0;j<ncols;++j) 
 	  for (local_ordinal_type i=0;i<blocksize;++i)
-	    vals[i] = norm;
-	} else {	  
-	  Kokkos::View<magnitude_type*,device_type> rv("rv", ncols);
-	  KokkosBlas::nrm1(rv, zz);
-	  const auto rv_host = Kokkos::create_mirror_view_and_copy
-	    (typename host_execution_space::memory_space(), rv);
-	  for (local_ordinal_type j=0;j<ncols;++j) {
-	    const auto norm = rv_host(j)/magnitude_type(blocksize);
-	    for (local_ordinal_type i=0;i<blocksize;++i)
-	      vals[j*blocksize+i] = norm;
-	  }
-	}
+	    vals[j*blocksize+i] = norm;
 	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
     };
@@ -3402,7 +3396,7 @@ namespace Ifpack2 {
                        const typename ImplType<MatrixType>::tpetra_multivector_type &X,  // tpetra interface
                        /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Y,  // tpetra interface
                        /* */ typename ImplType<MatrixType>::tpetra_multivector_type &Z,  // temporary tpetra interface (seq_method)
-                       /* */ typename ImplType<MatrixType>::tpetra_multivector_type &W,  // temporary tpetra interface (diff)
+                       /* */ typename ImplType<MatrixType>::impl_scalar_type_1d_view &W,  // temporary tpetra interface (diff)
                        // local object interface
                        const PartInterface<MatrixType> &interf, // mesh interface
                        const BlockTridiags<MatrixType> &btdm, // packed block tridiagonal matrices
@@ -3428,6 +3422,9 @@ namespace Ifpack2 {
       using vector_type_1d_view = typename impl_type::vector_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using tpetra_multivector_type = typename impl_type::tpetra_multivector_type;
+
+      using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view;
+      using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
 
       // either tpetra importer or async importer must be active
       TEUCHOS_TEST_FOR_EXCEPT_MSG(!tpetra_importer.is_null() && !async_importer.is_null(), 
@@ -3458,8 +3455,9 @@ namespace Ifpack2 {
         work = vector_type_1d_view("vector workspace 1d view", work_span_required);
 
       // construct W
-      if (W.getLocalLength() != Y.getLocalLength() || W.getNumVectors()  != Y.getNumVectors()) 
-	W = tpetra_multivector_type(Y.getMap(), num_vectors, false);
+      const size_type Y_size = Y.getLocalLength()*Y.getNumVectors();
+      if (size_type(W.extent(0)) < Y_size)
+	W = impl_scalar_type_1d_view("W", Y_size);
      
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
       if (is_seq_method_requested) {
@@ -3478,7 +3476,7 @@ namespace Ifpack2 {
       const auto XX = X.template getLocalView<memory_space>();
       const auto YY = Y.template getLocalView<memory_space>();
       const auto ZZ = Z.template getLocalView<memory_space>();      
-      const auto WW = W.template getLocalView<memory_space>();
+      impl_scalar_type_2d_view WW(W.data(), Y.getLocalLength(), Y.getNumVectors());
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
       SolveTridiags<MatrixType> solve_tridiags(interf, btdm, pmv, 
@@ -3502,7 +3500,6 @@ namespace Ifpack2 {
           // pmv := x(lclrow)
           multivector_converter.run(XX);
 	  Kokkos::deep_copy(YY, zero);
-	  //Kokkos::deep_copy(WW, zero);
         } else {
           if (is_seq_method_requested) {
             // y := x - R y
@@ -3575,7 +3572,7 @@ namespace Ifpack2 {
       
       // copy of Y (mutable to penentrate const)
       mutable typename impl_type::tpetra_multivector_type Z;
-      mutable typename impl_type::tpetra_multivector_type W;
+      mutable typename impl_type::impl_scalar_type_1d_view W;
       
       // local objects
       part_interface_type part_interface;

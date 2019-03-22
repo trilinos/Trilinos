@@ -115,7 +115,7 @@ namespace Ifpack2 {
     impl_->overlap_communication_and_computation = overlapCommAndComp;
     
     impl_->Z = typename impl_type::tpetra_multivector_type();
-    impl_->W = typename impl_type::tpetra_multivector_type();
+    impl_->W = typename impl_type::impl_scalar_type_1d_view();
 
     impl_->part_interface  = BlockTriDiContainerDetails::createPartInterface<MatrixType>(impl_->A, partitions);
     impl_->block_tridiags  = BlockTriDiContainerDetails::createBlockTridiags<MatrixType>(impl_->part_interface);
@@ -138,7 +138,7 @@ namespace Ifpack2 {
     impl_->async_importer  = Teuchos::null;
 
     impl_->Z = typename impl_type::tpetra_multivector_type();
-    impl_->W = typename impl_type::tpetra_multivector_type();
+    impl_->W = typename impl_type::impl_scalar_type_1d_view();
 
     impl_->part_interface  = part_interface_type();
     impl_->block_tridiags  = block_tridiags_type();
