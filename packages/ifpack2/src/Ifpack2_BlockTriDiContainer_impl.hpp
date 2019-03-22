@@ -211,11 +211,6 @@ namespace Ifpack2 {
       }
     };
 
-    enum : bool {
-      EnableProfiler = true,
-      DisableProfiler = false
-    };
-
 #if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS)
 #define IFPACK2_BLOCKTRIDICONTAINER_TIMER(label) TEUCHOS_FUNC_TIME_MONITOR(label);
 #else 
@@ -223,15 +218,14 @@ namespace Ifpack2 {
 #endif
     
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
-#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(useProfiler,label)	\
-    constexpr bool cudaProfiler = useProfiler;					\
-    if (cudaProfiler == true) { cudaProfilerStart(); }			\
+#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(label) \
+    cudaProfilerStart();					 \
     IFPACK2_BLOCKTRIDICONTAINER_TIMER(label)    
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END	\
-    if (cudaProfiler == true) { cudaProfilerStop(); }
+    { cudaProfilerStop(); }
 #else 
     /// later put vtune profiler region
-#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(useProfiler,label)	\
+#define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(label)	\
     IFPACK2_BLOCKTRIDICONTAINER_TIMER(label)
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END    
 #endif
@@ -626,7 +620,7 @@ namespace Ifpack2 {
       }
 
       void asyncSendRecv(const impl_scalar_type_2d_view &mv) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::AsyncSendRecv");
+	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncSendRecv");
 
 #ifdef HAVE_IFPACK2_MPI
         // constants and reallocate data buffers if necessary
@@ -663,7 +657,6 @@ namespace Ifpack2 {
           MPI_Iprobe(pids.recv[i], 42, comm, &flag, &stat);
         }
 #endif
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
 
       void cancel () {
@@ -674,8 +667,7 @@ namespace Ifpack2 {
       }
 
       void syncRecv() {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::SyncRecv");
-
+	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::SyncRecv");
 #ifdef HAVE_IFPACK2_MPI
         // receive async.
         for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
@@ -687,7 +679,6 @@ namespace Ifpack2 {
         // wait on the sends to match all Isends with a cleanup operation.
         waitall(reqs.send.size(), reqs.send.data());
 #endif
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
 
       void syncExchange(const impl_scalar_type_2d_view &mv) {
@@ -1164,7 +1155,7 @@ namespace Ifpack2 {
                          BlockTridiags<MatrixType> &btdm,
                          AmD<MatrixType> &amd,
                          const bool overlap_communication_and_computation) {
-      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::SymbolicPhase");
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::SymbolicPhase");
 
       using impl_type = ImplType<MatrixType>;
       using memory_space = typename impl_type::memory_space;
@@ -1448,7 +1439,6 @@ namespace Ifpack2 {
                                template getValues<memory_space>());
         }
       }
-      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
     }
     
     ///
@@ -1785,6 +1775,7 @@ namespace Ifpack2 {
       }
 
       void run() {
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ExtractAdnFactorize");
 	const local_ordinal_type team_size = 
 	  ExtractAndFactorizeTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
 	  recommended_team_size(blocksize, vector_length, internal_vector_length);
@@ -1801,7 +1792,9 @@ namespace Ifpack2 {
 	Kokkos::parallel_for("ExtractAndFactorize::TeamPolicy::run<ExtractAndFactorizeTag>", 
                              policy, *this);
 #endif
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
       }
+      
     }; 
     
     ///
@@ -1813,10 +1806,9 @@ namespace Ifpack2 {
                         const PartInterface<MatrixType> &interf,
                         BlockTridiags<MatrixType> &btdm,
                         const typename ImplType<MatrixType>::magnitude_type tiny) {
-      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::NumericPhase");
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NumericPhase");
       ExtractAndFactorizeTridiags<MatrixType> function(btdm, interf, A, tiny);
       function.run();
-      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
     }
     
     ///
@@ -1935,7 +1927,7 @@ namespace Ifpack2 {
       
       template<typename TpetraLocalViewType>
       void run(const TpetraLocalViewType &scalar_multivector_) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::MultiVectorConverter");
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::MultiVectorConverter");
 
         scalar_multivector = scalar_multivector_;
         if (is_cuda<execution_space>::value) {
@@ -2444,7 +2436,7 @@ namespace Ifpack2 {
 
       void run(const impl_scalar_type_2d_view &Y,
 	       const impl_scalar_type_2d_view &Z) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::SolveTridiags::Run");
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::SolveTridiags");
 	
 	/// set vectors 
 	this->Y_scalar_multivector = Y;
@@ -3001,7 +2993,7 @@ namespace Ifpack2 {
       void run(const MultiVectorLocalViewTypeY &y_, 
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ComputeResidual::Run<SeqTag>");
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ComputeResidual::<SeqTag>");
 
         y = y_; b = b_; x = x_; 
         if (is_cuda<execution_space>::value) {
@@ -3033,7 +3025,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeB &b_, 
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ComputeResidual::Run<AsyncTag>");
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ComputeResidual::<AsyncTag>");
 
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
@@ -3113,7 +3105,7 @@ namespace Ifpack2 {
                const MultiVectorLocalViewTypeX &x_,
                const MultiVectorLocalViewTypeX_Remote &x_remote_,
                const bool compute_owned) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ComputeResidual::Run<OverlapTag>");
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ComputeResidual::<OverlapTag>");
 
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
@@ -3218,7 +3210,7 @@ namespace Ifpack2 {
       void run(const impl_scalar_type_2d_view &zz,
 	       const local_ordinal_type blocksize,
 	       magnitude_type *vals) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(EnableProfiler,"BlockTriDi::ReduceMultiVector::Run");
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");
 
 	const local_ordinal_type nrows = zz.extent(0);
 	const local_ordinal_type ncols = zz.extent(1);
@@ -3329,7 +3321,8 @@ namespace Ifpack2 {
       bool checkDone (const int& sweep, const magnitude_type& tol2, const bool force = false) {
         // early return 
         if (sweep <= 0) return false;	
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::NormManager::CheckDone");
+
+	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::CheckDone");
 	
         TEUCHOS_ASSERT(sweep >= 1);
         if ( ! force && (sweep - 1) % sweep_step_) return false;
@@ -3368,7 +3361,6 @@ namespace Ifpack2 {
           }
 	  r_val = done;
         }
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
 	return r_val;
       }
       
@@ -3423,7 +3415,7 @@ namespace Ifpack2 {
                        const int max_num_sweeps, 
                        const typename ImplType<MatrixType>::magnitude_type tol,
                        const int check_tol_every) { 
-      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN(DisableProfiler,"BlockTriDi::ApplyInverseJacobi");
+      IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi");
 
       using impl_type = ImplType<MatrixType>;
       using memory_space = typename impl_type::memory_space;
@@ -3561,8 +3553,6 @@ namespace Ifpack2 {
 
       //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();
-
-      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
 
       return sweep;
     }
