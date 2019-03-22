@@ -518,7 +518,11 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                size_t maxNumEntriesPerRow,
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
                ProfileType pftype = DynamicProfile,
+#else
+	       ProfileType pftype = StaticProfile,
+#endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
@@ -540,7 +544,11 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
                ProfileType pftype = DynamicProfile,
+#else
+	       ProfileType pftype = StaticProfile,
+#endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
@@ -568,7 +576,11 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                size_t maxNumEntriesPerRow,
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
                ProfileType pftype = DynamicProfile,
+#else
+	       ProfileType pftype = StaticProfile,
+#endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -596,7 +608,11 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
                ProfileType pftype = DynamicProfile,
+#else
+	       ProfileType pftype = StaticProfile,
+#endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a previously constructed graph.

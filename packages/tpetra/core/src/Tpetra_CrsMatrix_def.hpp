@@ -167,6 +167,12 @@ namespace Tpetra {
       #else
         #pragma message "Deprecated code enabled, pftype will soon be unsupported."
       #endif
+    } else {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Pftype will soon be unsupported."
+      #else
+        #pragma message "Pftype will soon be unsupported."
+      #endif
     }
 #endif
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
@@ -210,6 +216,12 @@ namespace Tpetra {
         #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
       #else
         #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    } else {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Pftype will soon be unsupported."
+      #else
+        #pragma message "Pftype will soon be unsupported."
       #endif
     }
 #endif
@@ -256,6 +268,12 @@ namespace Tpetra {
         #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
       #else
         #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    } else {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Pftype will soon be unsupported."
+      #else
+        #pragma message "Pftype will soon be unsupported."
       #endif
     }
 #endif
@@ -316,6 +334,12 @@ namespace Tpetra {
         #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
       #else
         #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+      #endif
+    } else {
+      #if defined (__GNUC__)
+        #pragma GCC warning "Pftype will soon be unsupported."
+      #else
+        #pragma message "Pftype will soon be unsupported."
       #endif
     }
 #endif
