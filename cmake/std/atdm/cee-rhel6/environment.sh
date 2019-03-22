@@ -110,6 +110,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   module load sparc-dev/intel-18.0.2_mpich2-3.2
+  export OMP_NUM_THREADS=1
+  export OMP_PROC_BIND=false
+  unset OMP_PLACES
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
@@ -134,7 +137,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   #
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
-  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core" # Critical to perforamnce!
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
