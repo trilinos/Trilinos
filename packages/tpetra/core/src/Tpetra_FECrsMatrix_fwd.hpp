@@ -38,48 +38,25 @@
 //
 // ************************************************************************
 // @HEADER
-#ifndef TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
-#define TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
 
-#include <Kokkos_View.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_FECrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_FECrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_FEMultiVector.hpp>
+#ifndef TPETRA_FECRSMATRIX_FWD_HPP
+#define TPETRA_FECRSMATRIX_FWD_HPP
 
-namespace TpetraExamples {
+#include "Tpetra_Details_DefaultTypes.hpp"
 
+/// \file Tpetra_FECrsMatrix_fwd.hpp
+/// \brief Forward declaration of Tpetra::FECrsMatrix
 
-// Get LocalOrdinal & GlobalOrdinal from Map defaults.
-typedef Tpetra::Map<>::local_ordinal_type  local_ordinal_t;
-typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-typedef Tpetra::Map<>::node_type           node_t;
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Tpetra {
 
-typedef Kokkos::DefaultExecutionSpace execution_space_t;
+    template<class Scalar        = ::Tpetra::Details::DefaultTypes::scalar_type,
+             class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+             class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+             class Node          = ::Tpetra::Details::DefaultTypes::node_type>
+    class FECrsMatrix;
 
-typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t;
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
-typedef Tpetra::Map<>             map_t;
-typedef Tpetra::CrsGraph<>        graph_t;
-typedef Tpetra::FECrsGraph<local_ordinal_t,global_ordinal_t,node_t>      fe_graph_t;
-typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
-typedef Tpetra::CrsMatrix<Scalar>   matrix_t;
-typedef Tpetra::FECrsMatrix<Scalar> fe_matrix_t;
-
-typedef Tpetra::Export<>          export_t;
-typedef Tpetra::MultiVector<Scalar> multivector_t;
-typedef Tpetra::FEMultiVector<Scalar> fe_multivector_t;
-
-// NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_array_t;
-typedef Kokkos::View<global_ordinal_t*[4], execution_space_t> global_ordinal_2d_array_t;
-typedef Kokkos::View<Scalar*[4], execution_space_t>           scalar_2d_array_t;
-
-}
-
-#endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_TYPEDEFS_HPP
-
+#endif // TPETRA_FECRSMATRIX_FWD_HPP

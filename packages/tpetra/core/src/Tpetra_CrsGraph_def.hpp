@@ -5826,7 +5826,8 @@ namespace Tpetra {
         Distributor& distor) const
   {
     auto col_map = this->getColMap();
-    if (!col_map.is_null()) {
+    // packCrsGraph requires a valid localGraph. 
+    if( !col_map.is_null() && (lclGraph_.row_map.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
       packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
                                                     exportLIDs, constantNumPackets, distor);

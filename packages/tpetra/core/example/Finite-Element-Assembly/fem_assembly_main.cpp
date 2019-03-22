@@ -54,6 +54,7 @@
 #include "fem_assembly_MeshDatabase.hpp"
 #include "fem_assembly_Element.hpp"
 #include "fem_assembly_utility.hpp"
+#include "fem_assembly_InsertGlobalIndices_FE_SP.hpp"
 #include "fem_assembly_InsertGlobalIndices_DP.hpp"
 #include "fem_assembly_LocalElementLoop_DP.hpp"
 #include "fem_assembly_TotalElementLoop_DP.hpp"
@@ -101,6 +102,8 @@ int main (int argc, char *argv[])
   // Entry point
   if(opts.useStaticProfile)
   {
+    if(opts.execInsertGlobalIndicesFE && executeInsertGlobalIndicesFESP(comm, opts))
+       status = EXIT_FAILURE;
     if(opts.execTotalElementLoop && executeTotalElementLoopSP(comm, opts))
       status = EXIT_FAILURE;
   }

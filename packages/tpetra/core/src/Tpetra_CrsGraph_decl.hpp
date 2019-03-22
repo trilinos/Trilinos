@@ -278,6 +278,8 @@ namespace Tpetra {
     friend class CrsMatrix;
     template <class LO2, class GO2, class N2>
     friend class CrsGraph;
+    template <class LO, class GO, class N>
+    friend class FECrsGraph;
 
     //! The specialization of DistObject that is this class' parent class.
     typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
@@ -732,7 +734,7 @@ namespace Tpetra {
     ///
     /// This method must be called collectively (that is, like any MPI
     /// collective) over all processes in the graph's communicator.
-    void globalAssemble ();
+    virtual void globalAssemble ();
 
     /// \brief Resume fill operations.
     ///
