@@ -252,19 +252,17 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (pftype == DynamicProfile) {
       #if defined (__GNUC__)
-        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #endif
-    } else {
+#else
       #if defined (__GNUC__)
-        #pragma GCC warning "Pftype will soon be unsupported."
+        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Pftype will soon be unsupported."
+        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
       #endif
-    }
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,maxNumEntriesPerRow,"
@@ -312,19 +310,17 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (pftype == DynamicProfile) {
       #if defined (__GNUC__)
-        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #endif
-    } else {
+#else
       #if defined (__GNUC__)
-        #pragma GCC warning "Pftype will soon be unsupported."
+        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Pftype will soon be unsupported."
+        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
       #endif
-    }
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,"
@@ -370,19 +366,17 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (pftype == DynamicProfile) {
       #if defined (__GNUC__)
-        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #endif
-    } else {
+#else
       #if defined (__GNUC__)
-        #pragma GCC warning "Pftype will soon be unsupported."
+        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Pftype will soon be unsupported."
+        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
       #endif
-    }
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
@@ -459,19 +453,17 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (pftype == DynamicProfile) {
       #if defined (__GNUC__)
-        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #endif
-    } else {
+#else
       #if defined (__GNUC__)
-        #pragma GCC warning "Pftype will soon be unsupported."
+        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Pftype will soon be unsupported."
+        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
       #endif
-    }
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
@@ -536,19 +528,17 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (pftype == DynamicProfile) {
       #if defined (__GNUC__)
-        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #endif
-    } else {
+#else
       #if defined (__GNUC__)
-        #pragma GCC warning "Pftype will soon be unsupported."
+        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Pftype will soon be unsupported."
+        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
       #endif
-    }
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
@@ -612,19 +602,17 @@ namespace Tpetra {
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    if (pftype == DynamicProfile) {
       #if defined (__GNUC__)
-        #pragma GCC warning "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Deprecated code enabled, pftype will soon be unsupported."
+        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
       #endif
-    } else {
+#else
       #if defined (__GNUC__)
-        #pragma GCC warning "Pftype will soon be unsupported."
+        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
       #else
-        #pragma message "Pftype will soon be unsupported."
+        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
       #endif
-    }
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,"
