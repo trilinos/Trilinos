@@ -6437,7 +6437,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
                                                 next_future_num_parts_in_parts, //output
                                                 output_part_begin_index,
                                                 migration_reduce_all_population,
-                                                this->num_local_coords / (future_num_parts * current_num_parts),
+                                                this->num_global_coords / (future_num_parts * current_num_parts),
                                                 istring,
                                                 input_part_boxes, output_part_boxes) ) {
                         is_migrated_in_current_dimension = true;
