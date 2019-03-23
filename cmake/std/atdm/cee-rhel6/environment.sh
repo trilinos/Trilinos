@@ -110,7 +110,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3_OPENMPI-1.10.2" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   module load sparc-dev/intel-18.0.2_mpich2-3.2
-  export OMP_NUM_THREADS=1
+  export OMP_NUM_THREADS=2
   export OMP_PROC_BIND=false
   unset OMP_PLACES
   export OMPI_CXX=`which icpc`
