@@ -100,46 +100,34 @@ void print_crs_graph(std::string name, const V1 rowptr, const V2 colind) {
 }
 
 
+
 // =========================================================================
-// CuSparse Testing
+// MAGMASparse Testing
 // =========================================================================
-#if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
-#include <cuda_runtime.h>
-#include <cusparse.h>
-#include <cublas_v2.h>
+#if defined(HAVE_MUELU_MAGMASPARSE) && defined(HAVE_MUELU_TPETRA)
+#include <magma_v2.h>
+#include <magmasparse.h>
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class MagmaSparse_SpmV_Pack {
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
 
-// The cuda examples provide a nice helper function that does all
-// of this error checking
-// helper_cuda.h
-// I am tempted to place it into our repo... but I'll need to read the license first.
-// Worst case, we could replicate here (the following is essentially part of the funcitonality
-// but they do it better.
+public:
+  MagmaSparse_SpmV_Pack (const crs_matrix_type& A,
+                      const vector_type& X,
+                            vector_type& Y)
+  {}
 
-std::string cusparse_error(cusparseStatus_t code) {
-  switch(code) {
-  case CUSPARSE_STATUS_SUCCESS:
-    return std::string("CUSPARSE_STATUS_SUCCESS: Success");
-  case CUSPARSE_STATUS_NOT_INITIALIZED:
-    return std::string("CUSPARSE_STATUS_NOT_INITIALIZED: Library not initialized.");
-  case CUSPARSE_STATUS_ALLOC_FAILED:
-    return std::string("CUSPARSE_STATUS_ALLOC_FAILED: resources could not be allocated.");
-  case CUSPARSE_STATUS_INVALID_VALUE:
-    return std::string("CUSPARSE_STATUS_INVALID_VALUE: invalid parameters were passed (m,n,nnz<0).");
-  case CUSPARSE_STATUS_ARCH_MISMATCH:
-    return std::string("CUSPARSE_STATUS_ARCH_MISMATCH: the device does not support double precision (compute capability (c.c.) >= 1.3 required), symmetric/Hermitian matrix (c.c. >= 1.2 required), or transpose operation (c.c. >= 1.1 required).");
-  case CUSPARSE_STATUS_INTERNAL_ERROR:
-    return std::string("CUSPARSE_STATUS_INTERNAL_ERROR: Internal error");
-  case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
-    return std::string("CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED: Matrix type not supported");
-  default:
-    return (std::string("ERROR: cuda_error got a return code it doesn't not understand") + std::to_string(code));
-  }
-}
+ ~MagmaSparse_SpmV_Pack() {};
 
+  bool spmv(const Scalar alpha, const Scalar beta) { return (true); }
+};
 
-template<typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-class CuSparse_SpmV_Pack {
+template<typename LocalOrdinal, typename GlobalOrdinal>
+class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+  // typedefs shared among other TPLs
   typedef double Scalar;
+  typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
   typedef typename crs_matrix_type::local_matrix_type    KCRS;
@@ -153,7 +141,109 @@ class CuSparse_SpmV_Pack {
 
   typedef typename Kokkos::View<int*,
                                 typename lno_nnz_view_t::array_layout,
-                                typename lno_nnz_view_t::device_type> cusparse_int_type;
+                                typename lno_nnz_view_t::device_type> int_array_type;
+
+public:
+  MagmaSparse_SpmV_Pack (const crs_matrix_type& A,
+                         const vector_type& X,
+                               vector_type& Y)
+  {
+    // data access common to other TPLs
+    const KCRS & Amat = A.getLocalMatrix();
+    c_lno_view_t Arowptr = Amat.graph.row_map;
+    c_lno_nnz_view_t Acolind = Amat.graph.entries;
+    const scalar_view_t Avals = Amat.values;
+      
+    // type conversion 
+    Arowptr_int = int_array_type("Arowptr", Arowptr.extent(0));
+    // copy the ordinals into the local view (type conversion)
+    copy_view(Arowptr,Arowptr_int);
+
+
+    m   = static_cast<int>(A.getNodeNumRows());
+    n   = static_cast<int>(A.getNodeNumCols());
+    nnz = static_cast<int>(Acolind.extent(0));
+    vals   = reinterpret_cast<Scalar*>(Avals.data());
+    cols   = const_cast<int*>(reinterpret_cast<const int*>(Acolind.data()));
+    rowptr = reinterpret_cast<int*>(Arowptr_int.data());
+    
+    auto X_lcl = X.template getLocalView<device_type> ();
+    auto Y_lcl = Y.template getLocalView<device_type> ();
+    x = reinterpret_cast<Scalar*>(X_lcl.data());
+    y = reinterpret_cast<Scalar*>(Y_lcl.data());
+    
+    magma_init ();
+    int device; 
+    magma_getdevice( &device );
+    magma_queue_create( device, &queue );
+
+    // create the magma data container
+    magma_dev_Acrs = {Magma_CSR};
+    magma_Acrs     = {Magma_CSR};
+    magma_dev_x    = {Magma_DENSE};
+    magma_dev_y    = {Magma_DENSE};
+
+    //
+    magma_dvset_dev (m, 1,         // assume mx1 size  
+                     x,            // ptr to data on the device
+                     &magma_dev_x, // magma vector to populate
+                     queue);
+    
+    magma_dvset_dev (m, 1,         // assume mx1 size  
+                     y,            // ptr to data on the device
+                     &magma_dev_y, // magma vector to populate
+                     queue);
+    magma_dcsrset( m, n, rowptr, cols, vals, &magma_Acrs, queue );
+    magma_dmtransfer( magma_Acrs, &magma_dev_Acrs, Magma_DEV, Magma_DEV, queue );
+   
+  }
+
+  ~MagmaSparse_SpmV_Pack()
+  {
+    // we dont' own the data... not sure what magma does here...
+    magma_dmfree(&magma_dev_x, queue);
+    magma_dmfree(&magma_dev_y, queue);
+    magma_dmfree(&magma_dev_Acrs, queue);
+
+    magma_finalize ();
+  };
+  #warning("+++++++++++++++++++++++++++   Me  me me me me ++++++++++++++++++++++++++++")
+  bool spmv(const Scalar alpha, const Scalar beta)
+  {
+    magma_d_spmv( 1.0, magma_dev_Acrs, magma_dev_x, 0.0, magma_dev_y, queue );
+  }
+
+private:
+  magma_d_matrix magma_dev_Acrs;
+  magma_d_matrix magma_Acrs;
+  magma_d_matrix magma_dev_x;
+  magma_d_matrix magma_dev_y;
+  magma_queue_t queue;
+
+  int m = -1;
+  int n = -1;
+  int nnz = -1;
+  Scalar * vals  = nullptr; // aliased
+  int * cols     = nullptr; // aliased
+  int * rowptr   = nullptr; // copied
+  Scalar * x     = nullptr; // aliased
+  Scalar * y     = nullptr; // aliased
+  
+  // handles to the copied data
+  int_array_type Arowptr_int;
+};
+#endif
+
+
+// =========================================================================
+// CuSparse Testing
+// =========================================================================
+#if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class CuSparse_SpmV_Pack {
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
+
 public:
   CuSparse_SpmV_Pack (const crs_matrix_type& A,
                       const vector_type& X,
@@ -166,7 +256,7 @@ public:
 };
 
 template<typename LocalOrdinal, typename GlobalOrdinal>
-class CuSparse_SpmV_Pack<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
+class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
   // typedefs shared among other TPLs
   typedef double Scalar;
   typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
@@ -203,17 +293,17 @@ public:
     copy_view(Acolind,Acolind_cusparse);
 
 
-    m   = (int) A.getNodeNumRows();
-    n   = (int) A.getNodeNumCols();
-    nnz = (int) Acolind_cusparse.extent(0);
-    vals   = (Scalar*) Avals.data();
-    cols   = (int*) Acolind_cusparse.data();
-    rowptr = (int*) Arowptr_cusparse.data();
+    m   = static_cast<int>(A.getNodeNumRows());
+    n   = static_cast<int>(A.getNodeNumCols());
+    nnz = static_cast<int>(Acolind_cusparse.extent(0));
+    vals   = reinterpret_cast<Scalar*>(Avals.data());
+    cols   = reinterpret_cast<int*>(Acolind_cusparse.data());
+    rowptr = reinterpret_cast<int*>(Arowptr_cusparse.data());
     
     auto X_lcl = X.template getLocalView<device_type> ();
     auto Y_lcl = Y.template getLocalView<device_type> ();
-    x = (Scalar*) X_lcl.data();
-    y = (Scalar*) Y_lcl.data();
+    x = reinterpret_cast<Scalar*>(X_lcl.data());
+    y = reinterpret_cast<Scalar*>(Y_lcl.data());
     
     /* Get handle to the CUBLAS context */
     cublasStatus_t cublasStatus;
@@ -256,36 +346,18 @@ public:
     //               const double *beta, 
     //                     double *y)
     cusparseStatus_t rc;
-    if(Kokkos::Impl::is_same<Scalar,double>::value) {
-      rc = cusparseDcsrmv(
-          cusparseHandle,
-          transA,
-          m, n, nnz,
-          &alpha,
-          descrA,
-          vals,
-          rowptr,
-          cols,
-          x,
-          &beta,
-          y);
-    }
-//    else if (Kokkos::Impl::is_same<Scalar,float>::value) {
-//      rc = cusparseScsrmv(
-//          cusparseHandle,
-//          transA,
-//          m, n, nnz,
-//          &alpha,
-//          descrA,
-//          vals,
-//          rowptr
-//          cols,
-//          x,
-//          beta,
-//          y);
-//    }
-    else
-      throw std::runtime_error("CuSparse Type Mismatch");
+    rc = cusparseDcsrmv(
+        cusparseHandle,
+        transA,
+        m, n, nnz,
+        &alpha,
+        descrA,
+        vals,
+        rowptr,
+        cols,
+        x,
+        &beta,
+        y);
 
     return (rc);
   }
@@ -365,7 +437,7 @@ void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   typedef typename Node::device_type device_type;
-  auto AK = A.getLocalMatrix();
+  const auto& AK = A.getLocalMatrix();
   auto X_lcl = x.template getLocalView<device_type> ();
   auto Y_lcl = y.template getLocalView<device_type> ();
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
@@ -424,19 +496,26 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     bool do_tpetra   = true;
     bool do_kk       = true;
     bool do_cusparse = true;
+    bool do_magmasparse = true;
 
     bool report_error_norms = false;
-    #ifndef HAVE_MUELU_MKL
+    // handle the TPLs
+    #if ! defined(HAVE_MUELU_MKL)
       do_mkl = false;
     #endif
     #if ! defined(HAVE_MUELU_CUSPARSE)
       do_cusparse = false;
+    #endif
+    #if ! defined(HAVE_MUELU_MAGMASPARSE)
+      do_magmasparse = false;
     #endif
     
     clp.setOption("mkl",      "nomkl",      &do_mkl,        "Evaluate MKL");
     clp.setOption("tpetra",   "notpetra",   &do_tpetra,     "Evaluate Tpetra");
     clp.setOption("kk",       "nokk",       &do_kk,         "Evaluate KokkosKernels");
     clp.setOption("cusparse", "nocusparse", &do_cusparse,   "Evaluate CuSparse");
+    clp.setOption("magamasparse", "nomagmasparse", &do_magmasparse,   "Evaluate MagmaSparse");
+
     clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms,   "Report L2 norms for the solution");
 
     std::ostringstream galeriStream;
@@ -477,8 +556,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if(! std::is_same<NO, Kokkos::Compat::KokkosCudaWrapperNode>::value) do_cusparse = false;
     #endif
 
+    #if ! defined(HAVE_MUELU_MAGMASPARSE)
+    if (do_magmasparse) {
+      out << "MagmaSparse was requested, but this kernel is not available. Disabling..." << endl;
+      do_magmasparse = false;
+    }
+    #endif
+
     // simple hack to randomize order of experiments
-    enum class Experiments { MKL=0, TPETRA, KK, CUSPARSE };
+    enum class Experiments { MKL=0, TPETRA, KK, CUSPARSE, MAGMASPARSE };
+    const char * const experiment_id_to_string[] = { 
+        "MKL        ",
+        "Tpetra     ",
+        "KK         ",
+        "CuSparse   ",
+        "MagmaSparse"};
     std::vector<Experiments> my_experiments;
     // add the experiments we will run
   
@@ -490,6 +582,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (do_cusparse) my_experiments.push_back(Experiments::CUSPARSE);   // CuSparse
     #endif
  
+    #ifdef HAVE_MUELU_MAGMASPARSE
+    if (do_magmasparse) my_experiments.push_back(Experiments::MAGMASPARSE);   // MagmaSparse
+    #endif
+
     // assume these are available
     if (do_tpetra)  my_experiments.push_back(Experiments::TPETRA);     // Tpetra
     if (do_kk)     my_experiments.push_back(Experiments::KK);     // KK
@@ -559,10 +655,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if(!comm->getRank()) printf("DEBUG: A's importer has %d total permutes globally\n",(int)g_permutes);     
 
   #if defined(HAVE_MUELU_CUSPARSE)
-    typedef CuSparse_SpmV_Pack<LocalOrdinal,GlobalOrdinal,Node> CuSparse_thing_t;
+    typedef CuSparse_SpmV_Pack<SC,LO,GO,Node> CuSparse_thing_t;
     CuSparse_thing_t cusparse_spmv(*At, xt, yt);
   #endif
- 
+
+  #if defined(HAVE_MUELU_MAGMASPARSE)
+    typedef MagmaSparse_SpmV_Pack<SC,LO,GO,Node> MagmaSparse_thing_t;
+    MagmaSparse_thing_t magmasparse_spmv(*At, xt, yt);
+  #endif 
   #if defined(HAVE_MUELU_MKL)
     // typedefs shared among other TPLs
     typedef typename crs_matrix_type::local_matrix_type    KCRS;
@@ -622,6 +722,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             << *A
             << "========================================================" << endl;
     }
+    // save std::cout formating
+    std::ios cout_default_fmt_flags(NULL);
+    cout_default_fmt_flags.copyfmt(std::cout);
 
     // random source
     std::random_device rd;
@@ -698,6 +801,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           break;
         #endif
 
+        #ifdef HAVE_MUELU_MAGMASPARSE
+        // Magma CSR
+        case Experiments::MAGMASPARSE:
+        {
+           const Scalar alpha = 1.0;
+           const Scalar beta = 0.0;
+           TimeMonitor t(*TimeMonitor::getNewTimer("MV MagmaSparse: Total"));
+           magmasparse_spmv.spmv(alpha,beta);
+        }
+          break;
+        #endif
         default:
           std::cerr << "Unknown experiment ID encountered: " << (int) experiment_id << std::endl;
         }
@@ -709,20 +823,41 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           y->norm2(y_norms);
           const auto y_norm2 = y_norms[0];
 
+          y_norms[0] = -1;
+          yt.norm2(y_norms);
+          const auto y_mv_norm2 = y_norms[0];
+
           y->update(-Teuchos::ScalarTraits<Scalar>::one(), *y_baseline, Teuchos::ScalarTraits<Scalar>::one());
 
           y_norms[0] = -1;
           y->norm2(y_norms);
+          const auto y_err =  y_norms[0];
+ 
           y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());;
-          std::cout << "ExperimentID: " << (int) experiment_id << ", ||y-y_hat||_2 = " 
+         
+          y_norms[0] = -1;
+          y_baseline->norm2(y_norms);
+          const auto y_baseline_norm2 = y_norms[0];
+
+          y_norms[0] = -1;
+          yt.norm2(y_norms);
+          const auto y_mv_norm2_next_itr = y_norms[0];
+
+          std::cout << "ExperimentID: " << experiment_id_to_string[(int) experiment_id] << ", ||y-y_hat||_2 = " 
                     << std::setprecision(std::numeric_limits<Scalar>::digits10 + 1)
-                    << std::scientific << y_norms[0] 
-                    << ", ||y||_2 = " << y_norm2 << "\n";
+                    << std::scientific << y_err 
+                    << ", ||y||_2 = " << y_norm2
+                    << ", ||y_baseline||_2 = " << y_baseline_norm2
+                    << ", ||y_ptr|| == ||y_mv||:  " << std::boolalpha << (y_mv_norm2 == y_norm2)
+                    << ", setting y to nan ... ||y||_2 for next iter: " << y_mv_norm2_next_itr
+                    << "\n";
         }
         comm->barrier();
       }// end random exp loop
     } // end repeat
     } // end ! my_experiments.empty()
+    // restore the IO stream
+    std::cout.copyfmt(cout_default_fmt_flags);
 
     if (useStackedTimer) {
       stacked_timer->stop("MueLu_MatvecKernelDriver");
