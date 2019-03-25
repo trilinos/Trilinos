@@ -3212,12 +3212,10 @@ namespace Ifpack2 {
       }
     }; 
 
-
     template<typename MatrixType>
     struct ReduceMultiVector {
     public:
       using impl_type = ImplType<MatrixType>;
-      using execution_space = typename impl_type::execution_space;
       
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
@@ -3225,30 +3223,35 @@ namespace Ifpack2 {
 
       using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; 
-      
-    public:      
-      void run(const impl_scalar_type_2d_view &zz,
-	       magnitude_type *vals) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");	
-	const local_ordinal_type nrows = zz.extent(0);
-	const local_ordinal_type ncols = zz.extent(1);
 
-	impl_scalar_type_1d_view rz(zz.data(), nrows*ncols);
+    private:
+      ConstUnmanaged<impl_scalar_type_2d_view> _zz;
+
+    public:      
+      ReduceMultiVector(const impl_scalar_type_2d_view &zz)
+        : _zz(zz) {}
+      
+      void run(magnitude_type *vals) {
+	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");	
 #if 0
 	// this is expensive when I use cublas with uvm memory...
 	// no clue yet.
+	impl_scalar_type_1d_view rz(_zz.data(), _zz.span());
 	const auto norm2_sqrt = KokkosBlas::nrm2(rz);
 	const auto norm2 = norm2_sqrt*norm2_sqrt;
 #else
-        const Kokkos::RangePolicy<execution_space> policy(0,rz.extent(0));
-	magnitude_type norm2;
-	Kokkos::parallel_reduce
-	  (" ReduceMultiVector",
-	   policy, KOKKOS_LAMBDA(const local_ordinal_type &i, magnitude_type &update) {
-	    const magnitude_type val = Kokkos::ArithTraits<impl_scalar_type>::abs(rz(i));
-	    update += val*val;
-	  }, norm2);
+        magnitude_type norm2;
+        ConstUnmanaged<impl_scalar_type_1d_view> rz(_zz.data(), _zz.span());
+        using execution_space = typename impl_type::execution_space;
+        Kokkos::parallel_reduce
+          ("ReduceMultiVector::Device",
+           Kokkos::RangePolicy<execution_space>(0,rz.extent(0)),
+           KOKKOS_LAMBDA(const local_ordinal_type &i, magnitude_type &update) {
+            const magnitude_type val = Kokkos::ArithTraits<impl_scalar_type>::abs(rz(i));
+            update += val*val;
+          }, norm2);
 #endif	
+        const local_ordinal_type ncols = _zz.extent(1);
 	const auto norm = norm2/magnitude_type(ncols);
 	for (local_ordinal_type j=0;j<ncols;++j) vals[j] = norm;
 
@@ -3502,6 +3505,8 @@ namespace Ifpack2 {
 	compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf, 
 				is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
       
+      ReduceMultiVector<MatrixType> reduce_multivector(WW);
+
       // norm manager workspace resize
       if (is_norm_manager_active) {
 	norm_manager.resize(num_vectors);
@@ -3511,45 +3516,47 @@ namespace Ifpack2 {
       // iterate
       int sweep = 0;
       for (;sweep<max_num_sweeps;++sweep) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1");
-        if (is_y_zero) {
-	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_0");
-          // pmv := x(lclrow)
-          multivector_converter.run(XX);
-	  Kokkos::deep_copy(YY, zero);
-        } else {
-	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1");
-          if (is_seq_method_requested) {
-	    IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1_0");
-            // y := x - R y
-            Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
-            compute_residual_vector.run(YY, XX, ZZ);
-
-            // pmv := y(lclrow).
-            multivector_converter.run(YY);
+        {
+          IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1");
+          if (is_y_zero) {
+            IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_0");
+            // pmv := x(lclrow)
+            multivector_converter.run(XX);
+            Kokkos::deep_copy(YY, zero);
           } else {
-	    IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1_1");
-            // fused y := x - R y and pmv := y(lclrow); 
-	    // real use case does not use overlap comp and comm
-            if (overlap_communication_and_computation || !is_async_importer_active) {
-              if (is_async_importer_active) async_importer->asyncSendRecv(YY);
-              compute_residual_vector.run(pmv, XX, YY, remote_multivector, true);
-              if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) {
-                if (is_async_importer_active) async_importer->cancel();
-                break;
-              }
-              if (is_async_importer_active) {
-                async_importer->syncRecv();
-                compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
-              }
+            IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1");
+            if (is_seq_method_requested) {
+              IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1_0");
+              // y := x - R y
+              Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
+              compute_residual_vector.run(YY, XX, ZZ);
+              
+              // pmv := y(lclrow).
+              multivector_converter.run(YY);
             } else {
-              if (is_async_importer_active)
-                async_importer->syncExchange(YY);
-              if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
-              compute_residual_vector.run(pmv, XX, YY, remote_multivector);
+              IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1_1");
+              // fused y := x - R y and pmv := y(lclrow); 
+              // real use case does not use overlap comp and comm
+              if (overlap_communication_and_computation || !is_async_importer_active) {
+                if (is_async_importer_active) async_importer->asyncSendRecv(YY);
+                compute_residual_vector.run(pmv, XX, YY, remote_multivector, true);
+                if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) {
+                  if (is_async_importer_active) async_importer->cancel();
+                  break;
+                }
+                if (is_async_importer_active) {
+                  async_importer->syncRecv();
+                  compute_residual_vector.run(pmv, XX, YY, remote_multivector, false);
+                }
+              } else {
+                if (is_async_importer_active)
+                  async_importer->syncExchange(YY);
+                if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
+                compute_residual_vector.run(pmv, XX, YY, remote_multivector);
+              }
             }
           }
-	}
+        }
         
         // pmv := inv(D) pmv.
         {
@@ -3560,7 +3567,7 @@ namespace Ifpack2 {
           IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_3");          
           if (is_norm_manager_active) {	  
             // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-            ReduceMultiVector<MatrixType>().run(WW, norm_manager.getBuffer());
+            reduce_multivector.run(norm_manager.getBuffer());
             if (sweep + 1 == max_num_sweeps) {
               norm_manager.ireduce(sweep, true);
               norm_manager.checkDone(sweep + 1, tolerance, true);
