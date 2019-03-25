@@ -207,7 +207,7 @@ public:
 
     magma_finalize ();
   };
-  #warning("+++++++++++++++++++++++++++   Me  me me me me ++++++++++++++++++++++++++++")
+
   bool spmv(const Scalar alpha, const Scalar beta)
   {
     magma_d_spmv( 1.0, magma_dev_Acrs, magma_dev_x, 0.0, magma_dev_y, queue );
