@@ -775,8 +775,8 @@ namespace Ifpack2 {
       using local_ordinal_type = typename ImplType<MatrixType>::local_ordinal_type;
       using local_ordinal_type_1d_view = typename ImplType<MatrixType>::local_ordinal_type_1d_view;
 
-      //PartInterface() = default;
-      //PartInterface(const PartInterface &b) = default;
+      PartInterface() = default;
+      PartInterface(const PartInterface &b) = default;
 
       // Some terms:
       //   The matrix A is split as A = D + R, where D is the matrix of tridiag
@@ -983,8 +983,8 @@ namespace Ifpack2 {
 
       bool is_diagonal_only;
 
-      //BlockTridiags() = default;
-      //BlockTridiags(const BlockTridiags &b) = default;
+      BlockTridiags() = default;
+      BlockTridiags(const BlockTridiags &b) = default;
 
       // Index into row-major block of a tridiag.
       template <typename idx_type> 
@@ -3273,8 +3273,8 @@ namespace Ifpack2 {
       MPI_Request mpi_request_;
       MPI_Comm comm_;
 #endif
-      using magnitude_type_1d_host_view = Kokkos::View<magnitude_type*,host_execution_space>;
-      magnitude_type_1d_host_view work_;
+      using magnitude_type_1d_view_host = Kokkos::View<magnitude_type*,host_execution_space>;
+      magnitude_type_1d_view_host work_;
 
     public:
       NormManager() = default;
@@ -3299,7 +3299,7 @@ namespace Ifpack2 {
       // matrix having block size block_size.
       void resize(const int num_vectors) {
         num_vectors_ = num_vectors;
-        work_ = magnitude_type_1d_host_view("NormManager::work", 3*num_vectors_);
+        work_ = magnitude_type_1d_view_host("NormManager::work", 3*num_vectors_);
       }
       
       // Check the norm every sweep_step sweeps.
