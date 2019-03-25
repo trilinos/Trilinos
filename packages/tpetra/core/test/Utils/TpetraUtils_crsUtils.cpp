@@ -58,7 +58,6 @@
 using Teuchos::CommandLineProcessor;
 using Tpetra::Details::padCrsArrays;
 using Tpetra::Details::insertCrsIndices;
-using Tpetra::Details::impl::ind_difference;
 using Tpetra::Details::impl::uninitialized_view;
 using std::vector;
 
@@ -238,72 +237,66 @@ compare_array_values(V1 const& arr1, V2 const& arr2, size_t const n)
 TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
 {
   {
-    vector<int> indices{1, 3, 5, 7, -1, -1, -1, -1, -1, -1};
+    vector<int> row_ptrs{0, 10};
+    vector<int> cur_indices{1, 3, 5, 7, -1, -1, -1, -1, -1, -1};
     size_t num_assigned = 4;
-    vector<int> in_indices{0, 2, 4, 6, 8, 7, 5, 3, 1, 2, 6, 8, 4, 0};
-    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices);
+    vector<int> new_indices{0, 2, 4, 6, 8, 7, 5, 3, 1, 2, 6, 8, 4, 0};
+    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
     TEST_EQUALITY(num_inserted, 5);
     vector<int> expected{1, 3, 5, 7, 0, 2, 4, 6, 8};
-    TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
   }
 
   {
-    vector<int> indices{3, 6, 9, 12, -1, -1, -1, -1};
+    vector<int> row_ptrs{0, 8};
+    vector<int> cur_indices{3, 6, 9, 12, -1, -1, -1, -1};
     size_t num_assigned = 4;
-    vector<int> in_indices{1, 0, 2};
+    vector<int> new_indices{1, 0, 2};
     vector<int> expected{3, 6, 9, 12, 1, 0, 2, -1};
-    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices);
-    TEST_EQUALITY(num_inserted, in_indices.size());
-    TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
+    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
+    TEST_EQUALITY(num_inserted, new_indices.size());
+    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
   }
 
   {
-    vector<int> indices{3, 6, 9, 12, -1, -1, -1};
+    vector<int> row_ptrs{0, 7};
+    vector<int> cur_indices{3, 6, 9, 12, -1, -1, -1};
     size_t num_assigned = 4;
-    vector<int> in_indices{1, 0, 2, 5};
-    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices);
+    vector<int> new_indices{1, 0, 2, 5};
+    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
     TEST_EQUALITY(num_inserted, -1);
   }
 
   {
-    vector<int> indices{3, 6, 9, 12, -1, -1, -1, -1, -1};
+    vector<int> row_ptrs{0, 9};
+    vector<int> cur_indices{3, 6, 9, 12, -1, -1, -1, -1, -1};
     size_t num_assigned = 4;
-    vector<int> in_indices{0, 4, 7, 10, 13};
+    vector<int> new_indices{0, 4, 7, 10, 13};
     vector<int> expected{3, 6, 9, 12, 0, 4, 7, 10, 13};
-    auto num_inserted = insertCrsIndices(indices, num_assigned, in_indices);
-    TEST_EQUALITY(num_inserted, in_indices.size());
-    TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
+    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
+    TEST_EQUALITY(num_inserted, new_indices.size());
+    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
   }
 }
 
 TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
 {
   {
-    vector<int> indices{3, 6, 9, 12, -1, -1, -1};
+    vector<int> row_ptrs{0, 7};
+    vector<int> cur_indices{3, 6, 9, 12, -1, -1, -1};
     size_t num_assigned = 4;
-    vector<int> in_indices{1, 0, 2, 2, 1, 0, 1, 2, 1};
+    vector<int> new_indices{1, 0, 2, 2, 1, 0, 1, 2, 1};
     vector<int> in_values{1, 1, 1, 1, 1, 1, 1, 1, 1};
     vector<int> expected{3, 6, 9, 12, 1, 0, 2};
-    vector<int> values(indices.size(), 0);
+    vector<int> values(cur_indices.size(), 0);
     vector<int> expected_values{0, 0, 0, 0, 4, 2, 3};
     auto num_inserted =
-      insertCrsIndices(indices, num_assigned, in_indices,
+      insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices,
                        [&](const int i, const int offset){values[offset] += in_values[i]; });
     TEST_EQUALITY(num_inserted, 3);
-    TEST_ASSERT(compare_array_values(indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
     TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
   }
-}
-
-TEUCHOS_UNIT_TEST( TpetraCrsUtils, ind_difference )
-{
-  vector<int> indices{0, 3, 6, 9, 12, -1, -1, -1};
-  size_t num_assigned = 5;
-  vector<int> in_indices{1, 2, 5, 7, 8, 9, 12, 13, 14};
-  vector<int> expected{1, 2, 5, 7, 8, 13, 14};
-  auto diff =
-    ind_difference(in_indices.data(), in_indices.size(), indices.data(), num_assigned);
-  TEST_COMPARE_ARRAYS(diff, expected);
 }
 
 } // namespace (anonymous)

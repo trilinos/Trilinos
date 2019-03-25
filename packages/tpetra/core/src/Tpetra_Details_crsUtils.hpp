@@ -66,32 +66,6 @@ uninitialized_view(const std::string& name, const size_t& size)
   return ViewType (Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size);
 }
 
-/// \brief Implementation of numpy.argsort
-template <class Ordinal>
-Teuchos::Array<size_t>
-argsort(Ordinal const * const a, size_t const n)
-{
-  Teuchos::Array<size_t> ix(n);
-  std::iota(ix.begin(), ix.end(), 0);
-  std::sort(ix.begin(), ix.end(), [&](size_t i, size_t j) {return a[i] < a[j];});
-  return ix;
-}
-
-
-/// \brief Implementation of numpy.argsort
-template <class Ordinal>
-size_t
-ind_find(Ordinal const * const a, size_t const n, Ordinal const ind)
-{
-  size_t i = 0;
-  for (; i < n; ++i)
-  {
-    if (a[i] == ind)
-      return i;
-  }
-  return n;
-}
-
 /// \brief Implementation of padCrsArrays
 template<class RowPtr, class Indices, class Padding>
 void
@@ -184,174 +158,49 @@ pad_crs_arrays(
   indices = indices_new;
 }
 
-
-/// \brief Merges two ranges [first1, last1) and [first2, last2) into one sorted
-///   range beginning at d_first, eliminates all but the first element from
-///   every consecutive group of equivalent elements from the merged range,
-///   and returns a past-the-end iterator for the new logical end of the range.
-///
-///   On input, the first range need not be sorted, but the second must be
-///   sorted. The intended use case is the first range contains new elements to
-///   merge in to the existing CRS indices contained in the second range - which
-///   should already be sorted.
-///
-/// \param first1, last1 - first range of elements to merge (need not be sorted)
-/// \param first2, last2 - second range of elements to merge (must be sorted)
-///
-/// \return last - Output iterator to element past the last unique element in
-///   the merged range.
-///
-template <class InputIter1, class InputIter2, class OutputIter>
-OutputIter
-ind_merge(InputIter1 first1, InputIter1 last1,
-          InputIter2 first2, InputIter2 last2,
-          OutputIter d_first)
-{
-  auto d1 = std::distance(first1, last1);
-  auto d2 = std::distance(first2, last2);
-  std::copy(first1, last1, d_first);
-  std::copy(first2, last2, d_first + d1);
-
-  // We assume that the first range is NOT sorted. It is the range sent by
-  // users. The second range, on the other hand, should be sorted. It is the
-  // existing CRS index array.
-  std::sort(d_first, d_first + d1);
-  std::inplace_merge(d_first, d_first + d1, d_first + d1 + d2);
-  return std::unique(d_first, d_first + d1 + d2);
-}
-
-/// \brief Copies the elements from the array \c indices1 which are
-///   not found in the array \c indices2 to the array \c diff.
-///
-///   On input, indices1 need not be sorted, but indices2 must be sorted. The
-///   intended use case is indices1 contains new elements to merge in to the
-///   existing CRS indices contained in indices2 - which should already be
-///   sorted.
-///
-///   This function is modeled after std::set_difference but takes arrays and
-///   lengths instead of iterators. It also does not require that both input
-///   arrays be sorted (just the second).
-///
-/// \param [in] indices1 - the first array of indices
-/// \param [in] n1 - the length of indices1
-/// \param [in] indices2 - the second array of indices
-/// \param [in] n2 - the length of indices2
-///
-/// \return diff - The difference between \c indices1 and \c indices2
-///
-template <class Ordinal>
-Teuchos::Array<Ordinal>
-ind_difference(Ordinal const * const indices1, size_t const n1,
-               Ordinal const * const indices2, size_t const n2)
-{
-  Teuchos::Array<Ordinal> diff;
-
-  // We assume that indices1 is not sorted. It is the index array sent to us by
-  // users. indices2, on the other hand, should be sorted. It is the existing
-  // CRS index array.
-  auto ix = argsort(indices1, n1);
-
-  size_t i1 = 0;
-  size_t i2 = 0;
-  while (i1 < n1)
-  {
-    if (i2 == n2)
-    {
-      for (size_t i = i1; i < n1; i++)
-        diff.push_back(indices1[ix[i]]);
-      break;
-    }
-    auto ind1 = indices1[ix[i1]];
-    auto ind2 = indices2[i2];
-    if (ind1 < ind2)
-    {
-      diff.push_back(ind1);
-      i1++;
-    }
-    else
-    {
-      if (! (ind2 < ind1))
-        i1++;
-      i2++;
-    }
-  }
-
-  // Return only unique elements
-  auto last = std::unique(diff.begin(), diff.end());
-  diff.erase(last, diff.end());
-  return diff;
-}
-
 /// \brief Implementation of insertCrsIndices
-template <class V1, class V2>
-typename std::make_signed<typename V1::value_type>::type
+template <class Pointers, class InOutIndices, class InIndices, class IndexMap>
+typename std::make_signed<typename InOutIndices::value_type>::type
 insert_crs_indices(
-    V1& indices,
-    size_t const num_assigned,
-    V2 const& in_indices,
-    std::function<void(const int, const int)> fun)
+    typename Pointers::value_type const row,
+    Pointers const& row_ptrs,
+    InOutIndices& cur_indices,
+    size_t& num_assigned,
+    InIndices const& new_indices,
+    IndexMap map,
+    std::function<void(size_t const, size_t const, size_t const)> fun)
 {
-  if (in_indices.size() == 0)
+  if (new_indices.size() == 0)
     return 0;
-  //  auto ix = argsort(in_indices.data(), in_indices.size());
 
-  auto num_avail = indices.size() - num_assigned;
-  using signed_ordinal = typename std::make_signed<typename V1::value_type>::type;
+  using signed_ordinal = typename std::make_signed<typename InOutIndices::value_type>::type;
+  auto const start = row_ptrs[row];
+  auto end = start + num_assigned;
+  auto num_avail = row_ptrs[row + 1] - end;
   signed_ordinal num_inserted = 0;
-  for (size_t i = 0; i < in_indices.size(); i++)
+  for (size_t k = 0; k < new_indices.size(); k++)
   {
-    auto ind = in_indices[i];
-    //auto ind = in_indices[ix[i]];
-    auto n = num_assigned + num_inserted;
-    auto idx = ind_find(indices.data(), n, ind);
-    if (idx == n)
+    signed_ordinal row_offset = start;
+    auto idx = new_indices[k];
+    for (; row_offset < end; row_offset++)
+      if (idx == cur_indices[row_offset])
+        break;
+
+    if (row_offset == end)
     {
       if (num_inserted >= num_avail)
         // Not enough room!
         return -1;
-      else
-        num_inserted += 1;
+
       // This index is not yet in indices
-      indices[idx] = ind;
+      cur_indices[end++] = idx;
+      num_inserted++;
     }
-    if (fun) fun(i, idx);
+    if (fun) fun(k, start, row_offset - start);
   }
+  num_assigned += num_inserted;
   return num_inserted;
 }
-
-/// \brief Implementation of insertCrsIndices
-template<class T>
-typename std::make_signed<typename T::value_type>::type
-insert_crs_indices_sorted(
-    T& indices,
-    size_t const num_assigned,
-    typename T::value_type const in_indices[],
-    size_t const num_in)
-{
-  if (num_in == 0)
-    return 0;
-
-  // Rather than loop through the two arrays of indices and looking for their
-  // difference, and then checking if their is enough capacity in indices to
-  // accommodate the new elements (not already in indices, excluding
-  // duplicates), we go ahead and merge the two arrays in to one. After the
-  // arrays are merged, we can check if the length of the merged array exceeds
-  // the capacity of the indices array. If it does, return -1 to indicate the
-  // error. If it does not, however, we can just copy the merged elements back
-  // in to \c indices.
-  Teuchos::Array<typename T::value_type> merged(num_in + num_assigned);
-  auto last = ind_merge(in_indices, in_indices + num_in,
-                        indices.data(), indices.data() + num_assigned,
-                        merged.begin());
-  merged.erase(last, merged.end());
-
-  // Check if we have the capacity for the incoming indices
-  if (static_cast<size_t>(merged.size()) > indices.size())
-    return -1;
-  std::copy(merged.begin(), merged.end(), indices.data());
-  return merged.size() - num_assigned;
-}
-
 
 } // namespace impl
 
@@ -389,34 +238,93 @@ padCrsArrays(
   pad_crs_arrays<RowPtr, Indices, Padding>(rowPtrBeg, rowPtrEnd, indices, padding);
 }
 
-/// \brief Insert new indices in \c inIndices in to \c indices
+/// \brief Insert new indices in to current list of indices
 ///
-///   Only elements in inIndices that are not already in indices are inserted
-///   (duplicates are skipped).
+/// \param row [in] The row in which to insert
+/// \param rowPtrs [in] "Pointers" to beginning of each row
+/// \param curIndices [in/out] The current indices
+/// \param numAssigned [in/out] The number of currently assigned indices in row \c row
+/// \param newIndices [in] The indices to insert
+/// \param map [in] An optional function mapping newIndices[k] to its actual index
+/// \param fun [in] An optional function called on every insertion at the local
+///     index and the offset in to the inserted location
+/// \return numInserted The number of indices inserted. If there is not
+///     capacity in curIndices for newIndices, return -1;
 ///
-/// \param indices [in/out] CRS indices.
-/// \param numAssigned [in].The number of indices that have already been assigned.
-/// \param inIndices [in] The indices to insert. Only those entries not already
-///    present in \c indices will be inserted.
-/// \param numIn [in] The length of in_indices
-/// \param f [in] Optional callback function. If provided, it is called with the
-///    relative offset to the inserted index.
+/// \bf Notes
+/// \c curIndices is the current list of CRS indices. it is not assumed to be sorted, but
+/// entries are unique. For each \c newIndices[k], we look to see if the index exists in
+/// \c cur_indices. If it does, we do not insert it (no repeats). If it does not exist, we
+/// first check to make sure there is capacity in \c curIndices and if there is we insert
+/// it at the end.
 ///
-/// \return numInserted [out] The number of indices inserted.
-///    If numInserted == -1, there was not enough capacity for all of the incoming
-///    indices and none were inserted.
-template <class V1, class V2>
-typename std::make_signed<typename V1::value_type>::type
+/// The actual value of \c newIndices[k] that is inserted is the value returned from \c
+/// map(newIndices[k]). If an identity map is provided, \c newIndices[k] is directly
+/// inserted. However, any other map can be provided. For instance, for a locally indexed
+/// graph on which \c insertGlobalIndices is called, the \c curIndices array can be a
+/// view of the graph's local indices, the \c newIndices array are the new *global*
+/// indices, and \c map is the graph's column map to convert global indices to local.
+/// If this function is called through the overload below without the \c map
+/// argument, the identity map is provided.
+///
+/// The optional function \c fun is called on every valid index. \c fun is sent the
+/// current loop index \c k, \c rowPtrs[k] (the start of the row), and the relative
+/// offset from \c start in to the \c curIndices array for \c newIndices[k]. This
+/// function could, for example, be used by \c CrsMatrix to fill the values array during
+/// \c sumInto*Values or \c replace*Values; Eg, \c CrsMatrix::sumIntoLocalValues
+/// might have the following:
+///
+/// <code>
+/// CrsMatrix::sumIntoLocalValues(LO row, array<LO> cols, array<S> vals)
+/// {
+///   this->graph_->insertLocalValues(row, cols,
+///       [&](size_t const k, size_t const start, size_t const offset){
+///           this->values_[start+offset] += vals[k]; });
+/// }
+/// </code>
+///
+template <class Pointers, class InOutIndices, class InIndices>
+typename std::make_signed<typename InOutIndices::value_type>::type
 insertCrsIndices(
-    V1& indices,
-    size_t const numAssigned,
-    V2 const& inIndices,
-    std::function<void(const int, const int)> f = std::function<void(const int, const int)>())
+    typename Pointers::value_type const row,
+    Pointers const& rowPtrs,
+    InOutIndices& curIndices,
+    size_t& numAssigned,
+    InIndices const& newIndices,
+    std::function<void(const size_t, const size_t, const size_t)> fun =
+        std::function<void(const size_t, const size_t, const size_t)>())
 {
-  static_assert(std::is_same<typename std::remove_const<typename V1::value_type>::type,
-                             typename std::remove_const<typename V2::value_type>::type>::value,
-                "Expected views to have same value type");
-  return impl::insert_crs_indices(indices, numAssigned, inIndices, f);
+  static_assert(std::is_same<typename std::remove_const<typename InOutIndices::value_type>::type,
+                             typename std::remove_const<typename InIndices::value_type>::type>::value,
+    "Expected views to have same value type");
+
+  // Provide a unit map for the more general insert_indices
+  using ordinal = typename InOutIndices::value_type;
+  auto numInserted = impl::insert_crs_indices(row, rowPtrs, curIndices,
+    numAssigned, newIndices, [=](ordinal const idx) { return idx; }, fun);
+  return numInserted;
+}
+
+template <class Pointers, class InOutIndices, class InIndices, class IndexMap>
+typename std::make_signed<typename InOutIndices::value_type>::type
+insertCrsIndices(
+    typename Pointers::value_type const row,
+    Pointers const& rowPtrs,
+    InOutIndices& curIndices,
+    size_t& numAssigned,
+    InIndices const& newIndices,
+    IndexMap map,
+    std::function<void(const size_t, const size_t, const size_t)> fun =
+        std::function<void(const size_t, const size_t, const size_t)>())
+{
+  static_assert(std::is_same<typename std::remove_const<typename InOutIndices::value_type>::type,
+                             typename std::remove_const<typename InIndices::value_type>::type>::value,
+    "Expected views to have same value type");
+
+  // Provide a unit map for the more general insert_indices
+  auto numInserted = impl::insert_crs_indices(row, rowPtrs, curIndices,
+    numAssigned, newIndices, map, fun);
+  return numInserted;
 }
 
 } // namespace Details

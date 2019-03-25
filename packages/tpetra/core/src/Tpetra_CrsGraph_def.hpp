@@ -2099,7 +2099,6 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
-    using range_type = Kokkos::pair<size_t, size_t>;
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
 #ifdef HAVE_TPETRA_DEBUG
     constexpr bool debug = true;
@@ -2110,14 +2109,11 @@ namespace Tpetra {
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
     if (this->getProfileType () == StaticProfile) {
-      using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
-      using row_view_type = View<GO*, execution_space, MemoryUnmanaged>;
       auto numEntries = rowInfo.numEntries;
-      auto numAllocated = rowInfo.allocSize;
-      const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
-      row_view_type curInds = subview(this->k_gblInds1D_, slice);
+      using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
       inp_view_type inputInds(inputGblColInds, numInputInds);
-      auto numInserted = Details::insertCrsIndices(curInds, numEntries, inputInds);
+      auto numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
+        this->k_gblInds1D_, numEntries, inputInds);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
         std::runtime_error,
@@ -2184,15 +2180,11 @@ namespace Tpetra {
     size_t newNumEntries = 0;
 
     if (this->getProfileType () == StaticProfile) {
-      using range_type = Kokkos::pair<size_t, size_t>;
-      using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
-      using row_view_type = View<LO*, execution_space, MemoryUnmanaged>;
       auto numEntries = rowInfo.numEntries;
-      auto numAllocated = rowInfo.allocSize;
-      const range_type slice(rowInfo.offset1D, rowInfo.offset1D + numAllocated);
-      row_view_type curInds = subview(row_view_type(this->k_lclInds1D_), slice);
+      using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
       inp_view_type inputInds(indices.getRawPtr(), indices.size());
-      auto numInserted = Details::insertCrsIndices(curInds, numEntries, inputInds);
+      auto numInserted = Details::insertCrsIndices(myRow, k_rowPtrs_,
+          this->k_lclInds1D_, numEntries, inputInds);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
         std::runtime_error,
@@ -5674,7 +5666,7 @@ namespace Tpetra {
         Distributor& distor) const
   {
     auto col_map = this->getColMap();
-    // packCrsGraph requires a valid localGraph. 
+    // packCrsGraph requires a valid localGraph.
     if( !col_map.is_null() && (lclGraph_.row_map.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
       packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
