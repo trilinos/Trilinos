@@ -227,10 +227,10 @@ bool hasDeriv,
 ordinal_type n>
 KOKKOS_INLINE_FUNCTION
 void OrthPolynomialTri<outputViewType,inputViewType,workViewType,hasDeriv,n>::generate(
-    outputViewType output,
-    const inputViewType  input,
-    workViewType   work,
-    const ordinal_type   order ) {
+    outputViewType /* output */,
+    const inputViewType  /* input */,
+    workViewType   /* work */,
+    const ordinal_type   /* order */ ) {
 #if 0   //#ifdef HAVE_INTREPID2_SACADO
 
 constexpr ordinal_type spaceDim = 2;
