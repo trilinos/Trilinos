@@ -5661,63 +5661,72 @@ namespace Tpetra {
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
     using indices_type = t_GlobalOrdinal_1D;
+    using local_indices_type = t_LocalOrdinal_1D;
     using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
     using Tpetra::Details::padCrsArrays;
 
+    // Assume global indexing we don't have any indices yet
     if (! this->indicesAreAllocated()) {
       allocateIndices(GlobalIndices);
     }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! this->isGloballyIndexed(), std::runtime_error,
-      ": must be globally indexed to resize!\n");
 
     // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
     // would use it directly.
-    indices_type indices("indices", this->k_gblInds1D_.extent(0));
-    Kokkos::deep_copy(indices, this->k_gblInds1D_);
-
+    
     row_ptrs_type row_ptrs_beg("row_ptrs_beg", this->k_rowPtrs_.extent(0));
     Kokkos::deep_copy(row_ptrs_beg, this->k_rowPtrs_);
-
+    
     const size_t N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1);
-    row_ptrs_type row_ptrs_end("row_ptrs_end", N);
-
+      row_ptrs_type row_ptrs_end("row_ptrs_end", N);
+    
     bool refill_num_row_entries = false;
     if (this->k_numRowEntries_.extent(0) > 0) {
       // Case 1: Unpacked storage
       refill_num_row_entries = true;
       auto num_row_entries = this->k_numRowEntries_;
       Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
-        KOKKOS_LAMBDA(const size_t i){
-          row_ptrs_end(i) = row_ptrs_beg(i) + num_row_entries(i);
-        }
-      );
-
+                           KOKKOS_LAMBDA(const size_t i){
+                             row_ptrs_end(i) = row_ptrs_beg(i) + num_row_entries(i);
+                           }
+                           );
+      
     } else {
       // mfh If packed storage, don't need row_ptrs_end to be separate allocation;
       // could just have it alias row_ptrs_beg+1.
       // Case 2: Packed storage
       Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
-        KOKKOS_LAMBDA(const size_t i){
-          row_ptrs_end(i) = row_ptrs_beg(i+1);
-        }
-      );
+                           KOKKOS_LAMBDA(const size_t i){
+                             row_ptrs_end(i) = row_ptrs_beg(i+1);
+                           }
+                           );
     }
-
-    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
-    padCrsArrays<row_ptrs_type,indices_type,padding_type>(
-        row_ptrs_beg, row_ptrs_end, indices, padding);
-
+    
+    if(this->isGloballyIndexed()) {
+      indices_type indices("indices", this->k_gblInds1D_.extent(0));
+      Kokkos::deep_copy(indices, this->k_gblInds1D_);
+      using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
+      padCrsArrays<row_ptrs_type,indices_type,padding_type>(row_ptrs_beg, row_ptrs_end, indices, padding);
+      this->k_gblInds1D_ = indices;
+    }
+    else {
+      local_indices_type indices("indices", this->k_lclInds1D_.extent(0));
+      Kokkos::deep_copy(indices, this->k_lclInds1D_);
+      using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
+      padCrsArrays<row_ptrs_type,local_indices_type,padding_type>(row_ptrs_beg, row_ptrs_end, indices, padding);
+      //throw std::runtime_error("CMS: Finish me");
+      this->k_lclInds1D_ = indices;
+    }
+  
+    
     if (refill_num_row_entries) {
       auto num_row_entries = this->k_numRowEntries_;
       Kokkos::parallel_for("Fill num entries", range_policy(0, N),
-        KOKKOS_LAMBDA(const size_t i){
-          num_row_entries(i) = row_ptrs_end(i) - row_ptrs_beg(i);
-        }
-      );
+                           KOKKOS_LAMBDA(const size_t i){
+                             num_row_entries(i) = row_ptrs_end(i) - row_ptrs_beg(i);
+                           }
+                           );
     }
     this->k_rowPtrs_ = row_ptrs_beg;
-    this->k_gblInds1D_ = indices;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
