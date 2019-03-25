@@ -5657,7 +5657,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding)
   {
-    const char tfecfFuncName[] = "applyCrsPadding";
+    //    const char tfecfFuncName[] = "applyCrsPadding";
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
     using indices_type = t_GlobalOrdinal_1D;
@@ -5713,7 +5713,6 @@ namespace Tpetra {
       Kokkos::deep_copy(indices, this->k_lclInds1D_);
       using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
       padCrsArrays<row_ptrs_type,local_indices_type,padding_type>(row_ptrs_beg, row_ptrs_end, indices, padding);
-      //throw std::runtime_error("CMS: Finish me");
       this->k_lclInds1D_ = indices;
     }
   
@@ -6093,20 +6092,41 @@ namespace Tpetra {
       "Import or Export operations are not allowed on the destination "
       "CrsGraph if it is fill complete.");
 
-    const map_type& rowMap = * (this->rowMap_);
     const size_t numImportLIDs = static_cast<size_t> (importLIDs.size ());
+    
+    // If we're inserting in local indices, let's pre-allocate
+    Teuchos::Array<LO> lclColInds;
+    if(this->isLocallyIndexed()) { 
+      size_t maxNumInserts = 0;
+      for (size_t i = 0; i < numImportLIDs; ++i) 
+        maxNumInserts = std::max(maxNumInserts,numPacketsPerLID[i]);
+      lclColInds.resize(maxNumInserts);
+    }
+
+    const map_type& rowMap = * (this->rowMap_);
     size_t importsOffset = 0;
     for (size_t i = 0; i < numImportLIDs; ++i) {
       const LO lclRow = importLIDs[i];
       const GO gblRow = rowMap.getGlobalElement (lclRow);
       const LO numEnt = numPacketsPerLID[i];
       const GO* const gblColInds = (numEnt == 0) ? nullptr : &imports[importsOffset];
-      if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
-        // This row is not in the row Map on the calling process.
-        this->insertGlobalIndicesIntoNonownedRows (gblRow, gblColInds, numEnt);
-      }
+      if(!this->isLocallyIndexed()) {
+        if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
+          // This row is not in the row Map on the calling process.
+          this->insertGlobalIndicesIntoNonownedRows (gblRow, gblColInds, numEnt);
+        }
+        else {
+          this->insertGlobalIndicesFiltered (lclRow, gblColInds, numEnt);
+        }
+      } 
       else {
-        this->insertGlobalIndicesFiltered (lclRow, gblColInds, numEnt);
+        for(LO j = 0; j < numEnt; j++)  {
+          lclColInds[j] = this->colMap_->getLocalElement(gblColInds[j]);
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid (),
+                                              std::runtime_error,
+                                              "cannot insert into unowned rows if isLocallyIndexed().");
+        this->insertLocalIndices(lclRow,numEnt,lclColInds.data());
       }
       importsOffset += numEnt;
     }
