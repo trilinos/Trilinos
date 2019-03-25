@@ -118,9 +118,9 @@ public:
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelflags);
 
-  GraphModel(const RCP<const VectorAdapter<userCoord_t> > &ia,
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
+  GraphModel(const RCP<const VectorAdapter<userCoord_t> > &/* ia */,
+    const RCP<const Environment> &/* env */, const RCP<const Comm<int> > &/* comm */,
+    modelFlag_t &/* flags */)
   {
     throw std::runtime_error("cannot build GraphModel from VectorAdapter");
   }
