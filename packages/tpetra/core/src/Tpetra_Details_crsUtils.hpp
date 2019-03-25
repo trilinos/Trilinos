@@ -293,14 +293,17 @@ insert_crs_indices(
 {
   if (in_indices.size() == 0)
     return 0;
+  //  auto ix = argsort(in_indices.data(), in_indices.size());
 
   auto num_avail = indices.size() - num_assigned;
   using signed_ordinal = typename std::make_signed<typename V1::value_type>::type;
   signed_ordinal num_inserted = 0;
   for (size_t i = 0; i < in_indices.size(); i++)
   {
+    auto ind = in_indices[i];
+    //auto ind = in_indices[ix[i]];
     auto n = num_assigned + num_inserted;
-    auto idx = ind_find(indices.data(), n, in_indices[i]);
+    auto idx = ind_find(indices.data(), n, ind);
     if (idx == n)
     {
       if (num_inserted >= num_avail)
@@ -309,7 +312,7 @@ insert_crs_indices(
       else
         num_inserted += 1;
       // This index is not yet in indices
-      indices[idx] = in_indices[i];
+      indices[idx] = ind;
     }
     if (fun) fun(i, idx);
   }
