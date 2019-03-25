@@ -4,7 +4,11 @@ TRIBITS_ADD_EXECUTABLE(
    COMM serial mpi
 )
 
-
+TRIBITS_ADD_EXECUTABLE(
+  iceSheet_int
+  SOURCES iceSheetIntegration.cpp
+  COMM serial mpi
+)
 #TRIBITS_ADD_TEST(
 #    iceSheet
 #    NAME iceSheet_Antarctica_1K

@@ -64,6 +64,9 @@ APPEND_GLOB(SOURCES ${DIR}/algorithms/order/*.cpp)
 APPEND_GLOB(HEADERS ${DIR}/algorithms/color/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/algorithms/color/*.cpp)
 
+APPEND_GLOB(HEADERS ${DIR}/algorithms/connectivity/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/algorithms/connectivity/*.cpp)
+
 APPEND_GLOB(HEADERS ${DIR}/algorithms/match/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/algorithms/match/*.cpp)
 
@@ -105,6 +108,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/partition)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/order)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/color)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/connectivity)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/match)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/map)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/algorithms/zoltan)
