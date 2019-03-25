@@ -6,8 +6,9 @@
 
 namespace Zoltan2{
 
-/*! \brief A Default MachineRepresentation Class for testing only
- *  A more correct machine representation should be used for task mapping.
+/*! \brief A Default MachineRepresentation Class
+ *
+ *  Work In Progress, use another Machine Type.
  */
 
 template <typename nNo_t, typename nCoord_t>

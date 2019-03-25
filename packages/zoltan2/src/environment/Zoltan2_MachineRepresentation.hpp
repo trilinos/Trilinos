@@ -6,7 +6,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include <Zoltan2_MachineForTesting.hpp>
-#include <Zoltan2_MachineTorusLDMS.hpp>
+//#include <Zoltan2_MachineTorusLDMS.hpp>
 #include <Zoltan2_MachineTorusTopoMgr.hpp>
 #include <Zoltan2_MachineTorusTopoMgrForTesting.hpp>
 #include <Zoltan2_MachineTorusRCA.hpp>
@@ -27,6 +27,7 @@ class MachineRepresentation{
 public:
     typedef pcoord_t machine_pcoord_t;
     typedef part_t machine_part_t;
+/*
 #if defined(HAVE_ZOLTAN2_LDMS)
   #if defined(ZOLTAN2_MACHINE_TORUS)
     // TODO: Full LDMS Implementation 
@@ -35,7 +36,8 @@ public:
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
   #endif
 
-#elif defined(HAVE_ZOLTAN2_RCALIB) 
+*/
+#if defined(HAVE_ZOLTAN2_RCALIB) 
   #if defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusRCA<pcoord_t, part_t> machine_t;
   #elif TRUE || defined(ZOLTAN2_MACHINE_DRAGONFLY)  
