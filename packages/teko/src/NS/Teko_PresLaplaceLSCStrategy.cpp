@@ -125,23 +125,23 @@ void PresLaplaceLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerS
 }
 
 // functions inherited from LSCStrategy
-LinearOp PresLaplaceLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp PresLaplaceLSCStrategy::getInvBQBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getModifiableOp("invPresLap");
 }
 
-LinearOp PresLaplaceLSCStrategy::getInvBHBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp PresLaplaceLSCStrategy::getInvBHBt(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getModifiableOp("invPresLap");
 }
 
-LinearOp PresLaplaceLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp PresLaplaceLSCStrategy::getInvF(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    return state.getModifiableOp("invF");
 }
 
 // LinearOp PresLaplaceLSCStrategy::getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
-LinearOp PresLaplaceLSCStrategy::getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp PresLaplaceLSCStrategy::getOuterStabilization(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
@@ -150,7 +150,7 @@ LinearOp PresLaplaceLSCStrategy::getOuterStabilization(const BlockedLinearOp & A
    return lscState->aiD_;
 }
 
-LinearOp PresLaplaceLSCStrategy::getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp PresLaplaceLSCStrategy::getInvMass(const BlockedLinearOp & /* A */,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);

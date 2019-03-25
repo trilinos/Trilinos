@@ -101,7 +101,7 @@ RCP<Thyra::PreconditionerBase<double> > PreconditionerFactory::createPrec() cons
 //! initialize a newly created preconditioner object
 void PreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<double> > & ASrc,
                     PreconditionerBase<double> * prec,
-                    const ESupportSolveUse supportSolveUse) const
+                    const ESupportSolveUse /* supportSolveUse */) const
 {
    // get the blocked linear operator
    LinearOp A = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(ASrc->getOp());
@@ -137,9 +137,9 @@ void PreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<do
 }
 
 //! wipe clean a already initialized preconditioner object
-void PreconditionerFactory::uninitializePrec(PreconditionerBase<double> * prec, 
-                      RCP<const LinearOpSourceBase<double> > * fwdOpSrc,
-                      ESupportSolveUse *supportSolveUse) const
+void PreconditionerFactory::uninitializePrec(PreconditionerBase<double> * /* prec */, 
+                      RCP<const LinearOpSourceBase<double> > * /* fwdOpSrc */,
+                      ESupportSolveUse * /* supportSolveUse */) const
 {
    // Preconditioner * blkPrec = dynamic_cast<Preconditioner *>(prec);
 

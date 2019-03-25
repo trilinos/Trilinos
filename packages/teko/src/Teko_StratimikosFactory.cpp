@@ -76,7 +76,7 @@ StratimikosFactory::StratimikosFactory(const Teuchos::RCP<Stratimikos::DefaultLi
 
 
 // Overridden from PreconditionerFactoryBase
-bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &fwdOpSrc) const
+bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &/* fwdOpSrc */) const
 {
    using Teuchos::outArg;
 
@@ -106,13 +106,13 @@ bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &f
 }
 
 
-bool StratimikosFactory::applySupportsConj(Thyra::EConj conj) const
+bool StratimikosFactory::applySupportsConj(Thyra::EConj /* conj */) const
 {
   return false;
 }
 
 
-bool StratimikosFactory::applyTransposeSupportsConj(Thyra::EConj conj) const
+bool StratimikosFactory::applyTransposeSupportsConj(Thyra::EConj /* conj */) const
 {
   return false; // See comment below
 }
@@ -142,7 +142,7 @@ void StratimikosFactory::initializePrec(
 void StratimikosFactory::initializePrec_Thyra(
   const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
   Thyra::PreconditionerBase<double> *prec,
-  const Thyra::ESupportSolveUse supportSolveUse
+  const Thyra::ESupportSolveUse /* supportSolveUse */
   ) const
 {
   using Teuchos::RCP;
@@ -244,7 +244,7 @@ void StratimikosFactory::initializePrec_Thyra(
 void StratimikosFactory::initializePrec_Epetra(
   const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
   Thyra::PreconditionerBase<double> *prec,
-  const Thyra::ESupportSolveUse supportSolveUse
+  const Thyra::ESupportSolveUse /* supportSolveUse */
   ) const
 {
   using Teuchos::outArg;
@@ -405,9 +405,9 @@ void StratimikosFactory::initializePrec_Epetra(
 
 
 void StratimikosFactory::uninitializePrec(
-  Thyra::PreconditionerBase<double> *prec,
-  Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > *fwdOp,
-  Thyra::ESupportSolveUse *supportSolveUse
+  Thyra::PreconditionerBase<double> * /* prec */,
+  Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > * /* fwdOp */,
+  Thyra::ESupportSolveUse * /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
