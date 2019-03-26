@@ -129,6 +129,12 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // Bounds file for extrapolation risk
   validParamList->set<Teuchos::Array<std::string> >("avatar: bounds file",ar_dummy,"Bounds file for Avatar extrapolation risk");
 
+  // Add dummy variables at the start
+  validParamList->set<int>("avatar: initial dummy variables",int_dummy,"Number of dummy variables to add at the start");
+
+  // Add dummy variables before the class
+  validParamList->set<int>("avatar: pre-class dummy variables",int_dummy,"Number of dummy variables to add at the before the class");
+
   return validParamList;
 }
 
@@ -199,6 +205,14 @@ void AvatarInterface::Cleanup() {
 void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const {
   // NOTE: Assumes that the features are in the same order Avatar wants them.
   std::stringstream ss;
+
+  // Initial Dummy Variables
+  if (params_.isParameter("avatar: initial dummy variables")) {
+    int num_dummy = params_.get<int>("avatar: initial dummy variables");
+    for(int i=0; i<num_dummy; i++)
+      ss<<"666,";
+  }
+
   for(Teuchos::ParameterList::ConstIterator i=problemFeatures.begin(); i != problemFeatures.end(); i++) {
     //    const std::string& name = problemFeatures.name(i);
     const Teuchos::ParameterEntry& entry = problemFeatures.entry(i);
@@ -253,6 +267,14 @@ std::string AvatarInterface::ParamsToString(const std::vector<int> & indices) co
   for(Teuchos_Ordinal i=0; i<avatarParameterValues_.size(); i++) {
     ss << "," << avatarParameterValues_[i][indices[i]];
   }
+
+  // Pre-Class dummy variables
+  if (params_.isParameter("avatar: pre-class dummy variables")) {
+    int num_dummy = params_.get<int>("avatar: pre-class dummy variables");
+    for(int i=0; i<num_dummy; i++)
+      ss<<",666";
+  }
+  
   return ss.str();
 }
 
