@@ -229,6 +229,8 @@ namespace MueLu {
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
 
+    printf("CMS: numAggs = %d\n",(int)numAggs);
+
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
     // same as LIDs in column map
@@ -297,8 +299,10 @@ namespace MueLu {
       ////////////////////////////////
       for (GO agg = 0; agg < numAggs; agg++) {
         LO aggSize = aggStart[agg+1] - aggStart[agg];
+        printf("aggSize = %d NSDim = %d\n",aggSize,NSDim);
 
         Xpetra::global_size_t offset = agg*NSDim;
+
 
         // Extract the piece of the nullspace corresponding to the aggregate, and
         // put it in the flat array, "localQR" (in column major format) for the
