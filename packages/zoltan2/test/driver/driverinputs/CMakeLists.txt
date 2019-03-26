@@ -3,6 +3,7 @@ ADD_SUBDIRECTORY(glaze)
 ADD_SUBDIRECTORY(glaze2)
 ADD_SUBDIRECTORY(rectilinearRCB)
 ADD_SUBDIRECTORY(sacer4320)
+ADD_SUBDIRECTORY(miniem4669)
 ADD_SUBDIRECTORY(ordering)
 
 # command that copies files during build
