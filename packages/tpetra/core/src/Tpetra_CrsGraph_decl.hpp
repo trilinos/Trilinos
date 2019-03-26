@@ -1842,7 +1842,14 @@ namespace Tpetra {
 
     void
     insertLocalIndicesImpl (const LocalOrdinal lclRow,
-                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds);
+                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds,
+                            std::function<void(const size_t, const size_t, const size_t)> fun =
+                                std::function<void(const size_t, const size_t, const size_t)>());
+
+    LocalOrdinal
+    findLocalIndices(const LocalOrdinal lclRow,
+                     const Teuchos::ArrayView<const LocalOrdinal>& indices,
+                     std::function<void(const size_t, const size_t, const size_t)> fun) const;
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///

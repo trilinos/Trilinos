@@ -2166,7 +2166,8 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   insertLocalIndicesImpl (const LocalOrdinal myRow,
-                          const Teuchos::ArrayView<const LocalOrdinal>& indices)
+                          const Teuchos::ArrayView<const LocalOrdinal>& indices,
+                          std::function<void(const size_t, const size_t, const size_t)> fun)
   {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::subview;
@@ -2189,8 +2190,7 @@ namespace Tpetra {
         numInserted == -1,
         std::runtime_error,
         "There is not enough capacity to insert indices in to row " << myRow <<
-        ".  You must either fix the upper bound on the number of entries in this row"
-        ", or switch from StaticProfile to DynamicProfile.");
+        ".  You must fix the upper bound on the number of entries in this row.");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted < 0,
         std::logic_error,
@@ -2232,6 +2232,48 @@ namespace Tpetra {
          << " != newNumEntries = " << newNumEntries
          << ".  Please report this bug to the Tpetra developers.");
     }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  findLocalIndices(const LocalOrdinal myRow,
+                   const Teuchos::ArrayView<const LocalOrdinal>& indices,
+                   std::function<void(const size_t, const size_t, const size_t)> fun) const
+  {
+    const char tfecfFuncName[] = "findLocalIndices: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        this->getProfileType() != StaticProfile,
+        std::runtime_error,
+        "findLocalIndices requires the graph have StaticProfile");
+
+    using LO = LocalOrdinal;
+    using Kokkos::View;
+    using Kokkos::MemoryUnmanaged;
+    const RowInfo rowInfo = this->getRowInfo(myRow);
+    auto numEntries = rowInfo.numEntries;
+    using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
+    inp_view_type inputInds(indices.getRawPtr(), indices.size());
+
+    LO numFound = 0;
+    if (this->isLocallyIndexed())
+    {
+      numFound = Details::findCrsIndices(myRow, k_rowPtrs_,
+        this->k_lclInds1D_, inputInds, fun);
+    }
+    else if (this->isGloballyIndexed())
+    {
+      if (this->colMap_.is_null())
+        return Teuchos::OrdinalTraits<LO>::invalid ();
+      auto map =
+        [&](LocalOrdinal const k){
+          return this->colMap_->getGlobalElement(indices[k]);
+        };
+      numFound = Details::findCrsIndices(myRow, k_rowPtrs_,
+        this->k_gblInds1D_, inputInds, map, fun);
+    }
+    return numFound;
   }
 
 

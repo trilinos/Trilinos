@@ -181,7 +181,7 @@ insert_crs_indices(
   for (size_t k = 0; k < new_indices.size(); k++)
   {
     signed_ordinal row_offset = start;
-    auto idx = new_indices[k];
+    auto idx = map(new_indices[k]);
     for (; row_offset < end; row_offset++)
       if (idx == cur_indices[row_offset])
         break;
@@ -200,6 +200,44 @@ insert_crs_indices(
   }
   num_assigned += num_inserted;
   return num_inserted;
+}
+
+/// \brief Implementation of findCrsIndices
+template <class Pointers, class Indices1, class Indices2, class IndexMap, class Callback>
+size_t
+find_crs_indices(
+    typename Pointers::value_type const row,
+    Pointers const& row_ptrs,
+    Indices1 const& cur_indices,
+    Indices2 const& new_indices,
+    IndexMap map,
+    Callback cb)
+{
+  if (new_indices.size() == 0)
+    return 0;
+
+  using ordinal = typename Indices1::value_type;
+  auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
+
+  auto const start = row_ptrs[row];
+  auto const end = row_ptrs[row + 1];
+  size_t num_found = 0;
+  for (size_t k = 0; k < new_indices.size(); k++)
+  {
+    auto row_offset = start;
+    auto idx = map(new_indices[k]);
+    if (idx == invalid_ordinal)
+      continue;
+    for (; row_offset < end; row_offset++)
+    {
+      if (idx == cur_indices[row_offset])
+      {
+        cb(k, start, row_offset - start);
+        num_found++;
+      }
+    }
+  }
+  return num_found;
 }
 
 } // namespace impl
@@ -305,26 +343,65 @@ insertCrsIndices(
   return numInserted;
 }
 
-template <class Pointers, class InOutIndices, class InIndices, class IndexMap>
-typename std::make_signed<typename InOutIndices::value_type>::type
-insertCrsIndices(
+
+/// \brief Finds offsets in to current list of indices
+///
+/// \param row [in] The row in which to insert
+/// \param rowPtrs [in] "Pointers" to beginning of each row
+/// \param curIndices [in] The current indices
+/// \param numAssigned [in] The number of currently assigned indices in row \c row
+/// \param newIndices [in] The indices to insert
+/// \param fun [in] An optional function called on every insertion at the local
+///     index and the offset in to the inserted location
+/// \return numFound The number of indices found.
+///
+/// \bf Notes
+/// \c curIndices is the current list of CRS indices. it is not assumed to be sorted, but
+/// entries are unique. For each \c newIndices[k], we look to see if the index exists in
+/// \c curIndices. If it does, we do not insert it (no repeats). If it does not exist, we
+/// first check to make sure there is capacity in \c curIndices and if there is we insert
+/// it at the end.
+///
+/// The actual value of \c newIndices[k] that is inserted is the value returned from \c
+/// map(newIndices[k]). If an identity map is provided, \c newIndices[k] is directly
+/// inserted. However, any other map can be provided. For instance, for a locally indexed
+/// graph on which \c insertGlobalIndices is called, the \c curIndices array can be a
+/// view of the graph's local indices, the \c newIndices array are the new *global*
+/// indices, and \c map is the graph's column map to convert global indices to local.
+/// If this function is called through the overload below without the \c map
+/// argument, the identity map is provided.
+///
+/// The function \c fun is called on every valid index.
+///
+template <class Pointers, class Indices1, class Indices2, class Callback>
+size_t
+findCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
-    InOutIndices& curIndices,
-    size_t& numAssigned,
-    InIndices const& newIndices,
-    IndexMap map,
-    std::function<void(const size_t, const size_t, const size_t)> fun =
-        std::function<void(const size_t, const size_t, const size_t)>())
+    Indices1 const& curIndices,
+    Indices2 const& newIndices,
+    Callback cb)
 {
-  static_assert(std::is_same<typename std::remove_const<typename InOutIndices::value_type>::type,
-                             typename std::remove_const<typename InIndices::value_type>::type>::value,
+  static_assert(std::is_same<typename std::remove_const<typename Indices1::value_type>::type,
+                             typename std::remove_const<typename Indices2::value_type>::type>::value,
     "Expected views to have same value type");
+  // Provide a unit map for the more general find_crs_indices
+  using ordinal = typename Indices2::value_type;
+  auto map = [=](ordinal ind){ return ind; };
+  return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
+}
 
-  // Provide a unit map for the more general insert_indices
-  auto numInserted = impl::insert_crs_indices(row, rowPtrs, curIndices,
-    numAssigned, newIndices, map, fun);
-  return numInserted;
+template <class Pointers, class Indices1, class Indices2, class IndexMap, class Callback>
+size_t
+findCrsIndices(
+    typename Pointers::value_type const row,
+    Pointers const& rowPtrs,
+    Indices1 const& curIndices,
+    Indices2 const& newIndices,
+    IndexMap map,
+    Callback cb)
+{
+  return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
 }
 
 } // namespace Details

@@ -292,7 +292,13 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
     vector<int> expected_values{0, 0, 0, 0, 4, 2, 3};
     auto num_inserted =
       insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices,
-                       [&](const int i, const int offset){values[offset] += in_values[i]; });
+        [&](const size_t k, const size_t start, const size_t offset){
+          values[start+offset] += in_values[k];
+        });
+    for (int k=0; k<expected_values.size(); k++)
+    {
+      std::cout << "[" << k << "] = (" << expected_values[k] << ", " << values[k] << ")\n";
+    }
     TEST_EQUALITY(num_inserted, 3);
     TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
     TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));

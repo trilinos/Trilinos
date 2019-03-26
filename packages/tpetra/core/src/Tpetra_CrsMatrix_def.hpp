@@ -1910,70 +1910,82 @@ namespace Tpetra {
       this->allocateValues (LocalIndices, GraphNotYetAllocated);
     }
 
-    const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
-#ifdef HAVE_TPETRA_DEBUG
-    // In a debug build, test whether any of the given column indices
-    // are not in the column Map.  Keep track of the invalid column
-    // indices so we can tell the user about them.
+#ifdef NEW_GRAPH_INSERT
+    if (graph.getProfileType() == StaticProfile)
     {
-      using Teuchos::toString;
+      auto fun = [&](size_t const k, size_t const start, size_t const offset) {
+                   this->k_values1D_[start + offset] += values[k]; };
+      graph.insertLocalIndicesImpl(lclRow, indices, fun);
+    }
+    else
+#else
+    {
+      const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
+#ifdef HAVE_TPETRA_DEBUG
+      // In a debug build, test whether any of the given column indices
+      // are not in the column Map.  Keep track of the invalid column
+      // indices so we can tell the user about them.
+      {
+        using Teuchos::toString;
 
-      const map_type& colMap = * (graph.colMap_);
-      Teuchos::Array<LocalOrdinal> badColInds;
-      bool allInColMap = true;
-      for (size_t k = 0; k < numEntriesToAdd; ++k) {
-        if (! colMap.isNodeLocalElement (indices[k])) {
-          allInColMap = false;
-          badColInds.push_back (indices[k]);
+        const map_type& colMap = * (graph.colMap_);
+        Teuchos::Array<LocalOrdinal> badColInds;
+        bool allInColMap = true;
+        for (size_t k = 0; k < numEntriesToAdd; ++k) {
+          if (! colMap.isNodeLocalElement (indices[k])) {
+            allInColMap = false;
+            badColInds.push_back (indices[k]);
+          }
+        }
+        if (! allInColMap) {
+          std::ostringstream os;
+          os << "You attempted to insert entries in owned row " << lclRow
+             << ", at the following column indices: " << toString (indices)
+             << "." << endl;
+          os << "Of those, the following indices are not in the column Map on "
+            "this process: " << toString (badColInds) << "." << endl << "Since "
+            "the matrix has a column Map already, it is invalid to insert "
+            "entries at those locations.";
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::invalid_argument, os.str ());
         }
       }
-      if (! allInColMap) {
-        std::ostringstream os;
-        os << "You attempted to insert entries in owned row " << lclRow
-           << ", at the following column indices: " << toString (indices)
-           << "." << endl;
-        os << "Of those, the following indices are not in the column Map on "
-          "this process: " << toString (badColInds) << "." << endl << "Since "
-          "the matrix has a column Map already, it is invalid to insert "
-          "entries at those locations.";
+#endif // HAVE_TPETRA_DEBUG
+
+      RowInfo rowInfo = graph.getRowInfo (lclRow);
+      const size_t curNumEnt = rowInfo.numEntries;
+      const size_t newNumEnt = curNumEnt + numEntriesToAdd;
+      if (newNumEnt > rowInfo.allocSize) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::invalid_argument, os.str ());
+          (this->getProfileType () == StaticProfile, std::runtime_error,
+           "New indices exceed statically allocated graph structure.");
+        // This must be a nonconst reference, since we'll reallocate.
+        Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
+        // Make space for the new matrix entries.
+        // Teuchos::ArrayRCP::resize automatically copies over values on
+        // reallocation.
+        graph.lclInds2D_[rowInfo.localRow].resize (newNumEnt);
+        curVals.resize (newNumEnt);
+        rowInfo.allocSize = newNumEnt; // give rowInfo updated allocSize
       }
-    }
-#endif // HAVE_TPETRA_DEBUG
+      typename crs_graph_type::SLocalGlobalViews indsView;
+      indsView.linds = indices;
 
-    RowInfo rowInfo = graph.getRowInfo (lclRow);
-    const size_t curNumEnt = rowInfo.numEntries;
-    const size_t newNumEnt = curNumEnt + numEntriesToAdd;
-    if (newNumEnt > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->getProfileType () == StaticProfile, std::runtime_error,
-         "New indices exceed statically allocated graph structure.");
-      // This must be a nonconst reference, since we'll reallocate.
-      Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
-      // Make space for the new matrix entries.
-      // Teuchos::ArrayRCP::resize automatically copies over values on
-      // reallocation.
-      graph.lclInds2D_[rowInfo.localRow].resize (newNumEnt);
-      curVals.resize (newNumEnt);
-      rowInfo.allocSize = newNumEnt; // give rowInfo updated allocSize
-    }
-    typename crs_graph_type::SLocalGlobalViews indsView;
-    indsView.linds = indices;
-
-    Teuchos::ArrayView<IST> valsView = this->getViewNonConst (rowInfo);
-    Teuchos::ArrayView<const IST> valsIn =
-      Teuchos::av_reinterpret_cast<const IST> (values);
-    this->insertIndicesAndValues (graph, rowInfo, indsView, valsView,
-                                  valsIn, LocalIndices, LocalIndices);
+      Teuchos::ArrayView<IST> valsView = this->getViewNonConst (rowInfo);
+      Teuchos::ArrayView<const IST> valsIn =
+        Teuchos::av_reinterpret_cast<const IST> (values);
+      this->insertIndicesAndValues (graph, rowInfo, indsView, valsView,
+                                    valsIn, LocalIndices, LocalIndices);
 #ifdef HAVE_TPETRA_DEBUG
-    const size_t chkNewNumEnt = graph.getNumEntriesInLocalRow (lclRow);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (chkNewNumEnt != newNumEnt, std::logic_error,
-      "The row should have " << newNumEnt << " entries after insert, but "
-      "instead has " << chkNewNumEnt << ".  Please report this bug to "
-      "the Tpetra developers.");
+      const size_t chkNewNumEnt = graph.getNumEntriesInLocalRow (lclRow);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (chkNewNumEnt != newNumEnt, std::logic_error,
+        "The row should have " << newNumEnt << " entries after insert, but "
+        "instead has " << chkNewNumEnt << ".  Please report this bug to "
+        "the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
+    }
+#endif // NEW_GRAPH_INSERT
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3040,13 +3052,31 @@ namespace Tpetra {
                           const LocalOrdinal numElts,
                           const bool atomic) const
   {
+    LocalOrdinal numValid = 0; // number of valid local column indices
+
+#define NEW_GRAPH_INSERT2 1
+#ifdef NEW_GRAPH_INSERT2
+    if (graph.getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
+      auto fun =
+        [&](size_t const k, size_t const /*start*/, size_t const offset) {
+          if (atomic)
+            Kokkos::atomic_add(&rowVals[offset], newVals[k]);
+          else
+            rowVals[offset] += newVals[k];
+        };
+      numValid = graph.findLocalIndices(rowInfo.localRow, indsT, fun);
+      return numValid;
+    }
+#endif
+
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // Guess for the current index k into rowVals
-    LO numValid = 0; // number of valid local column indices
 
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can
