@@ -24,15 +24,6 @@ class StepperNewmarkExplicitAForm : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperNewmarkExplicitAForm();
-
   /// Constructor
   StepperNewmarkExplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -123,6 +114,16 @@ public:
                              const Thyra::VectorBase<Scalar>& vPred,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
+
+
+private:
+
+  /// Default Constructor -- not allowed
+
+private:
+
+  /// Default Constructor -- not allowed
+  StepperNewmarkExplicitAForm();
 
 protected:
 

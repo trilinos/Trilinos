@@ -58,31 +58,16 @@ correctVelocity(Thyra::VectorBase<Scalar>& v,
 
 
 template<class Scalar>
-StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm() :
-  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
-{
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
-}
-
-
-template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
-
 
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::setModel(

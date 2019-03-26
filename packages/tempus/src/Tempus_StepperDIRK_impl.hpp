@@ -24,11 +24,13 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 template<class Scalar>
-StepperDIRK<Scalar>::StepperDIRK()
+StepperDIRK<Scalar>::StepperDIRK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
 {
-  this->setTableau();
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
+  this->setTableau(stepperType);
+  this->setModel(appModel);
+  this->initialize();
 }
 
 template<class Scalar>
@@ -38,30 +40,8 @@ StepperDIRK<Scalar>::StepperDIRK(
 {
   this->setTableau(pList);
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-
-template<class Scalar>
-StepperDIRK<Scalar>::StepperDIRK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
-{
-  this->setTableau(stepperType);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
 
 template<class Scalar>
@@ -72,14 +52,8 @@ StepperDIRK<Scalar>::StepperDIRK(
 {
   this->setTableau(stepperType);
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
 
 

@@ -25,11 +25,14 @@ template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
-StepperIMEX_RK<Scalar>::StepperIMEX_RK()
+StepperIMEX_RK<Scalar>::StepperIMEX_RK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
 {
-  this->setTableaus(Teuchos::null, "IMEX RK SSP2");
+  this->setTableaus(Teuchos::null, stepperType);
   this->setParameterList(Teuchos::null);
-  this->modelWarning();
+  this->setModel(appModel);
+  this->initialize();
 }
 
 
@@ -40,32 +43,8 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
 {
   this->setTableaus(pList, "IMEX RK SSP2");
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-
-
-template<class Scalar>
-StepperIMEX_RK<Scalar>::StepperIMEX_RK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
-{
-  this->setTableaus(Teuchos::null, stepperType);
-  this->setParameterList(Teuchos::null);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
 
 
@@ -77,14 +56,8 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
 {
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
 
 

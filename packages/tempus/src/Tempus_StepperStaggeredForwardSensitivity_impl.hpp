@@ -23,16 +23,7 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
-
-template<class Scalar>
-StepperStaggeredForwardSensitivity<Scalar>::
-StepperStaggeredForwardSensitivity()
-{
-  this->setParams(Teuchos::null, Teuchos::null);
-  this->modelWarning();
-}
-
-
+// StepperStaggeredForwardSensitivity definitions:
 template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity(
@@ -40,6 +31,9 @@ StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<Teuchos::ParameterList>& pList,
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
 {
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
   // Set all the input parameters and call initialize
   this->setParams(pList, sens_pList);
   this->setModel(appModel);
@@ -72,11 +66,11 @@ setModel(
   // Create state and sensitivity steppers
   RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
   if (stateStepper_ == Teuchos::null)
-    stateStepper_ = sf->createStepper(stepperPL_, appModel);
+    stateStepper_ = sf->createStepper(appModel, stepperPL_);
   else
     stateStepper_->setModel(appModel);
   if (sensitivityStepper_ == Teuchos::null)
-    sensitivityStepper_ = sf->createStepper(stepperPL_, fsa_model_);
+    sensitivityStepper_ = sf->createStepper(fsa_model_, stepperPL_);
   else
     sensitivityStepper_->setModel(fsa_model_);
 }

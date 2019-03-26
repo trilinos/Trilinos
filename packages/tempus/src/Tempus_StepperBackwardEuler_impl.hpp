@@ -22,28 +22,19 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-template<class Scalar>
-StepperBackwardEuler<Scalar>::StepperBackwardEuler()
-{
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
-}
-
-
+// StepperBackwardEuler definitions:
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  this->setParameterList(pList);
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
 
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  // Set all the input parameters and call initialize
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->initialize();
 }
 
 
@@ -87,7 +78,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
       RCP<StepperFactory<Scalar> > sf =
         Teuchos::rcp(new StepperFactory<Scalar>());
       predictorStepper_ =
-        sf->createStepper(predPL, this->wrapperModel_->getAppModel());
+        sf->createStepper(this->wrapperModel_->getAppModel(), predPL);
     }
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( predictorName == predPL->name(),
@@ -102,7 +93,7 @@ void StepperBackwardEuler<Scalar>::setPredictor(
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     predictorStepper_ =
-      sf->createStepper(predPL, this->wrapperModel_->getAppModel());
+      sf->createStepper(this->wrapperModel_->getAppModel(), predPL);
   }
 }
 

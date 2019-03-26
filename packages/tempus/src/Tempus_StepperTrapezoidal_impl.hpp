@@ -22,28 +22,16 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-template<class Scalar>
-StepperTrapezoidal<Scalar>::StepperTrapezoidal()
-{
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
-}
-
-
+// StepperTrapezoidal definitions:
 template<class Scalar>
 StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
+  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
 
 
@@ -111,9 +99,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
 
     const Scalar time  = workingState->getTime();
     const Scalar dt    = workingState->getTimeStep();
-    const Scalar alpha = getAlpha(dt);
-    const Scalar beta  = getBeta (dt);
-
+    const Scalar alpha = 2.0/dt;
 
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
@@ -129,7 +115,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
     if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
     if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
     if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
-    if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);
+    if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
 
     this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 

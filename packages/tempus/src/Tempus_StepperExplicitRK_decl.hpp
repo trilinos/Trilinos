@@ -65,24 +65,15 @@ class StepperExplicitRK : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperExplicitRK();
+  /// Constructor to use default Stepper parameters.
+  StepperExplicitRK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "RK Explicit 4 Stage");
 
   /// Constructor to specialize Stepper parameters.
   StepperExplicitRK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList);
-
-  /// Constructor to use default Stepper parameters.
-  StepperExplicitRK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "RK Explicit 4 Stage");
 
   /// Constructor for StepperFactory.
   StepperExplicitRK(
@@ -158,6 +149,11 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+private:
+
+  /// Default Constructor -- not allowed
+  StepperExplicitRK();
 
 protected:
 

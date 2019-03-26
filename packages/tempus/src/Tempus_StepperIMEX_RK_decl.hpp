@@ -231,24 +231,15 @@ class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperIMEX_RK();
+  /// Constructor to use default Stepper parameters.
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "IMEX RK SSP2");
 
   /// Constructor to specialize Stepper parameters.
   StepperIMEX_RK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList);
-
-  /// Constructor to use default Stepper parameters.
-  StepperIMEX_RK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "IMEX RK SSP2");
 
   /// Constructor for StepperFactory.
   StepperIMEX_RK(
@@ -317,15 +308,6 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
-  /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const
-  {
-    const Teuchos::SerialDenseMatrix<int,Scalar> & A = implicitTableau_->A();
-    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
-  }
-  /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
-
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -351,6 +333,11 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     Scalar time, Scalar stepSize, Scalar stageNumber,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
+
+private:
+
+  /// Default Constructor -- not allowed
+  StepperIMEX_RK();
 
 protected:
 

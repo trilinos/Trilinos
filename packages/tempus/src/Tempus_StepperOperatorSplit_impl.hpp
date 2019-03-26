@@ -16,24 +16,6 @@
 
 namespace Tempus {
 
-
-template<class Scalar>
-StepperOperatorSplit<Scalar>::StepperOperatorSplit()
-  : stepperPL_(Teuchos::null), OpSpSolnHistory_(Teuchos::null),
-    stepperOSObserver_(Teuchos::null)
-{
-  this->setParameterList(Teuchos::null);
-
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,this->description());
-  *out << "Warning -- Constructing " << this->description()
-       << " without ModelEvaluators!\n"
-       << "  - Can reset ParameterList with setParameterList().\n"
-       << "  - Requires subsequent addStepper()/createSubSteppers()\n"
-       << "    and initialize() calls before calling takeStep().\n"
-       << std::endl;
-}
-
 template<class Scalar>
 StepperOperatorSplit<Scalar>::StepperOperatorSplit(
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
@@ -42,21 +24,19 @@ StepperOperatorSplit<Scalar>::StepperOperatorSplit(
     stepperOSObserver_(Teuchos::null)
 {
   this->setParameterList(pList);
+  this->createSubSteppers(appModels);
+  this->initialize();
+}
 
-  if (appModels.empty()) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,this->description());
-    *out << "Warning -- Constructing " << this->description()
-         << " without ModelEvaluators!\n"
-         << "  - Can reset ParameterList with setParameterList().\n"
-         << "  - Requires subsequent addStepper()/createSubSteppers\n"
-         << "    and initialize() calls before calling takeStep().\n"
-         << std::endl;
-  }
-  else {
-    this->createSubSteppers(appModels);
-    this->initialize();
-  }
+template<class Scalar>
+StepperOperatorSplit<Scalar>::StepperOperatorSplit()
+  : stepperPL_(Teuchos::null), OpSpSolnHistory_(Teuchos::null),
+    stepperOSObserver_(Teuchos::null)
+{
+  this->setParameterList(Teuchos::null);
+  // Still require
+  //  * Setting models and steppers, i.e., addStepper()
+  //  * Calling initialize()
 }
 
 template<class Scalar>
@@ -195,7 +175,7 @@ void StepperOperatorSplit<Scalar>::createSubSteppers(
 
   for (; aMI<appModels.end() || sLSI<stepperListStr.end(); aMI++, sLSI++) {
     RCP<ParameterList> subStepperPL = Teuchos::sublist(stepperPL_,*sLSI,true);
-    subStepperList_.push_back(sf->createStepper(subStepperPL, *aMI));
+    subStepperList_.push_back(sf->createStepper(*aMI, subStepperPL));
   }
 }
 

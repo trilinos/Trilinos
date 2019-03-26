@@ -45,15 +45,6 @@ class StepperBDF2 : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperBDF2();
-
   /// Constructor
   StepperBDF2(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -89,20 +80,14 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
-  /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const {return getAlpha(dt,dt);}
-  virtual Scalar getAlpha(const Scalar dt, const Scalar dtOld) const
-    { return (Scalar(2.0)*dt + dtOld)/(dt*(dt + dtOld)); }
-  /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
-
   /// Compute the first time step given the supplied startup stepper
   virtual void computeStartUp(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-  /// Pass initial guess to Newton solver
+    
+  /// Pass initial guess to Newton solver 
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
        {initial_guess_ = initial_guess;}
+
 
   /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
   virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
@@ -126,6 +111,11 @@ public:
 
 private:
 
+  /// Default Constructor -- not allowed
+  StepperBDF2();
+
+private:
+
   Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
 
   Teuchos::RCP<StepperObserver<Scalar> >     stepperObserver_;
@@ -133,7 +123,7 @@ private:
   Scalar                                     order_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >   xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 /** \brief Time-derivative interface for BDF2.

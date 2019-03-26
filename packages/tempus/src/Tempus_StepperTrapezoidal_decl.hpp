@@ -33,15 +33,6 @@ class StepperTrapezoidal : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperTrapezoidal();
-
   /// Constructor
   StepperTrapezoidal(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -72,13 +63,8 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
-
-  /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const { return Scalar(2.0)/dt; }
-  /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
-
-  /// Pass initial guess to Newton solver (only relevant for explicit schemes)
+    
+  /// Pass initial guess to Newton solver (only relevant for explicit schemes)  
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
      {initial_guess_ = initial_guess;}
 
@@ -101,6 +87,11 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+
+private:
+
+  /// Default Constructor -- not allowed
+  StepperTrapezoidal();
 
 private:
 

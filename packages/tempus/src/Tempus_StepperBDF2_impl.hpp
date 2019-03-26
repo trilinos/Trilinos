@@ -22,28 +22,19 @@ namespace Tempus {
 template<class Scalar> class StepperFactory;
 
 
-template<class Scalar>
-StepperBDF2<Scalar>::StepperBDF2()
-{
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
-}
-
-
+// StepperBDF2 definitions:
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  this->setParameterList(pList);
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
 
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  // Set all the input parameters and call initialize
+  this->setParameterList(pList);
+  this->setModel(appModel);
+  this->initialize();
 }
 
 
@@ -64,7 +55,7 @@ void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperName)
   this->stepperPL_->set("Start Up Stepper Name", startupStepperName);
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
   startUpStepper_ =
-    sf->createStepper(startupStepperPL, this->wrapperModel_->getAppModel());
+    sf->createStepper(this->wrapperModel_->getAppModel(), startupStepperPL);
 }
 
 
@@ -94,14 +85,14 @@ void StepperBDF2<Scalar>::setStartUpStepper(
         RCP<StepperFactory<Scalar> > sf =
           Teuchos::rcp(new StepperFactory<Scalar>());
         startUpStepper_ =
-          sf->createStepper(startupStepperPL,this->wrapperModel_->getAppModel());
+          sf->createStepper(this->wrapperModel_->getAppModel(), startupStepperPL);
       } else {
         // Construct default start-up Stepper
         RCP<StepperFactory<Scalar> > sf =
           Teuchos::rcp(new StepperFactory<Scalar>());
         startUpStepper_ =
-          sf->createStepper("IRK 1 Stage Theta Method",
-                            this->wrapperModel_->getAppModel());
+          sf->createStepper(this->wrapperModel_->getAppModel(),
+                            "IRK 1 Stage Theta Method");
 
         startupStepperName = startUpStepper_->description();
         startupStepperPL = startUpStepper_->getNonconstParameterList();
@@ -122,7 +113,7 @@ void StepperBDF2<Scalar>::setStartUpStepper(
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     startUpStepper_ =
-      sf->createStepper(startupStepperPL, this->wrapperModel_->getAppModel());
+      sf->createStepper(this->wrapperModel_->getAppModel(), startupStepperPL);
   }
 }
 
@@ -208,10 +199,10 @@ void StepperBDF2<Scalar>::takeStep(
 
     xOld    = solutionHistory->getStateTimeIndexNM1()->getX();
     xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
-    order_ = Scalar(2.0);
+    order_ = 2.0;
 
-    const Scalar alpha = getAlpha(dt, dtOld);
-    const Scalar beta  = getBeta (dt);
+    const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld);
+    const Scalar beta = 1.0;
 
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =

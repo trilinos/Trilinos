@@ -90,17 +90,7 @@ StepperNewmarkImplicitDForm<Scalar>::correctAcceleration(
   Thyra::V_StVpStV(Teuchos::ptrFromRef(a), c, d, -c, dPred);
 }
 
-template <class Scalar>
-StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
-    : out_(Teuchos::VerboseObjectBase::getDefaultOStream()) {
-#ifdef VERBOSE_DEBUG_OUTPUT
-  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
-#endif
-
-  this->setParameterList(Teuchos::null);
-  this->modelWarning();
-}
-
+// StepperNewmarkImplicitDForm definitions:
 template <class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
@@ -109,16 +99,13 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
 
+  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-
-  if (appModel == Teuchos::null) {
-    this->modelWarning();
-  }
-  else {
-    this->setModel(appModel);
-    this->initialize();
-  }
+  this->setModel(appModel);
+  this->initialize();
 }
 
 template <class Scalar>

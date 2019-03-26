@@ -37,8 +37,6 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -68,7 +66,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  auto model = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -136,15 +135,16 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  auto model = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   // Setup Stepper for field solve ----------------------------
-  auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
-  stepper->setModel(model);
-  stepper->initialize();
+  RCP<Tempus::StepperHHTAlpha<double> > stepper =
+    Teuchos::rcp(new Tempus::StepperHHTAlpha<double>(model));
 
   // Setup TimeStepControl ------------------------------------
-  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+  RCP<Tempus::TimeStepControl<double> > timeStepControl =
+    Teuchos::rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
   timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
@@ -155,12 +155,17 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
+  using Teuchos::rcp_const_cast;
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
-  auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-  auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
-  auto icState = rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
+  RCP<Thyra::VectorBase<double> > icX =
+    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  RCP<Thyra::VectorBase<double> > icXDot =
+    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
+  RCP<Thyra::VectorBase<double> > icXDotDot =
+    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
+  RCP<Tempus::SolutionState<double> > icState =
+      Teuchos::rcp(new Tempus::SolutionState<double>(icX, icXDot, icXDotDot));
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -168,7 +173,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
-  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  RCP<Tempus::SolutionHistory<double> > solutionHistory =
+    Teuchos::rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
@@ -235,7 +241,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  auto model = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   //Get k and m coefficients from model, needed for computing energy
   double k = hom_pl->get<double>("x coeff k");
@@ -281,10 +288,12 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
         integrator->getSolutionHistory();
       writeSolution("Tempus_HHTAlpha_SinCos_SecondOrder.dat", solutionHistory);
 
-      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
+      RCP<Tempus::SolutionHistory<double> > solnHistExact =
+        Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
+        RCP<Tempus::SolutionState<double> > state =
+          Teuchos::rcp(new Tempus::SolutionState<double>(
             model->getExactSolution(time_i).get_x(),
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
@@ -380,7 +389,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  auto model = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   //Get k and m coefficients from model, needed for computing energy
   double k = hom_pl->get<double>("x coeff k");
@@ -426,10 +436,12 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
         integrator->getSolutionHistory();
       writeSolution("Tempus_HHTAlpha_SinCos_FirstOrder.dat", solutionHistory);
 
-      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
+      RCP<Tempus::SolutionHistory<double> > solnHistExact =
+        Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
+        RCP<Tempus::SolutionState<double> > state =
+          Teuchos::rcp(new Tempus::SolutionState<double>(
             model->getExactSolution(time_i).get_x(),
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
@@ -526,7 +538,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  auto model = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  RCP<HarmonicOscillatorModel<double> > model =
+    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
   //Get k and m coefficients from model, needed for computing energy
   double k = hom_pl->get<double>("x coeff k");
@@ -572,10 +585,12 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
         integrator->getSolutionHistory();
       writeSolution("Tempus_HHTAlpha_SinCos_ExplicitCD.dat", solutionHistory);
 
-      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
+      RCP<Tempus::SolutionHistory<double> > solnHistExact =
+        Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        auto state = rcp(new Tempus::SolutionState<double>(
+        RCP<Tempus::SolutionState<double> > state =
+          Teuchos::rcp(new Tempus::SolutionState<double>(
             model->getExactSolution(time_i).get_x(),
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());

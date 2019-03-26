@@ -36,15 +36,6 @@ class StepperBackwardEuler :
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperBackwardEuler();
-
   /// Constructor
   StepperBackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -66,7 +57,7 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Pass initial guess to Newton solver
+    /// Pass initial guess to Newton solver 
     virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
        {initial_guess_ = initial_guess;}
 
@@ -83,11 +74,6 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
-
-    /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const { return Scalar(1.0)/dt; }
-  /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// Compute predictor given the supplied stepper
   virtual void computePredictor(
@@ -145,6 +131,9 @@ public:
 
 private:
 
+  /// Default Constructor -- not allowed
+  StepperBackwardEuler();
+
   /// Implementation of computeStep*() methods
   void computeStepResidDerivImpl(
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
@@ -161,7 +150,7 @@ private:
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
   mutable Teuchos::RCP<Thyra::VectorBase<Scalar> >    xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 /** \brief Time-derivative interface for Backward Euler.

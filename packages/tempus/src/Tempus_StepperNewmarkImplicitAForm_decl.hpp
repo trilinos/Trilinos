@@ -43,15 +43,6 @@ class StepperNewmarkImplicitAForm
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Constructs with a default ParameterList.
-   *  - Can reset ParameterList with setParameterList().
-   *  - Requires subsequent setModel() and initialize() calls before calling
-   *    takeStep().
-  */
-  StepperNewmarkImplicitAForm();
-
   /// Constructor
   StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -89,15 +80,8 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
-
-  /// Return W_xDotxDot_coeff = d(xDotDot)/d(xDotDot).
-  virtual Scalar getW_xDotDot_coeff (const Scalar) const {return Scalar(1.0);}
-  /// Return alpha = d(xDot)/d(xDotDot).
-  virtual Scalar getAlpha(const Scalar dt) const { return gamma_*dt; }
-  /// Return beta  = d(x)/d(xDotDot).
-  virtual Scalar getBeta (const Scalar dt) const { return beta_*dt*dt; }
-
-  /// Pass initial guess to Newton solver
+  
+  /// Pass initial guess to Newton solver  
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
        {initial_guess_ = initial_guess;}
 
@@ -137,6 +121,12 @@ public:
                                const Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
+
+private:
+
+  /// Default Constructor -- not allowed
+  StepperNewmarkImplicitAForm();
+
 private:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>                inArgs_;

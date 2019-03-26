@@ -48,11 +48,6 @@ public:
     virtual std::string getStepperType() const
      { return stepperPL_->get<std::string>("Stepper Type"); }
 
-    /// Return alpha = d(xDot)/dx.
-    virtual Scalar getAlpha(const Scalar dt) const = 0;
-    /// Return beta  = d(x)/dx.
-    virtual Scalar getBeta (const Scalar dt) const = 0;
-
     /// Solve problem using x in-place.
     const Thyra::SolveStatus<Scalar> solveImplicitODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
