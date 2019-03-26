@@ -252,16 +252,7 @@ namespace Tpetra {
     //! @name Collective methods for changing the graph's global state
     //@{
 
-    /// \brief Communicate nonlocal contributions to other processes.
-    ///
-    /// This method is called automatically by fillComplete().  Most
-    /// users do not need to call this themselves.
-    ///
-    /// This method must be called collectively (that is, like any MPI
-    /// collective) over all processes in the graph's communicator.
-    void globalAssemble (){endFill();}
-
-   //! Migrates data to the owned mode
+    //! Migrates data to the owned mode
     void endFill();
 
     //! Activates the owned+shared mode for assembly.  This can only be called once.
