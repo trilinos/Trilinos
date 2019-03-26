@@ -99,8 +99,10 @@ bool compare_final_matrix_structure_impl(Teuchos::FancyOStream &out,Tpetra::CrsM
   if (!success) {out<<"Compare: colind match failed"<<endl;return false;}
 
   // This is necessary to make sure that complex works (since Teuchos::ScalarTraits does not have a Kokkos::complex specialization)
-  auto values1_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values1));
-  auto values2_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values2));  
+  auto values1_h = Kokkos::create_mirror_view(values1);
+  auto values2_h = Kokkos::create_mirror_view(values2);
+  auto values1_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values1_h));
+  auto values2_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values2_h));  
   TEST_COMPARE_FLOATING_ARRAYS(values1_av,values2_av,tol);
   if (!success) {out<<"Compare: values match failed"<<endl;return false;}
 
