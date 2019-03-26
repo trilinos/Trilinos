@@ -147,7 +147,7 @@ void generate_fem1d_graph(size_t numLocalNodes, RCP<const Comm<int> > comm , Gra
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
   int rank    = comm->getRank();
   int numProc = comm->getSize();
-  size_t numOverlapNodes  = (rank == numProc-1) ? numLocalNodes : numLocalNodes + 1;
+  size_t numOverlapNodes = numLocalNodes; if(rank!=numProc-1) numOverlapNodes++;  if(rank!=0) numOverlapNodes++;
   size_t numLocalElements = (rank == numProc-1) ? numLocalNodes -1 : numLocalNodes;
   //  printf("CMS numOverlapNodes = %d numLocalElements = %d\n",numOverlapNodes,numLocalElements);
 
@@ -157,7 +157,9 @@ void generate_fem1d_graph(size_t numLocalNodes, RCP<const Comm<int> > comm , Gra
   for(size_t i=0; i<numLocalNodes; i++) {
     overlapIndices[i] = pack.uniqueMap->getGlobalElement(i);
   }
-  if(rank != numProc -1)  overlapIndices[numOverlapNodes-1] = overlapIndices[numLocalNodes-1] +1;
+  size_t last = numLocalNodes;
+  if(rank != 0)           {overlapIndices[last] = overlapIndices[0] - 1; last++;}
+  if(rank != numProc -1)  {overlapIndices[last] = overlapIndices[numLocalNodes-1] + 1; last++;}
 
   pack.overlapMap = rcp(new Tpetra::Map<LO,GO,Node>(INVALID,overlapIndices,0,comm));
 
@@ -259,7 +261,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   // Generate a mesh
   GraphPack<LO,GO,Node> pack;
   generate_fem1d_graph(numLocal,comm,pack);
-  //  pack.print(comm->getRank(),std::cout);
+  //pack.print(comm->getRank(),std::cout);
 
   // Comparative assembly
   // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
@@ -301,7 +303,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
   // Generate a mesh
   GraphPack<LO,GO,Node> pack;
   generate_fem1d_graph(numLocal,comm,pack);
-  //  pack.print(comm->getRank(),std::cout);
+  //  pack.print(comm->getRank(),std::cout);fflush(stdout);
 
   // Comparative assembly
   // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are

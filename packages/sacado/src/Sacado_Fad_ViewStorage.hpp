@@ -145,7 +145,7 @@ namespace Sacado {
        * we zero out components when it is resized to zero above.
        */
       KOKKOS_INLINE_FUNCTION
-      void resizeAndZero(int sz) {}
+      void resizeAndZero(int /* sz */) {}
 
       //! Expand derivative array to size sz
       KOKKOS_INLINE_FUNCTION
