@@ -1,0 +1,6 @@
+# Source this script to load the env that was used to build this version of
+# Trilinos and also load env vars that describe what was built.
+
+source @ATDM_CONFIG_SCRIPTS_INSTALL_DIR@/load-env.sh @ATDM_BUILD_NAME@
+
+export @ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME@=@CMAKE_INSTALL_PREFIX@

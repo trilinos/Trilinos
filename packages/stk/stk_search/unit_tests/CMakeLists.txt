@@ -40,6 +40,7 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestCoarseSearch.cpp")
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     search_unit_tests
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1

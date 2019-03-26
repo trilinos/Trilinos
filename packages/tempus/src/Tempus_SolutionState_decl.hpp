@@ -59,6 +59,13 @@ class SolutionState :
 {
 public:
 
+  /** \brief Default Constructor -- Not meant for immediate adding to SolutionHistory.
+   *  This constructor does not set the solution vectors, x, xdot and xdotdot.
+   *  which should be set via setX(), setXDot(), and/or setXDotDot() prior
+   *  to being added to SolutionHistory.
+   */
+  SolutionState();
+
   SolutionState(
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot    = Teuchos::null,
@@ -90,50 +97,6 @@ public:
     const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState = Teuchos::null);
 
   SolutionState(
-    const Scalar time,
-    const Scalar dt,
-    const int    iStep,
-    const Scalar errorAbs,
-    const Scalar errorRel,
-    const int    order,
-    const int    nFailures,
-    const int    nRunningFailures,
-    const int    nConsecutiveFailures,
-    const Status solutionStatus,
-    const bool   output,
-    const bool   outputScreen,
-    const bool   isSynced,
-    const bool   isInterpolated,
-    const Scalar accuracy,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-    const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
-    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
-
-  SolutionState(
-    const Scalar time,
-    const Scalar dt,
-    const int    iStep,
-    const Scalar errorAbs,
-    const Scalar errorRel,
-    const int    order,
-    const int    nFailures,
-    const int    nRunningFailures,
-    const int    nConsecutiveFailures,
-    const Status solutionStatus,
-    const bool   output,
-    const bool   outputScreen,
-    const bool   isSynced,
-    const bool   isInterpolated,
-    const Scalar accuracy,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-    const Teuchos::RCP<const StepperState<Scalar> >& stepperSt = Teuchos::null,
-    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null);
-
-  SolutionState(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
     const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
@@ -151,10 +114,6 @@ public:
   virtual void copySolutionData(
     const Teuchos::RCP<const SolutionState<Scalar> >& s);
 
-  /// Swap solution data, but keep metaData untouched.
-  virtual void swapSolutionData(
-    const Teuchos::RCP<SolutionState<Scalar> >& ss);
-
   /// Destructor
   virtual ~SolutionState() {}
 
@@ -170,6 +129,10 @@ public:
     virtual Scalar getIndex()    const {return metaData_->getIStep();}
     virtual Scalar getTimeStep() const {return metaData_->getDt();}
     virtual Scalar getOrder()    const {return metaData_->getOrder();}
+    virtual Scalar getNRunningFailures() const
+      { return metaData_->getNRunningFailures(); }
+    virtual Scalar getNConsecutiveFailures() const
+      { return metaData_->getNConsecutiveFailures(); }
     virtual Status getSolutionStatus() const
       { return metaData_->getSolutionStatus(); }
     virtual bool getOutput()     const {return metaData_->getOutput();}
@@ -191,7 +154,16 @@ public:
       { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
         metaData_nc_->setOrder(order); }
     virtual void setSolutionStatus(Status s)
-      { return metaData_nc_->setSolutionStatus(s); }
+      { metaData_nc_->setSolutionStatus(s); }
+
+    virtual void setSolutionStatus(const Thyra::SolveStatus<Scalar> sStatus)
+      {
+        if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+          metaData_nc_->setSolutionStatus(Status::PASSED);
+        else
+          metaData_nc_->setSolutionStatus(Status::FAILED);
+      }
+
     virtual void setOutput(bool output)
       { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
         metaData_nc_->setOutput(output); }
@@ -230,6 +202,19 @@ public:
 
   /// \name Set State Data
   //@{
+    virtual void setX(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
+      { x_nc_ = x; x_ = x; }
+    virtual void setX(Teuchos::RCP<const Thyra::VectorBase<Scalar> > x)
+      { x_nc_ = Teuchos::null; x_ = x; }
+    virtual void setXDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot)
+      { xdot_nc_ = xdot; xdot_ = xdot; }
+    virtual void setXDot(Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot)
+      { xdot_nc_ = Teuchos::null; xdot_ = xdot; }
+    virtual void setXDotDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot)
+      { xdotdot_nc_ = xdotdot; xdotdot_ = xdotdot; }
+    virtual void setXDotDot(Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot)
+      { xdotdot_nc_ = Teuchos::null; xdotdot_ = xdotdot; }
+
     virtual void setPhysicsState(const Teuchos::RCP<PhysicsState<Scalar> >& ps)
       { physicsState_nc_ = ps; physicsState_ = physicsState_nc_; }
   //@}

@@ -14,15 +14,13 @@
 
 namespace Tempus {
 
+
 /** \brief A ModelEvaluator for residual evaluations given a state.
  *  This ModelEvaluator takes a state, x, and determines its residual,
  *  \f$ g(x) \f$, which is suitable for a nonlinear solve.  This is
  *  accomplished by computing the time derivative of the state, x_dot,
  *  (through Lambda functions), supplying the current time, and calling
- *  the application application ModelEvaluator, \f$ f(\dot{x},x,t) \f$.
- *
- *  This class breaks the primary design principle for ModelEvaluators;
- *  it is not stateless!
+ *  the application application ModelEvaluator, \f$ f(x,\dot{x},t) \f$.
  */
 template <typename Scalar>
 class WrapperModelEvaluatorBasic
@@ -33,7 +31,7 @@ public:
   /// Constructor
   WrapperModelEvaluatorBasic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-    : appModel_(appModel), timeDer_(Teuchos::null)
+    : appModel_(appModel), timeDer_(Teuchos::null), evaluationType_(SOLVE_FOR_X)
   {
     wrapperInArgs_  = this->createInArgs();
     wrapperOutArgs_ = this->createOutArgs();
@@ -67,11 +65,13 @@ public:
   /// Set parameters for application implicit ModelEvaluator solve.
   virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
     Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs)
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs,
+    EVALUATION_TYPE evaluationType = SOLVE_FOR_X)
   {
     timeDer_ = timeDer;
     wrapperInArgs_.setArgs(inArgs);
     wrapperOutArgs_.setArgs(outArgs);
+    evaluationType_ = evaluationType;
   }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -120,6 +120,7 @@ private:
   Teuchos::RCP<TimeDerivative<Scalar> >              timeDer_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          wrapperInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         wrapperOutArgs_;
+  EVALUATION_TYPE                                    evaluationType_;
 };
 
 } // namespace Tempus

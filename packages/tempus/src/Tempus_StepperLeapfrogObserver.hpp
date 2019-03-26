@@ -48,11 +48,6 @@ public:
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     Stepper<Scalar> & stepper){}
 
-  /// Observe Stepper before Explicit ME evaluation while initializing xDotDot
-  virtual void observeBeforeExplicitInitialize(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperLeapfrog<Scalar> & stepperLF){}
-
   /// Observe Stepper before updating xDot while initializing xDotDot
   virtual void observeBeforeXDotUpdateInitialize(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,

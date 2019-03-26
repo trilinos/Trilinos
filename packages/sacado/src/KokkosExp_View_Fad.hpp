@@ -56,7 +56,7 @@ struct is_view_fad_contiguous { static const bool value = false; };
 template <typename view_type>
 KOKKOS_INLINE_FUNCTION
 constexpr unsigned
-dimension_scalar(const view_type& view) {
+dimension_scalar(const view_type& /* view */) {
   return 0;
 }
 

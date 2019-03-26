@@ -81,7 +81,7 @@ setStepper(
 
 template<class Scalar>
 void IntegratorForwardSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
@@ -139,7 +139,7 @@ setInitialState(Scalar t0,
   else
     assign(Xdotdot->getNonconstMultiVector()->subView(rng).ptr(), *DxdotdotDp0);
 
-  integrator_->setInitialState(t0, X, Xdot, Xdotdot);
+  integrator_->initializeSolutionHistory(t0, X, Xdot, Xdotdot);
 }
 
 template<class Scalar>
