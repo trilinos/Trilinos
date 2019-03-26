@@ -298,7 +298,7 @@ namespace Tpetra {
     void
     fillComplete (const Teuchos::RCP<const map_type>& domainMap,
                   const Teuchos::RCP<const map_type>& rangeMap,
-                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+                  const Teuchos::RCP<Teuchos::ParameterList>& /* params */ = Teuchos::null) {
       domainMap_ = domainMap;
       rangeMap_ = rangeMap;
       endFill();
@@ -332,7 +332,7 @@ namespace Tpetra {
     ///   method's behavior.  See documentation of the three-argument
     ///   version of fillComplete (above) for valid parameters.
     void
-    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {endFill();}
+    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& /* params */ = Teuchos::null) {endFill();}
 
 
   private:

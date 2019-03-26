@@ -101,7 +101,7 @@ namespace Tpetra {
   void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   init (const Teuchos::RCP<const map_type>& source,
-        const Teuchos::RCP<const map_type>& target,
+        const Teuchos::RCP<const map_type>& /* target */,
         bool useRemotePIDs,
         Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
@@ -133,6 +133,8 @@ namespace Tpetra {
     if(!plist.is_null())
       label = plist->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
+#else
+    (void)plist;
 #endif
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
