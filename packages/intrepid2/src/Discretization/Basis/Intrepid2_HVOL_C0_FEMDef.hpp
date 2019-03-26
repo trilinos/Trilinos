@@ -59,7 +59,7 @@ namespace Intrepid2 {
     void
     Basis_HVOL_C0_FEM::Serial<opType>::
     getValues(       outputViewType output,
-               const inputViewType input ) {
+               const inputViewType /* input */ ) {
       switch (opType) {
       case OPERATOR_VALUE : {
         output.access(0) = 1.0;
