@@ -124,7 +124,7 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   validParamList->set<int>("avatar: good class",int_dummy,"Numeric code for class Avatar considers to be good");
 
    // Which drop tol choice heuristic to use
-  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heurisitc we want to use");  
+  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heuristic we want to use");  
 
   // Bounds file for extrapolation risk
   validParamList->set<Teuchos::Array<std::string> >("avatar: bounds file",ar_dummy,"Bounds file for Avatar extrapolation risk");
@@ -163,7 +163,9 @@ void AvatarInterface::Setup() {
   // Get the avatar strings (NOTE: Only exist on proc 0)
   avatarStrings_ = ReadFromFiles("avatar: decision tree files");
   namesStrings_  = ReadFromFiles("avatar: names files");
-  boundsString_ = ReadFromFiles("avatar: bounds file");
+  if(params_.isParameter("avatar: bounds file"))
+    boundsString_ = ReadFromFiles("avatar: bounds file");
+
   filestem_ = params_.get<Teuchos::Array<std::string>>("avatar: filestem");
 
 
@@ -322,7 +324,9 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
       std::cout<<"** Avatar TestString ***\n"<<testString<<std::endl;//DEBUG
 
-      int bound_check = checkBounds(testString, boundsString_);
+      int bound_check = true;
+      if(params_.isParameter("avatar: bounds file"))
+         bound_check = checkBounds(testString, boundsString_);
       
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
@@ -395,56 +399,29 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
 int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString) const {
   std::stringstream ss(trialString);
-  std::vector<float> vect;
+  std::vector<double> vect;
 
-  int useNewFeatures = 0;
+  double b; 
+  while (ss >> b)  {
+    vect.push_back(b);
+    if (ss.peek() == ',') ss.ignore();
+  }
+  
+  std::stringstream ssBounds(boundsString[0]);
+  std::vector<double> boundsVect;
 
-  float i;
- 
-  while (ss >> i)
-  {
-    vect.push_back(i);
-
-    if (ss.peek() == ',')
-      ss.ignore();
+  while (ssBounds >> b) {
+    boundsVect.push_back(b);    
+    if (ssBounds.peek() == ',') ssBounds.ignore();
   }
 
-  std::string bounds = const_cast<char*>(boundsString[0].c_str());
+  int min_idx = (int) std::min(vect.size(),boundsVect.size()/2);
 
-  std::stringstream ssBounds(bounds);
-  std::vector<float> boundsVect;
+  bool inbounds=true;
+  for(int i=0; inbounds && i<min_idx; i++) 
+    inbounds =  boundsVect[2*i] <= vect[i] && vect[i] <= boundsVect[2*i+1];
 
-  float b;
- 
-  while (ssBounds >> b)
-  {
-    boundsVect.push_back(b);
-
-    if (ssBounds.peek() == ',')
-      ssBounds.ignore();
-  }
-
-  if (vect.at(3) > boundsVect.at(0) || vect.at(3) < boundsVect.at(1))
-    return 0;
- 
-  if (vect.at(4) > boundsVect.at(2) || vect.at(4) < boundsVect.at(3))
-    return 0;
-
-  if (vect.at(5) > boundsVect.at(4) || vect.at(5) < boundsVect.at(5))
-    return 0;
- 
-  if (vect.at(6) > boundsVect.at(6) || vect.at(6) < boundsVect.at(7))
-    return 0;
-
-  if (useNewFeatures == 1){
-    if (vect.at(8) > boundsVect.at(8) || vect.at(8) < boundsVect.at(9))
-      return 0;
-
-    if (vect.at(9) > boundsVect.at(10) || vect.at(9) < boundsVect.at(11))
-      return 0;
-  }
-
-  return 1;
+  return (int) inbounds;
 }
 
 int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCombos) const{
