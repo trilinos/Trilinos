@@ -2364,13 +2364,25 @@ namespace Tpetra {
                           const impl_scalar_type newVals[],
                           const LocalOrdinal numElts) const
   {
+    LocalOrdinal numValid = 0; // number of valid local column indices
+    if (graph.getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
+      auto fun =
+        [&](size_t const k, size_t const /*start*/, size_t const offset) {
+          rowVals[offset] = newVals[k];
+        };
+      numValid = graph.findLocalIndices(rowInfo.localRow, indsT, fun);
+      return numValid;
+    }
+
+    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
+    // removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // Guess for the current index k into rowVals
-    LO numValid = 0; // number of valid local column indices
 
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can
@@ -2487,13 +2499,28 @@ namespace Tpetra {
                            const impl_scalar_type newVals[],
                            const LocalOrdinal numElts) const
   {
+    LocalOrdinal numValid = 0; // number of valid local column indices
+    if (graph.getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
+      auto fun =
+        [&](size_t const k, size_t const /*start*/, size_t const offset) {
+          rowVals[offset] = newVals[k];
+        };
+      // [FIXME: pass globalRow directly?
+      auto globalRow = graph.rowMap_->getGlobalElement(rowInfo.localRow);
+      numValid = graph.findGlobalIndices(globalRow, indsT, fun);
+      return numValid;
+    }
+
+    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
+    // removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // guess at the index's relative offset in the row
-    LO numValid = 0; // number of valid input column indices
 
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can
@@ -2612,13 +2639,31 @@ namespace Tpetra {
                            const LocalOrdinal numElts,
                            const bool atomic) const
   {
+    LocalOrdinal numValid = 0; // number of valid local column indices
+    if (graph.getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
+      auto fun =
+        [&](size_t const k, size_t const /*start*/, size_t const offset) {
+          if (atomic)
+            Kokkos::atomic_add(&rowVals[offset], newVals[k]);
+          else
+            rowVals[offset] += newVals[k];
+        };
+      // [FIXME: pass globalRow directly?
+      auto globalRow = graph.rowMap_->getGlobalElement(rowInfo.localRow);
+      numValid = graph.findGlobalIndices(globalRow, indsT, fun);
+      return numValid;
+    }
+
+    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
+    // removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // guess at the index's relative offset in the row
-    LO numValid = 0; // number of valid input column indices
 
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can
@@ -3053,9 +3098,6 @@ namespace Tpetra {
                           const bool atomic) const
   {
     LocalOrdinal numValid = 0; // number of valid local column indices
-
-#define NEW_GRAPH_INSERT2 1
-#ifdef NEW_GRAPH_INSERT2
     if (graph.getProfileType() == StaticProfile)
     {
       Teuchos::ArrayView<const LocalOrdinal> indsT(inds, numElts);
@@ -3069,7 +3111,9 @@ namespace Tpetra {
       numValid = graph.findLocalIndices(rowInfo.localRow, indsT, fun);
       return numValid;
     }
-#endif
+
+    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
+    // removed.
 
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;

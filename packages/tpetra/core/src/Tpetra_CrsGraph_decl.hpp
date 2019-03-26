@@ -1846,10 +1846,14 @@ namespace Tpetra {
                             std::function<void(const size_t, const size_t, const size_t)> fun =
                                 std::function<void(const size_t, const size_t, const size_t)>());
 
-    LocalOrdinal
+    size_t
     findLocalIndices(const LocalOrdinal lclRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& indices,
                      std::function<void(const size_t, const size_t, const size_t)> fun) const;
+    size_t
+    findGlobalIndices(const GlobalOrdinal gblRow,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+                      std::function<void(const size_t, const size_t, const size_t)> fun) const;
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///
