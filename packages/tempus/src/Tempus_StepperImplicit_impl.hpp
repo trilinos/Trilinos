@@ -212,11 +212,7 @@ void StepperImplicit<Scalar>::setInitialConditions(
 
     this->evaluateImplicitODE(f, x, xDot, time, p);
 
-    Scalar normX = Thyra::norm(*x);
-    Scalar reldiff = Scalar(0.0);
-    if (normX == Scalar(0.0)) reldiff = Thyra::norm(*f);
-    else reldiff = Thyra::norm(*f)/normX;
-
+    Scalar reldiff = Thyra::norm(*f)/Thyra::norm(*x);
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
