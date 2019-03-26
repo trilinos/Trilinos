@@ -541,7 +541,8 @@ void IntegratorBasic<Scalar>::checkTimeStep()
       <<std::setw(11)<<std::setprecision(3)<<wsmd->getDt()
       << "  STEP FAILURE!! - ";
     if (wsmd->getSolutionStatus() == Status::FAILED) {
-      *out << "Solution Status = " << toString(wsmd->getSolutionStatus())
+      *out << "Solution Status = "
+           << toString(solutionHistory_->getWorkingState()->getSolutionStatus())
            << std::endl;
     } else if ((timeStepControl_->getStepType() == "Constant") and
                (wsmd->getDt() != timeStepControl_->getInitTimeStep())) {
