@@ -2238,7 +2238,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  findLocalIndices(const LocalOrdinal lclRow,
+  findLocalIndices(const RowInfo& rowInfo,
                    const Teuchos::ArrayView<const LocalOrdinal>& indices,
                    std::function<void(const size_t, const size_t, const size_t)> fun) const
   {
@@ -2255,6 +2255,7 @@ namespace Tpetra {
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
+    LO lclRow = rowInfo.localRow;
     if (this->isLocallyIndexed())
     {
       numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
@@ -2278,7 +2279,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  findGlobalIndices(const GlobalOrdinal gblRow,
+  findGlobalIndices(const RowInfo& rowInfo,
                     const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                     std::function<void(const size_t, const size_t, const size_t)> fun) const
   {
@@ -2292,14 +2293,12 @@ namespace Tpetra {
     using Kokkos::View;
     using Kokkos::MemoryUnmanaged;
     auto invalidCount = Teuchos::OrdinalTraits<size_t>::invalid();
-    auto lclRow = this->rowMap_->getLocalElement(gblRow);
-    if (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid())
-      return invalidCount;
 
     using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
+    LocalOrdinal lclRow = rowInfo.localRow;
     if (this->isLocallyIndexed())
     {
       if (this->colMap_.is_null())
