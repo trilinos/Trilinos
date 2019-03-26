@@ -110,12 +110,27 @@ namespace Ifpack2 {
                                    typename ViewType::device_type,
                                    MemoryTraits<typename ViewType::memory_traits,Kokkos::Unmanaged> >;
     template <typename ViewType>
+    using Atomic = Kokkos::View<typename ViewType::data_type,
+                                typename ViewType::array_layout,
+                                typename ViewType::device_type,
+                                MemoryTraits<typename ViewType::memory_traits,Kokkos::Atomic> >;    
+    template <typename ViewType>
     using Const = Kokkos::View<typename ViewType::const_data_type, 
                                typename ViewType::array_layout,
                                typename ViewType::device_type, 
                                typename ViewType::memory_traits>;
     template <typename ViewType>
     using ConstUnmanaged = Const<Unmanaged<ViewType> >;    
+
+    template <typename ViewType>
+    using AtomicUnmanaged = Atomic<Unmanaged<ViewType> >;    
+
+    template <typename ViewType>
+    using Unmanaged = Kokkos::View<typename ViewType::data_type,
+                                   typename ViewType::array_layout,
+                                   typename ViewType::device_type,
+                                   MemoryTraits<typename ViewType::memory_traits,Kokkos::Unmanaged> >;
+
 
     template <typename ViewType>
     using Scratch = Kokkos::View<typename ViewType::data_type,
@@ -351,7 +366,6 @@ namespace Ifpack2 {
 
       template <typename T>
       static int isend(const MPI_Comm comm, const T* buf, int count, int dest, int tag, MPI_Request* ireq) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::Isend");
 #ifdef HAVE_IFPACK2_MPI
         MPI_Request ureq;
         const auto dt = Teuchos::Details::MpiTypeTraits<scalar_type>::getType();
@@ -365,7 +379,6 @@ namespace Ifpack2 {
 
       template <typename T>
       static int irecv(const MPI_Comm comm, T* buf, int count, int src, int tag, MPI_Request* ireq) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::Irecv");
 #ifdef HAVE_IFPACK2_MPI
         MPI_Request ureq;
         const auto dt = Teuchos::Details::MpiTypeTraits<scalar_type>::getType();
@@ -378,7 +391,6 @@ namespace Ifpack2 {
       }
 
       static int waitany(int count, MPI_Request* reqs, int* index) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::WaitAny");
 #ifdef HAVE_IFPACK2_MPI
         return MPI_Waitany(count, reqs, index, MPI_STATUS_IGNORE);
 #else
@@ -387,7 +399,6 @@ namespace Ifpack2 {
       }
 
       static int waitall(int count, MPI_Request* reqs) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::WaitAll");
 #ifdef HAVE_IFPACK2_MPI
         return MPI_Waitall(count, reqs, MPI_STATUS_IGNORE);
 #else
@@ -439,7 +450,6 @@ namespace Ifpack2 {
     public:
       void setOffsetValues(const Teuchos::ArrayView<const size_t> &lens, 
                            const size_type_1d_view &offs) { 
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::SetOffsetValues");
         // wrap lens to kokkos view and deep copy to device
         Kokkos::View<size_t*,host_execution_space> lens_host(const_cast<size_t*>(lens.getRawPtr()), lens.size());
         const auto lens_device = Kokkos::create_mirror_view(memory_space(), lens_host);
@@ -459,7 +469,6 @@ namespace Ifpack2 {
 
     private:
       void createMpiRequests(const tpetra_import_type &import) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::CreateMpiRequests");
         Tpetra::Distributor &distributor = import.getDistributor();
 
         // copy pids from distributor
@@ -487,7 +496,6 @@ namespace Ifpack2 {
       }
 
       void createSendRecvIDs(const tpetra_import_type &import) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::CreateSendRecvIDs");
         // For each remote PID, the list of LIDs to receive.
         const auto remote_lids = import.getRemoteLIDs();
         const local_ordinal_type_1d_view_host
@@ -533,11 +541,15 @@ namespace Ifpack2 {
         const local_ordinal_type mv_blocksize = blocksize_*num_vectors;
         const local_ordinal_type idiff = iend_ - ibeg_;
         const auto abase = buffer_.data() + mv_blocksize*ibeg_;
-        
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
           using team_policy_type = Kokkos::TeamPolicy<execution_space>;
-          const team_policy_type policy(idiff, num_vectors == 1 ? 1 : 2);
+          local_ordinal_type vector_size(0);
+          if      (blocksize_ <=  4) vector_size =  4;
+          else if (blocksize_ <=  8) vector_size =  8;
+          else if (blocksize_ <= 16) vector_size = 16;
+          else                       vector_size = 32;
+          const team_policy_type policy(idiff, 1, vector_size);
           Kokkos::parallel_for
             ("AsyncableImport::TeamPolicy::copy", 
              policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
@@ -599,7 +611,6 @@ namespace Ifpack2 {
       }
 
       void createDataBuffer(const local_ordinal_type &num_vectors) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::CreateDataBuffer");
         const size_type extent_0 = lids.recv.extent(0)*blocksize;
         const size_type extent_1 = num_vectors;
         if (remote_multivector.extent(0) == extent_0 &&
@@ -621,7 +632,6 @@ namespace Ifpack2 {
                        const Teuchos::RCP<const tpetra_map_type>& tgt_map, 
                        const local_ordinal_type blocksize_,
                        const local_ordinal_type_1d_view dm2cm_) {
-        IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::Constructor");
         blocksize = blocksize_;
         dm2cm = dm2cm_;
 
@@ -643,7 +653,7 @@ namespace Ifpack2 {
         // constants and reallocate data buffers if necessary
         const local_ordinal_type num_vectors = mv.extent(1);
         const local_ordinal_type mv_blocksize = blocksize*num_vectors;
-
+        
         // send async
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
           copy<ToBuffer>(lids.send, buffer.send, offset.send(i), offset.send(i+1), 
@@ -677,7 +687,6 @@ namespace Ifpack2 {
       }
 
       void cancel () {
-	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::Cancel");
 #ifdef HAVE_IFPACK2_MPI
         waitall(reqs.recv.size(), reqs.recv.data());
         waitall(reqs.send.size(), reqs.send.data());
@@ -2063,6 +2072,7 @@ namespace Ifpack2 {
       static constexpr int internal_vector_length = impl_type::internal_vector_length;
 
       /// multivector view
+      using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view;
       using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view;
 
       /// team policy types
@@ -2087,7 +2097,11 @@ namespace Ifpack2 {
 
       // copy to multivectors : damping factor and Y_scalar_multivector
       Unmanaged<impl_scalar_type_2d_view> Y_scalar_multivector;
-      Unmanaged<impl_scalar_type_2d_view> Z_scalar_multivector;
+#if defined(__CUDA_ARCH__)
+      AtomicUnmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
+#else
+      /* */ Unmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
+#endif
       const impl_scalar_type df;
       const bool compute_diff;
 
@@ -2117,7 +2131,7 @@ namespace Ifpack2 {
                                  vector_length/internal_vector_length),
 	vector_loop_size(vector_length/internal_vector_length),
 	Y_scalar_multivector(),
-	Z_scalar_multivector(),
+	Z_scalar_vector(),
 	df(damping_factor),
 	compute_diff(is_norm_manager_active)	
       {}
@@ -2144,6 +2158,7 @@ namespace Ifpack2 {
 	    nrows_vals[vi] = partptr(partidx+1) - ri0_vals[vi];
 	  }
 
+          impl_scalar_type z_partial_sum(0);
 	  if (nrows_vals[0] == 1) {
 	    const local_ordinal_type j=0, pri=pri0;
 	    {
@@ -2160,9 +2175,11 @@ namespace Ifpack2 {
 			const impl_scalar_type yd = X_internal_vector_values(pri, i, col, v)[vi] - y;
 			y  += df*yd;
 			
-			if (compute_diff) 
-			  Z_scalar_multivector(row,col) = yd;
-		      }
+			{//if (compute_diff) {
+                          const auto yd_abs = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
+                          z_partial_sum += yd_abs*yd_abs;
+                        }
+                      }
 		    });
 		}
 	      }
@@ -2183,14 +2200,18 @@ namespace Ifpack2 {
 	  		const impl_scalar_type yd = X_internal_vector_values(pri, i, col, v)[vi] - y;
 	  		y += df*yd;
 
-			if (compute_diff) 
-			  Z_scalar_multivector(row,col) = yd;
+			{//if (compute_diff) {
+                          const auto yd_abs = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
+                          z_partial_sum += yd_abs*yd_abs;
+                        }
 	  	      }
 	  	    }
 	  	  }
 	  	}
 	      });
 	  }
+          //if (compute_diff) 
+            Z_scalar_vector(member.league_rank()) += z_partial_sum;
 	}
       }
 
@@ -2425,6 +2446,9 @@ namespace Ifpack2 {
 	const local_ordinal_type num_vectors = 1;
 	internal_vector_scratch_type_3d_view
 	  WW(member.team_scratch(0), blocksize, 1, vector_loop_size);
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            Z_scalar_vector(member.league_rank()) = impl_scalar_type(0);
+          }); 
 	Kokkos::parallel_for
 	  (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
 	    solveSingleVector(member, blocksize, i0, r0, nrows, v, WW);
@@ -2448,6 +2472,9 @@ namespace Ifpack2 {
 
 	internal_vector_scratch_type_3d_view
           WW(member.team_scratch(0), blocksize, num_vectors, vector_loop_size);
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            Z_scalar_vector(member.league_rank()) = impl_scalar_type(0);
+          }); 
 	Kokkos::parallel_for
 	  (Kokkos::ThreadVectorRange(member, vector_loop_size),[&](const int &v) {
 	    solveMultiVector(member, blocksize, i0, r0, nrows, v, WW);
@@ -2456,12 +2483,12 @@ namespace Ifpack2 {
       }      
 
       void run(const impl_scalar_type_2d_view &Y,
-	       const impl_scalar_type_2d_view &Z) {
+	       const impl_scalar_type_1d_view &Z) {
 	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::SolveTridiags");
 	
 	/// set vectors 
 	this->Y_scalar_multivector = Y;
-	this->Z_scalar_multivector = Z;
+	this->Z_scalar_vector = Z;
 
 	const local_ordinal_type num_vectors = X_internal_vector_values.extent(2);
 	const local_ordinal_type blocksize = D_internal_vector_values.extent(1);
@@ -3213,51 +3240,30 @@ namespace Ifpack2 {
     }; 
 
     template<typename MatrixType>
-    struct ReduceMultiVector {
-    public:
+    void reduceVector(const ConstUnmanaged<typename ImplType<MatrixType>::impl_scalar_type_1d_view> zz,
+                      const typename ImplType<MatrixType>::local_ordinal_type ncols,
+                      /* */ typename ImplType<MatrixType>::magnitude_type *vals) {
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceVector");	
       using impl_type = ImplType<MatrixType>;
-      
       using local_ordinal_type = typename impl_type::local_ordinal_type;
       using impl_scalar_type = typename impl_type::impl_scalar_type;
       using magnitude_type = typename impl_type::magnitude_type;
-
-      using impl_scalar_type_1d_view = typename impl_type::impl_scalar_type_1d_view; 
-      using impl_scalar_type_2d_view = typename impl_type::impl_scalar_type_2d_view; 
-
-    private:
-      ConstUnmanaged<impl_scalar_type_2d_view> _zz;
-
-    public:      
-      ReduceMultiVector(const impl_scalar_type_2d_view &zz)
-        : _zz(zz) {}
-      
-      void run(magnitude_type *vals) {
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN("BlockTriDi::ReduceMultiVector");	
 #if 0
-	// this is expensive when I use cublas with uvm memory...
-	// no clue yet.
-	impl_scalar_type_1d_view rz(_zz.data(), _zz.span());
-	const auto norm2_sqrt = KokkosBlas::nrm2(rz);
-	const auto norm2 = norm2_sqrt*norm2_sqrt;
+      const auto norm2 = KokkosBlas::nrm1(zz);
 #else
-        magnitude_type norm2;
-        ConstUnmanaged<impl_scalar_type_1d_view> rz(_zz.data(), _zz.span());
-        using execution_space = typename impl_type::execution_space;
-        Kokkos::parallel_reduce
-          ("ReduceMultiVector::Device",
-           Kokkos::RangePolicy<execution_space>(0,rz.extent(0)),
-           KOKKOS_LAMBDA(const local_ordinal_type &i, magnitude_type &update) {
-            const magnitude_type val = Kokkos::ArithTraits<impl_scalar_type>::abs(rz(i));
-            update += val*val;
-          }, norm2);
+      impl_scalar_type norm2(0);
+      Kokkos::parallel_reduce
+        ("ReduceMultiVector::Device",
+         Kokkos::RangePolicy<typename impl_type::execution_space>(0,zz.extent(0)),
+         KOKKOS_LAMBDA(const local_ordinal_type &i, impl_scalar_type &update) {
+          update += zz(i);
+        }, norm2);
 #endif	
-        const local_ordinal_type ncols = _zz.extent(1);
-	const auto norm = norm2/magnitude_type(ncols);
-	for (local_ordinal_type j=0;j<ncols;++j) vals[j] = norm;
+      const auto norm = Kokkos::ArithTraits<impl_scalar_type>::abs(norm2)/magnitude_type(ncols);
+      for (local_ordinal_type j=0;j<ncols;++j) vals[j] = norm;
 
-	IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
-      }
-    };
+      IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END;
+    }
     
     ///
     /// Manage the distributed part of the computation of residual norms.
@@ -3276,16 +3282,13 @@ namespace Ifpack2 {
       MPI_Request mpi_request_;
       MPI_Comm comm_;
 #endif
-      using magnitude_type_1d_view_host = Kokkos::View<magnitude_type*,host_execution_space>;
-      magnitude_type_1d_view_host work_;
+      magnitude_type work_[3];
 
     public:
       NormManager() = default;
       NormManager(const NormManager &b) = default;
       NormManager(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
         sweep_step_ = 1;
-        num_vectors_ = 0;
-
         collective_ = comm->getSize() > 1;
         if (collective_) {
 #ifdef HAVE_IFPACK2_MPI
@@ -3296,15 +3299,6 @@ namespace Ifpack2 {
         }
       }
 
-      int getNumVectors() const { return num_vectors_; }
-
-      // Resize the buffer to accommodate nvec vectors in the multivector, for a
-      // matrix having block size block_size.
-      void resize(const int num_vectors) {
-        num_vectors_ = num_vectors;
-        work_ = magnitude_type_1d_view_host("NormManager::work", 3*num_vectors_);
-      }
-      
       // Check the norm every sweep_step sweeps.
       void setCheckFrequency(const int sweep_step) {
         TEUCHOS_TEST_FOR_EXCEPT_MSG(sweep_step < 1, "sweep step must be >= 1");
@@ -3312,25 +3306,24 @@ namespace Ifpack2 {
       }
       
       // Get the buffer into which to store rank-local squared norms.
-      magnitude_type* getBuffer() { return work_.data(); }
+      magnitude_type* getBuffer() { return &work_[0]; }
 
       // Call MPI_Iallreduce to find the global squared norms.
       void ireduce(const int sweep, const bool force = false) {
         if ( ! force && sweep % sweep_step_) return;
 
 	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::Ireduce");
-        const int n = num_vectors_;
-	auto send_data = work_.data() + n;
-	auto recv_data = work_.data();
+	auto send_data = &work_[0] + 1;
+	auto recv_data = &work_[0];
         if (collective_) {
-          std::copy(recv_data, send_data, send_data);
+          work_[1] = work_[0];
 #ifdef HAVE_IFPACK2_MPI
 # if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3) 
-          MPI_Iallreduce(send_data, recv_data, n,
+          MPI_Iallreduce(send_data, recv_data, 1,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_, &mpi_request_);
 # else
-          MPI_Allreduce (send_data, recv_data, n,
+          MPI_Allreduce (send_data, recv_data, 1,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_);
 # endif
@@ -3361,21 +3354,10 @@ namespace Ifpack2 {
 #endif
         }
 	bool r_val = false;
-        const auto n = num_vectors_;
         if (sweep == 1) {
-          std::copy(work_.data(), work_.data()+n, work_.data()+2*n);
+          work_[2] = work_[0];
         } else {
-          const auto n0 = work_.data() + 2*n;
-          bool done = true;
-          for (int v = 0; v < num_vectors_; ++v) {
-	    work_[v];
-            const magnitude_type mdnf = work_[v];
-            if (mdnf > tol2*n0[v]) {
-              done = false;
-              break;
-            }
-          }
-	  r_val = done;
+          r_val = (work_[0] < tol2*work_[2]);
         }
 	return r_val;
       }
@@ -3383,16 +3365,13 @@ namespace Ifpack2 {
       // After termination has occurred, finalize the norms for use in
       // get_norms{0,final}.
       void finalize () {
-        magnitude_type* const nf = work_.data() + 2*num_vectors_;
-        for (int v = 0; v < num_vectors_; ++v) {
-          work_[v] = std::sqrt(work_[v]); // after converged
-          nf[v] = std::sqrt(nf[v]); // first norm 
-	}
+        work_[0] = std::sqrt(work_[0]); // after converged
+        work_[2] = std::sqrt(work_[2]); // first norm
       }
       
       // Report norms to the caller.
-      const magnitude_type* getNorms0 () const { return work_.data() + 2*num_vectors_; }
-      const magnitude_type* getNormsFinal () const { return work_.data(); }
+      const magnitude_type* getNorms0 () const { return &work_[2]; }
+      const magnitude_type* getNormsFinal () const { return &work_[0]; }
     };
 	
     ///
@@ -3468,19 +3447,16 @@ namespace Ifpack2 {
         work = vector_type_1d_view("vector workspace 1d view", work_span_required);
 
       // construct W
-      const size_type Y_size = Y.getLocalLength()*Y.getNumVectors();
-      if (size_type(W.extent(0)) < Y_size)
-	W = impl_scalar_type_1d_view("W", Y_size);
-     
+      const local_ordinal_type W_size = interf.packptr.extent(0)-1;
+      if (local_ordinal_type(W.extent(0)) < W_size) 
+	W = impl_scalar_type_1d_view("W", W_size);
+
       typename AsyncableImport<MatrixType>::impl_scalar_type_2d_view remote_multivector;
       {
-	IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_0");
 	if (is_seq_method_requested) {
-	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_0_0");
 	  if (Z.getNumVectors() != Y.getNumVectors()) 
 	    Z = tpetra_multivector_type(tpetra_importer->getTargetMap(), num_vectors, false);                   
 	} else {
-	  IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_0_1");
 	  if (is_async_importer_active) {
 	    // create comm data buffer and keep it here
 	    async_importer->createDataBuffer(num_vectors);
@@ -3493,8 +3469,7 @@ namespace Ifpack2 {
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
       const auto XX = X.template getLocalView<memory_space>();
       const auto YY = Y.template getLocalView<memory_space>();
-      const auto ZZ = Z.template getLocalView<memory_space>();      
-      impl_scalar_type_2d_view WW(W.data(), Y.getLocalLength(), Y.getNumVectors());
+      const auto ZZ = Z.template getLocalView<memory_space>();
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
       SolveTridiags<MatrixType> solve_tridiags(interf, btdm, pmv, 
@@ -3505,28 +3480,20 @@ namespace Ifpack2 {
 	compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf, 
 				is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
       
-      ReduceMultiVector<MatrixType> reduce_multivector(WW);
-
       // norm manager workspace resize
-      if (is_norm_manager_active) {
-	norm_manager.resize(num_vectors);
+      if (is_norm_manager_active) 
 	norm_manager.setCheckFrequency(check_tol_every);
-      }       
 
       // iterate
       int sweep = 0;
       for (;sweep<max_num_sweeps;++sweep) {
         {
-          IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1");
           if (is_y_zero) {
-            IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_0");
             // pmv := x(lclrow)
             multivector_converter.run(XX);
             Kokkos::deep_copy(YY, zero);
           } else {
-            IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1");
             if (is_seq_method_requested) {
-              IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1_0");
               // y := x - R y
               Z.doImport(Y, *tpetra_importer, Tpetra::REPLACE);
               compute_residual_vector.run(YY, XX, ZZ);
@@ -3534,7 +3501,6 @@ namespace Ifpack2 {
               // pmv := y(lclrow).
               multivector_converter.run(YY);
             } else {
-              IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_1_1_1");
               // fused y := x - R y and pmv := y(lclrow); 
               // real use case does not use overlap comp and comm
               if (overlap_communication_and_computation || !is_async_importer_active) {
@@ -3560,14 +3526,12 @@ namespace Ifpack2 {
         
         // pmv := inv(D) pmv.
         {
-          IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_2");          
-          solve_tridiags.run(YY, WW);
+          solve_tridiags.run(YY, W);
 	}
         {
-          IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::ApplyInverseJacobi::Region_3");          
           if (is_norm_manager_active) {	  
             // y(lclrow) = (b - a) y(lclrow) + a pmv, with b = 1 always.
-            reduce_multivector.run(norm_manager.getBuffer());
+            reduceVector<MatrixType>(W, num_vectors, norm_manager.getBuffer());
             if (sweep + 1 == max_num_sweeps) {
               norm_manager.ireduce(sweep, true);
               norm_manager.checkDone(sweep + 1, tolerance, true);
@@ -3579,7 +3543,6 @@ namespace Ifpack2 {
 
         is_y_zero = false;
       }
-      
 
       //sqrt the norms for the caller's use.
       if (is_norm_manager_active) norm_manager.finalize();

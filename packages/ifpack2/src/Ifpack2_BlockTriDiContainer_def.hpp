@@ -340,7 +340,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getNorms0 () const {
     const auto p = impl_->norm_manager.getNorms0();
-    return Teuchos::arcp(p, 0, p ? impl_->norm_manager.getNumVectors() : 0, false);
+    return Teuchos::arcp(p, 0, p ? 1 : 0, false);
   }
 
   template <typename MatrixType>
@@ -348,7 +348,7 @@ namespace Ifpack2 {
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ::getNormsFinal () const {
     const auto p = impl_->norm_manager.getNormsFinal();
-    return Teuchos::arcp(p, 0, p ? impl_->norm_manager.getNumVectors() : 0, false);
+    return Teuchos::arcp(p, 0, p ? 1 : 0, false);
   }
 
   template <typename MatrixType>
