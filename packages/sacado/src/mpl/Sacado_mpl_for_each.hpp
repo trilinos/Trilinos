@@ -76,7 +76,7 @@ namespace Sacado {
     template <class Seq, class Iter1>
     struct for_each_no_kokkos<Seq, Iter1, Iter1> {
       template <typename Op>
-      for_each_no_kokkos(const Op& op) {}
+      for_each_no_kokkos(const Op& /* op */) {}
     };
 
   }
