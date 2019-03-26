@@ -82,14 +82,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
     stepperPL->remove("Default Predictor");
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-
-    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
-    if (!pass) {
-      std::cout << std::endl;
-      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
-    }
-    TEST_ASSERT(pass)
+    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -101,13 +94,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
-    if (!pass) {
-      std::cout << std::endl;
-      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
-      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
-    }
-    TEST_ASSERT(pass)
+    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
   }
 }
 #endif // TEST_PARAMETERLIST
@@ -251,10 +238,10 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->initializeSolutionHistory.
+    // the application can set it also by integrator->setInitialState.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->initializeSolutionHistory(0.0, x0);
+    integrator->setInitialState(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();

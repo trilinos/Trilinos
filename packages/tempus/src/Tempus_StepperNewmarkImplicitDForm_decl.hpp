@@ -29,12 +29,10 @@ namespace Tempus {
  *  for the explicit case.
  *
  *  Newmark is second order accurate if \f$\gamma =  0.5\f$; otherwise it
- *  is first order accurate.  Some additional properties about the Newmark
- *  Beta scheme can be found
- *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
- *
- *  The First-Step-As-Last (FSAL) principle is not used with the
- *  Newmark implicit D-Form method.
+ * is first order
+ *  accurate.  Some additional properties about the Newmark Beta scheme
+ *  can be found <a
+ * href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
  */
 template <class Scalar>
 class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scalar> {
@@ -66,13 +64,13 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   virtual void
   initialize();
 
-  /// Set the initial conditions and make them consistent.
-  virtual void setInitialConditions (
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
-
   /// Take the specified timestep, dt, and return true if successful.
   virtual void
   takeStep(const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory);
+
+  /// Pass initial guess to Newton solver
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
 
   /// Get a default (initial) StepperState
   virtual Teuchos::RCP<Tempus::StepperState<Scalar>>
@@ -98,8 +96,6 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
     {return isExplicit() and isImplicit();}
   virtual bool isOneStepMethod()   const {return true;}
   virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
-  virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
@@ -167,8 +163,9 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   Scalar beta_;
   Scalar gamma_;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
+  Teuchos::RCP<Teuchos::FancyOStream> out_;
 };
 }  // namespace Tempus
 

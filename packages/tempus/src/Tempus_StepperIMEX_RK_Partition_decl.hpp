@@ -208,13 +208,14 @@ namespace Tempus {
  *         for \f$X_i\f$ where \f$Y_i\f$ are known parameters
  *       - \f$g^x_i \leftarrow - \tilde{\dot{X}}\f$
  *     - \f$f_i \leftarrow f(Z_i,\hat{t}_i)\f$
+ *     - \f$\dot{X}_i
+ *          = - g^x_i - f^x(Z_i,t_i)\f$ [Optional]
+ *     - \f$\dot{Y}_i = - f^y_i \f$ [Optional]
  *   - end for
  *   - \f$z_n = z_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\, f_i\f$
  *   - \f$x_n \mathrel{+{=}} - \Delta t\,\sum_{i=1}^{s} b_i\, g^x_i\f$
- *
- *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK Partition.
- *  The default is to set useFSAL=false, and useFSAL=true will result
- *  in an error.
+ *   - Solve \f$M(z_n) \dot{z}_n + F(z_n,t_n) + G(z_n,t_n) = 0\f$
+ *       for \f$\dot{z}_n\f$ [Optional]
  *
  *  #### References
  *  -# Shadid, Cyr, Pawlowski, Widley, Scovazzi, Zeng, Phillips, Conde,
@@ -294,10 +295,6 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -314,10 +311,9 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
-    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
-  /// Return alpha = d(xDot)/dx.
+    /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
   {
     const Teuchos::SerialDenseMatrix<int,Scalar> & A = implicitTableau_->A();
@@ -325,6 +321,10 @@ public:
   }
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+
+  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+     {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -367,7 +367,10 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
+  Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > stepperIMEX_RKPartObserver_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 

@@ -36,9 +36,6 @@ namespace Tempus {
  * parameters are not allowed at the present time.  Also, note that, like
  * the Newmark Beta stepper, the linear solve for the explicit version of
  * this scheme has not been optimized (the mass matrix is not lumped).
- *
- *  The First-Step-As-Last (FSAL) principle is not used with the
- *  HHT-Alpha method.
  */
 template<class Scalar>
 class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>
@@ -70,13 +67,13 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
-
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
+    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
+    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -93,8 +90,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
-    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
@@ -159,6 +154,9 @@ private:
   Scalar alpha_m_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 
 };
 } // namespace Tempus

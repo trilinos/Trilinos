@@ -144,12 +144,12 @@ public:
   virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper)
     { integrator_->setStepperWStepper(stepper); }
   /// Set the initial state which has the initial conditions
-  virtual void initializeSolutionHistory(
+  virtual void setInitialState(
     Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null)
-    { integrator_->initializeSolutionHistory(state); }
+    { integrator_->setInitialState(state); }
 
   /// Set the initial state from Thyra::VectorBase(s)
-  virtual void initializeSolutionHistory(
+  virtual void setInitialState(
     Scalar t0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,

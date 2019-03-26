@@ -26,10 +26,10 @@ const std::string toString(const Status status)
 {
   std::string s = "Invalid Status!";
   switch(status) {
-    case PASSED:  { s = "PASSED";          break; }
-    case FAILED:  { s = "FAILED";          break; }
-    case WORKING: { s = "WORKING";         break; }
-    default:      { s = "Invalid Status!"; break; }
+    case PASSED:  s = "PASSED";          break;
+    case FAILED:  s = "FAILED";          break;
+    case WORKING: s = "WORKING";         break;
+    default:      s = "Invalid Status!"; break;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(s == "Invalid Status!", std::logic_error,
    "Error - Invalid status = " << status << "\n");

@@ -55,19 +55,16 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"getNextTimeStep");
+    Teuchos::OSTab ostab(out,1,"getNextTimeStep");
     bool printChanges = solutionHistory->getVerbLevel() !=
                         Teuchos::as<int>(Teuchos::VERB_NONE);
 
-    auto changeDT = [] (int istep, Scalar dt_old, Scalar dt_new,
-                        std::string reason)
-    {
+    auto changeDT = [] (Scalar dt_old, Scalar dt_new, std::string reason) {
       std::stringstream message;
-      message << std::scientific
-                       <<std::setw(6)<<std::setprecision(3)<<istep
-        << " *  (dt = "<<std::setw(9)<<std::setprecision(3)<<dt_old
-        <<   ", new = "<<std::setw(9)<<std::setprecision(3)<<dt_new
-        << ")  " << reason << std::endl;
+      message <<
+    "     (dt = "<<std::scientific<<std::setw(9)<<std::setprecision(3)<<dt_old
+    << ", new = "<<std::scientific<<std::setw(9)<<std::setprecision(3)<<dt_new
+    << ")  " << reason << std::endl;
       return message.str();
     };
 
@@ -86,7 +83,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     if (getStepType() == "Variable") {
       // If last time step was adjusted for output, reinstate previous dt.
       if (outputAdjustedDt_ == true) {
-        if (printChanges) *out << changeDT(iStep, dt, dtAfterOutput_,
+        if (printChanges) *out << changeDT(dt, dtAfterOutput_,
           "Reset dt after output.");
         dt = dtAfterOutput_;
         outputAdjustedDt_ = false;
@@ -94,13 +91,13 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
 
       if (dt <= 0.0) {
-        if (printChanges) *out << changeDT(iStep, dt, getInitTimeStep(),
+        if (printChanges) *out << changeDT(dt, getInitTimeStep(),
           "Reset dt to initial dt.");
         dt = getInitTimeStep();
       }
 
       if (dt < getMinTimeStep()) {
-        if (printChanges) *out << changeDT(iStep, dt, getMinTimeStep(),
+        if (printChanges) *out << changeDT(dt, getMinTimeStep(),
           "Reset dt to minimum dt.");
         dt = getMinTimeStep();
       }
@@ -119,12 +116,12 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     if (getStepType() == "Variable") {
       if (dt < getMinTimeStep()) { // decreased below minimum dt
-        if (printChanges) *out << changeDT(iStep, dt, getMinTimeStep(),
+        if (printChanges) *out << changeDT(dt, getMinTimeStep(),
           "dt is too small.  Resetting to minimum dt.");
         dt = getMinTimeStep();
       }
       if (dt > getMaxTimeStep()) { // increased above maximum dt
-        if (printChanges) *out << changeDT(iStep, dt, getMaxTimeStep(),
+        if (printChanges) *out << changeDT(dt, getMaxTimeStep(),
           "dt is too large.  Resetting to maximum dt.");
         dt = getMaxTimeStep();
       }
@@ -144,7 +141,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
         if (std::abs((lastTime+dt-oTime)/(lastTime+dt)) < reltol) {
           output = true;
           if (getStepType() == "Variable") {
-            if (printChanges) *out << changeDT(iStep, dt, oTime - lastTime,
+            if (printChanges) *out << changeDT(dt, oTime - lastTime,
               "Adjusting dt for numerical roundoff to hit the next output time.");
             // Next output time IS VERY near next time (<reltol away from it),
             // e.g., adjust for numerical roundoff.
@@ -156,7 +153,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
                    oTime < (lastTime+dt-getMinTimeStep())*(1.0+reltol)) {
           output = true;
           if (getStepType() == "Variable") {
-            if (printChanges) *out << changeDT(iStep, dt, oTime - lastTime,
+            if (printChanges) *out << changeDT(dt, oTime - lastTime,
               "Adjusting dt to hit the next output time.");
             // Next output time is not near next time
             // (>getMinTimeStep() away from it).
@@ -167,7 +164,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           }
         } else {
           if (getStepType() == "Variable") {
-            if (printChanges) *out << changeDT(iStep, dt, (oTime - lastTime)/2.0,
+            if (printChanges) *out << changeDT(dt, (oTime - lastTime)/2.0,
               "The next output time is within the minimum dt of the next time. "
               "Adjusting dt to take two steps.");
             // Next output time IS near next time
@@ -184,7 +181,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     // numerical differences.
     if ((lastTime + dt > getFinalTime() ) ||
         (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
-      if (printChanges) *out << changeDT(iStep, dt, getFinalTime() - lastTime,
+      if (printChanges) *out << changeDT(dt, getFinalTime() - lastTime,
         "Adjusting dt to hit the final time.");
       dt = getFinalTime() - lastTime;
     }

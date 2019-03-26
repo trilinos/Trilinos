@@ -251,14 +251,14 @@ void StepperHHTAlpha<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
-      if (this->initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
+      if (initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
         //Throw an exception if initial_guess is not compatible with solution
-        bool is_compatible = (a_init->space())->isCompatible(*this->initial_guess_->space());
+        bool is_compatible = (a_init->space())->isCompatible(*initial_guess_->space());
         TEUCHOS_TEST_FOR_EXCEPTION(
             is_compatible != true, std::logic_error,
               "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
               << "for Newton is not compatible with solution vector!\n");
-        Thyra::copy(*this->initial_guess_, a_init.ptr());
+        Thyra::copy(*initial_guess_, a_init.ptr());
       }
       else { //if no initial_guess_ provide, set 0 initial guess
         Thyra::put_scalar(0.0, a_init.ptr());
@@ -266,7 +266,10 @@ void StepperHHTAlpha<Scalar>::takeStep(
       wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
-      workingState->setSolutionStatus(sStatus);  // Converged --> pass.
+      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+        workingState->setSolutionStatus(Status::PASSED);
+      else
+        workingState->setSolutionStatus(Status::FAILED);
       Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
@@ -300,7 +303,10 @@ void StepperHHTAlpha<Scalar>::takeStep(
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
-    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
+    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+      workingState->setSolutionStatus(Status::PASSED);
+    else
+      workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
   }
   return;
@@ -471,11 +477,10 @@ StepperHHTAlpha<Scalar>::getValidParameters() const
 #endif
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  this->getValidParametersBasic(pl);
-  pl->set<bool>       ("Zero Initial Guess", false);
-  pl->set<std::string>("Solver Name", "",
-    "Name of ParameterList containing the solver specifications.");
+  pl->set("Stepper Type", this->description());
+  pl->set("Zero Initial Guess", false);
+  pl->set("Solver Name", "",
+          "Name of ParameterList containing the solver specifications.");
 
   return pl;
 }
@@ -488,12 +493,13 @@ StepperHHTAlpha<Scalar>::getDefaultParameters() const
 #endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
-  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl =
-    rcp_const_cast<ParameterList>(this->getValidParameters());
-
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setName("Default Stepper - " + this->description());
+  pl->set<std::string>("Stepper Type", this->description());
+  pl->set<bool>       ("Zero Initial Guess", false);
   pl->set<std::string>("Solver Name", "Default Solver");
+
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 

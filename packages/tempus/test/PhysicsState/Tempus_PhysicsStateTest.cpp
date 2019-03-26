@@ -81,10 +81,10 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->initializeSolutionHistory.
+    // the application can set it also by integrator->setInitialState.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->initializeSolutionHistory(0.0, x0);
+    integrator->setInitialState(0.0, x0);
 
 
     // Replace Tempus::PhysicsState with
