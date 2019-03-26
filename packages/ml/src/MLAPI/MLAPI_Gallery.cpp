@@ -41,6 +41,8 @@ Operator Gallery(const std::string ProblemType,
 
   return (A);
 #else
+  (void)ProblemType;
+  (void)MySpace;
   ML_THROW("Configure with --enable-galeri", -1);
 #endif
 
