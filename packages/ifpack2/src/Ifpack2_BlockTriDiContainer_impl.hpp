@@ -653,6 +653,16 @@ namespace Ifpack2 {
         // constants and reallocate data buffers if necessary
         const local_ordinal_type num_vectors = mv.extent(1);
         const local_ordinal_type mv_blocksize = blocksize*num_vectors;
+
+        // receive async
+        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
+          irecv(comm, 
+                buffer.recv.data() + offset.recv[i]*mv_blocksize,
+                (offset.recv[i+1] - offset.recv[i])*mv_blocksize,
+                pids.recv[i],
+                42,
+                &reqs.recv[i]);
+        }
         
         // send async
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
@@ -664,16 +674,6 @@ namespace Ifpack2 {
                 pids.send[i], 
                 42,
                 &reqs.send[i]);
-        }
-
-        // receive async
-        for (local_ordinal_type i=0,iend=pids.recv.extent(0);i<iend;++i) {
-          irecv(comm, 
-                buffer.recv.data() + offset.recv[i]*mv_blocksize,
-                (offset.recv[i+1] - offset.recv[i])*mv_blocksize,
-                pids.recv[i],
-                42,
-                &reqs.recv[i]);
         }
 
         // I find that issuing an Iprobe seems to nudge some MPIs into action,
