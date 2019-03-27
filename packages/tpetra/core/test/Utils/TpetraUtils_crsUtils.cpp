@@ -58,6 +58,7 @@
 using Teuchos::CommandLineProcessor;
 using Tpetra::Details::padCrsArrays;
 using Tpetra::Details::insertCrsIndices;
+using Tpetra::Details::findCrsIndices;
 using Tpetra::Details::impl::uninitialized_view;
 using std::vector;
 
@@ -301,6 +302,25 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
     }
     TEST_EQUALITY(num_inserted, 3);
     TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
+  }
+}
+
+TEUCHOS_UNIT_TEST( TpetraUtils, findIndices )
+{
+  {
+    vector<int> row_ptrs{0, 4};
+    vector<int> cur_indices{3, 6, 9, 12};
+    vector<int> new_indices{3, 6, 9, 12, 12, 9, 3, 6, 0, 2};
+    vector<int> in_values(new_indices.size(), 1);
+    vector<int> values(cur_indices.size(), 0);
+    vector<int> expected_values{2, 2, 2, 2};
+    auto num_found =
+      findCrsIndices(0, row_ptrs, cur_indices, new_indices,
+        [&](const size_t k, const size_t start, const size_t offset){
+          values[start+offset] += in_values[k];
+        });
+    TEST_EQUALITY(num_found, 8);
     TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
   }
 }

@@ -1910,55 +1910,53 @@ namespace Tpetra {
       this->allocateValues (LocalIndices, GraphNotYetAllocated);
     }
 
-#ifdef NEW_GRAPH_INSERT
-    if (graph.getProfileType() == StaticProfile)
+    const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
+#ifdef HAVE_TPETRA_DEBUG
+    // In a debug build, test whether any of the given column indices
+    // are not in the column Map.  Keep track of the invalid column
+    // indices so we can tell the user about them.
     {
-      auto fun = [&](size_t const k, size_t const start, size_t const offset) {
-                   this->k_values1D_[start + offset] += values[k]; };
+      using Teuchos::toString;
+
+      const map_type& colMap = * (graph.colMap_);
+      Teuchos::Array<LocalOrdinal> badColInds;
+      bool allInColMap = true;
+      for (size_t k = 0; k < numEntriesToAdd; ++k) {
+        if (! colMap.isNodeLocalElement (indices[k])) {
+          allInColMap = false;
+          badColInds.push_back (indices[k]);
+        }
+      }
+      if (! allInColMap) {
+        std::ostringstream os;
+        os << "You attempted to insert entries in owned row " << lclRow
+           << ", at the following column indices: " << toString (indices)
+           << "." << endl;
+        os << "Of those, the following indices are not in the column Map on "
+           "this process: " << toString (badColInds) << "." << endl << "Since "
+            "the matrix has a column Map already, it is invalid to insert "
+            "entries at those locations.";
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::invalid_argument, os.str ());
+      }
+    }
+#endif // HAVE_TPETRA_DEBUG
+
+    RowInfo rowInfo = graph.getRowInfo (lclRow);
+
+    if (this->getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
+      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+                   valsView[offset] += values[k]; };
       graph.insertLocalIndicesImpl(lclRow, indices, fun);
     }
     else
-#else
     {
-      const size_t numEntriesToAdd = static_cast<size_t> (indices.size ());
-#ifdef HAVE_TPETRA_DEBUG
-      // In a debug build, test whether any of the given column indices
-      // are not in the column Map.  Keep track of the invalid column
-      // indices so we can tell the user about them.
-      {
-        using Teuchos::toString;
-
-        const map_type& colMap = * (graph.colMap_);
-        Teuchos::Array<LocalOrdinal> badColInds;
-        bool allInColMap = true;
-        for (size_t k = 0; k < numEntriesToAdd; ++k) {
-          if (! colMap.isNodeLocalElement (indices[k])) {
-            allInColMap = false;
-            badColInds.push_back (indices[k]);
-          }
-        }
-        if (! allInColMap) {
-          std::ostringstream os;
-          os << "You attempted to insert entries in owned row " << lclRow
-             << ", at the following column indices: " << toString (indices)
-             << "." << endl;
-          os << "Of those, the following indices are not in the column Map on "
-            "this process: " << toString (badColInds) << "." << endl << "Since "
-            "the matrix has a column Map already, it is invalid to insert "
-            "entries at those locations.";
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (true, std::invalid_argument, os.str ());
-        }
-      }
-#endif // HAVE_TPETRA_DEBUG
-
-      RowInfo rowInfo = graph.getRowInfo (lclRow);
+      // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) Remove with DynamicProfile
       const size_t curNumEnt = rowInfo.numEntries;
       const size_t newNumEnt = curNumEnt + numEntriesToAdd;
       if (newNumEnt > rowInfo.allocSize) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (this->getProfileType () == StaticProfile, std::runtime_error,
-           "New indices exceed statically allocated graph structure.");
         // This must be a nonconst reference, since we'll reallocate.
         Teuchos::Array<IST>& curVals = this->values2D_[lclRow];
         // Make space for the new matrix entries.
@@ -1985,7 +1983,6 @@ namespace Tpetra {
         "the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
     }
-#endif // NEW_GRAPH_INSERT
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2018,6 +2015,9 @@ namespace Tpetra {
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
 #endif // HAVE_TPETRA_DEBUG
 
+    size_t newNumEnt = 0;
+    const size_t curNumEnt = rowInfo.numEntries;
+
     if (! graph.indicesAreAllocated ()) {
       this->allocateValues (GlobalIndices, GraphNotYetAllocated);
       // mfh 23 Jul 2017: allocateValues invalidates existing
@@ -2027,42 +2027,48 @@ namespace Tpetra {
       rowInfo = graph.getRowInfo (rowInfo.localRow);
     }
 
-    const size_t curNumEnt = rowInfo.numEntries;
-    const size_t newNumEnt = curNumEnt + numInputEnt;
-    if (newNumEnt > rowInfo.allocSize) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->getProfileType () == StaticProfile &&
-         newNumEnt > rowInfo.allocSize, std::runtime_error,
-         "New indices exceed statically allocated graph structure.  "
-         "curNumEnt (" << curNumEnt << ") + numInputEnt ("
-         << numInputEnt << ") > allocSize (" << rowInfo.allocSize
-         << ").");
-      // This needs to be a nonconst reference, in case we want to
-      // reallocate it.
-      Teuchos::Array<IST>& curVals = this->values2D_[rowInfo.localRow];
-      // Teuchos::ArrayRCP::resize automatically copies over values on
-      // reallocation.
-      graph.gblInds2D_[rowInfo.localRow].resize (newNumEnt);
-      curVals.resize (newNumEnt);
-      rowInfo.allocSize = newNumEnt; // reassign for updated allocSize
+    if (this->getProfileType() == StaticProfile)
+    {
+      Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
+      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+                   valsView[offset] += vals[k]; };
+      auto numInserted =
+        graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, fun);
+      newNumEnt = curNumEnt + numInserted;
+    }
+    else
+    {
+      // NOTE (DYNAMICPROFILE_REMOVAL) remove this block
+      newNumEnt = curNumEnt + numInputEnt;
+      if (newNumEnt > rowInfo.allocSize) {
+        // This needs to be a nonconst reference, in case we want to
+        // reallocate it.
+        Teuchos::Array<IST>& curVals = this->values2D_[rowInfo.localRow];
+        // Teuchos::ArrayRCP::resize automatically copies over values on
+        // reallocation.
+        graph.gblInds2D_[rowInfo.localRow].resize (newNumEnt);
+        curVals.resize (newNumEnt);
+        rowInfo.allocSize = newNumEnt; // reassign for updated allocSize
+      }
+
+      using Teuchos::ArrayView;
+      typename crs_graph_type::SLocalGlobalViews inputIndsAV;
+      inputIndsAV.ginds = ArrayView<const GO> (gblColInds, numInputEnt);
+      ArrayView<IST> curValsAV = this->getViewNonConst (rowInfo);
+      ArrayView<const IST> inputValsAV (vals, numInputEnt);
+
+      const ELocalGlobal curIndexingStatus =
+        this->isGloballyIndexed () ? GlobalIndices : LocalIndices;
+      // curIndexingStatus == GlobalIndices means the method calls
+      // getGlobalViewNonConst() and does direct copying, which should
+      // be reasonably fast.  LocalIndices means the method calls the
+      // Map's getLocalElement() method once per entry to insert.  This
+      // may be slow.
+      this->insertIndicesAndValues (graph, rowInfo, inputIndsAV, curValsAV,
+                                    inputValsAV, GlobalIndices,
+                                    curIndexingStatus);
     }
 
-    using Teuchos::ArrayView;
-    typename crs_graph_type::SLocalGlobalViews inputIndsAV;
-    inputIndsAV.ginds = ArrayView<const GO> (gblColInds, numInputEnt);
-    ArrayView<IST> curValsAV = this->getViewNonConst (rowInfo);
-    ArrayView<const IST> inputValsAV (vals, numInputEnt);
-
-    const ELocalGlobal curIndexingStatus =
-      this->isGloballyIndexed () ? GlobalIndices : LocalIndices;
-    // curIndexingStatus == GlobalIndices means the method calls
-    // getGlobalViewNonConst() and does direct copying, which should
-    // be reasonably fast.  LocalIndices means the method calls the
-    // Map's getLocalElement() method once per entry to insert.  This
-    // may be slow.
-    this->insertIndicesAndValues (graph, rowInfo, inputIndsAV, curValsAV,
-                                  inputValsAV, GlobalIndices,
-                                  curIndexingStatus);
 #ifdef HAVE_TPETRA_DEBUG
     const size_t chkNewNumEnt =
       graph.getNumEntriesInLocalRow (rowInfo.localRow);
@@ -2374,8 +2380,8 @@ namespace Tpetra {
       return graph.findLocalIndices(rowInfo, indsT, fun);
     }
 
-    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
-    // removed.
+    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
+    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const bool sorted = graph.isSorted ();
@@ -2508,8 +2514,8 @@ namespace Tpetra {
       return graph.findGlobalIndices(rowInfo, indsT, fun);
     }
 
-    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
-    // removed.
+    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
+    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -2649,8 +2655,8 @@ namespace Tpetra {
       return graph.findGlobalIndices(rowInfo, indsT, fun);
     }
 
-    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
-    // removed.
+    // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
+    // yanked once DynamicProfile is removed.
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -3104,8 +3110,8 @@ namespace Tpetra {
       return graph.findLocalIndices(rowInfo, indsT, fun);
     }
 
-    // NOTE: [tjf 2019.03] from this point down can be yanked once DynamicProfile is
-    // removed.
+    // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)
+    // from this point down can be yanked once DynamicProfile is removed.
 
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;

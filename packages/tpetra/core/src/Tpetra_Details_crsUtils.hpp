@@ -168,7 +168,7 @@ insert_crs_indices(
     size_t& num_assigned,
     InIndices const& new_indices,
     IndexMap map,
-    std::function<void(size_t const, size_t const, size_t const)> fun)
+    std::function<void(size_t const, size_t const, size_t const)> cb)
 {
   if (new_indices.size() == 0)
     return 0;
@@ -196,7 +196,7 @@ insert_crs_indices(
       cur_indices[end++] = idx;
       num_inserted++;
     }
-    if (fun) fun(k, start, row_offset - start);
+    if (cb) cb(k, start, row_offset - start);
   }
   num_assigned += num_inserted;
   return num_inserted;
@@ -284,7 +284,7 @@ padCrsArrays(
 /// \param numAssigned [in/out] The number of currently assigned indices in row \c row
 /// \param newIndices [in] The indices to insert
 /// \param map [in] An optional function mapping newIndices[k] to its actual index
-/// \param fun [in] An optional function called on every insertion at the local
+/// \param cb [in] An optional callback function called on every insertion at the local
 ///     index and the offset in to the inserted location
 /// \return numInserted The number of indices inserted. If there is not
 ///     capacity in curIndices for newIndices, return -1;
@@ -305,7 +305,7 @@ padCrsArrays(
 /// If this function is called through the overload below without the \c map
 /// argument, the identity map is provided.
 ///
-/// The optional function \c fun is called on every valid index. \c fun is sent the
+/// The optional function \c cb is called on every valid index. \c cb is sent the
 /// current loop index \c k, \c rowPtrs[k] (the start of the row), and the relative
 /// offset from \c start in to the \c curIndices array for \c newIndices[k]. This
 /// function could, for example, be used by \c CrsMatrix to fill the values array during
@@ -329,7 +329,7 @@ insertCrsIndices(
     InOutIndices& curIndices,
     size_t& numAssigned,
     InIndices const& newIndices,
-    std::function<void(const size_t, const size_t, const size_t)> fun =
+    std::function<void(const size_t, const size_t, const size_t)> cb =
         std::function<void(const size_t, const size_t, const size_t)>())
 {
   static_assert(std::is_same<typename std::remove_const<typename InOutIndices::value_type>::type,
@@ -339,7 +339,7 @@ insertCrsIndices(
   // Provide a unit map for the more general insert_indices
   using ordinal = typename InOutIndices::value_type;
   auto numInserted = impl::insert_crs_indices(row, rowPtrs, curIndices,
-    numAssigned, newIndices, [=](ordinal const idx) { return idx; }, fun);
+    numAssigned, newIndices, [](ordinal const idx) { return idx; }, cb);
   return numInserted;
 }
 
@@ -351,7 +351,7 @@ insertCrsIndices(
 /// \param curIndices [in] The current indices
 /// \param numAssigned [in] The number of currently assigned indices in row \c row
 /// \param newIndices [in] The indices to insert
-/// \param fun [in] An optional function called on every insertion at the local
+/// \param cb [in] An optional function called on every insertion at the local
 ///     index and the offset in to the inserted location
 /// \return numFound The number of indices found.
 ///
@@ -371,7 +371,7 @@ insertCrsIndices(
 /// If this function is called through the overload below without the \c map
 /// argument, the identity map is provided.
 ///
-/// The function \c fun is called on every valid index.
+/// The function \c cb is called on every valid index.
 ///
 template <class Pointers, class Indices1, class Indices2, class Callback>
 size_t

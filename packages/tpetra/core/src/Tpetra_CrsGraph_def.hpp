@@ -2092,7 +2092,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   insertGlobalIndicesImpl (const RowInfo& rowInfo,
                            const GlobalOrdinal inputGblColInds[],
-                           const size_t numInputInds)
+                           const size_t numInputInds,
+                           std::function<void(const size_t, const size_t, const size_t)> fun)
   {
     using Kokkos::View;
     using Kokkos::subview;
@@ -2113,7 +2114,7 @@ namespace Tpetra {
       using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
       inp_view_type inputInds(inputGblColInds, numInputInds);
       auto numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
-        this->k_gblInds1D_, numEntries, inputInds);
+        this->k_gblInds1D_, numEntries, inputInds, fun);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
         std::runtime_error,
@@ -2130,6 +2131,7 @@ namespace Tpetra {
       return static_cast<size_t>(numInserted);
     }
     else {
+      // NOTE (DYNAMICPROFILE_REMOVAL) remove block
       size_t newNumEntries = rowInfo.numEntries + numInputInds; // preliminary
       if (newNumEntries > rowInfo.allocSize) {
         // update allocation, doubling size to reduce # reallocations
@@ -2185,7 +2187,7 @@ namespace Tpetra {
       using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
       inp_view_type inputInds(indices.getRawPtr(), indices.size());
       auto numInserted = Details::insertCrsIndices(myRow, k_rowPtrs_,
-          this->k_lclInds1D_, numEntries, inputInds);
+        this->k_lclInds1D_, numEntries, inputInds, fun);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         numInserted == -1,
         std::runtime_error,
@@ -2200,7 +2202,7 @@ namespace Tpetra {
       newNumEntries = rowInfo.numEntries + numNewInds;
     }
     else {
-
+      // NOTE (DYNAMICPROFILE_REMOVAL) remove block
       numNewInds = indices.size();
       newNumEntries = rowInfo.numEntries + numNewInds;
       if (newNumEntries > rowInfo.allocSize) {

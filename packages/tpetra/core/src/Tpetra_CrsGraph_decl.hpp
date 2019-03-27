@@ -1838,7 +1838,9 @@ namespace Tpetra {
     size_t
     insertGlobalIndicesImpl (const RowInfo& rowInfo,
                              const GlobalOrdinal inputGblColInds[],
-                             const size_t numInputInds);
+                             const size_t numInputInds,
+                             std::function<void(const size_t, const size_t, const size_t)> fun =
+                                 std::function<void(const size_t, const size_t, const size_t)>());
 
     void
     insertLocalIndicesImpl (const LocalOrdinal lclRow,

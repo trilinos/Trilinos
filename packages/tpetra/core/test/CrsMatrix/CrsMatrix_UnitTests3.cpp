@@ -301,10 +301,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
       }
       TEST_EQUALITY( matrix.getNumEntriesInLocalRow(0), matrix.getCrsGraph()->getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // if static graph, insert one additional entry on my row and verify that an exception is thrown
-      if (pftype == StaticProfile) {
-        TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
-      }
       matrix.fillComplete(params);
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
@@ -471,5 +467,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

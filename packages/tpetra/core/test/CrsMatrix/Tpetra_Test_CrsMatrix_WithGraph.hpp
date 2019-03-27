@@ -373,7 +373,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
-    }                                           
+    }
     TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
     if (!success) {
       out << "Test FAILED; no sense in continuing" << endl;
@@ -399,7 +399,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
-    }                                           
+    }
     TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
     if (!success) {
       out << "Test FAILED; no sense in continuing" << endl;
@@ -901,7 +901,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // always room for non-locals
       GO r = map->getMaxGlobalIndex() + 1;
       if (r > map->getMaxAllGlobalIndex()) r = map->getMinAllGlobalIndex();
-      TEST_NOTHROW( matrix.insertGlobalValues( r, tuple(r), tuple(ST::one()) ) );
+      TEST_NOTHROW( matrix.insertGlobalValues( r, tuple(r+1), tuple(ST::one()) ) );
       // after communicating non-locals, failure trying to add them
       TEST_THROW( matrix.globalAssemble(), std::runtime_error );
     }
@@ -927,5 +927,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 } // namespace Tpetra
 
 #endif // TPETRA_TEST_CRSMATRIX_WITHGRAPH_HPP
-
-
