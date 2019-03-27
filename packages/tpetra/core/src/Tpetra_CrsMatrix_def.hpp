@@ -1933,9 +1933,9 @@ namespace Tpetra {
            << ", at the following column indices: " << toString (indices)
            << "." << endl;
         os << "Of those, the following indices are not in the column Map on "
-           "this process: " << toString (badColInds) << "." << endl << "Since "
-            "the matrix has a column Map already, it is invalid to insert "
-            "entries at those locations.";
+          "this process: " << toString (badColInds) << "." << endl << "Since "
+          "the matrix has a column Map already, it is invalid to insert "
+          "entries at those locations.";
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (true, std::invalid_argument, os.str ());
       }
@@ -2522,7 +2522,7 @@ namespace Tpetra {
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // guess at the index's relative offset in the row
-    LO numValid = 0; // number of valid local column indices
+    LO numValid = 0; // number of valid input column indices
 
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can
@@ -2581,7 +2581,6 @@ namespace Tpetra {
 
     return numValid;
   }
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
@@ -2663,7 +2662,7 @@ namespace Tpetra {
     const bool sorted = graph.isSorted ();
 
     size_t hint = 0; // guess at the index's relative offset in the row
-    LO numValid = 0; // number of valid local column indices
+    LO numValid = 0; // number of valid input column indices
 
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can

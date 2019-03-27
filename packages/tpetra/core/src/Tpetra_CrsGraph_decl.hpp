@@ -1851,7 +1851,7 @@ namespace Tpetra {
     /// \brief Finds indices in the given row.
     ///
     /// This method does no insertion; it just finds indices and calls
-    //a callback for each found index
+    /// a callback for each found index
     ///
     /// \param row [in] Row of interest
     ///
