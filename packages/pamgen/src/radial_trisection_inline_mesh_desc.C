@@ -1556,7 +1556,7 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(bool is_bloc
 
 //! Reads in/creates the serial component of the unstructured mesh in parallel
 /****************************************************************************/
-void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> &gloabl_element_ids,
+void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> &/* gloabl_element_ids */,
                                                                const std::vector<long long> & global_node_vector)
 /****************************************************************************/
 {
@@ -2017,7 +2017,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(lo
   }
 }
 /****************************************************************************/
-long long Radial_Trisection_Inline_Mesh_Desc::GetBlockBasedGlobalID(long long the_el,long long bct)
+long long Radial_Trisection_Inline_Mesh_Desc::GetBlockBasedGlobalID(long long the_el,long long /* bct */)
 /****************************************************************************/
 {
   long long l;
