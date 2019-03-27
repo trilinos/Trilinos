@@ -143,7 +143,7 @@ template <typename Adapter>
     const RCP<const Adapter> &ia,
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
-    modelFlag_t &modelFlags):
+    modelFlag_t &/* modelFlags */):
       numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), nUserWeights_(0), weights_()
 {

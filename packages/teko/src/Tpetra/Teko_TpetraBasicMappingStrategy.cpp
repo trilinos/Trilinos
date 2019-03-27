@@ -68,7 +68,7 @@ namespace TpetraHelpers {
 //       comm - Epetra_Comm object related to the map
 //
 BasicMappingStrategy::BasicMappingStrategy(const Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > & rMap,
-                                           const Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > & dMap, const Teuchos::Comm<Thyra::Ordinal> & comm)
+                                           const Teuchos::RCP<const Tpetra::Map<LO,GO,NT> > & dMap, const Teuchos::Comm<Thyra::Ordinal> & /* comm */)
 {
    rangeMap_ = rMap;
    domainMap_ = dMap;

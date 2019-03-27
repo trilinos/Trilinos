@@ -78,7 +78,7 @@ ML_Epetra::EdgeMatrixFreePreconditioner::~EdgeMatrixFreePreconditioner(){
 
 // ================================================ ====== ==== ==== == =
 // Computes the preconditioner
-int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool CheckFiltering)
+int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /* CheckFiltering */)
 {
   Teuchos::ParameterList dummy, ListCoarse;
 
@@ -451,7 +451,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 
 // ================================================ ====== ==== ==== == =
 // Print the individual operators in the multigrid hierarchy.
-void ML_Epetra::EdgeMatrixFreePreconditioner::Print(int whichHierarchy)
+void ML_Epetra::EdgeMatrixFreePreconditioner::Print(int /* whichHierarchy */)
 {
   /*ofstream ofs("Pmat.edge.m");
     if(Prolongator_) Prolongator_->Print(ofs);*/

@@ -174,8 +174,8 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
 }
 
 
-int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
-                                      Epetra_MultiVector& Y) const
+int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& /* X */, 
+                                      Epetra_MultiVector& /* Y */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                      "EpetraOperatorWrapper::ApplyInverse not implemented");

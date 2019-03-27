@@ -174,7 +174,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ReComputePreconditioner() {
 
 // ================================================ ====== ==== ==== == =
 // Computes the preconditioner
-int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckFiltering)
+int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* CheckFiltering */)
 {
 #ifdef ML_TIMING
   double t_time_start, t_time_curr, t_diff[7];

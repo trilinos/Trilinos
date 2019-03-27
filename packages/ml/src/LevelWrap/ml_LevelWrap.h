@@ -68,7 +68,7 @@ namespace ML_Epetra
     //@{ \name Mathematical functions.
 
     //! Apply the inverse of the preconditioner to an Epetra_MultiVector (NOT AVAILABLE)
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    int Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const {
       return(-1);}
 
     //! Apply the preconditioner w/ RHS B and get result X

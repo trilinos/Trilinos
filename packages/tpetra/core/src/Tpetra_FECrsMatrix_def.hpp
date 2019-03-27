@@ -99,7 +99,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedTo
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(const CombineMode CM) {
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(const CombineMode /* CM */) {
   // This should be a no-op for all of our purposes
 }//end doLocalToOverlap
 
