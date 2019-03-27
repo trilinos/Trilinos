@@ -112,7 +112,6 @@ namespace Tpetra {
     using Teuchos::Ptr;
     using Teuchos::rcp;
     using std::endl;
-    using data_type = ImportExportData<LocalOrdinal,GlobalOrdinal,Node>;
     ProfilingRegion regionImportInit ("Tpetra::Import::init");
 
     std::unique_ptr<std::string> verbPrefix;
@@ -1086,11 +1085,10 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
-    using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     typedef typename Array<int>::difference_type size_type;
     const char tfecfFuncName[] = "setupExport: ";
-    const char suffix[ ] = "  Please report this bug to the Tpetra developers.";
+    const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
     std::unique_ptr<std::string> prefix;
     if (this->verbose ()) {
@@ -1208,7 +1206,7 @@ namespace Tpetra {
         // Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
         size_type numValidRemote = 0;
 #ifdef HAVE_TPETRA_DEBUG
-        ArrayView<GlobalOrdinal> remoteGIDsPtr = remoteGIDsView;
+        ArrayView<GO> remoteGIDsPtr = remoteGIDsView;
 #else
         GO* const remoteGIDsPtr = remoteGIDsView.getRawPtr ();
 #endif // HAVE_TPETRA_DEBUG
