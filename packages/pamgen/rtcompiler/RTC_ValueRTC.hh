@@ -41,17 +41,17 @@ class Value: public Object
   /**
    * getValue -> Should not be called
    */
-  virtual double getArrayValue(long offset) const { assert(false); return 0;}
+  virtual double getArrayValue(long /* offset */) const { assert(false); return 0;}
 
   /**
    * setValue -> Should not be called
    */
-  virtual void setValue(double value) { assert(false); }
+  virtual void setValue(double /* value */) { assert(false); }
 
   /**
    * setArrayValue -> Should not be called
    */
-  virtual void setArrayValue(double value, long offset) { assert(false); }
+  virtual void setArrayValue(double /* value */, long /* offset */) { assert(false); }
 
   /**
    * getSize - The size of everything is zero, except for arrays
