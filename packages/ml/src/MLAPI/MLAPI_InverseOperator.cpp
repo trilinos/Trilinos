@@ -386,7 +386,7 @@ InverseOperator::operator()(const MultiVector& LHS,
 }
 
 std::ostream&
-InverseOperator::Print(std::ostream& os, const bool verbose) const
+InverseOperator::Print(std::ostream& os, const bool /* verbose */) const
 {
 
   StackPush();

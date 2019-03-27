@@ -1700,7 +1700,7 @@ ML_Operator * ML_ODE_Strength_Matrix(ML_Operator * A, int num_steps, double t_fi
 // ---- Output----
 // Update is changed so that Update*Bone = 0 with the changes occuring only at allowed non-zeros
 
-void ML_Satisfy_Constraints(ML_Operator *Update, ML_Operator *Pattern, double *Bone, double *BtBinv, int * F, int numPDEs, int numDOFs, int numNodes, int NullDim)
+void ML_Satisfy_Constraints(ML_Operator *Update, ML_Operator *Pattern, double *Bone, double *BtBinv, int * F, int numPDEs, int numDOFs, int /* numNodes */, int NullDim)
 {
   int i, j, k, length, rowstart, rowend, counter, indx, nodeNullDim, node;
   int oneInt = 1;

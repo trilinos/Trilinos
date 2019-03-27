@@ -178,14 +178,14 @@ ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const
 
 // ============================================================================
 int ML_Epetra::MatrixFreePreconditioner::
-SetUseTranspose(bool UseTranspose)
+SetUseTranspose(bool /* UseTranspose */)
 {
   ML_RETURN(-1);
 }
 
 // ============================================================================
 int ML_Epetra::MatrixFreePreconditioner::
-Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   ML_RETURN(-1);
 }
@@ -1069,7 +1069,7 @@ TotalCPUTime() const
 
 // ============================================================================
 int ML_Epetra::MatrixFreePreconditioner::
-GetBlockDiagonal(const Epetra_CrsGraph& Graph, std::string DiagonalColoringType)
+GetBlockDiagonal(const Epetra_CrsGraph& Graph, std::string /* DiagonalColoringType */)
 {
   CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
                                             0, true, 0);
