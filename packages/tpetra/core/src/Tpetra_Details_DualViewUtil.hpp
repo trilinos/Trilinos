@@ -72,8 +72,6 @@ makeDualViewFromOwningHostView
    const typename Kokkos::DualView<ElementType*, DeviceType>::t_host& hostView)
 {
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-  using dev_view_type = typename dual_view_type::t_dev;
-  using host_view_type = typename dual_view_type::t_host;
 
   if (dv.extent (0) == hostView.extent (0)) {
     // We don't need to reallocate the device View.
@@ -96,7 +94,6 @@ makeDualViewFromArrayView (Kokkos::DualView<ElementType*, DeviceType>& dv,
                            const std::string& label)
 {
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-  using dev_view_type = typename dual_view_type::t_dev;
   using host_view_type = typename dual_view_type::t_host;
   using const_host_view_type = typename host_view_type::const_type;
 
@@ -116,7 +113,6 @@ makeDualViewFromVector (Kokkos::DualView<ElementType*, DeviceType>& dv,
                         const std::string& label)
 {
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
-  using dev_view_type = typename dual_view_type::t_dev;
   using host_view_type = typename dual_view_type::t_host;
   using const_host_view_type = typename host_view_type::const_type;
 
