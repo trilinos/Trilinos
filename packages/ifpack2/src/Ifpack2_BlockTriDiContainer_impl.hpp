@@ -1491,9 +1491,9 @@ namespace Ifpack2 {
 #else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked algo_type;
 #endif
-      static int recommended_team_size(const int blksize, 
-    				       const int vector_length, 
-    				       const int internal_vector_length) { 
+      static int recommended_team_size(const int /* blksize */,
+                                       const int /* vector_length */,
+                                       const int /* internal_vector_length */) {
 	return 1;
       }
 
@@ -2001,9 +2001,9 @@ namespace Ifpack2 {
 #else
       typedef KokkosBatched::Experimental::Algo::Level3::Blocked multi_vector_algo_type;
 #endif
-      static int recommended_team_size(const int blksize, 
-				       const int vector_length, 
-				       const int internal_vector_length) { 
+      static int recommended_team_size(const int /* blksize */,
+                                       const int /* vector_length */,
+                                       const int /* internal_vector_length */) {
 	return 1; 
       }
     };
@@ -2351,7 +2351,7 @@ namespace Ifpack2 {
       KOKKOS_INLINE_FUNCTION 
       void 
       solveMultiVector(const member_type &member, 
-                       const local_ordinal_type &blocksize,
+                       const local_ordinal_type &/* blocksize */,
                        const local_ordinal_type &i0,
                        const local_ordinal_type &r0,
                        const local_ordinal_type &nrows,
