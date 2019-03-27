@@ -60,7 +60,7 @@ struct view_is_cuda_uvm {
   static constexpr bool value =
 #ifdef KOKKOS_ENABLE_CUDA
     std::is_same<typename ViewType::memory_space,
-		 Kokkos::CudaUVMSpace>::value;
+                 Kokkos::CudaUVMSpace>::value;
 #else
     false;
 #endif // KOKKOS_ENABLE_CUDA
@@ -77,19 +77,19 @@ struct MakeContiguousBuffer {
       Kokkos::LayoutRight>::value;
   using contiguous_array_layout =
     typename std::conditional<is_contiguous_layout,
-			      typename ViewType::array_layout,
-			      Kokkos::LayoutLeft>::type;
+                              typename ViewType::array_layout,
+                              Kokkos::LayoutLeft>::type;
   using contiguous_device_type =
     typename std::conditional<
       std::is_same<
-	typename ViewType::memory_space,
-	Kokkos::HostSpace>::value,
+        typename ViewType::memory_space,
+        Kokkos::HostSpace>::value,
       typename ViewType::device_type,
       Kokkos::HostSpace::device_type>::type;
   using contiguous_buffer_type =
     Kokkos::View<typename ViewType::non_const_data_type,
-		 contiguous_array_layout,
-		 contiguous_device_type>;
+                 contiguous_array_layout,
+                 contiguous_device_type>;
 
   static contiguous_array_layout
   makeLayout (const ViewType& view)
@@ -97,11 +97,11 @@ struct MakeContiguousBuffer {
     // NOTE (mfh 17 Mar 2019) This would be a good chance to use if
     // constexpr, once we have C++17.
     return contiguous_array_layout (view.extent (0), view.extent (1),
-				    view.extent (2), view.extent (3),
-				    view.extent (4), view.extent (5),
-				    view.extent (6), view.extent (7));
+                                    view.extent (2), view.extent (3),
+                                    view.extent (4), view.extent (5),
+                                    view.extent (6), view.extent (7));
   }
-  
+
   static contiguous_buffer_type
   make (const ViewType& view)
   {
@@ -123,9 +123,9 @@ makeContiguousBuffer (const ViewType& view)
 template<class ValueType>
 static void
 allReduceRawContiguous (ValueType output[],
-			const ValueType input[],
-			const size_t count,
-			const Teuchos::Comm<int>& comm)
+                        const ValueType input[],
+                        const size_t count,
+                        const Teuchos::Comm<int>& comm)
 {
   using Teuchos::outArg;
   using Teuchos::REDUCE_SUM;
@@ -133,7 +133,7 @@ allReduceRawContiguous (ValueType output[],
   constexpr size_t max_int = size_t (std::numeric_limits<int>::max ());
   TEUCHOS_ASSERT( count <= size_t (max_int) );
   reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
-			     input, output);
+                             input, output);
 }
 
 } // namespace (anonymous)
@@ -147,8 +147,8 @@ namespace Details {
 template<class InputViewType, class OutputViewType>
 static void
 allReduceView (const OutputViewType& output,
-	       const InputViewType& input,
-	       const Teuchos::Comm<int>& comm)
+               const InputViewType& input,
+               const Teuchos::Comm<int>& comm)
 {
   // If all the right conditions hold, we may all-reduce directly from
   // the input to the output.  Here are the relevant conditions:
@@ -203,12 +203,12 @@ allReduceView (const OutputViewType& output,
     // bytes are there, and the bytes there don't need to define valid
     // ValueType instances.
     allReduceRawContiguous (output_tmp.data (), input_tmp.data (),
-			    output_tmp.span (), comm);
+                            output_tmp.span (), comm);
     Kokkos::deep_copy (output, output_tmp);
   }
   else {
     allReduceRawContiguous (output.data (), input.data (),
-			    output.span (), comm);
+                            output.span (), comm);
   }
 }
 

@@ -53,23 +53,23 @@ namespace { // (anonymous)
 template<class MapType>
 Teuchos::RCP<const MapType>
 makeLocalMap (const MapType& inputMap,
-	      const typename MapType::local_ordinal_type lclNumRows)
+              const typename MapType::local_ordinal_type lclNumRows)
 {
   Teuchos::RCP<MapType> map (new MapType (lclNumRows,
-					  inputMap.getIndexBase (),
-					  inputMap.getComm (),
-					  Tpetra::LocallyReplicated));
+                                          inputMap.getIndexBase (),
+                                          inputMap.getComm (),
+                                          Tpetra::LocallyReplicated));
   return Teuchos::rcp_const_cast<const MapType> (map);
 }
 
 template<class MV>
 bool multiVectorsLocallyEqual (Teuchos::FancyOStream& out,
-			       const MV& X, const MV& Y)
+                               const MV& X, const MV& Y)
 {
   using std::endl;
   out << "Test MultiVector local equality" << endl;
   Teuchos::OSTab tab1 (out);
-  
+
   const size_t lclNumRows = X.getLocalLength ();
   if (Y.getLocalLength () != lclNumRows) {
     return false;
@@ -111,24 +111,24 @@ bool multiVectorsLocallyEqual (Teuchos::FancyOStream& out,
 
     for (size_t i = 0; i < lclNumRows; ++i) {
       if (X_j_lcl(i) != Y_j_lcl(i)) {
-	out << "Oh no! X(" << i << "," << j << ")=" << X_j_lcl(i) << " != Y(" << i << "," << j << ")=" << Y_j_lcl(i) << endl;
-	return false;
+        out << "Oh no! X(" << i << "," << j << ")=" << X_j_lcl(i) << " != Y(" << i << "," << j << ")=" << Y_j_lcl(i) << endl;
+        return false;
       }
     }
   }
 
-  out << "Values match" << endl;  
+  out << "Values match" << endl;
   return true;
 }
 
 template<class MV>
 bool multiVectorsEqual (Teuchos::FancyOStream& out,
-			const MV& X, const MV& Y)
+                        const MV& X, const MV& Y)
 {
   using std::endl;
   out << "Test MultiVector global equality" << endl;
   Teuchos::OSTab tab1 (out);
-  
+
   const auto& X_map = * (X.getMap ());
   const auto& Y_map = * (Y.getMap ());
   if (! X_map.isSameAs (Y_map)) {
@@ -145,7 +145,7 @@ bool multiVectorsEqual (Teuchos::FancyOStream& out,
   const int lclEq = lclEqual ? 1 : 0;
   int gblEq = 0;
 
-  using Teuchos::outArg;  
+  using Teuchos::outArg;
   using Teuchos::reduceAll;
   using Teuchos::REDUCE_MIN;
   const auto& comm = * (X_map.getComm ());
@@ -172,22 +172,22 @@ void reduceMultiVector (MV& Z)
 template<class MV>
 void reduceMultiVector2 (MV& Z)
 {
-  using Teuchos::outArg;  
+  using Teuchos::outArg;
   using Teuchos::reduceAll;
   using Teuchos::REDUCE_SUM;
-  
+
   if (Z.need_sync_host ()) {
     Z.sync_host ();
   }
   Z.modify_host ();
-  
+
   const size_t numRows = Z.getLocalLength ();
   const size_t numCols = Z.getNumVectors ();
   MV Z2 (Z.getMap (), Z.getNumVectors ());
   Z2.sync_host ();
   Z2.modify_host ();
   const auto& comm = * (Z.getMap ()->getComm ());
-  
+
   for (size_t j = 0; j < numCols; ++j) {
     auto Z_j = Z.getVectorNonConst (j);
     auto Z_j_lcl_2d = Z_j->getLocalViewHost ();
@@ -198,12 +198,12 @@ void reduceMultiVector2 (MV& Z)
     auto Z2_j_lcl = Kokkos::subview (Z2_j_lcl_2d, Kokkos::ALL (), 0);
 
     reduceAll (comm, REDUCE_SUM, static_cast<int> (numRows),
-	       Z_j_lcl.data (), Z2_j_lcl.data ());
+               Z_j_lcl.data (), Z2_j_lcl.data ());
     Kokkos::deep_copy (Z_j_lcl, Z2_j_lcl);
   }
   Z.sync_device ();
 }
-  
+
 //
 // UNIT TESTS
 //
@@ -237,7 +237,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
   RCP<const map_type> map =
     rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
   const auto lclMap = makeLocalMap (*map, lclNumRows);
-  
+
   MV Z0 (lclMap, numCols);
 
   // Fill each column of Z0 with a different number.  Start with 1
@@ -252,22 +252,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     }
     Z0.sync_device ();
   }
-  
+
   MV Z1 (Z0, Teuchos::Copy);
   Z1.reduce ();
   {
     const SC TWO = STS::one () + STS::one ();
-    
+
     Z1.sync_host ();
     auto Z1_lcl = Z1.getLocalViewHost ();
     bool reduce_expected_result = true;
     for (size_t j = 0; j < numCols; ++j) {
       SC expectedVal = SC (mag_type (j+1)) *
-	SC (mag_type (comm->getSize ()));
+        SC (mag_type (comm->getSize ()));
       for (size_t i = 0; i < lclNumRows; ++i) {
-	if (STS::magnitude (expectedVal - SC (Z1_lcl(i,j))) >= mag_type (lclNumRows) * STS::eps ()) {
-	  reduce_expected_result = false;
-	}
+        if (STS::magnitude (expectedVal - SC (Z1_lcl(i,j))) >= mag_type (lclNumRows) * STS::eps ()) {
+          reduce_expected_result = false;
+        }
       }
     }
     TEST_ASSERT( reduce_expected_result );
@@ -286,24 +286,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
 
   const bool Z1_Z3_equal = multiVectorsEqual (out, Z1, Z3);
   TEST_ASSERT( Z1_Z3_equal );
-  
+
   {
     // Make sure Z4 has a stride greater than its number of rows.
     const size_t Z4_stride = static_cast<size_t> (lclNumRows + 31);
     dual_view_type Z4_dv_extra ("Z4", Z4_stride, numCols);
     auto Z4_dv = Kokkos::subview (Z4_dv_extra,
-				  pair_type (0, lclNumRows),
-				  pair_type (0, numCols));
+                                  pair_type (0, lclNumRows),
+                                  pair_type (0, numCols));
     TEST_ASSERT( LO (Z4_dv.extent (0) == lclNumRows ) );
     TEST_ASSERT( LO (Z4_dv.extent (1) == numCols ) );
     TEST_ASSERT( LO (Z4_dv.d_view.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z4_dv.d_view.extent (1) == numCols ) );		 
+    TEST_ASSERT( LO (Z4_dv.d_view.extent (1) == numCols ) );
     TEST_ASSERT( LO (Z4_dv.h_view.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z4_dv.h_view.extent (1) == numCols ) );		 
+    TEST_ASSERT( LO (Z4_dv.h_view.extent (1) == numCols ) );
     // Kokkos could in theory insert padding in the row dimension.
     TEST_ASSERT( size_t (Z4_dv.d_view.stride (1)) >= Z4_stride );
     TEST_ASSERT( size_t (Z4_dv.h_view.stride (1)) >= Z4_stride );
-  
+
     MV Z4 (lclMap, Z4_dv);
     TEST_ASSERT( Z4_dv.d_view.data () == Z4.getLocalViewDevice ().data () );
     TEST_ASSERT( Z4_dv.h_view.data () == Z4.getLocalViewHost ().data () );
@@ -311,42 +311,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     if (Z4.isConstantStride ()) {
       TEST_ASSERT( size_t (Z4_dv.d_view.stride (1)) == Z4.getStride () );
       TEST_ASSERT( size_t (Z4_dv.h_view.stride (1)) == Z4.getStride () );
-      // Kokkos could in theory insert padding in the row dimension.      
+      // Kokkos could in theory insert padding in the row dimension.
       TEST_ASSERT( Z4.getStride () >= Z4_stride );
     }
     for (size_t j = 0; j < numCols; ++j) {
       out << "Column j=" << j << " of Z4" << endl;
       Teuchos::OSTab colTab (out);
-	
+
       auto Z4_dv_j = Kokkos::subview (Z4_dv, Kokkos::ALL (), j);
-      
+
       auto Z4_j_h = Z4.getVectorNonConst (j);
       auto Z4_j_h_lcl_2d = Z4_j_h->getLocalViewHost ();
       auto Z4_j_h_lcl = Kokkos::subview (Z4_j_h_lcl_2d, Kokkos::ALL (), 0);
 
       TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv_j.h_view.data () );
       if (Z4_j_h_lcl.data () != Z4_dv_j.h_view.data ()) {
-	out << "Z4_j_h_lcl.data() = " << Z4_j_h_lcl.data ()
-	    << ", Z4_dv_j.h_view.data() = " << Z4_dv_j.h_view.data ()
-	    << endl;
+        out << "Z4_j_h_lcl.data() = " << Z4_j_h_lcl.data ()
+            << ", Z4_dv_j.h_view.data() = " << Z4_dv_j.h_view.data ()
+            << endl;
       }
       TEST_ASSERT( Z4_j_h_lcl.extent (0) == Z4_dv_j.h_view.extent (0) );
-      
+
       auto Z4_j_d = Z4.getVectorNonConst (j);
       auto Z4_j_d_lcl_2d = Z4_j_d->getLocalViewDevice ();
       auto Z4_j_d_lcl = Kokkos::subview (Z4_j_d_lcl_2d, Kokkos::ALL (), 0);
 
       TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv_j.d_view.data () );
       if (Z4_j_d_lcl.data () != Z4_dv_j.d_view.data ()) {
-	out << "Z4_j_d_lcl.data() = " << Z4_j_d_lcl.data ()
-	    << ", Z4_dv_j.d_view.data() = " << Z4_dv_j.d_view.data ()
-	    << endl;
+        out << "Z4_j_d_lcl.data() = " << Z4_j_d_lcl.data ()
+            << ", Z4_dv_j.d_view.data() = " << Z4_dv_j.d_view.data ()
+            << endl;
       }
       TEST_ASSERT( Z4_j_d_lcl.extent (0) == Z4_dv_j.d_view.extent (0) );
 
       if (j == 0) {
-	TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv.h_view.data () );
-	TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv.d_view.data () );	
+        TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv.h_view.data () );
+        TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv.d_view.data () );
       }
     }
 
@@ -364,14 +364,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     const size_t Z5_stride = Z0.getLocalLength () + lclNumRows;
     dual_view_type Z5_dv_extra ("Z5", Z5_stride, numCols);
     auto Z5_dv = Kokkos::subview (Z5_dv_extra,
-				  pair_type (0, lclNumRows),
-				  pair_type (0, numCols));
+                                  pair_type (0, lclNumRows),
+                                  pair_type (0, numCols));
     TEST_ASSERT( LO (Z5_dv.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z5_dv.extent (1) == numCols ) );		 
+    TEST_ASSERT( LO (Z5_dv.extent (1) == numCols ) );
     // Kokkos could in theory insert padding in the row dimension.
     TEST_ASSERT( size_t (Z5_dv.d_view.stride (1)) >= Z5_stride );
-    TEST_ASSERT( size_t (Z5_dv.h_view.stride (1)) >= Z5_stride );  
-  
+    TEST_ASSERT( size_t (Z5_dv.h_view.stride (1)) >= Z5_stride );
+
     MV Z5 (lclMap, Z5_dv);
     Tpetra::deep_copy (Z5, Z0);
 
@@ -389,14 +389,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     const size_t Z6_stride = Z0.getLocalLength () + lclNumRows;
     dual_view_type Z6_dv_extra ("Z6", Z6_stride, numCols);
     auto Z6_dv = Kokkos::subview (Z6_dv_extra,
-				  pair_type (0, lclNumRows),
-				  pair_type (0, numCols));
+                                  pair_type (0, lclNumRows),
+                                  pair_type (0, numCols));
     TEST_ASSERT( LO (Z6_dv.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z6_dv.extent (1) == numCols ) );		 
+    TEST_ASSERT( LO (Z6_dv.extent (1) == numCols ) );
     // Kokkos could in theory insert padding in the row dimension.
     TEST_ASSERT( size_t (Z6_dv.d_view.stride (1)) >= Z6_stride );
-    TEST_ASSERT( size_t (Z6_dv.h_view.stride (1)) >= Z6_stride );  
-  
+    TEST_ASSERT( size_t (Z6_dv.h_view.stride (1)) >= Z6_stride );
+
     MV Z6 (lclMap, Z6_dv);
     Tpetra::deep_copy (Z6, Z0);
 
@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
 
     out << endl << "Z1:" << endl;
     Z1.describe (out, Teuchos::VERB_EXTREME);
-    out << endl << "Z6:" << endl;    
+    out << endl << "Z6:" << endl;
     Z6.describe (out, Teuchos::VERB_EXTREME);
   }
 }
