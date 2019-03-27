@@ -76,7 +76,7 @@ public:
   }
 
   //! Sets double parameters `Name'.
-  virtual int SetParameter(const std::string Name, const double Value)
+  virtual int SetParameter(const std::string /* Name */, const double /* Value */)
   {
     return(0);
   };

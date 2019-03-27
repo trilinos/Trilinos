@@ -89,7 +89,7 @@ public:
 
     /*! \brief Implement Teuchos::ValueTypeReductionOp interface
      */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+    void reduce( const Ordinal /* count */, const T inBuffer[], T inoutBuffer[]) const
     {
         if (reductionType == 0){
             Ordinal next=0;
@@ -153,7 +153,7 @@ public:
 
     /*! \brief Implement Teuchos::ValueTypeReductionOp interface
      */
-    void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+    void reduce( const Ordinal /* count */, const T inBuffer[], T inoutBuffer[]) const
     {
         Ordinal next=0;
 

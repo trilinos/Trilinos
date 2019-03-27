@@ -944,9 +944,9 @@ setInitialState(Scalar t0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0) 
 {
-   fwdStateIntegrator->setInitialState(t0, x0, xdot0, xdotdot0); 
+   fwdStateIntegrator->initializeSolutionHistory(t0, x0, xdot0, xdotdot0); 
    //Reset observer.  This is necessary for correct observation of solution
-   //since setInitialState modifies the solutionHistory object.
+   //since initializeSolutionHistory modifies the solutionHistory object.
    setObserver(); 
  
 }

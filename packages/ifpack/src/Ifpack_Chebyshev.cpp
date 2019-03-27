@@ -844,8 +844,8 @@ PowerMethod(const int MaximumIterations,  double& lambda_max,const unsigned int 
 //==============================================================================
 #ifdef HAVE_IFPACK_EPETRAEXT
 int Ifpack_Chebyshev::
-CG(const int MaximumIterations,
-   double& lambda_min, double& lambda_max,const unsigned int * RngSeed)
+CG(const int /* MaximumIterations */,
+   double& /* lambda_min */, double& /* lambda_max */,const unsigned int * /* RngSeed */)
 {
   IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
                      // I turned it off.

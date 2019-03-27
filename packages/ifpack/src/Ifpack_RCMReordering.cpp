@@ -107,7 +107,7 @@ SetParameter(const std::string Name, const int Value)
 
 //==============================================================================
 int Ifpack_RCMReordering::
-SetParameter(const std::string Name, const double Value)
+SetParameter(const std::string /* Name */, const double /* Value */)
 {
   return(0);
 }
