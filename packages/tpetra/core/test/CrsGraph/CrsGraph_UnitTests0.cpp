@@ -1042,13 +1042,15 @@ namespace {
             // entry on parallel runs, three on serial runs
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
-            TEST_EQUALITY_CONST( myrow_gbl.size(), (numProcs == 1 ? 3 : 1) );
+            TEST_EQUALITY_CONST( myrow_gbl.size(),
+                                ( numProcs == 1 && pftype == DynamicProfile ? 3 : 1 ));
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;
             ngraph.globalAssemble();
             TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
-                           ngraph.getNumAllocatedEntriesInLocalRow(0) );
+                          ( numProcs == 1 && pftype == StaticProfile ? 1 :
+                            ngraph.getNumAllocatedEntriesInLocalRow(0) ));
             out << "Calling fillComplete(params)" << endl;
             ngraph.fillComplete (params);
 
@@ -1308,5 +1310,3 @@ namespace {
 
     TPETRA_INSTANTIATE_N(NC_TESTS)
 }
-
-
