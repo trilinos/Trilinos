@@ -185,8 +185,44 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-             const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-             ProfileType pftype,
+             const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    storageStatus_ (pftype == StaticProfile ?
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
+    fillComplete_ (false),
+    frobNorm_ (-STM::one ())
+  {
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
+      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, numEntPerRowToAlloc,
+                                                pftype, params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
+         "an exception: " << e.what ());
+    }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+    resumeFill (params);
+    checkInternalState ();
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -199,13 +235,13 @@ namespace Tpetra {
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc,
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, numEntPerRowToAlloc (),
                                                 pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
+         "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
          "an exception: " << e.what ());
     }
     // myGraph_ not null means that the matrix owns the graph.  That's
@@ -216,13 +252,14 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE  
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             size_t maxNumEntriesPerRow,
-             ProfileType pftype,
+             const size_t maxNumEntPerRow,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -249,7 +286,7 @@ namespace Tpetra {
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
-                                                maxNumEntriesPerRow,
+                                                maxNumEntPerRow,
                                                 pftype, params));
     }
     catch (std::exception &e) {
@@ -271,8 +308,46 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-             ProfileType pftype,
+             const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    storageStatus_ (pftype == StaticProfile ?
+                    ::Tpetra::Details::STORAGE_1D_UNPACKED :
+                    ::Tpetra::Details::STORAGE_2D),
+    fillComplete_ (false),
+    frobNorm_ (-STM::one ())
+  {
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
+      "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
+                                                numEntPerRowToAlloc,
+                                                pftype, params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
+         "RCP<ParameterList>]) threw an exception: " << e.what ());
+    }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+    resumeFill (params);
+    checkInternalState ();
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -285,13 +360,14 @@ namespace Tpetra {
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, numEntPerRow,
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
+                                                numEntPerRowToAlloc (),
                                                 pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "RCP<const Map>, ArrayRCP<const size_t>, ProfileType[, "
+         "RCP<const Map>, ArrayView<const size_t>, ProfileType[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
     // myGraph_ not null means that the matrix owns the graph.  That's
@@ -302,7 +378,8 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
-
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
@@ -4469,7 +4546,7 @@ namespace Tpetra {
 
     RCP<const map_type> nonlocalRowMap;
     // Keep this for CrsGraph's constructor, so we can use StaticProfile.
-    Teuchos::ArrayRCP<size_t> numEntPerNonlocalRow (myNumNonlocalRows);
+    Teuchos::Array<size_t> numEntPerNonlocalRow (myNumNonlocalRows);
     {
       Teuchos::Array<GO> myNonlocalGblRows (myNumNonlocalRows);
       size_type curPos = 0;
@@ -4527,7 +4604,7 @@ namespace Tpetra {
     //    exact counts of the number of entries in each nonlocal row.
 
     RCP<crs_matrix_type> nonlocalMatrix =
-      rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow,
+      rcp (new crs_matrix_type (nonlocalRowMap, numEntPerNonlocalRow (),
                                 StaticProfile));
     {
       size_type curPos = 0;
@@ -7927,7 +8004,6 @@ namespace Tpetra {
        const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
     using Teuchos::Array;
-    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -8049,7 +8125,7 @@ namespace Tpetra {
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
       const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
-      ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
+      Array<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
       if (alpha != ZERO) {
@@ -8067,10 +8143,10 @@ namespace Tpetra {
       }
       // Construct the result matrix C.
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile, constructorSublist));
       }
       // Since A and B have the same row Maps, we could add them

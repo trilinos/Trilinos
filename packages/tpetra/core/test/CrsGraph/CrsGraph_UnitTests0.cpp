@@ -165,7 +165,7 @@ namespace {
     // has the wrong length, as it does in this case.
     ArrayRCP<size_t> hints = arcp<size_t> (numLocal + 1);
     std::fill (hints.begin (), hints.end (), static_cast<size_t> (1));
-    TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal+1))),
+    TEST_THROW( badgraph = rcp (new graph_type (map, hints (0, numLocal+1))),
                 std::invalid_argument ); // too many entries
 
     // Make sure that the test passed on all processes.
@@ -176,7 +176,7 @@ namespace {
 
     // CrsGraph's constructor should throw if input allocation hint
     // has the wrong length, as it does in this case.
-    TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal-1))),
+    TEST_THROW( badgraph = rcp (new graph_type (map, hints (0, numLocal-1))),
                 std::invalid_argument ); // too few entries
 
     // Make sure that the test passed on all processes.
@@ -190,7 +190,7 @@ namespace {
     // build, but not for a release build.
 
     // hints[0] = Teuchos::OrdinalTraits<size_t>::invalid ();
-    // TEST_THROW( badgraph = rcp (new graph_type (map, hints.persistingView (0, numLocal))),
+    // TEST_THROW( badgraph = rcp (new graph_type (map, hints (0, numLocal))),
     //             std::invalid_argument ); // invalid value
 
     // // Make sure that the test passed on all processes.
@@ -855,7 +855,7 @@ namespace {
         }
         // create a diagonal graph, but where only my middle row has an entry
         ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
-        GRAPH ddgraph(map,toalloc,pftype);
+        GRAPH ddgraph(map, toalloc (), pftype);
         ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
         // before globalAssemble(), there should be one local entry on middle, none on the others
         ArrayView<const GO> myrow_gbl;

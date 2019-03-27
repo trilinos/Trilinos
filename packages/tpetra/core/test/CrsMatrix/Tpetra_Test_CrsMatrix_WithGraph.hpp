@@ -579,9 +579,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Second test: use an array to bound from above the number of
     // entries in each row, and insert using local indices.
     {
-      ArrayRCP<size_t> nnzperrow = Teuchos::arcp<size_t> (numLocal);
+      Teuchos::Array<size_t> nnzperrow (numLocal);
       std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
-      MAT bdmat (rmap, cmap, nnzperrow, Tpetra::StaticProfile);
+      MAT bdmat (rmap, cmap, nnzperrow (), Tpetra::StaticProfile);
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
