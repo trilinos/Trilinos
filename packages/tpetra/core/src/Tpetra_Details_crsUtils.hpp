@@ -160,7 +160,7 @@ pad_crs_arrays(
 
 /// \brief Implementation of insertCrsIndices
 template <class Pointers, class InOutIndices, class InIndices, class IndexMap>
-typename std::make_signed<typename InOutIndices::value_type>::type
+size_t
 insert_crs_indices(
     typename Pointers::value_type const row,
     Pointers const& row_ptrs,
@@ -173,14 +173,13 @@ insert_crs_indices(
   if (new_indices.size() == 0)
     return 0;
 
-  using signed_ordinal = typename std::make_signed<typename InOutIndices::value_type>::type;
   auto const start = row_ptrs[row];
   auto end = start + num_assigned;
   auto num_avail = row_ptrs[row + 1] - end;
-  signed_ordinal num_inserted = 0;
+  size_t num_inserted = 0;
   for (size_t k = 0; k < new_indices.size(); k++)
   {
-    signed_ordinal row_offset = start;
+    auto row_offset = start;
     auto idx = map(new_indices[k]);
     for (; row_offset < end; row_offset++)
       if (idx == cur_indices[row_offset])
@@ -190,7 +189,7 @@ insert_crs_indices(
     {
       if (num_inserted >= num_avail)
         // Not enough room!
-        return -1;
+        return Teuchos::OrdinalTraits<size_t>::invalid();
 
       // This index is not yet in indices
       cur_indices[end++] = idx;
@@ -322,7 +321,7 @@ padCrsArrays(
 /// </code>
 ///
 template <class Pointers, class InOutIndices, class InIndices>
-typename std::make_signed<typename InOutIndices::value_type>::type
+size_t
 insertCrsIndices(
     typename Pointers::value_type const row,
     Pointers const& rowPtrs,
@@ -340,6 +339,23 @@ insertCrsIndices(
   using ordinal = typename InOutIndices::value_type;
   auto numInserted = impl::insert_crs_indices(row, rowPtrs, curIndices,
     numAssigned, newIndices, [](ordinal const idx) { return idx; }, cb);
+  return numInserted;
+}
+
+template <class Pointers, class InOutIndices, class InIndices>
+size_t
+insertCrsIndices(
+    typename Pointers::value_type const row,
+    Pointers const& rowPtrs,
+    InOutIndices& curIndices,
+    size_t& numAssigned,
+    InIndices const& newIndices,
+    std::function<typename InOutIndices::value_type(const typename InIndices::value_type)> map,
+    std::function<void(const size_t, const size_t, const size_t)> cb =
+      std::function<void(const size_t, const size_t, const size_t)>())
+{
+  auto numInserted = impl::insert_crs_indices(row, rowPtrs, curIndices,
+    numAssigned, newIndices, map, cb);
   return numInserted;
 }
 

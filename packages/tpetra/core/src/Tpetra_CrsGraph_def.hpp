@@ -2113,22 +2113,17 @@ namespace Tpetra {
       auto numEntries = rowInfo.numEntries;
       using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
       inp_view_type inputInds(inputGblColInds, numInputInds);
-      auto numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
+      size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
         this->k_gblInds1D_, numEntries, inputInds, fun);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted == -1,
-        std::runtime_error,
-        "There is not enough capacity to insert indices in to row " << lclRow <<
-        ".  You must either fix the upper bound on the number of entries in this row"
-        ", or switch from StaticProfile to DynamicProfile.");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted < 0,
-        std::logic_error,
-        "An unknown error occurred when attempting to insert indices in to row " << lclRow
-        << ".  Please report this bug to Tpetra developers.\n");
+          numInserted == Teuchos::OrdinalTraits<size_t>::invalid(),
+          std::runtime_error,
+          "There is not enough capacity to insert indices in to row " << lclRow <<
+          ". The upper bound on the number of entries in this row must be increased to "
+          "accommodate one or more of the new indices.");
       this->k_numRowEntries_(lclRow) += numInserted;
       this->setLocallyModified();
-      return static_cast<size_t>(numInserted);
+      return numInserted;
     }
     else {
       // NOTE (DYNAMICPROFILE_REMOVAL) remove block
@@ -2189,15 +2184,11 @@ namespace Tpetra {
       auto numInserted = Details::insertCrsIndices(myRow, k_rowPtrs_,
         this->k_lclInds1D_, numEntries, inputInds, fun);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted == -1,
-        std::runtime_error,
-        "There is not enough capacity to insert indices in to row " << myRow <<
-        ".  You must fix the upper bound on the number of entries in this row.");
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        numInserted < 0,
-        std::logic_error,
-        "An unknown error occurred when attempting to insert indices in to row " << myRow
-        << ".  Please report this bug to Tpetra developers.\n");
+          numInserted == Teuchos::OrdinalTraits<size_t>::invalid(),
+          std::runtime_error,
+          "There is not enough capacity to insert indices in to row " << myRow <<
+          ". The upper bound on the number of entries in this row must be increased to "
+          "accommodate one or more of the new indices.");
       numNewInds = numInserted;
       newNumEntries = rowInfo.numEntries + numNewInds;
     }
@@ -2267,10 +2258,8 @@ namespace Tpetra {
     {
       if (this->colMap_.is_null())
         return Teuchos::OrdinalTraits<size_t>::invalid();
-      auto map =
-        [&](LocalOrdinal const lclInd){
-          return this->colMap_->getGlobalElement(lclInd);
-        };
+      const auto& colMap = *(this->colMap_);
+      auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
       numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
         this->k_gblInds1D_, inputInds, map, fun);
     }
@@ -2305,10 +2294,8 @@ namespace Tpetra {
     {
       if (this->colMap_.is_null())
         return invalidCount;
-      auto map =
-        [&](GlobalOrdinal const gblInd){
-          return this->colMap_->getLocalElement(gblInd);
-        };
+      const auto& colMap = *(this->colMap_);
+      auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
       numFound = Details::findCrsIndices(lclRow, k_rowPtrs_,
         this->k_lclInds1D_, inputInds, map, fun);
     }
@@ -3298,7 +3285,7 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                 const typename local_graph_type::entries_type::non_const_type& columnIndicesIn)
+                 const typename local_graph_type::entries_type::non_const_type& columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3327,18 +3314,6 @@ namespace Tpetra {
     indicesAreAllocated_ = true;
     indicesAreLocal_     = true;
     pftype_              = StaticProfile; // if the profile wasn't static before, it sure is now.
-
-    // Column indices sorted by row
-    using Tpetra::Details::impl::uninitialized_view;
-    using view_type = typename local_graph_type::entries_type::non_const_type;
-    auto columnIndices = uninitialized_view<view_type>("column indices", columnIndicesIn.size());
-    Kokkos::deep_copy(columnIndices, columnIndicesIn);
-    for (size_t i = 0; i < rowPointers.size() - 1; i++) {
-      auto begin = rowPointers[i];
-      auto end = rowPointers[i+1];
-      Kokkos::sort(columnIndices, begin, end);
-    }
-
     k_lclInds1D_         = columnIndices;
     k_rowPtrs_           = rowPointers;
     // Storage MUST be packed, since the interface doesn't give any
