@@ -65,7 +65,7 @@ public:
   virtual ~Ifpack_SingletonFilter() {};
 
   //! Returns the number of entries in MyRow.
-  virtual inline int NumMyRowEntries(int MyRow, int & NumEntries) const
+  virtual inline int NumMyRowEntries(int MyRow, int & /* NumEntries */) const
   {
     return(NumEntries_[MyRow]);
   }
@@ -93,22 +93,22 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X,
 			   Epetra_MultiVector& Y) const;
 
-  virtual int InvRowSums(Epetra_Vector& x) const
+  virtual int InvRowSums(Epetra_Vector& /* x */) const
   {
     return(-98); // NOT IMPLEMENTED
   }
 
-  virtual int LeftScale(const Epetra_Vector& x)
+  virtual int LeftScale(const Epetra_Vector& /* x */)
   {
     return(-98); // NOT IMPLEMENTED
   }
 
-  virtual int InvColSums(Epetra_Vector& x) const
+  virtual int InvColSums(Epetra_Vector& /* x */) const
   {
     return(-98); // NOT IMPLEMENTED
   }
 
-  virtual int RightScale(const Epetra_Vector& x) 
+  virtual int RightScale(const Epetra_Vector& /* x */) 
   {
     return(-98); // NOT IMPLEMENTED
   }

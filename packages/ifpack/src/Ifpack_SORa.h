@@ -286,7 +286,7 @@ private:
   {}
 
   //! operator= (should never be used)
-  Ifpack_SORa& operator=(const Ifpack_SORa& RHS)
+  Ifpack_SORa& operator=(const Ifpack_SORa& /* RHS */)
   {
     return(*this);
   }

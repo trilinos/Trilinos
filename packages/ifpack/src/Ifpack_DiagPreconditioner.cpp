@@ -65,7 +65,7 @@ Ifpack_DiagPreconditioner::~Ifpack_DiagPreconditioner()
 
 
 // ============================================================================ 
-int Ifpack_DiagPreconditioner::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Ifpack_DiagPreconditioner::Apply(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_RETURN(-1); // not defined
 }
