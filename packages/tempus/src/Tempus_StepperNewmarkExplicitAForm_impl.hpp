@@ -198,7 +198,8 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
     Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
     Scalar reldiff = Thyra::norm(*f);
     //The following logic is to prevent FPEs  
-    if (Thyra::norm(*xDotDot) > 1.0e-12) reldiff /= Thyra::norm(*xDotDot); 
+    if (Thyra::norm(*xDotDot) > 1.0e-12)
+      reldiff /= Thyra::norm(*xDotDot); 
 
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
     if (reldiff > eps) {
@@ -316,7 +317,7 @@ std::string StepperNewmarkExplicitAForm<Scalar>::description() const
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      /*verbLevel*/) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "appModel_ = " << this->appModel_->description() << std::endl;
