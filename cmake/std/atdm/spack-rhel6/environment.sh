@@ -44,7 +44,6 @@ module purge
 module load gcc-7.2.0/spack-cmake/3.13.4
 module load gcc-7.2.0/spack-git/2.20.1
 module load gcc-7.2.0/spack-ninja-fortran/1.7.2.gaad58
-#module load atdm-ninja_fortran/1.7.2
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
@@ -79,16 +78,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export OMPI_FC=`which gfortran`
     export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
     export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
-    module load sems-gcc/4.9.3
-    module load sems-intel/17.0.1
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
-    export OMPI_CXX=`which icpc`
-    export OMPI_CC=`which icc`
-    export OMPI_FC=`which ifort`
-    export ATDM_CONFIG_LAPACK_LIBS="-mkl"
-    export ATDM_CONFIG_BLAS_LIBS="-mkl"
-    export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
     echo
     echo "***"
@@ -105,14 +94,6 @@ module load gcc-7.2.0/spack-superlu/4.3
 module load gcc-7.2.0/spack-hdf5/1.8.12
 module load gcc-7.2.0/spack-zlib/1.2.11
 
-
-#module load sems-openmpi/1.10.1
-#module load sems-netcdf/4.4.1/exo_parallel
-#module load sems-hdf5/1.8.12/parallel
-#module load sems-zlib/1.2.8/base
-#module load sems-boost/1.59.0/base
-#module load sems-superlu/4.3/base
-
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so
 else
@@ -121,10 +102,6 @@ fi
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=-lhwloc
-
-#export BOOST_ROOT=${BOOST_ROOT}
-#export HDF5_ROOT=${HDF5_ROOT}
-#export NETCDF_ROOT=${NETCDF_ROOT}
 
 echo BOOST_ROOT=${BOOST_ROOT}
 echo HDF5_ROOT=${HDF5_ROOT}
