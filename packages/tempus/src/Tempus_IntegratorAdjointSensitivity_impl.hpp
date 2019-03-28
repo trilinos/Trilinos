@@ -296,8 +296,8 @@ initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxDp0,
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotDp0,
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotdotDp0)
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > /* DxdotDp0 */,
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > /* DxdotdotDp0 */)
 {
   state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
   dxdp_init_ = DxDp0;
