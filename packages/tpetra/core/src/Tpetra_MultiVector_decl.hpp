@@ -769,14 +769,11 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2>& node2) const;
 
-    /// \brief Swaps the data from *this with the data and maps from mv
-    /// \param mv [in/out] a MultiVector
-    ///
-    /// Note: This is done with minimal copying of data
-    void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & mv);
+    //! Swap contents of \c mv with contents of \c *this.
+    void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector ();
+    virtual ~MultiVector () = default;
 
     //@}
     //! @name Post-construction modification routines
