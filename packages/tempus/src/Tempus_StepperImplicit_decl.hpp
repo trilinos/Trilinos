@@ -112,7 +112,7 @@ public:
     virtual bool getZeroInitialGuess() const
       { return stepperPL_->get<bool>("Zero Initial Guess", false); }
     virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+        const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
       {return Scalar(1.0e+99);}
 
     virtual bool getEmbedded() const

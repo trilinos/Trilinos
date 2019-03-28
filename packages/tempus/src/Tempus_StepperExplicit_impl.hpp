@@ -227,7 +227,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
 }
 
 template<class Scalar>
-void StepperExplicit<Scalar>::setSolver(std::string solverName)
+void StepperExplicit<Scalar>::setSolver(std::string /* solverName */)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
@@ -238,7 +238,7 @@ void StepperExplicit<Scalar>::setSolver(std::string solverName)
 
 template<class Scalar>
 void StepperExplicit<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
+  Teuchos::RCP<Teuchos::ParameterList> /* solverPL */)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");
@@ -249,7 +249,7 @@ void StepperExplicit<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperExplicit<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > /* solver */)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperExplicit::setSolver()");

@@ -304,7 +304,7 @@ template <class Scalar>
 void
 IntegratorForwardSensitivity<Scalar>::
 createSensitivityModelAndStepper(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* model */)
 {
   using Teuchos::rcp;
 

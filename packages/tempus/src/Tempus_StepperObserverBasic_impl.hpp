@@ -26,14 +26,14 @@ template<class Scalar> StepperObserverBasic<Scalar>::~StepperObserverBasic(){}
 
 template<class Scalar>
 void StepperObserverBasic<Scalar>::observeBeginTakeStep(
-  Teuchos::RCP<SolutionHistory<Scalar> > sh,
-  Stepper<Scalar> & stepper)
+  Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+  Stepper<Scalar> & /* stepper */)
 {}
 
 template<class Scalar>
 void StepperObserverBasic<Scalar>::observeEndTakeStep(
-  Teuchos::RCP<SolutionHistory<Scalar> > sh,
-  Stepper<Scalar> & stepper)
+  Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+  Stepper<Scalar> & /* stepper */)
 {}
 
 } // namespace Tempus
