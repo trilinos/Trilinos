@@ -172,7 +172,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   ML_Aggregate_Set_NullSpace(flt_agg_, NumPDEEqns_,
                              NumRealEigenvectors + NumImagEigenvectors,
                              &flt_NullSpace_[0], NumMyRows());
-  int CL = ML_Gen_MultiLevelHierarchy_UsingAggregation(flt_ml_,1,
+#ifndef NDEBUG
+  int CL =
+#endif
+  ML_Gen_MultiLevelHierarchy_UsingAggregation(flt_ml_,1,
                                                        ML_DECREASING,
                                                        flt_agg_);
 
