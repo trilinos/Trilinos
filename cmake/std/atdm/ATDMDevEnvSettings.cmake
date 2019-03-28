@@ -90,6 +90,7 @@ ENDIF()
 
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS "")
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(SHARED_LIBS OFF)
+ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(PT_PACKAGES OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_SKIP_INSTALL_RPATH OFF)
 
@@ -161,7 +162,11 @@ ASSERT_DEFINED(ENV{MPIF90})
 ATDM_SET_CACHE(CMAKE_C_COMPILER "$ENV{MPICC}" CACHE FILEPATH)
 ATDM_SET_CACHE(CMAKE_CXX_COMPILER "$ENV{MPICXX}" CACHE FILEPATH)
 ATDM_SET_CACHE(CMAKE_Fortran_COMPILER "$ENV{MPIF90}" CACHE FILEPATH)
-ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran ${ATDM_ENABLE_SPARC_SETTINGS})
+IF (ATDM_ENABLE_SPARC_SETTINGS  OR  ATDM_PT_PACKAGES)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran ON)
+ELSE()
+  ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran OFF)
+ENDIF()
 
 #
 # D) Set up basic compiler flags, link flags etc.
@@ -202,10 +207,14 @@ ENDIF()
 # E) Set up other misc options
 #
 
-# Currently, EMPIRE configures of Trilinos have this enabled by default.  But
-# really we should elevate every subpackage that ATDM uses to Primary Tested.
-# That is the right solution.
-ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+IF (ATDM_PT_PACKAGES)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
+ELSE()
+  # Currently, EMPIRE configures of Trilinos have this enabled by default.  But
+  # really we should elevate every subpackage that ATDM uses to Primary Tested.
+  # That is the right solution.
+  ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+ENDIF()
 
 # Other various options
 ATDM_SET_CACHE(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT}" CACHE STRING)
@@ -369,6 +378,10 @@ ATDM_SET_CACHE(TPL_SuperLUDist_LIBRARIES "$ENV{ATDM_CONFIG_SUPERLUDIST_LIBS}" CA
 ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # NOTE: Not clear why you need this since the TPL DLlib is not explicilty
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
+
+# Don't have stuff for Matio and some SEACAS subpackage has required
+# dependency on this
+ATDM_SET_ENABLE(TPL_ENABLE_Matio OFF)
 
 #
 # G) Package and Test Disables
