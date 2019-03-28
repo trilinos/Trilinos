@@ -48,6 +48,7 @@
 #include <vector>
 #include <array>
 #include <algorithm>
+#include <limits>
 
 // MPI includes
 #include <mpi.h>
@@ -563,7 +564,7 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
   GlobalOrdinal maxFaceId = -1;
 
   GlobalOrdinal blockmaxElementId;
-  GlobalOrdinal localmaxElementId;
+  GlobalOrdinal localmaxElementId = std::numeric_limits<GlobalOrdinal>::min();
   GlobalOrdinal maxElementId;
 
   const CellTopologyData * baseTopologyData = fp.getCellTopology().getBaseCellTopologyData();
@@ -612,11 +613,11 @@ void IOSSConnManager<GO>::buildOffsetsAndIdCounts(const panzer::FieldPattern & f
 		// or if neither the FieldPattern nor the Ioss::ElementTopology is extended.
 		blockmaxNodeId = *(std::max_element(blockConnectivity->begin(), blockConnectivity->end()));
 	  }
-      if (blockmaxNodeId > localmaxNodeId)
-        localmaxNodeId = blockmaxNodeId;
+          if (blockmaxNodeId > localmaxNodeId)
+            localmaxNodeId = blockmaxNodeId;
 	}
 	if (blockmaxElementId > localmaxElementId)
-      localmaxElementId = blockmaxElementId;
+          localmaxElementId = blockmaxElementId;
   }
 
 #ifdef HAVE_MPI
