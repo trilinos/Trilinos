@@ -12,18 +12,19 @@ To get started building you can create a directory structure like:
     ~/TribitsExampleProject.base/
         TribitsExampleProject/   # This directory
         BUILDS/
-            GCC-<X.Y.Z>/
-                SERIAL_DEBUG/
+          SERIAL/
 
-You can then copy the configure file as:
+After that configure pointing to some value TriBITS source dir <tribits-dir>
+(i.e. TriBITS/tribits) with:
 
-  cd ~/TribitsExampleProject.base/BUILDS/GCC-<X.Y.Z>/BUILDS/SERIAL_DEBUG
-  cp ../../../../TribitsExampleProject/sampleScripts/linux-serial-debug.sh \
-    do-configure
+  cd BUILDS/SERIAL/ 
 
-After that set, configure with:
-
-  ./do-configure -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+  cmake -D \
+    -DTribitsExProj_TRIBITS_DIR=<tribits-dir> \
+    -DTribitsExProj_ENABLE_TESTS=ON \
+    -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+    -DCMAKE_CXX_COMPILER=g++ \
+    ../../examples/TribitsExampleProject
 
 and then build and test with:
 
