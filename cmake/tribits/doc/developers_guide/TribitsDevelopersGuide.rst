@@ -2337,7 +2337,9 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
-|   4)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
+|   4)  Find some optional command-line tools:
+|       a)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
+|       b)  Find Git (sets ``GIT_EXECUTABLE`` and ``GIT_VERSION_STRING``)
 |   5)  ``INCLUDE(`` `<projectDir>/Version.cmake`_ ``)``
 |   6)  Define primary TriBITS options and read in the list of extra repositories
 |       (calls ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()``)
@@ -5935,10 +5937,10 @@ as::
 A twist on this use case is for a package that only builds as a TriBITS
 package inside of some larger TriBITS project and not as its own TriBITS CMake
 project.  In this case, some slight changes are needed to this example but the
-basic approach is nearly identical.  One still needs a ``if()`` statement at
-the top of first ``CMakeLists.txt`` file (this time for the package) and the
-macro ``include_tribits_build()`` needs to be defined at the top of that file
-as well.  Then every ``CMakeLists.txt`` file in subdirectories just calls
+basic approach is nearly identical.  One still needs an ``if()`` statement at
+the top of the first ``CMakeLists.txt`` file (this time for the package) and
+the macro ``include_tribits_build()`` needs to be defined at the top of that
+file as well.  Then every ``CMakeLists.txt`` file in subdirectories just calls
 ``include_tribits_build()``.  That is it.
 
 
@@ -8032,6 +8034,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE`_
 * `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
+* `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
@@ -8390,20 +8393,6 @@ These options are described below.
 
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
-.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE:
-
-**${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE**
-
-  If ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`` is ``ON``, then the file
-  ``<Project>RepoVersion.txt`` will get generated as a byproduct of
-  configuring with CMake.  See `Multi-Repository Support`_ and
-  `<Project>_GENERATE_REPO_VERSION_FILE`_.  The default is ``OFF`` but the
-  project can change that by setting::
-
-    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
-
-  in the `<projectDir>/ProjectName.cmake`_ file.
-
 .. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
 
 **${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
@@ -8423,6 +8412,35 @@ These options are described below.
 
   is so that the necessary data-structures are generated in order to use the
   function `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.
+
+.. _${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES:
+
+**${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES**
+
+  If ``${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`` is ``ON``, then the files
+  ``VersionDate.cmake`` and ``<RepoName>_version_date.h`` will get generated
+  and the generated file ``<RepoName>_version_date.h`` will get installed for
+  each TriBITS version-controlled repository when the local directories are
+  git repositories.  The default is ``OFF`` but the project can change that by
+  setting::
+
+    SET(${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES ON)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
+
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE:
+
+**${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE**
+
+  If ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`` is ``ON``, then the file
+  ``<Project>RepoVersion.txt`` will get generated as a byproduct of
+  configuring with CMake.  See `Multi-Repository Support`_ and
+  `<Project>_GENERATE_REPO_VERSION_FILE`_.  The default is ``OFF`` but the
+  project can change that by setting::
+
+    SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
   
 .. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
@@ -8507,8 +8525,8 @@ These options are described below.
     SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
 
   The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
-  and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
-  systems and not Windows systems.
+  and therefore will work on many (but perhaps not all) Linux/Unix/Mac systems
+  and not on Windows systems.
 
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a
