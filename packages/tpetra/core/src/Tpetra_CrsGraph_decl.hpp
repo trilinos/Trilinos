@@ -1857,11 +1857,40 @@ namespace Tpetra {
     size_t
     insertGlobalIndicesImpl (const RowInfo& rowInfo,
                              const GlobalOrdinal inputGblColInds[],
-                             const size_t numInputInds);
+                             const size_t numInputInds,
+                             std::function<void(const size_t, const size_t, const size_t)> fun =
+                                 std::function<void(const size_t, const size_t, const size_t)>());
 
     void
     insertLocalIndicesImpl (const LocalOrdinal lclRow,
-                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds);
+                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds,
+                            std::function<void(const size_t, const size_t, const size_t)> fun =
+                                std::function<void(const size_t, const size_t, const size_t)>());
+
+    /// \brief Finds indices in the given row.
+    ///
+    /// This method does no insertion; it just finds indices and calls
+    /// a callback for each found index
+    ///
+    /// \param row [in] Row of interest
+    ///
+    /// \param indices [in] Column indices to find in row
+    ///
+    /// \param fun Call back function called at each found index.  Called as
+    ///   fun(k, start, offset); where k is the index in to indices, start is
+    ///   offset to the start of the row, and offset is the relative offset of
+    ///   indices[k] in the graphs indices.
+    ///
+    /// \return The number of indices found.
+    size_t
+    findLocalIndices(const RowInfo& rowInfo,
+                     const Teuchos::ArrayView<const LocalOrdinal>& indices,
+                     std::function<void(const size_t, const size_t, const size_t)> fun) const;
+
+    size_t
+    findGlobalIndices(const RowInfo& rowInfo,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+                      std::function<void(const size_t, const size_t, const size_t)> fun) const;
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///
