@@ -1949,7 +1949,8 @@ namespace Tpetra {
       Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
       auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
                    valsView[offset] += values[k]; };
-      graph.insertLocalIndicesImpl(lclRow, indices, fun);
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      graph.insertLocalIndicesImpl(lclRow, indices, cb);
     }
     else
     {
@@ -2032,8 +2033,9 @@ namespace Tpetra {
       Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
       auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
                    valsView[offset] += vals[k]; };
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
       auto numInserted =
-        graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, fun);
+        graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
       newNumEnt = curNumEnt + numInserted;
     }
     else
@@ -2377,7 +2379,8 @@ namespace Tpetra {
         [&](size_t const k, size_t const /*start*/, size_t const offset) {
           rowVals[offset] = newVals[k];
         };
-      return graph.findLocalIndices(rowInfo, indsT, fun);
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      return graph.findLocalIndices(rowInfo, indsT, cb);
     }
 
     // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
@@ -2511,7 +2514,8 @@ namespace Tpetra {
         [&](size_t const k, size_t const /*start*/, size_t const offset) {
           rowVals[offset] = newVals[k];
         };
-      return graph.findGlobalIndices(rowInfo, indsT, fun);
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      return graph.findGlobalIndices(rowInfo, indsT, cb);
     }
 
     // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
@@ -2651,7 +2655,8 @@ namespace Tpetra {
           else
             rowVals[offset] += newVals[k];
         };
-      return graph.findGlobalIndices(rowInfo, indsT, fun);
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      return graph.findGlobalIndices(rowInfo, indsT, cb);
     }
 
     // NOTE (DYNAMICPROFILE_REMOVAL) (tjf Mar 2019) from this point down can be
@@ -3106,7 +3111,8 @@ namespace Tpetra {
           else
             rowVals[offset] += newVals[k];
         };
-      return graph.findLocalIndices(rowInfo, indsT, fun);
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      return graph.findLocalIndices(rowInfo, indsT, cb);
     }
 
     // NOTE (DYNAMICPROFILE REMOVAL) (tjf Mar 2019)

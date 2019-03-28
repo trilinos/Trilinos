@@ -167,12 +167,13 @@ insert_crs_indices(
     InOutIndices& cur_indices,
     size_t& num_assigned,
     InIndices const& new_indices,
-    IndexMap map,
+    IndexMap&& map,
     std::function<void(size_t const, size_t const, size_t const)> cb)
 {
   if (new_indices.size() == 0)
     return 0;
 
+  using ordinal = typename InOutIndices::value_type;
   auto const start = row_ptrs[row];
   auto end = start + num_assigned;
   auto num_avail = row_ptrs[row + 1] - end;
@@ -180,7 +181,7 @@ insert_crs_indices(
   for (size_t k = 0; k < new_indices.size(); k++)
   {
     auto row_offset = start;
-    auto idx = map(new_indices[k]);
+    ordinal idx = std::forward<IndexMap>(map)(new_indices[k]);
     for (; row_offset < end; row_offset++)
       if (idx == cur_indices[row_offset])
         break;
@@ -209,8 +210,8 @@ find_crs_indices(
     Pointers const& row_ptrs,
     Indices1 const& cur_indices,
     Indices2 const& new_indices,
-    IndexMap map,
-    Callback cb)
+    IndexMap&& map,
+    Callback&& cb)
 {
   if (new_indices.size() == 0)
     return 0;
@@ -224,14 +225,14 @@ find_crs_indices(
   for (size_t k = 0; k < new_indices.size(); k++)
   {
     auto row_offset = start;
-    auto idx = map(new_indices[k]);
+    auto idx = std::forward<IndexMap>(map)(new_indices[k]);
     if (idx == invalid_ordinal)
       continue;
     for (; row_offset < end; row_offset++)
     {
       if (idx == cur_indices[row_offset])
       {
-        cb(k, start, row_offset - start);
+        std::forward<Callback>(cb)(k, start, row_offset - start);
         num_found++;
       }
     }
@@ -396,15 +397,16 @@ findCrsIndices(
     Pointers const& rowPtrs,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
-    Callback cb)
+    Callback&& cb)
 {
   static_assert(std::is_same<typename std::remove_const<typename Indices1::value_type>::type,
                              typename std::remove_const<typename Indices2::value_type>::type>::value,
     "Expected views to have same value type");
   // Provide a unit map for the more general find_crs_indices
   using ordinal = typename Indices2::value_type;
-  auto map = [=](ordinal ind){ return ind; };
-  return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
+  auto numFound = impl::find_crs_indices(row, rowPtrs, curIndices, newIndices,
+    [=](ordinal ind){ return ind; }, cb);
+  return numFound;
 }
 
 template <class Pointers, class Indices1, class Indices2, class IndexMap, class Callback>
@@ -414,8 +416,8 @@ findCrsIndices(
     Pointers const& rowPtrs,
     Indices1 const& curIndices,
     Indices2 const& newIndices,
-    IndexMap map,
-    Callback cb)
+    IndexMap&& map,
+    Callback&& cb)
 {
   return impl::find_crs_indices(row, rowPtrs, curIndices, newIndices, map, cb);
 }
