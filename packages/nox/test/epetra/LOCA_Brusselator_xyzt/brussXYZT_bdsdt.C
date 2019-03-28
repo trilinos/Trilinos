@@ -199,6 +199,9 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new Teuchos::ParameterList);
     getParamList(&(*paramList), MyPID);
 
+    // Enable backtracking
+    paramList->sublist("NOX").sublist("Line Search").set("Method","Polynomial");
+
     // Sublist for "Linear Solver"
     Teuchos::ParameterList& lsParams =
       paramList->sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
