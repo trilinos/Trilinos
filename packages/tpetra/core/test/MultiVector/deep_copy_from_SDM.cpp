@@ -117,7 +117,8 @@ namespace { // (anonymous)
       Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
     using pair_type = std::pair<int, int>;
 
-    sdm_view_type Y_orig (Y.values (), Y.stride (), Y.numCols ());
+    const IST* Y_raw = reinterpret_cast<const IST*> (Y.values ());
+    sdm_view_type Y_orig (Y_raw, Y.stride (), Y.numCols ());
     auto Y_view = Kokkos::subview (Y_orig, pair_type (0, Y.numRows ()),
                                    pair_type (0, Y.numCols ()));
     if (X.need_sync_host ()) { // X was changed on device
@@ -172,19 +173,19 @@ namespace { // (anonymous)
     return static_cast<ValueType> (static_cast<mag_type> (k));
   }
 
-  template<class ST>
+  template<class ST, class IST>
   void
   serialDenseMatrixIota (Teuchos::SerialDenseMatrix<int, ST>& A,
-                         const ST& startValue)
+                         const IST& startValue)
   {
     const int nrow = A.numRows ();
     const int ncol = A.numCols ();
-
     for (int col = 0; col < ncol; ++col) {
       for (int row = 0; row < nrow; ++row) {
-        A(row,col) = startValue +
-          toValueHost<ST> (ncol) * toValueHost<ST> (row) +
-          toValueHost<ST> (row);
+        const auto A_row_col = startValue +
+          toValueHost<IST> (ncol) * toValueHost<IST> (row) +
+          toValueHost<IST> (row);
+        A(row,col) = static_cast<ST> (A_row_col);
       }
     }
   }
@@ -201,9 +202,9 @@ namespace { // (anonymous)
       "to Tpetra::MultiVector" << std::endl;
     Teuchos::OSTab tab1 (out);
 
-    const IST flagValue = Kokkos::ArithTraits<IST>::one ();
-    const IST startValue = Teuchos::ScalarTraits<ST>::one () +
-      Teuchos::ScalarTraits<ST>::one ();
+    const IST ONE = Kokkos::ArithTraits<IST>::one ();
+    const IST flagValue = ONE;
+    const IST startValue = ONE + ONE;
     const GO indexBase = 0;
 
     auto comm = Tpetra::TestingUtilities::getDefaultComm ();
