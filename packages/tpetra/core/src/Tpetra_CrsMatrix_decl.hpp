@@ -525,7 +525,7 @@ namespace Tpetra {
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
-    /// \param NumEntriesPerRowToAlloc [in] Maximum number of matrix
+    /// \param numEntPerRowToAlloc [in] Maximum number of matrix
     ///   entries to allocate for each row.  If
     ///   pftype==DynamicProfile, this is only a hint.  If
     ///   pftype==StaticProfile, this sets the amount of storage
@@ -539,10 +539,19 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-               ProfileType pftype = DynamicProfile,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! DEPRECATED; use the version that takes an ArrayView instead.
+    TPETRA_DEPRECATED
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
     /// The column Map will be used to filter any matrix entries
@@ -552,7 +561,7 @@ namespace Tpetra {
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
     ///
-    /// \param maxNumEntriesPerRow [in] Maximum number of matrix
+    /// \param maxNumEntPerRow [in] Maximum number of matrix
     ///   entries per row.  If pftype==DynamicProfile, this is only a
     ///   hint, and you can set this to zero without affecting
     ///   correctness.  If pftype==StaticProfile, this sets the amount
@@ -567,8 +576,8 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               size_t maxNumEntriesPerRow,
-               ProfileType pftype = DynamicProfile,
+               const size_t maxNumEntPerRow,
+               const ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -580,7 +589,7 @@ namespace Tpetra {
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
     ///
-    /// \param NumEntriesPerRowToAlloc [in] Maximum number of matrix
+    /// \param numEntPerRowToAlloc [in] Maximum number of matrix
     ///   entries to allocate for each row.  If
     ///   pftype==DynamicProfile, this is only a hint.  If
     ///   pftype==StaticProfile, this sets the amount of storage
@@ -595,10 +604,20 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-               ProfileType pftype = DynamicProfile,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! DEPRECATED; use the version that takes an ArrayView instead.
+    TPETRA_DEPRECATED
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
+               const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE    
+    
     /// \brief Constructor specifying a previously constructed graph.
     ///
     /// Calling this constructor fixes the graph structure of the
@@ -883,7 +902,7 @@ namespace Tpetra {
         }
         else {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
-                                              numEntriesPerRow, pftype,
+                                              numEntriesPerRow (), pftype,
                                               matParams));
         }
       }
@@ -893,7 +912,8 @@ namespace Tpetra {
                                               pftype, matParams));
         }
         else {
-          clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesPerRow,
+          clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap,
+                                              numEntriesPerRow (),
                                               pftype, matParams));
         }
       }

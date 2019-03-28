@@ -217,7 +217,7 @@ public:
   /// \name Functions for Steppers with subSteppers (e.g., OperatorSplit)
   //@{
     virtual void createSubSteppers(
-      std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models){}
+      std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > /* models */){}
   //@}
 
   /// \name Helper functions

@@ -440,7 +440,6 @@ public:
 
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
-    const bool assumeSymmetric = equib_.assumeSymmetric;
 
     mag_type rowNorm {0.0};
     val_type diagVal {0.0};

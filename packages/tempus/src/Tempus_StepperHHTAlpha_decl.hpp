@@ -65,14 +65,14 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(

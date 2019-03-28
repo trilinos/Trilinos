@@ -84,7 +84,7 @@ namespace PHX {
         non_const_view tmp = PHX::any_cast<non_const_view>(f);
         *ptr_ = tmp;
       }
-      catch (std::exception& e) {
+      catch (std::exception& ) {
         std::cout << "\n\nError in MemoryBinder using PHX::any_cast. Tried to cast a field "
                   << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
                   << "\" from a PHX::any object containing a type of \""

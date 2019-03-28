@@ -403,10 +403,10 @@ protected:
     void register_fields()
     {
         m_elementWeightField = & get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEM_RANK, "Element Weights", 1);
-        stk::mesh::put_field_on_mesh(*m_elementWeightField, get_meta().universal_part(), nullptr);
+        stk::mesh::put_field_on_mesh(*m_elementWeightField, get_meta().universal_part(), static_cast<double*>(nullptr));
 
         stk::mesh::FieldBase & coordinateField = get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::NODE_RANK, "model_coordinates", 2);
-        stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), nullptr);
+        stk::mesh::put_field_on_mesh(coordinateField, get_meta().universal_part(), static_cast<double*>(nullptr));
     }
 
     void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
