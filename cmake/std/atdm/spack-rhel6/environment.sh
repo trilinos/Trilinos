@@ -23,7 +23,7 @@ fi
 
 echo "Using SEMS RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
-export ATDM_CONFIG_USE_NINJA=OFF
+export ATDM_CONFIG_USE_NINJA=ON
 
 # Get ATDM_CONFIG_NUM_CORES_ON_MACHINE for this machine
 source $ATDM_SCRIPT_DIR/utils/get_num_cores_on_machine.sh
@@ -43,7 +43,7 @@ export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 module purge
 module load gcc-7.2.0/spack-cmake/3.13.4
 module load gcc-7.2.0/spack-git/2.20.1
-
+module load gcc-7.2.0/spack-ninja-fortran/1.7.2.gaad58
 #module load atdm-ninja_fortran/1.7.2
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
@@ -66,7 +66,8 @@ fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     #module load sems-gcc/6.1.0
-    module load gcc-4.4.7/spack-gcc/7.2.0
+    #module load gcc-4.4.7/spack-gcc/7.2.0
+    module load gcc-7.2.0/spack-gcc/7.2.0
     export OMPI_CXX=`which g++`
 
     module load gcc-7.2.0/spack-netlib-lapack/3.8.0
