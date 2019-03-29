@@ -340,9 +340,9 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const size_t maxNumEntriesPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = DynamicProfile,
 #else
-	      ProfileType pftype = StaticProfile,
+	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -366,9 +366,9 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = DynamicProfile,
 #else
-	      ProfileType pftype = StaticProfile,
+	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -393,9 +393,9 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = DynamicProfile,
 #else
-	      ProfileType pftype = StaticProfile,
+	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -424,9 +424,9 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = DynamicProfile,
 #else
-	      ProfileType pftype = StaticProfile,
+	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -452,9 +452,9 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = DynamicProfile,
 #else
-	      ProfileType pftype = StaticProfile,
+	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -481,9 +481,9 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = DynamicProfile,
 #else
-	      ProfileType pftype = StaticProfile,
+	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 

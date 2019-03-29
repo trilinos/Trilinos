@@ -519,9 +519,9 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                size_t maxNumEntriesPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               ProfileType pftype = DynamicProfile,
+               const ProfileType pftype = DynamicProfile,
 #else
-	       ProfileType pftype = StaticProfile,
+	       const ProfileType pftype = StaticProfile,
 #endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -545,9 +545,9 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               ProfileType pftype = DynamicProfile,
+               const ProfileType pftype = DynamicProfile,
 #else
-	       ProfileType pftype = StaticProfile,
+	       const ProfileType pftype = StaticProfile,
 #endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -577,9 +577,9 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type>& colMap,
                size_t maxNumEntriesPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               ProfileType pftype = DynamicProfile,
+               const ProfileType pftype = DynamicProfile,
 #else
-	       ProfileType pftype = StaticProfile,
+	       const ProfileType pftype = StaticProfile,
 #endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -609,9 +609,9 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               ProfileType pftype = DynamicProfile,
+               const ProfileType pftype = DynamicProfile,
 #else
-	       ProfileType pftype = StaticProfile,
+	       const ProfileType pftype = StaticProfile,
 #endif
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 

@@ -251,18 +251,10 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #endif
-#else
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
-      #endif
+#ifndef TPETRA_ENABLE_DEPRECATED_CODE
+#if (pftype == DynamicProfile)
+#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
+#endif
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,maxNumEntriesPerRow,"
@@ -309,18 +301,10 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #endif
-#else
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
-      #endif
+#ifndef TPETRA_ENABLE_DEPRECATED_CODE
+#if (pftype == DynamicProfile)
+#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
+#endif
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,"
@@ -365,18 +349,10 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #endif
-#else
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
-      #endif
+#ifndef TPETRA_ENABLE_DEPRECATED_CODE
+#if (pftype == DynamicProfile)
+#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
+#endif
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
@@ -452,18 +428,10 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #endif
-#else
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
-      #endif
+#ifndef TPETRA_ENABLE_DEPRECATED_CODE
+#if (pftype == DynamicProfile)
+#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
+#endif
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
@@ -527,18 +495,10 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #endif
-#else
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
-      #endif
+#ifndef TPETRA_ENABLE_DEPRECATED_CODE
+#if (pftype == DynamicProfile)
+#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
+#endif
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
@@ -601,18 +561,10 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile with deprecated code is DynamicProfile, pftype will soon be unsupported."
-      #endif
-#else
-      #if defined (__GNUC__)
-        #pragma GCC warning "Default profile is StaticProfile, pftype will soon be unsupported."
-      #else
-        #pragma message "Default profile is StaticProfile, pftype will soon be unsupported."
-      #endif
+#ifndef TPETRA_ENABLE_DEPRECATED_CODE
+#if (pftype == DynamicProfile)
+#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
+#endif
 #endif
 
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,"
@@ -1052,7 +1004,7 @@ namespace Tpetra {
 
     const char tfecfFuncName[] = "isStorageOptimized: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (isOpt && getProfileType () == DynamicProfile, std::logic_error,
+      (isOpt && getProfileType () != StaticProfile, std::logic_error,
       "The matrix claims to have optimized storage, but getProfileType() "
       "returns DynamicProfile.  This should never happen.  Please report this "
       "bug to the Tpetra developers.");
@@ -2603,7 +2555,7 @@ namespace Tpetra {
         (this->indicesAreAllocated_ &&
          (this->storageStatus_ == ::Tpetra::Details::STORAGE_1D_PACKED ||
           this->storageStatus_ == ::Tpetra::Details::STORAGE_1D_UNPACKED) &&
-         this->pftype_ == DynamicProfile, std::logic_error,
+         this->pftype_ != StaticProfile, std::logic_error,
          "Graph claims to have allocated indices and 1-D storage "
          "(either packed or unpacked), but also claims to be DynamicProfile.");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2710,7 +2662,7 @@ namespace Tpetra {
          "k_rowPtrs_ must have N+1 rows, and "
          "k_rowPtrs_(N) must equal k_lclInds1D_.extent(0)." << suffix);
 
-      if (this->pftype_ == DynamicProfile) {
+      if (this->pftype_ != StaticProfile) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (this->indicesAreAllocated () &&
            this->getNodeNumRows () > 0 &&
@@ -4227,7 +4179,7 @@ namespace Tpetra {
     if (! params.is_null () && ! params->get ("Optimize Storage", true)) {
       requestOptimizedStorage = false;
     }
-    if (this->getProfileType () == DynamicProfile) {
+    if (this->getProfileType () != StaticProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
       //
       // DynamicProfile means that the graph's column indices are
