@@ -298,8 +298,6 @@ namespace Tpetra {
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
     const size_type numSrcGids = sourceGIDs.size ();
     const size_type numTgtGids = targetGIDs.size ();
-    const size_type numGids = std::min (numSrcGids, numTgtGids);
-    const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid ();
 
     Array<GO> tRemoteGIDs;
     if (this->verbose ()) {

@@ -139,3 +139,16 @@ IF (${PACKAGE_NAME}_ENABLE_TeuchosNumerics)
     STANDARD_PASS_OUTPUT
     )
 ENDIF ()
+
+# Regression test for Trilinos GitHub Issue #4639.
+# It must run with at least 2 MPI processes to exercise
+# the fix for that issue.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MV_reduce_strided
+  SOURCES
+    MV_reduce_strided
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-4
+  STANDARD_PASS_OUTPUT
+  )
