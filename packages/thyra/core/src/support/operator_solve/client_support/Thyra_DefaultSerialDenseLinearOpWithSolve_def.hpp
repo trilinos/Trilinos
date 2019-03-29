@@ -149,7 +149,7 @@ bool DefaultSerialDenseLinearOpWithSolve<Scalar>::solveSupportsImpl(
 
 template<class Scalar>
 bool DefaultSerialDenseLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureTypeImpl(
-  EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const
+  EOpTransp M_trans, const SolveMeasureType& /* solveMeasureType */) const
 {
   // We support all solve measures since we are a direct solver
   return this->solveSupportsImpl(M_trans);
@@ -162,7 +162,7 @@ DefaultSerialDenseLinearOpWithSolve<Scalar>::solveImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B,
   const Ptr<MultiVectorBase<Scalar> > &X,
-  const Ptr<const SolveCriteria<Scalar> > solveCriteria
+  const Ptr<const SolveCriteria<Scalar> > /* solveCriteria */
   ) const
 {
 #ifdef TEUCHOS_DEBUG

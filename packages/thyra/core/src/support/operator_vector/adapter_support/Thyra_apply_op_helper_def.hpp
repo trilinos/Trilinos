@@ -54,10 +54,10 @@ template<class Scalar>
 void Thyra::apply_op_validate_input(
   const std::string &func_name,
   const VectorSpaceBase<Scalar> &space,
-  const RTOpPack::RTOpT<Scalar> &op,
+  const RTOpPack::RTOpT<Scalar> &/* op */,
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+  const Ptr<RTOpPack::ReductTarget> &/* reduct_obj */,
   const Ordinal global_offset_in
   )
 {
@@ -79,10 +79,10 @@ void Thyra::apply_op_validate_input(
   const std::string &func_name,
   const VectorSpaceBase<Scalar> &domain,
   const VectorSpaceBase<Scalar> &range,
-  const RTOpPack::RTOpT<Scalar> &primary_op,
+  const RTOpPack::RTOpT<Scalar> &/* primary_op */,
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &/* reduct_objs */,
   const Ordinal primary_global_offset_in
   )
 {

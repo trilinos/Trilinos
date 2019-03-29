@@ -107,7 +107,7 @@ StepperOperatorSplit<Scalar>::getModel()
 }
 
 template<class Scalar>
-void StepperOperatorSplit<Scalar>::setSolver(std::string solverName)
+void StepperOperatorSplit<Scalar>::setSolver(std::string /* solverName */)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
@@ -118,7 +118,7 @@ void StepperOperatorSplit<Scalar>::setSolver(std::string solverName)
 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
+  Teuchos::RCP<Teuchos::ParameterList> /* solverPL */)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
@@ -129,7 +129,7 @@ void StepperOperatorSplit<Scalar>::setSolver(
 
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > /* solver */)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setSolver()");
@@ -353,7 +353,7 @@ std::string StepperOperatorSplit<Scalar>::description() const
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl;
 }

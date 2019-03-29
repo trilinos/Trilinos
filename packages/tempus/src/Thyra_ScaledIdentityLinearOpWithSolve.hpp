@@ -69,7 +69,7 @@ protected:
 
   /** @name Overridden from LinearOpBase */
   //@{
-  bool opSupportedImpl(EOpTransp M_trans) const { return true; }
+  bool opSupportedImpl(EOpTransp /* M_trans */) const { return true; }
 
   void applyImpl(const EOpTransp M_trans,
                  const MultiVectorBase<Scalar>& X,
@@ -88,23 +88,23 @@ protected:
 
   /** @name Overridden from LinearOpWithSolveBase */
   //@{
-  bool solveSupportsImpl(EOpTransp M_trans) const { return true; }
+  bool solveSupportsImpl(EOpTransp /* M_trans */) const { return true; }
 
   bool solveSupportsNewImpl(
-    EOpTransp M_trans,
-    const Ptr< const SolveCriteria< Scalar > > solveCriteria) const
+    EOpTransp /* M_trans */,
+    const Ptr< const SolveCriteria< Scalar > > /* solveCriteria */) const
   { return true; }
 
   bool solveSupportsSolveMeasureTypeImpl(
-    EOpTransp M_trans,
-     const SolveMeasureType &solveMeasureType) const
+    EOpTransp /* M_trans */,
+     const SolveMeasureType &/* solveMeasureType */) const
   { return true; }
 
   SolveStatus< Scalar > solveImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar>& B,
     const Ptr<MultiVectorBase<Scalar> >& X,
-    const Ptr< const SolveCriteria< Scalar > > solveCriteria) const
+    const Ptr< const SolveCriteria< Scalar > > /* solveCriteria */) const
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     assign(X, ST::zero());
@@ -133,6 +133,8 @@ private:
     const RCP<const VectorSpaceBase<Scalar> >& space) {
 #ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(is_null(space));
+#else
+    (void)space;
 #endif
 }
 

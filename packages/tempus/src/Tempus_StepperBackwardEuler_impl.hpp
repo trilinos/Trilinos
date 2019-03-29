@@ -276,7 +276,7 @@ std::string StepperBackwardEuler<Scalar>::description() const
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "wrapperModel_ = " << this->wrapperModel_->description() << std::endl;

@@ -175,7 +175,7 @@ DelayedLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const
 template<class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
   RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-  std::string *precFactoryName
+  std::string * /* precFactoryName */
   )
 {
   lowsf_->unsetPreconditionerFactory(precFactory);
@@ -223,8 +223,8 @@ void DelayedLinearOpWithSolveFactory<Scalar>::initializeOp(
 
 template<class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+  LinearOpWithSolveBase<Scalar> * /* Op */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);

@@ -182,7 +182,7 @@ std::string StepperForwardEuler<Scalar>::description() const
 template<class Scalar>
 void StepperForwardEuler<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "appModel_ = " << this->appModel_->description() << std::endl;

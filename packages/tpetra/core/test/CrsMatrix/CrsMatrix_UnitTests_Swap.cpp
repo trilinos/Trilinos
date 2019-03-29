@@ -389,7 +389,7 @@ class crsMatrix_Swap_Tester
         // Create the Row Map
         RCP<const map_type> row_map(new map_type(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
 
-        Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
+        Teuchos::Array<size_t> num_ent_per_row(lcl_num_rows);
         size_t                    idx = 0;
         for(auto& r: gbl_rows)
         {
@@ -411,7 +411,7 @@ class crsMatrix_Swap_Tester
             }
         }
 
-        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row, Tpetra::StaticProfile));
+        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row (), Tpetra::StaticProfile));
 
         for(auto& r: gbl_rows)
         {
@@ -569,7 +569,7 @@ class crsMatrix_Swap_Tester
         // Create the Row Map
         RCP<const map_type> row_map(new map_type(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
 
-        Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
+        Teuchos::Array<size_t> num_ent_per_row(lcl_num_rows);
         size_t                    idx = 0;
         for(auto& r: gbl_vals)
         {

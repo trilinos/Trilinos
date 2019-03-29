@@ -48,7 +48,7 @@ template <typename Scalar>
 void
 WrapperModelEvaluatorPairIMEX_Basic<Scalar>::
 setAppModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & /* me */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
     "Error - WrapperModelEvaluatorPairIMEX_Basic<Scalar>::setAppModel\n"
