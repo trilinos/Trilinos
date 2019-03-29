@@ -277,11 +277,11 @@ namespace MueLu {
   protected: //TODO: access function
 
     //! Setup Matrix object
-    virtual void SetupOperator(Operator& Op) const { }
+    virtual void SetupOperator(Operator& /* Op */) const { }
 
     //! Setup extra data
     // TODO: merge with SetupMatrix ?
-    virtual void SetupExtra(Hierarchy& H) const { }
+    virtual void SetupExtra(Hierarchy& /* H */) const { }
 
     // TODO this was private
     // Used in SetupHierarchy() to access levelManagers_

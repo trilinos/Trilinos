@@ -121,7 +121,7 @@ namespace MueLu {
     /*!  @brief Build method.   */
     void Build(Level& fineLevel, Level &coarseLevel) const;
 
-    void BuildP(Level &fineLevel, Level &coarseLevel) const { /* empty */ };
+    void BuildP(Level &/* fineLevel */, Level &/* coarseLevel */) const { /* empty */ };
     //@}
 
     //@{

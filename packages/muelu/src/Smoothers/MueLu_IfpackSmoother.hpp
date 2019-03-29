@@ -204,9 +204,9 @@ namespace MueLu {
   //! This function simplifies the usage of IfpackSmoother objects inside of templates as templates do not have to be specialized for <double, int, int> (see DirectSolver for an example).
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  GetIfpackSmoother (const std::string& type = "",
-                     const Teuchos::ParameterList& paramList = Teuchos::ParameterList (),
-                     const LocalOrdinal& overlap = 0)
+  GetIfpackSmoother (const std::string& /* type */ = "",
+                     const Teuchos::ParameterList& /* paramList */ = Teuchos::ParameterList (),
+                     const LocalOrdinal& /* overlap */ = 0)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "IfpackSmoother cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
