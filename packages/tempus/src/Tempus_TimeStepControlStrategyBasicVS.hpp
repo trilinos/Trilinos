@@ -120,7 +120,7 @@ public:
   virtual void getNextTimeStep(
     const TimeStepControl<Scalar> tsc,
     Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
-    Status & integratorStatus) override
+    Status & /* integratorStatus */) override
   {
     using Teuchos::RCP;
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();

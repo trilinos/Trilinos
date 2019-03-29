@@ -301,9 +301,16 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
       }
       TEST_EQUALITY( matrix.getNumEntriesInLocalRow(0), matrix.getCrsGraph()->getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // if static graph, insert one additional entry on my row and verify that an exception is thrown
+      // Before Mar 2019, insertion in to a matrix (graph) would append new indices/values
+      // to the appropriate row. The result was that insertion would result in duplicate
+      // indices (which would later be compressed out at fillComplete). A side-effect was
+      // that insertion would throw if the total number of inserted indices exceeded the
+      // space allocated - not just the number of unique indices. The current behavior now
+      // checks if an index exists the graph and only inserts if it doesn't. Thus, the
+      // following test needs to be modified to insert another *unique* index and not a
+      // repeat.
       if (pftype == StaticProfile) {
-        TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
+        TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
       }
       matrix.fillComplete(params);
       // check for throws and no-throws/values
@@ -471,5 +478,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

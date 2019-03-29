@@ -191,7 +191,7 @@ std::string StepperLeapfrog<Scalar>::description() const
 template<class Scalar>
 void StepperLeapfrog<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "appModel_ = " << this->appModel_->description() << std::endl;

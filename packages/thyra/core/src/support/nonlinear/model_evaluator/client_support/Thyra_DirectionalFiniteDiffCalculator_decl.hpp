@@ -88,10 +88,10 @@ public:
   /** \brief . */
   SelectedDerivatives() {}
   /** \brief . */
-  SelectedDerivatives& supports( ModelEvaluatorBase::EOutArgsDfDp arg, int l )
+  SelectedDerivatives& supports( ModelEvaluatorBase::EOutArgsDfDp /* arg */, int l )
     { supports_DfDp_.push_back(l); return *this; }
   /** \brief . */
-  SelectedDerivatives& supports( ModelEvaluatorBase::EOutArgsDgDp arg, int j, int l )
+  SelectedDerivatives& supports( ModelEvaluatorBase::EOutArgsDgDp /* arg */, int j, int l )
     { supports_DgDp_.push_back(std::pair<int,int>(j,l)); return *this; }
   // These should be private but I am too lazy to deal with the porting
   // issues of friends ...

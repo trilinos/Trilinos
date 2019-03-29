@@ -34,7 +34,7 @@ public:
       getModel(){return appModel_;}
 
     virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+        const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
       {return std::numeric_limits<Scalar>::max();}
 
     /// Set the initial conditions, make them consistent, and set needed memory.
@@ -58,7 +58,7 @@ public:
     /// Pass initial guess to Newton solver (only relevant for implicit solvers)
     //  thus a no-op for explicit steppers.
     virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess){}
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > /* initial_guess */){}
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
