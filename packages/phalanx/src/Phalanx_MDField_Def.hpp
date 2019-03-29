@@ -319,7 +319,7 @@ setFieldData(const PHX::any& a)
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     m_field_data = tmp;
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     std::cout << "\n\nError in compiletime PHX::MDField::setFieldData() in PHX::any_cast. Tried to cast the field \"" 
 	      << this->fieldTag().name()  << "\" with the identifier \"" << this->fieldTag().identifier() 
 	      << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name()) 

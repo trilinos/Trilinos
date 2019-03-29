@@ -278,6 +278,8 @@ namespace Tpetra {
     friend class CrsMatrix;
     template <class LO2, class GO2, class N2>
     friend class CrsGraph;
+    template <class LO, class GO, class N>
+    friend class FECrsGraph;
 
     //! The specialization of DistObject that is this class' parent class.
     typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
@@ -299,9 +301,9 @@ namespace Tpetra {
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,
                                    Kokkos::LayoutLeft,
                                    execution_space> local_graph_type;
+
     //! DEPRECATED; use local_graph_type (above) instead.
     typedef local_graph_type LocalStaticCrsGraphType TPETRA_DEPRECATED;
-
     //! DEPRECATED; use <tt>local_graph_type::row_map_type</tt> instead.
     typedef typename local_graph_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
     //! DEPRECATED; use <tt>local_graph_type::row_map_type::non_const_type</tt> instead.
@@ -391,6 +393,14 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::ArrayView<const size_t>& numEntPerRow,
+              const ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! DEPRECATED; use the version that takes an ArrayView instead.
+    TPETRA_DEPRECATED
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
 	      const ProfileType pftype = DynamicProfile,
@@ -398,6 +408,7 @@ namespace Tpetra {
 	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying column Map and a single upper
     ///   bound for the number of entries in all rows on the calling
@@ -479,6 +490,15 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
+              const Teuchos::ArrayView<const size_t>& numEntPerRow,
+              const ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! DEPRECATED; use the version that takes an ArrayView instead.
+    TPETRA_DEPRECATED
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
 	      const ProfileType pftype = DynamicProfile,
@@ -486,6 +506,7 @@ namespace Tpetra {
 	      const ProfileType pftype = StaticProfile,
 #endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying column Map and arrays containing
     ///   the graph with sorted local indices.
@@ -1860,11 +1881,40 @@ namespace Tpetra {
     size_t
     insertGlobalIndicesImpl (const RowInfo& rowInfo,
                              const GlobalOrdinal inputGblColInds[],
-                             const size_t numInputInds);
+                             const size_t numInputInds,
+                             std::function<void(const size_t, const size_t, const size_t)> fun =
+                                 std::function<void(const size_t, const size_t, const size_t)>());
 
     void
     insertLocalIndicesImpl (const LocalOrdinal lclRow,
-                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds);
+                            const Teuchos::ArrayView<const LocalOrdinal>& gblColInds,
+                            std::function<void(const size_t, const size_t, const size_t)> fun =
+                                std::function<void(const size_t, const size_t, const size_t)>());
+
+    /// \brief Finds indices in the given row.
+    ///
+    /// This method does no insertion; it just finds indices and calls
+    /// a callback for each found index
+    ///
+    /// \param row [in] Row of interest
+    ///
+    /// \param indices [in] Column indices to find in row
+    ///
+    /// \param fun Call back function called at each found index.  Called as
+    ///   fun(k, start, offset); where k is the index in to indices, start is
+    ///   offset to the start of the row, and offset is the relative offset of
+    ///   indices[k] in the graphs indices.
+    ///
+    /// \return The number of indices found.
+    size_t
+    findLocalIndices(const RowInfo& rowInfo,
+                     const Teuchos::ArrayView<const LocalOrdinal>& indices,
+                     std::function<void(const size_t, const size_t, const size_t)> fun) const;
+
+    size_t
+    findGlobalIndices(const RowInfo& rowInfo,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+                      std::function<void(const size_t, const size_t, const size_t)> fun) const;
 
     /// \brief Like insertGlobalIndices(), but with column Map filtering.
     ///
@@ -2817,7 +2867,7 @@ namespace Tpetra {
                                                             graphparams));
             } else {
               clonedGraph = rcp (new output_crs_graph_type (clonedRowMap, clonedColMap,
-                                                            numEntriesPerRow, pftype,
+                                                            numEntriesPerRow (), pftype,
                                                             graphparams));
             }
           } else {
@@ -2827,7 +2877,7 @@ namespace Tpetra {
                                                             graphparams));
             } else {
               clonedGraph = rcp (new output_crs_graph_type (clonedRowMap,
-                                                            numEntriesPerRow,
+                                                            numEntriesPerRow (),
                                                             pftype, graphparams));
             }
           }

@@ -123,7 +123,7 @@ public:
      *
      * \returns The operator to stabilize the whole Schur complement.
      */
-   virtual LinearOp getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getOuterStabilization(const BlockedLinearOp & /* A */,BlockPreconditionerState & /* state */) const
    { return Teuchos::null; }
 
    virtual LinearOp getInnerStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
@@ -173,7 +173,7 @@ public:
    //! Set to true to use the Full LDU decomposition, false otherwise
    virtual void setUseFullLDU(bool val) { useFullLDU_ = val; }
 
-   virtual void setSymmetric(bool isSymmetric) { }
+   virtual void setSymmetric(bool /* isSymmetric */) { }
 
 protected:
    // how to invert the matrices

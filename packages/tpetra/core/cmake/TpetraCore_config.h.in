@@ -109,6 +109,9 @@
 #  define HAVE_TPETRA_KOKKOSMPICOMM
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
 
+/* Define when enabling TeuchosNumerics in TpetraCore */
+#cmakedefine HAVE_TPETRACORE_TEUCHOSNUMERICS
+
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
 

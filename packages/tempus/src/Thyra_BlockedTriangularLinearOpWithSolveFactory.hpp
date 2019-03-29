@@ -379,8 +379,8 @@ template<class Scalar>
 void
 BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 setPreconditionerFactory(
-  const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
-  const std::string &precFactoryName
+  const RCP<PreconditionerFactoryBase<Scalar> > &/* precFactory */,
+  const std::string &/* precFactoryName */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -398,8 +398,8 @@ getPreconditionerFactory() const
 template<class Scalar>
 void BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 unsetPreconditionerFactory(
-  RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-  std::string *precFactoryName
+  RCP<PreconditionerFactoryBase<Scalar> > * /* precFactory */,
+  std::string * /* precFactoryName */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -410,7 +410,7 @@ template<class Scalar>
 bool
 BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 isCompatible(
-  const LinearOpSourceBase<Scalar> &fwdOpSrc
+  const LinearOpSourceBase<Scalar> &/* fwdOpSrc */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -431,7 +431,7 @@ BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 initializeOp(
   const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
   LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
 
@@ -509,8 +509,8 @@ template<class Scalar>
 void
 BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 initializeAndReuseOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+  LinearOpWithSolveBase<Scalar> * /* Op */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -524,7 +524,7 @@ uninitializeOp(
   RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
   RCP<const PreconditionerBase<Scalar> > *prec,
   RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
+  ESupportSolveUse * /* supportSolveUse */
   ) const
 {
   using Teuchos::dyn_cast;
@@ -548,7 +548,7 @@ template<class Scalar>
 bool
 BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 supportsPreconditionerInputType(
-  const EPreconditionerInputType precOpType
+  const EPreconditionerInputType /* precOpType */
   ) const
 {
   // We don't support any external preconditioners!
@@ -563,10 +563,10 @@ template<class Scalar>
 void
 BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const PreconditionerBase<Scalar> > &prec,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+  const RCP<const PreconditionerBase<Scalar> > &/* prec */,
+  LinearOpWithSolveBase<Scalar> * /* Op */,
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -577,10 +577,10 @@ template<class Scalar>
 void
 BlockedTriangularLinearOpWithSolveFactory<Scalar>::
 initializeApproxPreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+  const RCP<const LinearOpSourceBase<Scalar> > &/* approxFwdOpSrc */,
+  LinearOpWithSolveBase<Scalar> * /* Op */,
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,

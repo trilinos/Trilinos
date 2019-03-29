@@ -819,8 +819,8 @@ namespace Tpetra {
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
-                                       StaticProfile));
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
+                                       DynamicProfile));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -3896,7 +3896,7 @@ namespace Tpetra {
         // know how many entries there are in each row, so we can use
         // static profile.
         RCP<sparse_matrix_type> A_proc0 =
-          rcp (new sparse_matrix_type (gatherRowMap, gatherNumEntriesPerRow,
+          rcp (new sparse_matrix_type (gatherRowMap, gatherNumEntriesPerRow (),
                                        Tpetra::StaticProfile));
         if (myRank == rootRank) {
           if (debug) {

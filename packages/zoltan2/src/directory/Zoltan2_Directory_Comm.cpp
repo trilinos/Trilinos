@@ -369,7 +369,7 @@ int Zoltan2_Directory_Comm::invert_map(
   int      *pnrecvs,                   /* number of messages I receive */
   int       my_proc,                   /* my processor number */
   int       nprocs,                    /* total number of processors */
-  int       out_of_mem,                /* tell everyone I'm out of memory? */
+  int       /* out_of_mem */,          /* tell everyone I'm out of memory? */
   int       tag,                       /* message tag I can use */
   Teuchos::RCP<const Teuchos::Comm<int> > comm) /* communicator */
 {
@@ -858,8 +858,8 @@ int Zoltan2_Directory_Comm::do_post(
 
 int Zoltan2_Directory_Comm::do_wait(
   Zoltan2_Directory_Plan *plan,          /* communication data structure */
-  int tag,			                         /* message tag for communicating */
-  const Teuchos::ArrayRCP<char> &send_data, /* array of data I currently own */
+  int /* tag */,			                         /* message tag for communicating */
+  const Teuchos::ArrayRCP<char> &/* send_data */, /* array of data I currently own */
   int nbytes,                            /* msg size */
   Teuchos::ArrayRCP<char> &recv_data)		 /* array of data I'll own after comm */
 {
@@ -1653,7 +1653,7 @@ int Zoltan2_Directory_Comm::exchange_sizes(
   int      *total_recv_size,	        /* (returned) sum of all incoming sizes */
   int       my_proc,		              /* my processor number */
   int       tag,			                /* message tag I can use */
-  Teuchos::RCP<const Teuchos::Comm<int> > comm) {		/* communicator */
+  Teuchos::RCP<const Teuchos::Comm<int> > /* comm */) {		/* communicator */
 
   /* If sizes vary, then I need to communicate messaaage lengths */
   int self_index_to = -1;  /* location of self in procs_to */

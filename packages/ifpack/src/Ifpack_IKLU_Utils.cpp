@@ -577,7 +577,7 @@ static int csr_wclear (int mark, int lemax, int *w, int n)
 }
 
 /* keep off-diagonal entries; drop diagonal entries */
-static int csr_diag (int i, int j, double aij, void *other) { return (i != j) ; }
+static int csr_diag (int i, int j, double /* aij */, void * /* other */) { return (i != j) ; }
 
 /* p = amd(A+A') if symmetric is true, or amd(A'A) otherwise */
 int *csr_amd (int order, const csr *A)  /* order 0:natural, 1:Chol, 2:LU, 3:QR */

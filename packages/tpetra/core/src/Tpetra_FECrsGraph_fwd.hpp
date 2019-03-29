@@ -1,4 +1,3 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
@@ -39,28 +38,22 @@
 //
 // ************************************************************************
 // @HEADER
-*/
 
-#include "Tpetra_ConfigDefs.hpp"
+#ifndef TPETRA_FECRSGRAPH_FWD_HPP
+#define TPETRA_FECRSGRAPH_FWD_HPP
 
-#ifndef TPETRA_HIDE_DEPRECATED_CODE
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
-Teuchos::RCP<Tpetra::DefaultPlatform::DefaultPlatformType> Tpetra::DefaultPlatform::platform_ = Teuchos::null;
+/// \file Tpetra_FECrsGraph_fwd.hpp
+/// \brief Forward declaration of Tpetra::FECrsGraph
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
+template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+class FECrsGraph;
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  DefaultPlatform::DefaultPlatformType & DefaultPlatform::getDefaultPlatform() {
-    using Teuchos::rcp;
-    if (platform_.is_null ()) {
-#ifdef HAVE_TPETRA_MPI
-      platform_ = rcp (new MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> ());
-#else
-      platform_ = rcp (new SerialPlatform< ::Tpetra::Details::DefaultTypes::node_type> ());
-#endif
-    }
-    return *platform_;
-  }
-
-}
-#endif // TPETRA_HIDE_DEPRECATED_CODE
+#endif // TPETRA_FECRSGRAPH_FWD_HPP

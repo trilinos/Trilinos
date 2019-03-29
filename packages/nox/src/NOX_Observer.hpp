@@ -100,16 +100,16 @@ public:
   virtual ~Observer() {}
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::step().
-  virtual void runPreIterate(const NOX::Solver::Generic& solver) {}
+  virtual void runPreIterate(const NOX::Solver::Generic& /* solver */) {}
 
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::step().
-  virtual void runPostIterate(const NOX::Solver::Generic& solver) {}
+  virtual void runPostIterate(const NOX::Solver::Generic& /* solver */) {}
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::solve().
-  virtual void runPreSolve(const NOX::Solver::Generic& solver) {}
+  virtual void runPreSolve(const NOX::Solver::Generic& /* solver */) {}
 
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::solve().
-  virtual void runPostSolve(const NOX::Solver::Generic& solver) {}
+  virtual void runPostSolve(const NOX::Solver::Generic& /* solver */) {}
 
   /** \brief User defined method that will be executed prior to the
       update of the solution vector during a call to
@@ -124,7 +124,7 @@ public:
       \param [in] update - the direction vector that will be used to update the solution.
       \param [in] solver - the nox solver
    */
-  virtual void runPreSolutionUpdate(const NOX::Abstract::Vector& update, const NOX::Solver::Generic& solver) {}
+  virtual void runPreSolutionUpdate(const NOX::Abstract::Vector& /* update */, const NOX::Solver::Generic& /* solver */) {}
 
   /** \brief User defined method that will be executed after the
       update of the solution vector during a call to
@@ -139,13 +139,13 @@ public:
 
       \param [in] solver - the nox solver
    */
-  virtual void runPostSolutionUpdate(const NOX::Solver::Generic& solver) {}
+  virtual void runPostSolutionUpdate(const NOX::Solver::Generic& /* solver */) {}
 
   //! User defined method that will be executed before a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
-  virtual void runPreLineSearch(const NOX::Solver::Generic& solver) {}
+  virtual void runPreLineSearch(const NOX::Solver::Generic& /* solver */) {}
 
   //! User defined method that will be executed after a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
-  virtual void runPostLineSearch(const NOX::Solver::Generic& solver) {}
+  virtual void runPostLineSearch(const NOX::Solver::Generic& /* solver */) {}
 }; // class PrePostOperator
 
 } // namespace NOX

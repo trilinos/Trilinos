@@ -92,17 +92,17 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X,
                            Epetra_MultiVector& Y) const;
 
-  virtual int InvRowSums(Epetra_Vector& x) const
+  virtual int InvRowSums(Epetra_Vector& /* x */) const
   {
     return(-98);
   }
 
-  virtual int LeftScale(const Epetra_Vector& x)
+  virtual int LeftScale(const Epetra_Vector& /* x */)
   {
     return(-98);
   }
 
-  virtual int InvColSums(Epetra_Vector& x) const
+  virtual int InvColSums(Epetra_Vector& /* x */) const
   {
     return(-98);
   }

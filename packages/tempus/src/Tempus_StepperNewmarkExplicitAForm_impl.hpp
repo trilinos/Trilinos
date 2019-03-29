@@ -196,9 +196,12 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
     auto f       = initialState->getX()->clone_v();
     this->evaluateExplicitODE(f, x, xDot, initialState->getTime());
     Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDotDot));
-    Scalar reldiff = Thyra::norm(*f)/Thyra::norm(*xDotDot);
-
+    Scalar reldiff = Thyra::norm(*f);
+    Scalar normxDotDot = Thyra::norm(*xDotDot); 
+    //The following logic is to prevent FPEs  
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
+    if (normxDotDot > eps*reldiff) reldiff /= normxDotDot;  
+
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"StepperForwardEuler::setInitialConditions()");
@@ -314,7 +317,7 @@ std::string StepperNewmarkExplicitAForm<Scalar>::description() const
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "appModel_ = " << this->appModel_->description() << std::endl;

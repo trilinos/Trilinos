@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -38,53 +39,34 @@
 //
 // ************************************************************************
 // @HEADER
+*/
 
-#ifndef TPETRA_DEFAULT_PLATFORM_HPP
-#define TPETRA_DEFAULT_PLATFORM_HPP
-
-#include <Kokkos_DefaultNode.hpp>
+// Including this is the easy way to get access to all the Node types.
+#include "Kokkos_DefaultNode.hpp"
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_SerialPlatform.hpp"
-#ifdef HAVE_MPI
-#  include "Tpetra_MpiPlatform.hpp"
-#endif
+
+// Don't bother compiling anything, or even including anything else,
+// unless KokkosOpenMPWrapperNode is enabled.
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_OPENMP)
+
+#include "Tpetra_FECrsGraph_decl.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#include "Tpetra_FECrsGraph_def.hpp"
+
+// The first macro instantiates just the graph stuff.  The second
+// instantiates FECrsGraph methods templated on Scalar type that
+// CrsMatrix needs.  The two must be handled separately, to avoid link
+// errors resulting from redundant instantiations.
+
+#define TPETRA_FECRSGRAPH_GRAPH_INSTANT_OPENMPWRAPPERNODE( LO, GO ) \
+  TPETRA_FECRSGRAPH_GRAPH_INSTANT( LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
 
 namespace Tpetra {
 
-/** \brief Returns a default platform appropriate for the enviroment.
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-    \warning This class is DEPRECATED and will be REMOVED SOON.  Do
-      not use <tt>*Platform</tt> classes any more.  To initialize
-      Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
-      Tpetra::ScopeGuard, or Tpetra::initialize and Tpetra::finalize.
-      To get Tpetra's default Comm instance, include
-      <tt>Tpetra_Core.hpp</tt> and call
-      <tt>Tpetra::getDefaultComm()</tt>.  For the default Node type,
-      use <tt>Tpetra::Map<>::node_type</tt>.  Do not create Node
-      instances yourself.  It is OK for Node instances to be null.
- */
-class TPETRA_DEPRECATED DefaultPlatform {
-public:
-  /// \brief The default platform type specified at compile time.
-  ///
-  /// \warning This typedef is DEPRECATED and will be removed soon!
-#ifdef HAVE_TPETRA_MPI
-  typedef MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> DefaultPlatformType;
-#else
-  typedef SerialPlatform< ::Tpetra::Details::DefaultTypes::node_type> DefaultPlatformType;
-#endif
-
-  /// \brief Return a reference to the default platform singleton.
-  ///
-  /// \warning This method is DEPRECATED and will be removed soon!
-  static DefaultPlatformType& getDefaultPlatform ();
-
-private:
-  //! The default platform singleton.
-  static Teuchos::RCP<DefaultPlatformType> platform_;
-};
+  TPETRA_INSTANTIATE_LG(TPETRA_FECRSGRAPH_GRAPH_INSTANT_OPENMPWRAPPERNODE)
 
 } // namespace Tpetra
 
-#endif // TPETRA_DEFAULT_PLATFORM_HPP
-
+#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_OPENMP)

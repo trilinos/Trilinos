@@ -401,6 +401,13 @@ namespace Tpetra {
     /// with your precomputed Import object if you want to do an
     /// Import, else use doExport() with a precomputed Export object.
     ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
+    ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.
     ///   Its source Map must be the same as the input DistObject's Map,
@@ -410,7 +417,7 @@ namespace Tpetra {
     void
     doImport (const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     /// \brief Export data into this object using an Export object
     ///   ("forward mode").
@@ -424,6 +431,13 @@ namespace Tpetra {
     /// with your precomputed Export object if you want to do an
     /// Export, else use doImport() with a precomputed Import object.
     ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
+    ///
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
     ///   Its source Map must be the same as the input DistObject's Map,
@@ -433,7 +447,7 @@ namespace Tpetra {
     void
     doExport (const SrcDistObject& source,
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     /// \brief Import data into this object using an Export object
     ///   ("reverse mode").
@@ -447,6 +461,13 @@ namespace Tpetra {
     /// doImport() that takes a precomputed Import object in that
     /// case.
     ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
+    ///  
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
     ///   Its <i>target</i> Map must be the same as the input DistObject's Map,
@@ -457,7 +478,7 @@ namespace Tpetra {
     void
     doImport (const SrcDistObject& source,
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     /// \brief Export data into this object using an Import object
     ///   ("reverse mode").
@@ -471,6 +492,13 @@ namespace Tpetra {
     /// doExport() that takes a precomputed Export object in that
     /// case.
     ///
+    /// "Restricted Mode" does two things:
+    /// 1) Skips copyAndPermute
+    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    /// This cannot be used if #2 is not true, OR there are permutes.
+    /// The "source" maps still need to match
+    ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.
     ///   Its <i>target</i> Map must be the same as the input DistObject's Map,
@@ -481,7 +509,7 @@ namespace Tpetra {
     void
     doExport (const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     //@}
     //! @name Attribute accessor methods
@@ -642,7 +670,8 @@ namespace Tpetra {
                 const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
                 const char modeString[],
                 const ReverseOption revOp,
-                const CombineMode CM);
+                const CombineMode CM,
+                const bool restrictedMode);
 
     /// \brief Reallocate numExportPacketsPerLID_ and/or
     ///   numImportPacketsPerLID_, if necessary.
@@ -671,12 +700,13 @@ namespace Tpetra {
     doTransferOld (const SrcDistObject& src,
                    CombineMode CM,
                    size_t numSameIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type>& remoteLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
-                   Distributor& distor,
-                   ReverseOption revOp);
+                   const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
+                   const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
+                   Distributor &distor,
+                   ReverseOption revOp,
+                   const bool restrictedMode);
 
     /// \typedef buffer_memory_space
     /// \brief Kokkos memory space for communication buffers.
@@ -726,7 +756,8 @@ namespace Tpetra {
                      buffer_device_type>& exportLIDs,
                    Distributor& distor,
                    const ReverseOption revOp,
-                   const bool commOnHost);
+                   const bool commOnHost,
+                   const bool restrictedMode);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///

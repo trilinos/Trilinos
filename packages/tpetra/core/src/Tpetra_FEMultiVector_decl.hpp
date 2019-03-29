@@ -133,34 +133,36 @@ namespace Tpetra {
     //! Calls doTargetToSource() and then activates the source map mode
     void endFill()
     {
-      if(*activeMultiVector_ == FE_ACTIVE_TARGET) {
-        doTargetToSource(Tpetra::ADD);
+      if(*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+        doOwnedPlusSharedToOwned(Tpetra::ADD);
         switchActiveMultiVector();
       }
       else
-        throw std::runtime_error("FEMultiVector: Source MultiVector already active.  Cannot endFill()");
+        throw std::runtime_error("FEMultiVector: Owned+Shared MultiVector already active.  Cannot endFill()");
     }
 
     //! Activates the target map mode
     void beginFill()
     {
-      // Note: This does not throw an error since the on construction, the FEMV is in target mode.  Ergo, calling beginFill(),
+      // Note: This does not throw an error since the on construction, the FEMV is in owned+shared  mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeMultiVector_ == FE_ACTIVE_SOURCE) {
+      if(*activeMultiVector_ == FE_ACTIVE_OWNED) {
         switchActiveMultiVector();
       }
     }
 
+    /// \brief Migrate data from the owned+shared to the owned multivector
+    /// Since this is non-unique -> unique, we need a combine mode.
+    /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    void doOwnedPlusSharedToOwned(const CombineMode CM=Tpetra::ADD);
 
-    //! Migrate data from the target to the source map
-    // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Target MultiVector must be active
-    void doTargetToSource(const CombineMode CM=Tpetra::ADD);
-
-
-    //! Migrate data from the source to the target map
-    // Precondition: Source MultiVector must be active
-    void doSourceToTarget(const CombineMode CM=Tpetra::ADD);
+    /// \brief Migrate data from the owned to the owned+shared multivector
+    /// Precondition: Must be FE_ACTIVE_OWNED mode
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
     //! Switches which Multivector is active (without migrating data)
     void switchActiveMultiVector();
@@ -182,8 +184,8 @@ namespace Tpetra {
     // Enum for activity
     enum FEWhichActive
     {
-      FE_ACTIVE_TARGET,
-      FE_ACTIVE_SOURCE
+      FE_ACTIVE_OWNED_PLUS_SHARED,
+      FE_ACTIVE_OWNED
     };
 
 

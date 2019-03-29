@@ -88,7 +88,7 @@ public:
 
     /// Pass initial guess to Newton solver
     virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess){}
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > /* initial_guess */){}
 
    virtual std::string getStepperType() const
      { return stepperPL_->get<std::string>("Stepper Type"); }
@@ -102,7 +102,7 @@ public:
     virtual Scalar getOrderMax() const
       {return stepperPL_->get<int>("Maximum Order");}
     virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
+        const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
       {return Scalar(1.0e+99);}
     virtual void setOrder   (Scalar ord)
       {stepperPL_->set<int>("Order", ord);}

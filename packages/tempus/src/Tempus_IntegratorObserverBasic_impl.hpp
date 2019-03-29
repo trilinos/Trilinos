@@ -40,23 +40,23 @@ observeStartIntegrator(const Integrator<Scalar>& integrator){
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeStartTimeStep(const Integrator<Scalar>& integrator){}
+observeStartTimeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeNextTimeStep(const Integrator<Scalar>& integrator){}
+observeNextTimeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeBeforeTakeStep(const Integrator<Scalar>& integrator){}
+observeBeforeTakeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAfterTakeStep(const Integrator<Scalar>& integrator){}
+observeAfterTakeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAfterCheckTimeStep(const Integrator<Scalar>& integrator){}
+observeAfterCheckTimeStep(const Integrator<Scalar>& /* integrator */){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::

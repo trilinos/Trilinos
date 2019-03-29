@@ -12,8 +12,8 @@ extern "C" {
 #endif
 
 double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
-			int approx_all_zeros, ML_Comm *comm,
-			    int res_norm_or_not, ML *ml)
+			int approx_all_zeros, ML_Comm * /* comm */,
+			    int /* res_norm_or_not */, ML * /* ml */)
 {
 
   ML_Smoother * post = curr->post_smoother;
@@ -29,8 +29,8 @@ double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
 } /* ML_DD_OneLevel */
 
 double ML_DD_Additive(ML_1Level *curr, double *sol, double *rhs,
-			  int approx_all_zeros, ML_Comm *comm,
-			  int res_norm_or_not, ML *ml)
+			  int approx_all_zeros, ML_Comm * /* comm */,
+			  int /* res_norm_or_not */, ML * /* ml */)
 {
 
   ML_Operator * Amat = curr->Amat;
@@ -65,8 +65,8 @@ double ML_DD_Additive(ML_1Level *curr, double *sol, double *rhs,
 
 
 double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
-		    int approx_all_zeros, ML_Comm *comm,
-		    int res_norm_or_not, ML *ml)
+		    int approx_all_zeros, ML_Comm * /* comm */,
+		    int /* res_norm_or_not */, ML * /* ml */)
 {
 
   ML_Operator *Amat, *Rmat;
@@ -128,8 +128,8 @@ double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
 
 
 double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
-		      int approx_all_zeros, ML_Comm *comm,
-		      int res_norm_or_not, ML *ml)
+		      int approx_all_zeros, ML_Comm * /* comm */,
+		      int /* res_norm_or_not */, ML * /* ml */)
 {
   ML_Operator *Amat, *Rmat;
   ML_Smoother *pre,  *post;
