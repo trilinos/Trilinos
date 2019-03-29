@@ -518,11 +518,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const size_t maxNumEntriesPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               const ProfileType pftype = DynamicProfile,
-#else
-	       const ProfileType pftype = StaticProfile,
-#endif
+	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
@@ -544,11 +540,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               const ProfileType pftype = DynamicProfile,
-#else
-	       const ProfileType pftype = StaticProfile,
-#endif
+	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -585,11 +577,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const size_t maxNumEntPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               const ProfileType pftype = DynamicProfile,
-#else
-	       const ProfileType pftype = StaticProfile,
-#endif
+	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -617,11 +605,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-               const ProfileType pftype = DynamicProfile,
-#else
-	       const ProfileType pftype = StaticProfile,
-#endif
+	       const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE

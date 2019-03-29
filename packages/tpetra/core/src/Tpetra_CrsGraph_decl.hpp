@@ -341,11 +341,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const size_t maxNumEntriesPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      const ProfileType pftype = DynamicProfile,
-#else
-	      const ProfileType pftype = StaticProfile,
-#endif
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -367,11 +363,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      const ProfileType pftype = DynamicProfile,
-#else
-	      const ProfileType pftype = StaticProfile,
-#endif
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -394,7 +386,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-              const ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -402,11 +394,7 @@ namespace Tpetra {
     TPETRA_DEPRECATED
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 	      const ProfileType pftype = DynamicProfile,
-#else
-	      const ProfileType pftype = StaticProfile,
-#endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -434,11 +422,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const size_t maxNumEntriesPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      const ProfileType pftype = DynamicProfile,
-#else
-	      const ProfileType pftype = StaticProfile,
-#endif
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -462,11 +446,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-	      const ProfileType pftype = DynamicProfile,
-#else
-	      const ProfileType pftype = StaticProfile,
-#endif
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
@@ -491,7 +471,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayView<const size_t>& numEntPerRow,
-              const ProfileType pftype = DynamicProfile,
+	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -500,11 +480,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 	      const ProfileType pftype = DynamicProfile,
-#else
-	      const ProfileType pftype = StaticProfile,
-#endif
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 

@@ -136,6 +136,12 @@ namespace Tpetra {
 #endif
   };
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+#define TPETRA_DEFAULT_PROFILE_TYPE DynamicProfile
+#else
+#define TPETRA_DEFAULT_PROFILE_TYPE StaticProfile
+#endif
+
   /*! Optimize storage option */
   enum OptimizeOption {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
