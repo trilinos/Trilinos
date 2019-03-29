@@ -292,11 +292,10 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
     this->wrapperModel_->getAppModel()->evalModel(appInArgs, appOutArgs);
  
     Scalar reldiff = Thyra::norm(*f);
-    //The following logic prevents FPEs  
-    if (Thyra::norm(*x) > 1.0e-12)
-      reldiff /= Thyra::norm(*x);
- 
+    Scalar normx = Thyra::norm(*x); 
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
+    if (normx > eps*reldiff) reldiff /= normx; 
+
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,
