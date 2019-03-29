@@ -61,6 +61,9 @@
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+#  include "Teuchos_SerialDenseMatrix.hpp"
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 #include "KokkosCompat_View.hpp"
 #include "KokkosBlas.hpp"
@@ -1497,34 +1500,34 @@ namespace Tpetra {
 
       // This fixes GitHub Issue #4418.
       const bool use_atomic_updates = unpackOnHost ?
-	host_exec_space::concurrency () != 1 :
-	dev_exec_space::concurrency () != 1;
+        host_exec_space::concurrency () != 1 :
+        dev_exec_space::concurrency () != 1;
 
       if (printDebugOutput) {
-	std::ostringstream os;
-	os << *prefix << "Unpack: " << combineModeToString (CM) << endl;
-	std::cerr << os.str ();
+        std::ostringstream os;
+        os << *prefix << "Unpack: " << combineModeToString (CM) << endl;
+        std::cerr << os.str ();
       }
 
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
       // custom combine modes, start editing here.
 
       if (CM == INSERT || CM == REPLACE) {
-	using op_type = KokkosRefactor::Details::InsertOp<IST>;
+        using op_type = KokkosRefactor::Details::InsertOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
-				       op_type (), numVecs,
-				       use_atomic_updates,
+                                       op_type (), numVecs,
+                                       use_atomic_updates,
                                        debugCheckIndices);
 
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
-				       op_type (), numVecs,
-				       use_atomic_updates,
+                                       op_type (), numVecs,
+                                       use_atomic_updates,
                                        debugCheckIndices);
           }
         }
@@ -1534,9 +1537,9 @@ namespace Tpetra {
                                                        X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h,
-						       op_type (),
+                                                       op_type (),
                                                        numVecs,
-						       use_atomic_updates,
+                                                       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
@@ -1544,29 +1547,29 @@ namespace Tpetra {
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
-						       op_type (),
+                                                       op_type (),
                                                        numVecs,
-						       use_atomic_updates,
+                                                       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else if (CM == ADD) {
-	using op_type = KokkosRefactor::Details::AddOp<IST>;
+        using op_type = KokkosRefactor::Details::AddOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
-				       op_type (), numVecs,
-				       use_atomic_updates,
+                                       op_type (), numVecs,
+                                       use_atomic_updates,
                                        debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
-				       op_type (), numVecs,
+                                       op_type (), numVecs,
                                        use_atomic_updates,
-				       debugCheckIndices);
+                                       debugCheckIndices);
           }
         }
         else { // not constant stride
@@ -1575,9 +1578,9 @@ namespace Tpetra {
                                                        X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h,
-						       op_type (),
+                                                       op_type (),
                                                        numVecs,
-						       use_atomic_updates,
+                                                       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
@@ -1585,29 +1588,29 @@ namespace Tpetra {
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
-						       op_type (),
+                                                       op_type (),
                                                        numVecs,
-						       use_atomic_updates,
+                                                       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else if (CM == ABSMAX) {
-	using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
+        using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
-				       op_type (), numVecs,
+                                       op_type (), numVecs,
                                        use_atomic_updates,
-				       debugCheckIndices);
+                                       debugCheckIndices);
           }
           else { // unpack on device
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
-				       op_type (), numVecs,
+                                       op_type (), numVecs,
                                        use_atomic_updates,
-				       debugCheckIndices);
+                                       debugCheckIndices);
           }
         }
         else {
@@ -1616,9 +1619,9 @@ namespace Tpetra {
                                                        X_h, imports_h,
                                                        importLIDs_h,
                                                        whichVecs_h,
-						       op_type (),
+                                                       op_type (),
                                                        numVecs,
-						       use_atomic_updates,
+                                                       use_atomic_updates,
                                                        debugCheckIndices);
           }
           else { // unpack on device
@@ -1626,16 +1629,16 @@ namespace Tpetra {
                                                        X_d, imports_d,
                                                        importLIDs_d,
                                                        whichVecs_d,
-						       op_type (),
+                                                       op_type (),
                                                        numVecs,
-						       use_atomic_updates,
+                                                       use_atomic_updates,
                                                        debugCheckIndices);
           }
         }
       }
       else {
-	TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-	  (true, std::logic_error, "Invalid CombineMode");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::logic_error, "Invalid CombineMode");
       }
     }
     else {
@@ -3306,8 +3309,8 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": " << prefix << "X: {lclNumRows: "
-	 << lclNumRowsBefore << ", origLclNumRows: " << X.getOrigNumLocalRows ()
-	 << ", numCols: " << numCols << "}, subMap: " << newNumRows << endl;
+         << lclNumRowsBefore << ", origLclNumRows: " << X.getOrigNumLocalRows ()
+         << ", numCols: " << numCols << "}, subMap: " << newNumRows << endl;
       std::cerr << os.str ();
     }
     // We ask for the _original_ number of rows in X, because X could
@@ -3317,23 +3320,23 @@ namespace Tpetra {
     if (tooManyElts) {
       errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
       *errStrm << "  Proc " << myRank << ": subMap.getNodeNumElements() (="
-	<< newNumRows << ") + offset (=" << offset << ") > X.getOrigNumLocal"
+        << newNumRows << ") + offset (=" << offset << ") > X.getOrigNumLocal"
         "Rows() (=" << X.getOrigNumLocalRows () << ")." << endl;
       lclGood = 0;
       TEUCHOS_TEST_FOR_EXCEPTION
-	(! debug && tooManyElts, std::invalid_argument,
-	 prefix << errStrm->str () << suffix);
+        (! debug && tooManyElts, std::invalid_argument,
+         prefix << errStrm->str () << suffix);
     }
 
     if (debug) {
       reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
       if (gblGood != 1) {
-	std::ostringstream gblErrStrm;
-	const std::string myErrStr =
-	  errStrm.get () != nullptr ? errStrm->str () : std::string ("");
-	::Tpetra::Details::gathervPrint (gblErrStrm, myErrStr, *comm);
-	TEUCHOS_TEST_FOR_EXCEPTION
-	  (true, std::invalid_argument, gblErrStrm.str ());
+        std::ostringstream gblErrStrm;
+        const std::string myErrStr =
+          errStrm.get () != nullptr ? errStrm->str () : std::string ("");
+        ::Tpetra::Details::gathervPrint (gblErrStrm, myErrStr, *comm);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument, gblErrStrm.str ());
       }
     }
 
@@ -3373,35 +3376,35 @@ namespace Tpetra {
     MV subViewMV = X.isConstantStride () ?
       MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView) :
       MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView,
-	  X.whichVectors_ ());
+          X.whichVectors_ ());
 
     if (debug) {
       const size_t lclNumRowsRet = subViewMV.getLocalLength ();
       const size_t numColsRet = subViewMV.getNumVectors ();
       if (newNumRows != lclNumRowsRet || numCols != numColsRet) {
-	lclGood = 0;
-	if (errStrm.get () == nullptr) {
-	  errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
-	}
-	*errStrm << "  Proc " << myRank <<
-	  ": subMap.getNodeNumElements(): " << newNumRows <<
-	  ", subViewMV.getLocalLength(): " << lclNumRowsRet <<
-	  ", X.getNumVectors(): " << numCols <<
-	  ", subViewMV.getNumVectors(): " << numColsRet << endl;
+        lclGood = 0;
+        if (errStrm.get () == nullptr) {
+          errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
+        }
+        *errStrm << "  Proc " << myRank <<
+          ": subMap.getNodeNumElements(): " << newNumRows <<
+          ", subViewMV.getLocalLength(): " << lclNumRowsRet <<
+          ", X.getNumVectors(): " << numCols <<
+          ", subViewMV.getNumVectors(): " << numColsRet << endl;
       }
       reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
       if (gblGood != 1) {
-	std::ostringstream gblErrStrm;
-	if (myRank == 0) {
-	  gblErrStrm << prefix << "Returned MultiVector has the wrong local "
-	    "dimensions on one or more processes:" << endl;
-	}
-	const std::string myErrStr =
-	  errStrm.get () != nullptr ? errStrm->str () : std::string ("");
-	::Tpetra::Details::gathervPrint (gblErrStrm, myErrStr, *comm);
-	gblErrStrm << suffix << endl;
-	TEUCHOS_TEST_FOR_EXCEPTION
-	  (true, std::invalid_argument, gblErrStrm.str ());
+        std::ostringstream gblErrStrm;
+        if (myRank == 0) {
+          gblErrStrm << prefix << "Returned MultiVector has the wrong local "
+            "dimensions on one or more processes:" << endl;
+        }
+        const std::string myErrStr =
+          errStrm.get () != nullptr ? errStrm->str () : std::string ("");
+        ::Tpetra::Details::gathervPrint (gblErrStrm, myErrStr, *comm);
+        gblErrStrm << suffix << endl;
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::invalid_argument, gblErrStrm.str ());
       }
     }
 
@@ -4921,6 +4924,123 @@ namespace Tpetra {
     std::swap(mv.whichVectors_, this->whichVectors_);
   }
 
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+  template <class ST, class LO, class GO, class NT>
+  void
+  deep_copy (MultiVector<ST, LO, GO, NT>& dst,
+             const Teuchos::SerialDenseMatrix<int, ST>& src)
+  {
+    using MV = MultiVector<ST, LO, GO, NT>;
+    using IST = typename MV::impl_scalar_type;
+    using input_view_type =
+      Kokkos::View<const IST**, Kokkos::LayoutLeft,
+        Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+    using pair_type = std::pair<LO, LO>;
+
+    const LO numRows = static_cast<LO> (src.numRows ());
+    const LO numCols = static_cast<LO> (src.numCols ());
+    TEUCHOS_ASSERT( numRows == static_cast<LO> (dst.getLocalLength ()) );
+    TEUCHOS_ASSERT( numCols == static_cast<LO> (dst.getNumVectors ()) );
+
+    const IST* src_raw = reinterpret_cast<const IST*> (src.values ());
+    input_view_type src_orig (src_raw, src.stride (), numCols);
+    input_view_type src_view =
+      Kokkos::subview (src_orig, pair_type (0, numRows),
+                       pair_type (0, numCols));
+
+    if (dst.need_sync_device ()) {
+      dst.modify_host ();
+      if (dst.isConstantStride ()) {
+        Kokkos::deep_copy (dst.getLocalViewHost (), src_view);
+      }
+      else {
+        for (LO col = 0; col < numCols; ++col) {
+          auto dst_col = dst.getVectorNonConst (size_t (col));
+          auto dst_col_lcl_h_2d = dst_col->getLocalViewHost ();
+          auto dst_col_lcl_h =
+            Kokkos::subview (dst_col_lcl_h_2d, Kokkos::ALL (), 0);
+          auto src_col = Kokkos::subview (src_view, Kokkos::ALL (), col);
+          Kokkos::deep_copy (dst_col_lcl_h, src_col);
+        }
+      }
+      dst.sync_device (); // solvers prefer output sync'd to device
+    }
+    else {
+      dst.modify_device ();
+      if (dst.isConstantStride ()) {
+        Kokkos::deep_copy (dst.getLocalViewDevice (), src_view);
+      }
+      else {
+        for (LO col = 0; col < numCols; ++col) {
+          auto dst_col = dst.getVectorNonConst (size_t (col));
+          auto dst_col_lcl_d_2d = dst_col->getLocalViewDevice ();
+          auto dst_col_lcl_d =
+            Kokkos::subview (dst_col_lcl_d_2d, Kokkos::ALL (), 0);
+          auto src_col = Kokkos::subview (src_view, Kokkos::ALL (), col);
+          Kokkos::deep_copy (dst_col_lcl_d, src_col);
+        }
+      }
+    }
+  }
+
+  template <class ST, class LO, class GO, class NT>
+  void
+  deep_copy (Teuchos::SerialDenseMatrix<int, ST>& dst,
+             const MultiVector<ST, LO, GO, NT>& src)
+  {
+    using MV = MultiVector<ST, LO, GO, NT>;
+    using IST = typename MV::impl_scalar_type;
+    using output_view_type =
+      Kokkos::View<IST**, Kokkos::LayoutLeft,
+        Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+    using pair_type = std::pair<LO, LO>;
+
+    const LO numRows = static_cast<LO> (dst.numRows ());
+    const LO numCols = static_cast<LO> (dst.numCols ());
+    TEUCHOS_ASSERT( numRows == LO (src.getLocalLength ()) );
+    TEUCHOS_ASSERT( numCols == LO (src.getNumVectors ()) );
+
+    IST* dst_raw = reinterpret_cast<IST*> (dst.values ());
+    output_view_type dst_orig (dst_raw, dst.stride (), numCols);
+    auto dst_view =
+      Kokkos::subview (dst_orig, pair_type (0, numRows), Kokkos::ALL ());
+
+    if (src.need_sync_device () || ! src.need_sync_host ()) {
+      // Host has the most recent version of the data.  The different
+      // "if" test here favors the host version, even if the device
+      // version is also current.  This avoids device-to-host copies.
+      if (src.isConstantStride ()) {
+        Kokkos::deep_copy (dst_view, src.getLocalViewHost ());
+      }
+      else {
+        for (LO col = 0; col < numCols; ++col) {
+          auto src_col = src.getVector (size_t (col));
+          auto src_col_lcl_h_2d = src_col->getLocalViewHost ();
+          auto src_col_lcl_h =
+            Kokkos::subview (src_col_lcl_h_2d, Kokkos::ALL (), 0);
+          auto dst_col = Kokkos::subview (dst_view, Kokkos::ALL (), col);
+          Kokkos::deep_copy (dst_col, src_col_lcl_h);
+        }
+      }
+    }
+    else {
+      if (src.isConstantStride ()) {
+        Kokkos::deep_copy (dst_view, src.getLocalViewDevice ());
+      }
+      else {
+        for (LO col = 0; col < numCols; ++col) {
+          auto src_col = src.getVector (size_t (col));
+          auto src_col_lcl_d_2d = src_col->getLocalViewDevice ();
+          auto src_col_lcl_d =
+            Kokkos::subview (src_col_lcl_d_2d, Kokkos::ALL (), 0);
+          auto dst_col = Kokkos::subview (dst_view, Kokkos::ALL (), col);
+          Kokkos::deep_copy (dst_col, src_col_lcl_d);
+        }
+      }
+    }
+  }
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
+
   template <class Scalar, class LO, class GO, class NT>
   Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >
   createMultiVector (const Teuchos::RCP<const Map<LO, GO, NT> >& map,
@@ -4948,9 +5068,19 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+#  define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
-  template Teuchos::RCP<MultiVector< SCALAR , LO , GO , NODE > > createMultiVector (const Teuchos::RCP<const Map<LO, GO, NODE> >& map, size_t numVectors);
+  template Teuchos::RCP<MultiVector< SCALAR , LO , GO , NODE > > createMultiVector (const Teuchos::RCP<const Map<LO, GO, NODE> >& map, size_t numVectors); \
+  template void deep_copy (MultiVector<SCALAR, LO, GO, NODE>& dst, const Teuchos::SerialDenseMatrix<int, SCALAR>& src); \
+  template void deep_copy (Teuchos::SerialDenseMatrix<int, SCALAR>& dst, const MultiVector<SCALAR, LO, GO, NODE>& src);
+
+#else
+#  define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
+  template class MultiVector< SCALAR , LO , GO , NODE >; \
+  template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src);
+
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP
