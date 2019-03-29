@@ -142,7 +142,7 @@ std::string DefaultZeroLinearOp<Scalar>::description() const
 
 
 template<class Scalar>
-bool DefaultZeroLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
+bool DefaultZeroLinearOp<Scalar>::opSupportedImpl(EOpTransp /* M_trans */) const
 {
   return true;
 }
@@ -153,7 +153,7 @@ void DefaultZeroLinearOp<Scalar>::applyImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
   const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
+  const Scalar /* alpha */,
   const Scalar beta
   ) const
 {
@@ -161,6 +161,9 @@ void DefaultZeroLinearOp<Scalar>::applyImpl(
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "DefaultZeroLinearOp<Scalar>::apply(...)", *this, M_trans, X, &*Y
     );
+#else
+  (void)M_trans;
+  (void)X;
 #endif // TEUCHOS_DEBUG  
   scale(beta, Y);
 }
@@ -183,7 +186,7 @@ rowStatIsSupportedImpl(const RowStatLinearOpBaseUtils::ERowStat rowStat) const
 template<class Scalar>
 void DefaultZeroLinearOp<Scalar>::
 getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat, 
+    const RowStatLinearOpBaseUtils::ERowStat /* rowStat */, 
     const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const
 { 
   Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(),rowStatVec); 

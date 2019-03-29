@@ -121,6 +121,8 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_p_names(int l) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, this->Np() );
+#else
+  (void)l;
 #endif
   return Teuchos::null;
 }
@@ -132,6 +134,8 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_g_names(int j) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, this->Ng() );
+#else
+  (void)j;
 #endif
   return Teuchos::ArrayView<const std::string>(Teuchos::null);
 }
@@ -220,8 +224,8 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_W_factory() const
 
 template<class Scalar>
 void ResponseOnlyModelEvaluatorBase<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-  const bool wasSolved
+  const ModelEvaluatorBase::InArgs<Scalar> &/* finalPoint */,
+  const bool /* wasSolved */
   )
 {
   // This final point is just ignored by default!
