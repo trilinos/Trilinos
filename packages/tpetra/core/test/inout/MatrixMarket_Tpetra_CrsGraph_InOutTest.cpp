@@ -401,6 +401,7 @@ testCrsGraph (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   RCP<const map_type> domainMap = rowMap;
   RCP<const map_type> rangeMap = rowMap;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+  out << "Instantiating the graph" << endl;
   RCP<crs_graph_type> A =
     reader_type::readSparseGraph (inStr, rowMap, colMap, domainMap, rangeMap,
                              callFillComplete, tolerant, debug);

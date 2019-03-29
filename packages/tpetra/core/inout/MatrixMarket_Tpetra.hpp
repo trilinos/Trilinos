@@ -1562,7 +1562,7 @@ namespace Tpetra {
 
         // Create the graph where the root owns EVERYTHING
         RCP<sparse_graph_type> proc0Graph =
-            rcp(new sparse_graph_type(proc0Map,0,StaticProfile,constructorParams));
+	  rcp(new sparse_graph_type(proc0Map,proc0Map->getGlobalNumElements(),StaticProfile,constructorParams));
         if(myRank == rootRank) {
           typedef Teuchos::MatrixMarket::Raw::GraphElement<global_ordinal_type> element_type;
 

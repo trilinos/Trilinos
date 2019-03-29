@@ -543,7 +543,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::ArrayRCP<const size_t>& NumEntPerRowToAlloc,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
                const ProfileType pftype = DynamicProfile,
 #else
