@@ -76,7 +76,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -86,8 +86,8 @@ build name strings [below](#build-name-examples).
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
 [`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<complex>`](#complex),
-[`<shared_static>`](#shared_static) and [`<release_debug>`](#release_debug),
-is described below.
+[`<shared_static>`](#shared_static), [`<release_debug>`](#release_debug), and
+[`<pt>`](#pt), are described below.
 
 <a name="system_name"/>
 
@@ -226,6 +226,17 @@ checking (e.g. array bounds checking, pointer checking etc.)):
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build supports running in a debugger. 
+
+<a name="pt"/>
+
+**`<pt>`:** The following `<build-name>` keywords specify all Primary Tested
+(pt) packages are allowed to be enabled.  The default is to allow enable of
+Secondary Tested packages with disables for packages that the ATDM APPs do not
+use (as specified in the file `ATDMDisables.cmake`):
+
+* `-pt` or `_pt` and the very end of the `<build-name>` string: Allow enable
+  if all PT packages, don't disable any PT packages by default and enable
+  Fortran.
 
 All other strings in `<build-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<build-name>` string is defined in
