@@ -53,9 +53,16 @@ fi
 echo "Using waterman compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=64
-# NOTE: Above settings are used for building on a Dual-Socket POWER9 with 8
-# cores per socket.
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
+  [[ "${ATDM_CONFIG_CUDA_RDC}" == "ON" ]] ; then
+  export ATDM_CONFIG_BUILD_COUNT=32
+  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
+  # When CUDA+RDC is enabled, using all 64 cores to build and link results in
+  # build errors as described in #4502.
+else
+  export ATDM_CONFIG_BUILD_COUNT=64
+fi
 
 module purge
 

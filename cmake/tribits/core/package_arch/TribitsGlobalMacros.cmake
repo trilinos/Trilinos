@@ -316,6 +316,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   IF ("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES}" STREQUAL "")
     SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES OFF)
   ENDIF()
+
+  ADVANCED_SET(${PROJECT_NAME}_PARALLEL_COMPILE_JOBS_LIMIT "" CACHE STRING
+    "If not empty '', gives an integer for the max number of object compile jobs for Ninja builds. (Default empty for no limit)")
+
+  ADVANCED_SET(${PROJECT_NAME}_PARALLEL_LINK_JOBS_LIMIT "" CACHE STRING
+    "If not empty '', gives an integer for the max number of lib and exe link jobs for Ninja builds. (Default empty for no limit)")
   
   IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
     SET(${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT ON)
@@ -2037,6 +2043,20 @@ MACRO(TRIBITS_SETUP_ENV)
     TIMER_PRINT_REL_TIME(${SETUP_ENV_TIME_START_SECONDS}
       ${SETUP_ENV_TIME_STOP_SECONDS}
       "\nTotal time to probe and setup the environment")
+  ENDIF()
+
+  # Set ninja compile and link parallel job limits
+
+  IF (${PROJECT_NAME}_PARALLEL_COMPILE_JOBS_LIMIT)
+    SET_PROPERTY(GLOBAL APPEND PROPERTY JOB_POOLS
+      compile_job_pool=${${PROJECT_NAME}_PARALLEL_COMPILE_JOBS_LIMIT})
+    SET(CMAKE_JOB_POOL_COMPILE compile_job_pool)
+  ENDIF()
+  
+  IF (${PROJECT_NAME}_PARALLEL_LINK_JOBS_LIMIT)
+    SET_PROPERTY(GLOBAL APPEND PROPERTY JOB_POOLS
+      link_job_pool=${${PROJECT_NAME}_PARALLEL_LINK_JOBS_LIMIT})
+    SET(CMAKE_JOB_POOL_LINK link_job_pool)
   ENDIF()
 
 ENDMACRO()

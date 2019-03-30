@@ -118,13 +118,10 @@ module purge
 #
 
 module load sems-env
-module load atdm-env
 module load $sems_python_and_version_default
 module load $sems_cmake_and_version_load
+module load $sems_ninja_and_version_default
 module load $sems_git_and_version_default
-
-# Load Fortran-capable ninja in case someone wants to use it
-module load atdm-ninja_fortran/1.7.2
 
 # The SEMS Intel modules point to an unsupported version of GCC.
 # until this is fixed, the workaround is below.
