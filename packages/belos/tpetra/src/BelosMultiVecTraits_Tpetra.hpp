@@ -47,14 +47,80 @@
 
 #include "BelosMultiVecTraits.hpp"
 #include "BelosTypes.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_StaticView.hpp"
 #include "Teuchos_Array.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include "Tpetra_TsqrAdaptor.hpp"
 #endif // HAVE_BELOS_TSQR
+
+namespace { // (anonymous)
+
+// MapType: a Tpetra::Map specialization.
+//
+// inputMap: We use its communicator and index base.
+template<class MapType>
+Teuchos::RCP<const MapType>
+makeLocalMap (const MapType& inputMap,
+              const typename MapType::local_ordinal_type lclNumRows)
+{
+  Teuchos::RCP<MapType> map (new MapType (lclNumRows,
+                                          inputMap.getIndexBase (),
+                                          inputMap.getComm (),
+                                          Tpetra::LocallyReplicated));
+  return Teuchos::rcp_const_cast<const MapType> (map);
+}
+
+// Return a Tpetra::MultiVector with static storage and a local Map.
+// "Static storage" means that you're only allowed to have one of
+// these in operation at a time, since it stores its data in a static
+// memory pool.  "Local Map" means that the MultiVector is suitable
+// for MultiVector::reduce, or for the result of MultiVector::multiply
+// (e.g., for the X^T * Y or X*H * Y case, where X and Y have the same
+// globally distributed Map).
+//
+// Contents of the returned Tpetra::MultiVector are undefined.  If you
+// want to set the entries to zero, you must do that yourself with
+// MultiVector::putScalar.
+//
+// MultiVectorType: A Tpetra::MultiVector specialization.
+//
+// gblMv: We use its Map (though the returned MultiVector may have a
+// different Map, since the returned MultiVector has a
+// LocallyReplicated Map), and we also use it to deduce the return
+// type.
+template<class MultiVectorType>
+MultiVectorType
+makeStaticLocalMultiVector (const MultiVectorType& gblMv,
+                            const size_t lclNumRows,
+                            const size_t numCols)
+{
+  using Tpetra::Details::getStatic2dDualView;
+  using IST = typename MultiVectorType::impl_scalar_type;
+  using DT = typename MultiVectorType::device_type;
+
+  auto lclMap = makeLocalMap (* (gblMv.getMap ()), lclNumRows);
+  auto dv = getStatic2dDualView<IST, DT> (lclNumRows, numCols);
+
+  if (::Tpetra::Details::Behavior::debug ()) {
+    // Filling with NaN is a cheap and effective way to tell if
+    // downstream code is trying to use a MultiVector's data without
+    // them having been initialized.  ArithTraits lets us call nan()
+    // even if the scalar type doesn't define it; it just returns some
+    // undefined value in the latter case.
+    const IST nan = Kokkos::ArithTraits<IST>::nan ();
+    Kokkos::deep_copy (dv.d_view, nan);
+    Kokkos::deep_copy (dv.h_view, nan);
+  }
+  return MultiVectorType (lclMap, dv);
+}
+
+} // namespace (anonymous)
 
 namespace Belos {
 
@@ -326,44 +392,25 @@ namespace Belos {
                      Scalar beta,
                      MV& mv)
     {
-      using Teuchos::ArrayView;
-      using Teuchos::Comm;
-      using Teuchos::rcpFromRef;
-      typedef ::Tpetra::Map<LO, GO, Node> map_type;
-
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTimesMatAddMv");
-      Teuchos::RCP<Teuchos::Time> timer =
-        Teuchos::TimeMonitor::lookupCounter (timerName);
-      if (timer.is_null ()) {
-        timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error,
-        "Belos::MultiVecTraits::MvTimesMatAddMv: "
-        "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
-
-      // This starts the timer.  It will be stopped on scope exit.
+      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
       Teuchos::TimeMonitor timeMon (*timer);
 #endif // HAVE_BELOS_TPETRA_TIMERS
 
-      // Check if B is 1-by-1, in which case we can just call update()
-      if (B.numRows () == 1 && B.numCols () == 1) {
-        mv.update (alpha*B(0,0), A, beta);
-        return;
-      }
+      const size_t B_numRows = static_cast<size_t> (B.numRows ());
+      const size_t B_numCols = static_cast<size_t> (B.numCols ());
 
-      // Create local map
-      Teuchos::SerialComm<int> serialComm;
-      map_type LocalMap (B.numRows (), A.getMap ()->getIndexBase (),
-                         rcpFromRef<const Comm<int> > (serialComm),
-                         ::Tpetra::LocallyReplicated);
-      // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
-      ArrayView<const Scalar> Bvalues (B.values (), B.stride () * B.numCols ());
-      // create locally replicated MultiVector with a copy of this data
-      MV B_mv (rcpFromRef (LocalMap), Bvalues, B.stride (), B.numCols ());
-      mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, B_mv, beta);
+      // Check if B is 1-by-1, in which case we can just call update()
+      if (B_numRows == size_t (1) && B_numCols == size_t (1)) {
+        mv.update (alpha*B(0,0), A, beta);
+      }
+      else {
+        MV B_mv = makeStaticLocalMultiVector (A, B_numRows, B_numCols);
+        Tpetra::deep_copy (B_mv, B);
+        mv.multiply (Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+                     alpha, A, B_mv, beta);
+      }
     }
 
     /// \brief <tt>mv := alpha*A + beta*B</tt>
@@ -397,43 +444,19 @@ namespace Belos {
                const MV& B,
                Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
-      using ::Tpetra::LocallyReplicated;
-      using Teuchos::Comm;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-      using Teuchos::TimeMonitor;
-      typedef ::Tpetra::Map<LO,GO,Node> map_type;
-
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       const std::string timerName ("Belos::MVT::MvTransMv");
-      RCP<Teuchos::Time> timer = TimeMonitor::lookupCounter (timerName);
-      if (timer.is_null ()) {
-        timer = TimeMonitor::getNewCounter (timerName);
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        timer.is_null (), std::logic_error, "Belos::MvTransMv: "
-        "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
-
-      // This starts the timer.  It will be stopped on scope exit.
-      TimeMonitor timeMon (*timer);
+      auto timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+      Teuchos::TimeMonitor timeMon (*timer);
 #endif // HAVE_BELOS_TPETRA_TIMERS
 
-      // Form alpha * A^H * B, then copy into the SerialDenseMatrix.
-      // We will create a multivector C_mv from a a local map.  This
-      // map has a serial comm, the purpose being to short-circuit the
-      // MultiVector::reduce() call at the end of
-      // MultiVector::multiply().  Otherwise, the reduced multivector
-      // data would be copied back to the GPU, only to turn around and
-      // have to get it back here.  This saves us a round trip for
-      // this data.
+      const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
       const int numRowsC = C.numRows ();
       const int numColsC = C.numCols ();
-      const int strideC  = C.stride ();
 
-      // Check if numRowsC == numColsC == 1, in which case we can call dot()
+      // If numRowsC == numColsC == 1, then we can call dot().
       if (numRowsC == 1 && numColsC == 1) {
-        if (alpha == Teuchos::ScalarTraits<Scalar>::zero ()) {
+        if (alpha == ZERO) {
           // Short-circuit, as required by BLAS semantics.
           C(0,0) = alpha;
           return;
@@ -445,29 +468,12 @@ namespace Belos {
         return;
       }
 
-      // get comm
-      RCP<const Comm<int> > pcomm = A.getMap ()->getComm ();
-
-      // create local map with comm
-      RCP<const map_type> LocalMap =
-        rcp (new map_type (numRowsC, 0, pcomm, LocallyReplicated));
-
-      // create local multivector to hold the result
-      const bool INIT_TO_ZERO = true;
-      MV C_mv (LocalMap, numColsC, INIT_TO_ZERO);
-
-      // multiply result into local multivector
-      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B,
-                     Teuchos::ScalarTraits<Scalar>::zero ());
-
-      // create arrayview encapsulating the Teuchos::SerialDenseMatrix
-      Teuchos::ArrayView<Scalar> C_view (C.values (), strideC * numColsC);
-
-      // No accumulation to do (since Tpetra has already done it);
-      // simply extract the multivector data into C.
-      // Extract a copy of the result into the array view
-      // (and therefore, the SerialDenseMatrix).
-      C_mv.get1dCopy (C_view, strideC);
+      MV C_mv = makeStaticLocalMultiVector (A, numRowsC, numColsC);
+      // Filling with zero should be unnecessary, in theory, but not
+      // in practice, alas (Issue_3235 test fails).
+      C_mv.putScalar (ZERO);
+      C_mv.multiply (Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, alpha, A, B, ZERO);
+      Tpetra::deep_copy (C, C_mv);
     }
 
     //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
