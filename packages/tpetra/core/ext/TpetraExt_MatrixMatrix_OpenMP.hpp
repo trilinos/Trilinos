@@ -529,7 +529,7 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
     std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
     using Teuchos::TimeMonitor;
     Teuchos::RCP<TimeMonitor> MM;
-#endif
+#endif    
 
   // Node-specific code
   std::string nodename("OpenMP");
@@ -543,8 +543,21 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   }
 
   if(myalg == "LTG") {
-    // Use the LTG kernel if requested
-    ::Tpetra::MatrixMatrix::ExtraKernels::mult_PT_A_P_newmatrix_LowThreadGustavsonKernel(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
+ #ifdef HAVE_TPETRA_MMM_TIMINGS
+        MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+  #endif
+        // We don't need a kernel-level PTAP, we just transpose here
+        typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>  transposer_type;
+        transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
+        Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
+        if (!params.is_null())
+          transposeParams->set("compute global constants",
+                               params->get("compute global constants: temporaries",
+                                           false));
+        Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> > Ptrans = transposer.createTransposeLocal(transposeParams);
+        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> Rview;
+        Rview.origMatrix = Ptrans;       
+        ::Tpetra::MatrixMatrix::ExtraKernels::mult_R_A_P_newmatrix_LowThreadGustavsonKernel(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
   }
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::PT_A_P newmatrix unknown kernel");

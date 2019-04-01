@@ -347,19 +347,6 @@ namespace Tpetra {
 
   namespace MMdetails{
 
-
-    template<class CrsMatrixType>
-    size_t Ac_estimate_nnz(CrsMatrixType & A, CrsMatrixType &P){
-      size_t nnzPerRowA = 100, Pcols = 100;
-      if (A.getNodeNumEntries() > 0)
-        nnzPerRowA = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 9;
-      if (P.getNodeNumEntries() > 0)
-        Pcols = (P.getNodeNumCols() > 0) ? P.getNodeNumCols() : 100;
-      return (size_t)(Pcols*nnzPerRowA + 5*nnzPerRowA + 300);
-    }
-
-
-
     // Kernel method for computing the local portion of Ac = R*A*P
     template<class Scalar,
              class LocalOrdinal,
@@ -694,65 +681,6 @@ namespace Tpetra {
     }
 
 
-
-
-
-
-
-
-
-    /*********************************************************************************************************/
-    template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,
-             class OutRowptrType, class OutColindType, class OutValsType>
-    void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InColindArrayType &Incolind, const InValsArrayType & Invalues,
-                                       size_t m, double thread_chunk,
-                                       OutRowptrType & row_mapC, OutColindType &entriesC, OutValsType & valuesC ) {
-      typedef OutRowptrType lno_view_t;
-      typedef OutColindType lno_nnz_view_t;
-      typedef OutValsType scalar_view_t;
-      typedef typename lno_view_t::execution_space execution_space;
-      typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-
-      // Generate the starting nnz number per thread
-      size_t thread_max =  Inrowptr.size();
-      size_t c_nnz_size=0;
-      lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
-      {
-        lno_view_t thread_nnz_count("thread_nnz_counts", thread_max);
-        for(size_t i = 0; i < thread_max; i++)
-          thread_nnz_count(i) = Inrowptr(i)(Inrowptr(i).extent(0) - 1);
-        Tpetra::Details::computeOffsetsFromCounts(thread_start_nnz, thread_nnz_count);
-      }
-      c_nnz_size = thread_start_nnz(thread_max);
-
-      // Allocate output
-      lno_nnz_view_t  entriesC_(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size); entriesC = entriesC_;
-      scalar_view_t   valuesC_(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);  valuesC = valuesC_;
-      
-      // Copy out
-      Kokkos::parallel_for("LTG::CopyOut", range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid) {
-          size_t my_thread_start =  tid * thread_chunk;
-          size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
-          size_t nnz_thread_start = thread_start_nnz(tid);
-          
-          for (size_t i = my_thread_start; i < my_thread_stop; i++) {
-            size_t ii = i - my_thread_start;
-            // Rowptr
-            row_mapC(i) = nnz_thread_start + Inrowptr(tid)(ii);
-            if (i==m-1) {
-              row_mapC(m) = nnz_thread_start + Inrowptr(tid)(ii+1);
-            }
-            
-            // Colind / Values
-            for(size_t j = Inrowptr(tid)(ii); j<Inrowptr(tid)(ii+1); j++) {
-              entriesC(nnz_thread_start + j) = Incolind(tid)(j);
-              valuesC(nnz_thread_start + j)  = Invalues(tid)(j);        
-            }
-          }
-        });
-    }//end copy_out
-
-
     /*********************************************************************************************************/
     // RAP NewMatrix Kernel wrappers (Default non-threaded version)
     // Computes R * A * P -> Ac using classic Gustavson approach
@@ -1001,7 +929,7 @@ namespace Tpetra {
              class GlobalOrdinal,
              class Node,
              class LocalOrdinalViewType>
-    void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+    void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                        CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
                                                                                                        const LocalOrdinalViewType & Acol2Prow,
                                                                                                        const LocalOrdinalViewType & Acol2PIrow,
@@ -1014,276 +942,24 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
       using Teuchos::TimeMonitor;
-      Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP Newmatrix SerialCore"))));
+      Teuchos::TimeMonitor MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
 #endif
 
-      using Teuchos::Array;
-      using Teuchos::ArrayRCP;
-      using Teuchos::ArrayView;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
-
-      typedef Scalar            SC;
-      typedef LocalOrdinal      LO;
-      typedef GlobalOrdinal     GO;
-      typedef Node              NO;
-      typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
-      const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-      const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-
-      // number of rows on the process of the fine matrix
-      // size_t m = Pview.origMatrix->getNodeNumRows();
-      // number of rows on the process of the coarse matrix
-      size_t n = Ac.getRowMap()->getNodeNumElements();
-      LO maxAccol = Ac.getColMap()->getMaxLocalIndex();
-
-      // Get Data Pointers
-      ArrayRCP<const size_t> Arowptr_RCP, Prowptr_RCP, Irowptr_RCP;
-      ArrayRCP<size_t> Acrowptr_RCP;
-      ArrayRCP<const LO> Acolind_RCP, Pcolind_RCP, Icolind_RCP;
-      ArrayRCP<LO> Accolind_RCP;
-      ArrayRCP<const Scalar> Avals_RCP, Pvals_RCP, Ivals_RCP;
-      ArrayRCP<SC> Acvals_RCP;
-
-      // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
-      // out of the CrsMatrix.  This code computes R * A * (P_local +
-      // P_remote), where P_local contains the locally owned rows of P,
-      // and P_remote the (previously Import'ed) remote rows of P.
-
-      Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
-      Pview.origMatrix->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
-
-      if (!Pview.importMatrix.is_null())
-        Pview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
-
-      // mfh 27 Sep 2016: Remark below "For efficiency" refers to an issue
-      // where Teuchos::ArrayRCP::operator[] may be slower than
-      // Teuchos::ArrayView::operator[].
-
-      // For efficiency
-      ArrayView<const size_t>   Arowptr, Prowptr, Irowptr;
-      ArrayView<const LO>       Acolind, Pcolind, Icolind;
-      ArrayView<const SC>       Avals, Pvals, Ivals;
-      ArrayView<size_t>         Acrowptr;
-      ArrayView<LO> Accolind;
-      ArrayView<SC> Acvals;
-      Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-      Prowptr = Prowptr_RCP();  Pcolind = Pcolind_RCP();  Pvals = Pvals_RCP();
-      if (!Pview.importMatrix.is_null()) {
-        Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
-      }
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
-#endif
-
-      //////////////////////////////////////////////////////////////////////
-      // Get the local transpose of the graph of P by locally transposing
-      // all of P
-
-      ArrayRCP<const size_t>  Rrowptr_RCP;
-      ArrayRCP<const LO>      Rcolind_RCP;
-      ArrayRCP<const Scalar>  Rvals_RCP;
-      ArrayView<const size_t> Rrowptr;
-      ArrayView<const LO>     Rcolind;
-      ArrayView<const SC>     Rvals;
-
+      // We don't need a kernel-level PTAP, we just transpose here
+      typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>  transposer_type;
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
-      RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
+      Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
       if (!params.is_null())
         transposeParams->set("compute global constants",
                              params->get("compute global constants: temporaries",
-                                         false));
-      RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans = transposer.createTransposeLocal(transposeParams);
-
-      Ptrans->getAllValues(Rrowptr_RCP, Rcolind_RCP, Rvals_RCP);
-      Rrowptr = Rrowptr_RCP();
-      Rcolind = Rcolind_RCP();
-      Rvals = Rvals_RCP();
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP Newmatrix Alloc"))));
-#endif
-
-      size_t nnz_alloc = std::max(Ac_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix),
-                                  Ac.getColMap()->getNodeNumElements());
-      size_t nnzPerRowA = 100;
-      if (Aview.origMatrix->getNodeNumEntries() > 0)
-        nnzPerRowA = Aview.origMatrix->getNodeNumEntries()/Aview.origMatrix->getNodeNumRows();
-      Acrowptr_RCP.resize(n+1);       Acrowptr = Acrowptr_RCP();
-      Accolind_RCP.resize(nnz_alloc); Accolind = Accolind_RCP();
-      Acvals_RCP.resize(nnz_alloc);   Acvals   = Acvals_RCP();
-
-      // Classic csr assembly (low memory edition)
-      //
-      // mfh 27 Sep 2016: Ac_estimate_nnz does not promise an upper bound.
-      // The method loops over rows of R, and may resize after processing
-      // each row.  Chris Siefert says that this reflects experience in
-      // ML; for the non-threaded case, ML found it faster to spend less
-      // effort on estimation and risk an occasional reallocation.
-
-      // mfh 27 Sep 2016: The ac_status array is an implementation detail
-      // of the local sparse matrix-matrix multiply routine.
-
-      // The status array will contain the index into colind where this entry was last deposited.
-      //   ac_status[i] <  nnz - not in the row yet
-      //   ac_status[i] >= nnz - this is the entry where you can find the data
-      // We start with this filled with INVALID's indicating that there are no entries yet.
-      // Sadly, this complicates the code due to the fact that size_t's are unsigned.
-      const size_t ST_INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
-      Array<size_t> ac_status(maxAccol+1, ST_INVALID);
-
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP Newmatrix Fill Matrix"))));
-#endif
-
-      // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
-      // routine.  The routine computes Ac := R * A * (P_local + P_remote).
-      //
-      // For column index Aik in row i of A, Acol2PRow[Aik] tells
-      // you whether the corresponding row of P belongs to P_local
-      // ("orig") or P_remote ("Import").
-
-      size_t nnz = 0, nnz_old = 0;
-
-      // For each row of R
-      for (size_t i = 0; i < n; i++) {
-        // mfh 27 Sep 2016: m is the number of rows in the input matrix R
-        // on the calling process.
-        Acrowptr[i] = nnz;
-
-        // mfh 27 Sep 2016: For each entry of R in the current row of R
-        for (size_t kk = Rrowptr[i]; kk < Rrowptr[i+1]; kk++) {
-          LO k  = Rcolind[kk]; // local column index of current entry of R
-          const SC Rik = Rvals[kk];   // value of current entry of R
-          if (Rik == SC_ZERO)
-            continue; // skip explicitly stored zero values in R
-          // For each entry of A in the current row of A
-          for (size_t ll = Arowptr[k]; ll < Arowptr[k+1]; ll++) {
-            LO l = Acolind[ll]; // local column index of current entry of A
-            const SC Akl = Avals[ll];   // value of current entry of A
-            if (Akl == SC_ZERO)
-              continue; // skip explicitly stored zero values in A
-
-            if (Acol2PRow[l] != LO_INVALID) {
-              // mfh 27 Sep 2016: If the entry of Acol2PRow
-              // corresponding to the current entry of A is populated, then
-              // the corresponding row of P is in P_local (i.e., it lives on
-              // the calling process).
-
-              // Local matrix
-              size_t Pl = Teuchos::as<size_t>(Acol2PRow[l]);
-
-              // mfh 27 Sep 2016: Go through all entries in that row of P_local.
-              for (size_t jj = Prowptr[Pl]; jj < Prowptr[Pl+1]; jj++) {
-                LO j = Pcolind[jj];
-                SC Plj = Pvals[jj];
-                if (Plj == SC_ZERO)
-                  continue;
-                LO Acj = Pcol2Accol[j];
-
-                if (ac_status[Acj] == ST_INVALID || ac_status[Acj] < nnz_old) {
-#ifdef HAVE_TPETRA_DEBUG
-                  // Ac_estimate_nnz() is probably not perfect yet. If this happens, we need to allocate more memory..
-                  TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.size()),
-                                             std::runtime_error,
-                                             label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Accolind.size() << std::endl);
-#endif
-                  // New entry
-                  ac_status[Acj]   = nnz;
-                  Accolind[nnz] = Acj;
-                  Acvals[nnz]   = Rik*Akl*Plj;
-                  nnz++;
-                } else {
-                  Acvals[ac_status[Acj]] += Rik*Akl*Plj;
-                }
-              }
-            } else {
-              // mfh 27 Sep 2016: If the entry of Acol2PRow
-              // corresponding to the current entry of A is NOT populated (has
-              // a flag "invalid" value), then the corresponding row of P is
-              // in P_reote (i.e., it does not live on the calling process).
-
-              // Remote matrix
-              size_t Il = Teuchos::as<size_t>(Acol2PRowImport[l]);
-              for (size_t jj = Irowptr[Il]; jj < Irowptr[Il+1]; jj++) {
-                LO j = Icolind[jj];
-                SC Plj = Ivals[jj];
-                if (Plj == SC_ZERO)
-                  continue;
-                LO Acj = PIcol2Accol[j];
-
-                if (ac_status[Acj] == ST_INVALID || ac_status[Acj] < nnz_old){
-#ifdef HAVE_TPETRA_DEBUG
-                  // Ac_estimate_nnz() is probably not perfect yet. If this happens, we need to allocate more memory..
-                  TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.size()),
-                                             std::runtime_error,
-                                             label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Accolind.size() << std::endl);
-#endif
-                  // New entry
-                  ac_status[Acj]   = nnz;
-                  Accolind[nnz] = Acj;
-                  Acvals[nnz]   = Rik*Akl*Plj;
-                  nnz++;
-                } else {
-                  Acvals[ac_status[Acj]] += Rik*Akl*Plj;
-                }
-              }
-            }
-          }
-        }
-        // Resize for next pass if needed
-        if (nnz + std::max(5*nnzPerRowA, n) > nnz_alloc) {
-          nnz_alloc *= 2;
-          nnz_alloc = std::max(nnz_alloc, nnz + std::max(5*nnzPerRowA, n));
-          Accolind_RCP.resize(nnz_alloc); Accolind = Accolind_RCP();
-          Acvals_RCP.resize(nnz_alloc);   Acvals   = Acvals_RCP();
-        }
-        nnz_old = nnz;
-      }
-
-      Acrowptr[n] = nnz;
-
-      // Downward resize
-      Acvals_RCP.resize(nnz);
-      Accolind_RCP.resize(nnz);
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP sort"))));
-#endif
-
-      // Final sort & set of CRS arrays
-      //
-      // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
-      // matrix-matrix multiply routine sort the entries for us?
-      Import_Util::sortCrsEntries(Acrowptr_RCP(), Accolind_RCP(), Acvals_RCP());
-
-      // mfh 27 Sep 2016: This just sets pointers.
-      Ac.setAllValues(Acrowptr_RCP, Accolind_RCP, Acvals_RCP);
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP Newmatrix ESFC"))));
-#endif
-
-      // Final FillComplete
-      //
-      // mfh 27 Sep 2016: So-called "expert static fill complete" bypasses
-      // Import (from domain Map to column Map) construction (which costs
-      // lots of communication) by taking the previously constructed
-      // Import object.  We should be able to do this without interfering
-      // with the implementation of the local part of sparse matrix-matrix
-      // multply above.
-      RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-      labelList->set("Timer Label",label);
-      // labelList->set("Sort column Map ghost GIDs")
-      if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
-      RCP<const Export<LO,GO,NO> > dummyExport;
-      Ac.expertStaticFillComplete(Pview.origMatrix->getDomainMap(),
-                                  Pview.origMatrix->getDomainMap(),
-                                  Acimport,
-                                  dummyExport, labelList);
+                                           false));
+      Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans = transposer.createTransposeLocal(transposeParams);
+      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Rview;
+      Rview.origMatrix = Ptrans;       
+      
+      mult_R_A_P_newmatrix_kernel_wrapper(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
     }
+
 
 
     /*********************************************************************************************************/
