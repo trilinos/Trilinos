@@ -1245,7 +1245,6 @@ getTpetraAxisMap(int axis,
     "invalid axis index = " << axis << " (number of dimensions = " <<
     numDims() << ")");
 #endif
-  int num_dims = numDims();
   Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm =
     _mdComm->getTeuchosComm();
   Teuchos::Array< GlobalOrdinal > elements(getLocalDim(axis,withCommPad));
