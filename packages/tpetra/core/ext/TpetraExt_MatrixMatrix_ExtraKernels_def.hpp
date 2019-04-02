@@ -278,7 +278,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   });
 
   // Do the copy out
-  lno_view_t row_mapC("Kokkos::ViewAllocateWithoutInitializing(non_const_lnow_row"), m + 1);
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
   lno_nnz_view_t  entriesC;
   scalar_view_t   valuesC;
   copy_out_from_thread_memory(tl_rowptr,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
