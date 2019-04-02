@@ -2298,7 +2298,7 @@ namespace Tpetra {
     size_t numNewInds = 0;
     size_t newNumEntries = 0;
 
-    if (this->getProfileType () == StaticProfile) {      
+    if (this->getProfileType () == StaticProfile) {
       auto numEntries = rowInfo.numEntries;
       // Note: Teuchos::ArrayViews are in HostSpace
       using inp_view_type = View<const LO*, Kokkos::HostSpace, MemoryUnmanaged>;
