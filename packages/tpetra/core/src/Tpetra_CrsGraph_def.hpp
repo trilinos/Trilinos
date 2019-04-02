@@ -2298,9 +2298,10 @@ namespace Tpetra {
     size_t numNewInds = 0;
     size_t newNumEntries = 0;
 
-    if (this->getProfileType () == StaticProfile) {
+    if (this->getProfileType () == StaticProfile) {      
       auto numEntries = rowInfo.numEntries;
-      using inp_view_type = View<const LO*, execution_space, MemoryUnmanaged>;
+      // Note: Teuchos::ArrayViews are in HostSpace
+      using inp_view_type = View<const LO*, Kokkos::HostSpace, MemoryUnmanaged>;
       inp_view_type inputInds(indices.getRawPtr(), indices.size());
       auto numInserted = Details::insertCrsIndices(myRow, k_rowPtrs_,
         this->k_lclInds1D_, numEntries, inputInds, fun);
