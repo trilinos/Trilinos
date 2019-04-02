@@ -827,9 +827,9 @@ namespace Tpetra {
                 if (ac_status[Acj] == INVALID || ac_status[Acj] < nnz_old) {
 #ifdef HAVE_TPETRA_DEBUG
                   // Ac_estimate_nnz() is probably not perfect yet. If this happens, we need to allocate more memory..
-                  TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.size()),
+                  TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Ccolind.size()),
                                              std::runtime_error,
-                                             label << " ERROR, not enough memory allocated for matrix product. Allocated: " << Accolind.size() << std::endl);
+                                             label << " ERROR, not enough memory allocated for matrix product. Allocated: " << Ccolind.extent(0) << std::endl);
 #endif
                   // New entry
                   ac_status[Acj] = nnz;
@@ -856,9 +856,9 @@ namespace Tpetra {
                 if (ac_status[Acj] == INVALID || ac_status[Acj] < nnz_old) {
 #ifdef HAVE_TPETRA_DEBUG
                   // Ac_estimate_nnz() is probably not perfect yet. If this happens, we need to allocate more memory..
-                  TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.size()),
+                  TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Ccolind.size()),
                                              std::runtime_error,
-                                             label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Accolind.size() << std::endl);
+                                             label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Ccolind.extent(0) << std::endl);
 #endif
                   // New entry
                   ac_status[Acj] = nnz;
