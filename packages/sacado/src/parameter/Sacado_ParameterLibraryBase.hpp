@@ -134,6 +134,9 @@ namespace Sacado {
      */
     void print(std::ostream& os, bool print_values = false) const;
 
+    //! Clear the library
+    void clear() { library = FamilyMap(); }
+
   private:
 
     //! Private to prohibit copying
