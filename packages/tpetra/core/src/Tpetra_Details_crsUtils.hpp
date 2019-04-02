@@ -43,6 +43,7 @@
 #define TPETRA_DETAILS_CRSUTILS_HPP
 
 #include <numeric>
+#include <type_traits>
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
@@ -170,33 +171,40 @@ insert_crs_indices(
     IndexMap&& map,
     std::function<void(size_t const, size_t const, size_t const)> cb)
 {
-  if (new_indices.size() == 0)
+  using offset_type = typename std::decay<decltype (row_ptrs[0])>::type;
+  using ordinal_type = typename std::decay<decltype (cur_indices[0])>::type;
+
+  if (new_indices.size() == 0) {
     return 0;
+  }
 
-  using ordinal = typename InOutIndices::value_type;
-  auto const start = row_ptrs[row];
-  auto end = start + num_assigned;
-  auto num_avail = row_ptrs[row + 1] - end;
+  const offset_type start = row_ptrs[row];
+  offset_type end = start + static_cast<offset_type> (num_assigned);
+  const size_t num_avail = (row_ptrs[row + 1] < end) ? size_t (0) :
+    row_ptrs[row + 1] - end;
+  const size_t num_new_indices = static_cast<size_t> (new_indices.size ());
   size_t num_inserted = 0;
-  for (size_t k = 0; k < new_indices.size(); k++)
-  {
-    auto row_offset = start;
-    ordinal idx = std::forward<IndexMap>(map)(new_indices[k]);
-    for (; row_offset < end; row_offset++)
-      if (idx == cur_indices[row_offset])
+
+  for (size_t k = 0; k < num_new_indices; ++k) {
+    const ordinal_type idx = std::forward<IndexMap>(map)(new_indices[k]);
+    offset_type row_offset = start;
+    for (; row_offset < end; ++row_offset) {
+      if (idx == cur_indices[row_offset]) {
         break;
+      }
+    }
 
-    if (row_offset == end)
-    {
-      if (num_inserted >= num_avail)
-        // Not enough room!
+    if (row_offset == end) {
+      if (num_inserted >= num_avail) { // not enough room
         return Teuchos::OrdinalTraits<size_t>::invalid();
-
+      }
       // This index is not yet in indices
       cur_indices[end++] = idx;
       num_inserted++;
     }
-    if (cb) cb(k, start, row_offset - start);
+    if (cb) {
+      cb(k, start, row_offset - start);
+    }
   }
   num_assigned += num_inserted;
   return num_inserted;
