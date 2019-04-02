@@ -172,9 +172,9 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   }
 
   // Thread-local memory
-  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_view_t*> tl_rowptr(Kokkos::ViewAllocateWithoutInitializing("top_rowptr"),thread_max);
+  Kokkos::View<u_lno_nnz_view_t*> tl_colind(Kokkos::ViewAllocateWithoutInitializing("top_colind"),thread_max);
+  Kokkos::View<u_scalar_view_t*> tl_values(Kokkos::ViewAllocateWithoutInitializing("top_values"),thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -278,7 +278,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   });
 
   // Do the copy out
-  lno_view_t row_mapC("non_const_lnow_row", m + 1);
+  lno_view_t row_mapC("Kokkos::ViewAllocateWithoutInitializing(non_const_lnow_row"), m + 1);
   lno_nnz_view_t  entriesC;
   scalar_view_t   valuesC;
   copy_out_from_thread_memory(tl_rowptr,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
@@ -549,9 +549,9 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   }
 
   // Thread-local memory
-  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_view_t*> tl_rowptr(Kokkos::ViewAllocateWithoutInitializing("top_rowptr"),thread_max);
+  Kokkos::View<u_lno_nnz_view_t*> tl_colind(Kokkos::ViewAllocateWithoutInitializing("top_colind"),thread_max);
+  Kokkos::View<u_scalar_view_t*> tl_values(Kokkos::ViewAllocateWithoutInitializing("top_values"),thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -676,7 +676,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
 
   // Do the copy out
-  lno_view_t row_mapC("non_const_lnow_row", m + 1);
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
   lno_nnz_view_t  entriesC;
   scalar_view_t   valuesC;
   copy_out_from_thread_memory(tl_rowptr,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
@@ -1080,9 +1080,9 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // ("orig") or P_remote ("Import").
 
         // Thread-local memory
-        Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr", thread_max);
-        Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind", thread_max);
-        Kokkos::View<u_scalar_view_t*> tl_values("top_values", thread_max);
+        Kokkos::View<u_lno_view_t*> tl_rowptr(Kokkos::ViewAllocateWithoutInitializing("top_rowptr"), thread_max);
+        Kokkos::View<u_lno_nnz_view_t*> tl_colind(Kokkos::ViewAllocateWithoutInitializing("top_colind"), thread_max);
+        Kokkos::View<u_scalar_view_t*> tl_values(Kokkos::ViewAllocateWithoutInitializing("top_values"), thread_max);
 
         // For each row of R
         Kokkos::parallel_for("MMM::RAP::NewMatrix::LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
@@ -1199,7 +1199,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix copy from thread local"))));
   #endif
 
-        lno_view_t rowmapAc("non_const_lnow_row", m + 1);
+        lno_view_t rowmapAc(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
         lno_nnz_view_t entriesAc;
         scalar_view_t valuesAc;
         copy_out_from_thread_memory(tl_rowptr, tl_colind, tl_values, m, thread_chunk, rowmapAc, entriesAc, valuesAc);

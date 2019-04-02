@@ -766,9 +766,9 @@ namespace Tpetra {
       // ML; for the non-threaded case, ML found it faster to spend less
       // effort on estimation and risk an occasional reallocation.
       size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix), n);
-      lno_view_t Crowptr("Crowptr",m+1);
-      lno_nnz_view_t Ccolind("Ccolind",CSR_alloc);
-      scalar_view_t Cvals("Cvals",CSR_alloc);
+      lno_view_t Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+      lno_nnz_view_t Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+      scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
 
       // mfh 27 Sep 2016: The ac_status array is an implementation detail
       // of the local sparse matrix-matrix multiply routine.

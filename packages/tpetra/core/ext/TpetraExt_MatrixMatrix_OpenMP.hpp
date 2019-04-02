@@ -227,7 +227,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
 
 
-    lno_view_t      row_mapC ("non_const_lnow_row", AnumRows + 1);
+    lno_view_t      row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), AnumRows + 1);
     lno_nnz_view_t  entriesC;
     scalar_view_t   valuesC;
     KernelHandle kh;
