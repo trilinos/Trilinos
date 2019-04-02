@@ -946,7 +946,7 @@ namespace Tpetra {
 #endif
 
       // We don't need a kernel-level PTAP, we just transpose here
-      typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>  transposer_type;
+      typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Node>  transposer_type;
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
       Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
       if (!params.is_null())
