@@ -276,15 +276,15 @@ namespace {
       auto dcmv_map = defaultConstructedMultiVector.getMap ();
       TEST_ASSERT( dcmv_map.get () != nullptr );
       if (dcmv_map.get () != nullptr) {
-	TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
-		       Tpetra::global_size_t (0) );
+        TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
       }
       vec_type defaultConstructedVector;
       auto dcv_map = defaultConstructedVector.getMap ();
       TEST_ASSERT( dcv_map.get () != nullptr );
       if (dcv_map.get () != nullptr) {
-	TEST_EQUALITY( dcv_map->getGlobalNumElements (),
-		       Tpetra::global_size_t (0) );
+        TEST_EQUALITY( dcv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
       }
     }
 
@@ -2171,12 +2171,10 @@ namespace {
           {
             std::ostringstream os;
             os << ">>> Proc " << comm->getSize ();
-            auto A_dv = A.getDualView ();
-            os << ": A.modified_host: " << (A_dv.need_sync_device ()?1:0);
-            os  << ", A.modified_device: " << (A_dv.need_sync_host ()?1:0);
-            auto B_dv = B.getDualView ();
-            os << ": B.modified_host: " << (B_dv.need_sync_device ()?1:0);
-            os << ", B.modified_device: " << (B_dv.need_sync_host ()?1:0);
+            os << ": A.modified_host: " << (A.need_sync_device ()?1:0);
+            os  << ", A.modified_device: " << (A.need_sync_host ()?1:0);
+            os << ": B.modified_host: " << (B.need_sync_device ()?1:0);
+            os << ", B.modified_device: " << (B.need_sync_host ()?1:0);
             os << std::endl;
             std::cerr << os.str ();
           }
@@ -3490,7 +3488,7 @@ namespace {
   //
   // This tests ensures that getLocalView() actually returns a view of
   // the data, NOT a deep copy.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, getDualView, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewSemantics, LO, GO, Scalar, Node )
   {
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -3498,7 +3496,7 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename MV::device_type device_type;
 
-    out << "Test: MultiVector, getDualView" << endl;
+    out << "Test: MultiVector's DualView semantics" << endl;
     Teuchos::OSTab tab0 (out);
 
     int lclSuccess = 1;
@@ -3870,9 +3868,8 @@ namespace {
     {
       std::ostringstream os;
       os << ">>> Proc " << comm->getSize ();
-      auto X_gbl_dv = X_gbl.getDualView ();
-      os << ": X_gbl.modified_host: " << (X_gbl_dv.need_sync_device()?1:0)
-         << ", X_gbl.modified_device: " << (X_gbl_dv.need_sync_host()?1:0);
+      os << ": X_gbl.modified_host: " << (X_gbl.need_sync_device()?1:0)
+         << ", X_gbl.modified_device: " << (X_gbl.need_sync_host()?1:0);
       os << std::endl;
       std::cerr << os.str ();
     }
@@ -4636,7 +4633,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ReplaceMap        , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeepCopy          , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewSemantics , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
