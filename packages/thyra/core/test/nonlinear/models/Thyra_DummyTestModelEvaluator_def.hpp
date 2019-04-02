@@ -169,7 +169,7 @@ DummyTestModelEvaluator<Scalar>::get_p_space(int l) const
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::Array<std::string> >
-DummyTestModelEvaluator<Scalar>::get_p_names(int l) const
+DummyTestModelEvaluator<Scalar>::get_p_names(int /* l */) const
 {
   return Teuchos::null;
 }
@@ -193,7 +193,7 @@ DummyTestModelEvaluator<Scalar>::get_g_space(int j) const
 
 template<class Scalar>
 Teuchos::ArrayView<const std::string>
-DummyTestModelEvaluator<Scalar>::get_g_names(int j) const
+DummyTestModelEvaluator<Scalar>::get_g_names(int /* j */) const
 {
   return g_names_;
 }
@@ -263,8 +263,8 @@ DummyTestModelEvaluator<Scalar>::createInArgs() const
 
 template<class Scalar>
 void DummyTestModelEvaluator<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-  const bool wasSolved
+  const ModelEvaluatorBase::InArgs<Scalar> &/* finalPoint */,
+  const bool /* wasSolved */
   )
 {
   // ToDo: Capture the final point and then provide in interface.
@@ -311,8 +311,8 @@ DummyTestModelEvaluator<Scalar>::createOutArgsImpl() const
 
 template<class Scalar>
 void DummyTestModelEvaluator<Scalar>::evalModelImpl(
-  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  const ModelEvaluatorBase::InArgs<Scalar> &/* inArgs */,
+  const ModelEvaluatorBase::OutArgs<Scalar> &/* outArgs */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement to just copy inArgs and outArgs!

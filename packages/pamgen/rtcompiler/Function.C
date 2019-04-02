@@ -188,7 +188,7 @@ Function::~Function()
 }
 
 /*****************************************************************************/
-void Function::checkType(unsigned int index, int size, int* addr, string& errs)
+void Function::checkType(unsigned int index, int size, int* /* addr */, string& errs)
 /*****************************************************************************/
 {
   CHECKARGERR((_vars[index].first->getType() != IntT  ||
@@ -198,7 +198,7 @@ void Function::checkType(unsigned int index, int size, int* addr, string& errs)
 }
 
 /*****************************************************************************/
-void Function::checkType(unsigned int index, int size, long* addr, string& errs)
+void Function::checkType(unsigned int index, int size, long* /* addr */, string& errs)
 /*****************************************************************************/
 {
   CHECKARGERR((_vars[index].first->getType() != LongT  ||
@@ -208,7 +208,7 @@ void Function::checkType(unsigned int index, int size, long* addr, string& errs)
 }
 
 /*****************************************************************************/
-void Function::checkType(unsigned int index, int size, float* addr, string& errs)
+void Function::checkType(unsigned int index, int size, float* /* addr */, string& errs)
 /*****************************************************************************/
 {
   CHECKARGERR((_vars[index].first->getType() != FloatT  ||
@@ -218,7 +218,7 @@ void Function::checkType(unsigned int index, int size, float* addr, string& errs
 }
 
 /*****************************************************************************/
-void Function::checkType(unsigned int index, int size, double* addr, string& errs)
+void Function::checkType(unsigned int index, int size, double* /* addr */, string& errs)
 /*****************************************************************************/
 {
   CHECKARGERR((_vars[index].first->getType() != DoubleT  ||
@@ -228,7 +228,7 @@ void Function::checkType(unsigned int index, int size, double* addr, string& err
 }
 
 /*****************************************************************************/
-void Function::checkType(unsigned int index, int size, char* addr,string& errs)
+void Function::checkType(unsigned int index, int size, char* /* addr */,string& errs)
 /*****************************************************************************/
 {
   CHECKARGERR((_vars[index].first->getType() != CharT  ||

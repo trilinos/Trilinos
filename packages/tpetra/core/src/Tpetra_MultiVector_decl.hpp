@@ -65,6 +65,15 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include <type_traits>
 
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  template<class OrdinalType, class ScalarType>
+  class SerialDenseMatrix; // forward declaration
+}
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
+
 namespace Tpetra {
 
   namespace Details {
@@ -129,6 +138,30 @@ namespace Tpetra {
   void
   deep_copy (MultiVector<DS, DL, DG, DN>& dst,
              const MultiVector<SS, SL, SG, SN>& src);
+
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+  /// \brief Copy the contents of a Teuchos::SerialDenseMatrix into
+  ///   the local part of the given Tpetra::MultiVector.
+  /// \relatesalso MultiVector
+  ///
+  /// \pre <tt>src.numRows() == dst.getLocalLength()</tt>
+  /// \pre <tt>src.numCols() == dst.getNumVectors()</tt>
+  template <class ST, class LO, class GO, class NT>
+  void
+  deep_copy (MultiVector<ST, LO, GO, NT>& dst,
+             const Teuchos::SerialDenseMatrix<int, ST>& src);
+
+  /// \brief Copy the local part of the Tpetra::MultiVector into the
+  ///   Teuchos::SerialDenseMatrix.
+  /// \relatesalso MultiVector
+  ///
+  /// \pre <tt>src.numRows() == dst.getLocalLength()</tt>
+  /// \pre <tt>src.numCols() == dst.getNumVectors()</tt>
+  template <class ST, class LO, class GO, class NT>
+  void
+  deep_copy (Teuchos::SerialDenseMatrix<int, ST>& dst,
+             const MultiVector<ST, LO, GO, NT>& src);
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 
   /// \brief Return a deep copy of the given MultiVector.
   /// \relatesalso MultiVector
@@ -769,14 +802,11 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2>& node2) const;
 
-    /// \brief Swaps the data from *this with the data and maps from mv
-    /// \param mv [in/out] a MultiVector
-    ///
-    /// Note: This is done with minimal copying of data
-    void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & mv);
+    //! Swap contents of \c mv with contents of \c *this.
+    void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector ();
+    virtual ~MultiVector () = default;
 
     //@}
     //! @name Post-construction modification routines

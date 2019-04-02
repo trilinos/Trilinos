@@ -290,9 +290,12 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
     appInArgs.set_t        (initialState->getTime()    );
 
     this->wrapperModel_->getAppModel()->evalModel(appInArgs, appOutArgs);
-
-    Scalar reldiff = Thyra::norm(*f)/Thyra::norm(*x);
+ 
+    Scalar reldiff = Thyra::norm(*f);
+    Scalar normx = Thyra::norm(*x); 
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
+    if (normx > eps*reldiff) reldiff /= normx; 
+
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,
@@ -424,7 +427,7 @@ std::string StepperNewmarkImplicitAForm<Scalar>::description() const
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";

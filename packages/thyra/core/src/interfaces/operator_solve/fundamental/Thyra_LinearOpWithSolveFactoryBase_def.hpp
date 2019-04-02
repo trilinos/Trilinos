@@ -58,8 +58,8 @@ bool LinearOpWithSolveFactoryBase<Scalar>::acceptsPreconditionerFactory() const
 
 template<class Scalar>
 void LinearOpWithSolveFactoryBase<Scalar>::setPreconditionerFactory(
-  const RCP<PreconditionerFactoryBase<Scalar> > &precFactory
-  ,const std::string &precFactoryName
+  const RCP<PreconditionerFactoryBase<Scalar> > &/* precFactory */
+  ,const std::string &/* precFactoryName */
   )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -101,7 +101,7 @@ void LinearOpWithSolveFactoryBase<Scalar>::initializeAndReuseOp(
 
 template<class Scalar>
 bool LinearOpWithSolveFactoryBase<Scalar>::supportsPreconditionerInputType(
-  const EPreconditionerInputType precOpType
+  const EPreconditionerInputType /* precOpType */
   ) const
 {
   return false;
@@ -110,10 +110,10 @@ bool LinearOpWithSolveFactoryBase<Scalar>::supportsPreconditionerInputType(
 
 template<class Scalar>
 void LinearOpWithSolveFactoryBase<Scalar>::initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc
-  ,const RCP<const PreconditionerBase<Scalar> > &prec
-  ,LinearOpWithSolveBase<Scalar> *Op
-  ,const ESupportSolveUse supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */
+  ,const RCP<const PreconditionerBase<Scalar> > &/* prec */
+  ,LinearOpWithSolveBase<Scalar> * /* Op */
+  ,const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -126,10 +126,10 @@ void LinearOpWithSolveFactoryBase<Scalar>::initializePreconditionedOp(
 
 template<class Scalar>
 void LinearOpWithSolveFactoryBase<Scalar>::initializeApproxPreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc
-  ,const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc
-  ,LinearOpWithSolveBase<Scalar> *Op
-  ,const ESupportSolveUse supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */
+  ,const RCP<const LinearOpSourceBase<Scalar> > &/* approxFwdOpSrc */
+  ,LinearOpWithSolveBase<Scalar> * /* Op */
+  ,const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(

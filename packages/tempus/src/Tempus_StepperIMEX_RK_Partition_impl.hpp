@@ -723,7 +723,7 @@ std::string StepperIMEX_RK_Partition<Scalar>::description() const
 template<class Scalar>
 void StepperIMEX_RK_Partition<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
       << "wrapperModelPairIMEX = " << this->wrapperModel_->description()

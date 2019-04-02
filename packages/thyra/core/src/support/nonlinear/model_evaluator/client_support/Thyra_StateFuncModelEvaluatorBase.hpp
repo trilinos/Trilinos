@@ -105,7 +105,7 @@ public:
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
+StateFuncModelEvaluatorBase<Scalar>::get_p_space(int /* l */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
@@ -118,7 +118,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
 
 template<class Scalar>
 RCP<const Teuchos::Array<std::string> >
-StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
+StateFuncModelEvaluatorBase<Scalar>::get_p_names(int /* l */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
@@ -131,7 +131,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
 
 template<class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
+StateFuncModelEvaluatorBase<Scalar>::get_g_space(int /* j */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
@@ -145,7 +145,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
 
 template<class Scalar>
 Teuchos::ArrayView<const std::string>
-StateFuncModelEvaluatorBase<Scalar>::get_g_names(int j) const
+StateFuncModelEvaluatorBase<Scalar>::get_g_names(int /* j */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     true,std::logic_error
@@ -206,8 +206,8 @@ StateFuncModelEvaluatorBase<Scalar>::get_W_factory() const
 
 template<class Scalar>
 void StateFuncModelEvaluatorBase<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-  const bool wasSolved
+  const ModelEvaluatorBase::InArgs<Scalar> &/* finalPoint */,
+  const bool /* wasSolved */
   )
 {
   // This final point is just ignored by default!

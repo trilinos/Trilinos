@@ -635,6 +635,28 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, StaticProfileMultiInsert, LO, GO, Node)
+  {
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    const GST Invalid = Teuchos::OrdinalTraits<GST>::invalid();
+    RCP<const Comm<int>> comm = getDefaultComm();
+
+    const size_t num_local = 1;
+    RCP<const map_type> row_map = rcp(new map_type(Invalid, num_local, 0, comm));
+    RCP<graph_type> G = rcp(new graph_type(row_map, 1, StaticProfile));
+    auto row = row_map->getGlobalElement(0);
+    G->insertGlobalIndices(row, tuple<GO>(row, row, row, row));
+    G->insertGlobalIndices(row, tuple<GO>(row, row, row, row));
+    G->fillComplete();
+
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int));
+    TEST_EQUALITY_CONST(globalSuccess_int, 0);
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -651,12 +673,12 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill,        LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests,      LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC,     LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, StaticProfileMultiInsert, LO, GO, NODE )
 
     TPETRA_ETI_MANGLING_TYPEDEFS()
 
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_AND_RELEASE )
 
 } // namespace (anonymous)
-
 

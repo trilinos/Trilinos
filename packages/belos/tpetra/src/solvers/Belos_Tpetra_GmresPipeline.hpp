@@ -39,8 +39,7 @@ public:
     this->input_.computeRitzValues = true;
   }
 
-  virtual ~GmresPipeline ()
-  {}
+  virtual ~GmresPipeline () = default;
 
 private:
   SolverOutput<SC>

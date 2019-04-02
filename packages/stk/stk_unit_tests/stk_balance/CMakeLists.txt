@@ -41,7 +41,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     DEPLIBS
-    ARGS ""
+    ARGS "--gtest_filter=BalanceCommandLine.*:BasicColoring.*"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     )

@@ -266,11 +266,8 @@ namespace Tpetra {
 
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
-        // Create with DynamicProfile, so that the fillComplete() can
-        // do first-touch reallocation (a NUMA (Non-Uniform Memory
-        // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
                                        DynamicProfile));
 
         // List of the global indices of my rows.

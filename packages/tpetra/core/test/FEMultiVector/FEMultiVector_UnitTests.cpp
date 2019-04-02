@@ -39,16 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-
-#include <map>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_VerboseObject.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_Tuple.hpp>
+#include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -56,40 +47,19 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Import.hpp"
-#include "Tpetra_Export.hpp"
 #include "Tpetra_FEMultiVector.hpp"
 #include "Tpetra_Assembly_Helpers.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
-
-
-
-// Macro that marks a function as "possibly unused," in order to
-// suppress build warnings.
-#if ! defined(TRILINOS_UNUSED_FUNCTION)
-#  if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_MSC_VER))
-#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
-#  elif defined(__clang__)
-#    if __has_attribute(unused)
-#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
-#    else
-#      define TRILINOS_UNUSED_FUNCTION
-#    endif // Clang has 'unused' attribute
-#  elif defined(__IBMCPP__)
-// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
-//
-// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
-#    define TRILINOS_UNUSED_FUNCTION
-#  else // some other compiler
-#    define TRILINOS_UNUSED_FUNCTION
-#  endif
-#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
-
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include <map>
 
 namespace {
 
   template<class T1, class T2>
   void vector_check(size_t N, T1 & v1, T2 & v2) {
-    int myRank = v1.getMap()->getComm()->getRank();
+    const int myRank = v1.getMap()->getComm()->getRank();
     for(size_t i=0; i<N; i++)
       if(v1.getDataNonConst(0)[i] != v2.getDataNonConst(0)[i]) {
         std::stringstream oss;
@@ -98,32 +68,14 @@ namespace {
       }
   }
 
-
-  // Teuchos using statements
-   using Tpetra::TestingUtilities::getDefaultComm;
-
   using std::endl;
-  using std::copy;
-  using std::ostream_iterator;
-  using std::string;
 
   using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
   using Teuchos::rcp;
-  using Teuchos::null;
   using Teuchos::Array;
-  using Teuchos::ArrayView;
   using Teuchos::Comm;
-  using Teuchos::Range1D;
-  using Teuchos::Tuple;
-  using Teuchos::as;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
-  using Teuchos::arrayView;
-  using Teuchos::tuple;
-  using Teuchos::NO_TRANS;
-  using Teuchos::TRANS;
-  using Teuchos::CONJ_TRANS;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
@@ -131,36 +83,8 @@ namespace {
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
 
-  using Tpetra::Map;
-  using Tpetra::MultiVector;
-  using Tpetra::global_size_t;
-  using Tpetra::GloballyDistributed;
-  typedef Tpetra::global_size_t GST;
-
-  
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
-
-  double errorTolSlack = 1.0e+2;
-
-
-
-   template <class Scalar>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType testingTol() { return Teuchos::ScalarTraits<Scalar>::eps(); }
-  template <>
-  TRILINOS_UNUSED_FUNCTION int testingTol<int>() { return 0; }
-  template <>
-  TRILINOS_UNUSED_FUNCTION long testingTol<long>() { return 0; }
-  template <>
-  TRILINOS_UNUSED_FUNCTION long long testingTol<long long>() { return 0; }
-
-
-  //
-  // UNIT TEST SERVICE FUNCTIONS
-  //
-  
-
-
+  using GST = Tpetra::global_size_t;
 
   //
   // UNIT TESTS
@@ -168,13 +92,11 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, doImport, LO, GO, Scalar, NO )
   {
-
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
     const int numProcs = comm->getSize();
     if(numProcs==1) return;
-
 
     // Prepare for verbose output, if applicable.
     //    Teuchos::EVerbosityLevel verbLevel = verbose ? VERB_EXTREME : VERB_NONE;
@@ -213,7 +135,7 @@ namespace {
         if (myRank!=numProcs-1) {
           entry[0] = globalrow+1;
           graph->insertGlobalIndices (globalrow, entry());
-        }       
+        }
       }
       graph->fillComplete();
 
@@ -270,25 +192,18 @@ namespace {
     }
   }
 
-
-
-
-
-// ===============================================================================
-
- TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, AssemblyHelpers, LO , GO , Scalar , Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FEMultiVector, AssemblyHelpers, LO , GO , Scalar , Node )
   {
-  using Tpetra::Import; 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    const RCP<const Comm<int> > comm = Tpetra::getDefaultComm();   
+    const RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     int rank = comm->getRank();
     int size = comm->getSize();
 
     // create maps
     const size_t numLocal = 10;
     const size_t numOverlap = numLocal + (rank!=0) + (rank!=size-1);
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
-    
+    RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+
     Array<GO> overlapList(numOverlap);
     for(size_t i = 0; i< numLocal; i++) {
       overlapList[i] = map->getGlobalElement(i);
@@ -297,37 +212,24 @@ namespace {
     if(rank!=0)      {overlapList[iii] = overlapList[0]-1; iii++;}
     if(rank!=size-1) {overlapList[iii] = overlapList[numLocal-1]+1;}
 
+    RCP<const Tpetra::Map<LO,GO,Node> > overlapMap    = rcp(new Tpetra::Map<LO,GO,Node>(INVALID,overlapList(),0,comm));
+    RCP<const Tpetra::Import<LO,GO,Node> > importer   = rcp(new Tpetra::Import<LO,GO,Node>(map,overlapMap));
 
-    RCP<const Map<LO,GO,Node> > overlapMap    = rcp(new Map<LO,GO,Node>(INVALID,overlapList(),0,comm));
-    RCP<const Import<LO,GO,Node> > importer   = rcp(new Import<LO,GO,Node>(map,overlapMap));
-    
-    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v1(map,importer,1); 
-    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v2(map,importer,1); 
-    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v3(map,importer,1); 
-
+    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v1(map,importer,1);
+    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v2(map,importer,1);
+    Tpetra::FEMultiVector<Scalar,LO,GO,Node> v3(map,importer,1);
 
     // Just check to make sure beginFill() / endFill() compile
     Tpetra::beginFill(v1,v2,v3);
 
     Tpetra::endFill(v1,v2,v3);
-
-
-
   }
 
-
-// ===============================================================================
-
-
-#define UNIT_TEST_GROUP( SC, LO, GO, NO  )                         \
+#define UNIT_TEST_GROUP( SC, LO, GO, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, doImport, LO, GO, SC, NO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FEMultiVector, AssemblyHelpers, LO, GO, SC, NO )
 
- 
-
   TPETRA_ETI_MANGLING_TYPEDEFS()
-
-
 
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 }

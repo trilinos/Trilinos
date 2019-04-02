@@ -48,6 +48,35 @@
 # diretory).  This script is used to take the place of real commands during a
 # test that involves calling commands on the commandline.
 #
+# The file .mockprogram_inout.txt (or pointed to by
+# MOCKPROGRAM_INOUT_FILE_OVERRIDE) is of the form:
+#
+#   MOCK_PROGRAM_INPUT: <args_1>
+#   MOCK_PROGRAM_RETURN: <rtn>
+#   MOCK_PROGRAM_OUTPUT: <outline_1_line_1>
+#   <outline_1_line_2>
+#   ...
+#   MOCK_PROGRAM_INPUT: <args_2>
+#
+# The program reads in the blocks starting at the time and removes the block
+# from the file after it runs.  After all of the blocks are read in, if run
+# again it will error out with error code 2.
+#
+# This program can be used, for example, to simulate git command.  For
+# example, a couple of git commits might be simulated like:
+#
+#   MOCK_PROGRAM_INPUT: log -1
+#   MOCK_PROGRAM_RETURN: 0
+#   MOCK_PROGRAM_OUTPUT: This is the summary line
+#
+#   The is the body of the commit msg
+#   MOCK_PROGRAM_INPUT: diff --name-only HEAD --not @{u}
+#   MOCK_PROGRAM_RETURN: 0
+#   MOCK_PROGRAM_OUTPUT: file_name_1.txt
+#   file_name_2.txt
+#   file_name_3.txt
+
+#
 
 import sys
 import os

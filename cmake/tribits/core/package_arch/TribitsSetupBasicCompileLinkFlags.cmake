@@ -39,6 +39,7 @@
 
 INCLUDE(TribitsDefineStandardCompileVars)
 INCLUDE(DualScopePrependCmndlineArgs)
+INCLUDE(PrintVar)
 
 #
 # Helper macros

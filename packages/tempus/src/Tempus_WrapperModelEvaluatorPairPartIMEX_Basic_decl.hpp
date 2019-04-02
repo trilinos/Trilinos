@@ -81,7 +81,7 @@ public:
     virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
       Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
-      EVALUATION_TYPE evaluationType = SOLVE_FOR_X)
+      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
     {
       timeDer_ = timeDer;
       wrapperImplicitInArgs_.setArgs(inArgs);
