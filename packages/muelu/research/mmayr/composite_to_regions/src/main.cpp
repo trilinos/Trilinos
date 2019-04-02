@@ -1037,10 +1037,10 @@ LocalOrdinal LID2Dregion(void *ptr, LocalOrdinal LIDcomp, int whichGrp)
 {
    struct widget * myWidget = (struct widget *) ptr;
 
-//   int        *minGIDComp  = myWidget->minGIDComp;
-//   int        *maxGIDComp  = myWidget->maxGIDComp;
-   int        *myRegions   = myWidget->myRegions;
-   Map        *colMap      = myWidget->colMap;
+//   int       *minGIDComp   = myWidget->minGIDComp;
+//   int       *maxGIDComp   = myWidget->maxGIDComp;
+   int       *myRegions    = myWidget->myRegions;
+   Map       *colMap       = myWidget->colMap;
    int        maxRegPerGID = myWidget->maxRegPerGID;
    int       *trueCornerx  = myWidget->trueCornerx; // global coords of region
    int       *trueCornery  = myWidget->trueCornery; // corner within entire 2D mesh
@@ -1075,8 +1075,8 @@ LocalOrdinal LID2Dregion(void *ptr, LocalOrdinal LIDcomp, int whichGrp)
    }
    if (found == false) return(-1);
 
-   return(
-    (yGIDComp - relcornery[whichGrp]-trueCornery[whichGrp])*lDimx[whichGrp]+ (xGIDComp - relcornerx[whichGrp]-trueCornerx[whichGrp]));
+   return( (yGIDComp - relcornery[whichGrp] - trueCornery[whichGrp])*lDimx[whichGrp]
+           + (xGIDComp - relcornerx[whichGrp] - trueCornerx[whichGrp]) );
 }
 
 

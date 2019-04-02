@@ -231,7 +231,7 @@ void MakeGroupRegionRowMaps(const int myRank,
     std::iota(idx.begin(), idx.end(), 0);
     sort(idx.begin(), idx.end(), [tempRegIDs](int i1,int i2) { return tempRegIDs[i1] < tempRegIDs[i2];});
 
-    for (int i = 0; i < Teuchos::as<int>(AComp->getColMap()->getNodeNumElements()); i++) {
+    for (int i = 0; i < static_cast<int>(AComp->getColMap()->getNodeNumElements()); i++) {
       if (tempRegIDs[idx[i]] != -1)
         rowGIDsReg.push_back(colGIDsComp[idx[i]]);
     }
@@ -242,7 +242,7 @@ void MakeGroupRegionRowMaps(const int myRank,
                                         AComp->getMap()->getComm());
   }
 
-  for (int k=(int) myRegions.size(); k < appData.maxRegPerProc; k++) {
+  for (int k = static_cast<int>(myRegions.size()); k < appData.maxRegPerProc; k++) {
     rowMapPerGrp[k] = MapFactory::Build(AComp->getMap()->lib(),
                                         Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
                                         Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
@@ -264,62 +264,62 @@ void MakeGroupRegionColumnMaps(const int myRank,
   std::cout << myRank << " | Creating region group column maps ..." << std::endl;
 
   if (whichCase == MultipleRegionsPerProc) {//so maxRegPerProc > 1
-  // clone rowMap
-  for (int j = 0; j < appData.maxRegPerProc; j++) {
-  if (j < (int) myRegions.size()) {
-  colMapPerGrp[j] = MapFactory::Build(AComp->getMap()->lib(),
-    Teuchos::OrdinalTraits<int>::invalid(),
-    rowMapPerGrp[j]->getNodeElementList(),
-    Teuchos::OrdinalTraits<int>::zero(),
-    AComp->getMap()->getComm());
-} else {
-  colMapPerGrp[j] = MapFactory::Build(AComp->getMap()->lib(),
-    Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-    Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
-    AComp->getMap()->getComm());
-}
-}
-} else if (whichCase == RegionsSpanProcs) {//so maxRegPerProc = 1
-  Teuchos::Array<GlobalOrdinal> colIDsReg;
+    // clone rowMap
+    for (int j = 0; j < appData.maxRegPerProc; j++) {
+      if (j < (int) myRegions.size()) {
+        colMapPerGrp[j] = MapFactory::Build(AComp->getMap()->lib(),
+                                            Teuchos::OrdinalTraits<int>::invalid(),
+                                            rowMapPerGrp[j]->getNodeElementList(),
+                                            Teuchos::OrdinalTraits<int>::zero(),
+                                            AComp->getMap()->getComm());
+      } else {
+        colMapPerGrp[j] = MapFactory::Build(AComp->getMap()->lib(),
+                                            Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
+                                            Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
+                                            AComp->getMap()->getComm());
+      }
+    }
+  } else if (whichCase == RegionsSpanProcs) {//so maxRegPerProc = 1
+    Teuchos::Array<GlobalOrdinal> colIDsReg;
 
-  // copy the rowmap
-  Teuchos::ArrayView<const GlobalOrdinal> rowGIDsReg = rowMapPerGrp[0]->getNodeElementList();
-  for (LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(rowMapPerGrp[0]->getNodeNumElements()); i++) {
-  colIDsReg.push_back(rowGIDsReg[i]);
-}
+    // copy the rowmap
+    Teuchos::ArrayView<const GlobalOrdinal> rowGIDsReg = rowMapPerGrp[0]->getNodeElementList();
+    for (LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(rowMapPerGrp[0]->getNodeNumElements()); i++) {
+      colIDsReg.push_back(rowGIDsReg[i]);
+    }
 
-  // append additional ghosts who are in my region and
-  // for whom I have a LID
-  LocalOrdinal LID;
-  Teuchos::ArrayView<const GlobalOrdinal> colGIDsComp =  AComp->getColMap()->getNodeElementList();
-  for (std::size_t i = 0; i < AComp->getColMap()->getNodeNumElements(); i++) {
-  LID = LIDregion(&appData, i, 0);
-  if (LID == -1) {
-  for (int j = 0; j < appData.maxRegPerGID; j++) {
-  Teuchos::ArrayRCP<const double> jthRegions = appData.regionsPerGIDWithGhosts->getData(j);
-  if  ( ((int) jthRegions[i]) == myRegions[0]) {
-  colIDsReg.push_back(colGIDsComp[i]);
-  break;
-}
-}
-}
-}
-  if ((int) myRegions.size() > 0) {
-  colMapPerGrp[0] = MapFactory::Build(AComp->getMap()->lib(),
-    Teuchos::OrdinalTraits<int>::invalid(),
-    colIDsReg,
-    Teuchos::OrdinalTraits<int>::zero(),
-    AComp->getMap()->getComm());
-} else {
-  colMapPerGrp[0] = MapFactory::Build(AComp->getMap()->lib(),
-    Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-    Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
-    AComp->getMap()->getComm());
-}
-} else {
-  fprintf(stderr,"whichCase not set properly\n");
-  exit(1);
-}
+    // append additional ghosts who are in my region and
+    // for whom I have a LID
+    LocalOrdinal LID;
+    Teuchos::ArrayView<const GlobalOrdinal> colGIDsComp =  AComp->getColMap()->getNodeElementList();
+    for (std::size_t i = 0; i < AComp->getColMap()->getNodeNumElements(); i++) {
+      LID = LIDregion(&appData, i, 0);
+      if (LID == -1) {
+        for (int j = 0; j < appData.maxRegPerGID; j++) {
+          Teuchos::ArrayRCP<const double> jthRegions = appData.regionsPerGIDWithGhosts->getData(j);
+          if  ( ((int) jthRegions[i]) == myRegions[0]) {
+            colIDsReg.push_back(colGIDsComp[i]);
+            break;
+          }
+        }
+      }
+    }
+    if ((int) myRegions.size() > 0) {
+      colMapPerGrp[0] = MapFactory::Build(AComp->getMap()->lib(),
+                                          Teuchos::OrdinalTraits<int>::invalid(),
+                                          colIDsReg,
+                                          Teuchos::OrdinalTraits<int>::zero(),
+                                          AComp->getMap()->getComm());
+    } else {
+      colMapPerGrp[0] = MapFactory::Build(AComp->getMap()->lib(),
+                                          Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
+                                          Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
+                                          AComp->getMap()->getComm());
+    }
+  } else {
+    fprintf(stderr,"whichCase not set properly\n");
+    exit(1);
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class widget>
