@@ -1230,7 +1230,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // lots of communication) by taking the previously constructed
         // Import object.  We should be able to do this without interfering
         // with the implementation of the local part of sparse matrix-matrix
-        // multply above.
+        // multiply above.
         RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
         labelList->set("Timer Label",label);
         if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
