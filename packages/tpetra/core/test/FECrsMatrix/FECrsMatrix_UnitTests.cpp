@@ -45,7 +45,7 @@
 #include "Tpetra_FECrsMatrix.hpp"
 #include "Tpetra_FEMultiVector.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
-
+#include "KokkosCompat_View.hpp"
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
 // TODO: add test where dynamic profile initially has no allocation, then entries are added. this will test new view functionality.
@@ -98,7 +98,12 @@ bool compare_final_matrix_structure_impl(Teuchos::FancyOStream &out,Tpetra::CrsM
   TEST_COMPARE_ARRAYS(colind1,colind2);
   if (!success) {out<<"Compare: colind match failed"<<endl;return false;}
 
-  TEST_COMPARE_FLOATING_ARRAYS(values1,values2,tol);
+  // This is necessary to make sure that complex works (since Teuchos::ScalarTraits does not have a Kokkos::complex specialization)
+  auto values1_h = Kokkos::create_mirror_view(values1);
+  auto values2_h = Kokkos::create_mirror_view(values2);
+  auto values1_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values1_h));
+  auto values2_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values2_h));  
+  TEST_COMPARE_FLOATING_ARRAYS(values1_av,values2_av,tol);
   if (!success) {out<<"Compare: values match failed"<<endl;return false;}
 
   return true;

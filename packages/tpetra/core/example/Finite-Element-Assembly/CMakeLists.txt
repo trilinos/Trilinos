@@ -23,8 +23,8 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES fem_assembly_main.cpp
   COMM serial mpi
 )
-IF(${PACKAGE_NAME}_ENABLE_Experimental) 
-  TRIBITS_ADD_TEST(
+
+TRIBITS_ADD_TEST(
     FEMAssembly
     NAME FEMAssembly_InsertGlobalIndicesFESP
     ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=200 --num-elements-y=200"
@@ -32,7 +32,6 @@ IF(${PACKAGE_NAME}_ENABLE_Experimental)
     NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
 TRIBITS_ADD_TEST(
   FEMAssembly
