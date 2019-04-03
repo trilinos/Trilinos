@@ -172,9 +172,9 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   }
 
   // Thread-local memory
-  Kokkos::View<u_lno_view_t*> tl_rowptr(Kokkos::ViewAllocateWithoutInitializing("top_rowptr"),thread_max);
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind(Kokkos::ViewAllocateWithoutInitializing("top_colind"),thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values(Kokkos::ViewAllocateWithoutInitializing("top_values"),thread_max);
+  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -549,9 +549,9 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   }
 
   // Thread-local memory
-  Kokkos::View<u_lno_view_t*> tl_rowptr(Kokkos::ViewAllocateWithoutInitializing("top_rowptr"),thread_max);
-  Kokkos::View<u_lno_nnz_view_t*> tl_colind(Kokkos::ViewAllocateWithoutInitializing("top_colind"),thread_max);
-  Kokkos::View<u_scalar_view_t*> tl_values(Kokkos::ViewAllocateWithoutInitializing("top_values"),thread_max);
+  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
@@ -1080,9 +1080,9 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // ("orig") or P_remote ("Import").
 
         // Thread-local memory
-        Kokkos::View<u_lno_view_t*> tl_rowptr(Kokkos::ViewAllocateWithoutInitializing("top_rowptr"), thread_max);
-        Kokkos::View<u_lno_nnz_view_t*> tl_colind(Kokkos::ViewAllocateWithoutInitializing("top_colind"), thread_max);
-        Kokkos::View<u_scalar_view_t*> tl_values(Kokkos::ViewAllocateWithoutInitializing("top_values"), thread_max);
+        Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr", thread_max);
+        Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind", thread_max);
+        Kokkos::View<u_scalar_view_t*> tl_values("top_values", thread_max);
 
         // For each row of R
         Kokkos::parallel_for("MMM::RAP::NewMatrix::LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
