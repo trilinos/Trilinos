@@ -46,8 +46,9 @@
 /*! \file Teuchos_ParameterList.hpp
     \brief Templated Parameter List class
 */  
-
+#include <deque>
 #include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_StringIndexedOrderedValueObjectContainer.hpp"
 #include "Teuchos_Assert.hpp"
@@ -175,7 +176,8 @@ public:
   ParameterList();
 
   //! Constructor that names the entire parameter list.
-  ParameterList(const std::string &name);
+  ParameterList(const std::string &name,
+      Teuchos::RCP<const ParameterListModifier> const& modifier = null);
   
   //! Copy constructor
   ParameterList(const ParameterList& source);
@@ -198,6 +200,10 @@ public:
   /// \note This also replaces the name returned by <tt>this->name()</tt>
   ParameterList& operator= (const ParameterList& source);
   
+  void setModifier(
+      RCP<const ParameterListModifier> const& modifier
+  );
+
   /** Set the parameters in <tt>source</tt>.
    *
    * This function will set the parameters and sublists from
@@ -228,6 +234,35 @@ public:
    */
   ParameterList& disableRecursiveValidation();
   
+  /** Disallow recursive modification when this sublist is used in a modified
+   * parameter list.
+   *
+   * This function should be called when setting a sublist in a modified
+   * parameter list which is broken off to be passed to another object.
+   * The other object should modify its own list.  The parameter list can
+   * still be modified using a direct call to its modify method.
+   */
+  ParameterList& disableRecursiveModification();
+
+  /** Disallow recursive reconciliation when this sublist is used in a
+   * reconciled parameter list.
+   *
+   * This function should be called when setting a sublist in a reconciled
+   * parameter list which is broken off to be passed to another object.
+   * The other object should reconcile its own list.  The parameter list can
+   * still be reconciled using a direct call to its reconcile method.
+   */
+  ParameterList& disableRecursiveReconciliation();
+
+  /** Disallow all recursive modification, validation, and reconciliation when
+   * this sublist is used in a parameter list.
+   *
+   * This function should be called when setting a sublist in a
+   * parameter list which is broken off to be passed to another object.
+   * The other object should handle its own list.
+   */
+  ParameterList& disableRecursiveAll();
+
   /*! \brief Set a parameter whose value has type T.
 
     \param name [in] The parameter's name.
@@ -434,6 +469,9 @@ public:
   /*! \brief Retrieves the RCP for a constant entry with the name <tt>name</tt> if
    *  it exists. */
   inline RCP<const ParameterEntry> getEntryRCP(const std::string& name) const;
+
+  //! \brief Return the optional modifier object
+  inline RCP<const ParameterListModifier> getModifier() const;
 
   //@}
 
@@ -662,6 +700,35 @@ public:
     int const depth = 1000
     );
 
+  /** \brief Modify the valid parameter list prior to validation.
+   *
+   * \param validModifiedParamList [in,out] The parameter list used as a template for validation.
+   *
+   * \param depth [in] Determines the number of levels of depth that the
+   * modification will recurse into.  A value of <tt>depth=0</tt> means that
+   * only the top level parameters and sublists will be checked.  Default:
+   * <tt>depth = large number</tt>.
+   *
+   * We loop over the valid parameter list in this modification routine.  This routine
+   * adds and/or removes fields in the valid parameter list to match the structure of the
+   * parameter list about to be validated.  After completion, both parameter lists should
+   * have the same fields or else an error will be thrown during validation.
+   */
+  void modifyParameterList(ParameterList &validParamList, int const depth = 1000);
+
+  /** \brief Reconcile a parameter list after validation
+   *
+   * \param validParamList [in,out] The parameter list used as a template for validation.
+   *
+   * \param left_to_right [in] Sweep through the parameter list tree from left to right.
+   *
+   * We loop through the valid parameter list in reverse breadth-first order in this reconciliation
+   * routine.  This routine assumes that the reconciliation routine won't create new sublists as it
+   * traverses the parameter list.
+   */
+  void reconcileParameterList(ParameterList &validParamList,
+      const bool left_to_right = true);
+
   //@}
   
 private: // Functions
@@ -707,6 +774,13 @@ private: // Data members
   //! Validate into list or not
   bool disableRecursiveValidation_;
 
+  //! Modify into list or not
+  bool disableRecursiveModification_;
+
+  //! Reconcile into list or not
+  bool disableRecursiveReconciliation_;
+
+  RCP<const ParameterListModifier> modifier_;
 };
 
 
@@ -1062,6 +1136,11 @@ ParameterList::getEntryRCP(const std::string& name_in) const
   }
   return null;
 }
+
+
+inline RCP<const ParameterListModifier>
+ParameterList::getModifier() const
+{ return modifier_; }
 
 
 // Attribute Functions
@@ -1434,6 +1513,47 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterList& l)
   return l.print(os);
 }
 
+
+class ParameterListTraversal{
+public:
+  /** \brief Create an object for traversing parameter lists
+   *
+   *  \param left_to_right [in] Add sublists in left-to-right order.
+   *
+   *  This isn't currently used for any of the recursion routines in ModifiedParameterList but was
+   *  used as a model to create the recursive reconciliation routine and could be generalized if
+   *  needed.  It has limited use for other recursion routines such as the recursive modification
+   *  because additional sublists are created on-the-fly that aren't captured in these traversals.
+   */
+  ParameterListTraversal(bool left_to_right);
+
+  ~ParameterListTraversal();
+
+  bool isDisabled(ParameterList &pl);
+
+  /** \brief Creates a deque containing references to all of the sublists at the current level of a given
+   * parameter list.
+   *
+   * \param pl[in] The parameter list with possible sublists.
+   *
+   * This produces a deque of references to `pl`'s sublists.
+   */
+  std::deque<std::reference_wrapper<ParameterList>> getSublists(ParameterList &pl);
+
+  /** \brief Creates a deque containing references to all of the sublists at all levels of a given
+   * parameter list in breadth-first order.
+   *
+   * \param pl[in] The parameter list with possible sublists.
+   *
+   * This produces a deque of references to `pl`'s sublists in breadth-first search order.  It can be
+   * used to traverse the parameter list in either breadth-first or reverse-breadth-first search order
+   * by either going forward or backwards through the deque.
+   */
+  std::deque<std::reference_wrapper<ParameterList>> breadthTraversal(ParameterList &pl);
+
+protected:
+  bool left_to_right_;
+};
   
 } // end of Teuchos namespace
 

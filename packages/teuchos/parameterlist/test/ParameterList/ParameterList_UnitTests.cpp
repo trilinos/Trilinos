@@ -43,6 +43,7 @@
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
 
@@ -67,6 +68,27 @@ public:
     std::string const& sublistName
     ) const
     {}
+};
+
+
+class SimpleModifier : public Teuchos::ParameterListModifier {
+
+public:
+
+  SimpleModifier() : Teuchos::ParameterListModifier("Simple Modifier"){}
+
+  void modify(Teuchos::ParameterList &pl, Teuchos::ParameterList &valid_pl) const
+  {
+    expandSublistsUsingBaseName("SubA", pl, valid_pl);
+  }
+
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // If A and B are less than 0.0 then throw an error
+    if (pl.get<double>("A") < 0.0 && pl.get<double>("B") < 0.0){
+      throw std::logic_error("Parameters A and B can't both be less than 0.0");
+    }
+  }
 };
 
 
@@ -781,6 +803,47 @@ TEUCHOS_UNIT_TEST( ParameterList, getIntegralValue_int )
   ECHO(PL_Main.set("Nonlinear Solver", "Trust Region Based"));
   ECHO(const int trustRegionValue  = getIntegralValue<int>(PL_Main, "Nonlinear Solver"));
   TEST_EQUALITY_CONST(trustRegionValue, 1);
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, ValidSimpleInput )
+{
+  RCP<SimpleModifier> modifier = rcp(new SimpleModifier());
+  ParameterList valid_pl("My Valid Parameter List with a Modifier", modifier);
+  //valid_pl before modification
+  //  A: 1.0
+  //  B: 0.1
+  //  SubA:
+  //    C: 1
+  valid_pl.set("A", 1.0);
+  valid_pl.set("B", 0.1);
+  valid_pl.sublist("SubA").set("C", 1);
+  ParameterList pl("My Parameter List");
+  pl.set("A", 5.0);
+  pl.set("B", -0.1);
+  pl.sublist("SubA 1").set("C", 3);
+  pl.sublist("SubA 2").set("C", 4);
+  ParameterList expected_valid_pl(valid_pl);
+  expected_valid_pl.remove("SubA");
+  expected_valid_pl.sublist("SubA 1").set("C", 1);
+  expected_valid_pl.sublist("SubA 2").set("C", 1);
+  pl.modifyParameterList(valid_pl);
+  //valid_pl after modification
+  //  A: 1.0
+  //  B: 0.1
+  //  SubA 1:
+  //    C: 1
+  //  SubA 2:
+  //    C: 1
+  TEST_EQUALITY(valid_pl, expected_valid_pl);
+//  std::cout << haveSameValuesSorted(expected_valid_pl, valid_pl, true) << std::endl;
+  pl.validateParametersAndSetDefaults(valid_pl);
+  TEST_NOTHROW(pl.reconcileParameterList(valid_pl));
+  pl.set("A", -1.0);
+  TEST_THROW(pl.reconcileParameterList(valid_pl), std::logic_error);
+  // Test the copy constructor
+  ParameterList copy_valid_pl(valid_pl);
+  TEST_EQUALITY(valid_pl, copy_valid_pl);
 }
 
 

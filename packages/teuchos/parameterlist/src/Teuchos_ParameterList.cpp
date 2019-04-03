@@ -78,12 +78,16 @@ namespace Teuchos {
 
 
 ParameterList::ParameterList()
-  :name_("ANONYMOUS"), disableRecursiveValidation_(false)
+  :name_("ANONYMOUS"), disableRecursiveValidation_(false),
+   disableRecursiveModification_(false), disableRecursiveReconciliation_(false)
 {}
 
 
-ParameterList::ParameterList(const std::string &name_in)
-  :name_(name_in), disableRecursiveValidation_(false)
+ParameterList::ParameterList(const std::string &name_in,
+    RCP<const ParameterListModifier> const& modifier_in)
+  :name_(name_in), disableRecursiveValidation_(false),
+   disableRecursiveModification_(false), disableRecursiveReconciliation_(false),
+   modifier_(modifier_in)
 {}
 
 
@@ -92,6 +96,9 @@ ParameterList::ParameterList(const ParameterList& source)
   name_ = source.name_;
   params_ = source.params_;
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
+  disableRecursiveModification_= source.disableRecursiveModification_;
+  disableRecursiveReconciliation_ = source.disableRecursiveReconciliation_;
+  modifier_ = source.modifier_;
 }
 
 
@@ -112,7 +119,16 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
   name_ = source.name_;
   params_ = source.params_;
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
+  disableRecursiveModification_= source.disableRecursiveModification_;
+  disableRecursiveReconciliation_ = source.disableRecursiveReconciliation_;
   return *this;
+}
+
+
+void ParameterList::setModifier(
+    RCP<const ParameterListModifier> const& modifier_in)
+{
+  modifier_ = modifier_in;
 }
 
 
@@ -162,6 +178,29 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
 ParameterList& ParameterList::disableRecursiveValidation()
 {
   disableRecursiveValidation_ = true;
+  return *this;
+}
+
+
+ParameterList& ParameterList::disableRecursiveModification()
+{
+  disableRecursiveModification_ = true;
+  return *this;
+}
+
+
+ParameterList& ParameterList::disableRecursiveReconciliation()
+{
+  disableRecursiveReconciliation_ = true;
+  return *this;
+}
+
+
+ParameterList& ParameterList::disableRecursiveAll()
+{
+  this->disableRecursiveModification();
+  this->disableRecursiveValidation();
+  this->disableRecursiveReconciliation();
   return *this;
 }
 
@@ -454,6 +493,95 @@ void ParameterList::validateParameters(
   *out << "\n*** Existing ParameterList::validateParameters(...) for "
     "this->name()=\""<<this->name()<<"\"...\n";
 #endif
+}
+
+
+void ParameterList::modifyParameterList(ParameterList & valid_pl,
+    int const depth)
+{
+  RCP<const ParameterListModifier> modifier;
+  if (nonnull(modifier = valid_pl.getModifier())) {
+    modifier->modify(*this, valid_pl);
+  }
+  ConstIterator itr;
+  for (itr = valid_pl.begin(); itr != valid_pl.end(); ++itr){
+    const std::string &entry_name = itr->first;
+    const ParameterEntry &entry = itr->second;
+    if (entry.isList() && depth > 0){
+      ParameterList &valid_pl_sublist = valid_pl.sublist(entry_name, true);
+      if(!valid_pl_sublist.disableRecursiveModification_){
+        const ParameterEntry *validEntry = this->getEntryPtr(entry_name);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          !validEntry, Exceptions::InvalidParameterName
+          ,"Error, the parameter {name=\""<<entry_name<<"\","
+          "type=\""<<entry.getAny(false).typeName()<<"\""
+          ",value=\""<<filterValueToString(entry)<<"\"}"
+          "\nin the parameter (sub)list \""<<this->name()<<"\""
+          "\nwas not found in the list of parameters during modification."
+          "\n\nThe parameters and types are:\n"
+          <<this->currentParametersString()
+          );
+        ParameterList &pl_sublist = this->sublist(entry_name, true);
+        pl_sublist.modifyParameterList(valid_pl_sublist, depth-1);
+      }
+    }
+  }
+}
+
+
+void ParameterList::reconcileParameterList(ParameterList & valid_pl,
+    const bool left_to_right){
+  // We do a breadth-first traversal of `valid_pl` and store references to all of the sublists
+  // in `valid_pl` in a deque with a matching deque for `this`.
+  std::deque<std::reference_wrapper<ParameterList>> refs, valid_refs, tmp, valid_tmp;
+  tmp.push_back(*this);
+  valid_tmp.push_back(valid_pl);
+  while (!valid_tmp.empty()){
+    ParameterList &cur_node = tmp.front();
+    ParameterList &valid_cur_node = valid_tmp.front();
+    tmp.pop_front();
+    valid_tmp.pop_front();
+    refs.push_back(cur_node);
+    valid_refs.push_back(valid_cur_node);
+    // Look for all sublists in valid_tmp
+    for (auto itr = valid_cur_node.begin(); itr != valid_cur_node.end(); ++itr){
+      const std::string &entry_name = itr->first;
+      if (valid_cur_node.isSublist(entry_name)){
+        const ParameterEntry &entry = itr->second;
+        ParameterList &valid_cur_node_sublist = valid_cur_node.sublist(entry_name);
+        if (!valid_cur_node_sublist.disable_reconciliation_){
+          TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+            !cur_node.isSublist(entry_name), Exceptions::InvalidParameterName
+            ,"Error, the parameter {name=\"" << entry_name <<"\","
+            "type=\"" << entry.getAny(false).typeName() << "\""
+            ",value=\"" << filterValueToString(entry) << "\"}"
+            "\nin the parameter (sub)list \"" <<cur_node.name() << "\""
+            "\nwas not found in the list of parameters during reconciliation."
+            "\n\nThe parameters and types are:\n"
+            <<cur_node.currentParametersString()
+            );
+          if (left_to_right){
+            valid_tmp.push_back(valid_cur_node_sublist);
+            tmp.push_back(cur_node.sublist(entry_name));
+          } else{
+            valid_tmp.push_front(valid_cur_node_sublist);
+            tmp.push_front(cur_node.sublist(entry_name));
+          }
+        }
+      }
+    }
+  }
+  // We now apply the reconciliation from the bottom to the top of the parameter lists by
+  // traversing the deques from the back to the front.
+  RCP<const ParameterListModifier> modifier;
+  std::deque<std::reference_wrapper<ParameterList>>::reverse_iterator ref, valid_ref;
+  for(ref = refs.rbegin(), valid_ref = valid_refs.rbegin();
+      ref != refs.rend() && valid_ref != valid_refs.rend();
+      ++ref, ++valid_ref){
+    if (nonnull(modifier = valid_ref->get().modifier())) {
+      modifier->reconcile(ref->get());
+    }
+  }
 }
 
 
