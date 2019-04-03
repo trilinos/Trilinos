@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP
-#define MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP
+#ifndef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DECL_HPP
+#define MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DECL_HPP
 
 // Teuchos includes for dense linear algebra
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -55,13 +55,13 @@
 
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_IndexManager_kokkos_fwd.hpp"
 
 namespace MueLu{
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class GeometricInterpolationPFactory : public PFactory {
-#undef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
+  class GeometricInterpolationPFactory_kokkos : public PFactory {
+#undef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -69,15 +69,21 @@ namespace MueLu{
     // Declare useful types
     using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
     using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LO,GO,Node>;
+    using device_type      = typename Node::device_type;
+    using execution_space  = typename Node::execution_space;
+    using impl_scalar_type = typename Kokkos::Details::ArithTraits<real_type>::val_type;
+    using coord_view_type  = typename Kokkos::View<impl_scalar_type**,
+                                                   Kokkos::LayoutLeft,
+                                                   execution_space>;
 
     //! @name Constructors/Destructors.
     //@{
 
     //! Constructor
-    GeometricInterpolationPFactory() { }
+    GeometricInterpolationPFactory_kokkos() { }
 
     //! Destructor.
-    virtual ~GeometricInterpolationPFactory() { }
+    virtual ~GeometricInterpolationPFactory_kokkos() { }
     //@}
 
     RCP<const ParameterList> GetValidParameterList() const;
@@ -97,6 +103,26 @@ namespace MueLu{
 
     //@}
 
+    //! @name Public functors
+    //@{
+
+    struct coarseCoordinatesBuilderFunctor{
+
+      IndexManager_kokkos geoData_;
+      coord_view_type fineCoordView_;
+      coord_view_type coarseCoordView_;
+
+      coarseCoordinatesBuilderFunctor(RCP<IndexManager_kokkos> geoData,
+                                      coord_view_type fineCoordView,
+                                      coord_view_type coarseCoordView);
+
+      KOKKOS_INLINE_FUNCTION
+      void operator() (const LO nodeIdx) const;
+
+    }; // struct coarseCoordinatesBuilderFunctor
+
+    //@}
+
   private:
     void BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
     void BuildLinearP(RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
@@ -110,9 +136,9 @@ namespace MueLu{
                                    const Teuchos::SerialDenseVector<LO,real_type> parametricCoordinates,
                                    real_type functions[4][8]) const;
 
-  }; // class GeometricInterpolationPFactory
+  }; // class GeometricInterpolationPFactory_kokkos
 
 } // namespace MueLu
 
-#define MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
-#endif // MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP
+#define MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
+#endif // MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DECL_HPP
