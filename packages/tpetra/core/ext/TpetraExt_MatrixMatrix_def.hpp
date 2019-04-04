@@ -3388,7 +3388,8 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     KCRS Iks;
     if(Ik!=0) Iks = *Ik;
     size_t merge_numrows =  Ak.numCols();
-    lno_view_t Mrowptr(Kokkos::ViewAllocateWithoutInitializing("Mrowptr"), merge_numrows + 1);
+    // The last entry of this at least, need to be initialized
+    lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 
