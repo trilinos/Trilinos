@@ -1,0 +1,3 @@
+We currently just snapshot the src directory from percept on github
+into this package's src directory. The update.sh shows an example of
+running this script.

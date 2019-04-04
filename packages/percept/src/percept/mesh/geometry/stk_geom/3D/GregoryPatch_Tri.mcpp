@@ -1,0 +1,142 @@
+// Copyright 2014 Sandia Corporation. Under the terms of
+// Contract DE-AC04-94AL85000 with Sandia Corporation, the
+// U.S. Government retains certain rights in this software.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+#include "GregoryPatch.hpp"
+
+namespace percept {
+
+// our tri patches are degree-elevated cubics on the boundary, quartics in the interior
+//   (and with extra Gregory points in interior) - since we store the quartics,
+//   this function extracts the cubics on the boundary
+void  GregoryPatch::
+extract_degree_lower_on_boundary(const MDArray& qh, MDArray& q)
+{
+  <* CodeGen[qDegreeLower] *>
+}
+
+void  GregoryPatch::
+degree_elevate(MDArray& q, MDArray& qh)
+{
+  <* CodeGen[eqqhRuleExpanded] *>
+}
+/// @param Cp is for a single coordinate (x,y, or z)
+double  GregoryPatch::
+evalTri(double u, double v, const MDArray& Cp)
+{
+  /*
+     <* bcl[u,v] // ColumnForm *>
+
+     0  : b[0, 0][u, v]
+     1  : b[1, 0][u, v]
+     2  : b[2, 0][u, v]
+     3  : b[3, 0][u, v]
+     4  : b[4, 0][u, v]
+     5  : b[0, 1][u, v]
+     6  : b[1, 1, 1, 0][u, v]
+     7  : b[1, 1, 0, 1][u, v]
+     8  : b[2, 1, 1, 0][u, v]
+     9  : b[2, 1, 1, 1][u, v]
+     10 : b[3, 1][u, v]
+     11 : b[0, 2][u, v]
+     12 : b[1, 2, 1, 1][u, v]
+     13 : b[1, 2, 0, 1][u, v]
+     14 : b[2, 2][u, v]
+     15 : b[0, 3][u, v]
+     16 : b[1, 3][u, v]
+     17 : b[0, 4][u, v]
+
+     edges
+     edge 0: {0,1,2,3,4}
+     edge 1: {4,10,14,16,17}
+     edge 2: {17,15,11,5,0}
+
+     ribbons: (convention is interior is on the left, 1st 4 are "q" boundary points, 2nd 4 are interior "p" points)
+
+     v = 0 (edge 0)
+     { {0, DL(0,1), DL(4,3), 4}, {DL(0,5), 6, 8, DL(4,10)} }
+     w = 0 (edge 1)
+     { {4, DL(4,10), DL(17,16), 17}, {DL(4,3), 9, 12, DL(17,15) } }
+     u = 0 (edge 2)
+     { {17, DL(17,15), DL(0,5), 0}, {DL(17,16), 13, 7, DL(0,1)}}
+
+     Note: DL(q[0],q[1]) = ql[1] = degree lower of quartic given by q[i],i=0,4 = 1/3 (4 q[1] - q[0]) (Note: ql[0] = q[0])
+     Note: DH(ql[0],ql[1]) = qh[1] = degree higher of cubic ql[i],i=0,3 = (ql[0] + 3 ql[1]) / 4
+   */
+  double p = 0;
+#define NEAR(u,val) (std::fabs((u)-(val)) < 1.e-5)
+  if (NEAR(u,0))
+    {
+      <* CodeGen[{p->EvalPatch[0,v]}] *>
+    }
+  else if (NEAR(u , 1-v))
+    {
+      <* CodeGen[{p->EvalPatch[u,1-u]}] *>
+    }
+  else if (NEAR(v, 0))
+    {
+      <* CodeGen[{p->EvalPatch[u,0]}] *>
+    }
+  else
+    {
+      <* CodeGen[{p->EvalPatch[u,v]}] *>
+    }
+  return p;
+}
+
+/// @param Cp is for a single coordinate (x,y, or z)
+void  GregoryPatch::
+evalTriGrad(double u, double v, const MDArray& Cp, double *grad)
+{
+  double gu = 0.0, gv=0.0;
+  if (NEAR(u,0))
+    {
+      <* CodeGen[{gu -> DuDvTri[[1,1]], gv -> DuDvTri[[1,2]] }] *>
+    }
+  else if (NEAR(u , 1-v))
+    {
+      <* CodeGen[{gu -> DuDvTri[[2,1]], gv -> DuDvTri[[2,2]] }] *>
+    }
+  else if (NEAR(v, 0))
+    {
+      <* CodeGen[{gu -> DuDvTri[[3,1]], gv -> DuDvTri[[3,2]] }] *>
+    }
+  else
+    {
+      <* CodeGen[{gu -> du, gv -> dv}] *>
+    }
+  grad[0] = gu;
+  grad[1] = gv;
+}
+
+void  GregoryPatch::
+evalTriHessian(double u, double v, const MDArray& Cp, double H[2][2])
+{
+  double H00, H01, H10, H11;
+  if (NEAR(u,0))
+    {
+      <* CodeGen[{H00 -> HessTriB[[1,1,1]], H01 -> HessTriB[[1,1,2]], H10 -> HessTriB[[1,2,1]], H11 -> HessTriB[[1,2,2]] }] *>
+    }
+  else if (NEAR(u , 1-v))
+    {
+      <* CodeGen[{H00 -> HessTriB[[2,1,1]], H01 -> HessTriB[[2,1,2]], H10 -> HessTriB[[2,2,1]], H11 -> HessTriB[[2,2,2]] }] *>
+    }
+  else if (NEAR(v, 0))
+    {
+      <* CodeGen[{H00 -> HessTriB[[3,1,1]], H01 -> HessTriB[[3,1,2]], H10 -> HessTriB[[3,2,1]], H11 -> HessTriB[[3,2,2]] }] *>
+    }
+  else
+    {
+      <* CodeGen[{H00 -> HessTri[[1,1]], H01 -> HessTri[[1,2]], H10 -> HessTri[[2,1]], H11 -> HessTri[[2,2]] }] *>
+    }
+  H[0][0] = H00;
+  H[0][1] = H01;
+  H[1][0] = H10;
+  H[1][1] = H11;
+}
+
+#undef NEAR
+}
