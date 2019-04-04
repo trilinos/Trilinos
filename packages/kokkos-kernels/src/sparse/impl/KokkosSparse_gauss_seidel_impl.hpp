@@ -47,7 +47,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_MemoryTraits.hpp>
-#include "KokkosGraph_graph_color.hpp"
+#include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 #ifndef _KOKKOSGSIMP_HPP
 #define _KOKKOSGSIMP_HPP
