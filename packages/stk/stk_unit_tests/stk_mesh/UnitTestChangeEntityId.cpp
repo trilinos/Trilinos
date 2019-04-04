@@ -69,7 +69,7 @@ TEST( UnitTestChangeEntityId, change_id_small )
 
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  Part &quad4_part = meta_data.declare_part_with_topology("quad4_Part", stk::topology::QUAD_4);
+  Part &quad4_part = meta_data.declare_part_with_topology("quad4_Part", stk::topology::QUAD_4_2D);
   meta_data.commit();
 
   BulkData mesh(meta_data, pm);
