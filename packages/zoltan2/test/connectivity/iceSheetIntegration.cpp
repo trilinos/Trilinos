@@ -56,10 +56,14 @@ int main(int argc, char** argv)
   int num_global_boundary_edges = 0;
   if(me == 0){
     read_grounded_file(argv[3],nglobal,grounded_flags_global);
-    std::cout<<me<<": num global vtxIDs = "<<nglobal<<"\n"; 
+    //std::cout<<me<<": num global vtxIDs = "<<nglobal<<"\n"; 
     read_boundary_file(argv[4],num_global_boundary_edges,boundary_edges_global);
     
   }
+  
+/*  for(int i = 0; i < nlocal; i++){
+    std::cout<<me<<": vtxIDs["<<i<<"] = "<<vtxIDs[i]<<"\n";
+  }*/
 
   //broadcast global array counts
   Teuchos::broadcast<int,int>(*comm, 0,1,&nglobal);
@@ -75,7 +79,7 @@ int main(int argc, char** argv)
   Teuchos::broadcast<int,int>(*comm,0,num_global_boundary_edges, boundary_edges_global);
  
   int numLocalBoundaryEdges = 0;
-  for(int i = 0; i < 2*num_global_boundary_edges; i+=2){
+  for(int i = 0; i < num_global_boundary_edges; i+=2){
     for(int j = 0; j < nlocal; j++){
       if(boundary_edges_global[i] == vtxIDs[j] || boundary_edges_global[i+1] == vtxIDs[j]){
         numLocalBoundaryEdges++;
@@ -83,7 +87,7 @@ int main(int argc, char** argv)
       } 
     }
   }
-  std::cout<<me<<": global_boundary_edges = "<<num_global_boundary_edges<<" localBoundaryEdges = "<<numLocalBoundaryEdges<<"\n";
+  std::cout<<me<<": global_boundary_edges = "<<num_global_boundary_edges<<" localBoundaryEdges = "<<2*numLocalBoundaryEdges<<"\n";
   int* boundaryEdges = new int[2*numLocalBoundaryEdges];
   
   for(int i = 0; i < 2*numLocalBoundaryEdges; i++){
@@ -95,9 +99,9 @@ int main(int argc, char** argv)
   }
   std::cout<<me<<": is done initializing local arrays\n";
   int edgecounter = 0;
-  for(int i = 0; i < 2*num_global_boundary_edges; i+=2){
+  for(int i = 0; i < num_global_boundary_edges; i+=2){
     for(int j = 0; j < nlocal; j++){
-      if(boundary_edges_global[i] == vtxIDs[j] || boundary_edges_global[i+1] == vtxIDs[j]){
+      if(boundary_edges_global[i] == vtxIDs[j]+1 || boundary_edges_global[i+1] == vtxIDs[j]+1){
         boundaryEdges[edgecounter] = boundary_edges_global[i];
 	boundaryEdges[edgecounter+1] = boundary_edges_global[i+1];
 	edgecounter+=2;

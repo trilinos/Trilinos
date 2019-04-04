@@ -113,7 +113,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   
   int me = problemComm->getRank();
 
-  std::cout<<me<<": Local vertices:\n";
+  /*std::cout<<me<<": Local vertices:\n";
   for(int i = 0; i < nVtx; i++){
     std::cout<<"\t"<<vtxIDs[i]<<"\n";
   }
@@ -123,7 +123,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
     for(int j = offsets[i]; j < offsets[i+1]; j++){
       std::cout<<me<<": "<<vtxIDs[i]<<" -- "<<adjs[j]<<"\n";
     }
-  }
+  }*/
   
   //create the Tpetra map for the global indices
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -156,6 +156,9 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   RCP<const Tpetra::Map<> > mapWithCopies = rcp(new Tpetra::Map<>(dummy, gids, 0, problemComm));
   
   int* local_boundary_counts = new int[nVtx];
+  for(int i = 0; i < nVtx; i++){
+    local_boundary_counts[i] = 0;
+  }
   for(int i = 0; i < num_boundary_edges*2; i++){
     if(map->getLocalElement(boundary_edges[i]) != fail){
       local_boundary_counts[map->getLocalElement(boundary_edges[i])]++;
