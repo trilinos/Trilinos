@@ -59,7 +59,7 @@
 #include <impl/Kokkos_Timer.hpp>
 
 #include "KokkosGraph_Distance1Color.hpp"
-#include "KokkosGraph_Distance1ColorHandle.hpp"      // todo: remove this  (SCAFFOLDING - WCMCLEN)
+#include "KokkosGraph_Distance1ColorHandle.hpp"     // todo: this should go away at some point 
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosKernels_Handle.hpp"
 
