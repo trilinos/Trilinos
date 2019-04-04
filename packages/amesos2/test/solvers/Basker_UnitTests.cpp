@@ -67,9 +67,6 @@
 #include "Amesos2.hpp"
 #include "Amesos2_Meta.hpp"
 
-//#include "Amesos2_Basker_decl.hpp"
-//#include "Amesos2_Basker_def.hpp"
-
 
 namespace {
 

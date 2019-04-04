@@ -368,26 +368,26 @@ namespace Intrepid2 {
       // copy values into right positions of V2
       for (ordinal_type j=0;j<numPtsPerCell;j++) {
 
-        const ordinal_type i_card = numEdges*order+j;
+        const ordinal_type i_card = numEdges*order+spaceDim*j;
 
         for (ordinal_type k=0;k<cardPn;k++) {
           // x component
           V2(i_card,k) = phisAtInternalPoints(k,j);
           // y component
-          V2(i_card+numPtsPerCell,cardPn+k) = phisAtInternalPoints(k,j);
+          V2(i_card+1,cardPn+k) = phisAtInternalPoints(k,j);
         }
 
         //save dof coordinates
         for(ordinal_type d=0; d<spaceDim; ++d) {
           for(ordinal_type dim=0; dim<spaceDim; ++dim) {
-            dofCoords(i_card+d*numPtsPerCell,dim) = internalPoints(j,dim);
-            dofCoeffs(i_card+d*numPtsPerCell,dim) = (d==dim);
+            dofCoords(i_card+d,dim) = internalPoints(j,dim);
+            dofCoeffs(i_card+d,dim) = (d==dim);
           }
 
-          tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
-          tags[i_card+d*numPtsPerCell][1] = 0; // elem id
-          tags[i_card+d*numPtsPerCell][2] = spaceDim*j+d; // local dof id
-          tags[i_card+d*numPtsPerCell][3] = spaceDim*numPtsPerCell; // total vert dof
+          tags[i_card+d][0] = spaceDim; // elem dof
+          tags[i_card+d][1] = 0; // elem id
+          tags[i_card+d][2] = spaceDim*j+d; // local dof id
+          tags[i_card+d][3] = spaceDim*numPtsPerCell; // total vert dof
         }
       }
     }

@@ -34,156 +34,56 @@
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 
-TEST( stk_topology, isTri)
+TEST(stk_topology, isTri)
 {
-  using stk::topology;
-
-  topology implementedTopologies[] =   // std::vector<topology> implementedTopologies(72)
- { stk::topology::INVALID_TOPOLOGY,
-   stk::topology::BEGIN_TOPOLOGY, stk::topology::NODE,
-   stk::topology::LINE_2, stk::topology::LINE_3,
-   stk::topology::TRI_3, stk::topology::TRIANGLE_3, stk::topology::TRI_4, stk::topology::TRIANGLE_4, stk::topology::TRI_6, stk::topology::TRIANGLE_6,
-   stk::topology::QUAD_4, stk::topology::QUADRILATERAL_4, stk::topology::QUAD_8, stk::topology::QUADRILATERAL_8, stk::topology::QUAD_9, stk::topology::QUADRILATERAL_9,
-   stk::topology::PARTICLE,
-   stk::topology::LINE_2_1D, stk::topology::LINE_3_1D,
-   stk::topology::BEAM_2, stk::topology::BEAM_3,
-   stk::topology::SHELL_LINE_2, stk::topology::SHELL_LINE_3,
-   stk::topology::TRI_3_2D, stk::topology::TRIANGLE_3_2D, stk::topology::TRI_4_2D, stk::topology::TRIANGLE_4_2D, stk::topology::TRI_6_2D, stk::topology::TRIANGLE_6_2D,
-   stk::topology::QUAD_4_2D, stk::topology::QUADRILATERAL_4_2D, stk::topology::QUAD_8_2D, stk::topology::QUADRILATERAL_8_2D, stk::topology::QUAD_9_2D, stk::topology::QUADRILATERAL_9_2D,
-   stk::topology::SHELL_TRI_3, stk::topology::SHELL_TRIANGLE_3, stk::topology::SHELL_TRI_4, stk::topology::SHELL_TRIANGLE_4, stk::topology::SHELL_TRI_6, stk::topology::SHELL_TRIANGLE_6,
-   stk::topology::SHELL_QUAD_4, stk::topology::SHELL_QUADRILATERAL_4, stk::topology::SHELL_QUAD_8, stk::topology::SHELL_QUADRILATERAL_8, stk::topology::SHELL_QUAD_9, stk::topology::SHELL_QUADRILATERAL_9,
-   stk::topology::TET_4, stk::topology::TETRAHEDRON_4, stk::topology::TET_8, stk::topology:: TETRAHEDRON_8, stk::topology::TET_10, stk::topology::TETRAHEDRON_10, stk::topology::TET_11, stk::topology::TETRAHEDRON_11,
-   stk::topology::PYRAMID_5, stk::topology::PYRAMID_13, stk::topology::PYRAMID_14,
-   stk::topology::WEDGE_6, stk::topology::WEDGE_15, stk::topology::WEDGE_18,
-   stk::topology::HEX_8, stk::topology:: HEXAHEDRON_8, stk::topology::HEX_20, stk::topology::HEXAHEDRON_20, stk::topology::HEX_27, stk::topology::HEXAHEDRON_27,
-   stk::topology::END_TOPOLOGY, stk::topology::NUM_TOPOLOGIES,
-   stk::topology::SUPERELEMENT_START,
-   stk::topology::FORCE_TOPOLOGY_TO_UNSIGNED };
-
-  for (uint i = 0; i<72;++i){
-      bool amITri = stk::isTriangle(implementedTopologies[i]);
-      if (i >23 && i<30 ){
-        EXPECT_TRUE(amITri);
-      }
-      else{
-        EXPECT_FALSE(amITri);
-      }
+  for (unsigned topology = 0; topology < stk::topology::END_TOPOLOGY; ++topology) {
+    bool amITri = stk::isTriangleElement((stk::topology::topology_t)topology);
+    if (topology >= stk::topology::TRI_3_2D && topology <= stk::topology::TRI_6_2D) {
+      EXPECT_TRUE(amITri);
+    }
+    else {
+      EXPECT_FALSE(amITri);
+    }
   }
-
 }
 
 
-TEST( stk_topology, isQuad)
+TEST(stk_topology, isQuad)
 {
-  using stk::topology;
-
-  topology implementedTopologies[] =   // std::vector<topology> implementedTopologies(72)
- { stk::topology::INVALID_TOPOLOGY,
-   stk::topology::BEGIN_TOPOLOGY, stk::topology::NODE,
-   stk::topology::LINE_2, stk::topology::LINE_3,
-   stk::topology::TRI_3, stk::topology::TRIANGLE_3, stk::topology::TRI_4, stk::topology::TRIANGLE_4, stk::topology::TRI_6, stk::topology::TRIANGLE_6,
-   stk::topology::QUAD_4, stk::topology::QUADRILATERAL_4, stk::topology::QUAD_8, stk::topology::QUADRILATERAL_8, stk::topology::QUAD_9, stk::topology::QUADRILATERAL_9,
-   stk::topology::PARTICLE,
-   stk::topology::LINE_2_1D, stk::topology::LINE_3_1D,
-   stk::topology::BEAM_2, stk::topology::BEAM_3,
-   stk::topology::SHELL_LINE_2, stk::topology::SHELL_LINE_3,
-   stk::topology::TRI_3_2D, stk::topology::TRIANGLE_3_2D, stk::topology::TRI_4_2D, stk::topology::TRIANGLE_4_2D, stk::topology::TRI_6_2D, stk::topology::TRIANGLE_6_2D,
-   stk::topology::QUAD_4_2D, stk::topology::QUADRILATERAL_4_2D, stk::topology::QUAD_8_2D, stk::topology::QUADRILATERAL_8_2D, stk::topology::QUAD_9_2D, stk::topology::QUADRILATERAL_9_2D,
-   stk::topology::SHELL_TRI_3, stk::topology::SHELL_TRIANGLE_3, stk::topology::SHELL_TRI_4, stk::topology::SHELL_TRIANGLE_4, stk::topology::SHELL_TRI_6, stk::topology::SHELL_TRIANGLE_6,
-   stk::topology::SHELL_QUAD_4, stk::topology::SHELL_QUADRILATERAL_4, stk::topology::SHELL_QUAD_8, stk::topology::SHELL_QUADRILATERAL_8, stk::topology::SHELL_QUAD_9, stk::topology::SHELL_QUADRILATERAL_9,
-   stk::topology::TET_4, stk::topology::TETRAHEDRON_4, stk::topology::TET_8, stk::topology:: TETRAHEDRON_8, stk::topology::TET_10, stk::topology::TETRAHEDRON_10, stk::topology::TET_11, stk::topology::TETRAHEDRON_11,
-   stk::topology::PYRAMID_5, stk::topology::PYRAMID_13, stk::topology::PYRAMID_14,
-   stk::topology::WEDGE_6, stk::topology::WEDGE_15, stk::topology::WEDGE_18,
-   stk::topology::HEX_8, stk::topology:: HEXAHEDRON_8, stk::topology::HEX_20, stk::topology::HEXAHEDRON_20, stk::topology::HEX_27, stk::topology::HEXAHEDRON_27,
-   stk::topology::END_TOPOLOGY, stk::topology::NUM_TOPOLOGIES,
-   stk::topology::SUPERELEMENT_START,
-   stk::topology::FORCE_TOPOLOGY_TO_UNSIGNED };
-
-  for (uint i = 0; i<72;++i){
-      bool amIQuad = stk::isQuadrilateral(implementedTopologies[i]);
-      if (i >29 && i<36 ){
-        EXPECT_TRUE(amIQuad);
-      }
-      else{
-        EXPECT_FALSE(amIQuad);
-      }
+  for (unsigned topology = 0; topology < stk::topology::END_TOPOLOGY; ++topology) {
+    bool amIQuad = stk::isQuadrilateralElement((stk::topology::topology_t)topology);
+    if (topology >= stk::topology::QUAD_4_2D && topology <= stk::topology::QUAD_9_2D) {
+      EXPECT_TRUE(amIQuad);
+    }
+    else{
+      EXPECT_FALSE(amIQuad);
+    }
   }
-
 }
 
-TEST( stk_topology, isHex)
+TEST(stk_topology, isHex)
 {
-  using stk::topology;
-
-  topology implementedTopologies[] =   // std::vector<topology> implementedTopologies(72)
- { stk::topology::INVALID_TOPOLOGY,
-   stk::topology::BEGIN_TOPOLOGY, stk::topology::NODE,
-   stk::topology::LINE_2, stk::topology::LINE_3,
-   stk::topology::TRI_3, stk::topology::TRIANGLE_3, stk::topology::TRI_4, stk::topology::TRIANGLE_4, stk::topology::TRI_6, stk::topology::TRIANGLE_6,
-   stk::topology::QUAD_4, stk::topology::QUADRILATERAL_4, stk::topology::QUAD_8, stk::topology::QUADRILATERAL_8, stk::topology::QUAD_9, stk::topology::QUADRILATERAL_9,
-   stk::topology::PARTICLE,
-   stk::topology::LINE_2_1D, stk::topology::LINE_3_1D,
-   stk::topology::BEAM_2, stk::topology::BEAM_3,
-   stk::topology::SHELL_LINE_2, stk::topology::SHELL_LINE_3,
-   stk::topology::TRI_3_2D, stk::topology::TRIANGLE_3_2D, stk::topology::TRI_4_2D, stk::topology::TRIANGLE_4_2D, stk::topology::TRI_6_2D, stk::topology::TRIANGLE_6_2D,
-   stk::topology::QUAD_4_2D, stk::topology::QUADRILATERAL_4_2D, stk::topology::QUAD_8_2D, stk::topology::QUADRILATERAL_8_2D, stk::topology::QUAD_9_2D, stk::topology::QUADRILATERAL_9_2D,
-   stk::topology::SHELL_TRI_3, stk::topology::SHELL_TRIANGLE_3, stk::topology::SHELL_TRI_4, stk::topology::SHELL_TRIANGLE_4, stk::topology::SHELL_TRI_6, stk::topology::SHELL_TRIANGLE_6,
-   stk::topology::SHELL_QUAD_4, stk::topology::SHELL_QUADRILATERAL_4, stk::topology::SHELL_QUAD_8, stk::topology::SHELL_QUADRILATERAL_8, stk::topology::SHELL_QUAD_9, stk::topology::SHELL_QUADRILATERAL_9,
-   stk::topology::TET_4, stk::topology::TETRAHEDRON_4, stk::topology::TET_8, stk::topology:: TETRAHEDRON_8, stk::topology::TET_10, stk::topology::TETRAHEDRON_10, stk::topology::TET_11, stk::topology::TETRAHEDRON_11,
-   stk::topology::PYRAMID_5, stk::topology::PYRAMID_13, stk::topology::PYRAMID_14,
-   stk::topology::WEDGE_6, stk::topology::WEDGE_15, stk::topology::WEDGE_18,
-   stk::topology::HEX_8, stk::topology:: HEXAHEDRON_8, stk::topology::HEX_20, stk::topology::HEXAHEDRON_20, stk::topology::HEX_27, stk::topology::HEXAHEDRON_27,
-   stk::topology::END_TOPOLOGY, stk::topology::NUM_TOPOLOGIES,
-   stk::topology::SUPERELEMENT_START,
-   stk::topology::FORCE_TOPOLOGY_TO_UNSIGNED };
-
-  for (uint i = 0; i<72;++i){
-      bool amIHex = stk::isHexahedron(implementedTopologies[i]);
-      if ((i >61 && i<68) || i == 69 ){                                                //not sure why one of the upper topologies is equivalent to HEXAHEDRON_27
-        EXPECT_TRUE(amIHex);
-      }
-      else{
-        EXPECT_FALSE(amIHex);
-      }
+  for (unsigned topology = 0; topology < stk::topology::END_TOPOLOGY; ++topology) {
+    bool amIHex = stk::isHexahedronElement((stk::topology::topology_t)topology);
+    if (topology >= stk::topology::HEX_8 && topology <= stk::topology::HEX_27) {
+      EXPECT_TRUE(amIHex);
+    }
+    else {
+      EXPECT_FALSE(amIHex);
+    }
   }
-
 }
 
-TEST( stk_topology, isTet)
+TEST(stk_topology, isTet)
 {
-  using stk::topology;
-
-  topology implementedTopologies[] =   // std::vector<topology> implementedTopologies(72)
- { stk::topology::INVALID_TOPOLOGY,
-   stk::topology::BEGIN_TOPOLOGY, stk::topology::NODE,
-   stk::topology::LINE_2, stk::topology::LINE_3,
-   stk::topology::TRI_3, stk::topology::TRIANGLE_3, stk::topology::TRI_4, stk::topology::TRIANGLE_4, stk::topology::TRI_6, stk::topology::TRIANGLE_6,
-   stk::topology::QUAD_4, stk::topology::QUADRILATERAL_4, stk::topology::QUAD_8, stk::topology::QUADRILATERAL_8, stk::topology::QUAD_9, stk::topology::QUADRILATERAL_9,
-   stk::topology::PARTICLE,
-   stk::topology::LINE_2_1D, stk::topology::LINE_3_1D,
-   stk::topology::BEAM_2, stk::topology::BEAM_3,
-   stk::topology::SHELL_LINE_2, stk::topology::SHELL_LINE_3,
-   stk::topology::TRI_3_2D, stk::topology::TRIANGLE_3_2D, stk::topology::TRI_4_2D, stk::topology::TRIANGLE_4_2D, stk::topology::TRI_6_2D, stk::topology::TRIANGLE_6_2D,
-   stk::topology::QUAD_4_2D, stk::topology::QUADRILATERAL_4_2D, stk::topology::QUAD_8_2D, stk::topology::QUADRILATERAL_8_2D, stk::topology::QUAD_9_2D, stk::topology::QUADRILATERAL_9_2D,
-   stk::topology::SHELL_TRI_3, stk::topology::SHELL_TRIANGLE_3, stk::topology::SHELL_TRI_4, stk::topology::SHELL_TRIANGLE_4, stk::topology::SHELL_TRI_6, stk::topology::SHELL_TRIANGLE_6,
-   stk::topology::SHELL_QUAD_4, stk::topology::SHELL_QUADRILATERAL_4, stk::topology::SHELL_QUAD_8, stk::topology::SHELL_QUADRILATERAL_8, stk::topology::SHELL_QUAD_9, stk::topology::SHELL_QUADRILATERAL_9,
-   stk::topology::TET_4, stk::topology::TETRAHEDRON_4, stk::topology::TET_8, stk::topology:: TETRAHEDRON_8, stk::topology::TET_10, stk::topology::TETRAHEDRON_10, stk::topology::TET_11, stk::topology::TETRAHEDRON_11,
-   stk::topology::PYRAMID_5, stk::topology::PYRAMID_13, stk::topology::PYRAMID_14,
-   stk::topology::WEDGE_6, stk::topology::WEDGE_15, stk::topology::WEDGE_18,
-   stk::topology::HEX_8, stk::topology:: HEXAHEDRON_8, stk::topology::HEX_20, stk::topology::HEXAHEDRON_20, stk::topology::HEX_27, stk::topology::HEXAHEDRON_27,
-   stk::topology::END_TOPOLOGY, stk::topology::NUM_TOPOLOGIES,
-   stk::topology::SUPERELEMENT_START,
-   stk::topology::FORCE_TOPOLOGY_TO_UNSIGNED };
-
-  for (uint i = 0; i<72;++i){
-      bool amITet = stk::isTetrahedron(implementedTopologies[i]);
-      if (i >47 && i<56){
-        EXPECT_TRUE(amITet);
-      }
-      else{
-        EXPECT_FALSE(amITet);
-      }
+  for (unsigned topology = 0; topology < stk::topology::END_TOPOLOGY; ++topology) {
+    bool amITet = stk::isTetrahedronElement((stk::topology::topology_t)topology);
+    if (topology >= stk::topology::TET_4 && topology <= stk::topology::TET_11) {
+      EXPECT_TRUE(amITet);
+    }
+    else {
+      EXPECT_FALSE(amITet);
+    }
   }
-
 }
 

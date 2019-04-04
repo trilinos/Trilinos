@@ -56,19 +56,16 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> ztcrsmatrix_t;
 typedef Tpetra::RowMatrix<zscalar_t, zlno_t, zgno_t, znode_t> ztrowmatrix_t;
@@ -118,7 +115,7 @@ int verifyInputAdapter(
       fail = 6;
   }
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
 
   const zgno_t *rowIds=NULL, *colIds=NULL;
   const offset_t *offsets=NULL;
@@ -133,7 +130,7 @@ int verifyInputAdapter(
     if (nrows != M.getNodeNumRows())
       fail = 8;
 
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
       printMatrix<offset_t>(comm, nrows, rowIds, offsets, colIds);
@@ -146,10 +143,11 @@ int verifyInputAdapter(
 }
 
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   int fail = 0, gfail=0;
   bool aok = true;
@@ -157,11 +155,12 @@ int main(int argc, char *argv[])
   // Create object that can give us Tpetra matrices for testing.
 
   RCP<UserInputForTests> uinput;
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput = 
-      rcp(new UserInputForTests(
-        testDataFilePath,std::string("simple"), comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     aok = false;
@@ -215,7 +214,7 @@ int main(int argc, char *argv[])
   
     fail = verifyInputAdapter<ztrowmatrix_t>(*trMInput, *trM);
   
-    gfail = globalFail(comm, fail);
+    gfail = globalFail(*comm, fail);
   
     if (!gfail){
       ztrowmatrix_t *mMigrate = NULL;
@@ -225,10 +224,10 @@ int main(int argc, char *argv[])
       }
       catch (std::exception &e){
         fail = 11;
-        cout << "Error caught:  " << e.what() << endl;
+        std::cout << "Error caught:  " << e.what() << std::endl;
       }
 
-      gfail = globalFail(comm, fail);
+      gfail = globalFail(*comm, fail);
   
       if (!gfail){
         RCP<const ztrowmatrix_t> cnewM = 
@@ -250,11 +249,11 @@ int main(int argc, char *argv[])
         }
         fail = verifyInputAdapter<ztrowmatrix_t>(*newInput, *newM);
         if (fail) fail += 100;
-        gfail = globalFail(comm, fail);
+        gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
-      printFailureCode(comm, fail);
+      printFailureCode(*comm, fail);
     }
   }
 

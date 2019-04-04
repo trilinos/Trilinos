@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -103,8 +103,7 @@ int Ioss::Edge3::number_edges_face(int face) const
 
 Ioss::IntVector Ioss::Edge3::edge_connectivity(int edge_number) const
 {
-  Ioss::IntVector connectivity(Constants::nedgenode);
-  connectivity[0] = edge_number;
+  Ioss::IntVector connectivity;
   return connectivity;
 }
 

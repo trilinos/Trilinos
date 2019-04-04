@@ -229,6 +229,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createVectorSpace,
     rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(vs, true);
   TEST_EQUALITY(vs_spmd->localSubDim(), g_localDim);
   TEST_EQUALITY(vs->dim(), as<Ordinal>(tpetraMap->getGlobalNumElements()));
+
+  typedef Thyra::TpetraOperatorVectorExtraction<Scalar> ConverterT;
+  RCP<const TpetraMap_t> tpetraMap2 = ConverterT::getTpetraMap(vs);
+  TEST_EQUALITY(tpetraMap2, tpetraMap);
 }
 
 

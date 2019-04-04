@@ -47,7 +47,7 @@
 PyTrilinos.IFPACK is the python interface to the Trilinos
 preconditioner package IFPACK:
 
-    http://trilinos.sandia.gov/packages/ifpack
+    https://trilinos.org/docs/dev/packages/ifpack/doc/html/index.html
 
 The purpose of IFPACK is to provide incomplete foctorization
 preconditioners to Trilinos.  Note that the C++ version of IFPACK uses
@@ -92,7 +92,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -124,7 +124,7 @@ example subdirectory of the PyTrilinos package:
 
 // External Trilinos modules
 %import "Teuchos.i"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
 #endif

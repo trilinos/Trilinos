@@ -44,6 +44,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 #include "Sacado.hpp"
 #include "Sacado_Fad_MP_Vector.hpp"
 
@@ -213,7 +214,7 @@ struct ApplyView<DataType,NoLayout,ExecutionSpace> {
 //
 
 const int global_num_rows = 11;
-const int global_ensemble_size = 8;
+const int global_ensemble_size = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 const int global_fad_size = 5;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, Size, Scalar, Layout )

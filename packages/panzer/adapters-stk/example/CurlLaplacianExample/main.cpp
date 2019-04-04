@@ -44,6 +44,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 #include "Teuchos_DefaultComm.hpp"
@@ -86,7 +87,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 
-#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 
 #include "Example_BCStrategy_Factory.hpp"
@@ -143,7 +144,8 @@ using Teuchos::rcp;
 
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		        std::vector<panzer::BC>& bcs,
-                        const std::string & eBlockName,int basis_order);
+                        const std::vector<std::string>& eBlockNames,
+                        int basis_order);
 
 void solveEpetraSystem(panzer::LinearObjContainer & container);
 void solveTpetraSystem(panzer::LinearObjContainer & container);
@@ -166,17 +168,22 @@ int main(int argc,char * argv[])
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
 
+   const auto stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Panzer MixedPoisson Test"));
+   Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+   stackedTimer->start("Curl Laplacian");
+
    // Build command line processor
    ////////////////////////////////////////////////////
 
-   bool useTpetra = false;
+   bool useTpetra = true;
    bool threeD = false;
+   int x_blocks = 1;
    int x_elements=20,y_elements=20,z_elements=20;
    std::string celltype = "Quad"; // or "Tri" (2d), Hex or Tet (3d)
    double x_size=1.,y_size=1.,z_size=1.;
    int basis_order = 1;
    std::string output_filename="output_";
-   
+
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
    clp.setDocString("This example solves curl laplacian problem with Hex and Tet inline mesh with high order.\n");
@@ -184,6 +191,7 @@ int main(int argc,char * argv[])
    clp.setOption("cell",&celltype);
    clp.setOption("use-tpetra","use-epetra",&useTpetra);
    clp.setOption("use-threed","use-twod",&threeD);
+   clp.setOption("x-blocks",&x_blocks);
    clp.setOption("x-elements",&x_elements);
    clp.setOption("y-elements",&y_elements);
    clp.setOption("z-elements",&z_elements);
@@ -209,25 +217,22 @@ int main(int argc,char * argv[])
    // construction of uncommitted (no elements) mesh
    ////////////////////////////////////////////////////////
 
-   std::string eBlockName = "";
    RCP<panzer_stk::STK_MeshFactory> mesh_factory;
    if(threeD) {
      mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory);
 
      // set mesh factory parameters
      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-     pl->set("X Blocks",1);
+     pl->set("X Blocks",x_blocks);
      pl->set("Y Blocks",1);
      pl->set("Z Blocks",1);
-     pl->set("X Elements",x_elements);
+     pl->set("X Elements",x_elements/x_blocks);
      pl->set("Y Elements",y_elements);
      pl->set("Z Elements",z_elements);
      pl->set("Xf",x_size);
      pl->set("Yf",y_size);
      pl->set("Zf",z_size);
      mesh_factory->setParameterList(pl);
-
-     eBlockName = "eblock-0_0_0";
    }
    else {
      if      (celltype == "Quad") mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
@@ -237,15 +242,13 @@ int main(int argc,char * argv[])
 
      // set mesh factory parameters
      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-     pl->set("X Blocks",1);
+     pl->set("X Blocks",x_blocks);
      pl->set("Y Blocks",1);
-     pl->set("X Elements",x_elements);
+     pl->set("X Elements",x_elements/x_blocks);
      pl->set("Y Elements",y_elements);
      pl->set("Xf",x_size);
      pl->set("Yf",y_size);
      mesh_factory->setParameterList(pl);
-
-     eBlockName = "eblock-0_0";
    }
 
    RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
@@ -262,9 +265,11 @@ int main(int argc,char * argv[])
    {
       bool build_transient_support = false;
 
-      testInitialization(ipb, bcs, eBlockName,basis_order);
+      std::vector<std::string> eBlockNames;
+      mesh->getElementBlockNames(eBlockNames);
+      testInitialization(ipb, bcs, eBlockNames, basis_order);
 
-      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(eBlockName));
+      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(eBlockNames[0]));
 
       // GobalData sets ostream and parameter interface to physics
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
@@ -272,25 +277,25 @@ int main(int argc,char * argv[])
       // Can be overridden by the equation set
       int default_integration_order = 4;
 
-      // the physics block nows how to build and register evaluator with the field manager
-      RCP<panzer::PhysicsBlock> pb
-	= rcp(new panzer::PhysicsBlock(ipb, eBlockName,
-				       default_integration_order,
-				       volume_cell_data,
-				       eqset_factory,
-				       gd,
-				       build_transient_support));
+      // the physics block knows how to build and register evaluator with the field manager
+      for (const auto& block : eBlockNames) {
+        RCP<panzer::PhysicsBlock> pb
+          = rcp(new panzer::PhysicsBlock(ipb, block,
+                                         default_integration_order,
+                                         volume_cell_data,
+                                         eqset_factory,
+                                         gd,
+                                         build_transient_support));
 
-      // we can have more than one physics block, one per element block
-      physicsBlocks.push_back(pb);
+        // we can have more than one physics block, one per element block
+        physicsBlocks.push_back(pb);
+      }
    }
 
    // finish building mesh, set required field variables and mesh bulk data
    ////////////////////////////////////////////////////////////////////////
 
-   {
-      RCP<panzer::PhysicsBlock> pb = physicsBlocks[0]; // we are assuming only one physics block
-
+   for (const auto pb : physicsBlocks) {
       const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 
       // insert all fields into a set
@@ -312,9 +317,8 @@ int main(int argc,char * argv[])
                mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
          }
       }
-
-      mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
+   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
 
    // check that the bcs exist in the mesh
@@ -366,7 +370,7 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
       = Teuchos::rcp(new panzer::WorksetContainer);
    wkstContainer->setFactory(wkstFactory);
-   for(size_t i=0;i<physicsBlocks.size();i++) 
+   for(size_t i=0;i<physicsBlocks.size();i++)
      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
    wkstContainer->setWorksetSize(workset_size);
    wkstContainer->setGlobalIndexer(dofManager);
@@ -579,6 +583,14 @@ int main(int argc,char * argv[])
       lout << "HCurl Error = " << sqrt(h1_resp_func->value) << std::endl;
    }
 
+   stackedTimer->stop("Curl Laplacian");
+   Teuchos::StackedTimer::OutputOptions options;
+   options.output_fraction = true;
+   options.output_minmax = true;
+   options.output_histogram = true;
+   options.num_histogram = 5;
+   stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
+
    // all done!
    /////////////////////////////////////////////////////////////
 
@@ -638,11 +650,10 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());
 
-  typedef Belos::BlockGmresSolMgr<double,MV,OP> SolverType;
+  typedef Belos::PseudoBlockGmresSolMgr<double,MV,OP> SolverType;
 
   Teuchos::ParameterList belosList;
-  belosList.set( "Flexible Gmres", false );               // Flexible Gmres will be used to solve this problem
-  belosList.set( "Num Blocks", 1000 );            // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Blocks", 3000 );            // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", 1 );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", 5000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed
@@ -668,7 +679,8 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
 
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 		        std::vector<panzer::BC>& bcs,
-                        const std::string & eBlockName,int basis_order)
+                        const std::vector<std::string>& eBlockNames,
+                        int basis_order)
 {
   {
     Teuchos::ParameterList& p = ipb->sublist("CurlLapacian Physics");
@@ -679,62 +691,61 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     p.set("Integration Order",10);
   }
 
-  {
-    std::size_t bc_id = 0;
+  std::size_t bc_id = 0;
+  for (const auto& block : eBlockNames) {
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "left";
-    std::string element_block_id = eBlockName;
+    std::string element_block_id = block;
     std::string dof_name = "EFIELD";
     std::string strategy = "Constant";
     double value = 0.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name,
 		  strategy, p);
     bcs.push_back(bc);
   }
 
-  {
-    std::size_t bc_id = 1;
+  // multiblock splits on x only
+  for (const auto& block : eBlockNames) {
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "top";
-    std::string element_block_id = eBlockName;
+    std::string element_block_id = block;
     std::string dof_name = "EFIELD";
     std::string strategy = "Constant";
     double value = 0.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name,
 		  strategy, p);
     bcs.push_back(bc);
   }
 
-  {
-    std::size_t bc_id = 2;
+  for (const auto& block : eBlockNames) {
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "right";
-    std::string element_block_id = eBlockName;
+    std::string element_block_id = block;
     std::string dof_name = "EFIELD";
     std::string strategy = "Constant";
     double value = 0.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name,
 		  strategy, p);
     bcs.push_back(bc);
   }
 
-  {
-    std::size_t bc_id = 3;
+  // multiblock splits on x only
+  for (const auto& block : eBlockNames) {
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "bottom";
-    std::string element_block_id = eBlockName;
+    std::string element_block_id = block;
     std::string dof_name = "EFIELD";
     std::string strategy = "Constant";
     double value = 0.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name,
 		  strategy, p);
     bcs.push_back(bc);
   }

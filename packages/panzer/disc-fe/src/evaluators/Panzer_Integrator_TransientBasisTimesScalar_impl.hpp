@@ -110,10 +110,6 @@ postRegistrationSetup(
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
   num_nodes = residual.extent(1);
   num_qp = scalar.extent(1);
 

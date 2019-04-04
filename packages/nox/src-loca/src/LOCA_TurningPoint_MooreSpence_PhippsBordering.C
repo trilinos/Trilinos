@@ -453,7 +453,7 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::solveTransposeContiguous(
           Teuchos::ParameterList& params,
           const NOX::Abstract::MultiVector& input_x,
           const NOX::Abstract::MultiVector& input_null,
-              const NOX::Abstract::MultiVector::DenseMatrix& input_param,
+              const NOX::Abstract::MultiVector::DenseMatrix& /* input_param */,
           NOX::Abstract::MultiVector& result_x,
           NOX::Abstract::MultiVector& result_null,
               NOX::Abstract::MultiVector::DenseMatrix& result_param) const

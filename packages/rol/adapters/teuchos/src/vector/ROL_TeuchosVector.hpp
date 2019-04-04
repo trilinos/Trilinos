@@ -118,6 +118,16 @@ public:
     }    
   }
 
+  void randomize(const Real l=0.0, const Real u=1.0) override {
+    Real a = (u-l);
+    Real b = l;
+    Real x(0);
+    for( Ordinal i=0; i<vec_->length(); ++i ) {
+      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+      (*vec_)(i) = a*x + b;
+    }    
+  }
+
   Teuchos::RCP<Vector<Real>> clone() const override { 
     return Teuchos::rcp( new TeuchosVector(vec_->length()) );
   }

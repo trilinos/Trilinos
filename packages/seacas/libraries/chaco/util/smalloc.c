@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -179,7 +179,7 @@ void *srealloc(void *ptr, size_t n)
   void *                     p;            /* returned pointer */
   extern int                 DEBUG_MEMORY; /* use debug memory allocator? */
   struct smalloc_debug_data *dbptr;        /* loops through debug list */
-  void bail(char *msg, int status);
+  void                       bail(char *msg, int status);
 
   if (ptr == NULL) {
     if (n == 0) {

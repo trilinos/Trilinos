@@ -91,7 +91,7 @@ private:
     {
         stk::topology element_topology = get_bulk().bucket(element).topology();
         stk::mesh::EntityVector element_side_nodes(get_side_topology(element, side_ordinal).num_nodes());
-        element_topology.side_nodes(element_nodes, side_ordinal, element_side_nodes.begin());
+        element_topology.side_nodes(element_nodes.data(), side_ordinal, element_side_nodes.data());
         return element_side_nodes;
     }
 

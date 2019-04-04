@@ -516,14 +516,14 @@ apply (HostView& X,
 template<class MatrixType, class LocalScalarType>
 void
 BandedContainer<MatrixType, LocalScalarType, true>::
-weightedApply (HostView& X,
-               HostView& Y,
-               HostView& D,
-               int blockIndex,
-               int stride,
-               Teuchos::ETransp mode,
-               scalar_type alpha,
-               scalar_type beta) const
+weightedApply (HostView& /* X */,
+               HostView& /* Y */,
+               HostView& /* D */,
+               int /* blockIndex */,
+               int /* stride */,
+               Teuchos::ETransp /* mode */,
+               scalar_type /* alpha */,
+               scalar_type /* beta */) const
 {
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;

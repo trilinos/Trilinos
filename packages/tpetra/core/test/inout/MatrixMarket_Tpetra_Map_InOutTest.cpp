@@ -39,14 +39,11 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
-
 #include <TpetraCore_ETIHelperMacros.h>
 
 #include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 
 namespace { // anonymous
 
@@ -77,8 +74,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase0, LO, 
   const bool tolerant = false;
   const bool globallyVerbose = true;
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -149,7 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase0, LO, 
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (),
                           tolerant, globallyVerbose);
   if (globallyVerbose) {
     std::ostringstream os;
@@ -170,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase0, LO, 
   }
   TEST_ASSERT( map.isSameAs (*inMap) );
 
-  // Now try readMap without the node argument.
+  // Now try readMap again.
 
   // This input stream can exist on all processes,
   // but only Process 0 will read from it.
@@ -205,8 +201,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase1, LO, 
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
   // Forestall compiler warnings about unused variables.
@@ -237,7 +232,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigUniformIndexBase1, LO, 
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (),
                           tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
@@ -253,8 +248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigNonuniformIndexBase0, L
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
 
@@ -283,7 +277,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigNonuniformIndexBase0, L
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (), 
                           tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
@@ -298,8 +292,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigNonuniformIndexBase1, L
     "to a Matrix Market file" << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -328,7 +321,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, ContigNonuniformIndexBase1, L
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (), 
                           tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
@@ -338,8 +331,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase0, LO, GO )
 {
   typedef Tpetra::Map<LO, GO> map_type;
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -379,7 +371,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase0, LO, GO )
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (), 
                           tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
@@ -389,8 +381,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase1, LO, GO )
 {
   typedef Tpetra::Map<LO, GO> map_type;
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -430,7 +421,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase1, LO, GO )
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (), 
                           tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);
@@ -440,8 +431,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigIndexBase1, LO, GO )
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, LO, GO )
 {
   typedef Tpetra::Map<LO, GO> map_type;
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -486,7 +476,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MapOutputInput, NoncontigOvrlpngIndBase0, LO,
   std::istringstream mapInStream (mapOutStream.str ());
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   RCP<const map_type> inMap =
-    reader_type::readMap (mapInStream, map.getComm (), map.getNode (),
+    reader_type::readMap (mapInStream, map.getComm (), 
                           tolerant, debug);
 
   TEST_EQUALITY(map.isSameAs (*inMap), true);

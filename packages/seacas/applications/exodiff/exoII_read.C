@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -68,7 +68,7 @@ ExoII_Read<INT>::ExoII_Read()
 }
 
 template <typename INT>
-ExoII_Read<INT>::ExoII_Read(const char *fname)
+ExoII_Read<INT>::ExoII_Read(const std::string &fname)
     : file_name(fname), file_id(-1), // value of -1 indicates file not open
       num_nodes(0), dimension(0), num_elmts(0), num_elmt_blocks(0), num_node_sets(0),
       num_side_sets(0), db_version(0.0), api_version(0.0), io_word_size(0), eblocks(nullptr),
@@ -679,24 +679,22 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Global_Results(int tim
     SMART_ASSERT(global_vals != nullptr);
   }
 
-  if (global_vals) {
-    for (unsigned j = 0; j < global_vars.size(); ++j) {
-      global_vals[j] = 0.0;
-    }
+  for (unsigned j = 0; j < global_vars.size(); ++j) {
+    global_vals[j] = 0.0;
+  }
 
-    int err = ex_get_var(file_id, time_step_num, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
+  int err = ex_get_var(file_id, time_step_num, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
 
-    if (err < 0) {
-      ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-            << "global variable values!  Aborting...\n");
-      exit(1);
-    }
-    else if (err > 0) {
-      std::ostringstream oss;
-      oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
-          << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
-      return oss.str();
-    }
+  if (err < 0) {
+    ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
+          << "global variable values!  Aborting...\n");
+    exit(1);
+  }
+  else if (err > 0) {
+    std::ostringstream oss;
+    oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
+        << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
+    return oss.str();
   }
   return "";
 }
@@ -724,31 +722,29 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
     SMART_ASSERT(global_vals2 != nullptr);
   }
 
-  if (global_vals) {
-    for (unsigned j = 0; j < global_vars.size(); ++j) {
-      global_vals[j] = 0.0;
-    }
+  for (unsigned j = 0; j < global_vars.size(); ++j) {
+    global_vals[j] = 0.0;
+  }
 
-    int err = ex_get_var(file_id, t1, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
+  int err = ex_get_var(file_id, t1, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
 
+  if (err < 0) {
+    ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
+          << "global variable values!  Aborting...\n");
+    exit(1);
+  }
+
+  if (t2 != t1) {
+    err = ex_get_var(file_id, t2, EX_GLOBAL, 1, 1, global_vars.size(), global_vals2);
     if (err < 0) {
       ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
             << "global variable values!  Aborting...\n");
       exit(1);
     }
 
-    if (t2 != t1) {
-      err = ex_get_var(file_id, t2, EX_GLOBAL, 1, 1, global_vars.size(), global_vals2);
-      if (err < 0) {
-        ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-              << "global variable values!  Aborting...\n");
-        exit(1);
-      }
-
-      // Do the interpolation...
-      for (size_t j = 0; j < global_vars.size(); j++) {
-        global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
-      }
+    // Do the interpolation...
+    for (size_t j = 0; j < global_vars.size(); j++) {
+      global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
     }
   }
   return "";
@@ -1163,11 +1159,11 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   }
   eblocks = nullptr;
   if (num_elmt_blocks > 0) {
-    eblocks = new Exo_Block<INT>[ num_elmt_blocks ];
+    eblocks = new Exo_Block<INT>[num_elmt_blocks];
     SMART_ASSERT(eblocks != nullptr);
     std::vector<INT> ids(num_elmt_blocks);
 
-    err = ex_get_ids(file_id, EX_ELEM_BLOCK, TOPTR(ids));
+    err = ex_get_ids(file_id, EX_ELEM_BLOCK, ids.data());
 
     if (err < 0) {
       ERROR("Failed to get element"
@@ -1212,11 +1208,11 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   }
   nsets = nullptr;
   if (num_node_sets > 0) {
-    nsets = new Node_Set<INT>[ num_node_sets ];
+    nsets = new Node_Set<INT>[num_node_sets];
     SMART_ASSERT(nsets != nullptr);
     std::vector<INT> ids(num_node_sets);
 
-    err = ex_get_ids(file_id, EX_NODE_SET, TOPTR(ids));
+    err = ex_get_ids(file_id, EX_NODE_SET, ids.data());
 
     if (err < 0) {
       ERROR("Failed to get nodeset ids!  Aborting...\n");
@@ -1239,11 +1235,11 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   }
   ssets = nullptr;
   if (num_side_sets) {
-    ssets = new Side_Set<INT>[ num_side_sets ];
+    ssets = new Side_Set<INT>[num_side_sets];
     SMART_ASSERT(ssets != nullptr);
     std::vector<INT> ids(num_side_sets);
 
-    err = ex_get_ids(file_id, EX_SIDE_SET, TOPTR(ids));
+    err = ex_get_ids(file_id, EX_SIDE_SET, ids.data());
 
     if (err < 0) {
       ERROR("Failed to get sideset ids!  Aborting...\n");
@@ -1368,16 +1364,17 @@ namespace {
         SMART_ASSERT(varnames[vg] != nullptr);
         if (std::strlen(varnames[vg]) == 0 ||
             static_cast<int>(std::strlen(varnames[vg])) > name_size) {
-          std::cerr << trmclr::red << "exodiff: ERROR: " << type
-                    << " variable names appear corrupt\n"
-                    << "                A length is 0 or greater than "
-                    << "name_size(" << name_size << ")\n"
-                    << "                Here are the names that I received from"
-                    << " a call to ex_get_var_names(...):\n";
+          std::ostringstream out;
+          out << "exodiff: ERROR: " << type << " variable names appear corrupt\n"
+              << "                A length is 0 or greater than "
+              << "name_size(" << name_size << ")\n"
+              << "                Here are the names that I received from"
+              << " a call to ex_get_var_names(...):\n";
           for (int k = 1; k <= num_vars; ++k) {
-            std::cerr << "\t\t" << k << ") \"" << varnames[k - 1] << "\"\n";
+            out << "\t\t" << k << ") \"" << varnames[k - 1] << "\"\n";
           }
-          std::cerr << "                 Aborting...\n" << trmclr::normal;
+          out << "                 Aborting...\n";
+          DIFF_OUT(out);
           exit(1);
         }
 

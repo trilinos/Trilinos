@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "node";
+    static constexpr const char *name = "node";
 
     static void factory();
     ~Node() override;
@@ -75,7 +75,7 @@ namespace Ioss {
   private:
     static Node instance_;
 
-    Node(const Node &); // Do not implement
+    Node(const Node &) = delete;
   };
 } // namespace Ioss
 #endif

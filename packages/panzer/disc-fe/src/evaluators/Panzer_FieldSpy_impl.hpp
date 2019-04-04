@@ -71,15 +71,6 @@ FieldSpy<EvalT,Traits>::FieldSpy(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData /* sd */,
-                                                       PHX::FieldManager<Traits>& fm)
-{
-
-  this->utils.setFieldData(source,fm);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
 void FieldSpy<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   std::cout << "SPY: Name = \"" << source.fieldTag().identifier() << "\" at t = " << workset.time << "\n";

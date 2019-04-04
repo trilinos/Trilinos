@@ -55,14 +55,15 @@ namespace {
 
     std::string filename = "single_step.restart";
     MPI_Comm comm = MPI_COMM_WORLD;
-
+    {
     stk::io::StkMeshIoBroker stkIo(comm);
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
       
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "disp", 3);
-    stk::mesh::put_field(field, stkIo.meta_data().universal_part());
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
     stkIo.populate_bulk_data();
 
@@ -93,6 +94,7 @@ namespace {
       //+ restart database. The time of this state should be 2.0.
       // ... Verification deleted
       //-END
+    }
     }
 
     {

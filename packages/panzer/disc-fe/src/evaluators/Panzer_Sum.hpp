@@ -92,7 +92,7 @@ class Sum
   // std::vector< PHX::MDField<const ScalarT> > values;
   // std::vector<double> scalars;
   PHX::MDField<const ScalarT> values[MAX_VALUES];
-  Kokkos::View<const double *,PHX::Device> scalars;
+  Kokkos::View<const double *,typename PHX::DevLayout<double>::type,PHX::Device> scalars;
 
   std::size_t cell_data_size;
 
@@ -115,8 +115,6 @@ class SumStatic : public panzer::EvaluatorWithBaseImpl<TRAITS>,
             public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
 private:
   typedef typename EvalT::ScalarT ScalarT;
@@ -127,8 +125,6 @@ class SumStatic<EvalT,TRAITS,Tag0,void,void> : public panzer::EvaluatorWithBaseI
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
 private:
   typedef typename EvalT::ScalarT ScalarT;
@@ -179,8 +175,8 @@ private:
   //////////////////////////////////////////////
   enum {MAX_VALUES=20};
   PHX::MDField<const ScalarT,Tag0,Tag1> current_value;
-  Kokkos::View<const ScalarT**,PHX::Device> value_views[MAX_VALUES];
-  Kokkos::View<const double*,PHX::Device> scalars;
+  Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device> value_views[MAX_VALUES];
+  Kokkos::View<const double*,typename PHX::DevLayout<ScalarT>::type,PHX::Device> scalars;
   int numValues;
 
      // this is used in the parallel kernel
@@ -192,8 +188,6 @@ class SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2> : public panzer::EvaluatorWithBaseI
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
 private:
   typedef typename EvalT::ScalarT ScalarT;

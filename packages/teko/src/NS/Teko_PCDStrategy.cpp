@@ -321,7 +321,7 @@ Teuchos::RCP<Teuchos::ParameterList> PCDStrategy::getRequestedParameters() const
 }
 
 //! For assiting in construction of the preconditioner
-bool PCDStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
+bool PCDStrategy::updateRequestedParameters(const Teuchos::ParameterList & /* pl */) 
 {
    TEUCHOS_ASSERT(false);
 

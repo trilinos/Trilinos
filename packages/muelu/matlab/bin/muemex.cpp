@@ -55,7 +55,7 @@
 #error "MueMex requires Epetra, Tpetra and MATLAB."
 #endif
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include "MueLu_MatlabUtils.hpp"
 #include "MueLu_TwoLevelMatlabFactory.hpp"
 #include "MueLu_SingleLevelMatlabFactory.hpp"
@@ -256,7 +256,7 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
     typedef Tpetra::Vector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Vector;
     typedef Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector;
     typedef Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_Operator;
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     //numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
     RCP<const muemex_map_type> map = rcp(new muemex_map_type(matSize, (mm_GlobalOrd) 0, comm));
     RCP<Tpetra_MultiVector> rhs = loadDataFromMatlab<RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(b);
@@ -725,7 +725,7 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
   H->GetLevel(0)->Set("A", xA);
   if(haveCoords)
   {
-    RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coords = loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(matlabCoords);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coords = loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(matlabCoords);
     H->GetLevel(0)->Set("Coordinates", coords);
   }
   //Decide whether user passed level 0 Nullspace in parameter list. If not, make it here.
@@ -1170,10 +1170,10 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
         List->set(option_name, *opt_int);
 #ifdef HAVE_MUELU_INTREPID2
       else if (strcmp(option_name, "pcoarsen: element to node map") == 0)
-	List->set(option_name, loadDataFromMatlab<RCP<FieldContainer_ordinal>>(prhs));
+        List->set(option_name, loadDataFromMatlab<RCP<FieldContainer_ordinal>>(prhs));
 #endif
-      else 
-	List->set(option_name, loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(prhs));
+      else
+        List->set(option_name, loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(prhs));
       break;
       // NTS: 64-bit ints will break on a 32-bit machine.        We
       // should probably detect machine type, or somthing, but that would

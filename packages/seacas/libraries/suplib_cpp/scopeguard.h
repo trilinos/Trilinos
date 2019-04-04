@@ -1,35 +1,35 @@
 /*
-* Copyright(C) 2009 National Technology & Engineering Solutions
-* of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
-* NTESS, the U.S. Government retains certain rights in this software.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are
-* met:
-*
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*
-*     * Redistributions in binary form must reproduce the above
-*       copyright notice, this list of conditions and the following
-*       disclaimer in the documentation and/or other materials provided
-*       with the distribution.
-*     * Neither the name of NTESS nor the names of its
-*       contributors may be used to endorse or promote products derived
-*       from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ * Copyright(C) 2009-2017 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of NTESS nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef SCOPEGUARD_H_
 #define SCOPEGUARD_H_
 
@@ -44,10 +44,8 @@ template <class T> class RefHolder
 
 public:
   explicit RefHolder(T &ref) : ref_(ref) {}
-  operator T &() const { return ref_; }
-private:
-  // Disable assignment - not implemented
-  RefHolder &operator=(const RefHolder &);
+             operator T &() const { return ref_; }
+  RefHolder &operator=(const RefHolder &) = delete;
 };
 
 template <class T> inline RefHolder<T> ByRef(T &t) { return RefHolder<T>(t); }
@@ -58,11 +56,11 @@ class ScopeGuardImplBase
 
 protected:
   ~ScopeGuardImplBase() = default;
-  ScopeGuardImplBase(const ScopeGuardImplBase &other) throw() : dismissed_(other.dismissed_)
+  ScopeGuardImplBase(const ScopeGuardImplBase &other) : dismissed_(other.dismissed_)
   {
     other.Dismiss();
   }
-  template <typename J> static void SafeExecute(J &j) throw()
+  template <typename J> static void SafeExecute(J &j)
   {
     if (!j.dismissed_) {
       try {
@@ -76,8 +74,8 @@ protected:
   mutable bool dismissed_;
 
 public:
-  ScopeGuardImplBase() throw() : dismissed_(false) {}
-  void Dismiss() const throw() { dismissed_ = true; }
+  ScopeGuardImplBase() : dismissed_(false) {}
+  void Dismiss() const { dismissed_ = true; }
 };
 
 // typedef const ScopeGuardImplBase& ScopeGuard;
@@ -87,11 +85,12 @@ template <typename F> class ScopeGuardImpl0 : public ScopeGuardImplBase
 {
 public:
   static ScopeGuardImpl0<F> MakeGuard(F fun) { return ScopeGuardImpl0<F>(fun); }
-  ~ScopeGuardImpl0() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl0() { SafeExecute(*this); }
   void Execute() { fun_(); }
+
 protected:
   explicit ScopeGuardImpl0(F fun) : fun_(fun) {}
-  F                          fun_;
+  F fun_;
 };
 
 template <typename F> inline ScopeGuardImpl0<F> MakeGuard(F fun)
@@ -103,8 +102,9 @@ template <typename F, typename P1> class ScopeGuardImpl1 : public ScopeGuardImpl
 {
 public:
   static ScopeGuardImpl1<F, P1> MakeGuard(F fun, P1 p1) { return ScopeGuardImpl1<F, P1>(fun, p1); }
-  ~ScopeGuardImpl1() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl1() { SafeExecute(*this); }
   void Execute() { fun_(p1_); }
+
 protected:
   ScopeGuardImpl1(F fun, P1 p1) : fun_(fun), p1_(p1) {}
   F        fun_;
@@ -123,8 +123,9 @@ public:
   {
     return ScopeGuardImpl2<F, P1, P2>(fun, p1, p2);
   }
-  ~ScopeGuardImpl2() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl2() { SafeExecute(*this); }
   void Execute() { fun_(p1_, p2_); }
+
 protected:
   ScopeGuardImpl2(F fun, P1 p1, P2 p2) : fun_(fun), p1_(p1), p2_(p2) {}
   F        fun_;
@@ -146,8 +147,9 @@ public:
   {
     return ScopeGuardImpl3<F, P1, P2, P3>(fun, p1, p2, p3);
   }
-  ~ScopeGuardImpl3() throw() { SafeExecute(*this); }
+  ~ScopeGuardImpl3() { SafeExecute(*this); }
   void Execute() { fun_(p1_, p2_, p3_); }
+
 protected:
   ScopeGuardImpl3(F fun, P1 p1, P2 p2, P3 p3) : fun_(fun), p1_(p1), p2_(p2), p3_(p3) {}
   F        fun_;
@@ -171,8 +173,9 @@ public:
   {
     return ObjScopeGuardImpl0<Obj, MemFun>(obj, memFun);
   }
-  ~ObjScopeGuardImpl0() throw() { SafeExecute(*this); }
+  ~ObjScopeGuardImpl0() { SafeExecute(*this); }
   void Execute() { (obj_.*memFun_)(); }
+
 protected:
   ObjScopeGuardImpl0(Obj &obj, MemFun memFun) : obj_(obj), memFun_(memFun) {}
   Obj &  obj_;
@@ -205,8 +208,9 @@ public:
   {
     return ObjScopeGuardImpl1<Obj, MemFun, P1>(obj, memFun, p1);
   }
-  ~ObjScopeGuardImpl1() throw() { SafeExecute(*this); }
+  ~ObjScopeGuardImpl1() { SafeExecute(*this); }
   void Execute() { (obj_.*memFun_)(p1_); }
+
 protected:
   ObjScopeGuardImpl1(Obj &obj, MemFun memFun, P1 p1) : obj_(obj), memFun_(memFun), p1_(p1) {}
   Obj &    obj_;
@@ -242,8 +246,9 @@ public:
   {
     return ObjScopeGuardImpl2<Obj, MemFun, P1, P2>(obj, memFun, p1, p2);
   }
-  ~ObjScopeGuardImpl2() throw() { SafeExecute(*this); }
+  ~ObjScopeGuardImpl2() { SafeExecute(*this); }
   void Execute() { (obj_.*memFun_)(p1_, p2_); }
+
 protected:
   ObjScopeGuardImpl2(Obj &obj, MemFun memFun, P1 p1, P2 p2)
       : obj_(obj), memFun_(memFun), p1_(p1), p2_(p2)
@@ -283,7 +288,7 @@ MakeGuard(Ret (Obj2::*memFun)(P1a, P2a), Obj1 *obj, P1b p1, P2b p2)
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
 #define ANONYMOUS_VARIABLE(str) CONCATENATE(str, __LINE__)
 
-#define ON_BLOCK_EXIT ScopeGuard     ANONYMOUS_VARIABLE(scopeGuard) = MakeGuard
+#define ON_BLOCK_EXIT ScopeGuard ANONYMOUS_VARIABLE(scopeGuard) = MakeGuard
 #define ON_BLOCK_EXIT_OBJ ScopeGuard ANONYMOUS_VARIABLE(scopeGuard) = MakeObjGuard
 
 #endif // SCOPEGUARD_H_

@@ -195,7 +195,7 @@ void SparseContainer<MatrixType,InverseType>::
 applyImpl (inverse_mv_type& X,
            inverse_mv_type& Y,
            int blockIndex,
-           int stride,
+           int /* stride */,
            Teuchos::ETransp mode,
            InverseScalar alpha,
            InverseScalar beta) const
@@ -335,7 +335,7 @@ weightedApply (HostView& X,
                HostView& Y,
                HostView& D,
                int blockIndex,
-               int stride,
+               int /* stride */,
                Teuchos::ETransp mode,
                scalar_type alpha,
                scalar_type beta) const

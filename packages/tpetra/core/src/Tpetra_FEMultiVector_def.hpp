@@ -44,13 +44,14 @@
 
 /// \file Tpetra_MultiVector_def.hpp
 /// \brief Definition of the Tpetra::MultiVector class
-///
-#include "Tpetra_FEMultiVector_decl.hpp"
-#include "Tpetra_MultiVector_def.hpp"  // This might be a very bad idea
+
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+
 
 namespace Tpetra {
-
-
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -60,56 +61,59 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
               const bool zeroOut):
   base_type(importer.is_null()? map:importer->getTargetMap(),numVecs,zeroOut),
   importer_(importer) {
+  const char tfecfFuncName[] = "FEMultiVector::FEMultiVector(): ";
 
-  activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_TARGET));
-    
+  activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
+
   // Sanity check the importer
   if(!importer_.is_null() && !importer_->getSourceMap()->isSameAs(*map)) {
     throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if importer is provided");
   }
 
   if(!importer_.is_null()) {
-    // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements()) 
-    if(importer_->getNumSameIDs() == importer->getSourceMap()->getNodeNumElements()) {
-      //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView      
-      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL)));
+    // The locallyFitted check is debug mode only since it is more expensive
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if(debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !importer->getTargetMap()->isLocallyFitted(*importer->getSourceMap()),
+                                             std::runtime_error,"importer->getTargetMap() must be locally fitted to importer->getSourceMap()");
+      
     }
-    else {
-      //   2) If not call a new constructor for the inactive guy (w/ source map)
-      inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),numVecs,zeroOut));
-    }
+
+    // Memory aliasing is required for FEMultiVector
+    inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL)));
   }
+
 }// end constructor
 
 
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& newMap) {
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& /* newMap */) {
   throw std::runtime_error("Tpetra::FEMultiVector::replaceMap() is not implemented");
 }// end replaceMap
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {
-  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_TARGET) {
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
+  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
     inactiveMultiVector_->doExport(*this,*importer_,CM);
   }
 }//end doTargetToSource
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doSourceToTarget(const CombineMode CM) {
-  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_SOURCE) {
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(const CombineMode CM) {
+  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_OWNED) {
     inactiveMultiVector_->doImport(*this,*importer_,CM);
   }
 }//end doTargetToSource
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
-  if(*activeMultiVector_ == FE_ACTIVE_TARGET) 
-    *activeMultiVector_ = FE_ACTIVE_SOURCE;
-  else 
-    *activeMultiVector_ = FE_ACTIVE_TARGET;
+  if(*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED)
+    *activeMultiVector_ = FE_ACTIVE_OWNED;
+  else
+    *activeMultiVector_ = FE_ACTIVE_OWNED_PLUS_SHARED;
 
   if(importer_.is_null()) return;
 
@@ -117,8 +121,6 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
   this->swap(*inactiveMultiVector_);
 
 }//end switchActiveMultiVector
-
-
 
 } // namespace Tpetra
 

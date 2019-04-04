@@ -46,6 +46,7 @@
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_topology/topology.hpp"    // for topology
 namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class PartRepository; } } }
 
 
@@ -212,20 +213,17 @@ bool insert( ConstPartVector & , const Part & );
 bool insert( PartVector & , Part & );
 bool contains( const PartVector & v , const Part & part );
 
-inline
-bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
+#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 4 2019
+STK_DEPRECATED inline bool insert_ordinal( OrdinalVector & v , unsigned part_ordinal )
 {
-  for(OrdinalVector::iterator i=v.begin(), e=v.end(); i!=e; ++i) {
-    if (*i == part_ordinal) return false;
-    if (*i > part_ordinal) {
-      v.insert(i, part_ordinal);
-      return true;
-    }
+  OrdinalVector::iterator iter = std::lower_bound(v.begin(), v.end(), part_ordinal);
+  if (iter == v.end() || *iter != part_ordinal) {
+    v.insert(iter, part_ordinal);
+    return true;
   }
-
-  v.push_back(part_ordinal);
-  return true ;
+  return false;
 }
+#endif
 
 void get_part_and_all_subsets(const Part& part, ConstPartVector& part_and_all_subsets);
 
@@ -256,6 +254,13 @@ bool contains_ordinal( Iterator beg, Iterator end, unsigned part_ordinal )
   }
 
   return false;
+}
+
+inline
+bool contains_ordinal(const OrdinalVector& ordinals, Ordinal ord)
+{
+  OrdinalVector::const_iterator iter = std::lower_bound(ordinals.begin(), ordinals.end(), ord);
+  return iter != ordinals.end() && *iter == ord;
 }
 
 template<class Iterator>

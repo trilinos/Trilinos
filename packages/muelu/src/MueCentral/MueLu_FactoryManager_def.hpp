@@ -46,8 +46,6 @@
 #ifndef MUELU_FACTORYMANAGER_DEF_HPP
 #define MUELU_FACTORYMANAGER_DEF_HPP
 
-#include "MueLu_FactoryManager_decl.hpp"
-
 #include <Teuchos_ParameterList.hpp>
 
 // Headers for factories used by default:
@@ -55,6 +53,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 // #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -76,11 +75,14 @@
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
+
+#include "MueLu_FactoryManager_decl.hpp"
 
 
 namespace MueLu {
@@ -157,6 +159,8 @@ namespace MueLu {
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
+      if (varName == "Coordinates")                     return GetFactory("Ptent");
+      if (varName == "Node Comm")                       return GetFactory("Ptent");
 
       if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -177,6 +181,7 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
+      if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
@@ -191,6 +196,7 @@ namespace MueLu {
       // Non-Galerkin
       if (varName == "K")                               return GetFactory("A");
       if (varName == "M")                               return GetFactory("A");
+      if (varName == "Mdiag")                           return GetFactory("A");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");

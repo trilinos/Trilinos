@@ -105,6 +105,8 @@ private:
     const RCP<const PreconditionerBase<Scalar> > &prec) {
 #ifdef TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPT(is_null(prec));
+#else
+    (void)prec;
 #endif
   }
 

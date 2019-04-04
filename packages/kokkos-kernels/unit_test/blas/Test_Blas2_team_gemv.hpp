@@ -87,7 +87,7 @@ namespace Test {
     char trans = mode[0];
 	
     //KokkosBlas::gemv(mode,a,A,x,b,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamGemm",  policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -98,7 +98,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
 
     //KokkosBlas::gemv(mode,a,A,c_x,b,y);    
-   Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamGemm", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -109,7 +109,7 @@ namespace Test {
     Kokkos::deep_copy(b_y,b_org_y);
 
     //KokkosBlas::gemv(mode,a,c_A,c_x,b,y);
-   Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamGemm", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::gemv(teamMember, trans, a, Kokkos::subview(c_A,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N),Kokkos::ALL()), c_x, b, Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < K-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -129,8 +129,8 @@ int test_team_gemv(const char* mode) {
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutLeft, Device> view_type_c_ll;
   Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,0,1024);
   Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,13,1024);
-  Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,1024,1024);
-  Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,132231,1024);
+  Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,124,124);
+  //Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,132231,1024);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -139,8 +139,8 @@ int test_team_gemv(const char* mode) {
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutRight, Device> view_type_c_lr;
   Test::impl_test_team_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,0,1024);
   Test::impl_test_team_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,13,1024);
-  Test::impl_test_team_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,1024,1024);
-  Test::impl_test_team_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,132231,1024);
+  Test::impl_test_team_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,124,124);
+  //Test::impl_test_team_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,132231,1024);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -149,13 +149,13 @@ int test_team_gemv(const char* mode) {
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_c_ls;
   Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,0,1024);
   Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,13,1024);
-  Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,1024,1024);
-  Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,132231,1024);
+  Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,124,124);
+  //Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,132231,1024);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(mode,1024,1024);
-  Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(mode,1024,1024);
+  Test::impl_test_team_gemv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(mode,124,124);
+  Test::impl_test_team_gemv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(mode,124,124);
 #endif
 
   return 1;

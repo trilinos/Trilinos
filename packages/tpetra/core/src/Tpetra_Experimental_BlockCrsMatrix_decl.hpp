@@ -130,18 +130,18 @@ namespace Experimental {
 /// }
 /// \endcode
 ///
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LO,
+         class GO,
+         class Node>
 class BlockCrsMatrix :
-  virtual public Tpetra::RowMatrix<Scalar, LO, GO, Node>,
-  virtual public Tpetra::DistObject<char, LO, GO, Node>
+  virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
+  virtual public ::Tpetra::DistObject<char, LO, GO, Node>
 {
 private:
-  typedef Tpetra::DistObject<char, LO, GO, Node> dist_object_type;
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
+  using dist_object_type = ::Tpetra::DistObject<char, LO, GO, Node>;
+  using BMV = BlockMultiVector<Scalar, LO, GO, Node>;
+  using STS = Teuchos::ScalarTraits<Scalar>;
 
 protected:
   //! Implementation detail; tells
@@ -152,7 +152,7 @@ public:
   //@{
 
   //! The type of entries in the matrix (that is, of each entry in each block).
-  typedef Scalar scalar_type;
+  using scalar_type = Scalar;
 
   /// \brief The implementation type of entries in the matrix.
   ///
@@ -160,7 +160,7 @@ public:
   /// work correctly for Scalar types like std::complex<T>, which lack
   /// the necessary CUDA device macros and volatile overloads to work
   /// correctly with Kokkos.
-  typedef typename BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type impl_scalar_type;
+  using impl_scalar_type = typename BMV::impl_scalar_type;
 
   //! The type of local indices.
   typedef LO local_ordinal_type;
@@ -182,9 +182,9 @@ public:
   //! The implementation of Map that this class uses.
   typedef ::Tpetra::Map<LO, GO, node_type> map_type;
   //! The implementation of MultiVector that this class uses.
-  typedef Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
+  typedef ::Tpetra::MultiVector<Scalar, LO, GO, node_type> mv_type;
   //! The implementation of CrsGraph that this class uses.
-  typedef Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
+  typedef ::Tpetra::CrsGraph<LO, GO, node_type> crs_graph_type;
 
   //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
@@ -337,7 +337,7 @@ public:
   LO getBlockSize () const { return blockSize_; }
 
   //! Get the (mesh) graph.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
+  virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
 
   const crs_graph_type & getCrsGraph () const { return graph_; }
 
@@ -357,8 +357,8 @@ public:
   /// Not Implemented
   void
   gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                   const MultiVector<Scalar,LO,GO,Node> &B,
-                   const MultiVector<Scalar,LO,GO,Node> &D,
+                   const ::Tpetra::MultiVector<Scalar,LO,GO,Node> &B,
+                   const ::Tpetra::MultiVector<Scalar,LO,GO,Node> &D,
                    const Scalar& dampingFactor,
                    const ESweepDirection direction,
                    const int numSweeps,
@@ -368,9 +368,9 @@ public:
   ///
   /// Not Implemented
   void
-  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
-                            const MultiVector<Scalar,LO,GO,Node>& B,
-                            const MultiVector<Scalar,LO,GO,Node>& D,
+  reorderedGaussSeidelCopy (::Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
+                            const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
+                            const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& D,
                             const Teuchos::ArrayView<LO>& rowIndices,
                             const Scalar& dampingFactor,
                             const ESweepDirection direction,
@@ -735,29 +735,48 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
+  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
+  //! Whether this class implements the old or new interface of DistObject.
+  virtual bool useNewInterface () {
+    return true;
+  }
+
+  /// \typedef buffer_device_type
+  /// \brief Kokkos::Device specialization for communication buffers.
+  ///
+  /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+  using buffer_device_type = typename DistObject<Scalar, LO, GO,
+                                                 Node>::buffer_device_type;
 
   virtual void
-  copyAndPermute (const Tpetra::SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
+  copyAndPermuteNew (const SrcDistObject& sourceObj,
+                     const size_t numSameIDs,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& permuteFromLIDs);
 
   virtual void
-  packAndPrepare (const Tpetra::SrcDistObject& source,
-                  const Teuchos::ArrayView<const LO>& exportLIDs,
-                  Teuchos::Array<packet_type>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Tpetra::Distributor& distor);
+  packAndPrepareNew (const SrcDistObject& sourceObj,
+                     const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& exportLIDs,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type>& exports,
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type> numPacketsPerLID,
+                     size_t& constantNumPackets,
+                     Distributor& /* distor */);
 
   virtual void
-  unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-                    const Teuchos::ArrayView<const packet_type> &imports,
-                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
-                    Tpetra::Distributor& distor,
-                    Tpetra::CombineMode CM);
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& importLIDs,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type> imports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
+                       const size_t constantNumPackets,
+                       Distributor& /* distor */,
+                       const CombineMode combineMode);
   //@}
 
 private:
@@ -886,47 +905,105 @@ private:
   // //! Clear the local error state and stream.
   // void clearLocalErrorStateAndStream ();
 
+  template<class Device>
+  struct is_cuda {
+#if defined(KOKKOS_ENABLE_CUDA)
+    // CudaHostPinnedSpace::execution_space ==
+    // HostSpace::execution_space.  That's OK; it's host memory, that
+    // just happens to be Cuda accessible.  But what if somebody gives
+    // us Device<Cuda, CudaHostPinnedSpace>?  It looks like they mean
+    // to run on device then, so we should sync to device.
+    static constexpr bool value =
+      std::is_same<typename Device::execution_space, Kokkos::Cuda>::value;
+#else
+    static constexpr bool value = false;
+#endif // defined(KOKKOS_ENABLE_CUDA)
+  };
+
 public:
   //! \name Implementation of "dual view semantics"
   //@{
+
+  //! Mark the matrix's valueas as modified in host space
+  inline void modify_host()
+  {
+    val_.modify_host();
+  }
+
+  //! Mark the matrix's valueas as modified in device space
+  inline void modify_device()
+  {
+    val_.modify_device();
+  }
 
   //! Mark the matrix's values as modified in the given memory space.
   template<class MemorySpace>
   void modify ()
   {
-    // It's legit to use a memory space, execution space, or
-    // Kokkos::Device specialization as the template parameter of
-    // Kokkos::DualView::modify.  That method just extracts the
-    // memory_space typedef of its template parameter anyway.
-    // However, insisting on a memory space avoids unnecessary
-    // instantiations.
-    val_.template modify<typename MemorySpace::memory_space> ();
+    if (is_cuda<MemorySpace>::value) {
+      this->modify_device ();
+    }
+    else {
+      this->modify_host ();
+    }
+  }
+
+  //! Whether the matrix's values need sync'ing to host space
+  inline bool need_sync_host() const
+  {
+    return val_.need_sync_host();
+  }
+
+  //! Whether the matrix's values need sync'ing to device space
+  inline bool need_sync_device() const
+  {
+    return val_.need_sync_device();
   }
 
   //! Whether the matrix's values need sync'ing to the given memory space.
   template<class MemorySpace>
   bool need_sync () const
   {
-    // It's legit to use a memory space, execution space, or
-    // Kokkos::Device specialization as the template parameter of
-    // Kokkos::DualView::need_sync.  That method just extracts the
-    // memory_space typedef of its template parameter anyway.
-    // However, insisting on a memory space avoids unnecessary
-    // instantiations.
-    return val_.template need_sync<typename MemorySpace::memory_space> ();
+    if (is_cuda<MemorySpace>::value) {
+      return this->need_sync_device ();
+    }
+    else {
+      return this->need_sync_host ();
+    }
+  }
+
+  //! Sync the matrix's values to host space
+  inline void sync_host()
+  {
+    val_.sync_host();
+  }
+
+  //! Sync the matrix's values to device space
+  inline void sync_device()
+  {
+    val_.sync_device();
   }
 
   //! Sync the matrix's values <i>to</i> the given memory space.
   template<class MemorySpace>
   void sync ()
   {
-    // It's legit to use a memory space, execution space, or
-    // Kokkos::Device specialization as the template parameter of
-    // Kokkos::DualView::sync.  That method just extracts the
-    // memory_space typedef of its template parameter anyway.
-    // However, insisting on a memory space avoids unnecessary
-    // instantiations.
-    val_.template sync<typename MemorySpace::memory_space> ();
+    if (is_cuda<MemorySpace>::value) {
+      this->sync_device ();
+    }
+    else {
+      this->sync_host ();
+    }
+  }
+
+  // \brief Get the host view of the matrix's values
+  typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host getValuesHost () const {
+    return val_.view_host();
+  }
+
+  // \brief Get the device view of the matrix's values
+  typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev getValuesDevice () const {
+    return val_.view_device();
   }
 
   /// \brief Get the host or device View of the matrix's values (\c val_).
@@ -943,10 +1020,21 @@ public:
   /// allocations generally are not lazy; that way, the host fill
   /// interface always works in a thread-parallel context without
   /// needing to synchronize on the allocation.
+  ///
+  /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
+  /// Hence I made the non-templated functions [getValuesHost and getValuesDevice; see above] const.
   template<class MemorySpace>
-  auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ())
+  typename std::conditional<is_cuda<MemorySpace>::value,
+                            typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev,
+                            typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host>::type
+  getValues ()
   {
-    return val_.template view<typename MemorySpace::memory_space> ();
+    // Unlike std::conditional, if_c has a select method.
+    return Kokkos::Impl::if_c<
+        is_cuda<MemorySpace>::value,
+        typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev,
+        typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host
+      >::select (this->getValuesDevice (), this->getValuesHost ());
   }
 
   //@}
@@ -1239,7 +1327,7 @@ public:
   /// same diagonal element.  You may combine these overlapping
   /// diagonal elements by doing an Export from the row Map Vector
   /// to a range Map Vector.
-  virtual void getLocalDiagCopy (Vector<Scalar,LO,GO,Node>& diag) const;
+  virtual void getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const;
 
   //@}
   //! \name Mathematical methods
@@ -1250,14 +1338,14 @@ public:
    *
    * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
    */
-  virtual void leftScale (const Vector<Scalar, LO, GO, Node>& x);
+  virtual void leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x);
 
   /**
    * \brief Scale the RowMatrix on the right with the given Vector x.
    *
    * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
    */
-  virtual void rightScale (const Vector<Scalar, LO, GO, Node>& x);
+  virtual void rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x);
 
   /// \brief The Frobenius norm of the matrix.
   ///
@@ -1267,7 +1355,7 @@ public:
   /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |A(i,j)|^2 }\f$.
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
-  virtual typename Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
+  virtual typename ::Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
   getFrobeniusNorm () const;
   //@}
 };

@@ -101,7 +101,7 @@ template <typename Scalar>
 void
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 setAppModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & /* me */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
     "Error - WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::setAppModel\n"
@@ -168,26 +168,34 @@ getIMEXVector(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(full == Teuchos::null)
-    return Teuchos::null;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vector;
+  if(full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 0) {
+    vector = full;
+  }
+  else {
 
-  if(numExplicitOnlyBlocks_==0)
-    return full;
+    RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
+      "  was given a VectorBase that could not be cast to a\n"
+      "  ProductVectorBase!\n");
+    int numBlocks = blk_full->productSpace()->numBlocks();
 
-  RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
-    rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
-  TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
-    "  was given a VectorBase that could not be cast to a\n"
-    "  ProductVectorBase!\n");
-  int numBlocks = blk_full->productSpace()->numBlocks();
+    // special case where the implicit terms are not blocked
+    if(numBlocks == numExplicitOnlyBlocks_+1)
+      vector = blk_full->getNonconstVectorBlock(numExplicitOnlyBlocks_);
 
-  // special case where the implicit terms are not blocked
-  if(numBlocks==numExplicitOnlyBlocks_+1)
-    return blk_full->getNonconstVectorBlock(numExplicitOnlyBlocks_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !( numExplicitOnlyBlocks_ == 0 || full == Teuchos::null ||
+         numBlocks == numExplicitOnlyBlocks_+1 ),
+      std::logic_error, "Error - Invalid values!\n");
+  }
 
-  TEUCHOS_ASSERT(false);
-  return Teuchos::null;
+  return vector;
 }
 
 template <typename Scalar>
@@ -198,26 +206,36 @@ getIMEXVector(const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(full == Teuchos::null)
-    return Teuchos::null;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > vector;
+  if(full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 0) {
+    vector = full;
+  }
+  else {
 
-  if(numExplicitOnlyBlocks_==0)
-    return full;
+    // special case where the implicit terms are not blocked
 
-  RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
-    rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(full);
-  TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
-    "  was given a VectorBase that could not be cast to a\n"
-    "  ProductVectorBase!\n");
-  int numBlocks = blk_full->productSpace()->numBlocks();
+    RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getIMEXVector()\n"
+      "  was given a VectorBase that could not be cast to a\n"
+      "  ProductVectorBase!\n");
+    int numBlocks = blk_full->productSpace()->numBlocks();
 
-  // special case where the implicit terms are not blocked
-  if(numBlocks==numExplicitOnlyBlocks_+1)
-    return blk_full->getVectorBlock(numExplicitOnlyBlocks_);
+    // special case where the implicit terms are not blocked
+    if(numBlocks == numExplicitOnlyBlocks_+1)
+      vector = blk_full->getVectorBlock(numExplicitOnlyBlocks_);
 
-  TEUCHOS_ASSERT(false);
-  return Teuchos::null;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !( numExplicitOnlyBlocks_ == 0 || full == Teuchos::null ||
+         numBlocks == numExplicitOnlyBlocks_+1 ),
+      std::logic_error, "Error - Invalid values!\n");
+  }
+
+  return vector;
 }
 
 template <typename Scalar>
@@ -229,23 +247,30 @@ getExplicitOnlyVector(
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null)
-    return Teuchos::null;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vector;
+  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 1) {
 
-  RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
-    rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
-  TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector()\n"
-    "  was given a VectorBase that could not be cast to a ProductVectorBase!\n"
-    "  full = " << *full << "\n");
+    // special case where the explicit terms are not blocked
 
-  // special case where the explicit terms are not blocked
-  if(numExplicitOnlyBlocks_==1)
-    return blk_full->getNonconstVectorBlock(0);
+    RCP<Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector\n"
+      "  given a VectorBase that could not be cast to a ProductVectorBase!\n"
+      "  full = " << *full << "\n");
 
-  TEUCHOS_ASSERT(false);
-  return Teuchos::null;
+    vector = blk_full->getNonconstVectorBlock(0);
+  }
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !( (numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) ||
+       (numExplicitOnlyBlocks_ == 1) ),
+    std::logic_error, "Error - Invalid values!\n");
+
+  return vector;
 }
 
 template <typename Scalar>
@@ -257,23 +282,31 @@ getExplicitOnlyVector(
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null)
-    return Teuchos::null;
+  RCP<const Thyra::VectorBase<Scalar> > vector;
+  if(numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) {
+    vector = Teuchos::null;
+  }
+  else if(numExplicitOnlyBlocks_ == 1) {
 
-  RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
-    rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(full);
-  TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector()\n"
-    "  was given a VectorBase that could not be cast to a ProductVectorBase!\n"
-    "  full = " << *full << "\n");
+    // special case where the explicit terms are not blocked
 
-  // special case where the explicit terms are not blocked
-  if(numExplicitOnlyBlocks_==1)
-    return blk_full->getVectorBlock(0);
+    RCP<const Thyra::ProductVectorBase<Scalar> > blk_full =
+      rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(full);
+    TEUCHOS_TEST_FOR_EXCEPTION( blk_full == Teuchos::null, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::getExplicitOnlyVector\n"
+      "  given a VectorBase that could not be cast to a ProductVectorBase!\n"
+      "  full = " << *full << "\n");
 
-  TEUCHOS_ASSERT(false);
-  return Teuchos::null;
+    vector = blk_full->getVectorBlock(0);
 
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !( (numExplicitOnlyBlocks_ == 0 || full == Teuchos::null) ||
+       (numExplicitOnlyBlocks_ == 1) ),
+    std::logic_error, "Error - Invalid values!\n");
+
+  return vector;
 }
 
 template <typename Scalar>

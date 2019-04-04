@@ -179,7 +179,7 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
                    "X and Y must have the same rank.");
     static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby<rank-2>::axpby: "
                    "X and Y must have rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::axpby<> ETI specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XMV).name(),typeid(BV).name(),typeid(YMV).name());
@@ -213,6 +213,7 @@ struct Axpby<AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
         Axpby_MV_Invoke_Left<AV, XMV, BV, YMV, index_type> >::type Axpby_MV_Invoke_Layout;
       Axpby_MV_Invoke_Layout::run(av, X, bv, Y, a, b);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -247,7 +248,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
                    "X and Y must have the same rank.");
     static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby::axpby (MV): "
                    "X and Y must have rank 2.");
-
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
 
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
@@ -307,6 +308,7 @@ struct Axpby<typename XMV::non_const_value_type, XMV,
       Axpby_MV_Invoke_Layout::run(alpha, X,
                                                           beta, Y, a, b);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 
@@ -339,6 +341,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
     static_assert (YV::Rank == 1, "KokkosBlas::Impl::Axpby<rank-1>::axpby: "
                    "X and Y must have rank 1.");
 
+    Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::axpby[ETI]":"KokkosBlas::axpby[noETI]");
     #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
     if(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::axpby<> ETI specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XV).name(),typeid(BV).name(),typeid(YV).name());
@@ -386,6 +389,7 @@ struct Axpby<typename XV::non_const_value_type, XV,
         typename YV::non_const_value_type, YV,
         index_type> (alpha, X, beta, Y, 0, a, b);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif //!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY

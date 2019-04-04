@@ -33,6 +33,10 @@
 #ifndef STK_SIMD_VIEW_H
 #define STK_SIMD_VIEW_H
 
+#include <Kokkos_Macros.hpp>
+#ifndef KOKKOS_INVALID_INDEX
+#define KOKKOS_INVALID_INDEX 0
+#endif
 #include <Kokkos_Core.hpp>
 #include <Kokkos_View.hpp>
 #include <stk_simd/Simd.hpp>
@@ -281,14 +285,14 @@ class View
   template< typename Label >
   explicit STK_INLINE
   View( const Label & arg_label
-      , const size_t arg_N0 = 0 
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0
+      , const size_t arg_N0 = KOKKOS_INVALID_INDEX 
+      , const size_t arg_N1 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N2 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N3 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N4 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N5 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N6 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N7 = KOKKOS_INVALID_INDEX
       )
     : Kokkos::View< DataType, array_layout, execution_space, memory_traits >( arg_label,
                                                                               arg_N0 , arg_N1 , arg_N2 , arg_N3,
@@ -306,7 +310,7 @@ class View
   template <typename I0>
   STK_FORCE_INLINE
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && is_layout_right_simd, simd_reference_type>::type 
-  operator() (const I0& i0) const {
+  operator() (const I0 i0) const {
     static_assert(rank==1, VALID_NUM_INDICES_ERROR_MSG);
     return stk::simd::simd_ref_cast(this->data()[simd_width*int_index(i0)]);
   }
@@ -314,7 +318,7 @@ class View
   template <typename I0>
   STK_FORCE_INLINE
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && !is_layout_right_simd, simd_reference_type >::type 
-  operator() (const I0& i0) const {
+  operator() (const I0 i0) const {
     static_assert(rank==1, VALID_NUM_INDICES_ERROR_MSG);
     static_assert(is_valid_simd_layout, VALID_SIMD_ERROR_MSG);
     return stk::simd::simd_ref_cast((*this)(simd_width*int_index(i0)));
@@ -325,16 +329,16 @@ class View
   template< typename I0, typename I1 >
   STK_FORCE_INLINE
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && is_layout_right_simd, simd_reference_type >::type 
-  operator() (const I0& i0, const I1& i1) const {
+  operator() (const I0 i0, const I1 i1) const {
     static_assert(rank==2, VALID_NUM_INDICES_ERROR_MSG);
     static_assert( !std::is_same<I1, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
-    return stk::simd::simd_ref_cast(this->data()[simd_width*(i1 + this->dimension_1()*int_index(i0))]);
+    return stk::simd::simd_ref_cast(this->data()[simd_width*(i1 + this->extent(1)*int_index(i0))]);
   }
 
   template< typename I0, typename I1 >
   STK_FORCE_INLINE
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && !is_layout_right_simd, simd_reference_type >::type 
-  operator() (const I0& i0, const I1& i1) const {
+  operator() (const I0 i0, const I1 i1) const {
     static_assert(rank==2, VALID_NUM_INDICES_ERROR_MSG);
     static_assert( !std::is_same<I1, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
     static_assert(is_valid_simd_layout, VALID_SIMD_ERROR_MSG);
@@ -346,19 +350,19 @@ class View
   template< typename I0, typename I1, typename I2 >
   STK_FORCE_INLINE
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && is_layout_right_simd, simd_reference_type >::type 
-  operator() (const I0& i0, const I1& i1, const I2& i2) const {
+  operator() (const I0 i0, const I1 i1, const I2 i2) const {
     static_assert(rank==3, VALID_NUM_INDICES_ERROR_MSG);
     static_assert( !std::is_same<I1, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
     static_assert( !std::is_same<I2, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
-    return stk::simd::simd_ref_cast(this->data()[simd_width*(i2 + this->dimension_2()*(
-                                                             i1 + this->dimension_1()*(
+    return stk::simd::simd_ref_cast(this->data()[simd_width*(i2 + this->extent(2)*(
+                                                             i1 + this->extent(1)*(
                                                              int_index(i0))))]);
   }
 
   template< typename I0, typename I1, typename I2 >
   STK_FORCE_INLINE
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && !is_layout_right_simd, simd_reference_type >::type 
-  operator() (const I0& i0, const I1& i1, const I2& i2) const {
+  operator() (const I0 i0, const I1 i1, const I2 i2) const {
     static_assert(rank==3, VALID_NUM_INDICES_ERROR_MSG);
     static_assert( !std::is_same<I1, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
     static_assert( !std::is_same<I2, stk::simd::Index>::value, VALID_INDEX_ERROR_MSG);
@@ -368,7 +372,7 @@ class View
 
   STK_FORCE_INLINE
   size_t simd_dimension() const {
-    return is_device_gpu ? this->dimension_0() : simd_pad<base_type>( this->dimension_0() ) / simd_width;
+    return is_device_gpu ? this->extent(0) : simd_pad<base_type>( this->extent(0) ) / simd_width;
   }
 };
 

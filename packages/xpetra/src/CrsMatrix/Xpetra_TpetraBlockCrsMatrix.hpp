@@ -319,6 +319,15 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) {
+      XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel");
+      Teuchos::LabeledObject::setObjectLabel(objectLabel);
+      mtx_->setObjectLabel(objectLabel);
+    }
+    //@}
+
     //! Deep copy constructor
     TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
       : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
@@ -368,6 +377,10 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
+
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix::replaceDiag: function not implemented");
+    }
 
     //! Left scale operator with given vector values
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
@@ -733,6 +746,8 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
+    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
 
@@ -1080,6 +1095,8 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
+
+    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
 
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }

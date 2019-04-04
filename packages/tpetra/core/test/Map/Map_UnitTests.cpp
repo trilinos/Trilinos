@@ -127,7 +127,7 @@ namespace {
       TEST_EQUALITY( m->getMinAllGlobalIndex(),
 		     static_cast<GO> (0) );
       TEST_EQUALITY( m->getMaxAllGlobalIndex(),
-		     static_cast<size_t> (numImages-1) );
+		     static_cast<GO> (numImages-1) );
     }
 
     // Make sure that the test passed on all MPI processes.

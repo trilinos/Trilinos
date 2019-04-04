@@ -2,16 +2,21 @@
     ShyLU FROSch configuration.
 */
 
-/* define if we want to use MPI */
+#cmakedefine HAVE_SHYLU_DDFROSCH_AMESOS
+
+#cmakedefine HAVE_SHYLU_DDFROSCH_BELOS
+
 #cmakedefine HAVE_SHYLU_DDFROSCH_EPETRA
 
 #cmakedefine HAVE_SHYLU_DDFROSCH_EPETRAEXT
 
-#cmakedefine HAVE_SHYLU_DDKOKKOSCONTAINERS
+#cmakedefine HAVE_SHYLU_DDFROSCH_MUELU
 
-#cmakedefine HAVE_SHYLU_DDKOKKOSCORE
+#cmakedefine HAVE_SHYLU_DDFROSCH_STRATIMIKOS
 
-#cmakedefine HAVE_SHYLU_DDFROSCH_TPETRA
+#cmakedefine HAVE_SHYLU_DDFROSCH_THYRA
 
 #cmakedefine HAVE_SHYLU_DDFROSCH_ZOLTAN2
 
+
+#cmakedefine HAVE_SHYLU_DDFROSCH_HDF5

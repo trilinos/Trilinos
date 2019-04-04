@@ -93,7 +93,7 @@ fi
 
 if [ "$TRILINOS_CHECKIN_TEST_SEMS_SKIP_MODULE_LOAD" == "" ] ; then
   export TRILINOS_SEMS_DEV_ENV_VERBOSE=1
-  source $TRILINOS_DIR/cmake/std/GCC-4.8.4-OpenMPI-1.10.1-MpiReleaseDebugSharedPtOpenMP_env.sh
+  source $TRILINOS_DIR/cmake/load_sems_dev_env.sh ""
   # NOTE: Above, must pass empty arg "" or bash will pass in "$@" which is
   # bad!
 else

@@ -37,12 +37,12 @@ namespace Sacado {
 }
 #endif
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 namespace Sacado {
   namespace Impl {
     const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host = 0;
     const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device = 0;
-#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
+#ifdef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
     __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device = 0;
 #endif
   }

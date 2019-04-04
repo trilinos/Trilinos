@@ -47,7 +47,7 @@
 PyTrilinos.NOX.Solver is the python interface to the Solver namespace
 of the Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.Solver is to provide solver manager classes for
 NOX.  NOX.Solver provides the following user-level classes:
@@ -81,7 +81,7 @@ in addition to the following factory function:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_NOX_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 

@@ -27,7 +27,7 @@ void run(const int N) {
 int main(int argc, char *argv[]) {
   
   Kokkos::initialize(argc, argv);
-
+#if !defined(__CUDA_ARCH__)
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
   const int N[1] = { 128*128 };
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
       run<Algo::Gemv::Blocked>(N[i]);
     }
   }
-
+#endif
   Kokkos::finalize();
   
   return 0;

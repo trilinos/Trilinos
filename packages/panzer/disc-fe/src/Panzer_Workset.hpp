@@ -65,7 +65,7 @@ namespace panzer {
   struct WorksetNeeds;
 
   template<typename LO, typename GO>
-  class LocalMeshPartition;
+  struct LocalMeshPartition;
 
   class SubcellConnectivity;
 
@@ -88,7 +88,7 @@ namespace panzer {
     { }
 
     //! Constructs the workset details from a given chunk of the mesh
-    void setup(const panzer::LocalMeshPartition<int,int> & partition, const panzer::WorksetNeeds & needs);
+    void setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition, const panzer::WorksetNeeds & needs);
 
     void setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
                     const Kokkos::View<double***,PHX::Device> & cell_vertices,

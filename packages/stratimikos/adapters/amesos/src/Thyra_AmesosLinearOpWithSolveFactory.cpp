@@ -166,7 +166,7 @@ AmesosLinearOpWithSolveFactory::createOp() const
 void AmesosLinearOpWithSolveFactory::initializeOp(
   const RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
   ,LinearOpWithSolveBase<double>                                   *Op
-  ,const ESupportSolveUse                                          supportSolveUse
+  ,const ESupportSolveUse                                          /* supportSolveUse */
   ) const
 {
   using Teuchos::outArg;
@@ -357,14 +357,14 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   amesosOp->setVerbLevel(this->getVerbLevel());
 }
 
-bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
+bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType /* precOpType */) const
 {
   return false;
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   const RCP<const LinearOpSourceBase<double> >       &fwdOpSrc
-  ,const RCP<const PreconditionerBase<double> >      &prec
+  ,const RCP<const PreconditionerBase<double> >      &/* prec */
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
@@ -379,7 +379,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   const RCP<const LinearOpSourceBase<double> >       &fwdOpSrc
-  ,const RCP<const LinearOpSourceBase<double> >      &approxFwdOpSrc
+  ,const RCP<const LinearOpSourceBase<double> >      &/* approxFwdOpSrc */
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
@@ -397,7 +397,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   ,RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
   ,RCP<const PreconditionerBase<double> >    *prec
   ,RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
-  ,ESupportSolveUse                                           *supportSolveUse
+  ,ESupportSolveUse                                           * /* supportSolveUse */
   ) const
 {
 #ifdef TEUCHOS_DEBUG

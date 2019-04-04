@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,8 +32,10 @@
 
 #include <Ionit_Initializer.h>
 #include <Ioss_DBUsage.h>
+#include <Ioss_Hex8.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Region.h>
+#include <Ioss_Shell4.h>
 #include <exo_fpp/Iofx_DatabaseIO.h>
 #include <gtest/gtest.h>
 #include <mpi.h>
@@ -69,7 +71,7 @@ namespace {
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
     Iofx::DatabaseIO *db_io =
-        new Iofx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+        new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
     return db_io;
   }
 
@@ -86,7 +88,7 @@ namespace {
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
     Iofx::DatabaseIO *db_io =
-        new Iofx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+        new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
     return db_io;
   }
 
@@ -103,7 +105,7 @@ namespace {
     EXPECT_EQ(2u, element_blocks.size());
 
     std::vector<std::string>      gold_strings{"block_2", "block_1"};
-    std::vector<std::string>      gold_top_names{"hex8", "shell4"};
+    std::vector<std::string>      gold_top_names{Ioss::Hex8::name, Ioss::Shell4::name};
     std::vector<int>              parametric_dim{3, 2};
     std::vector<int>              num_vertices{8, 4};
     std::vector<int>              number_nodes{8, 4};
@@ -168,7 +170,7 @@ namespace {
     Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
     std::vector<double> coordinates;
     nb->get_field_data("mesh_model_coordinates", coordinates);
-    int64_t num_nodes   = nb->get_property("entity_count").get_int();
+    int64_t num_nodes   = nb->entity_count();
     int64_t spatial_dim = nb->get_property("component_degree").get_int();
 
     size_t num_coordinates = num_nodes * spatial_dim;
@@ -233,8 +235,8 @@ namespace {
 
       ASSERT_EQ(gold_sideset_conn[i].size(), connectivity.size());
       for (size_t j = 0; j < connectivity.size(); ++j) {
-        EXPECT_EQ(gold_sideset_conn[i][j], connectivity[j]) << sidesets[i]->name() << " conn index "
-                                                            << j << " for sideset " << i;
+        EXPECT_EQ(gold_sideset_conn[i][j], connectivity[j])
+            << sidesets[i]->name() << " conn index " << j << " for sideset " << i;
       }
     }
   }
@@ -295,7 +297,7 @@ namespace {
     std::string NodeBlockName = "nodeblock_1";
 
     auto    nb          = input_region.get_node_blocks()[0];
-    int64_t num_nodes   = nb->get_property("entity_count").get_int();
+    int64_t num_nodes   = nb->entity_count();
     int     spatial_dim = nb->get_property("component_degree").get_int();
 
     Ioss::NodeBlock *output_node_block =
@@ -311,7 +313,7 @@ namespace {
       std::string name              = input_element_blocks[blk]->name();
       std::string exotype           = topology->name();
       int         nodes_per_element = topology->number_nodes();
-      int64_t     num_elements = input_element_blocks[blk]->get_property("entity_count").get_int();
+      int64_t     num_elements      = input_element_blocks[blk]->entity_count();
 
       Ioss::ElementBlock *output_element_block =
           new Ioss::ElementBlock(db_out, name, exotype, num_elements);
@@ -328,8 +330,8 @@ namespace {
 
     const std::vector<Ioss::NodeSet *> nodesets_input = input_region.get_nodesets();
     for (size_t i = 0; i < nodesets_input.size(); ++i) {
-      std::string nodeset_name        = nodesets_input[i]->name();
-      int64_t number_nodes_in_nodeset = nodesets_input[i]->get_property("entity_count").get_int();
+      std::string nodeset_name            = nodesets_input[i]->name();
+      int64_t     number_nodes_in_nodeset = nodesets_input[i]->entity_count();
 
       Ioss::NodeSet *const nodeset =
           new Ioss::NodeSet(db_out, nodeset_name, number_nodes_in_nodeset);
@@ -340,19 +342,20 @@ namespace {
 
     const std::vector<Ioss::SideSet *> sidesets_input = input_region.get_sidesets();
     for (size_t i = 0; i < sidesets_input.size(); ++i) {
-      std::string sideset_name        = sidesets_input[i]->name();
-      int64_t number_nodes_in_sideset = sidesets_input[i]->get_property("entity_count").get_int();
+      std::string sideset_name            = sidesets_input[i]->name();
+      int64_t     number_nodes_in_sideset = sidesets_input[i]->entity_count();
 
       Ioss::SideSet *const sideset_output = new Ioss::SideSet(db_out, sideset_name);
       output_region.add(sideset_output);
 
       const std::vector<Ioss::SideBlock *> &side_blocks = sidesets_input[i]->get_side_blocks();
       for (size_t k = 0; k < side_blocks.size(); ++k) {
-        std::string      topo_name        = side_blocks[k]->topology()->name();
-        int64_t          side_count       = side_blocks[k]->get_property("entity_count").get_int();
-        std::string      parent_topo_name = side_blocks[k]->parent_element_topology()->name();
-        Ioss::SideBlock *side_block =
-            new Ioss::SideBlock(db_out, topo_name, topo_name, parent_topo_name, side_count);
+        const std::string &topo_name        = side_blocks[k]->topology()->name();
+        int64_t            side_count       = side_blocks[k]->entity_count();
+        const std::string &parent_topo_name = side_blocks[k]->parent_element_topology()->name();
+        const std::string &side_block_name  = side_blocks[k]->name();
+        Ioss::SideBlock *  side_block =
+            new Ioss::SideBlock(db_out, side_block_name, topo_name, parent_topo_name, side_count);
 
         sideset_output->add(side_block);
 
@@ -427,4 +430,4 @@ namespace {
     output_region.end_mode(Ioss::STATE_MODEL);
   }
   // EndDocTest2
-}
+} // namespace

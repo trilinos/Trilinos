@@ -192,7 +192,7 @@ namespace LOCA {
        */
       virtual void
       preProcessContinuationStep(
-               LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+               LOCA::Abstract::Iterator::StepStatus /* stepStatus */) {}
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
@@ -201,7 +201,7 @@ namespace LOCA {
        */
       virtual void
       postProcessContinuationStep(
-               LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+               LOCA::Abstract::Iterator::StepStatus /* stepStatus */) {}
 
     }; // Class ConstraintInterface
 

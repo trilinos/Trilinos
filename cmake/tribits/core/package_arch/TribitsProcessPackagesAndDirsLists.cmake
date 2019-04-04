@@ -357,7 +357,7 @@ FUNCTION(TRIBITS_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED  UPSTREAM_PACKAGE_NAME_IN  P
     SET(IMPLICIT_PACKAGE_ENABLE_ALLOWED TRUE)
   ELSE()
     IF (UPSTREAM_PACKAGE_NAME_IN)
-      MESSAGE("-- " "WARNING: Not Setting ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME_IN}=ON"
+      MESSAGE("-- " "NOTE: Not Setting ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME_IN}=ON"
         " even though ${UPSTREAM_PACKAGE_NAME_IN} has an optional dependence on"
         " ${PACKAGE_NAME_IN} because ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=OFF" )
     ENDIF()
@@ -548,7 +548,7 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(
             "\n***"
-            "\n*** WARNING: Excluding package ${TRIBITS_PACKAGE} because ${PACKAGE_ABS_DIR}"
+            "\n*** NOTE: Excluding package ${TRIBITS_PACKAGE} because ${PACKAGE_ABS_DIR}"
               " does not exist!"
             "\n***\n" )
         ENDIF()

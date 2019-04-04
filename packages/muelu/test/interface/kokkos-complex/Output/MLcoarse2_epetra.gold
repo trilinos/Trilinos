@@ -10,16 +10,19 @@ Level 0
   A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  
 Level 1
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
+ Prolongator smoothing (MueLu::SaPFactory_kokkos)
+  Build (MueLu::TentativePFactory_kokkos)
+   Build (MueLu::UncoupledAggregationFactory_kokkos)
+    Build (MueLu::CoalesceDropFactory_kokkos)
      Build (MueLu::AmalgamationFactory)
      [empty list]
      
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    filtered matrix: use lumping = 1   [default]
+    filtered matrix: reuse graph = 1   [default]
+    filtered matrix: reuse eigenvalue = 1   [default]
     lightweight wrap = 1   [default]
     
    aggregation: max agg size = -1   [default]
@@ -27,24 +30,20 @@ Level 1
    aggregation: max selected neighbors = 0   [unused]
    aggregation: ordering = natural   [unused]
    aggregation: enable phase 1 = 1   [default]
+   aggregation: phase 1 algorithm = Serial   [default]
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
-   aggregation: use interface aggregation = 0   [default]
-   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   Interface aggregate map name =    [default]
-   Interface aggregate map factory =    [default]
    
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+   Build (MueLu::CoarseMapFactory_kokkos)
+   [empty list]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -78,16 +77,19 @@ Level 1
   A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  
 Level 2
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
+ Prolongator smoothing (MueLu::SaPFactory_kokkos)
+  Build (MueLu::TentativePFactory_kokkos)
+   Build (MueLu::UncoupledAggregationFactory_kokkos)
+    Build (MueLu::CoalesceDropFactory_kokkos)
      Build (MueLu::AmalgamationFactory)
      [empty list]
      
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    filtered matrix: use lumping = 1   [default]
+    filtered matrix: reuse graph = 1   [default]
+    filtered matrix: reuse eigenvalue = 1   [default]
     lightweight wrap = 1   [default]
     
    aggregation: max agg size = -1   [default]
@@ -95,27 +97,23 @@ Level 2
    aggregation: max selected neighbors = 0   [unused]
    aggregation: ordering = natural   [unused]
    aggregation: enable phase 1 = 1   [default]
+   aggregation: phase 1 algorithm = Serial   [default]
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
-   aggregation: use interface aggregation = 0   [default]
-   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   Interface aggregate map name =    [default]
-   Interface aggregate map factory =    [default]
    
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
    
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+   Build (MueLu::CoarseMapFactory_kokkos)
+   [empty list]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -149,16 +147,19 @@ Level 2
   A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  
 Level 3
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
+ Prolongator smoothing (MueLu::SaPFactory_kokkos)
+  Build (MueLu::TentativePFactory_kokkos)
+   Build (MueLu::UncoupledAggregationFactory_kokkos)
+    Build (MueLu::CoalesceDropFactory_kokkos)
      Build (MueLu::AmalgamationFactory)
      [empty list]
      
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    filtered matrix: use lumping = 1   [default]
+    filtered matrix: reuse graph = 1   [default]
+    filtered matrix: reuse eigenvalue = 1   [default]
     lightweight wrap = 1   [default]
     
    aggregation: max agg size = -1   [default]
@@ -166,27 +167,23 @@ Level 3
    aggregation: max selected neighbors = 0   [unused]
    aggregation: ordering = natural   [unused]
    aggregation: enable phase 1 = 1   [default]
+   aggregation: phase 1 algorithm = Serial   [default]
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
-   aggregation: use interface aggregation = 0   [default]
-   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   Interface aggregate map name =    [default]
-   Interface aggregate map factory =    [default]
    
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
    
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+   Build (MueLu::CoarseMapFactory_kokkos)
+   [empty list]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -220,16 +217,19 @@ Level 3
   A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  
 Level 4
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
+ Prolongator smoothing (MueLu::SaPFactory_kokkos)
+  Build (MueLu::TentativePFactory_kokkos)
+   Build (MueLu::UncoupledAggregationFactory_kokkos)
+    Build (MueLu::CoalesceDropFactory_kokkos)
      Build (MueLu::AmalgamationFactory)
      [empty list]
      
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    filtered matrix: use lumping = 1   [default]
+    filtered matrix: reuse graph = 1   [default]
+    filtered matrix: reuse eigenvalue = 1   [default]
     lightweight wrap = 1   [default]
     
    aggregation: max agg size = -1   [default]
@@ -237,27 +237,23 @@ Level 4
    aggregation: max selected neighbors = 0   [unused]
    aggregation: ordering = natural   [unused]
    aggregation: enable phase 1 = 1   [default]
+   aggregation: phase 1 algorithm = Serial   [default]
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
-   aggregation: use interface aggregation = 0   [default]
-   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   Interface aggregate map name =    [default]
-   Interface aggregate map factory =    [default]
    
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
    
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+   Build (MueLu::CoarseMapFactory_kokkos)
+   [empty list]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   
@@ -291,16 +287,19 @@ Level 4
   A = Teuchos::RCP<MueLu::FactoryBase const>{ptr=0,node=0,strong_count=0,weak_count=0}
  
 Level 5
- Prolongator smoothing (MueLu::SaPFactory)
-  Build (MueLu::TentativePFactory)
-   Build (MueLu::UncoupledAggregationFactory)
-    Build (MueLu::CoalesceDropFactory)
+ Prolongator smoothing (MueLu::SaPFactory_kokkos)
+  Build (MueLu::TentativePFactory_kokkos)
+   Build (MueLu::UncoupledAggregationFactory_kokkos)
+    Build (MueLu::CoalesceDropFactory_kokkos)
      Build (MueLu::AmalgamationFactory)
      [empty list]
      
     aggregation: drop tol = 0   [default]
     aggregation: Dirichlet threshold = 0   [default]
     aggregation: drop scheme = classical   [default]
+    filtered matrix: use lumping = 1   [default]
+    filtered matrix: reuse graph = 1   [default]
+    filtered matrix: reuse eigenvalue = 1   [default]
     lightweight wrap = 1   [default]
     
    aggregation: max agg size = -1   [default]
@@ -308,27 +307,23 @@ Level 5
    aggregation: max selected neighbors = 0   [unused]
    aggregation: ordering = natural   [unused]
    aggregation: enable phase 1 = 1   [default]
+   aggregation: phase 1 algorithm = Serial   [default]
    aggregation: enable phase 2a = 1   [default]
    aggregation: enable phase 2b = 1   [default]
    aggregation: enable phase 3 = 1   [default]
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
-   aggregation: use interface aggregation = 0   [default]
-   aggregation: error on nodes with no on-rank neighbors = 0   [default]
    OnePt aggregate map name =    [default]
    OnePt aggregate map factory =    [default]
-   Interface aggregate map name =    [default]
-   Interface aggregate map factory =    [default]
    
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
    
-   Build (MueLu::CoarseMapFactory)
-   Striding info = {}   [default]
-   Strided block id = -1   [default]
-   Domain GID offsets = {0}   [default]
+   Build (MueLu::CoarseMapFactory_kokkos)
+   [empty list]
    
   tentative: calculate qr = 1   [default]
+  tentative: build coarse coordinates = 1   [default]
   matrixmatrix: kernel params -> 
    [empty list]
   

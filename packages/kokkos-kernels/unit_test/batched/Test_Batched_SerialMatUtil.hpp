@@ -69,11 +69,22 @@ namespace Test {
 
     inline
     int run() {
+      typedef typename ViewType::value_type value_type;
+      std::string name_region("KokkosBatched::Test::SerialMatUtil");
+      std::string name_value_type = ( std::is_same<value_type,float>::value ? "::Float" : 
+                                      std::is_same<value_type,double>::value ? "::Double" :
+                                      std::is_same<value_type,Kokkos::complex<float> >::value ? "::ComplexFloat" :
+                                      std::is_same<value_type,Kokkos::complex<double> >::value ? "::ComplexDouble" : "::UnknownValueType" );                               
+      std::string name_work_tag = ( std::is_same<AlgoTagType,KokkosKernelTag>::value ? "::KokkosBatched" :
+                                    std::is_same<AlgoTagType,NaiveTag>::value ? "::Naive" : "::UnknownWorkTag");
+      std::string name_test_id = ( TestID == BatchedSet ? "Set" : 
+                                   TestID == BatchedScale ? "Scale" : "UnknownTest");
+      std::string name = name_region + name_value_type + name_work_tag + name_test_id;
+      Kokkos::Profiling::pushRegion( name.c_str() );
       Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.extent(0));
-      Kokkos::parallel_for(policy, *this);
+      Kokkos::parallel_for(name.c_str(), policy, *this);
+      Kokkos::Profiling::popRegion();
       return 0; 
-      //MD 08/2017 NOTE: compilation was failing with werror.
-      //I added dummy return.
     }      
   };
 

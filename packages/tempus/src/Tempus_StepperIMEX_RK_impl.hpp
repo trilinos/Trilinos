@@ -25,16 +25,11 @@ template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
-StepperIMEX_RK<Scalar>::StepperIMEX_RK(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  std::string stepperType)
+StepperIMEX_RK<Scalar>::StepperIMEX_RK()
 {
-  this->setTableaus(Teuchos::null, stepperType);
+  this->setTableaus(Teuchos::null, "IMEX RK SSP2");
   this->setParameterList(Teuchos::null);
-  this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
-  this->initialize();
+  this->modelWarning();
 }
 
 
@@ -45,10 +40,32 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
 {
   this->setTableaus(pList, "IMEX RK SSP2");
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+
+
+template<class Scalar>
+StepperIMEX_RK<Scalar>::StepperIMEX_RK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  std::string stepperType)
+{
+  this->setTableaus(Teuchos::null, stepperType);
+  this->setParameterList(Teuchos::null);
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -60,10 +77,14 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
 {
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -125,7 +146,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     pl->set<std::string>("Stepper Type", "SDIRK 2 Stage 3rd order");
     pl->set("Solver Name", "");
-    Scalar gamma = 1.0 - 1.0/ST::squareroot(2.0);
+    const Scalar one = ST::one();
+    Scalar gamma = one - one/ST::squareroot(2*one);
     pl->set<double>("gamma",gamma);
     this->setImplicitTableau("SDIRK 2 Stage 3rd order", pl);
 
@@ -134,7 +156,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(
   } else if (stepperType == "IMEX RK ARS 233") {
     using std::to_string;
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    const Scalar gammaN = (3.0+ST::squareroot(3.0))/(6.0);
+    const Scalar one = ST::one();
+    const Scalar gammaN = (3*one+ST::squareroot(3*one))/(6*one);
     std::string gamma      = to_string(        gammaN);
     std::string one_gamma  = to_string(1.0-    gammaN);
     std::string one_2gamma = to_string(1.0-2.0*gammaN);
@@ -345,18 +368,18 @@ void StepperIMEX_RK<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (this->stepperObserver_ == Teuchos::null) {
       stepperIMEX_RKObserver_ =
         Teuchos::rcp(new StepperIMEX_RKObserver<Scalar>());
-      stepperObserver_ =
+      this->stepperObserver_ =
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
           (stepperIMEX_RKObserver_);
      }
   } else {
-    stepperObserver_ = obs;
+    this->stepperObserver_ = obs;
     stepperIMEX_RKObserver_ =
       Teuchos::rcp_dynamic_cast<StepperIMEX_RKObserver<Scalar> >
-        (stepperObserver_);
+        (this->stepperObserver_);
   }
 }
 
@@ -375,6 +398,11 @@ void StepperIMEX_RK<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperIMEX_RK::initialize()\n");
 
+  this->setTableaus(this->stepperPL_);
+  this->setParameterList(this->stepperPL_);
+  this->setSolver();
+  this->setObserver();
+
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
   stageF_.resize(numStages);
@@ -388,6 +416,53 @@ void StepperIMEX_RK<Scalar>::initialize()
 
   xTilde_ = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+}
+
+
+template<class Scalar>
+void StepperIMEX_RK<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  int numStates = solutionHistory->getNumStates();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
+    "Error - setInitialConditions() needs at least one SolutionState\n"
+    "        to set the initial condition.  Number of States = " << numStates);
+
+  if (numStates > 1) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperIMEX_RK::setInitialConditions()");
+    *out << "Warning -- SolutionHistory has more than one state!\n"
+         << "Setting the initial conditions on the currentState.\n"<<std::endl;
+  }
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+
+  // Use x from inArgs as ICs, if needed.
+  auto inArgs = this->wrapperModel_->getNominalValues();
+  if (x == Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION( (x == Teuchos::null) &&
+      (inArgs.get_x() == Teuchos::null), std::logic_error,
+      "Error - setInitialConditions() needs the ICs from the SolutionHistory\n"
+      "        or getNominalValues()!\n");
+
+    x = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
+    initialState->setX(x);
+  }
+
+  // Perform IC Consistency
+  std::string icConsistency = this->getICConsistency();
+  TEUCHOS_TEST_FOR_EXCEPTION(icConsistency != "None", std::logic_error,
+    "Error - setInitialConditions() requested a consistency of '"
+             << icConsistency << "'.\n"
+    "        But only  'None' is available for IMEX-RK!\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( this->getUseFSAL(), std::logic_error,
+    "Error - The First-Step-As-Last (FSAL) principle is not "
+         << "available for IMEX-RK.  Set useFSAL=false.\n");
 }
 
 
@@ -476,7 +551,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -491,7 +566,6 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    Thyra::SolveStatus<Scalar> sStatus;
     stageX_ = workingState->getX();
     Thyra::assign(stageX_.ptr(), *(currentState->getX()));
 
@@ -526,32 +600,23 @@ void StepperIMEX_RK<Scalar>::takeStep(
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
-        Scalar alpha = 1.0/(dt*A(i,i));
+        const Scalar alpha = Scalar(1.0)/(dt*A(i,i));
+        const Scalar beta  = Scalar(1.0);
 
         // Setup TimeDerivative
         Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
           Teuchos::rcp(new StepperIMEX_RKTimeDerivative<Scalar>(
             alpha, xTilde_.getConst()));
 
-        // Setup InArgs and OutArgs
-        typedef Thyra::ModelEvaluatorBase MEB;
-        MEB::InArgs<Scalar>  inArgs  = this->wrapperModel_->getInArgs();
-        MEB::OutArgs<Scalar> outArgs = this->wrapperModel_->getOutArgs();
-        inArgs.set_x(stageX_);
-        if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(stageG_[i]);
-        if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
-        if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
-        if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
-        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
-        if (inArgs.supports(MEB::IN_ARG_stage_number))
-          inArgs.set_stage_number(i);
-
-        this->wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
+        Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
+         Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta));
+        p->stageNumber_ = i;
 
         if (!Teuchos::is_null(stepperIMEX_RKObserver_))
           stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
 
-        sStatus = this->solveImplicitODE(stageX_);
+        const Thyra::SolveStatus<Scalar> sStatus =
+          this->solveImplicitODE(stageX_, stageG_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
@@ -578,12 +643,10 @@ void StepperIMEX_RK<Scalar>::takeStep(
         Thyra::Vp_StV((workingState->getX()).ptr(), -dt*b   (i), *(stageG_[i]));
     }
 
-    if (pass == true)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
-    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -615,7 +678,7 @@ std::string StepperIMEX_RK<Scalar>::description() const
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > wrapperModelPairIMEX =
     Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> >(
@@ -647,9 +710,11 @@ StepperIMEX_RK<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set("Stepper Type", "IMEX RK SSP2");
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
+  pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
+  this->getValidParametersBasic(pl);
+  pl->set<bool>("Initial Condition Consistency Check", false);
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
   return pl;
@@ -659,12 +724,15 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperIMEX_RK<Scalar>::getDefaultParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - IMEX RK SSP2");
-  pl->set<std::string>("Stepper Type", "IMEX RK SSP2");
-  pl->set<bool>       ("Zero Initial Guess", false);
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
+
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-  Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();
+  RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 
   return pl;

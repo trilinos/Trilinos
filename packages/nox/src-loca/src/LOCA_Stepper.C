@@ -107,6 +107,7 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
+  calcEigenvaluesTargetStep(false),
   return_failed_on_max_steps(true),
   printOnlyConvergedSol(p->get("Write Only Converged Solution", true))
 {
@@ -150,6 +151,7 @@ LOCA::Stepper::Stepper(
   minTangentFactor(0.1),
   tangentFactorExponent(1.0),
   calcEigenvalues(false),
+  calcEigenvaluesTargetStep(false),
   return_failed_on_max_steps(true),
   printOnlyConvergedSol(p->get("Write Only Converged Solution", true))
 {
@@ -288,6 +290,7 @@ LOCA::Stepper::resetExceptLocaStatusTest(
   tangentFactorExponent =
     stepperList->get("Tangent Factor Exponent",1.0);
   calcEigenvalues = stepperList->get("Compute Eigenvalues",false);
+  calcEigenvaluesTargetStep = stepperList->get("Compute Eigenvalues On Target Step",false);
 
   // TODO Deprecated as moved to LOCA::StatusTest::MaxIters
   return_failed_on_max_steps =
@@ -521,6 +524,9 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
 
+    // Compute eigenvalues/eigenvectors if requested
+    if (calcEigenvaluesTargetStep) computeEigenData();
+
     // Allow continuation group to postprocess the step
     if (solverStatus == NOX::StatusTest::Converged)
       curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
@@ -581,7 +587,7 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   NOX::StatusTest::StatusType solverStatus;
 
@@ -676,7 +682,7 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   // FIXME Remove this.
   LOCA::StatusTest::CheckType checkType = LOCA::StatusTest::Complete;

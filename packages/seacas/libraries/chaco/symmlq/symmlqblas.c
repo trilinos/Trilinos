@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,11 +33,9 @@
  *
  */
 /* symmlqblas.f -- translated by f2c (version of 16 May 1991  13:06:06).
-   You must link the resulting object file with the libraries:
-        -link <S|C|M|L>f2c.lib   (in that order)
-*/
+ */
 
-#include "f2c.h"
+#include <math.h>
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
@@ -50,14 +48,13 @@
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-int chdaxpy_(integer *n, doublereal *da, doublereal *dx, integer *incx, doublereal *dy,
-             integer *incy)
+int chdaxpy(long int *n, double *da, double *dx, long int *incx, double *dy, long int *incy)
 {
   /* System generated locals */
-  integer i__1;
+  long int i__1;
 
   /* Local variables */
-  static integer i, m, ix, iy, mp1;
+  static long int i, m, ix, iy, mp1;
 
   /*     constant times a vector plus a vector. */
   /*     uses unrolled loops for increments equal to one. */
@@ -98,9 +95,9 @@ int chdaxpy_(integer *n, doublereal *da, doublereal *dx, integer *incx, doublere
   }
   return 0;
 
-/*        code for both increments equal to 1 */
+  /*        code for both increments equal to 1 */
 
-/*        clean-up loop */
+  /*        clean-up loop */
 
 L20:
   m = *n % 4;
@@ -129,13 +126,13 @@ L40:
 } /* daxpy_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-int chdcopy_(integer *n, doublereal *dx, integer *incx, doublereal *dy, integer *incy)
+int chdcopy(long int *n, double *dx, long int *incx, double *dy, long int *incy)
 {
   /* System generated locals */
-  integer i__1;
+  long int i__1;
 
   /* Local variables */
-  static integer i, m, ix, iy, mp1;
+  static long int i, m, ix, iy, mp1;
 
   /*     copies a vector, x, to a vector, y. */
   /*     uses unrolled loops for increments equal to one. */
@@ -173,9 +170,9 @@ int chdcopy_(integer *n, doublereal *dx, integer *incx, doublereal *dy, integer 
   }
   return 0;
 
-/*        code for both increments equal to 1 */
+  /*        code for both increments equal to 1 */
 
-/*        clean-up loop */
+  /*        clean-up loop */
 
 L20:
   m = *n % 7;
@@ -207,16 +204,16 @@ L40:
 } /* dcopy_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-doublereal ch_ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy, integer *incy)
+double ch_ddot(long int *n, double *dx, long int *incx, double *dy, long int *incy)
 {
   /* System generated locals */
-  integer    i__1;
-  doublereal ret_val;
+  long int i__1;
+  double   ret_val;
 
   /* Local variables */
-  static integer    i, m;
-  static doublereal dtemp;
-  static integer    ix, iy, mp1;
+  static long int i, m;
+  static double   dtemp;
+  static long int ix, iy, mp1;
 
   /*     forms the dot product of two vectors. */
   /*     uses unrolled loops for increments equal to one. */
@@ -257,9 +254,9 @@ doublereal ch_ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy, i
   ret_val = dtemp;
   return ret_val;
 
-/*        code for both increments equal to 1 */
+  /*        code for both increments equal to 1 */
 
-/*        clean-up loop */
+  /*        clean-up loop */
 
 L20:
   m = *n % 5;
@@ -288,30 +285,30 @@ L60:
 } /* ddot_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-doublereal chdnrm2_(integer *n, doublereal *dx, integer *incx)
+double chdnrm2(long int *n, double *dx, long int *incx)
 {
   /* Initialized data */
 
-  static doublereal zero  = 0.;
-  static doublereal one   = 1.;
-  static doublereal cutlo = 8.232e-11;
-  static doublereal cuthi = 1.304e19;
+  static double zero  = 0.;
+  static double one   = 1.;
+  static double cutlo = 8.232e-11;
+  static double cuthi = 1.304e19;
 
   /* Format strings */
   /* static char fmt_30[] = ""; static char fmt_50[] = ""; static char fmt_70[] =
      ""; static char fmt_110[] = ""; */
 
   /* System generated locals */
-  integer    i__1, i__2;
-  doublereal ret_val, d__1;
+  long int i__1, i__2;
+  double   ret_val, d__1;
 
   /* Builtin functions */
   double sqrt();
 
   /* Local variables */
-  static doublereal xmax;
-  static integer    next, i, j, nn;
-  static doublereal hitest, sum;
+  static double   xmax;
+  static long int next, i, j, nn;
+  static double   hitest, sum;
 
   /* Parameter adjustments */
   --dx;
@@ -346,7 +343,7 @@ doublereal chdnrm2_(integer *n, doublereal *dx, integer *incx)
   /*     from the environmental parameters listed in the imsl converter */
   /*     document the limiting values are as follows.. */
   /*     cutlo, s.p.   u/eps = 2**(-102) for  honeywell.  close seconds are
-  */
+   */
   /*                   univac and dec at 2**(-103) */
   /*                   thus cutlo = 2**(-51) = 4.44089e-16 */
   /*     cuthi, s.p.   v = 2**127 for univac, honeywell, and dec. */
@@ -377,19 +374,19 @@ L20:
   case 3: goto L110;
   }
 L30:
-  if ((d__1 = dx[i], abs(d__1)) > cutlo) {
+  if ((d__1 = dx[i], fabs(d__1)) > cutlo) {
     goto L85;
   }
   next = 1;
   xmax = zero;
 
-/*                        phase 1.  sum is zero */
+  /*                        phase 1.  sum is zero */
 
 L50:
   if (dx[i] == zero) {
     goto L200;
   }
-  if ((d__1 = dx[i], abs(d__1)) > cutlo) {
+  if ((d__1 = dx[i], fabs(d__1)) > cutlo) {
     goto L85;
   }
 
@@ -397,36 +394,36 @@ L50:
   next = 2;
   goto L105;
 
-/*                                prepare for phase 4. */
+  /*                                prepare for phase 4. */
 
 L100:
   i    = j;
   next = 3;
   sum  = sum / dx[i] / dx[i];
 L105:
-  xmax = (d__1 = dx[i], abs(d__1));
+  xmax = (d__1 = dx[i], fabs(d__1));
   goto L115;
 
-/*                   phase 2.  sum is small. */
-/*                             scale to avoid destructive underflow. */
+  /*                   phase 2.  sum is small. */
+  /*                             scale to avoid destructive underflow. */
 
 L70:
-  if ((d__1 = dx[i], abs(d__1)) > cutlo) {
+  if ((d__1 = dx[i], fabs(d__1)) > cutlo) {
     goto L75;
   }
 
-/*                     common code for phases 2 and 4. */
-/*                     in phase 4 sum is large.  scale to avoid overflow.
-*/
+  /*                     common code for phases 2 and 4. */
+  /*                     in phase 4 sum is large.  scale to avoid overflow.
+   */
 
 L110:
-  if ((d__1 = dx[i], abs(d__1)) <= xmax) {
+  if ((d__1 = dx[i], fabs(d__1)) <= xmax) {
     goto L115;
   }
   /* Computing 2nd power */
   d__1 = xmax / dx[i];
   sum  = one + sum * (d__1 * d__1);
-  xmax = (d__1 = dx[i], abs(d__1));
+  xmax = (d__1 = dx[i], fabs(d__1));
   goto L200;
 
 L115:
@@ -435,23 +432,23 @@ L115:
   sum += d__1 * d__1;
   goto L200;
 
-/*                  prepare for phase 3. */
+  /*                  prepare for phase 3. */
 
 L75:
   sum = sum * xmax * xmax;
 
-/*     for real or d.p. set hitest = cuthi/n */
-/*     for complex      set hitest = cuthi/(2*n) */
+  /*     for real or d.p. set hitest = cuthi/n */
+  /*     for complex      set hitest = cuthi/(2*n) */
 
 L85:
-  hitest = cuthi / (real)(*n);
+  hitest = cuthi / (float)(*n);
 
   /*                   phase 3.  sum is mid-range.  no scaling. */
 
   i__1 = nn;
   i__2 = *incx;
   for (j = i; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
-    if ((d__1 = dx[j], abs(d__1)) >= hitest) {
+    if ((d__1 = dx[j], fabs(d__1)) >= hitest) {
       goto L100;
     }
     /* L95: */

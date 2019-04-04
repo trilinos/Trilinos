@@ -94,9 +94,14 @@ MatrixFree::MatrixFree(Teuchos::ParameterList& printParams,
     epetraMap = Teuchos::rcp(new Epetra_Map(*testMap));
   }
   else {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     int size = currentX.getEpetraVector().Map().NumGlobalPoints();
-    int mySize = currentX.getEpetraVector().Map().NumMyPoints();
     int indexBase = currentX.getEpetraVector().Map().IndexBase();
+#else
+    long long size = currentX.getEpetraVector().Map().NumGlobalPoints64();
+    long long indexBase = currentX.getEpetraVector().Map().IndexBase64();
+#endif
+    int mySize = currentX.getEpetraVector().Map().NumMyPoints();
     const Epetra_Comm& comm = currentX.getEpetraVector().Map().Comm();
     epetraMap = Teuchos::rcp(new Epetra_Map(size, mySize, indexBase, comm));
   }
@@ -108,9 +113,9 @@ MatrixFree::~MatrixFree()
 
 }
 
-int MatrixFree::SetUseTranspose(bool UseTranspose)
+int MatrixFree::SetUseTranspose(bool use_transpose)
 {
-  if (UseTranspose == true) {
+  if (use_transpose == true) {
     utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
      << "unavailable in Matrix-Free mode!" << std::endl;
     throw "NOX Error";
@@ -227,7 +232,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   return 0;
 }
 
-int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int MatrixFree::ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
        << std::endl;
@@ -273,7 +278,7 @@ const Epetra_Map& MatrixFree::OperatorRangeMap() const
   return *epetraMap;
 }
 
-bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& /* Jac */)
 {
   // Since we have no explicit Jacobian we set our currentX to the
   // incoming value and evaluate the RHS.  When the Jacobian is applied,

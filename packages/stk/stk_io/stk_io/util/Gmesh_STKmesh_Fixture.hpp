@@ -34,7 +34,7 @@
 #ifndef stk_io_util_Gmesh_STKmesh_Fixture_hpp
 #define stk_io_util_Gmesh_STKmesh_Fixture_hpp
 
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -66,10 +66,16 @@ class Gmesh_STKmesh_Fixture
    * @param gmesh_spec The specification for the mesh. See Iogn::GeneratedMesh
    * for documentation on how to specify meshes.
    */
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
+  STK_DEPRECATED Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
+                         , const std::string& gmesh_spec
+                         , bool use_64bit_int_IO_api
+                         , stk::mesh::ConnectivityMap * connectivity_map
+                       );
+#endif
   Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
                          , const std::string& gmesh_spec
                          , bool use_64bit_int_IO_api=false
-                         , stk::mesh::ConnectivityMap * connectivity_map = NULL
                        );
 
   /**
@@ -102,11 +108,8 @@ class Gmesh_STKmesh_Fixture
   /**
    * Get a reference to the bulk data for the stk-mesh.
    */
-  const stk::mesh::BulkData & getBulkData() const
-  { return m_mesh_data.bulk_data(); }
-
-  stk::mesh::BulkData & getBulkData()
-  { return m_mesh_data.bulk_data(); }
+  const stk::mesh::BulkData & getBulkData() const { return m_mesh_data.bulk_data(); }
+        stk::mesh::BulkData & getBulkData()       { return m_mesh_data.bulk_data(); }
 
  private:
   /**

@@ -2,8 +2,6 @@
 #define STK_FACE_CREATION_TEST_UTILS_H
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <Ioss_Region.h>                // for Region
 #include <init/Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -21,13 +19,6 @@
 #include <stk_balance/fixSplitCoincidentElements.hpp>
 #include "stk_mesh/base/MeshDiagnostics.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
-
-namespace stk {
-namespace mesh {
-    class SideSetEntry;
-    EntityVector get_locally_owned_sides_from_sideset(BulkData &bulkData, std::vector<SideSetEntry> &skinnedSideSet);
-    bool is_sideset_equivalent_to_skin(BulkData &bulkData, EntityVector &sidesetSides, const Part& skinnedPart);
-}}
 
 namespace SideTestUtil
 {

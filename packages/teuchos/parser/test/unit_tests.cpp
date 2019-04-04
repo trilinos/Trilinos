@@ -526,4 +526,13 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_symbols ) {
   TEUCHOS_ASSERT(symbols == expect_symbols);
 }
 
+TEUCHOS_UNIT_TEST( Parser, pull_request_3312 ) {
+  Teuchos::RCP<Teuchos::Reader> reader(Teuchos::MathExpr::new_calc_reader());
+  Teuchos::any result_any;
+  reader->read_string(result_any, "x = 5; -x^2", "neg versus pow");
+  TEUCHOS_ASSERT(Teuchos::any_cast<double>(result_any) == -25.0);
+  reader->read_string(result_any, "3.0^2.0^3.0", "pow left or right");
+  TEUCHOS_ASSERT(Teuchos::any_cast<double>(result_any) == 6561.0);
+}
+
 } // anonymous namespace

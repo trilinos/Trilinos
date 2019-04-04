@@ -3,13 +3,17 @@
           
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
           
-\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library.}
+\cba{repartition: params}{\parameterlist}{Partitioner parameters. \muelu passes them directly to the appropriate package library. In particular, this allows to choose a partitioning algorithm from \zoltan{} or \zoltan2{} or from external packages such as \parmetis{}.}
           
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
           
-\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.}
+\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs. The value is not used if "repartition: min rows per thread" is positive.}
           
 \cbb{repartition: target rows per proc}{int}{0}{Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"}
+          
+\cbb{repartition: min rows per thread}{int}{0}{Minimum number of rows per thread. If the actual number if smaller, then rebalancing occurs. If the value is set to 0, no repartitioning based on thread count will occur.}
+          
+\cbb{repartition: target rows per thread}{int}{0}{Target number of rows per thread after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per thread".}
           
 \cbb{repartition: max imbalance}{double}{1.2}{Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.}
           

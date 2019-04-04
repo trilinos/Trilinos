@@ -40,7 +40,7 @@ and post-smoothers should be chosen to maintain symmetry (e.g., forward
 Gauss-Seidel for the pre-smoother and backward Gauss-Seidel for the
 post-smoother). The $P_k$'s are \textit{interpolation} matrices that transfer
 solutions from coarse levels to finer levels. The $R_k$'s are
-\textit{restriction} matrices that restrict a fine level solution to a coarser
+\textit{restriction} matrices that restrict a fine level residual to a coarser
 level. In a geometric multigrid, $P_k$'s and $R_k$'s are determined
 by the application, whereas in an algebraic multigrid they are automatically
 generated. For symmetric problems, typically $R_k=P_k^T$. For nonsymmetric
@@ -52,3 +52,8 @@ generate the grid transfers $P_k$ automatically and the coarse problems $A_k$
 via a sparse triple matrix product. \trilinos{} provides a wide selection of
 smoothers and direct solvers for use in \muelu through the \ifpack,
 \ifpacktwo, \amesos, and \amesostwo packages (see \S\ref{sec:options}).
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "mueluguide"
+%%% End:

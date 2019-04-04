@@ -49,7 +49,7 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology.tcc"    // for topology::num_nodes, etc
+#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 namespace stk {
@@ -334,6 +334,20 @@ Part & MetaData::declare_part( const std::string & p_name )
   return *m_part_repo.declare_part( p_name, rank );
 }
 
+const char** MetaData::reserved_state_suffix() const
+{
+  static const char* s_reserved_state_suffix[6] = {
+    "_STKFS_OLD",
+    "_STKFS_N",
+    "_STKFS_NM1",
+    "_STKFS_NM2",
+    "_STKFS_NM3",
+    "_STKFS_NM4"
+  };
+
+  return s_reserved_state_suffix;
+}
+
 Part & MetaData::declare_internal_part( const std::string & p_name )
 {
   std::string internal_name = impl::convert_to_internal_name(p_name);
@@ -353,18 +367,18 @@ Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank 
   return declare_part(internal_name, rank);
 }
 
-void MetaData::declare_part_subset( Part & superset , Part & subset )
+void MetaData::declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
   if (!is_initialized()) {
     // can't do any topology stuff yet
-    return internal_declare_part_subset(superset, subset);
+    return internal_declare_part_subset(superset, subset, verifyFieldRestrictions);
   }
 
   stk::topology superset_stkTopo = get_topology(superset);
 
   const bool no_superset_topology = (superset_stkTopo == stk::topology::INVALID_TOPOLOGY);
   if ( no_superset_topology ) {
-    internal_declare_part_subset(superset,subset);
+    internal_declare_part_subset(superset,subset, verifyFieldRestrictions);
     return;
   }
 
@@ -387,7 +401,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
       << " coming from the subset part");
 
   // Everything is Okay!
-  internal_declare_part_subset(superset,subset);
+  internal_declare_part_subset(superset,subset, verifyFieldRestrictions);
   // Update PartTopologyVector for "subset" and same-rank subsets, ad nauseum
   if (subset.primary_entity_rank() == superset.primary_entity_rank()) {
     assign_topology(subset, superset_stkTopo);
@@ -400,7 +414,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   }
 }
 
-void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
+void MetaData::internal_declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
   require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
@@ -408,9 +422,12 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 
   m_part_repo.declare_subset( superset, subset );
 
-  // The new superset / subset relationship can cause a
-  // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(superset, subset);
+  if (verifyFieldRestrictions)
+  {
+    // The new superset / subset relationship can cause a
+    // field restriction to become incompatible or redundant.
+    m_field_repo.verify_and_clean_restrictions(superset, subset);
+  }
 }
 
 //----------------------------------------------------------------------

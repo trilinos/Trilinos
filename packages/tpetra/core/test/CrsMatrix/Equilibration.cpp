@@ -751,11 +751,15 @@ testEquilibration (Teuchos::FancyOStream& out,
     auto result2 =
       Tpetra::computeRowAndColumnOneNorms (static_cast<row_matrix_type&> (* (test.A)),
                                            assumeSymmetric);
+
     {
       out << "Test whether assumeSymmetric got communicated" << endl;
       Teuchos::OSTab tab3 (out);
       TEST_EQUALITY( assumeSymmetric, result2.assumeSymmetric );
     }
+
+    out << "Call computeRowOneNorms (we'll test that too)" << endl;
+    auto result3 = Tpetra::computeRowOneNorms (* (test.A));
 
     {
       out << "Test detection of global error conditions" << endl;
@@ -765,13 +769,37 @@ testEquilibration (Teuchos::FancyOStream& out,
       TEST_EQUALITY( test.gblFoundNan, result2.foundNan );
       TEST_EQUALITY( test.gblFoundZeroDiag, result2.foundZeroDiag );
       TEST_EQUALITY( test.gblFoundZeroRowNorm, result2.foundZeroRowNorm );
+
+      TEST_EQUALITY( test.gblFoundInf, result3.foundInf );
+      TEST_EQUALITY( test.gblFoundNan, result3.foundNan );
+      TEST_EQUALITY( test.gblFoundZeroDiag, result3.foundZeroDiag );
+      TEST_EQUALITY( test.gblFoundZeroRowNorm, result3.foundZeroRowNorm );
     }
 
     {
-      out << "Test global row norms" << endl;
+      out << "Test global row norms computed by computeRowAndColumnOneNorms"
+	  << endl;
       Teuchos::OSTab tab3 (out);
       auto rowNorms_h = Kokkos::create_mirror_view (result2.rowNorms);
       Kokkos::deep_copy (rowNorms_h, result2.rowNorms);
+
+      bool ok = true;
+      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+        if (! near (rowNorms_h[lclRow],
+                    test.gblRowNorms[lclRow],
+                    toleranceFactor)) {
+          ok = false;
+          break;
+        }
+      }
+      TEST_ASSERT( ok );
+    } // test global row norms
+
+    {
+      out << "Test global row norms computed by computeRowOneNorms" << endl;
+      Teuchos::OSTab tab3 (out);
+      auto rowNorms_h = Kokkos::create_mirror_view (result3.rowNorms);
+      Kokkos::deep_copy (rowNorms_h, result3.rowNorms);
 
       bool ok = true;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1121,7 +1149,6 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap->getGlobalElement (lclRow);
       const GO gblCol = gblRow;
-      mag_type lclRowScaledColNorm {0.0};
 
       if (gblRow == rowMap->getMinAllGlobalIndex ()) {
         const LO diagLclColInd = colMap->getLocalElement (gblCol);
@@ -1414,9 +1441,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
       const GO gblRow = rowMap->getGlobalElement (lclRow);
       const GO gblCol = gblRow;
       const LO lclCol = colMap->getLocalElement (gblCol);
-      mag_type lclRowScaledColNorm {0.0};
 
-      const mag_type matrixAbsVal = myRank == 1 ? 0.0 : 1.0;
       lclRowScaledColNorms[lclCol] = myRank == 1 ?
         NaughtyValues<mag_type>::quiet_NaN () : 1.0;
     }
@@ -1652,9 +1677,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
       const GO gblCol = gblRow;
       const LO lclCol = colMap->getLocalElement (gblCol);
       if (lclCol != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-        mag_type lclRowScaledColNorm {0.0};
 
-        const mag_type matrixAbsVal = myRank == 1 ? 0.0 : 1.0;
         lclRowScaledColNorms[lclCol] = myRank == 1 ?
           NaughtyValues<mag_type>::quiet_NaN () : 1.0;
       }
@@ -1919,7 +1942,6 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
       const GO gblRow = rowMap->getGlobalElement (lclRow);
       const GO gblCol = gblRow;
       const LO lclCol = colMap->getLocalElement (gblCol);
-      mag_type lclRowScaledColNorm {0.0};
 
       mag_type matrixAbsVal = 1.0;
       if (myRank == 1) {
@@ -2060,12 +2082,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Equilibration, Test0, SC, LO, GO, NT)
     std::function<test_return_type (FancyOStream&,
                                     const RCP<const Comm<int> >&,
                                     const bool)>;
-  std::array<test_type, 4> tests {
+  std::array<test_type, 4> tests {{
     makeSymmetricPositiveDefiniteTridiagonalMatrixTest<SC, LO, GO, NT>,
     makeMatrixTestWithExplicitZeroDiag<SC, LO, GO, NT>,
     makeMatrixTestWithExplicitInfAndNan<SC, LO, GO, NT>,
     makeMatrixTestWithImplicitZeroDiag<SC, LO, GO, NT>
-  };
+  }};
 
   for (bool assumeSymmetric : {false, true}) {
     for (auto&& currentTest : tests) {
@@ -2112,4 +2134,3 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
-

@@ -38,7 +38,7 @@
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Types.hpp>      // for RelationType, EntityRank, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowAssertMsg
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -289,6 +289,12 @@ void get_entities_through_relations(
  *          to all of the input mesh entities of the given
  *          mesh rank.
  */
+void get_entities_through_relations(
+  const BulkData& mesh,
+  const Entity* entities_begin ,
+  const Entity* entities_end ,
+        EntityRank              entities_related_rank ,
+        std::vector<Entity> & entities_related );
 void get_entities_through_relations(
   const BulkData& mesh,
   const std::vector<Entity> & entities ,

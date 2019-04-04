@@ -71,7 +71,7 @@ NOX::LineSearch::NonlinearCG::~NonlinearCG()
 
 bool NOX::LineSearch::NonlinearCG::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-      Teuchos::ParameterList& params)
+      Teuchos::ParameterList& /* params */)
 {
   utils = gd->getUtils();
   //Teuchos::ParameterList& p = params.sublist("NonlinearCG");

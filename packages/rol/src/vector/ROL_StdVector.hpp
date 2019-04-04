@@ -63,11 +63,15 @@ class StdVector : public Vector<Real> {
 
 private:
 
-  Ptr<std::vector<Element> >  std_vec_;
+  Ptr<std::vector<Element>>  std_vec_;
 
 public:
 
   StdVector(const Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+
+  StdVector(const int dim, const Element val=0.0) {
+    std_vec_ = makePtr<std::vector<Element>>(dim,val);
+  }
 
   void set( const Vector<Real> &x ) {
 
@@ -198,6 +202,17 @@ public:
   void setScalar( const Real C ) {
     uint dim = std_vec_->size();
     std_vec_->assign(dim,C);
+  }
+
+  void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    Real a = (u-l);
+    Real b = l;
+    Real x(0);
+    uint dim = std_vec_->size();
+    for (uint i=0; i<dim; ++i) {
+      x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+      (*std_vec_)[i] = a*x + b;
+    }
   }
 
   virtual void print( std::ostream &outStream ) const {

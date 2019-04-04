@@ -185,7 +185,7 @@ getTimeStepControl() const
 
 template<class Scalar>
 void IntegratorPseudoTransientForwardSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
@@ -227,8 +227,8 @@ setInitialState(Scalar t0,
   else
     assign(Xdotdot->getNonconstMultiVector().ptr(), *DxdotdotDp0);
 
-  state_integrator_->setInitialState(t0, x0, xdot0, xdotdot0);
-  sens_integrator_->setInitialState(t0, X, Xdot, Xdotdot);
+  state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
+  sens_integrator_->initializeSolutionHistory(t0, X, Xdot, Xdotdot);
 }
 
 template<class Scalar>

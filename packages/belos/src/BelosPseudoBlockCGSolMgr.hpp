@@ -746,8 +746,6 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   // then didn't set any parameters using setParameters().
   if (!isSet_) { setParameters( params_ ); }
 
-  Teuchos::BLAS<int,ScalarType> blas;
-
   TEUCHOS_TEST_FOR_EXCEPTION
     (! problem_->isProblemSet (), PseudoBlockCGSolMgrLinearProblemFailure,
      prefix << "The linear problem to solve is not ready.  You must call "
@@ -792,6 +790,9 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
       Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
   }
 
+  // Setup condition estimate
+  block_cg_iter->setDoCondEst(genCondEst_);
+  bool condEstPerf = false;
 
   // Enter solve() iterations
   {
@@ -799,10 +800,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 #endif
 
-    bool first_time=true;
     while ( numRHS2Solve > 0 ) {
-      if(genCondEst_ && first_time) block_cg_iter->setDoCondEst(true);
-      else block_cg_iter->setDoCondEst(false);
 
       // Reset the active / converged vectors from this block
       std::vector<int> convRHSIdx;
@@ -839,7 +837,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 
             // Figure out which linear systems converged.
             std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
-
+ 
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
             if (convIdx.size() == currRHSIdx.size())
@@ -850,7 +848,6 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 
             // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
             int have = 0;
-            std::vector<int> unconvIdx(currRHSIdx.size());
             for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
               bool found = false;
               for (unsigned int j=0; j<convIdx.size(); ++j) {
@@ -866,6 +863,20 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
             }
             currRHSIdx.resize(have);
             currIdx2.resize(have);
+
+            // Compute condition estimate if the very first linear system in the block has converged.
+            if (currRHSIdx[0] != 0 && genCondEst_ && !condEstPerf)
+            {
+              // Compute the estimate.
+              ScalarType l_min, l_max;
+              Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
+              Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
+              compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+
+              // Make sure not to do more condition estimate computations for this solve.
+              block_cg_iter->setDoCondEst(false); 
+              condEstPerf = true;
+            }
 
             // Set the remaining indices after deflation.
             problem_->setLSIndex( currRHSIdx );
@@ -934,7 +945,6 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
         currIdx.resize( numRHS2Solve );
       }
 
-      first_time=false;
     }// while ( numRHS2Solve > 0 )
 
   }
@@ -962,11 +972,12 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   }
 
   // Do condition estimate, if needed
-  if (genCondEst_) {
+  if (genCondEst_ && !condEstPerf) {
     ScalarType l_min, l_max;
     Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
     Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
     compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+    condEstPerf = true;
   }
 
   if (! isConverged) {
@@ -1005,24 +1016,24 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
      elements of A. Note that A is supposed to be symmatric
   */
   int info = 0;
+  const int N = diag.size ();
   ScalarType scalar_dummy;
-  MagnitudeType mag_dummy;
+  std::vector<MagnitudeType> mag_dummy(4*N);
   char char_N = 'N';
   Teuchos::LAPACK<int,ScalarType> lapack;
-  const int N = diag.size ();
 
   lambda_min = STS::one ();
   lambda_max = STS::one ();
   if( N > 2 ) {
-    lapack.STEQR (char_N, N, diag.getRawPtr (), offdiag.getRawPtr (),
-                  &scalar_dummy, 1, &mag_dummy, &info);
+    lapack.PTEQR (char_N, N, diag.getRawPtr (), offdiag.getRawPtr (),
+                  &scalar_dummy, 1, &mag_dummy[0], &info);
     TEUCHOS_TEST_FOR_EXCEPTION
       (info < 0, std::logic_error, "Belos::PseudoBlockCGSolMgr::"
-       "compute_condnum_tridiag_sym: LAPACK's _STEQR failed with info = "
+       "compute_condnum_tridiag_sym: LAPACK's _PTEQR failed with info = "
        << info << " < 0.  This suggests there might be a bug in the way Belos "
        "is calling LAPACK.  Please report this to the Belos developers.");
-    lambda_min = Teuchos::as<ScalarType> (diag[0]);
-    lambda_max = Teuchos::as<ScalarType> (diag[N-1]);
+    lambda_min = Teuchos::as<ScalarType> (diag[N-1]);
+    lambda_max = Teuchos::as<ScalarType> (diag[0]);
   }
 
   // info > 0 means that LAPACK's eigensolver didn't converge.  This

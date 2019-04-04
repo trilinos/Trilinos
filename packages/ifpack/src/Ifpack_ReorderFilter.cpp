@@ -89,7 +89,7 @@ Ifpack_ReorderFilter::operator=(const Ifpack_ReorderFilter& RHS)
 
 //==============================================================================
 int Ifpack_ReorderFilter::
-ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
+ExtractMyRowCopy(int MyRow, int /* Length */, int & NumEntries, 
                  double *Values, int * Indices) const
 {
   int MyReorderdRow = Reordering_->InvReorder(MyRow);
@@ -137,8 +137,8 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
 //==============================================================================
 int Ifpack_ReorderFilter::
-Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-      const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Solve(bool /* Upper */, bool /* Trans */, bool /* UnitDiagonal */, 
+      const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-98);
 }

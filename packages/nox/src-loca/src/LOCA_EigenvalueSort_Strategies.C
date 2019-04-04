@@ -345,8 +345,8 @@ LOCA::EigenvalueSort::SmallestReal::sort(int n, double* r_evals,
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::EigenvalueSort::LargestImaginary::sort(int n, double* evals,
-                         std::vector<int>* perm) const
+LOCA::EigenvalueSort::LargestImaginary::sort(int /* n */, double* /* evals */,
+                         std::vector<int>* /* perm */) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
@@ -388,8 +388,8 @@ LOCA::EigenvalueSort::LargestImaginary::sort(int n, double* r_evals,
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::EigenvalueSort::SmallestImaginary::sort(int n, double* evals,
-                          std::vector<int>* perm) const
+LOCA::EigenvalueSort::SmallestImaginary::sort(int /* n */, double* /* evals */,
+                          std::vector<int>* /* perm */) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
@@ -431,7 +431,7 @@ LOCA::EigenvalueSort::SmallestImaginary::sort(int n, double* r_evals,
 }
 
 LOCA::EigenvalueSort::LargestRealInverseCayley::LargestRealInverseCayley(
-         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<LOCA::GlobalData>& /* global_data */,
          const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) :
   sigma(0.0),
   mu(0.0)

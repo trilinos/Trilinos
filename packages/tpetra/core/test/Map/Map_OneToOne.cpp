@@ -46,7 +46,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include <Teuchos_Tuple.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_TieBreak.hpp"
 
@@ -58,8 +58,6 @@ namespace { // (anonymous)
   using Teuchos::RCP;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
   template <typename LO,typename GO>
   class GotoLowTieBreak : public Tpetra::Details::TieBreak<LO,GO> {
@@ -81,9 +79,8 @@ namespace { // (anonymous)
   // whether createOneToOne returns a Map that is the same.
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, AlreadyOneToOneContig, LO, GO, NT)
   {
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
     RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO, NT> (NUM_GLOBAL_ELEMENTS, comm);
 
@@ -104,9 +101,8 @@ namespace { // (anonymous)
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
 
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
     const GO indexBase = 0;
@@ -152,9 +148,8 @@ namespace { // (anonymous)
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
 
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
     const GO indexBase = 1;
@@ -197,9 +192,8 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, LargeOverlap, LO, GO, NT)
   {
     //Creates a map with large overlaps
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -267,9 +261,8 @@ namespace { // (anonymous)
   {
     //Will create a non-contig map with all of the elements on a single
     //processor. Nothing should change.
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank();
 
     Array<GO> elementList;
@@ -293,9 +286,8 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, NoIDs, LO, GO, NT)
   {
     //An empty map.
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
     Array<GO> elementList (0);
 
@@ -311,9 +303,8 @@ namespace { // (anonymous)
     //Every processor starts by owning all of them.
     //After one-to-one, only the last processor should own all of them.
 
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 
@@ -339,9 +330,8 @@ namespace { // (anonymous)
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(OneToOne, TieBreak, LO, GO, NT)
   {
     //Creates a map with large overlaps
-    typedef Tpetra::Map<LO, GO, NT> Map;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    using Map = Tpetra::Map<LO, GO, NT>;
+    RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank();
     const int numProc = comm->getSize();
 

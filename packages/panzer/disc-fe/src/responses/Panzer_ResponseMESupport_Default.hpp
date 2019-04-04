@@ -99,6 +99,14 @@ public:
      */
    void setVector(const Teuchos::RCP<Thyra::VectorBase<double> > & destVec);
 
+   //! set the vector space for this response
+   void setVectorSpace(Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs)
+   { vSpace_ = vs; }
+
+   //! Access the response vector
+   Teuchos::RCP<Thyra::VectorBase<double> > getVector() const
+   { return tVector_; }
+
 protected:
    //! Get the teuchos comm object
    Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > getComm() const { return tComm_; }
@@ -114,6 +122,10 @@ protected:
 
    //! Access the thyra vector
    Thyra::ArrayRCP<double> getThyraVector() const;
+
+   //! Access the thyra MultiVector
+    Teuchos::RCP<Thyra::MultiVectorBase<double> > getThyraMultiVector() const
+    { return tVector_;}
 
 
 private:

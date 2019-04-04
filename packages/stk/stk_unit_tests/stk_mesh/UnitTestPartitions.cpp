@@ -417,42 +417,6 @@ TEST( UnitTestPartition, Partition_testInitialize )
   check_bucket_ids_testset_A(bucket_repository);
 }
 
-/// Test of Partition::compress()
-TEST( UnitTestPartition, Partition_testCompress)
-{
-  SelectorFixture fix;
-
-  if (fix.m_bulk_data.parallel_size() > 1)
-  {
-    return;
-  }
-  initializeFivePartitionsWithSixBucketsEach(fix);
-  setFieldDataUsingEntityIDs(fix);
-
-  stk::mesh::impl::BucketRepository &bucket_repository = fix.m_bulk_data.my_get_bucket_repository();
-  bucket_repository.sync_from_partitions();
-
-  std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
-  size_t num_partitions = partitions.size();
-  size_t expectedNumPartitions = 5u;
-  EXPECT_EQ(expectedNumPartitions, num_partitions);
-
-  for (size_t i = 0; i < num_partitions; ++i)
-  {
-    stk::mesh::impl::Partition &partition = *partitions[i];
-    size_t numEntitiesPerPartition = 3000;
-    size_t bucketCapacity = bucket_repository.default_bucket_capacity;
-    size_t numBucketsPerPartition = (numEntitiesPerPartition + (bucketCapacity - 1u)) / bucketCapacity;
-    EXPECT_EQ(numBucketsPerPartition, partition.num_buckets());
-    partition.compress(true);
-    size_t numCompressedBucketsPerPartition = (numEntitiesPerPartition + (bucket_repository.max_bucket_capacity - 1u)) / bucket_repository.max_bucket_capacity;
-    EXPECT_EQ(numCompressedBucketsPerPartition, partition.num_buckets());
-    check_test_partition_invariant(fix, partition);
-  }
-
-  check_bucket_ids_testset_A(bucket_repository);
-}
-
 /// Test Partition::sort()
 TEST( UnitTestPartition, Partition_testSort)
 {
@@ -694,12 +658,13 @@ TEST( UnitTestPartition, Partition_testGetOrCreateOV)
   stk::mesh::impl::BucketRepository &bucket_repository = fix.m_bulk_data.my_get_bucket_repository();
   bucket_repository.sync_from_partitions();
 
+  stk::mesh::OrdinalVector scratch;
   std::vector<stk::mesh::PartOrdinal> parts;
   parts.push_back(fix.m_meta_data.universal_part().mesh_meta_data_ordinal());
   parts.push_back(fix.m_meta_data.locally_owned_part().mesh_meta_data_ordinal());
   parts.push_back(fix.m_partA.mesh_meta_data_ordinal() );
   stk::mesh::impl::Partition *partitionA =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
   ASSERT_TRUE(0 != partitionA);
   size_t numEntitiesPerPartition = 3000;
   size_t bucketCapacity = bucket_repository.default_bucket_capacity;
@@ -708,12 +673,12 @@ TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 
   parts.push_back(fix.m_partC.mesh_meta_data_ordinal());
   stk::mesh::impl::Partition *partitionAC =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
   ASSERT_TRUE(0 != partitionAC);
   EXPECT_EQ(0u, partitionAC->num_buckets());
 
   stk::mesh::impl::Partition *partitionAC_again =
-    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
+    bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts, scratch);
   ASSERT_TRUE(partitionAC == partitionAC_again);
 
   check_bucket_ids_testset_A(bucket_repository);

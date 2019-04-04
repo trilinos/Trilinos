@@ -102,9 +102,9 @@ public:
   //            const RCP<const Comm<int> > &problemComm,
   //            const RCP<GraphModel<typename Adapter::base_adapter_t> > &model
   //) BDD: old inteface for reference
-  AlgPTScotch(const RCP<const Environment> &env,
-              const RCP<const Comm<int> > &problemComm,
-              const RCP<const base_adapter_t> &adapter
+  AlgPTScotch(const RCP<const Environment> &/* env */,
+              const RCP<const Comm<int> > &/* problemComm */,
+              const RCP<const base_adapter_t> &/* adapter */
   )
   {
     throw std::runtime_error(

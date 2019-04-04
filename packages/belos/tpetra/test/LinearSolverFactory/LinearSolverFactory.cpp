@@ -41,7 +41,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "BelosTpetraAdapter.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "BelosSolverFactory.hpp"
 #include "Trilinos_Details_LinearSolver.hpp"
@@ -236,8 +236,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( LinearSolverFactory, Solve, SC, LO, GO, NT )
   return;
 #endif // NOT TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
   const size_t numVecs = 3;
 

@@ -263,6 +263,9 @@ int main(int argc, char *argv[])
     fm.postRegistrationSetup(nullptr);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 
+    // In debug mode, print the evaluator start stop messages
+    fm.printEvaluatorStartStopMessage<Residual>(Teuchos::rcpFromRef(std::cout));
+
     // Set the team and vector size on the workset for Host DAG
     for (auto& w : worksets) {
       w.team_size_ = p.teamSize();

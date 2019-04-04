@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -121,15 +121,15 @@ int main(int argc, char **argv)
     int         num_nodes_per_elem[] = {3, 4, 2, 2, 1};
 
     ex_put_block(exoid, EX_ELEM_BLOCK, ebids[0], "triangle", num_elem_in_block[0],
-                 num_nodes_per_elem[0], 0);
+                 num_nodes_per_elem[0], 0, 0, 0);
     ex_put_block(exoid, EX_ELEM_BLOCK, ebids[1], "quad", num_elem_in_block[1],
-                 num_nodes_per_elem[1], 0);
+                 num_nodes_per_elem[1], 0, 0, 0);
     ex_put_block(exoid, EX_ELEM_BLOCK, ebids[2], "beam", num_elem_in_block[2],
-                 num_nodes_per_elem[2], 3);
+                 num_nodes_per_elem[2], 0, 0, 3);
     ex_put_block(exoid, EX_ELEM_BLOCK, ebids[3], "truss", num_elem_in_block[3],
-                 num_nodes_per_elem[3], 1);
+                 num_nodes_per_elem[3], 0, 0, 1);
     ex_put_block(exoid, EX_ELEM_BLOCK, ebids[4], "circle", num_elem_in_block[4],
-                 num_nodes_per_elem[4], 2);
+                 num_nodes_per_elem[4], 0, 0, 2);
 
     /* Write element block names */
     ex_put_names(exoid, EX_ELEM_BLOCK, (char **)block_names);
@@ -143,11 +143,11 @@ int main(int argc, char **argv)
     int conn_T[] = {10, 6, 9, 10, 7, 12, 12, 8};
     int conn_c[] = {6, 7, 8, 9};
 
-    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[0], conn_t);
-    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[1], conn_q);
-    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[2], conn_B);
-    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[3], conn_T);
-    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[4], conn_c);
+    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[0], conn_t, NULL, NULL);
+    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[1], conn_q, NULL, NULL);
+    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[2], conn_B, NULL, NULL);
+    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[3], conn_T, NULL, NULL);
+    ex_put_conn(exoid, EX_ELEM_BLOCK, ebids[4], conn_c, NULL, NULL);
   }
 
   /* write element block attributes */
@@ -243,18 +243,18 @@ int main(int argc, char **argv)
 
    {
      num_nset_vars = 3;
-     
+
      var_names[0] = "ns_var0";
      var_names[1] = "ns_var1";
      var_names[2] = "ns_var2";
-     
+
      ex_put_variable_param (exoid, "m", num_nset_vars);
      printf ("after ex_put_variable_param, %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
      }
-     
+
      ex_put_variable_names (exoid, "m", num_nset_vars, var_names);
      printf ("after ex_put_variable_names, %d\n", error);
      if (error) {
@@ -262,21 +262,21 @@ int main(int argc, char **argv)
        exit(-1);
      }
    }
-   
+
    {
      num_sset_vars = 3;
 
      var_names[0] = "ss_var0";
      var_names[1] = "ss_var1";
      var_names[2] = "ss_var2";
-     
+
      ex_put_variable_param (exoid, EX_SIDE_SET, num_sset_vars);
      printf ("after ex_put_variable_param, %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
      }
-     
+
      ex_put_variable_names (exoid, EX_SIDE_SET, num_sset_vars, var_names);
      printf ("after ex_put_variable_names, %d\n", error);
      if (error) {
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
        {
          for (m=0; m<num_elem_in_block[j]; m++)
          {
-           elem_var_vals[m] = (float)(k+1) + (float)(j+2) + 
+           elem_var_vals[m] = (float)(k+1) + (float)(j+2) +
                               ((float)(m+1)*time_value);
            /* printf("elem_var_vals[%d]: %f\n",m,elem_var_vals[m]); */
          }
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
        {
          for (m=0; m<num_face_in_sset[j]; m++)
          {
-           sset_var_vals[m] = (float)(k+2) + (float)(j+3) + 
+           sset_var_vals[m] = (float)(k+2) + (float)(j+3) +
                               ((float)(m+1)*time_value);
            /* printf("sset_var_vals[%d]: %f\n",m,sset_var_vals[m]); */
          }
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
        {
          for (m=0; m<num_nodes_in_nset[j]; m++)
          {
-           nset_var_vals[m] = (float)(k+3) + (float)(j+4) + 
+           nset_var_vals[m] = (float)(k+3) + (float)(j+4) +
                               ((float)(m+1)*time_value);
            /* printf("nset_var_vals[%d]: %f\n",m,nset_var_vals[m]); */
          }

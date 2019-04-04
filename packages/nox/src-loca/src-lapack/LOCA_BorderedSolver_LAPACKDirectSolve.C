@@ -60,7 +60,7 @@
 
 LOCA::BorderedSolver::LAPACKDirectSolve::LAPACKDirectSolve(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
     const Teuchos::RCP<Teuchos::ParameterList>& slvrParams):
   globalData(global_data),
   solverParams(slvrParams),
@@ -527,7 +527,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverseTranspose(
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::LAPACKDirectSolve::solve(
     bool trans,
-    Teuchos::ParameterList& params,
+    Teuchos::ParameterList& /* params */,
     const NOX::Abstract::MultiVector* F,
     const NOX::Abstract::MultiVector::DenseMatrix* G,
     NOX::Abstract::MultiVector& X,

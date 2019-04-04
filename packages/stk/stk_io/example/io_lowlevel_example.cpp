@@ -218,9 +218,8 @@ namespace stk_example_io {
     }
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL,
 						    MPI_COMM_WORLD, properties);
-    if (dbi == NULL || !dbi->ok()) {
-      std::cerr  << "ERROR: Could not open database '" << in_filename
-		 << "' of type '" << dbtype << "'\n";
+    if (dbi == nullptr || !dbi->ok()) {
+      std::cerr  << "ERROR: Could not open database '" << in_filename << "' of type '" << dbtype << "'\n";
       std::exit(EXIT_FAILURE);
     }
 
@@ -265,17 +264,17 @@ namespace stk_example_io {
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, out_filename,
 						    Ioss::WRITE_RESULTS,
 						    MPI_COMM_WORLD);
-    if (dbo == NULL || !dbo->ok()) {
-      std::cerr << "ERROR: Could not open results database '" << out_filename
-		<< "' of type '" << dbtype << "'\n";
+    if (dbo == nullptr || !dbo->ok()) {
+      std::cerr << "ERROR: Could not open results database '" << out_filename << "' of type '" << dbtype << "'\n";
       std::exit(EXIT_FAILURE);
     }
 
     // NOTE: 'out_region' owns 'dbo' pointer at this time...
     Ioss::Region out_region(dbo, "results_output");
 
-    stk::io::define_output_db(out_region, bulk_data, {}, &in_region);
-    stk::io::write_output_db(out_region,  bulk_data);
+    stk::io::OutputParams params(out_region, bulk_data);
+    stk::io::define_output_db(params, {}, &in_region);
+    stk::io::write_output_db(params);
 
     // ------------------------------------------------------------------------
     /** \todo REFACTOR A real app would register a subset of the
@@ -311,10 +310,10 @@ namespace stk_example_io {
       if (stk::io::is_part_io_part(*part)) {
 	// Get Ioss::GroupingEntity corresponding to this part...
 	Ioss::GroupingEntity *entity = out_region.get_entity(part->name());
-	if (entity != NULL) {
+	if (entity != nullptr) {
 	  if (entity->type() == Ioss::SIDESET) {
 	    Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
-	    assert(sset != NULL);
+	    assert(sset != nullptr);
 	    int block_count = sset->block_count();
 	    for (int i=0; i < block_count; i++) {
 	      Ioss::SideBlock *fb = sset->get_block(i);
@@ -367,8 +366,8 @@ namespace stk_example_io {
     stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
       meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field( coord_field, meta.universal_part(),
-                          spatial_dim);
+    stk::mesh::put_field_on_mesh( coord_field, meta.universal_part(),
+                          spatial_dim, nullptr);
 
     /** \todo IMPLEMENT truly handle fields... For this case we are
      * just defining a field for each transient field that is present
@@ -391,7 +390,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
 	stk::mesh::Part* const part = meta.get_part(entity->name());
-	STKIORequire(part != NULL);
+	STKIORequire(part != nullptr);
 
       const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
 
@@ -439,10 +438,10 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
 	stk::mesh::Part* const part = meta.get_part(entity->name());
-	STKIORequire(part != NULL);
+	STKIORequire(part != nullptr);
 	STKIORequire(entity->field_exists("distribution_factors"));
 
-	stk::mesh::put_field(distribution_factors_field, *part);
+	stk::mesh::put_field_on_mesh(distribution_factors_field, *part, nullptr);
 
 	/** \todo IMPLEMENT truly handle fields... For this case we
 	 * are just defining a field for each transient field that is
@@ -461,14 +460,14 @@ namespace stk_example_io {
   {
     assert(sset->type() == Ioss::SIDESET);
     Ioss::SideSet *fs = dynamic_cast<Ioss::SideSet *>(sset);
-    assert(fs != NULL);
+    assert(fs != nullptr);
     const Ioss::SideBlockContainer& blocks = fs->get_side_blocks();
     stk::io::default_part_processing(blocks, meta);
 
     stk::mesh::Part* const fs_part = meta.get_part(sset->name());
-    STKIORequire(fs_part != NULL);
+    STKIORequire(fs_part != nullptr);
 
-    stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
+    stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = nullptr;
     bool surface_df_defined = false; // Has the surface df field been defined yet?
 
 
@@ -477,7 +476,7 @@ namespace stk_example_io {
       Ioss::SideBlock *side_block = sset->get_block(i);
       if (stk::io::include_entity(side_block)) {
 	stk::mesh::Part * const side_block_part = meta.get_part(side_block->name());
-	STKIORequire(side_block_part != NULL);
+	STKIORequire(side_block_part != nullptr);
 	meta.declare_part_subset(*fs_part, *side_block_part);
 
         const stk::mesh::EntityRank part_rank = side_block_part->primary_entity_rank();
@@ -492,8 +491,8 @@ namespace stk_example_io {
 	  }
 	  stk::io::set_distribution_factor_field(*side_block_part, *distribution_factors_field);
 	  int side_node_count = side_block->topology()->number_nodes();
-	  stk::mesh::put_field(*distribution_factors_field,
-                               *side_block_part, side_node_count);
+	  stk::mesh::put_field_on_mesh(*distribution_factors_field,
+                               *side_block_part, side_node_count, nullptr);
 	}
 
 	/** \todo IMPLEMENT truly handle fields... For this case we
@@ -541,7 +540,7 @@ namespace stk_example_io {
     Ioss::NodeBlock *nb = node_blocks[0];
 
     std::vector<stk::mesh::Entity> nodes;
-    stk::io::get_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
+    stk::io::get_input_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
 
     /** \todo REFACTOR Application would probably store this field
      * (and others) somewhere after the declaration instead of
@@ -567,7 +566,7 @@ namespace stk_example_io {
         const std::string &name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
-        STKIORequire(part != NULL);
+        STKIORequire(part != nullptr);
 
         const stk::topology topo = part->topology();
         if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -626,7 +625,7 @@ namespace stk_example_io {
         const std::string & name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
-        STKIORequire(part != NULL);
+        STKIORequire(part != nullptr);
         stk::mesh::PartVector add_parts( 1 , part );
 
         std::vector<int> node_ids ;
@@ -647,7 +646,7 @@ namespace stk_example_io {
         stk::mesh::Field<double> *df_field =
             meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
 
-        if (df_field != NULL) {
+        if (df_field != nullptr) {
           stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
         }
       }
@@ -708,7 +707,7 @@ namespace stk_example_io {
 
         const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*side_block_part);
 
-        if (df_field != NULL) {
+        if (df_field != nullptr) {
           stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
         }
       }
@@ -738,7 +737,7 @@ namespace stk_example_io {
 		      Ioss::Field::RoleType filter_role)
   {
     std::vector<stk::mesh::Entity> entities;
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk::io::get_input_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
@@ -777,10 +776,10 @@ namespace stk_example_io {
       if (stk::io::is_part_io_part(*part)) {
 	// Get Ioss::GroupingEntity corresponding to this part...
 	Ioss::GroupingEntity *entity = region.get_entity(part->name());
-	if (entity != NULL) {
+	if (entity != nullptr) {
 	  if (entity->type() == Ioss::SIDESET) {
 	    Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
-	    assert(sset != NULL);
+	    assert(sset != nullptr);
 	    int block_count = sset->block_count();
 	    for (int i=0; i < block_count; i++) {
 	      Ioss::SideBlock *side_block = sset->get_block(i);
@@ -810,7 +809,8 @@ namespace stk_example_io {
 		      Ioss::Field::RoleType filter_role)
   {
     std::vector<stk::mesh::Entity> entities;
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk::io::OutputParams params(bulk);
+    stk::io::get_output_entity_list(io_entity, part_type, params, entities);
 
     stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
@@ -848,11 +848,11 @@ namespace stk_example_io {
 
 	// Get Ioss::GroupingEntity corresponding to this part...
 	Ioss::GroupingEntity *entity = region.get_entity(part->name());
-	if (entity != NULL) {
+	if (entity != nullptr) {
 
 	  if (entity->type() == Ioss::SIDESET) {
 	    Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
-	    assert(sset != NULL);
+	    assert(sset != nullptr);
 	    int block_count = sset->block_count();
 
 	    for (int i=0; i < block_count; i++) {

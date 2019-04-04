@@ -12,7 +12,7 @@ setlocal
 rem Set the location of Git, Ninja, etc.
 set SEMS_DIR=C:\projects\sems\install\win-x86_64
 set NINJA_DIR=%SEMS_DIR%\utility\ninja\1.7.2
-set CMAKE_DIR=%SEMS_DIR%\utility\cmake\3.8.1\bin
+set CMAKE_DIR=%SEMS_DIR%\utility\cmake\3.12.0\bin
 set GIT_EXE=%SEMS_DIR%\utility\git\2.13.0\cmd\git.exe
 set PATH=%NINJA_DIR%;%PATH%
 

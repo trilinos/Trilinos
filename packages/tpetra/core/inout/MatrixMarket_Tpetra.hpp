@@ -822,7 +822,7 @@ namespace Tpetra {
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
                                        DynamicProfile));
 
         // List of the global indices of my rows.
@@ -973,7 +973,6 @@ namespace Tpetra {
         using Teuchos::RCP;
         using Teuchos::rcp;
         typedef global_ordinal_type GO;
-        typedef typename ArrayView<const GO>::size_type size_type;
 
         // Construct the CrsMatrix.
         //
@@ -1047,7 +1046,7 @@ namespace Tpetra {
       readBanner (std::istream& in,
                   size_t& lineNumber,
                   const bool tolerant=false,
-                  const bool debug=false,
+                  const bool /* debug */=false,
                   const bool isGraph=false)
       {
         using Teuchos::MatrixMarket::Banner;
@@ -1139,7 +1138,7 @@ namespace Tpetra {
                      const Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
                      const Teuchos::RCP<const comm_type>& pComm,
                      const bool tolerant = false,
-                     const bool debug = false)
+                     const bool /* debug */ = false)
       {
         using Teuchos::MatrixMarket::readCoordinateDimensions;
         using Teuchos::Tuple;
@@ -3903,7 +3902,7 @@ namespace Tpetra {
         // know how many entries there are in each row, so we can use
         // static profile.
         RCP<sparse_matrix_type> A_proc0 =
-          rcp (new sparse_matrix_type (gatherRowMap, gatherNumEntriesPerRow,
+          rcp (new sparse_matrix_type (gatherRowMap, gatherNumEntriesPerRow (),
                                        Tpetra::StaticProfile));
         if (myRank == rootRank) {
           if (debug) {
@@ -6893,7 +6892,6 @@ namespace Tpetra {
         using Teuchos::REDUCE_MAX;
         using Teuchos::reduceAll;
         using std::endl;
-        typedef typename multivector_type::scalar_type scalar_type;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
         const char prefix[] = "Tpetra::MatrixMarket::writeDenseHeader: ";
 
@@ -7018,7 +7016,6 @@ namespace Tpetra {
         using Teuchos::TypeNameTraits;
         using Teuchos::wait;
         using std::endl;
-        typedef typename multivector_type::scalar_type scalar_type;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
 
         const Comm<int>& comm = * (X.getMap ()->getComm ());

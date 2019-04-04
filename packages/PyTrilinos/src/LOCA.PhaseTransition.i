@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.PhaseTransition is the python interface to namespace
 PhaseTransition of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.PhaseTransition is to provide groups and vectors
 for phase transition bifurcations.  The python version of
@@ -70,7 +70,7 @@ LOCA.PhaseTransition supports the following classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 

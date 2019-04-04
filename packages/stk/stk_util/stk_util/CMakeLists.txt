@@ -1,4 +1,5 @@
 
+ADD_SUBDIRECTORY(command_line)
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(parallel)
 ADD_SUBDIRECTORY(environment)

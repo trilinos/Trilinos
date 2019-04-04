@@ -2,6 +2,8 @@ ADD_SUBDIRECTORY(coffey)
 ADD_SUBDIRECTORY(glaze)
 ADD_SUBDIRECTORY(glaze2)
 ADD_SUBDIRECTORY(rectilinearRCB)
+ADD_SUBDIRECTORY(sacer4320)
+ADD_SUBDIRECTORY(miniem4669)
 ADD_SUBDIRECTORY(ordering)
 
 # command that copies files during build
@@ -12,6 +14,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         multiJaggedTest.xml
         GeomGenWeight.txt
         chacoGraphMetricsTest.xml
+        chacoGraphMetricsTestNoDistribute.xml
+        chacoGraphMetricsTestNoGraph.xml
+        chacoGraphMetricsTestNoGraphNoDistribute.xml
         chacoSimple3dTest.xml
         chacoSimpleTest.xml
         chacoVwgtTest.xml    

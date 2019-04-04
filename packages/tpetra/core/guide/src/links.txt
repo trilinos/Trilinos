@@ -1,0 +1,28 @@
+
+.. _Trilinos: http://www.trilinos.org/
+.. _Tpetra: http://www.trilinos.org/packages/tpetra
+.. _Teuchos: https://www.trilinos.org/packages/teuchos
+.. _Belos: http://www.trilinos.org/packages/belos
+.. _Anasazi: http://www.trilinos.org/packages/anasazi
+.. _MPI: https://en.wikipedia.org/wiki/Message_Passing_Interface
+.. _Kokkos: https://www.github.com/kokkos
+.. _OpenMP: http://www.openmp.org
+.. _`POSIX Threads`: https://en.wikipedia.org/wiki/POSIX_Threads
+.. _Nvidia: http://www.nvidia.com
+.. _Epetra: http://www.trilinos.org/packages/epetra
+.. _CUDA: http://www.nvidia.com/object/cuda_home_new.html
+
+.. |tpetra_map| replace:: :code:`Tpetra::Map`
+.. _tpetra_map: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html
+
+.. |tpetra_crsmatrix| replace:: :code:`Tpetra::CrsMatrix`
+.. _tpetra_crsmatrix: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1CrsMatrix.html
+
+.. |tpetra_crsgraph| replace:: :code:`Tpetra::CrsGraph`
+.. _tpetra_crsgraph: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1CrsGraph.html
+
+.. |tpetra_mv| replace:: :code:`Tpetra::Vector`
+.. _tpetra_mv: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Vector.html
+
+.. |tpetra_example_fem_assembly| replace:: :code:`Tpetra FEM Assembly Example`
+.. _tpetra_example_fem_assembly: https://github.com/trilinos/Trilinos/tree/develop/packages/tpetra/core/example/Finite-Element-Assembly

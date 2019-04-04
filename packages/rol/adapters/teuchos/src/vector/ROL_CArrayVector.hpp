@@ -133,6 +133,16 @@ class CArrayVector : public Vector<Real> {
            }
         } 
 
+        void randomize( const Real l=0.0, const Real u=1.0 ) {
+           Real a = (u-l);
+           Real b = l;
+           Real x(0);
+           for(unsigned int i=0; i<dim_; ++i) {
+               x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+               (array_)[i] = a*x + b;
+           }
+        }
+
 };    
 
 

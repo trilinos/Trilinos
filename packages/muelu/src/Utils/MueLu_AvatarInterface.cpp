@@ -57,10 +57,12 @@
 
 // ***********************************************************************
 /* Notional Parameterlist Structure
-   "avatar: decision tree files"   "{'mytree1.dat','mytree2.dat'}"
-   "avatar: names files"           "{'mynames1.dat','mynames2.dat'}"
-   "avatar: args"                  "{'-s','23','-y','14'}"
-
+   "avatar: filestem"              "{'mystem1','mystem2'}"
+   "avatar: decision tree files"   "{'mystem1.trees','mystem2.trees'}"
+   "avatar: names files"           "{'mystem1.names','mystem2.names'}"
+   "avatar: good class"            "1"
+   "avatar: heuristic" 		   "1"
+   "avatar: bounds file"           "{'bounds.data'}"
    "avatar: muelu parameter mapping"
      - "param0'
        - "muelu parameter"          "aggregation: threshold"
@@ -72,6 +74,7 @@
        - "avatar parameter"         "SWEEPS"
        - "muelu values"             "{1,2,3}"
        - "avatar values"            "{1,2,3}"
+
 
    Notional SetMueLuParameters "problemFeatures"  Structure
    "my feature #1"                "246.01"
@@ -103,6 +106,7 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
 
   Teuchos::ParameterList pl_dummy;
   Teuchos::Array<std::string> ar_dummy;
+  int int_dummy;
 
   // Files from which to read Avatar trees
   validParamList->set<Teuchos::Array<std::string> >("avatar: decision tree files",ar_dummy,"Names of Avatar decision tree files");
@@ -110,19 +114,35 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // Files from which to read Avatar names
   validParamList->set<Teuchos::Array<std::string> >("avatar: names files",ar_dummy,"Names of Avatar decision names files");
 
-  // Avatar command line args
-  validParamList->set<Teuchos::Array<std::string> >("avatar: args",ar_dummy,"Arguments to control the execution of Avatar");
+  // Filestem arg for Avatar
+  validParamList->set<Teuchos::Array<std::string> >("avatar: filestem",ar_dummy,"Filestem for the files Avatar requires");
 
   // This should be a MueLu parameter-to-Avatar parameter mapping (e.g. if Avatar doesn't like spaces)
   validParamList->set<Teuchos::ParameterList>("avatar: muelu parameter mapping",pl_dummy,"Mapping of MueLu to Avatar Parameters");
-  
+
+  // "Good" Class ID for Avatar
+  validParamList->set<int>("avatar: good class",int_dummy,"Numeric code for class Avatar considers to be good");
+
+   // Which drop tol choice heuristic to use
+  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heuristic we want to use");  
+
+  // Bounds file for extrapolation risk
+  validParamList->set<Teuchos::Array<std::string> >("avatar: bounds file",ar_dummy,"Bounds file for Avatar extrapolation risk");
+
+  // Add dummy variables at the start
+  validParamList->set<int>("avatar: initial dummy variables",int_dummy,"Number of dummy variables to add at the start");
+
+  // Add dummy variables before the class
+  validParamList->set<int>("avatar: pre-class dummy variables",int_dummy,"Number of dummy variables to add at the before the class");
+
   return validParamList;
 }
 
 
 // ***********************************************************************
 Teuchos::ArrayRCP<std::string> AvatarInterface::ReadFromFiles(const char * paramName) const {
-  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(paramName);
+  //  const Teuchos::Array<std::string> & tf = params_.get<const Teuchos::Array<std::string> >(paramName);
+  Teuchos::Array<std::string> & tf = params_.get<Teuchos::Array<std::string> >(paramName);
   Teuchos::ArrayRCP<std::string> treelist;
   // Only Proc 0 will read the files and print the strings
   if (comm_->getRank() == 0) {
@@ -149,28 +169,28 @@ void AvatarInterface::Setup() {
   // Get the avatar strings (NOTE: Only exist on proc 0)
   avatarStrings_ = ReadFromFiles("avatar: decision tree files");
   namesStrings_  = ReadFromFiles("avatar: names files");
+  if(params_.isParameter("avatar: bounds file"))
+    boundsString_ = ReadFromFiles("avatar: bounds file");
+
+  filestem_ = params_.get<Teuchos::Array<std::string>>("avatar: filestem");
 
 
   if(comm_->getRank() == 0) {
-    // Process avatar command line args
-    const Teuchos::Array<std::string> & avatarArgs = params_.get<Teuchos::Array<std::string> >("avatar: args");
-    int argc = (int) avatarArgs.size() +1;
-    const char * argv0 = "avatardt";    
-    std::vector<char*> argv(argc);
-    argv[0] = const_cast<char*>(argv0);
-    for(int i=1; i<argc; i++) 
-      argv[i] = const_cast<char*>(avatarArgs[i-1].c_str());
-    
     // Now actually set up avatar - Avatar's cleanup routine will free the pointer
-    //Avatar_handle* avatar_train(int argc, char** argv, char* names_file, char* tree_file);
-    avatarHandle_ = avatar_train(argc,argv.data(),const_cast<char*>(namesStrings_[0].c_str()),const_cast<char*>(avatarStrings_[0].c_str()));
+    //    Avatar_handle* avatar_train(int argc, char **argv, char* names_file, int names_file_is_a_string, char* train_file, int train_file_is_a_string);
+    const int namesfile_is_a_string = 1;
+    const int treesfile_is_a_string = 1;
+    avatarHandle_ = avatar_load(const_cast<char*>(filestem_[0].c_str()),const_cast<char*>(namesStrings_[0].c_str()),namesfile_is_a_string,const_cast<char*>(avatarStrings_[0].c_str()),treesfile_is_a_string);
 
   }
 
+  // Which class does Avatar consider "good"
+  avatarGoodClass_ = params_.get<int>("avatar: good class");
+
+  heuristicToUse_ = params_.get<int>("avatar: heuristic");
+
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
-
-  throw std::runtime_error("Not yet implemented!");
 
 }
 
@@ -184,13 +204,20 @@ void AvatarInterface::Cleanup() {
 // ***********************************************************************
 void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & problemFeatures, std::string & featureString) const {
   // NOTE: Assumes that the features are in the same order Avatar wants them.
-  // FIXME: This ordering should be checked against the names file
   std::stringstream ss;
+
+  // Initial Dummy Variables
+  if (params_.isParameter("avatar: initial dummy variables")) {
+    int num_dummy = params_.get<int>("avatar: initial dummy variables");
+    for(int i=0; i<num_dummy; i++)
+      ss<<"666,";
+  }
+
   for(Teuchos::ParameterList::ConstIterator i=problemFeatures.begin(); i != problemFeatures.end(); i++) {
     //    const std::string& name = problemFeatures.name(i);
     const Teuchos::ParameterEntry& entry = problemFeatures.entry(i);
     if(i!=problemFeatures.begin()) ss<<",";
-    ss<<entry;
+    entry.leftshift(ss,false);  // Because ss<<entry prints out '[unused]' and we don't want that.
   }
   featureString = ss.str();
 }
@@ -220,16 +247,17 @@ void AvatarInterface::UnpackMueLuMapping() {
       avatarParameterName_[idx] = sublist.get<std::string>("avatar parameter");
 
       // Get the values
-      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are ints
+      //FIXME: For now we assume that all of these guys are doubles and their Avatar analogues are doubles
       mueluParameterValues_[idx]  = sublist.get<Teuchos::Array<double> >("muelu values");
-      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<int> >("avatar values");            
+      avatarParameterValues_[idx] = sublist.get<Teuchos::Array<double> >("avatar values");            
+
+      idx++;
     }
     else {
       done=true;
     }
-    idx++;
   }
-  
+
   if(idx!=numParams) 
     throw std::runtime_error("MueLu::AvatarInterface::UnpackMueLuMapping(): 'avatar: muelu parameter mapping' has unknown fields");
 }
@@ -239,6 +267,14 @@ std::string AvatarInterface::ParamsToString(const std::vector<int> & indices) co
   for(Teuchos_Ordinal i=0; i<avatarParameterValues_.size(); i++) {
     ss << "," << avatarParameterValues_[i][indices[i]];
   }
+
+  // Pre-Class dummy variables
+  if (params_.isParameter("avatar: pre-class dummy variables")) {
+    int num_dummy = params_.get<int>("avatar: pre-class dummy variables");
+    for(int i=0; i<num_dummy; i++)
+      ss<<",666";
+  }
+  
   return ss.str();
 }
 
@@ -265,7 +301,7 @@ void AvatarInterface::GenerateMueLuParametersFromIndex(int id,Teuchos::Parameter
   for(int i=0; i<numParams; i++) {
     int div = avatarParameterValues_[i].size();
     int mod = curr_id % div;
-    pl.set(mueluParameterName_[i],mueluParameterValues_[mod]);
+    pl.set(mueluParameterName_[i],mueluParameterValues_[i][mod]);
     curr_id = (curr_id - mod)/div;
   }
 }
@@ -297,25 +333,32 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
-    Teuchos::ArrayRCP<int> avatarOutput;
-    {
+    // FIXME: Find alternative to hard coding malloc size (input deck?)
+    int* predictions = (int*)malloc(8 * sizeof(int));
+    float* probabilities = (float*)malloc(3 * 8 * sizeof(float));
+
       std::string testString;
       for(int i=0; i<num_combos; i++) {
         SetIndices(i,indices);
         // Now we add the MueLu parameters into one, enormous Avatar trial string and run avatar once
-        testString += trialString + ParamsToString(indices) + "\n";
+        testString += trialString + ParamsToString(indices) + ",0\n";
       }
+
+      std::cout<<"** Avatar TestString ***\n"<<testString<<std::endl;//DEBUG
+
+      int bound_check = true;
+      if(params_.isParameter("avatar: bounds file"))
+         bound_check = checkBounds(testString, boundsString_);
       
       // FIXME: Only send in first tree's string
-      //int* avatar_test(Avatar_handle* a, char* tree_file, char* test_data_file);
-      avatarOutput=Teuchos::arcp(avatar_test(&*avatarHandle_,const_cast<char*>(avatarStrings_[0].c_str()),const_cast<char*>(testString.c_str())),0,num_combos,false);
-
-    }
+      //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
+      const int test_data_is_a_string = 1;
+      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions,probabilities);
 
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i] == 1) acceptableCombos.push_back(i);      
+      if(predictions[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
@@ -326,24 +369,175 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
                            << "         An arbitrary set of options will be chosen instead"<<std::endl;    
     }
     else {
-      // As a placeholder, we'll choose the first acceptable combination.  Later we can do something smarter
-      chosen_option_id = acceptableCombos[0];
+      // If there is only one acceptable combination, use it; 
+      // otherwise, find the parameter choice with the highest
+      // probability of success
+      if(acceptableCombos.size() == 1){
+	chosen_option_id = acceptableCombos[0];
+      } 
+      else {
+	switch (heuristicToUse_){
+	  case 1: 
+		chosen_option_id = hybrid(probabilities, acceptableCombos);
+		break;
+	  case 2: 
+		chosen_option_id = highProb(probabilities, acceptableCombos);
+		break;
+	  case 3: 
+		// Choose the first option in the list of acceptable
+		// combinations; the lowest drop tolerance among the 
+		// acceptable combinations
+		chosen_option_id = acceptableCombos[0];
+		break;
+	  case 4: 
+		chosen_option_id = lowCrash(probabilities, acceptableCombos);
+		break;
+	  case 5:
+		chosen_option_id = weighted(probabilities, acceptableCombos);
+		break;
+        }
+
+      }
+    }
+    
+    // If mesh parameters are outside bounding box, set drop tolerance
+    // to 0, otherwise use avatar recommended drop tolerance
+    if (bound_check == 0){
+      GetOStream(Runtime0) << "WARNING: Extrapolation risk detected, setting drop tolerance to 0" <<std::endl;
+      GenerateMueLuParametersFromIndex(0,avatarParams);
+    } else {
+      GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
     }
 
-    // Generate the parameterList from the chosen option
-    GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
-  }
+    // Cleanup 
+    free(predictions);
+    free(probabilities); 
+  } 
 
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
 
+
+}
+
+int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString) const {
+  std::stringstream ss(trialString);
+  std::vector<double> vect;
+
+  double b; 
+  while (ss >> b)  {
+    vect.push_back(b);
+    if (ss.peek() == ',') ss.ignore();
+  }
+  
+  std::stringstream ssBounds(boundsString[0]);
+  std::vector<double> boundsVect;
+
+  while (ssBounds >> b) {
+    boundsVect.push_back(b);    
+    if (ssBounds.peek() == ',') ssBounds.ignore();
+  }
+
+  int min_idx = (int) std::min(vect.size(),boundsVect.size()/2);
+
+  bool inbounds=true;
+  for(int i=0; inbounds && i<min_idx; i++) 
+    inbounds =  boundsVect[2*i] <= vect[i] && vect[i] <= boundsVect[2*i+1];
+
+  return (int) inbounds;
+}
+
+int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  float best_prob = probabilities[2];
+  float diff;
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    diff = probabilities[this_combo] - low_crash;
+     // If this parameter combination has a crash
+     // probability .2 lower than the current "best", we 
+     // will use this drop tolerance
+    if(diff < -.2){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    } 
+    // If this parameter combination has the same
+    // or slightly lower crash probability than the
+    // current best, we compare their "GOOD" probabilities 
+    else if(diff <= 0 && probabilities[this_combo + 2] > best_prob){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    }
+  }
+  return chosen_option_id;
+}
+
+int AvatarInterface::highProb(float * probabilities, std::vector<int> acceptableCombos) const{
+  float high_prob = probabilities[2];
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    // If this parameter combination has a higher "GOOD" 
+    // probability, use this combination
+    if(probabilities[this_combo + 2] > high_prob){
+      high_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x]; 
+    }
+  }
+  return chosen_option_id;
+}
+
+int AvatarInterface::lowCrash(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    // If this parameter combination has a lower "CRASH"
+    // probability, use this combination
+    if(probabilities[this_combo] < low_crash){
+      low_crash = probabilities[this_combo];
+      chosen_option_id = acceptableCombos[x]; 
+    }
+  }
+  return chosen_option_id;
+}
+
+int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  float best_prob = probabilities[2];
+  float diff;
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    diff = probabilities[this_combo] - low_crash;
+     // If this parameter combination has a crash
+     // probability .2 lower than the current "best", we 
+     // will use this drop tolerance
+    if(diff < -.2){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    } 
+    // If this parameter combination is within .1
+    // or has a slightly lower crash probability than the
+    // current best, we compare their "GOOD" probabilities 
+    else if(diff <= .1 && probabilities[this_combo + 2] > best_prob){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    }
+  }
+  return chosen_option_id;
 }
 
 
-
-
-
-
-} // namespace MueLu
+}// namespace MueLu
 
 #endif// HAVE_MUELU_AVATAR
 

@@ -218,6 +218,12 @@ public:
     }
   }
 
+  void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    for (size_type i=0; i<vecs_.size(); ++i) {
+      vecs_[i]->randomize(l,u);
+    }
+  }
+
   void print( std::ostream &outStream ) const {
     for( size_type i=0; i<vecs_.size(); ++i ) {
       outStream << "V[" << i << "]: ";
@@ -249,9 +255,17 @@ public:
 
 public:
 
-  static Vp create( std::initializer_list<Vp> vs ) {
+  // Make a new PartitionedVector from an initializer_list of pointers to vectors
+  static Ptr<PartitionedVector> create( std::initializer_list<Vp> vs ) {
     std::vector<Vp> subvecs{vs};
     return ROL::makePtr<PartitionedVector>( subvecs ); 
+  }
+
+  // Make a new PartitionedVector by cloning the given vector N times
+  static Ptr<PartitionedVector> create( const V& x, size_type N ) {
+    std::vector<Vp> subvecs(N);
+    for( size_type i=0; i<N; ++i ) subvecs.at(i) = x.clone();
+    return ROL::makePtr<PartitionedVector>( subvecs );
   }
 
 };

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,7 +40,6 @@
 #include <iostream>
 #include <numeric>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -66,21 +65,31 @@
 // ========================================================================
 
 namespace {
+  struct my_numpunct : std::numpunct<char>
+  {
+  protected:
+    char        do_thousands_sep() const override { return ','; }
+    std::string do_grouping() const override { return "\3"; }
+  };
+
   template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
-  std::string codename;
-  std::string version = "0.6";
+  std::string                  codename;
+  std::string                  version = "0.6";
 } // namespace
 
 int main(int argc, char *argv[])
 {
   int my_rank = 0;
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
 
   Skinner::Interface interface;
   interface.parse_options(argc, argv);
+
+  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
+  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
 
   std::string in_type = "exodusII";
 
@@ -101,17 +110,23 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (interface.ints_64_bit()) {
-    skinner(interface, static_cast<int64_t>(0));
+  try {
+    if (interface.ints_64_bit()) {
+      skinner(interface, static_cast<int64_t>(0));
+    }
+    else {
+      skinner(interface, 0);
+    }
   }
-  else {
-    skinner(interface, 0);
+  catch (std::exception &e) {
+    std::cerr << "\n" << e.what() << "\n\nskinner terminated due to exception\n";
+    exit(EXIT_FAILURE);
   }
 
   if (my_rank == 0) {
     OUTPUT << "\n" << codename << " execution successful.\n";
   }
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -154,12 +169,12 @@ namespace {
     Ioss::Region region(dbi, "region_1");
 
     Ioss::FaceGenerator face_generator(region);
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     auto start = std::chrono::steady_clock::now();
     face_generator.generate_faces((INT)0);
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     auto duration = std::chrono::steady_clock::now() - start;
@@ -188,7 +203,7 @@ namespace {
       }
     }
 
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
     Ioss::Int64Vector counts(3), global(3);
     counts[0] = interior;
     counts[1] = boundary;
@@ -290,7 +305,7 @@ namespace {
       }
     }
 
-    if (interface.netcdf4) {
+    if (interface.netcdf4_) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
 

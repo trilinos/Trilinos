@@ -107,9 +107,16 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     int numRows = 399;
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(numRows);
+    GO nx = numRows;
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     Teuchos::ParameterList MueLuList;
     MueLuList.set("verbosity","none");
@@ -119,11 +126,11 @@ namespace MueLuTests {
 
     Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
         MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-            A, MueLuList, Teuchos::null, Teuchos::null);
+            A, MueLuList, coordinates, Teuchos::null);
 
     // confirm that we did get a hierarchy with two levels -- a sanity check for this test
     TEST_EQUALITY(2, H->GetGlobalNumLevels());
-    
+
     using namespace std;
     string descriptionTwoLevel = H->description();
 
@@ -184,11 +191,19 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(399*comm->getSize());
+    GO nx = 399*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     Hierarchy H(A);
     H.SetMaxCoarseSize(1);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     FactoryManager M;
@@ -213,6 +228,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -224,8 +242,13 @@ namespace MueLuTests {
 
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+    GO nx = 6561*comm->getSize();  //=8*3^6
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
     RCP<const Map > map = Op->getRowMap();
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (Scalar) 1.0);
@@ -238,6 +261,7 @@ namespace MueLuTests {
     RCP<MueLu::Level> Finest = H.GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
+    Finest->Set("Coordinates", coordinates);
     Finest->Set("Nullspace", nullSpace);
     Finest->Set("A", Op);
 
@@ -272,6 +296,7 @@ namespace MueLuTests {
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
+    M.SetFactory("Coordinates", TentPFact);
 
     H.Setup(M, 0, maxLevels);
 
@@ -315,12 +340,20 @@ namespace MueLuTests {
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     //matrix
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+    GO nx = 6561*comm->getSize();  //=8*3^6
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
     RCP<const Map > map = Op->getRowMap();
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map, 1);
     nullSpace->putScalar( (Scalar) 1.0);
@@ -335,6 +368,7 @@ namespace MueLuTests {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", Op);
     Finest->Set("Nullspace", nullSpace);
+    Finest->Set("Coordinates", coordinates);
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetMinNodesPerAggregate(3);
@@ -369,6 +403,7 @@ namespace MueLuTests {
     M.SetFactory("Aggregates", CoupledAggFact);
     M.SetFactory("Smoother", SmooFact);
     M.SetFactory("CoarseSolver", coarseSolveFact);
+    M.SetFactory("Coordinates", TentPFact);
 
     H.Setup(M, 0, maxLevels);
 
@@ -571,6 +606,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TESTING_SET_OSTREAM;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
 #   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
 #   endif
@@ -579,12 +617,18 @@ namespace MueLuTests {
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
+    GO nx = 299*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.setVerbLevel(Teuchos::VERB_HIGH);
     H.SetMaxCoarseSize(50);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
@@ -670,13 +714,22 @@ namespace MueLuTests {
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
+    GO nx = 299*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.setVerbLevel(Teuchos::VERB_HIGH);
     H.SetMaxCoarseSize(50);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     // setup smoother factory
     RCP<SmootherPrototype> smooProto;
@@ -781,13 +834,22 @@ namespace MueLuTests {
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #   endif
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299*comm->getSize());
+    GO nx  = 299*comm->getSize();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.SetMaxCoarseSize(299*comm->getSize()); // set max coarse size to fit problem size (-> 1 level method)
     H.setVerbLevel(Teuchos::VERB_HIGH);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level
@@ -830,14 +892,24 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(30);
+    GO nx = 30;
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.SetDefaultVerbLevel(MueLu::Low);
     H.SetMaxCoarseSize(29);
+    H.GetLevel(0)->Set("Coordinates", coordinates);
+
     FactoryManager M;
     M.SetKokkosRefactor(false);
     M.SetFactory("Smoother", Teuchos::null);
@@ -849,30 +921,16 @@ namespace MueLuTests {
 
     // Write matrices out, read fine A back in, and check that the read was ok
     // by using a matvec with a random vector.
-    // JJH: 22-Feb-2016 Append scalar type to file name. The theory is that for dashboard
-    //      tests with multiple Scalar instantiations of this test, a test with Scalar type
-    //      A could try to read in the results of the test with Scalar type B, simply because
-    //      the test with type B overwrote A's output matrix file.  A better solution would be
-    //      to write to a file stream, but this would involve writing new interfaces to Epetra's
-    //      file I/O capabilities.
-    std::string tname = typeid(Scalar).name();
-    tname = tname + typeid(LocalOrdinal).name();
-    tname = tname + typeid(GlobalOrdinal).name();
-#ifdef HAVE_MUELU_KOKKOSCORE
-    std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
-    nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
-    tname = tname + nn;
-#endif
-    tname = "_" + tname;
+    char t[] = "XXXXXX";
+    mkstemp(t); //mkstemp() creates a temporary file. We use the name of that file as
+                //the suffix for the various data files produced by Hierarchy::Write().
+                //A better solution would be to write to a file stream, but this would 
+                //involve writing new interfaces to Epetra's file I/O capabilities.
+    std::string tname(t);
     LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
     //Only write out the fine level matrix, since that is the only data file we test against.
     H.Write(zero,zero,tname);
 
-    Teuchos::Array<typename TST::magnitudeType> norms(1);
-
-    out << "random status: " << rand() << std::endl;
-    std::srand(595343843);
-    std::rand();
     std::string infile = "A_0" + tname + ".m";
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<Matrix> Ain = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(infile, lib, comm);
@@ -881,6 +939,8 @@ namespace MueLuTests {
     infile = "domainmap_A_0" + tname + ".m"; remove(infile.c_str());
     infile = "rangemap_A_0" + tname + ".m";  remove(infile.c_str());
     infile = "rowmap_A_0" + tname + ".m";    remove(infile.c_str());
+    remove(tname.c_str()); //remove file created by mkstemp
+
     RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
     randomVec->randomize();
     out << "randomVec norm: " << randomVec->norm2() << std::endl;
@@ -896,6 +956,7 @@ namespace MueLuTests {
     //diff = A_v + (-1.0)*(Ain_v) + 0*diff
     diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
 
+    Teuchos::Array<typename TST::magnitudeType> norms(1);
     diff->norm2(norms);
     out << "||diff|| = " << norms[0] << std::endl;
     TEST_EQUALITY(norms[0]<1e-15, true);
@@ -907,6 +968,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     out << "===== Generating matrices =====" << std::endl;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -921,6 +985,8 @@ namespace MueLuTests {
       out << "Skipping test" << std::endl;
       return;
     }
+
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("2D", A->getRowMap(), matrixList);
 
     // extract information
     RCP<const Map>        rangeMap = A->getRangeMap();
@@ -937,10 +1003,11 @@ namespace MueLuTests {
     Hierarchy Haux(A_point);
     Haux.SetMaxCoarseSize(1);
     Haux.SetDefaultVerbLevel(MueLu::None);
+    Haux.GetLevel(0)->Set("Coordinates", coordinates);
 
     FactoryManager Maux;
     Maux.SetKokkosRefactor(false);
-    const FactoryBase* nullFactory = Maux.GetFactory("Nullspace").get();
+    const FactoryBase* nullFactory  = Maux.GetFactory("Nullspace").get();
 
     Haux.Keep("Nullspace", nullFactory);
 
@@ -985,7 +1052,7 @@ namespace MueLuTests {
     H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
 
     RCP<Level> l0 = H.GetLevel(0);
-    l0->Set("A",          A);
+    l0->Set("A",           A);
     H.AddNewLevel();
     RCP<Level> l1     = H   .GetLevel(1);
     RCP<Level> l1_aux = Haux.GetLevel(1);
@@ -1005,10 +1072,36 @@ namespace MueLuTests {
     X->putScalar( Teuchos::ScalarTraits<Scalar>::zero());
 
     int iterations = 10;
+    real_type tol = 1.0e-10;
     H.IsPreconditioner(false);
-    H.Iterate(*RHS, *X, iterations);
+    H.Iterate(*RHS, *X, std::pair<LO,real_type>(iterations,tol));
 #endif
     TEST_EQUALITY(0,0);
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, CheckNullspaceDimension, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    // Test that HierarchyManager throws if user-supplied nullspace has dimension smaller than numPDEs
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    GO nx = 30;
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+    A->SetFixedBlockSize(2);
+
+    HierarchyManager mueluManager;
+    RCP<Hierarchy> Hrcp = mueluManager.CreateHierarchy();
+    Hierarchy&     H    = *Hrcp;
+    H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
+
+    RCP<Level> l0 = H.GetLevel(0);
+    l0->Set("A", A);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
+    nullSpace->putScalar( (Scalar) 1.0);
+    l0->Set("Nullspace", nullSpace);
+
+    TEST_THROW( mueluManager.SetupHierarchy(H), MueLu::Exceptions::RuntimeError );
   }
 
 
@@ -1027,7 +1120,8 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, CheckNullspaceDimension, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 

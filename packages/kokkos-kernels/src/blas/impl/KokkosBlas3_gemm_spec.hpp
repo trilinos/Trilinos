@@ -128,7 +128,7 @@ struct GEMM {
   static_assert (static_cast<int> (CViewType::rank) == 2,
                  "CViewType must have rank 2.");
 
-  Kokkos::Profiling::pushRegion(eti_spec_avail?"KokkosBlas::gemm[ETI]":"KokkosBlas::gemm[noETI]");
+  Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::gemm[ETI]":"KokkosBlas::gemm[noETI]");
   // Figure out Scalar Types
   typedef typename AViewType::non_const_value_type ScalarA;
   typedef typename BViewType::non_const_value_type ScalarB;

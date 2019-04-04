@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ double find_maxdeg(struct vtx_data **graph,       /* graph data structure */
                    int               nvtxs,       /* number of vertices */
                    int               using_ewgts, /* are edge weights being used? */
                    float *           pmax_ewgt    /* returns largest edge weight if not NULL */
-                   )
+)
 {
   double maxdeg;   /* maximum degree of a vertex */
   float *eptr;     /* loops through edge weights */

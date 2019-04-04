@@ -85,6 +85,7 @@
 
 // NOX Objects
 #include "NOX.H"
+#include "NOX_SolverStats.hpp"
 #include "NOX_Epetra.H"
 
 // Trilinos Objects
@@ -134,7 +135,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  bool verbose = false;
+  bool verbose = true;
   bool success = false;
   try {
     // Create and reset the Timer
@@ -330,6 +331,11 @@ int main(int argc, char *argv[])
     // Time integration loop
     while(timeStep < maxTimeSteps) {
 
+      if (timeStep > 0) {
+        solver->reset(grp.getX(), combo);
+        grp.computeF();
+      }
+
       timeStep++;
       time += dt;
 
@@ -363,8 +369,6 @@ int main(int argc, char *argv[])
 
       Problem->reset(finalSolution);
       grp.setX(finalSolution);
-      solver->reset(grp.getX(), combo);
-      grp.computeF();
 
     } // end time step while loop
 
@@ -400,12 +404,20 @@ int main(int argc, char *argv[])
     if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations",0) != 3) {
       testStatus = 2;
     }
-#ifndef HAVE_MPI
-    // 3. Linear Iterations (9)
-    if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 9) {
-      testStatus = 3;
+    if (solver->getSolverStatistics()->numNonlinearIterations != 3) {
+      testStatus = 2;
     }
-#endif
+    if (NumProc == 1) {
+      // 3. Linear Iterations (9)
+      if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 9) {
+        testStatus = 3;
+      }
+      if (solver->getSolverStatistics()->linearSolve.allNonlinearSolves_NumLinearIterations != 9) {
+        testStatus = 3;
+      }
+    }
+
+    utils.out() << "testStatus = " << testStatus << std::endl;
 
     success = (testStatus == 0);
     // Summarize test results

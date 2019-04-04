@@ -49,8 +49,6 @@
 #include <FROSch_ExtractSubmatrices_def.hpp>
 #include <FROSch_Tools_def.hpp>
 
-// TODO
-// -> "InterfaceEntity" -> "Entity"
 
 namespace FROSch {
     
@@ -60,7 +58,9 @@ namespace FROSch {
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class EntitySet;
     
-    enum EntityType {VertexType,ShortEdgeType,StraightEdgeType,EdgeType,FaceType,SurfaceType,VolumeType};
+    enum EntityType {DefaultType,VertexType,EdgeType,FaceType,InteriorType,InterfaceType};
+    enum EntityFlag {DefaultFlag,StraightFlag,ShortFlag,NodeFlag};
+    enum DistanceFunction {ConstantDistanceFunction,InverseEuclideanDistanceFunction};
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -93,12 +93,16 @@ namespace FROSch {
         typedef Xpetra::Vector<SC,LO,GO,NO> Vector;
         typedef Teuchos::RCP<Vector> VectorPtr;
         
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         
         typedef Teuchos::Array<Node<SC,LO,GO> > NodeVec;
         typedef Teuchos::RCP<Node<SC,LO,GO> > NodePtr;
+        typedef Teuchos::Array<NodePtr> NodePtrVec;
         
         typedef unsigned UN;
         
@@ -107,11 +111,15 @@ namespace FROSch {
         typedef Teuchos::Array<GO> GOVec;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         
+        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
+        typedef Teuchos::Array<SCVecPtr> SCVecPtrVec;
+        
         
         InterfaceEntity(EntityType type,
                         UN dofsPerNode,
                         UN multiplicity,
-                        GO *subdomains);
+                        GO *subdomains,
+                        EntityFlag flag = DefaultFlag);
         
         ~InterfaceEntity();
         
@@ -140,13 +148,29 @@ namespace FROSch {
         
         int setLocalID(LO localID);
         
-        int setParentID(LO parentID);
+        int setCoarseNodeID(LO coarseNodeID);
         
         int setUniqueIDToFirstGlobalID();
         
         int resetEntityType(EntityType type);
         
-        int findParents(EntitySetPtr entitySet);
+        int resetEntityFlag(EntityFlag flag);
+        
+        int findAncestorsInSet(EntitySetPtr entitySet);
+        
+        int clearAncestors();
+        
+        int addOffspring(InterfaceEntityPtr interfaceEntity);
+        
+        int clearOffspring();
+        
+        EntitySetPtr findCoarseNodes();
+        
+        int clearCoarseNodes();
+        
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
         
         InterfaceEntityPtr divideEntity(CrsMatrixPtr matrix, int pID);
         
@@ -156,6 +180,8 @@ namespace FROSch {
         
         EntityType getEntityType() const;
         
+        EntityFlag getEntityFlag() const;
+        
         UN getDofsPerNode() const;
         
         UN getMultiplicity() const;
@@ -164,7 +190,7 @@ namespace FROSch {
         
         LO getLocalID() const;
         
-        LO getParentID() const;
+        LO getCoarseNodeID() const;
         
         const Node<SC,LO,GO>& getNode(UN iDNode) const;
         
@@ -184,30 +210,45 @@ namespace FROSch {
         
         UN getNumNodes() const;
         
-        const EntitySetPtr getParents() const;
+        const EntitySetPtr getAncestors() const;
+        
+        const EntitySetPtr getOffspring() const;
+        
+        const EntitySetPtr getCoarseNodes() const;
+        
+        SC getDistanceToCoarseNode(UN iDNode,
+                                   UN iDCoarseNode) const;
         
     protected:
         
         EntityType Type_;
         
+        EntityFlag Flag_;
+        
         NodeVec NodeVector_;
         
         GOVec SubdomainsVector_;
         
-        EntitySetPtr Parents_;
+        EntitySetPtr Ancestors_;
+        EntitySetPtr Offspring_;
+        EntitySetPtr CoarseNodes_;
+        
+        SCVecPtrVec DistancesVector_;
         
         UN DofsPerNode_;
         UN Multiplicity_;
         GO UniqueID_;
         LO LocalID_;
-        LO ParentID_;
+        LO CoarseNodeID_;
     };
     
     template <class SC,class LO,class GO,class NO>
-    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa, Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
+    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                  Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
     
     template <class SC,class LO,class GO,class NO>
-    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa, Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
+    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
     
 }
 

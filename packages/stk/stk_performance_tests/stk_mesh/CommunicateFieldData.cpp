@@ -224,7 +224,7 @@ void test_communicate_field_data_ghosting(stk::mesh::BulkData& mesh, const stk::
     MPI_Reduce(static_cast<void*>(&stk_comm_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
 
     if ( my_proc == 0 ) {
-      std::cerr << "Time to do communicate_field_data: " << max_time << std::endl;
+      std::cerr << "Time to do communicate_field_data ("<<const_fields.size() <<" fields): " << max_time << std::endl;
     }
     stk::parallel_print_time_for_performance_compare(mesh.parallel(), stk_comm_time);
 }

@@ -54,15 +54,15 @@
 
 namespace Zoltan2 {
 
-//GFD this declaration is really messy is there a better way? I couldn't typedef outside since 
+//GFD this declaration is really messy is there a better way? I couldn't typedef outside since
 //    there is no user type until the function.
 template <typename User>
-RCP<Tpetra::CrsMatrix<int, 
+RCP<Tpetra::CrsMatrix<int,
                       typename MeshAdapter<User>::lno_t,
-                      typename MeshAdapter<User>::gno_t, 
+                      typename MeshAdapter<User>::gno_t,
                       typename MeshAdapter<User>::node_t> >
 get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
-		      const RCP<const Comm<int> > comm,
+                      const RCP<const Comm<int> > comm,
                       Zoltan2::MeshEntityType sourcetarget,
                       Zoltan2::MeshEntityType through) {
   typedef typename MeshAdapter<User>::gno_t gno_t;
@@ -75,10 +75,9 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
   typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
   typedef Tpetra::global_size_t GST;
   const GST dummy = Teuchos::OrdinalTraits<GST>::invalid ();
-  
+
 /* Find the adjacency for a nodal based decomposition */
   if (ia->availAdjs(sourcetarget, through)) {
-    using Tpetra::DefaultPlatform;
     using Teuchos::Array;
     using Teuchos::as;
     using Teuchos::RCP;
@@ -114,7 +113,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     min[0] = std::numeric_limits<gno_t>::max();
     for (size_t i = 0; i < LocalNumIDs; ++i) {
       if (Ids[i] < min[0]) {
-	min[0] = Ids[i];
+        min[0] = Ids[i];
       }
       size_t ncols = offsets[i+1] - offsets[i];
       if (ncols > maxcols) maxcols = ncols;
@@ -124,7 +123,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     min[1] = std::numeric_limits<gno_t>::max();
     for (size_t i = 0; i < LocalNumOfThrough; ++i) {
       if (throughIds[i] < min[1]) {
-	min[1] = throughIds[i];
+        min[1] = throughIds[i];
       }
     }
 
@@ -134,7 +133,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     //Generate Map for sourcetarget.
     ArrayView<const gno_t> sourceTargetGIDs(Ids, LocalNumIDs);
     sourcetargetMapG = rcp(new map_type(dummy,
-					sourceTargetGIDs, gmin[0], comm));
+                                        sourceTargetGIDs, gmin[0], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
     /*RCP<const map_type> oneToOneSTMap =
@@ -150,7 +149,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     ArrayView<const gno_t> throughGIDs(throughIds, LocalNumOfThrough);
     throughMapG = rcp (new map_type(dummy,
-				    throughGIDs, gmin[1], comm));
+                                    throughGIDs, gmin[1], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneTMap)
     RCP<const map_type> oneToOneTMap =
@@ -164,13 +163,13 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     // Construct Tpetra::CrsGraph objects.
     adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG,//oneToOneSTMap,
-					      0));
+                                              0));
 
     Array<nonzero_t> justOneA(maxcols, 1);
     ArrayView<const gno_t> adjacencyIdsAV(adjacencyIds, offsets[LocalNumIDs]);
 
     for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
-      // Insert all columns for global row Ids[localElement] 
+      // Insert all columns for global row Ids[localElement]
       size_t ncols = offsets[localElement+1] - offsets[localElement];
       adjsMatrix->insertGlobalValues(Ids[localElement],
                               adjacencyIdsAV(offsets[localElement], ncols),
@@ -179,7 +178,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     //Fill-complete adjs Graph
     adjsMatrix->fillComplete (oneToOneTMap, //throughMapG,
-			      adjsMatrix->getRowMap());
+                              adjsMatrix->getRowMap());
 
     // Form 2ndAdjs
     RCP<sparse_matrix_type> secondAdjs =
@@ -217,7 +216,7 @@ void get2ndAdjsViewFromAdjs(
   if (secondAdjs!=RCP<sparse_matrix_type>()) {
     Array<gno_t> Indices;
     Array<nonzero_t> Values;
-    
+
     size_t nadj = 0;
 
     gno_t const *Ids=NULL;
@@ -234,10 +233,10 @@ void get2ndAdjsViewFromAdjs(
       secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
       for (size_t j = 0; j < NumEntries; ++j) {
-	if(globalRow != Indices[j]) {
-	  adj.push_back(Indices[j]);
-	  nadj++;;
-	}
+        if(globalRow != Indices[j]) {
+          adj.push_back(Indices[j]);
+          nadj++;;
+        }
       }
     }
 

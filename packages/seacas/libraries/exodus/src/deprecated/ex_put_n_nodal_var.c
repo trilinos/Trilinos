@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,24 +33,24 @@
  *
  */
 /*****************************************************************************
-*
-* expnv - ex_put_n_nodal_var
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     time_step               whole time step number
-*       int     nodel_var_index         index of desired nodal variable
-*       int     start_node              index (1-based) of first node to put
-*       int     num_nodes               number of nodal points
-*       float*  nodal_var_vals          array of nodal variable values
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expnv - ex_put_n_nodal_var
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     time_step               whole time step number
+ *       int     nodel_var_index         index of desired nodal variable
+ *       int     start_node              index (1-based) of first node to put
+ *       int     num_nodes               number of nodal points
+ *       float*  nodal_var_vals          array of nodal variable values
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_put_partial_var, etc
 #include <stdint.h>   // for int64_t
@@ -58,7 +58,8 @@
 /*!
 \ingroup ResultsData
 
- * \deprecated Use ex_put_partial_var() instead.
+ * \deprecated Use ex_put_partial_var()(exoid, time_step, EX_NODAL, nodal_var_index, 1, start_node,
+num_nodes, nodal_var_vals)
  */
 
 /*!

@@ -109,7 +109,7 @@ private:
     }
     void applyInverse(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       obj_->precond(Hv,v,*x_,tol);
-    } 
+    }
   };
 
 public:
@@ -175,8 +175,8 @@ public:
         secant_ = SecantFactory<Real>(parlist);
       }
       else {
-      secantName_ = Glist.sublist("Secant").get("User Defined Secant Name",
-                                                "Unspecified User Defined Secant Method");         
+        secantName_ = Glist.sublist("Secant").get("User Defined Secant Name",
+                                                  "Unspecified User Defined Secant Method");         
       }
     }
     // Initialize Krylov object

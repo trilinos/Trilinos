@@ -155,7 +155,7 @@ namespace MueLuTests {
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
 
-    RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
+    RCP<TestProblem<SC,LO,GO,NO> > p = rcp (new TestProblem<SC,LO,GO,NO> (lib));
 
     typedef MultiVector             MV;
     typedef Belos::OperatorT<MV>    OP;
@@ -184,7 +184,7 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-    RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
+    RCP<TestProblem<SC,LO,GO,NO> > p = rcp (new TestProblem<SC,LO,GO,NO> (lib));
 
     typedef Epetra_MultiVector   MV;
     typedef Belos::OperatorT<MV> OP;
@@ -217,7 +217,7 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-    RCP<TestProblem<SC,LO,GO,NO> > p = TestHelpers::getTestProblem<SC,LO,GO,NO>(lib);
+    RCP<TestProblem<SC,LO,GO,NO> > p = rcp (new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lib));
 
     typedef Belos::MultiVec<SC> MV;
     typedef Belos::Operator<SC> OP;
@@ -257,7 +257,7 @@ namespace MueLuTests {
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
-    RCP<TestProblem<Scalar,LocalOrdinal,GlobalOrdinal,Node> > p = TestHelpers::getTestProblem<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lib);
+    RCP<TestProblem<Scalar,LocalOrdinal,GlobalOrdinal,Node> > p = rcp (new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lib));
 
     typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef typename Belos::OperatorT<MV>    OP;

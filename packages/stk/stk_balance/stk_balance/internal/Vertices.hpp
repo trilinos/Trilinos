@@ -36,7 +36,7 @@
 #include <string>
 #include <vector>
 #include "balanceTypes.hpp"
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 
 namespace stk {namespace mesh {class BulkData;}}
 namespace stk {namespace mesh {class Selector;}}

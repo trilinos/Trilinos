@@ -1,4 +1,4 @@
-// Copyright(C) 2010 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,7 +33,9 @@
 #define EJ_Version_h
 
 static char const *qainfo[] = {
-    "ejoin", "2016/08/10", "1.4.2",
+    "ejoin",
+    "2018/07/26",
+    "1.5.2",
 };
 
 #endif

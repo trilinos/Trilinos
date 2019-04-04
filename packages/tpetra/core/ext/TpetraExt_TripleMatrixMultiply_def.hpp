@@ -297,8 +297,29 @@ namespace Tpetra {
 #endif
         Teuchos::ParameterList labelList;
         labelList.set("Timer Label", label);
+        Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
+
         RCP<crs_matrix_type> Acprime = rcpFromRef(Ac);
-        if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
+        bool isMM = true;
+        bool overrideAllreduce = false;
+        int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+        if(!params.is_null()) {
+          Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
+          mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+          mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+          int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+          if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+          isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
+          overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck",false);
+
+          labelList.set("compute global constants",params->get("compute global constants",true));
+        }
+        labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
+
+        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM,
+                                "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+        labelList_subList.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
+
         export_type exporter = export_type(*Pprime->getGraph()->getImporter());
         Actemp->exportAndFillComplete(Acprime,
                                       exporter,
@@ -494,7 +515,7 @@ namespace Tpetra {
       {
         lno_view_t thread_nnz_count("thread_nnz_counts", thread_max);
         for(size_t i = 0; i < thread_max; i++)
-          thread_nnz_count(i) = Inrowptr(i)(Inrowptr(i).dimension(0) - 1);
+          thread_nnz_count(i) = Inrowptr(i)(Inrowptr(i).extent(0) - 1);
         Tpetra::Details::computeOffsetsFromCounts(thread_start_nnz, thread_nnz_count);
       }
       c_nnz_size = thread_start_nnz(thread_max);
@@ -963,7 +984,7 @@ namespace Tpetra {
                     if (ac_status[Acj] == INVALID || ac_status[Acj] < nnz_old) {
     #ifdef HAVE_TPETRA_DEBUG
                       // Ac_estimate_nnz() is probably not perfect yet. If this happens, we need to allocate more memory..
-                      TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.dimension_0()),
+                      TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.extent(0)),
                                                  std::runtime_error,
                                                  label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Accolind.size() << std::endl);
     #endif
@@ -1225,9 +1246,9 @@ namespace Tpetra {
                     if (ac_status[Acj] == ST_INVALID || ac_status[Acj] < nnz_old) {
     #ifdef HAVE_TPETRA_DEBUG
                       // Ac_estimate_nnz() is probably not perfect yet. If this happens, we need to allocate more memory..
-                      TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.dimension_0()),
+                      TEUCHOS_TEST_FOR_EXCEPTION(nnz >= Teuchos::as<size_t>(Accolind.extent(0)),
                                                  std::runtime_error,
-                                                 label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Accolind.dimension_0() << std::endl);
+                                                 label << " ERROR, not enough memory allocated for matrix product. Allocated: "  << Accolind.extent(0) << std::endl);
     #endif
                       // New entry
                       ac_status[Acj]   = nnz;

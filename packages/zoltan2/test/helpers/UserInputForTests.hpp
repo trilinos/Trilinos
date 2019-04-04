@@ -89,7 +89,6 @@ using Teuchos::rcp;
 using Teuchos::arcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
-using namespace std;
 using namespace Zoltan2_TestingFramework;
 
 /*! \brief A class that generates typical user input for testing.
@@ -973,7 +972,7 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
   bool fail = false;
   if(this->tcomm_->getRank() == 0){
 
-    fstream inParam(paramFileName.c_str());
+    std::fstream inParam(paramFileName.c_str());
     if (inParam.fail())
     {
       fail = true;
@@ -1009,7 +1008,7 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
     throw "File " + paramFileName + " cannot be opened.";
   }
   this->tcomm_->broadcast(0, size, inp);
-  istringstream inParam(inp);
+  std::istringstream inParam(inp);
   string str;
   getline (inParam,str);
   while (!inParam.eof()){
@@ -1394,7 +1393,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   if (verbose_ && tcomm_->getRank() == 0){
 
     std::cout << "Matrix is " << (distributeInput ? "" : "not");
-    std::cout << "distributed." << endl;
+    std::cout << "distributed." << std::endl;
 
     std::cout << "UserInputForTests, Create matrix with " << problemType;
     std::cout << " (and " << xdim;
@@ -2650,7 +2649,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
     meshFileName << path << "/" << testData << ".pmgen";
     // open file
 
-    file.open(meshFileName.str(), ios::in);
+    file.open(meshFileName.str(), std::ios::in);
 
     if(!file.is_open()) // may be a problem with path or filename
     {
@@ -2682,7 +2681,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
       }
 
       file.clear();
-      file.seekg(0, ios::beg);
+      file.seekg(0, std::ios::beg);
     }
   }
 
@@ -2693,7 +2692,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
 
   if(len == 0){
     if(verbose_ && tcomm_->getRank() == 0)
-      std::cout << "Pamgen Mesh file size == 0, exiting UserInputForTests early." << endl;
+      std::cout << "Pamgen Mesh file size == 0, exiting UserInputForTests early." << std::endl;
     return;
   }
 
@@ -2745,7 +2744,8 @@ void UserInputForTests::setPamgenCoordinateMV()
   zscalar_t **elem_coords = new zscalar_t * [dimension];
   for(int i = 0; i < dimension; ++i){
     elem_coords[i] = new zscalar_t[numelements];
-    memcpy(elem_coords[i],&pamgen_mesh->element_coord[i*numelements],sizeof(double) * numelements);
+    double *tmp = &pamgen_mesh->element_coord[i*numelements];
+    for (int j = 0; j < numelements; j++) elem_coords[i][j] = tmp[j];
   }
 
   // make a Tpetra map
@@ -2784,7 +2784,7 @@ void UserInputForTests::setPamgenCoordinateMV()
 void UserInputForTests::setPamgenAdjacencyGraph()
 {
 //  int rank = this->tcomm_->getRank();
-//  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
+//  if(rank == 0) std::cout << "Making a graph from our pamgen mesh...." << std::endl;
 
   // Define Types
 //  typedef zlno_t lno_t;
@@ -2799,7 +2799,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   size_t global_nodes = (size_t)this->pamgen_mesh->num_nodes_global; //global columns
   // make map with global elements assigned to this mesh
   // make range map
-//  if(rank == 0) cout << "Building Rowmap: " << endl;
+//  if(rank == 0) std::cout << "Building Rowmap: " << std::endl;
   RCP<const map_t> rowMap = rcp(new map_t(global_els,0,this->tcomm_));
   RCP<const map_t> rangeMap = rowMap;
 
@@ -2825,7 +2825,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   zlno_t el_no = 0;
   zscalar_t one = static_cast<zscalar_t>(1);
 
-//  if(rank == 0) cout << "Writing C... " << endl;
+//  if(rank == 0) std::cout << "Writing C... " << std::endl;
   for(int i = 0; i < blks; i++)
   {
     int el_per_block = this->pamgen_mesh->elements[i];
@@ -2850,18 +2850,21 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 
 
   // Compute product C*C'
-//  if(rank == 0) cout << "Compute Multiplication C... " << endl;
+//  if(rank == 0) std::cout << "Compute Multiplication C... " << std::endl;
   RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(rowMap,0));
   Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
 
   // remove entris not adjacent
   // make graph
-//  if(rank == 0) cout << "Writing M_... " << endl;
+//  if(rank == 0) std::cout << "Writing M_... " << std::endl;
   this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
 
-//  if(rank == 0) cout << "\nSetting graph of connectivity..." << endl;
-  for(zgno_t gid : rowMap->getNodeElementList())
+//  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
+  Teuchos::ArrayView<const zgno_t> rowMapElementList = 
+                                        rowMap->getNodeElementList();
+  for (Teuchos_Ordinal ii = 0; ii < rowMapElementList.size(); ii++)
   {
+    zgno_t gid = rowMapElementList[ii];
     size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
     Array<zscalar_t> rowvals (numEntriesInRow);
     Array<zgno_t> rowinds (numEntriesInRow);
@@ -2884,7 +2887,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 
   this->M_->fillComplete();
   this->xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  //  if(rank == 0) cout << "Completed M... " << endl;
+  //  if(rank == 0) std::cout << "Completed M... " << std::endl;
 
 }
 

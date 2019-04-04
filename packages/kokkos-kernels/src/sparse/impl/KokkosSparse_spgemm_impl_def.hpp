@@ -62,7 +62,7 @@ void KokkosSPGEMM
 
     //get the algorithm and execution space.
     //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
-    KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
+    KokkosKernels::Impl::ExecSpaceType my_exec_space_ = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "Numeric PHASE" << std::endl;
@@ -70,10 +70,10 @@ void KokkosSPGEMM
 
     if (spgemm_algorithm == SPGEMM_KK_SPEED || spgemm_algorithm == SPGEMM_KK_DENSE)
     {
-      this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_, my_exec_space);
+      this->KokkosSPGEMM_numeric_speed(rowmapC_, entriesC_, valuesC_, my_exec_space_);
     }
     else {
-      this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space);
+      this->KokkosSPGEMM_numeric_hash(rowmapC_, entriesC_, valuesC_, my_exec_space_);
     }
 
   }
@@ -120,11 +120,11 @@ void KokkosSPGEMM
     //number of rows and nnzs
     nnz_lno_t n = this->row_mapB.extent(0) - 1;
     size_type nnz = this->entriesB.extent(0);
-    KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
+    KokkosKernels::Impl::ExecSpaceType my_exec_space_ = KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
     bool compress_in_single_step = this->handle->get_spgemm_handle()->get_compression_step();
     //compress in single step if it is cuda execution space.
-    if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+    if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA) {
     	compress_in_single_step = true;
     }
 
@@ -180,10 +180,10 @@ void KokkosSPGEMM
     	}
     }
     else {
-    	new_row_mapB = row_lno_temp_work_view_t ("");
-    	new_row_mapB_begins = row_lno_temp_work_view_t ("");
-    	set_index_entries = nnz_lno_temp_work_view_t ("");
-    	set_entries = nnz_lno_temp_work_view_t ("");
+    	new_row_mapB = row_lno_temp_work_view_t();
+    	new_row_mapB_begins = row_lno_temp_work_view_t();
+    	set_index_entries = nnz_lno_temp_work_view_t();
+    	set_entries = nnz_lno_temp_work_view_t();
     	nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->original_max_row_flops;
     	if (KOKKOSKERNELS_VERBOSE){
     		std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:" << maxNumRoughZeros << std::endl;

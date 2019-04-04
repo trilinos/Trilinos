@@ -103,7 +103,12 @@ namespace MueLu {
 
     void getGhostedNodesData(const RCP<const Map> fineMap,
                              Array<LO>& ghostedNodeCoarseLIDs,
-                             Array<int>& ghostedNodeCoarsePIDs) const;
+                             Array<int>& ghostedNodeCoarsePIDs,
+                             Array<GO>& ghostedNodeCoarseGIDs) const;
+
+    void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
+                            Array<GO>& coarseNodeCoarseGIDs,
+                            Array<GO>& coarseNodeFineGIDs) const;
 
     void getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const;
 

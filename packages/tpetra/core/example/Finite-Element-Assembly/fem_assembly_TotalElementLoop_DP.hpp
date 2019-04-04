@@ -68,6 +68,17 @@ int executeTotalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
 
 int executeTotalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
 {
+  using Teuchos::RCP;
+
+  // The output stream 'out' will ignore any output not from Process 0.
+  RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
+  Teuchos::FancyOStream& out = *pOut;
+
+  out << "================================================================================" << std::endl
+      << "=  Total Element Loop (Dynamic Profile)"    << std::endl
+      << "================================================================================" << std::endl
+      << std::endl;
+
   int status = 0;
   for(size_t i=0; i<opts.repetitions; ++i)
   {
@@ -88,11 +99,6 @@ int executeTotalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
   Teuchos::FancyOStream& out = *pOut;
-
-  out << "================================================================================" << std::endl
-      << "=  Total Element Loop (Dynamic Profile)"    << std::endl
-      << "================================================================================" << std::endl
-      << std::endl;
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
@@ -242,7 +248,11 @@ int executeTotalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts&
   RCP<multivector_t> rhs = rcp(new multivector_t(crs_graph->getRowMap(), 1));
 
   scalar_2d_array_t element_matrix;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   Kokkos::resize(element_matrix, 4, 4);
+#else
+  Kokkos::resize(element_matrix, 4);
+#endif
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list

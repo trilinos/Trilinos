@@ -1,6 +1,3 @@
-// $Id$
-// $Source$
-
 //@HEADER
 // ************************************************************************
 //
@@ -39,65 +36,19 @@
 //
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
 #ifndef NOX_PREPOSTOPERATOR_VECTOR_H
 #define NOX_PREPOSTOPERATOR_VECTOR_H
 
-#include "NOX_Common.H"
-#include "Teuchos_RCP.hpp"
-#include "NOX_Abstract_PrePostOperator.H"
-#include <vector>
+#include "NOX_Observer_Vector.hpp"
+
+// This file is deprecated, but exists for backwards compatibility to
+// support transition from PrePostOperator to Observer. Please include
+// NOX_Observer_Vector.hpp instead.
 
 namespace NOX {
-
-  /** \brief Concrete implementation of PrePostOperator that stores a vector of PrePostOperators.
-
-  The intent of this object to to aggregate a set of PrePostOperator objects.
-
-  \author Roger Pawlowski (SNL 1444)
-*/
-
-  class PrePostOperatorVector : public NOX::Abstract::PrePostOperator {
-
-public:
-
-  typedef std::vector<Teuchos::RCP<NOX::Abstract::PrePostOperator> >::iterator it;
-
-  void runPreIterate(const NOX::Solver::Generic& solver);
-
-  void runPostIterate(const NOX::Solver::Generic& solver);
-
-  void runPreSolve(const NOX::Solver::Generic& solver);
-
-  void runPostSolve(const NOX::Solver::Generic& solver);
-
-  void runPreLineSearch(const NOX::Solver::Generic& solver);
-
-  void runPostLineSearch(const NOX::Solver::Generic& solver);
-
- //! Add PrePostOperator to end of vector.
-  void pushBack(const Teuchos::RCP<NOX::Abstract::PrePostOperator>& ppop);
-
-  //! Remove PrePostOperator from end of vector.
-  void popBack();
-
-  //! Clear the vector of PrePostOperators.
-  void clear();
-
-private:
-
-  //! std::vector of PrePostOpertor objects
-  std::vector<Teuchos::RCP<NOX::Abstract::PrePostOperator> > ppop_vec_;
-
-}; // class PrePostOperator
-} // namespace NOX
+  using PrePostOperatorVector = NOX::ObserverVector;
+}
 
 #endif

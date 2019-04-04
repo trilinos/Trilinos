@@ -82,15 +82,6 @@ MultiVariateParameter(const std::string parameter_name,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 void MultiVariateParameter<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* worksets */,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(target_field,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-void MultiVariateParameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
   ScalarT sum = 0;

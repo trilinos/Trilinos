@@ -224,7 +224,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
 
 template<class Scalar>
-Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType stepSizeType)
+Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType /* stepSizeType */)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   this->initialize_();
@@ -442,9 +442,9 @@ void ExplicitRKStepper<Scalar>::describe(
 
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::addPoints(
-    const Array<Scalar>& time_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    const Array<Scalar>& /* time_vec */
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* x_vec */
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& /* xdot_vec */
     )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, addPoints is not implemented for ExplicitRKStepper at this time.\n");
@@ -496,7 +496,7 @@ void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
+void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& /* time_vec */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ExplicitRKStepper at this time.\n");
 }

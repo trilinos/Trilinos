@@ -51,25 +51,20 @@
 /// (Tpetra_FEMultiVector_decl.hpp).
 ///
 
+#include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of MultiVector (declared later in this file)
-  template<class S, class LO, class GO, class N> class FEMultiVector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class FEMultiVector :
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
   private:
-    friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    friend ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
@@ -115,7 +110,7 @@ namespace Tpetra {
     ///   resulting MultiVector.  If the importer is not null, this must be the same as importer->getSourceMap()
     /// \param importer [in] Import describing the distribution of rows of the the multivector in two separate modes.
     ///   In the case of finite element assembly, importer->getSourceMap() should correspond to the uniquely owned entries in the domain map
-    ///   of the finite element problem.  importer->getTargetMap() should correspond to the overlapped entries needed for assembly.  The 
+    ///   of the finite element problem.  importer->getTargetMap() should correspond to the overlapped entries needed for assembly.  The
     ///   cannonical way to get this importer is to take the Import object associated with the CrsGraph for your finite element matrix.
     /// \param numVectors [in] Number of columns of the resulting MultiVector.
     // NOTE: A map AND an importer need to be arguments because in serial, the importer will be null
@@ -127,7 +122,7 @@ namespace Tpetra {
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~FEMultiVector () {}
-    
+
     //@}
     //! @name Post-construction modification routines
     //@{
@@ -138,55 +133,59 @@ namespace Tpetra {
     //! Calls doTargetToSource() and then activates the source map mode
     void endFill()
     {
-      if(*activeMultiVector_ == FE_ACTIVE_TARGET) {
-        doTargetToSource(Tpetra::ADD);
+      if(*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+        doOwnedPlusSharedToOwned(Tpetra::ADD);
         switchActiveMultiVector();
       }
       else
-        throw std::runtime_error("FEMultiVector: Source MultiVector already active.  Cannot endFill()");
+        throw std::runtime_error("FEMultiVector: Owned+Shared MultiVector already active.  Cannot endFill()");
     }
 
     //! Activates the target map mode
     void beginFill()
     {
-      // Note: This does not throw an error since the on construction, the FEMV is in target mode.  Ergo, calling beginFill(),
+      // Note: This does not throw an error since the on construction, the FEMV is in owned+shared  mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeMultiVector_ == FE_ACTIVE_SOURCE) {
+      if(*activeMultiVector_ == FE_ACTIVE_OWNED) {
         switchActiveMultiVector();
       }
     }
 
+    /// \brief Migrate data from the owned+shared to the owned multivector
+    /// Since this is non-unique -> unique, we need a combine mode.
+    /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    void doOwnedPlusSharedToOwned(const CombineMode CM=Tpetra::ADD);
 
-    //! Migrate data from the target to the source map
-    // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Target MultiVector must be active
-    void doTargetToSource(const CombineMode CM=Tpetra::ADD);
-
-
-    //! Migrate data from the source to the target map
-    // Precondition: Source MultiVector must be active
-    void doSourceToTarget(const CombineMode CM=Tpetra::ADD);
+    /// \brief Migrate data from the owned to the owned+shared multivector
+    /// Precondition: Must be FE_ACTIVE_OWNED mode
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
     //! Switches which Multivector is active (without migrating data)
     void switchActiveMultiVector();
 
   private:
-    /// \brief Default c'tor (private so it does not get used)
-    ///
-    FEMultiVector() { }
+    //! Default c'tor (private so it does not get used)
+    FEMultiVector() = delete;
 
   protected:
     //@{
     //! @name Internal routines and data structures
 
-    /// \brief Replace the underlying Map in place.  NOTE: FEMultiVector does not allow this and will throw
+    /// \brief Replace the underlying Map in place.
+    ///
+    /// \warning FEMultiVector does not allow this and will throw if
+    ///   you call this method.
     void replaceMap (const Teuchos::RCP<const map_type>& map);
 
     // Enum for activity
     enum FEWhichActive
     {
-      FE_ACTIVE_TARGET,
-      FE_ACTIVE_SOURCE
+      FE_ACTIVE_OWNED_PLUS_SHARED,
+      FE_ACTIVE_OWNED
     };
 
 

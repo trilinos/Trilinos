@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,16 +42,10 @@
 #include <string>
 #include <vector>
 
-#define ELB_VERSION "4.16"
+#define ELB_VERSION "4.18"
 #define UTIL_NAME "nem_slice"
 #define ELB_FALSE 0
 #define ELB_TRUE 1
-
-#if __cplusplus > 199711L
-#define TOPTR(x) x.data()
-#else
-#define TOPTR(x) (x.empty() ? nullptr : &x[0])
-#endif
 
 /* Macro for maximum value */
 #ifndef MAX
@@ -60,7 +54,7 @@
 
 /*
  * Constants for memory allocation of graph structures. The smaller these
- * values, the more efficient the code will be, memory wise. Larger values
+ * values, the more memory-efficient the code will be. Larger values
  * will likely speed execution and prevent swap thrashing.
  */
 #define SURND_ALLOC 8
@@ -70,7 +64,11 @@
 
 #define MAX_INP_LINE 10240
 
-template <typename INT> void vec_free(std::vector<INT> &V) { std::vector<INT>().swap(V); }
+template <typename INT> void vec_free(std::vector<INT> &V)
+{
+  V.clear();
+  V.shrink_to_fit();
+}
 
 /* Prototype for timing function */
 extern double get_time();
@@ -149,6 +147,7 @@ struct Problem_Description
   int   mech_add_procs;   /* adds processors in cases of mechanisms       */
   int   dsd_add_procs;    /* adds processors in cases of disconnected subdomains */
   int   no_sph;
+  int   fix_columns; /* detect, fix vertical column partitioning */
   char *groups;
   int * group_no;
   int   num_groups;
@@ -158,8 +157,8 @@ struct Problem_Description
   Problem_Description()
       : type(-1), read_coords(-1), coarse_flag(-1), alloc_graph(-1), num_vertices(0), vis_out(-1),
         skip_checks(-1), face_adj(-1), partial_adj(0), global_mech(-1), local_mech(-1),
-        find_cnt_domains(-1), mech_add_procs(-1), dsd_add_procs(-1), no_sph(-1), groups(nullptr),
-        group_no(nullptr), num_groups(-1), int64db(0), int64api(0)
+        find_cnt_domains(-1), mech_add_procs(-1), dsd_add_procs(-1), no_sph(-1), fix_columns(0),
+        groups(nullptr), group_no(nullptr), num_groups(-1), int64db(0), int64api(0)
   {
   }
 };
@@ -206,24 +205,26 @@ template <typename INT> struct Weight_Description
 /* Structure used to store information about the FEM mesh */
 template <typename INT> struct Mesh_Description
 {
-  size_t  num_nodes;
-  size_t  num_elems;
-  size_t  num_dims;
-  size_t  num_el_blks;
-  INT *   eb_cnts;
-  size_t  num_node_sets;
-  size_t  num_side_sets;
-  size_t  max_np_elem;
-  size_t  ns_list_len;
-  char    title[MAX_LINE_LENGTH + 1]{};
-  float * coords;
-  E_Type *elem_type;
-  INT **  connect;
+  size_t              num_nodes;
+  size_t              num_elems;
+  size_t              num_dims;
+  size_t              num_el_blks;
+  std::vector<INT>    eb_cnts;
+  std::vector<INT>    eb_ids;
+  std::vector<INT>    eb_npe;
+  std::vector<E_Type> eb_type;
+  size_t              num_node_sets;
+  size_t              num_side_sets;
+  size_t              max_np_elem;
+  size_t              ns_list_len;
+  char                title[MAX_LINE_LENGTH + 1]{};
+  float *             coords;
+  E_Type *            elem_type;
+  INT **              connect;
 
   Mesh_Description()
-      : num_nodes(0), num_elems(0), num_dims(0), num_el_blks(0), eb_cnts(nullptr), num_node_sets(0),
-        num_side_sets(0), max_np_elem(0), ns_list_len(0), coords(nullptr), elem_type(nullptr),
-        connect(nullptr)
+      : num_nodes(0), num_elems(0), num_dims(0), num_el_blks(0), num_node_sets(0), num_side_sets(0),
+        max_np_elem(0), ns_list_len(0), coords(nullptr), elem_type(nullptr), connect(nullptr)
   {
   }
 };

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -89,22 +89,12 @@ namespace Iofx {
     ~DatabaseIO() override{};
 
   private:
-    const std::string &decoded_filename() const;
-
-    // Check to see if database state is ok...
-    // If 'write_message' true, then output a warning message indicating the problem.
-    // If 'error_message' non-null, then put the warning message into the string and return it.
-    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
-    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    bool ok__(bool write_message = false, std::string *error_msg = nullptr,
-              int *bad_count = nullptr) const override;
-
     void get_step_times__() override;
 
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
-                         bool abort_if_error) const;
+                         bool abort_if_error) const override;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
-                            bool overwrite, bool abort_if_error) const;
+                            bool overwrite, bool abort_if_error) const override;
     bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
                               bool abort_if_error) const;
 
@@ -174,15 +164,11 @@ namespace Iofx {
     int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
                                     const Ioss::Field &field, void *data, size_t data_size) const;
 
-  public:
-    // Temporarily made public for use during Salinas transition
-    // to using Ioss
     int get_file_pointer() const override; // Open file and set exodusFilePtr.
-  private:
-    int64_t read_nodal_coordinates();
-    void read_elements(const Ioss::ElementBlock &block);
 
-    void compute_block_adjacencies() const override;
+    int64_t read_nodal_coordinates();
+    void    read_elements(const Ioss::ElementBlock &block);
+
     void compute_node_status() const;
 
     // Metadata-related functions.
@@ -238,16 +224,6 @@ namespace Iofx {
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, ex_entity_type entity_type,
                              ex_inquiry inquiry_type) const;
 
-    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
-    {
-      return nodeMap.global_to_local(global, must_exist);
-    }
-
-    int64_t element_global_to_local__(int64_t global) const override
-    {
-      return elemMap.global_to_local(global);
-    }
-
     // Internal data handling
     int64_t handle_node_ids(void *ids, int64_t num_to_get) const;
     int64_t handle_element_ids(const Ioss::ElementBlock *eb, void *ids, size_t num_to_get) const;
@@ -267,8 +243,8 @@ namespace Iofx {
     int64_t put_side_field(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
                            size_t data_size) const;
 
-    mutable std::string decodedFilename; /// The actual processor-specific filename.
-    mutable bool isSerialParallel; //!< true if application code is controlling the processor id.
+    mutable bool isSerialParallel{
+        false}; //!< true if application code is controlling the processor id.
   };
 } // namespace Iofx
 #endif

@@ -44,7 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -207,8 +207,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
 
   int gblSuccess = 0; // output argument
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   auto world_size = comm->getSize();
   auto my_rank = comm->getRank();

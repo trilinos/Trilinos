@@ -43,8 +43,8 @@
 
 
 #pragma once
-#ifndef ROL_FUNCTIONBINDING_HPP
-#define ROL_FUNCTIONBINDING_HPP
+#ifndef ROL_FUNCTIONBINDINGS_HPP
+#define ROL_FUNCTIONBINDINGS_HPP
 
 #include <functional>
 #include "ROL_Vector.hpp"
@@ -69,28 +69,39 @@ template<typename Real>
 using f_dderiv_t = function<void( Vector<Real>&, const Vector<Real>&, const Vector<Real>& )>;
 
 template<typename Real>
-f_vector_t<Real> fix_direction( f_dderiv_t<Real>& f, const Vector<Real>& v ) {
+using f_solve_t = function<void( Vector<Real> &, Vector<Real> & )>;
+
+template<typename Real>
+inline f_vector_t<Real> fix_direction( f_dderiv_t<Real>& f, const Vector<Real>& v ) {
   return bind( f, ph::_1, cref(v), ph::_2 );
 }
 
 template<typename Real>
-f_vector_t<Real> fix_position( f_dderiv_t<Real>& f, const Vector<Real>& x ) {
+inline f_vector_t<Real> fix_position( f_dderiv_t<Real>& f, const Vector<Real>& x ) {
   return bind( f, ph::_1, ph::_2, cref(x) );
 }
 
-
 } // namespace details 
 
-using details::f_update_t;
-using details::f_scalar_t;
-using details::f_vector_t;
-using details::f_dderiv_t;
-using details::fix_direction;
-using details::fix_position;
+template<typename Real> using f_update_t = details::f_update_t<Real>;
+template<typename Real> using f_scalar_t = details::f_scalar_t<Real>;
+template<typename Real> using f_vector_t = details::f_vector_t<Real>;
+template<typename Real> using f_dderiv_t = details::f_dderiv_t<Real>;
+template<typename Real> using f_solve_t  = details::f_solve_t<Real>;
+
+template<typename Real>
+inline f_vector_t<Real> fix_direction( f_dderiv_t<Real>& f, const Vector<Real>& v ) {
+  return details::fix_direction(f,v);
+}
+
+template<typename Real>
+inline f_vector_t<Real> fix_position( f_dderiv_t<Real>& f, const Vector<Real>& x ) {
+  return details::fix_position(f,x);
+}
 
 
 } // namespace ROL
 
 
-#endif // ROL_FUNCTIONBINDING_HPP
+#endif // ROL_FUNCTIONBINDINGS_HPP
 

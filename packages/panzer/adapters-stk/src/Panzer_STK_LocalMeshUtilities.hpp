@@ -46,7 +46,7 @@
 namespace panzer
 {
 template <typename LO, typename GO>
-class LocalMeshInfo;
+struct LocalMeshInfo;
 }
 
 namespace panzer_stk

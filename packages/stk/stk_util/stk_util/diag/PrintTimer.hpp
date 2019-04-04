@@ -43,8 +43,6 @@ namespace stk { namespace diag { class Timer; } }
 namespace stk {
 namespace diag {
 
-std::ostream &printXML(std::ostream& os, MetricsMask metrics_mask, bool checkpoint);
-
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint);
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine);

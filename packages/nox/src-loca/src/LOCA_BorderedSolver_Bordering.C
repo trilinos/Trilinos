@@ -61,7 +61,7 @@
 
 LOCA::BorderedSolver::Bordering::Bordering(
      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
      const Teuchos::RCP<Teuchos::ParameterList>& slvrParams):
   globalData(global_data),
   solverParams(slvrParams),
@@ -399,7 +399,7 @@ LOCA::BorderedSolver::Bordering::solveFZero(
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::solveContiguous(
                Teuchos::ParameterList& params,
-               const NOX::Abstract::MultiVector* AA,
+               const NOX::Abstract::MultiVector* /* AA */,
                const LOCA::MultiContinuation::ConstraintInterface* BB,
                const NOX::Abstract::MultiVector::DenseMatrix* CC,
                std::vector<int>& indexF,
@@ -534,7 +534,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::Bordering::solveContiguousTrans(
                Teuchos::ParameterList& params,
                const NOX::Abstract::MultiVector* AA,
-               const NOX::Abstract::MultiVector* BB,
+               const NOX::Abstract::MultiVector* /* BB */,
                const NOX::Abstract::MultiVector::DenseMatrix* CC,
                std::vector<int>& indexF,
                std::vector<int>& indexB,

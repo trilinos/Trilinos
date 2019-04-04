@@ -91,3 +91,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
+# This test comes with its own main() function.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  StaticView
+  SOURCES
+    StaticView
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_crsUtils
+  SOURCES
+    TpetraUtils_crsUtils
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )

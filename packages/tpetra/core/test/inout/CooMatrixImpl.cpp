@@ -98,11 +98,11 @@ testCooMatrixImpl (bool& success, Teuchos::FancyOStream& out)
   }
 
   const size_t origNumEnt = 6;
-  const GO gblRowInds[] = {418, 31, 31, 31, 666, 93};
-  const GO gblColInds[] = {7, 5, 6, 5, 4, 3};
-  const SC vals[] = {7.0, 1.0, 2.0, 3.0, 10.0, 11.0};
+  const GO origGblRowInds[] = {418, 31, 31, 31, 666, 93};
+  const GO origGblColInds[] = {7, 5, 6, 5, 4, 3};
+  const SC origVals[] = {7.0, 1.0, 2.0, 3.0, 10.0, 11.0};
 
-  A.sumIntoGlobalValues (gblRowInds, gblColInds, vals, origNumEnt);
+  A.sumIntoGlobalValues (origGblRowInds, origGblColInds, origVals, origNumEnt);
 
   const size_t expectedNumEnt = 5;
   TEST_ASSERT( A.getLclNumEntries () == expectedNumEnt );

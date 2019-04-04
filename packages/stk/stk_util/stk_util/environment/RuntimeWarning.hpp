@@ -61,18 +61,9 @@ void reset_warning_count();
 /**
  * @brief Function <b>set_max_messages</b> sets the maximum number of warning before no more warning
  * will be displayed.
- *
- * @param max_messages	an <b>int</b> variable ...
  */
 void set_max_warning_count(unsigned int max_messages);
 
-/**
- * @brief Member function <b>report_warning</b> ...
- *
- * @param message		a <b>char</b> const pointer ...
- *
- * @param message_code		a <b>MessageCode</b> const ...
- */
 void report_warning(const char *message, const MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
 /**
@@ -91,15 +82,6 @@ void report_warning(const char *message, const MessageCode &message_code = Messa
  */
 void report_symmetric_warning(const char *message, const MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
-/**
- * @brief Member function <b>report_deferred_warning</b> ...
- *
- * @param message		a <b>std::string</b> const ...
- *
- * @param aggregate		a <b>std::string</b> const ...
- *
- * @param message_code		a <b>MessageCode</b> const ...
- */
 void report_deferred_warning(const char *message, const char *aggregate, const MessageCode &message_code);
 
 /**
@@ -290,7 +272,7 @@ private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5, 2019
 /**
  * @brief Class <b>RuntimeWarningDeferred</b> reports a deferred warning message to the report
  * system.
@@ -385,6 +367,7 @@ public:
 private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
+#endif
 
 using RuntimeWarningP0 = stk::RuntimeWarningSymmetric;
 using RuntimeWarning   = stk::RuntimeWarningAdHoc;

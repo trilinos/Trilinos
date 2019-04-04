@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,15 +35,13 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_NOERR, EX_FATAL, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <sys/types.h> // for int64_t
 
 /*!
 The function ex_get_map() reads the element order map
-from the database. See #ElementOrderMap for a description of the
-element order map. If an element order map is not stored in the data
+from the database. If an element order map is not stored in the data
 file, a default array (1,2,3,. .. num_elem) is returned. Memory
 must be allocated for the element map array ({num_elem} in length)
 before this call is made.
@@ -80,7 +78,7 @@ int ex_get_map(int exoid, void_int *elem_map)
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* inquire id's of previously defined dimensions and variables  */
 
@@ -92,7 +90,7 @@ int ex_get_map(int exoid, void_int *elem_map)
   if ((status = nc_inq_dimlen(exoid, numelemdim, &num_elem)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of elements in file id %d",
              exoid);
-    ex_err("ex_get_map", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -124,7 +122,7 @@ int ex_get_map(int exoid, void_int *elem_map)
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element order map in file id %d", exoid);
-    ex_err("ex_get_map", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

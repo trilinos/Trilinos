@@ -100,9 +100,6 @@ public:
                                         bool useMax,
                                         const Teuchos::RCP<ExtremeValueScatterBase> & functionalScatter);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
   void evaluateFields(typename Traits::EvalData d);
 
   void preEvaluate(typename Traits::PreEvalData d);
@@ -121,10 +118,10 @@ private:
 
 template <typename LO,typename GO>
 void ExtremeValueScatter<LO,GO>::scatterDerivative(
-                                        const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
-                                        panzer::Traits::EvalData workset, 
-                                        WorksetDetailsAccessor& wda,
-                                        Teuchos::ArrayRCP<double> & dgdx) const
+                                        const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & /* cellExtremeValue */,
+                                        panzer::Traits::EvalData /* workset */, 
+                                        WorksetDetailsAccessor& /* wda */,
+                                        Teuchos::ArrayRCP<double> & /* dgdx */) const
 {
   TEUCHOS_ASSERT(false);
 }

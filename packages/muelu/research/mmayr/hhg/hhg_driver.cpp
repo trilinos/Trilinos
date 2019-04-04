@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     probParams->print(*out);
 
   const std::string& mappingFileName = probParams->get<std::string>("mapping file name");
-  const std::string& matrixFileName = probParams->get<std::string>("matrix file name");
+  // const std::string& matrixFileName = probParams->get<std::string>("matrix file name");
 
   // create the RegionManager to deal with node-to-region mappings
   Teuchos::RCP<RegionManager> regionManager = Teuchos::rcp(new RegionManager(mappingFileName, comm));

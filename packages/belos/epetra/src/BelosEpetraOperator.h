@@ -97,7 +97,7 @@ public:
   //@{ 
   
   //! Set whether the operator or its inverse should be applied. [ This option is not implemented ]
-  int SetUseTranspose( bool UseTranspose_in ) { return(-1); };
+  int SetUseTranspose( bool /* UseTranspose_in */ ) { return(-1); };
   //@}
   
   //! @name Operator application methods

@@ -57,9 +57,6 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
-#include <Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
-
 namespace {
   void provide_entity_count(stk::mesh::BulkData &bulk, int proc);
 

@@ -136,8 +136,7 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   typedef Tpetra::global_size_t GST;
 
   // Set up Tpetra typedefs.
-  typedef double scalar_type;
-  typedef Tpetra::CrsMatrix<scalar_type> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<> crs_matrix_type;
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
 

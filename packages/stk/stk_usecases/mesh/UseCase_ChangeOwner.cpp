@@ -70,7 +70,7 @@ Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
     m_elem_rank( stk::topology::ELEMENT_RANK ),
     m_node_rank( stk::topology::NODE_RANK )
 {
-  stk::mesh::put_field( m_coord_field , m_fem_meta_data.universal_part() );
+  stk::mesh::put_field_on_mesh( m_coord_field , m_fem_meta_data.universal_part() , nullptr);
 
   m_fem_meta_data.commit();
 }
@@ -245,10 +245,11 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   VectorField * coordinates_field =
-    & put_field(
+    & put_field_on_mesh(
         fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         fem_meta_data.universal_part() ,
-        3
+        3,
+        nullptr
         );
 
   stk::mesh::Part & owned_part = fem_meta_data.locally_owned_part();
@@ -385,10 +386,11 @@ bool test_change_owner_2( stk::ParallelMachine pm )
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   VectorField * coordinates_field =
-    & put_field(
+    & put_field_on_mesh(
         fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         fem_meta_data.universal_part() ,
-        3
+        3,
+        nullptr
         );
 
   stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4);
@@ -505,10 +507,11 @@ bool test_change_owner_3( stk::ParallelMachine pm )
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   VectorField * coordinates_field =
-    & put_field(
+    & put_field_on_mesh(
         fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         fem_meta_data.universal_part() ,
-        3
+        3,
+        nullptr
         );
 
   stk::mesh::Part & quad_part  = fem_meta_data.declare_part_with_topology( "quad", stk::topology::QUAD_4 );

@@ -1,0 +1,39 @@
+<ParameterList name="BDDC">
+  <!-- Problem Type options: -->
+  <!--  Poisson-3D           -->
+  <!--  Elasticity-3D        -->
+  <!--  Poisson-2D           -->
+  <!--  Elasticity-3D        -->
+  <Parameter name="Problem Type String"   type="string" value="Elasticity-3D"/>
+  <Parameter name="Length Direction 1"    type="double" value="2"/>
+  <Parameter name="Length Direction 2"    type="double" value="1"/>
+  <Parameter name="Length Direction 3"    type="double" value="1"/>
+  <Parameter name="Number Subregions Direction 1" type="int"  value="2"/>
+  <Parameter name="Number Subregions Direction 2" type="int"  value="1"/>
+  <Parameter name="Number Subregions Direction 3" type="int"  value="1"/>
+  <Parameter name="Number Subdomains Per Subregion Direction 1"  type="int" value="1"/>
+  <Parameter name="Number Subdomains Per Subregion Direction 2"  type="int" value="1"/>
+  <Parameter name="Number Subdomains Per Subregion Direction 3"  type="int" value="1"/>
+  <Parameter name="Number of Elements Per Subdomain Direction 1" type="int" value="4"/>
+  <Parameter name="Number of Elements Per Subdomain Direction 2" type="int" value="4"/>
+  <Parameter name="Number of Elements Per Subdomain Direction 3" type="int" value="4"/>
+  <Parameter name="Sort Subdomain Nodes"            type="bool"   value="true"/>
+  <Parameter name="Apply Left Side Essential BCs"   type="bool"   value="true"/>
+  <Parameter name="Apply Right Side Essential BCs"  type="bool"   value="false"/>
+  <!-- Diagonal Scale Factor > 1 removes singularities for floating domains -->
+  <Parameter name="Diagonal Scale Factor"           type="double" value="1.0000"/>
+  <Parameter name="Output Model"                    type="bool"   value="false"/>
+  <Parameter name="Load Direction"                  type="int"    value="0"/>
+  <Parameter name="Material Property Option"        type="int"    value="0"/>
+  <Parameter name="E1"                              type="double" value="1.0"/>
+  <Parameter name="nu1"                             type="double" value="0.3"/>
+  <Parameter name="E2"                              type="double" value="1.0"/>
+  <Parameter name="nu2"                             type="double" value="0.3"/>
+  <Parameter name="Artificial Foundation Stiffness" type="double" value="0"/>
+  <Parameter name="omega"                           type="double" value="0"/>
+  <Parameter name="Adjust Nodal Coordinates"        type="bool"   value="true"/>
+  <Parameter name="Add Asymmetry"                   type="bool"   value="false"/>
+  <Parameter name="Number of Solves"                type="int"    value="2"/>
+  <Parameter name="Quad Type 2 Point"               type="int"    value="1"/>
+  <Parameter name="Quad Type TP"                    type="int"    value="1"/>
+</ParameterList>

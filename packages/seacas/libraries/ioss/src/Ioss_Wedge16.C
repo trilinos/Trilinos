@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -67,27 +67,27 @@ namespace {
     static int       nodes_per_face[nface + 1];
     static int       edges_per_face[nface + 1];
   };
+
+  // Edge numbers are zero-based [0..number_edges)
+  int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
+      {{0, 1, 6},  {1, 2, 7}, {2, 0, 8},  {3, 4, 12}, {4, 5, 13},
+       {5, 3, 14}, {0, 3, 9}, {1, 4, 10}, {2, 5, 11}};
+
+  // Face numbers are zero-based [0..number_faces)
+  int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
+      {{0, 1, 4, 3, 6, 10, 12, 9},
+       {1, 2, 5, 4, 7, 11, 13, 10},
+       {0, 3, 5, 2, 9, 14, 11, 8},
+       {0, 2, 1, 8, 7, 6, -1, -1},
+       {3, 4, 5, 12, 13, 14, -1, -1}};
+
+  int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
+      {{0, 7, 3, 6}, {1, 8, 4, 7}, {6, 5, 8, 2}, {2, 1, 0, -1}, {3, 4, 5, -1}};
+
+  int Constants::nodes_per_face[nface + 1] = {-1, 8, 8, 8, 6, 6};
+
+  int Constants::edges_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
 } // namespace
-
-// Edge numbers are zero-based [0..number_edges)
-int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-    {{0, 1, 6},  {1, 2, 7}, {2, 0, 8},  {3, 4, 12}, {4, 5, 13},
-     {5, 3, 14}, {0, 3, 9}, {1, 4, 10}, {2, 5, 11}};
-
-// Face numbers are zero-based [0..number_faces)
-int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    {{0, 1, 4, 3, 6, 10, 12, 9},
-     {1, 2, 5, 4, 7, 11, 13, 10},
-     {0, 3, 5, 2, 9, 14, 11, 8},
-     {0, 2, 1, 8, 7, 6, -1, -1},
-     {3, 4, 5, 12, 13, 14, -1, -1}};
-
-int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-    {{0, 7, 3, 6}, {1, 8, 4, 7}, {6, 5, 8, 2}, {2, 1, 0, -1}, {3, 4, 5, -1}};
-
-int Constants::nodes_per_face[nface + 1] = {-1, 8, 8, 8, 6, 6};
-
-int Constants::edges_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
 
 void Ioss::Wedge16::factory()
 {

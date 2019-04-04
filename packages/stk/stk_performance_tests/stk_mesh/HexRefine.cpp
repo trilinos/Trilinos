@@ -119,20 +119,16 @@ void create_entities( BulkData & bulk,
 TEST( hex_refine, hex_refine)
 {
   double start_time = stk::cpu_time();
-  //unsigned ex=100, ey=100, ez=100;
   const int max_levels = 2;
   unsigned nn = 100/(1 << (max_levels-1));
   unsigned ex=nn, ey=nn, ez=nn;
 
-  //unsigned num_elems = ex*ey*ez;
   fixtures::HexFixture fixture(MPI_COMM_WORLD, ex, ey, ez);
   fixture.m_meta.commit();
   fixture.generate_mesh();
   double create_time = stk::cpu_time() - start_time;
 
   std::vector<double> avg_centroid(3, 0.0);
-  //const double tolerance = 1.e-6;
-  //const double expected = ((double)ex)/2;
 
   start_time = stk::cpu_time();
 

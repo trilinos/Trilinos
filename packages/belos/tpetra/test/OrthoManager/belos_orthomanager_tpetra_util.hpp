@@ -45,7 +45,7 @@
 #include <BelosOrthoManagerFactory.hpp>
 #include <BelosOrthoManagerTest.hpp>
 #include <BelosTpetraAdapter.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files

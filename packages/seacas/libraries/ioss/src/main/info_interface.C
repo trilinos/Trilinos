@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,6 +31,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "Ioss_CodeTypes.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "info_interface.h"
 #include <cstddef>  // for nullptr
@@ -38,13 +40,25 @@
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for char_traits, string
 
-Info::Interface::Interface()
-    : checkNodeStatus_(false), computeVolume_(false), adjacencies_(false), ints64Bit_(false),
-      computeBBox_(false), listGroups_(false), useGenericNames_(false), fieldSuffixSeparator_('_'),
-      summary_(0), surfaceSplitScheme_(1), filetype_("exodus")
-{
-  enroll_options();
-}
+namespace {
+  std::string get_type_from_file(const std::string &filename)
+  {
+    Ioss::FileInfo file(filename);
+    auto           extension = file.extension();
+    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
+      return "exodus";
+    }
+    else if (extension == "cgns") {
+      return "cgns";
+    }
+    else {
+      // "exodus" is default...
+      return "exodus";
+    }
+  }
+} // namespace
+
+Info::Interface::Interface() { enroll_options(); }
 
 Info::Interface::~Interface() = default;
 
@@ -71,16 +85,33 @@ void Info::Interface::enroll_options()
   options_.enroll("list_groups", Ioss::GetLongOption::NoValue,
                   "Print a list of the names of all groups in this file and then exit.", nullptr);
 
+  options_.enroll("disable_field_recognition", Ioss::GetLongOption::NoValue,
+                  "Do not combine fields into vector, tensor fields based on basename and suffix.\n"
+                  "\t\tKeep all fields on database as scalars",
+                  nullptr);
+
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
                   "\t\t when recognizing vector, tensor fields. Enter '0' for no separaor",
                   "_");
 
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database Type: exodus, generated", "exodusii");
-
-  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database Type: exodus, generated (alias for db_type)", nullptr);
+                  "Database Type: generated"
+#if defined(SEACAS_HAVE_PAMGEN)
+                  ", pamgen"
+#endif
+#if defined(SEACAS_HAVE_EXODUS)
+                  ", exodus"
+#endif
+#if defined(SEACAS_HAVE_CGNS)
+                  ", cgns"
+#endif
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
+                  ", data_warehouse"
+#endif
+                  ".",
+                  "unknown");
+  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr);
 
   options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
                   "List information only for the specified group.", nullptr);
@@ -98,6 +129,57 @@ void Info::Interface::enroll_options()
 
   options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
+
+#if defined(PARALLEL_AWARE_EXODUS)
+  options_.enroll(
+      "rcb", Ioss::GetLongOption::NoValue,
+      "Use recursive coordinate bisection method to decompose the input mesh in a parallel run.",
+      nullptr);
+  options_.enroll(
+      "rib", Ioss::GetLongOption::NoValue,
+      "Use recursive inertial bisection method to decompose the input mesh in a parallel run.",
+      nullptr);
+
+  options_.enroll(
+      "hsfc", Ioss::GetLongOption::NoValue,
+      "Use hilbert space-filling curve method to decompose the input mesh in a parallel run.",
+      nullptr);
+
+  options_.enroll(
+      "metis_sfc", Ioss::GetLongOption::NoValue,
+      "Use the metis space-filling-curve method to decompose the input mesh in a parallel run.",
+      nullptr);
+
+  options_.enroll(
+      "kway", Ioss::GetLongOption::NoValue,
+      "Use the metis kway graph-based method to decompose the input mesh in a parallel run.",
+      nullptr);
+
+  options_.enroll("kway_geom", Ioss::GetLongOption::NoValue,
+                  "Use the metis kway graph-based method with geometry speedup to decompose the "
+                  "input mesh in a parallel run.",
+                  nullptr);
+
+  options_.enroll("linear", Ioss::GetLongOption::NoValue,
+                  "Use the linear method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements in order first n/p to proc 0, next to proc 1.",
+                  nullptr);
+
+  options_.enroll("cyclic", Ioss::GetLongOption::NoValue,
+                  "Use the cyclic method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements handed out to id % proc_count",
+                  nullptr);
+
+  options_.enroll("random", Ioss::GetLongOption::NoValue,
+                  "Use the random method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements assigned randomly to processors in a way that preserves balance.\n"
+                  "\t\t(do not use for a real run)",
+                  nullptr);
+  options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
+                  "Number of processors that can perform simultaneous IO operations in "
+                  "a parallel run; 0 to disable",
+                  nullptr);
+#endif
 }
 
 bool Info::Interface::parse_options(int argc, char **argv)
@@ -117,7 +199,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("help") != nullptr) {
-    options_.usage();
+    options_.usage(std::cerr);
     std::cerr << "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
@@ -181,6 +263,10 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
   }
 
+  if (options_.retrieve("disable_field_recognition") != nullptr) {
+    disableFieldRecognition_ = true;
+  }
+
   {
     const char *temp = options_.retrieve("field_suffix_separator");
     if (temp != nullptr) {
@@ -188,30 +274,63 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
   }
 
+#if defined(PARALLEL_AWARE_EXODUS)
+  if (options_.retrieve("rcb") != nullptr) {
+    decompMethod_ = "RCB";
+  }
+
+  if (options_.retrieve("rib") != nullptr) {
+    decompMethod_ = "RIB";
+  }
+
+  if (options_.retrieve("hsfc") != nullptr) {
+    decompMethod_ = "HSFC";
+  }
+
+  if (options_.retrieve("metis_sfc") != nullptr) {
+    decompMethod_ = "METIS_SFC";
+  }
+
+  if (options_.retrieve("kway") != nullptr) {
+    decompMethod_ = "KWAY";
+  }
+
+  if (options_.retrieve("kway_geom") != nullptr) {
+    decompMethod_ = "KWAY_GEOM";
+  }
+
+  if (options_.retrieve("linear") != nullptr) {
+    decompMethod_ = "LINEAR";
+  }
+
+  if (options_.retrieve("cyclic") != nullptr) {
+    decompMethod_ = "CYCLIC";
+  }
+
+  if (options_.retrieve("random") != nullptr) {
+    decompMethod_ = "RANDOM";
+  }
+#endif
+
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2012 NTESS.  Under the terms of Contract\n"
-              << "DE-AC04-94AL85000 with NTESS, the U.S. Government retains\n"
-              << "certain rights in this software\n"
-              << "\n"
+              << "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
+              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+              << "NTESS, the U.S. Government retains certain rights in this software.\n\n"
               << "Redistribution and use in source and binary forms, with or without\n"
               << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
+              << "met:\n\n "
               << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
+              << "      notice, this list of conditions and the following disclaimer.\n\n"
               << "    * Redistributions in binary form must reproduce the above\n"
               << "      copyright notice, this list of conditions and the following\n"
               << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "\n"
+              << "      with the distribution.\n\n"
               << "    * Neither the name of NTESS nor the names of its\n"
               << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
+              << "      from this software without specific prior written permission.\n\n"
               << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
               << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
               << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
               << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
@@ -232,5 +351,10 @@ bool Info::Interface::parse_options(int argc, char **argv)
     std::cerr << "\nERROR: filename not specified\n\n";
     return false;
   }
+
+  if (filetype_ == "unknown") {
+    filetype_ = get_type_from_file(filename_);
+  }
+
   return true;
 }

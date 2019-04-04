@@ -41,11 +41,12 @@
 // @HEADER
 */
 
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Tpetra_Core.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <TpetraCore_ETIHelperMacros.h>
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_Core.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#include "Teuchos_CommHelpers.hpp"
 
 namespace { // (anonymous)
 

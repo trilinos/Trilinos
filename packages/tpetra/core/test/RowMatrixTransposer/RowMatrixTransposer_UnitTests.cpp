@@ -70,8 +70,9 @@ namespace {
         " this option is ignored and a serial comm is always used." );
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( RowMatrixTransposer, RectangularTranspose, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( RowMatrixTransposer, RectangularTranspose, LO, GO, Node )
   {
+    typedef CrsMatrix<>::scalar_type Scalar;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     auto comm = Tpetra::getDefaultComm();
     int numProcs = comm->getSize();
@@ -101,7 +102,7 @@ namespace {
 
 
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
-            TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( RowMatrixTransposer, RectangularTranspose, LO, GO, double, NODE )
+            TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RowMatrixTransposer, RectangularTranspose, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

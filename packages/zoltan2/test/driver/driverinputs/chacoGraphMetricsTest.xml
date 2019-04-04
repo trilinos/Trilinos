@@ -40,7 +40,7 @@
 <ParameterList name="chacoEdgeWeight">
   
   <ParameterList name="InputParameters">
-    <Parameter name="input path" type="string" value="../../../../../packages/zoltan/test/ch_ewgt"/>
+    <Parameter name="input path" type="string" value="./"/>
     <Parameter name="input file" type="string" value="ewgt"/>
     <Parameter name="file type" type="string" value="Chaco"/>
   </ParameterList>
@@ -79,6 +79,11 @@
         <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="1.0"/>
         <Parameter name="upper" type="double" value="999.0"/>
+      </ParameterList>
+      <ParameterList name="metriccheck5">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="1.0"/>
+        <Parameter name="upper" type="double" value="1.5"/>
       </ParameterList>
      </ParameterList>
 

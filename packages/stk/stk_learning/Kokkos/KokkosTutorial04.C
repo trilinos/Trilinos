@@ -52,7 +52,7 @@ void example_04(int N, int M, int nrepeat) {
 
 #ifdef KOKKOS_ENABLE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
-#elif KOKKOS_ENABLE_CUDA
+#elif defined(KOKKOS_ENABLE_CUDA)
   typedef Kokkos::Cuda     ExecSpace ;
 #else
   typedef Kokkos::Serial   ExecSpace ;
@@ -60,7 +60,7 @@ void example_04(int N, int M, int nrepeat) {
 
 #ifdef KOKKOS_ENABLE_OPENMP
    typedef Kokkos::OpenMP       MemSpace;
-#elif KOKKOS_ENABLE_CUDA
+#elif defined(KOKKOS_ENABLE_CUDA)
    typedef Kokkos::CudaSpace    MemSpace;
 #else
    typedef Kokkos::HostSpace    MemSpace;

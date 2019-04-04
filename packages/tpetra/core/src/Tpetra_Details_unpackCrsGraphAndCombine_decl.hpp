@@ -46,6 +46,7 @@
 #include "Tpetra_CombineMode.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Tpetra_DistObject_decl.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
 
 /// \file Tpetra_Details_unpackCrsGraphAndCombine_decl.hpp
 /// \brief Declaration of functions for unpacking the entries of a
@@ -80,9 +81,6 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Forward declaration of Distributor
 class Distributor;
-// Forward declaration of CrsGraph
-template<class LO, class GO, class NT>
-class CrsGraph;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 //
@@ -117,11 +115,6 @@ namespace Details {
 ///
 /// \param combineMode [in] the mode to use for combining
 ///
-/// \param atomic [in] whether or not do atomic adds/replaces in to the graph
-///
-/// \warning The allowed \c combineMode are:
-///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
-///
 /// This is the public interface to the unpack and combine machinery and
 /// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
@@ -130,30 +123,30 @@ namespace Details {
 template<class LO, class GO, class NT>
 void
 unpackCrsGraphAndCombine(
-    const CrsGraph<LO, GO, NT>& sourceGraph,
+    CrsGraph<LO, GO, NT>& sourceGraph,
     const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
     size_t constantNumPackets,
     Distributor & distor,
-    CombineMode combineMode,
-    const bool atomic);
+    CombineMode combineMode);
 
 template<class LO, class GO, class NT>
 void
 unpackCrsGraphAndCombineNew(
-    const CrsGraph<LO, GO, NT>& sourceGraph,
+    CrsGraph<LO, GO, NT>& sourceGraph,
     const Kokkos::DualView<const typename CrsGraph<LO,GO,NT>::packet_type*,
                            typename CrsGraph<LO,GO,NT>::buffer_device_type>&
                            imports,
     const Kokkos::DualView<const size_t*,
                            typename CrsGraph<LO,GO,NT>::buffer_device_type>&
                            numPacketsPerLID,
-    const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
+    const Kokkos::DualView<const LO*,
+                           typename CrsGraph<LO,GO,NT>::buffer_device_type>&
+                           importLIDs,
     const size_t constantNumPackets,
     Distributor & distor,
-    const CombineMode combineMode,
-    const bool atomic);
+    const CombineMode combineMode);
 
 /// \brief Special version of Tpetra::Details::unpackCrsGraphAndCombine
 ///   that also unpacks owning process ranks.

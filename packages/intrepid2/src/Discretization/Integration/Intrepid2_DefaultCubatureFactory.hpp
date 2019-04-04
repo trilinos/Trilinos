@@ -78,7 +78,7 @@ namespace Intrepid2 {
 
     /** \brief Factory method.
 
-        \param cell        [in]    - Cell topology.
+        \param topologyKey [in]    - Key of the cell topology.
         \param degree      [in]    - Array of polynomial degrees, one for each component cubature.
 
         \return
@@ -88,10 +88,42 @@ namespace Intrepid2 {
              typename pointValueType = double,
              typename weightValueType = double>
     static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> > 
+    create( unsigned                         topologyKey,
+            const std::vector<ordinal_type> &degree,
+            const EPolyType                  polytype = POLYTYPE_MAX );
+
+    /** \brief Factory method.
+
+        \param cell        [in]    - Cell topology.
+        \param degree      [in]    - Array of polynomial degrees, one for each component cubature.
+
+        \return
+        - RCP to cubature with given specifications.
+    */
+    template<typename ExecSpaceType,
+             typename pointValueType = double,
+             typename weightValueType = double>
+    static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> >
     create( const shards::CellTopology       cellTopology,
             const std::vector<ordinal_type> &degree,
             const EPolyType                  polytype = POLYTYPE_MAX );
 
+
+    /** \brief Factory method.
+
+        \param topologyKey [in]    - Key of the cell topology.
+        \param degree      [in]    - A single polynomial degree, used for all component cubatures.
+
+        \return
+        - RCP to cubature with given specifications.
+    */
+    template<typename ExecSpaceType,
+             typename pointValueType = double,
+             typename weightValueType = double>
+    static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> >
+    create( unsigned                    topologyKey,
+            const ordinal_type          degree,
+            const EPolyType             polytype = POLYTYPE_MAX );
     
     /** \brief Factory method.
 

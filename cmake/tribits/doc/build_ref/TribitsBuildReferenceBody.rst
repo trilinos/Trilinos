@@ -304,6 +304,7 @@ See the following use cases:
 * `Determine the list of packages that can be enabled`_
 * `Print package dependencies`_
 * `Enable a set of packages`_
+* `Enable or disable tests for specific packages`_
 * `Enable to test all effects of changing a given package(s)`_
 * `Enable all packages with tests and examples`_
 * `Disable a package and all its dependencies`_
@@ -411,6 +412,42 @@ not enforce this if you set the value on the command line or in a SET()
 statement in an input ```*.cmake`` options files.  However, setting
 ``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
 be interpreted correctly..
+
+
+Enable or disable tests for specific packages
++++++++++++++++++++++++++++++++++++++++++++++
+
+The enable tests for explicitly enabled packages, configure with::
+
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+
+This wil result in the enable of the test suites for any package that
+explicitly enabled with ``-D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON``.  Note
+that his will **not** result in the enable of the test suites for any packages
+that may only be implicitly enabled in order to build the explicitly enabled
+packages.
+
+If one wants to enable a package along with the enable of other packages, but
+not the test suite for that package, then when can disable the tests for that
+package by configuring with::
+
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_3>=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <TRIBITS_PACKAGE_2>_ENABLE_TESTS=OFF \
+
+The above will enable the package test suites for ``<TRIBITS_PACKGE_1>`` and
+``<TRIBITS_PACKGE_3>`` but **not** for ``<TRIBITS_PACKAGE_2>`` (or any other
+packages that might get implicitly enabled).  One might use this if one wants
+to build and install package ``<TRIBITS_PACKAGE_2>`` but does not want to
+build and run the test suite for that package.
+
+These and other options give the user complete control of what packages get
+enabled or disabled and what package test suites are enabled or disabled.
+
 
 Enable to test all effects of changing a given package(s)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -884,6 +921,32 @@ than 3.7.0 will not work since features were added to CMake 3.7.0+ that allow
 for the generation of these makefiles.
 
 
+Limiting parallel compile and link jobs for Ninja builds
+--------------------------------------------------------
+
+When the CMake generator Ninja is used (i.e. ``-GNinja``), one can limit the
+number of parallel jobs that are used for compiling object files by setting::
+
+  -D <Project>_PARALLEL_COMPILE_JOBS_LIMIT=<N>
+
+and/or limit the number of parallel jobs that are used for linking libraries
+and executables by setting::
+
+  -D <Project>_PARALLEL_LINK_JOBS_LIMIT=<M>
+
+where ``<N>`` and ``<M>`` are integers like ``20`` and ``4``.  If these are
+not set, then the number of parallel jobs will be determined by the ``-j<P>``
+argument passed to ``ninja -j<P>`` or by ninja automatically according to
+machine load when running ``ninja``.
+
+Limiting the number of link jobs can be useful, for example, for certain
+builds of large projects where linking many jobs in parallel can consume all
+of the RAM on a given system and crash the build.
+
+NOTE: These options are ignored when using Makefiles or other CMake
+generators.  They only work for the Ninja generator.
+
+
 Enabling support for C++11
 --------------------------
 
@@ -1274,11 +1337,17 @@ of cmake.
 Enabling the usage of resource files to reduce length of build lines
 --------------------------------------------------------------------
 
-CMake supports three very useful (undocumented) options for reducing the
-length of the command-lines used to build object files, create libraries, and
-link executables.  Using these options can avoid troublesome "command-line too
+When using the ``Unix Makefile`` generator and the ``Ninja`` generator, CMake
+supports some very useful (undocumented) options for reducing the length of
+the command-lines used to build object files, create libraries, and link
+executables.  Using these options can avoid troublesome "command-line too
 long" errors, "Error 127" library creation errors, and other similar errors
-related to excessively long command lines to build various targets.
+related to excessively long command-lines to build various targets.
+
+When using the ``Unix Makefile`` generator, CMake responds to the three cache
+variables ``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES``,
+``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS`` and
+``CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES`` described below.
 
 To aggregate the list of all of the include directories (e.g. ``'-I
 <full_path>'``) into a single ``*.rsp`` file for compiling object files, set::
@@ -1292,26 +1361,46 @@ set::
   -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON
 
 To aggregate the list of all of the libraries (e.g. ``'<path>/<libname>.a'``)
-into a single ``*.rsp`` file for creating shared libraries library or linking
+into a single ``*.rsp`` file for creating shared libraries or linking
 executables, set::
 
   -D CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES=ON
 
-WARNING: Some of these options don't work with some compilers (or some
-versions of CMake don't know how pass these files to these compilers
-correctly).  For example, some versions of ``gfortran`` do not accept
-``*.rsp`` files as produced with some versions of CMake.  Because of problems
-like this, TriBITS cannot robustly automatically turn on these options.
-Therefore, it is up to the user to try these options out to see if they work
-with their specific version of CMake, compilers, and OS.
+When using the ``Ninja`` generator, CMake only responds to the single option::
 
-NOTE: One can decide to set any combination of these three options based on
-need and preference and what actually works with a given OS, version of CMake,
-and provided compilers.  For example, on one system
-``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON`` may work but
-``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=ON`` may not (which is the case for
-``gfortran`` mentioned above).  Therefore, one should experiment carefully and
-inspect the build lines using ``make VERBOSE=1 <target>`` as described in
+  -D CMAKE_NINJA_FORCE_RESPONSE_FILE=ON
+
+which turns on the usage of ``*.rsp`` response files for include directories,
+object files, and libraries (and therefore is equivalent to setting the above
+three ``Unix Makefiles`` generator options to ``ON``).
+
+This feature works well on most standard systems but there are problems in
+some situations and therefore these options can only be safely enabled on
+case-by-case basis -- experimenting to ensure they are working correctly.
+Some examples of some known problematic cases (as of CMake 3.11.2) are:
+
+* CMake will only use resource files with static libraries created with GNU
+  ``ar`` (e.g. on Linux) but not BSD ``ar`` (e.g. on MacOS).  With BSD ``ar``,
+  CMake may break up long command-lines (i.e. lots of object files) with
+  multiple calls to ``ar`` but that may only work with the ``Unix Makefiles``
+  generator, not the ``Ninja`` generator.
+
+* Some versions of ``gfortran`` do not accept ``*.rsp`` files.
+
+* Some versions of ``nvcc`` (e.g. with CUDA 8.044) do not accept ``*.rsp``
+  files for compilation or linking.
+
+Because of problems like these, TriBITS cannot robustly automatically turn on
+these options.  Therefore, it is up to the user to try these options out to
+see if they work with their specific version of CMake, compilers, and OS.
+
+NOTE: When using the ``Unix Makefiles`` generator, one can decide to set any
+combination of these three options based on need and preference and what
+actually works with a given OS, version of CMake, and provided compilers.  For
+example, on one system ``CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=ON`` may work
+but ``CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES=ON`` may not (which is the case
+for ``gfortran`` mentioned above).  Therefore, one should experiment carefully
+and inspect the build lines using ``make VERBOSE=1 <target>`` as described in
 `Building with verbose output without reconfiguring`_ when deciding which of
 these options to enable.
 
@@ -1764,25 +1853,37 @@ This will override the global behavior set by
 Outputting package dependency information
 -----------------------------------------
 
+.. _<Project>_DEPS_DEFAULT_OUTPUT_DIR:
+
 To generate the various XML and HTML package dependency files, one can set the
 output directory when configuring using::
 
   -D <Project>_DEPS_DEFAULT_OUTPUT_DIR:FILEPATH=<SOME_PATH>
 
 This will generate, by default, the output files
-<Project>PackageDependencies.xml, <Project>PackageDependenciesTable.html, and
-CDashSubprojectDependencies.xml.
+``<Project>PackageDependencies.xml``,
+``<Project>PackageDependenciesTable.html``, and
+``CDashSubprojectDependencies.xml``.  If ``<Project>_DEPS_DEFAULT_OUTPUT_DIR``
+is not set, then the individual output files can be specified as described below.
 
-The filepath for <Project>PackageDependencies.xml can be overridden using::
+.. _<Project>_DEPS_XML_OUTPUT_FILE:
+
+The filepath for <Project>PackageDependencies.xml can be overridden (or set
+independently) using::
 
   -D <Project>_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
 
-The filepath for <Project>PackageDependenciesTable.html can be overridden
-using::
+.. _<Project>_DEPS_HTML_OUTPUT_FILE:
+
+The filepath for ``<Project>PackageDependenciesTable.html`` can be overridden
+(or set independently) using::
 
   -D <Project>_DEPS_HTML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
 
-The filepath for CDashSubprojectDependencies.xml can be overridden using::
+.. _<Project>_CDASH_DEPS_XML_OUTPUT_FILE:
+
+The filepath for CDashSubprojectDependencies.xml can be overridden (or set
+independently) using::
 
   -D <Project>_CDASH_DEPS_XML_OUTPUT_FILE:FILEPATH=<SOME_FILE_PATH>
 
@@ -1790,8 +1891,8 @@ NOTES:
 
 * One must start with a clean CMake cache for all of these defaults to work.
 
-* The files <Project>PackageDependenciesTable.html and
-  CDashSubprojectDependencies.xml will only get generated if support for
+* The files ``<Project>PackageDependenciesTable.html`` and
+  ``CDashSubprojectDependencies.xml`` will only get generated if support for
   Python is enabled.
 
 
@@ -1858,6 +1959,21 @@ did not get added, then this line will show why the test was not added
 (i.e. due to criteria related to the test's ``COMM``, ``NUM_MPI_PROCS``,
 ``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
 arguments).
+
+
+Enable advanced test start and end times and timing blocks
+----------------------------------------------------------
+
+For tests added using ``TRIBITS_ADD_ADVANCED_TEST()``, one can see start and
+end times for the tests and the timing for each ``TEST_<IDX>`` block in the
+detailed test output by configuring with::
+
+  -D<Project>_SHOW_TEST_START_END_DATE_TIME=ON
+
+The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
+and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
+systems and not native Windows systems.
+
 
 .. _DART_TESTING_TIMEOUT:
 
@@ -2043,9 +2159,12 @@ packages from a file, configure with::
   -D<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
 
 Specifying extra repositories through an extra repos file allows greater
-flexibility in the specification of extra repos.  This is not helpful for a
-basic configure of the project but is useful in automated testing using the
-``TribitsCTestDriverCore.cmake`` script and the ``checkin-test.py`` script.
+flexibility in the specification of extra repos.  This is not needed for a
+basic configure of the project but is useful in generating version information
+using `<Project>_GENERATE_VERSION_DATE_FILES`_ and
+`<Project>_GENERATE_REPO_VERSION_FILE`_ as well as in automated testing using
+the ctest -S scripts with the ``TRIBITS_CTEST_DRIVER()`` function and the
+``checkin-test.py`` tool.
 
 The valid values of ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
 ``Continuous``, ``Nightly``, and ``Experimental``.  Only repositories listed
@@ -2206,19 +2325,93 @@ NOTES:
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
 
+.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 Generating a project repo version file
 --------------------------------------
 
-In development mode working with local git repos for the project sources, on
-can generate a <Project>RepoVersion.txt file which lists all of the repos and
-their current versions using::
+When working with local git repos for the project sources, one can generate a
+``<Project>RepoVersion.txt`` file which lists all of the repos and their
+current versions using::
 
    -D <Project>_GENERATE_REPO_VERSION_FILE=ON
 
-This will cause a <Project>RepoVersion.txt file to get created in the binary
-directory, get installed in the install directory, and get included in the
-source distribution tarball.
+This will cause a ``<Project>RepoVersion.txt`` file to get created in the
+binary directory, get installed in the install directory, and get included in
+the source distribution tarball.
+
+NOTE: If the base ``.git/`` directory is missing, then no
+``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
+printed to cmake STDOUT.
+
+.. _<Project>_GENERATE_VERSION_DATE_FILES:
+
+Generating git version date files
+---------------------------------
+
+When working with local git repos for the project sources, one can generate
+the files ``VersionDate.cmake`` and ``<Project>_version_date.h`` in the build
+directory by setting::
+
+   -D <Project>_GENERATE_VERSION_DATE_FILES=ON
+
+These files are generated in the build directory and the file
+``<Project>_version_date.h`` is installed in the installation directory.  (In
+addition, these files are also generated for each extra repository that are
+also version-controlled repos, see `<Project>_EXTRAREPOS_FILE`_.)
+
+These files contain ``<PROJECT_NAME_UC>_VERSION_DATE`` which is a 10-digit
+date-time version integer.  This integer is created by first using git to
+extract the commit date for ``HEAD`` using the command::
+
+  env TZ=GMT git log --format="%cd" --date=iso-local -1 HEAD
+
+which returns the date and time for the commit date of ``HEAD`` in the form::
+
+  "YYYY-MM-DD hh:mm:ss +0000"
+
+This git commit date is then is used to create a 10-digit date/time integer of
+the form::
+
+  YYYYMMDDhh
+
+This 10-digit integer is set to a CMake variable
+``<PROJECT_NAME_UC>_VERSION_DATE`` in the generated ``VersionDate.cmake`` file
+and a C/C++ preprocessor macro ``<PROJECT_NAME_UC>_VERSION_DATE`` in the
+generated ``<Project>_version_date.h`` header file.
+
+This 10-digit date/time integer ``YYYYMMDDhh`` will fit in a signed 32-bit
+integer with a maximum value of ``2^32 / 2 - 1`` = ``2147483647``.  Therefore,
+the maximum date that can be handled is the year 2147 with the max date/time
+of ``2147 12 31 23`` = ``2147123123``.
+
+The file ``<Project>_version_date.h`` is meant to be included by downstream
+codes to determine the version of ``<Project>`` being used and allows
+``<PROJECT_NAME_UC>_VERSION_DATE`` to be used in C/C++ ``ifdefs`` like::
+
+  #if defined(<PROJECT_NAME_UC>_VERSION_DATE) && <PROJECT_NAME_UC>_VERSION_DATE >= 2019032704
+    /* The version is newer than 2019-03-27 04:00:00 UTC */
+    ...
+  #else
+    /* The version is older than 2019-03-27 04:00:00 UTC */
+    ...
+  #endif
+
+This allows downstream codes to know the fine-grained version of <Project> at
+configure and build time to adjust for the addition of new features,
+deprecation of code, or breaks in backward compatibility (which occur in
+specific commits with unique commit dates).
+
+NOTE: If the branch is not hard-reset then the first-parent commits on that
+branch will have monotonically increasing git commit dates (adjusted for UTC).
+This assumption is required for the correct usage of the
+``<PROJECT_NAME_UC>_VERSION_DATE`` macro as demonstrated above.
+
+NOTE: If the base ``.git/`` directory is missing or the version of git is not
+2.10.0 or greater (needed for the ``--date=iso-local`` argument), then the
+``<Project>_version_date.h`` file will still get generated but will have an
+undefined macro ``<PROJECT_NAME_UC>_VERSION_DATE`` and a ``NOTE`` message will
+be printed to cmake STDOUT.
 
 
 CMake configure-time development mode and debug checking

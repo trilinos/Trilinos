@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,7 +39,7 @@
 void scale_diag(double *vec,      /* the vector to scale */
                 int beg, int end, /* specify the range to norm over */
                 double *diag      /* vector to scale by */
-                )
+)
 {
   int i;
 
@@ -57,7 +57,7 @@ void scale_diag(double *vec,      /* the vector to scale */
 void scale_diag_float(float *vec,       /* the vector to scale */
                       int beg, int end, /* specify the range to norm over */
                       float *diag       /* vector to scale by */
-                      )
+)
 {
 
   int i;

@@ -185,7 +185,7 @@ DefaultDiagonalLinearOp<Scalar>::clone() const
 
 
 template<class Scalar>
-bool DefaultDiagonalLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
+bool DefaultDiagonalLinearOp<Scalar>::opSupportedImpl(EOpTransp /* M_trans */) const
 {
   return true;
 }

@@ -89,7 +89,7 @@ struct Lanczos_PCE_Setup {
     func()
   {
     rtol = 1e-8;
-    atol = 1e-12;
+    atol = 1e-10;
     const OrdinalType d = 3;
     const OrdinalType p = 5;
     

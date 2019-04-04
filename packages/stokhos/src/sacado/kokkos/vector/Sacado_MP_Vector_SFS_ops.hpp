@@ -134,6 +134,10 @@
 #include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
 #undef OPNAME
 
+#define OPNAME ceil
+#include "Sacado_MP_Vector_SFS_unary_func_tmpl.hpp"
+#undef OPNAME
+
 #define OPNAME operator+
 #define OPER +
 #include "Sacado_MP_Vector_SFS_binary_op_tmpl.hpp"

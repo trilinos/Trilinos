@@ -243,7 +243,7 @@ int main(int argc, char** argv)
   fclose(infile);
 
   /*create the out_file_name*/
-  out_file_name = (char*)malloc(MAX_STR_LENGTH+1);
+  out_file_name = (char*)malloc(MAX_STR_LENGTH+100);
 
   for( rank = start_rank; rank != end_rank; rank ++){
     int cr_result;

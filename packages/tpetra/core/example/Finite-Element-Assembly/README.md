@@ -17,27 +17,21 @@ Files
 - `fem_assembly_main`
   - Contains the main() function for the application.
 
-### Finite Element Mesh Assembly Examples
-- `fem_assembly_InsertGlobalIndices_DP.hpp`
+### Finite Element Mesh Assembly Example Sources
+- `fem_assembly_InsertGlobalIndices_DP.hpp`  (Type-1)
   - Constructs the crsGraph by looping over the _owned_ elements and inserting the representations of the
     connectivity of each element into the graph using their global ids and lets Tpetra handle the exchanges.
-  - Performance:  :star:
-  - Ease of use:  :star: :star: :star:
   - DynamicProfile
-- `fem_assembly_LocalElementLoop_DP.hpp`
+- `fem_assembly_LocalElementLoop_DP.hpp`  (Type-2)
   - This method distinguishes owned from overlapping nodes.
     - Owned nodes are those that _only_ touch elements owned by the same process.
     - Overlapping nodes are nodes that touch elements owned by a different process.
-  - Performance:  :star: :star:
-  - Ease of use:  :star:
   - DynamicProfile
-- `fem_assembly_TotalElementLoop_DP.hpp`
+- `fem_assembly_TotalElementLoop_DP.hpp`  (Type-3)
   - Each process contains information from both its owned elements and its ghost elements so mesh construction
     is possible without requiring communication.
-  - Performance:  :star: :star: :star:
-  - Ease of use:  :star: :star:
   - DynamicProfile
-- `fem_assembly_TotalElementLoop_SP.hpp`
+- `fem_assembly_TotalElementLoop_SP.hpp`  (Type-3)
   - StaticProfile version of the Total Element Loop example.
 
 

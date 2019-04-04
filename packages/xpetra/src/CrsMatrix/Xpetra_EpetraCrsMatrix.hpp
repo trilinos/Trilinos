@@ -204,6 +204,7 @@ public:
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {  }
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const { }
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const { }
+  void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) { }
   void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
   void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
 
@@ -213,6 +214,7 @@ public:
 
   std::string description() const { return std::string(""); }
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { }
+  void setObjectLabel( const std::string &objectLabel ) { }
 
   EpetraCrsMatrixT(const EpetraCrsMatrixT& matrix) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
@@ -850,7 +852,10 @@ public:
   }
 
   //! Get a copy of the diagonal entries owned by this node, with local row indices.
-  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra<GlobalOrdinal,Node>(diag)); }
+  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getLocalDiagCopy");
+    XPETRA_ERR_CHECK(mtx_->ExtractDiagonalCopy(toEpetra<GlobalOrdinal,Node>(diag)));
+  }
 
   //! Get offsets of the diagonal entries in the matrix.
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
@@ -860,6 +865,11 @@ public:
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
+  }
+
+  //! Replace the diagonal entries of the matrix
+  void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+    mtx_->ReplaceDiagonalValues (toEpetra<GlobalOrdinal,Node>(diag));
   }
 
   void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
@@ -1088,7 +1098,10 @@ public:
 
   }
 
-
+  void setObjectLabel( const std::string &objectLabel ) {
+    Teuchos::LabeledObject::setObjectLabel(objectLabel);
+    mtx_->SetLabel(objectLabel.c_str());
+  }
   //@}
 
   //! Deep copy constructor
@@ -1631,7 +1644,7 @@ public:
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
-  
+
   // Epetra always has global constants
   bool haveGlobalConstants() const  { return true;}
 
@@ -1838,6 +1851,11 @@ public:
   //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
+  }
+
+  //! Replace the diagonal entries of the matrix
+  void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+    mtx_->ReplaceDiagonalValues (toEpetra<GlobalOrdinal,Node>(diag));
   }
 
   void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
@@ -2066,7 +2084,10 @@ public:
 
   }
 
-
+  void setObjectLabel( const std::string &objectLabel ) {
+    Teuchos::LabeledObject::setObjectLabel(objectLabel);
+    mtx_->SetLabel(objectLabel.c_str());
+  }
   //@}
 
   //! Deep copy constructor

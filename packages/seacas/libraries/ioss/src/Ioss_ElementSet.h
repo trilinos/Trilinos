@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -59,6 +59,7 @@ namespace Ioss {
 
     std::string type_string() const override { return "ElementSet"; }
     std::string short_type_string() const override { return "elementlist"; }
+    std::string contains_string() const override { return "Element"; }
     EntityType  type() const override { return ELEMENTSET; }
 
     // Handle implicit properties -- These are calcuated from data stored

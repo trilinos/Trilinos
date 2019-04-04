@@ -42,7 +42,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk
 {
@@ -62,7 +62,7 @@ protected:
     {
         stk::io::fill_mesh_preexisting(stkIo, fileToRead, get_bulk());
     }
-    void TearDown()
+    void NGPTearDown()
     {
         unlink(filename.c_str());
     }

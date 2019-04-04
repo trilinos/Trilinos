@@ -235,6 +235,8 @@ void ReductTargetSerializer<Scalar>::serialize(
   TEUCHOS_TEST_FOR_EXCEPT( !reduct_objs );
   TEUCHOS_TEST_FOR_EXCEPT( !(bytes==this->getBufferSize(count)) );
   TEUCHOS_TEST_FOR_EXCEPT( !charBuffer );
+#else
+  (void)bytes;
 #endif
   Ordinal offset = 0;
   for( Ordinal i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
@@ -266,6 +268,8 @@ void ReductTargetSerializer<Scalar>::deserialize(
   TEUCHOS_TEST_FOR_EXCEPT( !charBuffer );
   TEUCHOS_TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
   TEUCHOS_TEST_FOR_EXCEPT( !reduct_objs );
+#else
+  (void)bytes;
 #endif
   Ordinal offset = 0;
   for( Ordinal i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {

@@ -14,12 +14,14 @@ SET(HEADERS_PUBLIC "")
 SET(HEADERS_PRIVATE "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS_PUBLIC *.h)
+FILE(GLOB HEADERS_PUBLIC *.hpp)
 LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
-
-APPEND_SET(SOURCES
-  shylu_bddc_dummy.cpp)
+FILE(GLOB SOURCES *.cpp)
+#APPEND_SET(SOURCES
+#  shylu_bddc_dummy.cpp
+#  shylu_SolverSuperLU.cpp
+#  shylu_SuperLU.cpp)
 
 #-----------------------------------------------------------------------------
 

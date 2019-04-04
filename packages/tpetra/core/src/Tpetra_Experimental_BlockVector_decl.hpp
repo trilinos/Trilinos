@@ -42,8 +42,9 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKVECTOR_DECL_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_DECL_HPP
 
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Tpetra_Vector.hpp>
+#include "Tpetra_Experimental_BlockVector_fwd.hpp"
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -73,10 +74,10 @@ namespace Experimental {
 /// "multivectors" that are not "multi."  That is, a BlockVector has a
 /// single vector (column).  Please refer to the documentation of
 /// BlockMultiVector for details.
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LO,
+         class GO,
+         class Node>
 class BlockVector : public BlockMultiVector<Scalar, LO, GO, Node> {
 private:
   typedef BlockMultiVector<Scalar, LO, GO, Node> base_type;
@@ -193,6 +194,22 @@ public:
   /// \param blockSize [in] The number of degrees of freedom per mesh
   ///   point.  We assume that this is the same for all mesh points.
   BlockVector (const mv_type& X_mv,
+               const map_type& meshMap,
+               const LO blockSize);
+
+  /// \brief View an existing Vector.
+  ///
+  /// \param X_vec [in/out] The Vector view.  It MUST have view
+  ///   semantics; otherwise this constructor throws.  Its Map must be
+  ///   the same (in the sense of isSameAs) as the point Map
+  ///   corresponding to the given mesh Map and block size.
+  ///
+  /// \param meshMap [in] The mesh Map to use for interpreting the
+  ///   given Vector (in place) as a BlockVector.
+  ///
+  /// \param blockSize [in] The number of degrees of freedom per mesh
+  ///   point.  We assume that this is the same for all mesh points.
+  BlockVector (const vec_type& X_vec,
                const map_type& meshMap,
                const LO blockSize);
 

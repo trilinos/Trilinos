@@ -88,7 +88,6 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("Coordinates",               Teuchos::null, "Generating factory for coorindates");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",              Teuchos::null, "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
-    validParamList->set<std::string>            ("axisPermutation",         "", "Assuming a global (x,y,z) orientation, local might be (z,y,x). This vector gives a permutation from global to local orientation.");
     validParamList->set<std::string>            ("stencil type",            "full", "You can use two type of stencils: full and reduced, that correspond to 27 and 7 points stencils respectively in 3D.");
     validParamList->set<std::string>            ("block strategy",          "coupled", "The strategy used to handle systems of PDEs can be: coupled or uncoupled.");
 
@@ -147,8 +146,8 @@ namespace MueLu {
     // obtain general variables
     RCP<Matrix>      A             = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates =
-      Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(fineLevel, "Coordinates");
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates =
+      Get< RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > >(fineLevel, "Coordinates");
     LO numDimensions  = coordinates->getNumVectors();
     LO BlkSize = A->GetFixedBlockSize();
 
@@ -237,8 +236,8 @@ namespace MueLu {
     Array<LO> myOffset(3), lCoarseNodesPerDir(3), glCoarseNodesPerDir(3), endRate(3);
     Array<bool> ghostInterface(6);
     Array<int> boundaryFlags(3);
-    ArrayRCP<Array<double> > coarseNodes(numDimensions);
-    Array<ArrayView<const double> > fineNodes(numDimensions);
+    ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes(numDimensions);
+    Array<ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > fineNodes(numDimensions);
     for(LO dim = 0; dim < numDimensions; ++dim) {fineNodes[dim] = coordinates->getData(dim)();}
 
     // This struct stores PIDs, LIDs and GIDs on the fine mesh and GIDs on the coarse mesh.
@@ -257,12 +256,12 @@ namespace MueLu {
                                                         coarseNodesGIDs.view(0, lNumCoarseNodes),
                                                         coordinates->getMap()->getIndexBase(),
                                                         coordinates->getMap()->getComm());
-    Array<ArrayView<const double> > coarseCoords(numDimensions);
+    Array<ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseCoords(numDimensions);
     for(LO dim = 0; dim < numDimensions; ++dim) {
       coarseCoords[dim] = coarseNodes[dim]();
     }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coarseCoordinates =
-      Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsMap, coarseCoords(),
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coarseCoordinates =
+      Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordsMap, coarseCoords(),
                                                          numDimensions);
 
     // Now create a new matrix: Aghost that contains all the data
@@ -552,8 +551,8 @@ namespace MueLu {
           glElementCoarseNodeCG[7] += 1;
 
           LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
-          LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
-            + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
+          // LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
+          //   + elemInds[1]*coarseRate[1]*glFineNodesPerDir[0] + elemInds[0]*coarseRate[0];
 
           // Compute the element prolongator
           Teuchos::SerialDenseMatrix<LO,SC> Pi, Pf, Pe;
@@ -619,6 +618,7 @@ namespace MueLu {
                           ++refCoarsePointTuple[dim];
                         }
                       } else {
+                        // Note:  no need for magnitudeType here, just use double because these things are LO's
                         refCoarsePointTuple[dim] =
                           std::ceil(static_cast<double>(lNodeTuple[dim] + myOffset[dim])
                                     / coarseRate[dim]);
@@ -756,14 +756,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetGeometricData(RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates,
+  GetGeometricData(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coordinates,
                    const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
                    const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
                    Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
                    Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
                    Array<LO>& glCoarseNodesPerDir, Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs,
                    Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
-                   ArrayRCP<Array<double> > coarseNodes, Array<int>& boundaryFlags,
+                   ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes, Array<int>& boundaryFlags,
                    RCP<NodesIDs> ghostedCoarseNodes) const {
     // This function is extracting the geometric information from the coordinates
     // and creates the necessary data/formatting to perform locally the calculation
@@ -1245,7 +1245,7 @@ namespace MueLu {
           firstCoarseNodeInds[dim] = coarseRate[dim] - myOffset[dim];
         }
       }
-      Array<ArrayRCP<const double> > fineNodes(numDimensions);
+      Array<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > fineNodes(numDimensions);
       for(LO dim = 0; dim < numDimensions; ++dim) {fineNodes[dim] = coordinates->getData(dim);}
       for(LO k = 0; k < lCoarseNodesPerDir[2]; ++k) {
         for(LO j = 0; j < lCoarseNodesPerDir[1]; ++j) {

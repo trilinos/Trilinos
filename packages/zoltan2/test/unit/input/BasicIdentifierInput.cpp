@@ -48,18 +48,14 @@
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-using Teuchos::RCP;
-using Teuchos::Comm;
-using Teuchos::DefaultComm;
+int main(int narg, char *arg[]) {
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   int fail = 0, gfail = 0;
@@ -127,9 +123,9 @@ int main(int argc, char *argv[]) {
   delete [] myIds;
   delete [] weights;
 
-  gfail = globalFail(comm, fail);
+  gfail = globalFail(*comm, fail);
   if (gfail) {
-    printFailureCode(comm, fail);   // will exit(1)
+    printFailureCode(*comm, fail);   // will exit(1)
   }
   if (rank == 0) {
     std::cout << "PASS" << std::endl;

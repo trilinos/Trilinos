@@ -813,6 +813,18 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   // Basic test checks maximum iterations and native residual.
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
+  // Perform sanity checking for flexible Gmres here.
+  // NOTE:  If the user requests that the solver manager use flexible GMRES, but there is no right preconditioner, don't use flexible GMRES.
+  //        Throw an error is the user provided a left preconditioner, as that is inconsistent with flexible GMRES.
+  if (isFlexible_ && Teuchos::is_null(problem_->getRightPrec())) {
+    isFlexible_ = false;
+    params_->set("Flexible Gmres", isFlexible_);
+
+    // If the user specified the preconditioner as a left preconditioner, throw an error.
+    TEUCHOS_TEST_FOR_EXCEPTION( !Teuchos::is_null(problem_->getLeftPrec()),BlockGmresSolMgrLinearProblemFailure,
+      "Belos::BlockGmresSolMgr::solve(): Linear problem has a left preconditioner, not a right preconditioner, which is required for flexible GMRES.");
+  }
+
   // If there is a left preconditioner, we create a combined status test that checks the implicit
   // and then explicit residual norm to see if we have convergence.
   if (!Teuchos::is_null(problem_->getLeftPrec()) && !isFlexible_) {
@@ -917,11 +929,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockGmresSolMgrLinearProblemFailure,
     "Belos::BlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
-
-  if (isFlexible_) {
-    TEUCHOS_TEST_FOR_EXCEPTION(problem_->getRightPrec()==Teuchos::null,BlockGmresSolMgrLinearProblemFailure,
-      "Belos::BlockGmresSolMgr::solve(): Linear problem does not have a preconditioner required for flexible GMRES, call setRightPrec().");
-  }
 
   if (!isSTSet_ || (!expResTest_ && !Teuchos::is_null(problem_->getLeftPrec())) ) {
     TEUCHOS_TEST_FOR_EXCEPTION( checkStatusTest(),BlockGmresSolMgrLinearProblemFailure,

@@ -55,6 +55,7 @@
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
 #include "Tpetra_Details_initializeKokkos.hpp"
@@ -62,6 +63,7 @@
 #include <typeinfo>
 
 namespace Tpetra {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
@@ -89,7 +91,7 @@ namespace Tpetra {
        GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        LocalGlobal lOrG,
-       const Teuchos::RCP<Node> &node) :
+       const Teuchos::RCP<Node> &/* node */) :
     comm_ (comm),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -242,7 +244,7 @@ namespace Tpetra {
        size_t numLocalElements,
        GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       const Teuchos::RCP<Node> &node) :
+       const Teuchos::RCP<Node> &/* node */) :
     comm_ (comm),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -416,6 +418,10 @@ namespace Tpetra {
 
     return debugGlobalSum;
 #else
+    (void)numGlobalElements;
+    (void)numLocalElements;
+    (void)indexBase;
+    (void)comm;
     return static_cast<global_size_t> (0);
 #endif // HAVE_TPETRA_DEBUG
   }
@@ -727,7 +733,7 @@ namespace Tpetra {
        const Teuchos::ArrayView<const GlobalOrdinal>& entryList,
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-       const Teuchos::RCP<Node>& node) :
+       const Teuchos::RCP<Node>& /* node */) :
     comm_ (comm),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -1323,7 +1329,7 @@ namespace Tpetra {
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  isLocallyFitted (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
   {
     if (this == &map)
       return true;
@@ -1420,7 +1426,7 @@ namespace Tpetra {
     // execution does not require interprocess communication."
     // However, just to be sure, I'll put this call after the above
     // tests that don't communicate.
-    if (! Details::congruent (*comm_, * (map.getComm ()))) {
+    if (! ::Tpetra::Details::congruent (*comm_, * (map.getComm ()))) {
       return false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,7 @@ void genvals3d(
     double **xvecs,            /* vectors to partition */
     double * vals[8][MAXSETS], /* ptrs to lists of values */
     int      nvtxs             /* number of values */
-    )
+)
 {
   int     nsets  = 8;  /* number of sets */
   int     nlists = 13; /* number of lists to generate */

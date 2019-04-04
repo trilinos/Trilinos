@@ -179,7 +179,7 @@ ELSE(TRIBITS_PROCESSING_PACKAGE)
 
 # This CMakeLists.txt file is being processed as the TriBITS projects's base
 # CMakeLists.txt file!  (See comments at bottom of this file.)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
 PROJECT(${PROJECT_NAME} NONE)
 SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits"

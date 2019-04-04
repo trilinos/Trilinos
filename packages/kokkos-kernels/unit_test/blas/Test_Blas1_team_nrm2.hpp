@@ -53,7 +53,7 @@ namespace Test {
     Kokkos::View<typename AT::mag_type*,Device> d_r("Nrm2::Result",K);
 
     //KokkosBlas::nrm2(r,a);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamNrm2", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        d_r(teamId) = KokkosBlas::Experimental::nrm2(teamMember, Kokkos::subview(a,Kokkos::ALL(),teamId));
     } );
@@ -64,7 +64,7 @@ namespace Test {
     }
 
     //KokkosBlas::nrm2(r,c_a);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamNrm2", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        d_r(teamId) = KokkosBlas::Experimental::nrm2(teamMember, Kokkos::subview(c_a,Kokkos::ALL(),teamId));
     } );
@@ -85,24 +85,24 @@ int test_team_nrm2() {
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device> view_type_a_ll;
   Test::impl_test_team_nrm2<view_type_a_ll, Device>(0,5);
   Test::impl_test_team_nrm2<view_type_a_ll, Device>(13,5);
-  Test::impl_test_team_nrm2<view_type_a_ll, Device>(1024,5);
-  Test::impl_test_team_nrm2<view_type_a_ll, Device>(132231,5);
+  Test::impl_test_team_nrm2<view_type_a_ll, Device>(124,5);
+  //Test::impl_test_team_nrm2<view_type_a_ll, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device> view_type_a_lr;
   Test::impl_test_team_nrm2<view_type_a_lr, Device>(0,5);
   Test::impl_test_team_nrm2<view_type_a_lr, Device>(13,5);
-  Test::impl_test_team_nrm2<view_type_a_lr, Device>(1024,5);
-  Test::impl_test_team_nrm2<view_type_a_lr, Device>(132231,5);
+  Test::impl_test_team_nrm2<view_type_a_lr, Device>(124,5);
+  //Test::impl_test_team_nrm2<view_type_a_lr, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   typedef Kokkos::View<ScalarA**, Kokkos::LayoutStride, Device> view_type_a_ls;
   Test::impl_test_team_nrm2<view_type_a_ls, Device>(0,5);
   Test::impl_test_team_nrm2<view_type_a_ls, Device>(13,5);
-  Test::impl_test_team_nrm2<view_type_a_ls, Device>(1024,5);
-  Test::impl_test_team_nrm2<view_type_a_ls, Device>(132231,5);
+  Test::impl_test_team_nrm2<view_type_a_ls, Device>(124,5);
+  //Test::impl_test_team_nrm2<view_type_a_ls, Device>(132231,5);
 #endif
 
   return 1;

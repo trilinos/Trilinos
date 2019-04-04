@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.Hopf.MooreSpence is the python interface to namespace
 Hopf::MooreSpence of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.Hopf.MooreSpence is to provide ***.  The python
 version of LOCA.Hopf.MooreSpence supports the following classes:
@@ -76,9 +76,23 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 "
 %enddef
 
-%module(package="PyTrilinos.LOCA.Hopf",
-        directors = "1",
-        docstring = %loca_hopf_moorespence_docstring) MooreSpence
+%define %loca_hopf_moorespence_importcode
+"
+from . import _MooreSpence
+import PyTrilinos.Teuchos.Base
+import PyTrilinos.NOX.Abstract
+import PyTrilinos.Epetra
+from PyTrilinos.LOCA import Extended
+from PyTrilinos.LOCA import MultiContinuation
+from PyTrilinos.LOCA import TimeDependent
+from PyTrilinos.LOCA import TurningPoint
+"
+%enddef
+
+%module(package      ="PyTrilinos.LOCA.Hopf",
+        directors    = "1",
+        moduleimport = %loca_hopf_moorespence_importcode,
+        docstring    = %loca_hopf_moorespence_docstring) MooreSpence
 
 %{
 // PyTrilinos include files
@@ -89,12 +103,12 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // NOX-Epetra include files
-#ifdef HAVE_NOX_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 //#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
@@ -102,7 +116,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 
 // NOX-PETSc include files
 #include "NOX_Abstract_Vector.H"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 #include "NOX_Petsc_Vector.H"
 #endif
 
@@ -117,7 +131,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 
 // PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 %include "petsc4py/petsc4py.i"
 #endif
 
@@ -152,13 +166,6 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 %teuchos_rcp(LOCA::Hopf::MooreSpence::SalingerBordering)
 
 // Base class support
-%pythoncode
-%{
-import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
-if not parentDir in sys.path: sys.path.append(parentDir)
-del sys, op
-%}
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"
 %import(module="Extended") "LOCA_Extended_MultiVector.H"

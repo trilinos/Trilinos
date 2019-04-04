@@ -1,9 +1,17 @@
-function [] = mkAppData(allMyNodes,allMyRegions,nProcs,whichCase)
+%
+% Input
+%   allMyNodes
+%   allMyRegions
+%   nProcs          total number of processors
+%   whichCase       
+%   outDir          path to output directory
+%
+function [] = mkAppData(allMyNodes,allMyRegions,nProcs,whichCase,outDir)
 
 for myRank=0:nProcs-1
    
    % open file
-   fp = fopen(sprintf('myAppData_%d',myRank),'w');
+   fp = fopen(sprintf('%s/myAppData_%d',outDir,myRank),'w');
    if fp == -1
      error('mkAppData: cannot open myAppData_%d\n',myRank);
    end

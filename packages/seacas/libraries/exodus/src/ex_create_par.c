@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,8 +35,8 @@
 
 /*!
 
-\note The ex_create_int() is an internal function called by
-ex_create(). The user should call ex_create() and not ex_create_int().
+\note The ex_create_par_int() is an internal function called by
+ex_create_par(). The user should call ex_create_par() and not ex_create_par_int().
 
 The function ex_create() creates a new exodus file and returns an ID
 that can subsequently be used to refer to the file.
@@ -92,6 +92,14 @@ alias.
 
 \arg EX_NORMAL_MODEL Create a standard model.
 
+\arg EX_64BIT_DATA	To create a model using the CDF5 format which uses the
+                        classic model but has 64-bit dimensions and sizes.
+                        This type will also be created if the
+                        environment variable EXODUS_NETCDF5 is defined in the
+                        users environment. A message will be printed to standard
+                        output if
+                        this environment variable is found.
+
 \arg EX_NETCDF4	To create a model using the HDF5-based NetCDF-4
                         output. An HDF5-based NetCDF-4 file will also be created
 if the
@@ -121,7 +129,7 @@ declared with
 \param io_ws            The word size in bytes (4 or 8) of the floating point
                         data as they are to be stored in the exodus file.
 
-\param run_version (internally generated) used to verify compatability of libary
+\param run_version (internally generated) used to verify compatibility of library
 and include files.
 
 The following code segment creates an exodus file called \file{test.exo}:
@@ -149,423 +157,58 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 #include <mpi.h>
 #include <stdlib.h>
 
-static int warning_output = 0;
-
+/* NOTE: Do *not* call `ex_create_par_int()` directly.  The public API
+ *       function name is `ex_create_par()` which is a wrapper that calls
+ *       `ex_create_par_int` with an additional argument to make sure
+ *       library and include file are consistent
+ */
 int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI_Comm comm,
                       MPI_Info info, int run_version)
 {
-  int   exoid;
-  int   status;
-  int   dimid;
-  int   old_fill;
-  int   lio_ws;
-  int   filesiz;
-  float vers;
-  char  errmsg[MAX_ERR_LENGTH];
-  char *mode_name;
-  int   nc_mode = 0;
+  int  exoid;
+  int  status;
+  char errmsg[MAX_ERR_LENGTH];
+  int  nc_mode = 0;
 
-  int         int64_status;
-  const char *routine    = "ex_create_par";
-  int         pariomode  = 0;
-  int         is_mpiio   = 0;
-  int         is_pnetcdf = 0;
-
-  unsigned int my_mode = cmode;
-
-  /* Contains a 1 in all bits corresponding to file modes */
-  static unsigned int all_modes = EX_NORMAL_MODEL | EX_64BIT_OFFSET | EX_64BIT_DATA | EX_NETCDF4;
+  unsigned int my_mode     = cmode;
+  int          is_parallel = 1;
 
   EX_FUNC_ENTER();
 
 #if !NC_HAS_PARALLEL
   /* Library does NOT support parallel output via netcdf-4 or pnetcdf */
-  snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: Parallel output requires the netcdf-4 and/or "
-                                   "pnetcdf library format, but this netcdf library does not "
-                                   "support either.\n");
-  ex_err(routine, errmsg, EX_BADPARAM);
+  snprintf(errmsg, MAX_ERR_LENGTH,
+           "EXODUS: ERROR: Parallel output requires the netcdf-4 and/or "
+           "pnetcdf library format, but this netcdf library does not "
+           "support either.\n");
+  ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
   EX_FUNC_LEAVE(EX_FATAL);
 #endif
 
-  if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
-    int run_version_major = run_version / 100;
-    int run_version_minor = run_version % 100;
-    int lib_version_major = EX_API_VERS_NODOT / 100;
-    int lib_version_minor = EX_API_VERS_NODOT % 100;
-    fprintf(stderr, "EXODUS: Warning: This code was compiled with exodusII "
-                    "version %d.%02d,\n          but was linked with exodusII "
-                    "library version %d.%02d\n          This is probably an "
-                    "error in the build process of this code.\n",
-            run_version_major, run_version_minor, lib_version_major, lib_version_minor);
-    warning_output = 1;
-  }
+  nc_mode = ex_int_handle_mode(my_mode, is_parallel, run_version);
 
-/*
- * See if specified mode is supported in the version of netcdf we
- * are using
- */
-#if !NC_HAS_HDF5
-  if (my_mode & EX_NETCDF4) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: File format specified as netcdf-4, but the "
-                                     "NetCDF library being used was not configured to enable "
-                                     "this format\n");
-    ex_err(routine, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-#endif
-
-#if !defined(NC_64BIT_DATA)
-  if (my_mode & EX_64BIT_DATA) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: File format specified as 64bit_data, but "
-                                     "the NetCDF library being used does not support this "
-                                     "format\n");
-    ex_err(routine, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-#endif
-
-  /* Check that one and only one format mode is specified... */
-  {
-    unsigned int set_modes = all_modes & my_mode;
-
-    if (set_modes == 0) {
-      my_mode |= EX_64BIT_OFFSET; /* Default if nothing specified */
-    }
-    else {
-      /* Checks that only a single bit is set */
-      set_modes = set_modes && !(set_modes & (set_modes - 1));
-      if (!set_modes) {
-        snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: More than 1 file format "
-                                         "(EX_NORMAL_MODEL, EX_LARGE_MODEL, EX_64BIT_OFFSET, "
-                                         "EX_64BIT_DATA, or EX_NETCDF4)\nwas specified in the "
-                                         "mode argument of the ex_create call. Only a single "
-                                         "format can be specified.\n");
-        ex_err(routine, errmsg, EX_BADPARAM);
-        EX_FUNC_LEAVE(EX_FATAL);
-      }
-    }
-  }
-
-  /*
-   * See if any integer data is to be stored as int64 (long long). If
-   * so, then need to set NC_NETCDF4 and unset NC_CLASSIC_MODEL (or
-   * set EX_NOCLASSIC.  Output meaningful error message if the library
-   * is not NetCDF-4 enabled...
-   *
-   * As of netcdf-4.4.0, can also use NC_64BIT_DATA (CDF5) mode for this...
-   */
-  int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
-
-  if ((int64_status & EX_ALL_INT64_DB) != 0) {
-#if NC_HAS_HDF5 || defined(NC_64BIT_DATA)
-    /* Library DOES support netcdf4 and/or cdf5 ... See if user
-     * specified either of these and use that one; if not, pick
-     * netcdf4, non-classic as default.
-     */
-    if (my_mode & EX_NETCDF4) {
-      my_mode |= EX_NOCLASSIC;
-    }
-#if defined(NC_64BIT_DATA)
-    else if (my_mode & EX_64BIT_DATA) {
-      ; /* Do nothing, already set */
-    }
-#endif
-    else {
-      /* Unset the current mode so we don't have multiples specified */
-      /* ~all_modes sets to 1 all bits not associated with file format */
-      my_mode &= ~all_modes;
+  if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {
 #if NC_HAS_HDF5
-      /* Pick netcdf4 as default mode for 64-bit integers */
-      my_mode |= EX_NOCLASSIC;
-      my_mode |= EX_NETCDF4;
-#else
-      /* Pick 64bit_data as default mode for 64-bit integers */
-      my_mode |= EX_64BIT_DATA;
-#endif
-    }
-#else
-    /* Library does NOT support netcdf4 or cdf5 */
-    snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: 64-bit integer storage requested, but the "
-                                     "netcdf library does not support the required netcdf-4 or "
-                                     "64BIT_DATA extensions.\n");
-    ex_err(routine, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-#endif
-  }
-
-  /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
-   * Exodus uses different flag values; map to netcdf values
-   */
-  {
-    int tmp_mode = 0;
-    if (my_mode & EX_MPIPOSIX) {
-      pariomode = NC_MPIPOSIX;
-      tmp_mode  = EX_NETCDF4;
-#if !NC_HAS_HDF5
-      snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: EX_MPIPOSIX parallel output requested "
-                                       "which requires NetCDF-4 support, but the library does "
-                                       "not have that option enabled.\n");
-      ex_err(routine, errmsg, EX_BADPARAM);
-      EX_FUNC_LEAVE(EX_FATAL);
-#endif
-    }
-    else if (my_mode & EX_MPIIO) {
-      pariomode = NC_MPIIO;
-      is_mpiio  = 1;
-      tmp_mode  = EX_NETCDF4;
-#if !NC_HAS_HDF5
-      snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: EX_MPIIO parallel output requested which "
-                                       "requires NetCDF-4 support, but the library does not "
-                                       "have that option enabled.\n");
-      ex_err(routine, errmsg, EX_BADPARAM);
-      EX_FUNC_LEAVE(EX_FATAL);
-#endif
-    }
-    else if (my_mode & EX_PNETCDF) {
-      pariomode  = NC_PNETCDF;
-      is_pnetcdf = 1;
-      /* See if client specified 64-bit or not... */
-      if ((int64_status & EX_ALL_INT64_DB) != 0) {
-        tmp_mode = EX_64BIT_DATA;
-      }
-      else {
-        tmp_mode = EX_64BIT_OFFSET;
-      }
-#if !NC_HAS_PNETCDF
-      snprintf(errmsg, MAX_ERR_LENGTH, "EXODUS: ERROR: EX_PNETCDF parallel output requested "
-                                       "which requires PNetCDF support, but the library does "
-                                       "not have that option enabled.\n");
-      ex_err(routine, errmsg, EX_BADPARAM);
-      EX_FUNC_LEAVE(EX_FATAL);
-#endif
-    }
-
-    /* If tmp_mode was set here, then need to clear any other mode that
-       was potentially already set in my_mode... */
-    my_mode &= ~all_modes;
-    my_mode |= tmp_mode;
-  }
-
-  if (my_mode & EX_NETCDF4) {
-    nc_mode |= NC_NETCDF4;
-  }
-
-  if (!(my_mode & EX_NOCLASSIC)) {
-    nc_mode |= NC_CLASSIC_MODEL;
-  }
-
-  /*
-   * See if "large file" mode was specified in a ex_create my_mode. If
-   * so, then pass the NC_64BIT_OFFSET flag down to netcdf.
-   * If netcdf4 mode specified, don't use NC_64BIT_OFFSET mode.
-   */
-  if (my_mode & EX_NORMAL_MODEL) {
-    filesiz = 0;
-#if NC_HAS_HDF5
-  }
-  else if (nc_mode & NC_NETCDF4) {
-    filesiz = 1;
-#endif
-#if defined(NC_64BIT_DATA)
-  }
-  else if (nc_mode & NC_64BIT_DATA) {
-    filesiz = 1;
-#endif
-  }
-  else {
-    filesiz = (int)((my_mode & EX_64BIT_OFFSET) || (ex_large_model(-1) == 1));
-  }
-
-  if (
-#if NC_HAS_HDF5
-      !(nc_mode & NC_NETCDF4) &&
-#endif
-#if defined(NC_64BIT_DATA)
-      !(nc_mode & NC_64BIT_DATA) &&
-#endif
-      filesiz == 1) {
-    nc_mode |= NC_64BIT_OFFSET;
-  }
-
-  if (my_mode & EX_SHARE) {
-    nc_mode |= NC_SHARE;
-  }
-
-  /*
-   * set error handling mode to no messages, non-fatal errors
-   */
-  ex_opts(exoptval); /* call required to set ncopts first time through */
-
-  if (my_mode & EX_CLOBBER) {
-    nc_mode |= NC_CLOBBER;
-    mode_name = "CLOBBER";
-  }
-  else {
-    nc_mode |= NC_NOCLOBBER;
-    mode_name = "NOCLOBBER";
-  }
-
-#if defined NC_IGNORE_MAX_DIMS
-  nc_mode |= NC_IGNORE_MAX_DIMS;
-#endif
-
-#if defined NC_IGNORE_MAX_VARS
-  nc_mode |= NC_IGNORE_MAX_VARS;
-#endif
-
-  if ((status = nc_create_par(path, nc_mode | pariomode, comm, info, &exoid)) != NC_NOERR) {
-#if NC_HAS_HDF5
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s, mode: %s", path, mode_name);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
 #else
     if (my_mode & EX_NETCDF4) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s in NETCDF4 and %s "
-                                       "mode.\n\tThis library does not support netcdf-4 files.",
-               path, mode_name);
-    }
-    else {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s, mode: %s", path,
-               mode_name);
-    }
-#endif
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* turn off automatic filling of netCDF variables */
-
-  if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to set nofill mode in file id %d", exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* Verify that there is not an existing file_item struct for this
-     exoid This could happen (and has) when application calls
-     ex_open(), but then closes file using nc_close() and then reopens
-     file.  NetCDF will possibly reuse the exoid which results in
-     internal corruption in exodus data structures since exodus does
-     not know that file was closed and possibly new file opened for
-     this exoid
-  */
-  if (ex_find_file_item(exoid) != NULL) {
-    char errmsg[MAX_ERR_LENGTH];
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: There is an existing file already using the file "
-                                     "id %d which was also assigned to file %s.\n\tWas "
-                                     "nc_close() called instead of ex_close() on an open Exodus "
-                                     "file?\n",
-             exoid, path);
-    ex_err(routine, errmsg, EX_BADFILEID);
-    nc_close(exoid);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* initialize floating point size conversion.  since creating new file,
-   * i/o wordsize attribute from file is zero.
-   */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, 1, is_mpiio, is_pnetcdf) != EX_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to init conversion routines in file id %d",
-             exoid);
-    ex_err(routine, errmsg, EX_LASTERR);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* put the EXODUS version number, and i/o floating point word size as
-   * netcdf global attributes
-   */
-
-  /* store Exodus API version # as an attribute */
-  vers = EX_API_VERS;
-  if ((status = nc_put_att_float(exoid, NC_GLOBAL, ATT_API_VERSION, NC_FLOAT, 1, &vers)) !=
-      NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to store Exodus II API version attribute in file id %d", exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* store Exodus file version # as an attribute */
-  vers = EX_VERS;
-  if ((status = nc_put_att_float(exoid, NC_GLOBAL, ATT_VERSION, NC_FLOAT, 1, &vers)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to store Exodus II file version attribute in file id %d", exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* store Exodus file float word size  as an attribute */
-  lio_ws = (int)(*io_ws);
-  if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, NC_INT, 1, &lio_ws)) !=
-      NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store Exodus II file float word size "
-                                     "attribute in file id %d",
-             exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* store Exodus file size (1=large, 0=normal) as an attribute */
-  if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_FILESIZE, NC_INT, 1, &filesiz)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: failed to store Exodus II file size attribute in file id %d", exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  {
-    int max_so_far = 32;
-    if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far)) !=
-        NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to add maximum_name_length attribute in file id %d", exoid);
-      ex_err(routine, errmsg, status);
-      EX_FUNC_LEAVE(EX_FATAL);
+               "ERROR: file create failed for %s in NETCDF4 "
+               "mode.\n\tThis library does not support netcdf-4 files.",
+               path);
     }
-  }
-
-  /* define some dimensions and variables */
-
-  /* create string length dimension */
-  if ((status = nc_def_dim(exoid, DIM_STR, (MAX_STR_LENGTH + 1), &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define string length in file id %d", exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* The name string length dimension is delayed until the ex_put_init function
-   */
-
-  /* create line length dimension */
-  if ((status = nc_def_dim(exoid, DIM_LIN, (MAX_LINE_LENGTH + 1), &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define line length in file id %d", exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* create number "4" dimension; must be of type long */
-  if ((status = nc_def_dim(exoid, DIM_N4, 4L, &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number \"4\" dimension in file id %d",
-             exoid);
-    ex_err(routine, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  {
-    int int64_db_status = int64_status & EX_ALL_INT64_DB;
-    if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_INT64_STATUS, NC_INT, 1,
-                                 &int64_db_status)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add int64_status attribute in file id %d",
-               exoid);
-      ex_err(routine, errmsg, status);
-      EX_FUNC_LEAVE(EX_FATAL);
+    else {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);
     }
-  }
-
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err(routine, errmsg, status);
+#endif
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
+  status = ex_int_populate_header(exoid, path, my_mode, is_parallel, comp_ws, io_ws);
+  if (status != EX_NOERR) {
+    EX_FUNC_LEAVE(status);
+  }
   EX_FUNC_LEAVE(exoid);
 }
 #else

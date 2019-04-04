@@ -51,21 +51,26 @@ typedef Sacado::ELRCacheFad::SLFad<double,10> ELRCacheFad_SLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,5> ELRCacheFad_SFadType;
 Sacado::Random<double> rnd;
 
-FAD_KOKKOS_COMM_TESTS_CUDA(Fad_DFadType, Fad_DFad)
+
 FAD_KOKKOS_COMM_TESTS_CUDA(Fad_SLFadType, Fad_SLFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(Fad_SFadType, Fad_SFad)
 
-FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_DFadType, CacheFad_DFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_SLFadType, CacheFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_SFadType, CacheFad_SFad)
 
-FAD_KOKKOS_COMM_TESTS_CUDA(ELRFad_DFadType, ELRFad_DFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRFad_SLFadType, ELRFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRFad_SFadType, ELRFad_SFad)
 
-FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_DFadType, ELRCacheFad_DFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_SLFadType, ELRCacheFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_SFadType, ELRCacheFad_SFad)
+
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
+FAD_KOKKOS_COMM_TESTS_CUDA(Fad_DFadType, Fad_DFad)
+FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_DFadType, CacheFad_DFad)
+FAD_KOKKOS_COMM_TESTS_CUDA(ELRFad_DFadType, ELRFad_DFad)
+FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_DFadType, ELRCacheFad_DFad)
+#endif
+
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

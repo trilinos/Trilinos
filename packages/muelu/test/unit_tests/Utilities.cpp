@@ -202,7 +202,7 @@ namespace MueLuTests {
       RCP<MultiVector> diagInvMerged = bDiagInv->Merge();
       Teuchos::ArrayRCP<const Scalar> diagInvData = diagInvMerged->getData(0);
       for(size_t i = 0; i < Teuchos::as<size_t>(diagInvData.size()); ++i) {
-        if(i >= 0  && i < 5 ) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
+        if(i < 5 ) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
         if(i >= 5  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
         if(i >= 10 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
       }
@@ -223,7 +223,7 @@ namespace MueLuTests {
       RCP<MultiVector> diagInvMerged = bDiagInv->Merge();
       Teuchos::ArrayRCP<const Scalar> diagInvData = diagInvMerged->getData(0);
       for(size_t i = 0; i < Teuchos::as<size_t>(diagInvData.size()); ++i) {
-        if(i >= 0  && i < 5 ) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
+        if(i < 5 ) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
         if(i >= 5  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
         if(i >= 10 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
       }
@@ -249,7 +249,7 @@ namespace MueLuTests {
       for(size_t i = 0; i < Teuchos::as<size_t>(diagInvData.size()); ++i) {
         if(i >= 10 && i < 15) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
         if(i >= 15 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
-        if(i >= 0  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
+        if(i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
       }
     }
     // reordered blocked diagonal operator (Thyra)
@@ -273,7 +273,7 @@ namespace MueLuTests {
       for(size_t i = 0; i < Teuchos::as<size_t>(diagInvData.size()); ++i) {
         if(i >= 10 && i < 15) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
         if(i >= 15 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
-        if(i >= 0  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
+        if(i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
       }
     }
   } // GetDiagonalInverse

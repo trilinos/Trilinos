@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,6 +41,7 @@
 
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
+#include <Ioss_NullEntity.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
 
@@ -58,8 +59,15 @@ int main(int argc, char *argv[])
   Ioss::Initializer        initialize_topologies;
 
   int err_count = test_all_elements();
+
+  // Make sure Ioss::NullEntity works.  Not used in IOSS iteself,
+  // but some clients use it, so need to make sure it compiles
+  // correctly.
+  Ioss::GroupingEntity *entity = new Ioss::NullEntity();
+  std::cout << "\nThe null entity type is " << entity->type_string()
+	    << " and it contains " << entity->contains_string() << "\n";
+
   OUTPUT << "\n" << argv[0];
-  ;
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << '\n';
     return EXIT_SUCCESS;
@@ -338,7 +346,9 @@ bool test_element(const std::string &type)
                edge_conn[1] != face_conn[(j + 1) % fncn])) {
             OUTPUT << "\n\tEdge Connectivity does not match face "
                       "connectivity for edge "
-                   << j + 1 << " on face " << i;
+                   << j + 1 << " on face " << i << "\nEdge: " << edge_conn[0] << " " << edge_conn[1]
+                   << "\nFace: " << face_conn[j] << " " << face_conn[(j + 1) % fncn] << "\n";
+
             result = false;
           }
           if (order == 2) {

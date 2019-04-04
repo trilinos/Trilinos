@@ -31,9 +31,6 @@ TRIL_SET_BOOL_CACHE_VAR(ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_
 TRIL_SET_BOOL_CACHE_VAR(ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE TRUE)
 TRIL_SET_BOOL_CACHE_VAR(ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE TRUE)
 
-# Disable this MueLu test until it can be fixed for OpenMP (#3035)
-TRIL_SET_BOOL_CACHE_VAR(MueLu_UnitTestsTpetra_MPI_4_DISABLE TRUE)
-
 # NOTE: The order of these includes matters!
 
 include("${CMAKE_CURRENT_LIST_DIR}/MpiReleaseDebugSharedPtSettings.cmake")

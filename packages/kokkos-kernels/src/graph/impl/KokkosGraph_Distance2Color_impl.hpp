@@ -360,7 +360,7 @@ public:
     nnz_lno_temp_work_view_t current_vertexList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
 
     // init conflictlist sequentially.
-    Kokkos::parallel_for(my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
+    Kokkos::parallel_for("KokkosGraph::Distance2Color::ColorGraphD2", my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t>(current_vertexList));
 
     // Next iteratons's conflictList
     nnz_lno_temp_work_view_t next_iteration_recolorList;
@@ -513,7 +513,7 @@ private:
                           chunkSize_
                           );
 
-    Kokkos::parallel_for(my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
+    Kokkos::parallel_for("KokkosGraph::Distance2Color::ColorGraphGreedy", my_exec_space(0, current_vertexListLength_ / chunkSize_ + 1), gc);
 
   }  // colorGreedy (end)
 
@@ -573,7 +573,7 @@ private:
                                                      current_vertexList_,
                                                      next_iteration_recolorList_,
                                                      next_iteration_recolorListLength_);
-        Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
+        Kokkos::parallel_reduce("KokkosGraph::Distance2Color::FindConflicts", my_exec_space(0, current_vertexListLength_), conf, output_numUncolored);
       }
     }
     else

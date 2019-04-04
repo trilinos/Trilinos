@@ -46,6 +46,8 @@
 #ifndef MUELU_INDEXMANAGER_DEF_HPP
 #define MUELU_INDEXMANAGER_DEF_HPP
 
+#include "Teuchos_OrdinalTraits.hpp"
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include <MueLu_IndexManager_decl.hpp>
@@ -74,10 +76,11 @@ namespace MueLu {
     ghostedNodesPerDir.resize(3);
 
     offsets.resize(3);
+    coarseNodeOffsets.resize(3);
     startIndices.resize(6);
     startGhostedCoarseNode.resize(3);
 
-  }
+  } // Constructor
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void IndexManager<LocalOrdinal, GlobalOrdinal, Node>::computeMeshParameters() {
@@ -90,8 +93,13 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    gNumFineNodes10 = gFineNodesPerDir[1]*gFineNodesPerDir[0];
-    gNumFineNodes   = gFineNodesPerDir[2]*gNumFineNodes10;
+    if(coupled_) {
+      gNumFineNodes10 = gFineNodesPerDir[1]*gFineNodesPerDir[0];
+      gNumFineNodes   = gFineNodesPerDir[2]*gNumFineNodes10;
+    } else {
+      gNumFineNodes10 = Teuchos::OrdinalTraits<GO>::invalid();
+      gNumFineNodes   = Teuchos::OrdinalTraits<GO>::invalid();
+    }
     lNumFineNodes10 = lFineNodesPerDir[1]*lFineNodesPerDir[0];
     lNumFineNodes   = lFineNodesPerDir[2]*lNumFineNodes10;
     for(int dim = 0; dim < 3; ++dim) {
@@ -114,6 +122,13 @@ namespace MueLu {
         // If uncoupled aggregation is used, offsets[dim] = 0, so nothing to do.
         if(coupled_) {
           offsets[dim] = Teuchos::as<LO>(startIndices[dim]) % coarseRate[dim];
+          if(offsets[dim] == 0) {
+            coarseNodeOffsets[dim] = 0;
+          } else if(startIndices[dim] + endRate[dim] == lFineNodesPerDir[dim]) {
+            coarseNodeOffsets[dim] = endRate[dim] - offsets[dim];
+          } else {
+            coarseNodeOffsets[dim] = coarseRate[dim] - offsets[dim];
+          }
 
           if(interpolationOrder_ == 0) {
             int rem  = startIndices[dim] % coarseRate[dim];
@@ -154,6 +169,7 @@ namespace MueLu {
               << meshEdge[5] << "}" << std::endl;
     *out << "startIndices: " << startIndices << std::endl;
     *out << "offsets: " << offsets << std::endl;
+    *out << "coarseNodeOffsets: " << coarseNodeOffsets << std::endl;
 
     // Here one element can represent either the degenerate case of one node or the more general
     // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with

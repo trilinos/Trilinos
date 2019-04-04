@@ -52,17 +52,17 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-NOX::LineSearch::Utils::Counters::Counters()
+NOX::LineSearchCounters::LineSearchCounters()
 {
   reset();
 }
 
-NOX::LineSearch::Utils::Counters::~Counters()
+NOX::LineSearchCounters::~LineSearchCounters()
 {
 
 }
 
-void NOX::LineSearch::Utils::Counters::reset()
+void NOX::LineSearchCounters::reset()
 {
   totalNumLineSearchCalls = 0;
   totalNumNonTrivialLineSearches = 0;
@@ -70,7 +70,7 @@ void NOX::LineSearch::Utils::Counters::reset()
   totalNumIterations = 0;
 }
 
-bool NOX::LineSearch::Utils::Counters::setValues(Teuchos::ParameterList& lineSearchParams)
+bool NOX::LineSearchCounters::setValues(Teuchos::ParameterList& lineSearchParams)
 {
   Teuchos::ParameterList& outputList = lineSearchParams.sublist("Output");
   outputList.set("Total Number of Line Search Calls", totalNumLineSearchCalls);
@@ -80,42 +80,42 @@ bool NOX::LineSearch::Utils::Counters::setValues(Teuchos::ParameterList& lineSea
   return true;
 }
 
-void NOX::LineSearch::Utils::Counters::incrementNumLineSearches(int numLS)
+void NOX::LineSearchCounters::incrementNumLineSearches(int numLS)
 {
   totalNumLineSearchCalls += numLS;
 }
 
-void NOX::LineSearch::Utils::Counters::incrementNumNonTrivialLineSearches(int numNonTrivialLS)
+void NOX::LineSearchCounters::incrementNumNonTrivialLineSearches(int numNonTrivialLS)
 {
   totalNumNonTrivialLineSearches += numNonTrivialLS;
 }
 
-void NOX::LineSearch::Utils::Counters::incrementNumFailedLineSearches(int numFailedLS)
+void NOX::LineSearchCounters::incrementNumFailedLineSearches(int numFailedLS)
 {
   totalNumFailedLineSearches += numFailedLS;
 }
 
-void NOX::LineSearch::Utils::Counters::incrementNumIterations(int numInnerIters)
+void NOX::LineSearchCounters::incrementNumIterations(int numInnerIters)
 {
   totalNumIterations += numInnerIters;
 }
 
-int NOX::LineSearch::Utils::Counters::getNumLineSearches() const
+int NOX::LineSearchCounters::getNumLineSearches() const
 {
   return totalNumLineSearchCalls;
 }
 
-int NOX::LineSearch::Utils::Counters::getNumNonTrivialLineSearches() const
+int NOX::LineSearchCounters::getNumNonTrivialLineSearches() const
 {
   return totalNumNonTrivialLineSearches;
 }
 
-int NOX::LineSearch::Utils::Counters::getNumFailedLineSearches() const
+int NOX::LineSearchCounters::getNumFailedLineSearches() const
 {
   return totalNumFailedLineSearches;
 }
 
-int NOX::LineSearch::Utils::Counters::getNumIterations() const
+int NOX::LineSearchCounters::getNumIterations() const
 {
   return totalNumIterations;
 }

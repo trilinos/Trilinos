@@ -49,14 +49,6 @@
 
 #include <stk_util/util/FeatureTest.hpp>
 
-#ifdef SIERRA_INCLUDE_LIBPAPI
-#  include <papi.h>
-#  if defined(PAPI_VERSION) && (PAPI_VERSION_MAJOR(PAPI_VERSION) != 3)
-#    error "Compiling against an unknown PAPI version"
-#  endif
-#endif
-
-// #include <fenv.h>
 #include <math.h>
 #include <sstream>
 #include <iomanip>
@@ -377,20 +369,9 @@ private:
   Timer::Metric<HeapAlloc>      m_heapAlloc;    ///< Heap allocated
 };
 
-
-/**
- * Member function <b>operator&lt;&lt;</b> ...
- *
- * @param dout      a <b>Writer</b> variable ...
- *
- * @param timer      a <b>TimerImpl</b> variable ...
- *
- * @return      a <b>Writer</b> ...
- */
 inline Writer &operator<<(Writer &dout, const TimerImpl &timer) {
   return timer.dump(dout);
 }
-
 
 void
 updateRootTimer(
@@ -414,7 +395,7 @@ deleteRootTimer(
   Timer                 timer)
 {
   TimerImpl::deleteRootTimer(timer.m_timerImpl);
-  timer.m_timerImpl = 0;
+  timer.m_timerImpl = nullptr;
 }
 
 
@@ -669,7 +650,6 @@ TimerImpl::findTimer(
   std::vector<Timer> &          found_timers)
 {
   if (timer->begin() == timer->end()) { // at leaf
-    
   }
   else
     for (TimerList::const_iterator it = timer->begin(); it != timer->end(); ++it)
@@ -861,24 +841,18 @@ TimeBlockSynchronized::TimeBlockSynchronized(
     if (mpi_comm != MPI_COMM_NULL)
       MPI_Barrier(mpi_comm);
 #endif
-
-    if (start_timer)
+    if (start_timer) {
       m_timer.start();
+    }
   }
 }
-
 
 TimeBlockSynchronized::~TimeBlockSynchronized()
 {
   if (m_started) {
-    try {
-      m_timer.stop();
-    }
-    catch (...) {
-    }
+    m_timer.stop();
   }
 }
-
 
 void
 TimeBlockSynchronized::start()
@@ -888,7 +862,6 @@ TimeBlockSynchronized::start()
   m_started = true;
   m_timer.start();
 }
-
 
 void
 TimeBlockSynchronized::stop()
@@ -902,45 +875,8 @@ TimeBlockSynchronized::stop()
 } // namespace diag
 } // namespace stk
 
-
-
-#ifdef SIERRA_INCLUDE_LIBPAPI
-class PAPIRuntimeError : public std::runtime_error
-{
-public:
-  PAPIRuntimeError(const char *message, int status)
-    : std::runtime_error(message),
-      m_status(status)
-  {}
-
-  virtual const char *what() const throw() {
-    static std::string message;
-    static char papi_message[PAPI_MAX_STR_LEN];
-
-    PAPI_perror(m_status, papi_message, sizeof(papi_message));
-
-    message = std::runtime_error::what();
-    message += papi_message;
-
-    return message.c_str();
-  }
-
-private:
-  int m_status;
-};
-#endif
-
-
 namespace sierra {
 namespace Diag {
-
-namespace {
-
-size_t
-s_timerNameMaxWidth = DEFAULT_TIMER_NAME_MAX_WIDTH;		///< Maximum width for names
-
-} // namespace
-
 
 // 
 // SierraRootTimer member functions:
@@ -1032,35 +968,17 @@ setTimeFormatMillis()
   }
 }
 
-
 int
 getTimeFormat()
 {
   return stk::diag::getTimerTimeFormat();
 }
 
-
 void
 setTimerNameMaxWidth(
   size_t        width)
 {
-  s_timerNameMaxWidth = width;
 }
-
-
-size_t
-getTimerNameMaxWidth()
-{
-  return s_timerNameMaxWidth;
-}
-
-
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type
-getSierraCPUTime()
-{
-  return sierraTimer().getMetric<stk::diag::CPUTime>().getAccumulatedLap(false);
-}
-
 
 stk::diag::MetricTraits<stk::diag::WallTime>::Type
 getSierraWallTime()
@@ -1068,17 +986,10 @@ getSierraWallTime()
   return sierraTimer().getMetric<stk::diag::WallTime>().getAccumulatedLap(false);
 }
 
-
 stk::diag::MetricTraits<stk::diag::CPUTime>::Type
 getCPULapTime(Timer timer) {
   return timer.getMetric<stk::diag::CPUTime>().getLap();
 }
-
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type
-getCPUAccumulatedLapTime(Timer timer) {
-  return timer.getMetric<stk::diag::CPUTime>().getAccumulatedLap(false);
-}
-
 
 TimerParser &
 theTimerParser()
@@ -1099,10 +1010,6 @@ TimerParser::TimerParser()
 
   mask("hms", 0, "Display times in HH:MM:SS format");
   mask("seconds", 0, "Display times in seconds");
-
-  
-//   mask("table", TIMER_TABLE, "Format output as a table");
-//   mask("xml", TIMER_XML, "Format output as an XML file");
 
   mask("all", TIMER_ALL, "Enable all metrics");
   mask("none", TIMER_NONE, "Disable all timers");
@@ -1132,16 +1039,13 @@ TimerParser::TimerParser()
 
 OptionMaskParser::Mask
 TimerParser::parse(
-  const char *          mask) const
+  const char *          option_mask) const
 {
   m_metricsSetMask = 0;
   m_metricsMask = 0;
   m_optionMask = getEnabledTimerMask();
   
-  m_optionMask = OptionMaskParser::parse(mask);
-
-//   if ((m_optionMask & TIMER_FORMAT) == 0)
-//     m_optionMask |= TIMER_TABLE;
+  m_optionMask = OptionMaskParser::parse(option_mask);
 
   setEnabledTimerMask(m_optionMask);
   

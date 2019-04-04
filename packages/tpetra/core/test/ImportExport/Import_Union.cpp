@@ -44,7 +44,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include <TpetraCore_ETIHelperMacros.h>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Map.hpp>
@@ -314,7 +314,7 @@ namespace {
     OSTab tab1 (out);
     out << "Both target Maps contiguous" << endl;
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GO indexBase = 0;
     const int myRank = comm->getRank ();

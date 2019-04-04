@@ -55,13 +55,13 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_replaceDiagonalCrsMatrix.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_TpetraMap.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
 #include "Xpetra_TpetraVector.hpp"
 #include "Xpetra_TpetraCrsGraph.hpp"
-//#include "Xpetra_TpetraRowMatrix.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -106,7 +106,7 @@ namespace Xpetra {
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (toTpetra(rowMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
@@ -114,7 +114,7 @@ namespace Xpetra {
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
     //! Constructor specifying a previously constructed graph.
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
@@ -290,9 +290,9 @@ namespace Xpetra {
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
     { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(rowptr,colind,values); }
 
-    bool haveGlobalConstants() const 
+    bool haveGlobalConstants() const
     { return mtx_->haveGlobalConstants();}
-    
+
 //@}
 
     //! @name Transformational Methods
@@ -436,16 +436,26 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) {
+      XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel");
+      Teuchos::LabeledObject::setObjectLabel(objectLabel);
+      mtx_->setObjectLabel(objectLabel);
+    }
+    //@}
+
+
+
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
       : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
 
-    //! Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
       XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
       mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector());
-      // mtx_->getLocalDiagCopy(toTpetra(diag));
     }
 
     //! Get offsets of the diagonal entries in the matrix.
@@ -457,9 +467,13 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
-      //XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
-      //mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector(), offsets);
       mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
+    }
+
+    //! Replace the diagonal entries of the matrix
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+      XPETRA_MONITOR("TpetraCrsMatrix::replaceDiag");
+      Tpetra::replaceDiagonalCrsMatrix(*mtx_, *(toTpetra(diag)));
     }
 
     //! Left scale operator with given vector values
@@ -757,7 +771,6 @@ namespace Xpetra {
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
 
     bool haveGlobalConstants() const  { return false;}
-    
 
     //@}
 
@@ -882,6 +895,12 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { }
+    //@}
+
+
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix) {}
 
@@ -893,6 +912,9 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {  }
+
+    //! Replace the diagonal entries of the matrix
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {  }
 
     //! Left scale operator with given vector values
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
@@ -951,14 +973,12 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
-                       const typename local_matrix_type::values_type& val) {
-      getTpetra_CrsMatrixNonConst()->setAllValues(ptr,ind,val);
-    }
+                       const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
 
@@ -1269,6 +1289,11 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { }
+    //@}
+
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix) {}
 
@@ -1280,6 +1305,9 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {  }
+
+    //! Replace the diagonal entries of the matrix
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {  }
 
     //! Left scale operator with given vector values
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
@@ -1338,14 +1366,12 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
-                       const typename local_matrix_type::values_type& val) {
-      getTpetra_CrsMatrixNonConst()->setAllValues(ptr,ind,val);
-    }
+                       const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
 

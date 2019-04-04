@@ -1,6 +1,17 @@
-function [] = mkRegionsPerGID(myNodes,myRank,maxRegPerGID)
+% mkRegionsPerGID.m
+%
+% Input:
+%   myNodes         list of nodes owned by this processor
+%   myRank          rank of this processor
+%   maxRegPerGID    max number of regions that a single GID belongs to
+%   outDir          path to output directory
+%
+% Outpu:
+%   [none]
+%
+function [] = mkRegionsPerGID(myNodes, myRank, maxRegPerGID, outDir)
 
-   fp = fopen(sprintf('myRegionAssignment_%d',myRank),'w');
+   fp = fopen(sprintf('%s/myRegionAssignment_%d', outDir, myRank), 'w');
    if fp == -1
       error('mkRegionsPerGID: cannot open myRegAssignment_%d\n',myRank);
    end

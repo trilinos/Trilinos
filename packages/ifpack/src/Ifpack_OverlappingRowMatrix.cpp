@@ -1725,7 +1725,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values,
 
 // ======================================================================
 int Ifpack_OverlappingRowMatrix::
-ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
+ExtractDiagonalCopy(Epetra_Vector & /* Diagonal */) const
 {
   IFPACK_CHK_ERR(-1);
 }
@@ -1733,7 +1733,7 @@ ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 
 // ======================================================================
 int Ifpack_OverlappingRowMatrix::
-Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+Multiply(bool /* TransA */, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int NumVectors = X.NumVectors();
   std::vector<int> Ind(MaxNumEntries_);
@@ -1777,7 +1777,7 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 // ======================================================================
 int Ifpack_OverlappingRowMatrix::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   IFPACK_CHK_ERR(-1);
 }

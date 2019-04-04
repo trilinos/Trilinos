@@ -139,8 +139,8 @@ LOCA::Hopf::ComplexVector::ComplexVector(
 
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::Hopf::ComplexVector::generateMultiVector(int nColumns,
-                           int nVectorRows,
-                           int nScalarRows) const
+                           int /* nVectorRows */,
+                           int /* nScalarRows */) const
 {
   return
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, nColumns));

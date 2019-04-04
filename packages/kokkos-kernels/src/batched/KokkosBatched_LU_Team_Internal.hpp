@@ -48,7 +48,9 @@ namespace KokkosBatched {
       const auto minus_abs_tiny = -abs_tiny;
 
       for (int p=0;p<k;++p) {
-        const int iend = m-p-1, jend = n-p-1;
+        // Made this non-const in order to WORKAROUND issue #349
+        int iend = m-p-1;
+        int jend = n-p-1;
 
         const ValueType 
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
@@ -111,9 +113,10 @@ namespace KokkosBatched {
                               const int jb,
                               ValueType *__restrict__ AA) {
         const int tsize = member.team_size();
-        const int mb = mbAlgo;
-        const int nb = ((jb-mb) + (ib-mb)) > 0?
-                       ((jb-mb) + (ib-mb))/tsize + (((jb-mb) + (ib-mb))%tsize > 0):
+        // Made this non-const in order to WORKAROUND issue #349
+        int mb = mbAlgo;
+        int nb = ((jb-mb) + (ib-mb)) > 0?
+                 ((jb-mb) + (ib-mb))/tsize + (((jb-mb) + (ib-mb))%tsize > 0):
                        1;
         const int kb = ib < jb ? ib : jb; 
 
@@ -129,7 +132,8 @@ namespace KokkosBatched {
             lu.serial_invoke(pb, Ap);
           member.team_barrier();
 
-          const int 
+          // Made this non-const in order to WORKAROUND issue #349
+          int 
             m_abr  = ib-p-mb,               n_abr  = jb-p-mb,
             mp_abr = m_abr%nb,              np_abr = n_abr%nb,
             mq_abr = (m_abr/nb)+(mp_abr>0), nq_abr = (n_abr/nb)+(np_abr>0);

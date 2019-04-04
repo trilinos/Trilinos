@@ -107,11 +107,6 @@ class InputConditionsEvaluator
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -159,21 +154,6 @@ InputConditionsEvaluator(
 }
 
 //**********************************************************************
-
-template<typename EvalT, typename Traits>
-void
-InputConditionsEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(x,fm);
-  this->utils.setFieldData(y,fm);
-  this->utils.setFieldData(dx,fm);
-  this->utils.setFieldData(dy,fm);
-}
-
-//**********************************************************************
 template<typename EvalT, typename Traits>
 void
 InputConditionsEvaluator<EvalT, Traits>::
@@ -204,11 +184,6 @@ class HessianTestEvaluator
 
     HessianTestEvaluator(
       const Teuchos::ParameterList& p);
-
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
 
     void
     evaluateFields(
@@ -253,20 +228,6 @@ HessianTestEvaluator(
   
   std::string n = "Hessian test evaluator (" + PHX::typeAsString<ScalarT>()+")";
   this->setName(n);
-}
-
-//**********************************************************************
-
-template<typename EvalT, typename Traits>
-void
-HessianTestEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(x,fm);
-  this->utils.setFieldData(y,fm);
-  this->utils.setFieldData(result,fm);
 }
 
 //**********************************************************************

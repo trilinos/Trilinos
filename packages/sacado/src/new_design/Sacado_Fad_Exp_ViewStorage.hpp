@@ -56,7 +56,7 @@ namespace Sacado {
     private:
 
       // Enumerated flag so logic is evaluated at compile-time
-      enum { stride_one = 1 == static_stride };
+      static constexpr bool stride_one = (1 == static_stride);
 
     public:
 
@@ -180,7 +180,7 @@ namespace Sacado {
       //! Returns derivative component \c i with bounds checking
       KOKKOS_INLINE_FUNCTION
       T dx(int i) const {
-        return sz_.value ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
+        return unsigned(sz_.value) ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
       }
 
       //! Returns derivative component \c i without bounds checking

@@ -109,6 +109,9 @@ int main( int argc , char ** argv )
   else if (rv==CLP_ERROR)
     return(EXIT_FAILURE);
 
+  {
+  Kokkos::initialize(argc, argv);
+
   if ( cmdline.VTUNE  ) {
     connect_vtune(comm->getRank());
   }
@@ -140,6 +143,9 @@ int main( int argc , char ** argv )
 #endif
 
   }
+
+  }
+  Kokkos::finalize();
 
   //--------------------------------------------------------------------------
 

@@ -112,7 +112,39 @@ namespace Stokhos {
         "Cuda compute capability >= 2 is required!");
 
       // These come from the CUDA occupancy calculator
-      if (compute_capability_major == 6) {
+      if (compute_capability_major == 7) {
+        if (compute_capability_minor == 0) {
+          shared_memory_capacity = 96 * 1024;
+        }
+        else {
+          shared_memory_capacity = 64 * 1024;
+        }
+
+        max_shmem_per_block = 48 * 1024;
+        max_regs_per_block = 64 * 1024;
+        max_regs_per_sm = 64 * 1024;
+        shared_memory_granularity = 256;
+        max_threads_per_block = 1024;
+
+        if (compute_capability_minor == 0) {
+          max_threads_per_sm = 2048;
+          max_warps_per_sm = 64;
+          max_blocks_per_sm = 32;
+        }
+        else {
+          max_threads_per_sm = 1024;
+          max_warps_per_sm = 32;
+          max_blocks_per_sm = 16;
+        }
+
+        warp_size = 32;
+        warp_granularity = 4; // ??
+        reg_bank_size = 256;
+        has_shuffle = true;
+        has_ldg = true;
+      }
+
+      else if (compute_capability_major == 6) {
         if (compute_capability_minor == 1)
           shared_memory_capacity = 96 * 1024;
         else

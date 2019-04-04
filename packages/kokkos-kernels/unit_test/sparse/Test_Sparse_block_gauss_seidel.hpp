@@ -77,7 +77,8 @@ int run_block_gauss_seidel_1(
     int apply_type = 0, // 0 for symmetric, 1 for forward, 2 for backward.
     bool skip_symbolic = false,
     bool skip_numeric = false,
-    size_t shmem_size = 32128
+    size_t shmem_size = 32128,
+    typename crsMat_t::value_type omega = Kokkos::Details::ArithTraits<typename crsMat_t::value_type>::one()
     ){
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -121,19 +122,19 @@ int run_block_gauss_seidel_1(
   switch (apply_type){
   case 0:
     symmetric_block_gauss_seidel_apply
-    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, apply_count);
+    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, omega, apply_count);
     break;
   case 1:
     forward_sweep_block_gauss_seidel_apply
-    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, apply_count);
+    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, omega, apply_count);
     break;
   case 2:
     backward_sweep_block_gauss_seidel_apply
-    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, apply_count);
+    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, omega, apply_count);
     break;
   default:
     symmetric_block_gauss_seidel_apply
-    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, apply_count);
+    (&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, x_vector, y_vector,false, true, omega, apply_count);
     break;
   }
 
@@ -252,6 +253,7 @@ void test_block_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
     //int apply_type = 0;
     //bool skip_symbolic = false;
     //bool skip_numeric = false;
+    scalar_t omega = 0.9;
 
 
     bool is_symmetric_graph = true;
@@ -266,7 +268,7 @@ void test_block_gauss_seidel(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
 
             Kokkos::Impl::Timer timer1;
             //int res =
-            run_block_gauss_seidel_1<crsMat_t, device>(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size);
+            run_block_gauss_seidel_1<crsMat_t, device>(input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size, omega);
             //double gs = timer1.seconds();
 
             //KokkosKernels::Impl::print_1Dview(x_vector);

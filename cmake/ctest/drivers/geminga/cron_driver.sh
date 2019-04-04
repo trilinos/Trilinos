@@ -41,7 +41,7 @@ export https_proxy="https://sonproxy.sandia.gov:80"
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
-module load sems-cmake/3.5.2
+module load sems-cmake/3.10.3
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
@@ -63,7 +63,7 @@ $SCRIPT_DIR/../cron_driver.py
 module unload sems-superlu/4.3/base
 module unload sems-openmpi/1.10.1
 module unload sems-gcc/5.3.0
-module unload sems-cmake/3.5.2
+module unload sems-cmake/3.10.3
 # ===========================================================================
 export CTEST_CONFIGURATION="nvcc_wrapper"
 #module load openmpi/1.10.0
@@ -73,7 +73,7 @@ export CTEST_CONFIGURATION="nvcc_wrapper"
 
 module load sems-env
 module load kokkos-env
-module load sems-cmake/3.5.2
+module load sems-cmake/3.10.3
 module load sems-gcc/5.3.0
 module load sems-boost/1.58.0/base
 module load sems-python/2.7.9
@@ -82,7 +82,7 @@ module load kokkos-cuda/8.0.44
 module load kokkos-openmpi/1.8.7/cuda
 module load sems-superlu/4.3
 module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.3.2/base
+module load sems-netcdf/4.4.1/exo_parallel
 # See Trilinos github issue #2115.
 export OMPI_CXX=/home/jhu/code/trilinos-test/trilinos/packages/kokkos/bin/nvcc_wrapper
 
@@ -98,7 +98,7 @@ echo "Configuration = $CTEST_CONFIGURATION"
 env
 
 export CUDA_LAUNCH_BLOCKING=1
-
+export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 # Machine independent cron_driver:
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
@@ -107,8 +107,7 @@ $SCRIPT_DIR/../cron_driver.py
 #module unload cuda
 #module unload gcc
 #module unload openmpi
-
-module unload sems-netcdf/4.3.2/base
+module load sems-netcdf/4.4.1/exo_parallel
 module unload sems-hdf5/1.8.12/parallel
 module load sems-superlu/4.3
 module unload kokkos-openmpi/1.8.7/cuda
@@ -118,7 +117,7 @@ module unload sems-zlib/1.2.8/base
 module unload sems-python/2.7.9
 module unload sems-boost/1.58.0/base
 module unload sems-gcc/5.3.0
-module unload sems-cmake/3.5.2
+module unload sems-cmake/3.10.3
 module unload kokkos-env
 module unload sems-env
 # ===========================================================================

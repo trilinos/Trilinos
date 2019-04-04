@@ -57,9 +57,13 @@ namespace FROSch {
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
@@ -73,7 +77,6 @@ namespace FROSch {
         
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         EntitySet(EntityType type);
@@ -84,18 +87,35 @@ namespace FROSch {
         
         int addEntity(InterfaceEntityPtr entity);
         
-        int buildEntityMap(MapPtr &localToGlobalNodesMap);
+        int addEntitySet(EntitySetPtr entitySet);
         
-        int findParents(EntitySetPtr entitySet);
+        int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
         
-        int divideUnconnectedEntities(CrsMatrixPtr matrix, int pID);
+        int findAncestorsInSet(EntitySetPtr entitySet);
         
-        InterfaceEntityPtrVecPtr sortOutVertices();
+        int clearAncestors();
         
-        InterfaceEntityPtrVecPtr sortOutShortEdges();
+        int clearOffspring();
         
-        InterfaceEntityPtrVecPtr sortOutStraightEdges(UN dimension,
-                                                      SCVecPtr2D &localNodeList);
+        EntitySetPtr findCoarseNodes();
+        
+        int clearCoarseNodes();
+        
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
+        
+        int divideUnconnectedEntities(CrsMatrixPtr matrix,
+                                      int pID);
+        
+        int flagNodes();
+        
+        int flagShortEntities();
+        
+        int flagStraightEntities(UN dimension,
+                                 MultiVectorPtr &nodeList);
+        
+        EntitySetPtr sortOutEntities(EntityFlag flag);
         
         int removeEntity(UN iD);
         
@@ -108,7 +128,7 @@ namespace FROSch {
         bool checkForShortEdges();
         
         bool checkForStraightEdges(UN dimension,
-                                   SCVecPtr2D &localNodeList);
+                                   MultiVectorPtr &nodeList);
         
         bool checkForEmptyEntities();
         
@@ -117,6 +137,8 @@ namespace FROSch {
         /////////////////
         
         int setUniqueIDToFirstGlobalNodeID();
+        
+        int setCoarseNodeID();
         
         int resetEntityType(EntityType type);
         
@@ -135,7 +157,7 @@ namespace FROSch {
         const MapPtr getEntityMap() const;
         
         const SCVecPtr getDirection(UN dimension,
-                                    SCVecPtr2D &localNodeList,
+                                    MultiVectorPtr &nodeList,
                                     UN iD) const;
         
     protected:

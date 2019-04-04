@@ -176,7 +176,10 @@ template <class Scalar = Tpetra::Vector<>::scalar_type,
 class TpetraOperatorVectorExtraction {
 public:
 
-  // ToDo: Get a Tpetra::Map from a Thyra::VectorSpaceBase?
+  /** \brief Get a const Tpetra::Map from a const Thyra::VectorSpaceBase object.
+   */
+  static RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraMap(const RCP<const VectorSpaceBase<Scalar> > &vs);
 
   /** \brief Get a non-const Tpetra::Vector from a non-const
    * Thyra::VectorBase object.

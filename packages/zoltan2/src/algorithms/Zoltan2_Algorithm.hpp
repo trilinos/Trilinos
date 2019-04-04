@@ -88,19 +88,19 @@ public:
   virtual ~Algorithm() {}
 
   //! \brief Ordering method
-  virtual int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution)
+  virtual int localOrder(const RCP<LocalOrderingSolution<lno_t> > &/* solution */)
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief Ordering method
-  virtual int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution)
+  virtual int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &/* solution */)
   {
     Z2_THROW_NOT_IMPLEMENTED 
   }
   
   //! \brief Coloring method
-  virtual void color(const RCP<ColoringSolution<Adapter> > &solution) 
+  virtual void color(const RCP<ColoringSolution<Adapter> > &/* solution */) 
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -111,19 +111,19 @@ public:
   }
 
   //! \brief Partitioning method
-  virtual void partition(const RCP<PartitioningSolution<Adapter> > &solution) 
+  virtual void partition(const RCP<PartitioningSolution<Adapter> > &/* solution */) 
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief Matrix Partitioning method
-  virtual void partitionMatrix(const RCP<MatrixPartitioningSolution<Adapter> > &solution) 
+  virtual void partitionMatrix(const RCP<MatrixPartitioningSolution<Adapter> > &/* solution */) 
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
   //! \brief Mapping method
-  virtual void map(const RCP<MappingSolution<Adapter> > &solution) 
+  virtual void map(const RCP<MappingSolution<Adapter> > &/* solution */) 
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -135,12 +135,12 @@ public:
   }
 
   //! \brief  for partitioning methods, fill arrays with partition tree info
-  virtual void getPartitionTree(part_t numParts,
-                        part_t & numTreeVerts,
-                        std::vector<part_t> & permPartNums,
-                        std::vector<part_t> & splitRangeBeg,
-                        std::vector<part_t> & splitRangeEnd,
-                        std::vector<part_t> & treeVertParents) const
+  virtual void getPartitionTree(part_t /* numParts */,
+                        part_t & /* numTreeVerts */,
+                        std::vector<part_t> & /* permPartNums */,
+                        std::vector<part_t> & /* splitRangeBeg */,
+                        std::vector<part_t> & /* splitRangeEnd */,
+                        std::vector<part_t> & /* treeVertParents */) const
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -150,7 +150,7 @@ public:
   //          Not all partitioning algorithms will support
   //          this method.
   //
-  virtual std::vector<coordinateModelPartBox<scalar_t, part_t> > &
+  virtual std::vector<coordinateModelPartBox> &
   getPartBoxesView() const
   {
     Z2_THROW_NOT_IMPLEMENTED
@@ -165,7 +165,7 @@ public:
   //   \param dim : the number of dimensions specified for the point in space
   //   \param point : the coordinates of the point in space; array of size dim
   //   \return the part number of a part overlapping the given point
-  virtual part_t pointAssign(int dim, scalar_t *point) const
+  virtual part_t pointAssign(int /* dim */, scalar_t * /* point */) const
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -183,8 +183,8 @@ public:
   //                     array of size dim
   //   \param nParts : (out) the number of parts overlapping the box
   //   \param parts :  (out) array of parts overlapping the box
-  virtual void boxAssign(int dim, scalar_t *lower, scalar_t *upper,
-                         size_t &nParts, part_t **partsFound) const
+  virtual void boxAssign(int /* dim */, scalar_t * /* lower */, scalar_t * /* upper */,
+                         size_t &/* nParts */, part_t ** /* partsFound */) const
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -200,9 +200,9 @@ public:
   //                                               0 through i-1
   //  \param comAdj    (out) the neighboring parts
   virtual void getCommunicationGraph(
-    const PartitioningSolution<Adapter> *solution,
-    ArrayRCP<part_t> &comXAdj,
-    ArrayRCP<part_t> &comAdj)
+    const PartitioningSolution<Adapter> * /* solution */,
+    ArrayRCP<part_t> &/* comXAdj */,
+    ArrayRCP<part_t> &/* comAdj */)
     // TODO:  Should the return args be ArrayViews?
   {
     Z2_THROW_NOT_IMPLEMENTED
@@ -216,7 +216,7 @@ public:
   //  For example, AlgContiguousMapping can compute this function implicitly, 
   //  with no additional storage.  However, Mapping algorithms can skip this
   //  function and, instead, register their results in MappingSolution.
-  virtual int getRankForPart(part_t p)
+  virtual int getRankForPart(part_t /* p */)
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -231,7 +231,7 @@ public:
   //  For example, AlgContiguousMapping can compute this function implicitly, 
   //  with no additional storage.  However, Mapping algorithms can skip this
   //  function and, instead, register their results in MappingSolution.
-  virtual void getMyPartsView(part_t &numParts, part_t *&parts)
+  virtual void getMyPartsView(part_t &/* numParts */, part_t *&/* parts */)
   {
     Z2_THROW_NOT_IMPLEMENTED
   }

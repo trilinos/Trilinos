@@ -78,14 +78,14 @@ public:
   }
 
   /// Set values needed in evalModelImpl
-  void initializeNewmark(Teuchos::RCP<const Vector> a, Teuchos::RCP<Vector> v_pred,
-                         Teuchos::RCP<Vector> d_pred, Scalar delta_t,
+  void initializeNewmark(Teuchos::RCP<const Vector> v_pred,
+                         Teuchos::RCP<const Vector> d_pred, Scalar delta_t,
                          Scalar t, Scalar beta, Scalar gamma)
   {
 #ifdef VERBOSE_DEBUG_OUTPUT
     *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-    a_ = a; v_pred_ = v_pred; d_pred_ = d_pred;
+    v_pred_ = v_pred; d_pred_ = d_pred;
     delta_t_ = delta_t; t_ = t; beta_ = beta; gamma_ = gamma;
   }
 
@@ -148,9 +148,7 @@ public:
 #ifdef VERBOSE_DEBUG_OUTPUT
       *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = appModel_->getNominalValues();
-      nominalValues.set_x(a_);
-      return nominalValues;
+      return appModel_->getNominalValues();
     }
 
     /// Set InArgs the wrapper ModelEvalutor.
@@ -172,7 +170,8 @@ public:
     /// Set parameters for application implicit ModelEvaluator solve.
     virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
       Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs)
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs,
+      EVALUATION_TYPE /* evaluationType */ = SOLVE_FOR_X)
     {
       timeDer_ = timeDer;
       wrapperInArgs_.setArgs(inArgs);
@@ -201,9 +200,8 @@ private:
   Scalar gamma_;
   Scalar beta_;
   Scalar delta_t_;
-  Teuchos::RCP<const Vector> a_;
-  Teuchos::RCP<Vector> d_pred_;
-  Teuchos::RCP<Vector> v_pred_;
+  Teuchos::RCP<const Vector> d_pred_;
+  Teuchos::RCP<const Vector> v_pred_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   SCHEME_TYPE schemeType_;
 

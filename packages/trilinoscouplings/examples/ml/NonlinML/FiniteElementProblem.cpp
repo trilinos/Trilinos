@@ -84,7 +84,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
       OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
     
     OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
-			    OverlapMyGlobalElements, 0, *Comm);
+                            OverlapMyGlobalElements, 0, *Comm);
 
     delete [] OverlapMyGlobalElements;
 
@@ -119,9 +119,9 @@ FiniteElementProblem::~FiniteElementProblem()
 
 // Matrix and Residual Fills
 bool FiniteElementProblem::evaluate(FillType f, 
-				    const Epetra_Vector* soln, 
-				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+                                    const Epetra_Vector* soln, 
+                                    Epetra_Vector* tmp_rhs, 
+                                    Epetra_RowMatrix* tmp_matrix)
 {
   flag = f;
 
@@ -149,9 +149,9 @@ bool FiniteElementProblem::evaluate(FillType f,
 
   // Declare required variables
   int i,j;
-  #ifndef NDEBUG
-     int ierr;
-  #endif
+#ifndef NDEBUG
+  int ierr;
+#endif
   int OverlapNumMyElements = OverlapMap->NumMyElements();
 
   int OverlapMinMyGID;
@@ -188,37 +188,37 @@ bool FiniteElementProblem::evaluate(FillType f,
       uu[1]=u[ne+1];
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu);
-	            
+                    
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
-	row=OverlapMap->GID(ne+i);
-	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-	//     MyPID, row, ne+i,StandardMap.MyGID(row));
-	if (StandardMap->MyGID(row)) {
-	  if ((flag == F_ONLY)    || (flag == ALL)) {
-	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-	      +basis.wt*basis.dx
-	      *((1.0/(basis.dx*basis.dx))*basis.duu*
-		basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
-	  }
-	}
-	// Loop over Trial Functions
-	if ((flag == MATRIX_ONLY) || (flag == ALL)) {
-	  for(j=0;j < 2; j++) {
-	    if (StandardMap->MyGID(row)) {
-	      column=OverlapMap->GID(ne+j);
-	      jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
-				     basis.dphide[j]*basis.dphide[i]
-				     +2.0*factor*basis.uu*basis.phi[j]*
-				     basis.phi[i]);  
-              #ifndef NDEBUG
-	      ierr=
-              #endif
+        row=OverlapMap->GID(ne+i);
+        //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+        //     MyPID, row, ne+i,StandardMap.MyGID(row));
+        if (StandardMap->MyGID(row)) {
+          if ((flag == F_ONLY)    || (flag == ALL)) {
+            (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
+              +basis.wt*basis.dx
+              *((1.0/(basis.dx*basis.dx))*basis.duu*
+                basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
+          }
+        }
+        // Loop over Trial Functions
+        if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+          for(j=0;j < 2; j++) {
+            if (StandardMap->MyGID(row)) {
+              column=OverlapMap->GID(ne+j);
+              jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
+                                     basis.dphide[j]*basis.dphide[i]
+                                     +2.0*factor*basis.uu*basis.phi[j]*
+                                     basis.phi[i]);  
+#             ifndef NDEBUG
+              ierr=
+#             endif
                  A->SumIntoGlobalValues(row, 1, &jac, &column);
-              assert(ierr);
-	    }
-	  }
-	}
+              assert(ierr==0);
+            }
+          }
+        }
       }
     }
   } 
@@ -280,13 +280,13 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
       
       // Loop over Trial Functions
       for(j=0;j < 2; j++) {
-	
-	// If this row is owned by current processor, add the index
-	if (StandardMap->MyGID(row)) {
-	  column=OverlapMap->GID(ne+j);
-	  AA.InsertGlobalIndices(row, 1, &column);
-	}
-      } 	
+        
+        // If this row is owned by current processor, add the index
+        if (StandardMap->MyGID(row)) {
+          column=OverlapMap->GID(ne+j);
+          AA.InsertGlobalIndices(row, 1, &column);
+        }
+      }         
     }
   }
   AA.FillComplete();

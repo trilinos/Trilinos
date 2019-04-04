@@ -53,7 +53,6 @@
 
 #include "NOX_Solver_Generic.H"             // base class
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp" // base class
-#include "NOX_Solver_PrePostOperator.H"  // class data element
 #include "Teuchos_ParameterList.hpp"             // class data element
 #include "NOX_Utils.H"                 // class data element
 #include "Teuchos_RCP.hpp"       // class data element
@@ -61,6 +60,7 @@
 // Forward declarations
 namespace NOX {
   class GlobalData;
+  class Observer;
   namespace LineSearch {
     class Generic;
   }
@@ -105,11 +105,12 @@ public:
   void reset(const NOX::Abstract::Vector& initialGuess,
          const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   void reset(const NOX::Abstract::Vector& initialGuess);
-  NOX::StatusTest::StatusType getStatus();
+  void reset();
   NOX::StatusTest::StatusType step();
   NOX::StatusTest::StatusType solve();
   const NOX::Abstract::Group& getSolutionGroup() const;
   const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  NOX::StatusTest::StatusType getStatus() const;
   int getNumIterations() const;
   const Teuchos::ParameterList& getList() const;
   double getStepSize() const;
@@ -117,6 +118,7 @@ public:
   Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
   Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
   Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
+  Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
 protected:
 
@@ -168,11 +170,8 @@ protected:
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
-
-
-
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
   //! Pointer to solnPtr casted back to a thyra group
   Teuchos::RCP<NOX::Thyra::Group> thyraSolnGroup;

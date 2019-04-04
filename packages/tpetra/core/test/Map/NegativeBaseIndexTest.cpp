@@ -44,6 +44,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace {
 
@@ -66,10 +68,9 @@ namespace {
   {
     using std::endl;
     using map_type = Tpetra::Map<>;
-    using LO = Tpetra::Map<>::local_ordinal_type;
     using GO = Tpetra::Map<>::global_ordinal_type;
     using size_type = Teuchos::Array<GO>::size_type;
-    
+
     out << "Bug 5401 (negative index base) test" << endl;
     Teuchos::OSTab tab0 (out);
 
@@ -83,14 +84,14 @@ namespace {
     TEST_EQUALITY( numProcs, 2 );
     if (numProcs != 2) {
       out << "This test only works when running with exactly "
-	"2 MPI processes." << endl;
+        "2 MPI processes." << endl;
       return;
     }
-    
+
     TEST_ASSERT( std::is_signed<GO>::value );
     if (! std::is_signed<GO>::value) {
       out << "This test only works when the default GlobalOrdinal "
-	"type is signed." << endl;
+        "type is signed." << endl;
       return;
     }
 
@@ -111,29 +112,29 @@ namespace {
 
     //int localMapCtorSuccess = 0;
     RCP<map_type> map (new map_type (GINV, elements (),
-				     baseIndexIsNegOne, comm));
+                                     baseIndexIsNegOne, comm));
     out << "Process " << myRank << ":" << endl;
     {
       Teuchos::OSTab tab1 (out);
       out << "My number of global indices: " << map->getNodeNumElements ()
-	  << endl
+          << endl
           << "Global number of global indices: " << map->getGlobalNumElements ()
-	  << endl
+          << endl
           << "Index base: " << map->getIndexBase () << endl
           << "My min global index: " << map->getMinGlobalIndex () << endl
           << "Global min global index: " << map->getMinAllGlobalIndex () << endl;
     }
 
     TEST_EQUALITY( map->getNodeNumElements(),
-		   static_cast<size_t> (numElements) );
+                   static_cast<size_t> (numElements) );
     TEST_EQUALITY( map->getGlobalNumElements(),
-		   static_cast<global_size_t> (numElements*numProcs) );
+                   static_cast<global_size_t> (numElements*numProcs) );
     TEST_EQUALITY( map->getIndexBase(), static_cast<GO> (-1) );
     TEST_EQUALITY( map->getMinGlobalIndex(),    static_cast<GO> (-1) );
     TEST_EQUALITY( map->getMinAllGlobalIndex(), static_cast<GO> (-1) );
 
     // All procs fail if any proc fails
-    using Teuchos::outArg;    
+    using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
     const int lclSuccess = success ? 1 : 0;

@@ -42,9 +42,9 @@
 #ifndef TPETRA_ROWMATRIX_DEF_HPP
 #define TPETRA_ROWMATRIX_DEF_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Map.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_RowGraph.hpp"
 
 namespace Tpetra {
 
@@ -62,7 +62,6 @@ namespace Tpetra {
        const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
     using Teuchos::Array;
-    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -184,7 +183,7 @@ namespace Tpetra {
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
       const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
-      ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
+      Array<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
       if (alpha != STS::zero ()) {
@@ -202,10 +201,10 @@ namespace Tpetra {
       }
       // Construct the result matrix C.
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile, constructorSublist));
       }
       // Since A and B have the same row Maps, we could add them
@@ -487,7 +486,7 @@ namespace Tpetra {
             Teuchos::Array<char>& exports,
             const Teuchos::ArrayView<size_t>& numPacketsPerLID,
             size_t& constantNumPackets,
-            Distributor& distor) const
+            Distributor& /* distor */) const
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -628,7 +627,6 @@ namespace Tpetra {
 //
 
 #define TPETRA_ROWMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
-  \
   template class RowMatrix< SCALAR , LO , GO , NODE >;
 
 

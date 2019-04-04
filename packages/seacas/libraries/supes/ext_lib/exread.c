@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,7 +60,7 @@ C     the terminal and read (with echo) from the keyboard. For a batch
 C     job, this would read from the main input file and echo to the
 C     log file with the prompt string as a prefix. This routine should
 C     assume the burden of assuring that the standard input and output
-C     devices are properly openned.
+C     devices are properly opened.
 C
 C     FORMAL PARAMETERS:
 C     PROMPT    CHARACTER       Prompt String

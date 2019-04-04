@@ -40,7 +40,7 @@
 namespace
 {
 
-const double tolerance = 5e-2;
+const double tolerance = 0.10;
 
 void doWork()
 {

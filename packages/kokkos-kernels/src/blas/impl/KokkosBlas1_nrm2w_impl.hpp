@@ -257,7 +257,7 @@ V_Nrm2w_Invoke (const RV& r, const XV& X, const XV& W, const bool& take_sqrt)
 
   typedef V_Nrm2w_Functor<RV, XV, SizeType> functor_type;
   functor_type op (X, W, take_sqrt);
-  Kokkos::parallel_reduce (policy, op, r);
+  Kokkos::parallel_reduce ("KokkosBlas::Nrm2w::S0", policy, op, r);
 }
 
 
@@ -284,7 +284,7 @@ MV_Nrm2w_Invoke (const RV& r, const XMV& X, const XMV& W, const bool& take_sqrt)
   else {
     typedef MV_Nrm2w_Right_FunctorVector<RV, XMV, SizeType> functor_type;
     functor_type op (X, W, take_sqrt);
-    Kokkos::parallel_reduce (policy, op, r);
+    Kokkos::parallel_reduce ("KokkosBlas::Nrm2w::S1", policy, op, r);
   }
 }
 

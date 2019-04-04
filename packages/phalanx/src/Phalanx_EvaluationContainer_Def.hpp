@@ -395,5 +395,14 @@ PHX::EvaluationContainer<EvalT, Traits>::getFieldTags()
 }
 
 // *************************************************************************
+template <typename EvalT, typename Traits>
+void
+PHX::EvaluationContainer<EvalT, Traits>::
+printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
+{
+  this->dag_manager_.printEvaluatorStartStopMessage(ostr);
+}
+
+// *************************************************************************
 
 #endif 

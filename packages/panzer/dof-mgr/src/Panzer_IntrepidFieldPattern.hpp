@@ -135,6 +135,9 @@ namespace panzer {
     void getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
                                      Kokkos::DynRankView<double,PHX::Device> & coords) const;
 
+    /// Returns the underlying Intrepid2::Basis object
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > getIntrepidBasis() const;
+
   protected:
     Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > intrepidBasis_;
 

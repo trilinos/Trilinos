@@ -1,0 +1,27 @@
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(../test)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example1
+    SOURCES example1.cpp
+    DEPLIBS
+    ARGS ""
+    COMM mpi
+    NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    simpleExample1
+    SOURCES simpleExample1.cpp
+    DEPLIBS
+    ARGS ""
+    COMM mpi
+    NUM_MPI_PROCS 8
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUBDDCExampleFiles
+    SOURCE_FILES problemMaker.xml problemMakerSimple.xml bddc.xml
+)
+

@@ -1,0 +1,39 @@
+===================
+ FROSch TODO List
+===================
+
+08.08.2018 Christian Hochmuth:
+	- Determine overlap only based on the graph of the matrix
+	- forward declaration
+	- Assert for ScalarType not being float or double
+	- check on Tpetra deprecating DynamicProfile in FY19
+	
+21.08.2018 Alexander Heinlein:
+	- Use a graph instead of a matrix to do communicateLocalComponents in FROSch_DDInterface
+	
+21.08.2018 Christian Hochmuth:
+	- General MultiplicativeOperator for more than 2 operators
+	- New class "CombinationOperator" and derive MultiplicativeOperator and SumOperator from this class 
+	- Get rid of resetMatrix() methods
+
+27.08.2018 Alexander Heinlein:
+    - Use Thyra instead of Subdomain_Solver.hpp
+    
+29.08.2018 Alexander Heinlein:
+    - Standardize the names in the Thyra interface
+
+14.11.2018 Alexander Heinlein:
+    - Add tests Thyra_Xpetra_BlockLaplace and Thyra_Xpetra_StokesHDF5
+    - Integrate AlgebraicOverlappingPreconditioner, GDSWPreconditioner, OneLevelPreconditioner, and RGDSWPreconditioner into Thyra interface
+    - Add tests for AlgebraicOverlappingPreconditioner, GDSWPreconditioner, OneLevelPreconditioner, and RGDSWPreconditioner using the Thyra interface 
+    - Add test: SetupPreconditioners - Calls only the setup of each different preconditioner without the solution of the linear system
+
+20.11.2018 Alexander Heinlein:
+    - Allow different coarse spaces for the different blocks in TwoLevelBlockPreconditioner
+    - Add the possiblity to add coordinates in TwoLevelBlockPreconditioner
+
+16.01.2019 Alexander Heinlein:
+    - Use Xpetra_UseDefaultTypes.hpp and Xpetra_UseShortNames.hpp?
+    - Reorganization of the DDInterface
+    - Do we need the dimension for the DDInterface?
+    - InterfaceEntity -> Entity?

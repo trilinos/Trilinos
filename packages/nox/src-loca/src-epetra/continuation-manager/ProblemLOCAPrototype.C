@@ -59,14 +59,14 @@ ProblemLOCAPrototype::~ProblemLOCAPrototype()
 
 
 bool ProblemLOCAPrototype::
-PrintSolutionFile( const std::string & fileName, const Epetra_Vector & x,
-  const Teuchos::ParameterList & xParams)
+PrintSolutionFile( const std::string & /* fileName */, const Epetra_Vector & /* x */,
+  const Teuchos::ParameterList & /* xParams */)
 {
   return true;
 }
 
 bool ProblemLOCAPrototype::
-SetSolutionFileParameters(const Epetra_Vector & x)
+SetSolutionFileParameters(const Epetra_Vector & /* x */)
 {
   return true;
 }
@@ -82,7 +82,7 @@ GetSolutionFileParameters()
 }
 
 bool ProblemLOCAPrototype::
-SetContinuationFileParameters(const Epetra_Vector & x)
+SetContinuationFileParameters(const Epetra_Vector & /* x */)
 {
   return true;
 }
@@ -98,16 +98,16 @@ GetContinuationFileParameters()
 }
 
 bool ProblemLOCAPrototype::
-UpdateContinuationFile( const std::string & fileName,
-  const int & idStep,
-  const Teuchos::ParameterList & continuationFileParams)
+UpdateContinuationFile( const std::string & /* fileName */,
+  const int & /* idStep */,
+  const Teuchos::ParameterList & /* continuationFileParams */)
 {
   return true;
 }
 
 bool ProblemLOCAPrototype::
-ComputePeriodicDirectionDerivative(const Epetra_Vector & x,
-    Epetra_Vector & dx)
+ComputePeriodicDirectionDerivative(const Epetra_Vector & /* x */,
+    Epetra_Vector & /* dx */)
 {
   return true;
 }

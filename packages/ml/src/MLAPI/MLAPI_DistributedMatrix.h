@@ -341,11 +341,11 @@ public:
 
 private:
 
-  DistributedMatrix(const DistributedMatrix& rhs)
+  DistributedMatrix(const DistributedMatrix& /* rhs */)
   {
   }
 
-  DistributedMatrix& operator=(const DistributedMatrix& rhs)
+  DistributedMatrix& operator=(const DistributedMatrix& /* rhs */)
   {
     return(*this);
   }

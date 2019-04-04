@@ -41,7 +41,6 @@
 #include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
-#include "Ioss_IOFactory.h"             // for IOFactory
 #include "Ioss_NodeSet.h"               // for NodeSet
 #include "Ioss_Region.h"                // for NodeSetContainer, Region
 #include "Ioss_Utils.h"                 // for Utils
@@ -103,7 +102,8 @@ namespace {
 	const stk::mesh::Part *part = all_parts[i];
 	
 	//+ It exists on all nodes in the mesh...
-	stk::mesh::put_field(temperature, *part);
+	stk::mesh::put_field_on_mesh(temperature, *part,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
 	stk::topology topo = part->topology();
 	if (topo == stk::topology::SHELL_QUAD_4) {

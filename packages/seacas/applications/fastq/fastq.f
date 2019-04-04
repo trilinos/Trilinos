@@ -1,23 +1,23 @@
-C    Copyright(C) 2014 National Technology & Engineering Solutions of
+C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
 C $Id: fastq.f,v 1.38 2007/07/24 13:10:18 gdsjaar Exp $
       PROGRAM FASTQ
@@ -59,24 +59,6 @@ C         PACKAGE, AS WELL AS A NUMBER OF UTILITY ROUTINES FROM
 C         THE DEPARTMENT 1520 SUPES LIBRARY OF ROUTINES.  OF PRIME
 C         USE IS THE FREE FIELD READER ROUTINES AND THE DYNAMIC
 C         MEMORY ALLOCATION ROUTINES.
-C
-C***********************************************************************
-C
-C                ISSUED BY SANDIA NATIONAL LABORATORIES,
-C                       A PRIME CONTRACTOR TO THE
-C                   UNITED STATES DEPARTMENT OF ENERGY
-C
-C
-C  THIS CODE WAS PREPARED IN THE COURSE OF WORK SPONSORED BY THE UNITED
-C  STATES GOVERNMENT.  NEITHER THE UNITED STATES, NOR THE UNITED STATES
-C  DEPARTMENT OF ENERGY, NOR THE UNITED STATES NUCLEAR REGULATORY
-C  COMMISSION, NOR ANY OF THEIR EMPLOYEES, NOR ANY OF THEIR CONTRACTORS,
-C  SUBCONTRACTORS, OR THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR
-C  IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE
-C  ACCURACY, COMPLETENESS OR USEFULNESS OF ANY INFORMATION, APPARATUS,
-C  PRODUCT OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT
-C  INFRINGE PRIVATELY OWNED RIGHTS.
-C
 C
 C***********************************************************************
 C
@@ -201,7 +183,7 @@ C
 
       IF (SOFT(1:3) .EQ. 'VMS') THEN
          VAXVMS = .TRUE.
-      ELSE 
+      ELSE
          VAXVMS = .FALSE.
       ENDIF
 
@@ -265,7 +247,7 @@ C
       else
          write (*,*) '   Output Format: Genesis/ExodusI'
       end if
-      
+
       CALL MESAGE (' ')
       WRITE (*, *)
      *  '+++                Copyright 2014 NTESS                   +++'
@@ -327,7 +309,7 @@ C
 C
 C ... See if supes memory debugging desired
 C     If EXT99 Environment variable set, turn on supes memory debugging
-C     The numeric value of the variable is used as the unit to write 
+C     The numeric value of the variable is used as the unit to write
 C     debug information to.
       CALL EXNAME (-99, MEMDBG, L)
       IF (L .GE. 1) THEN

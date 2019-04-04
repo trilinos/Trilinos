@@ -57,12 +57,15 @@
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_GlobalData.H"
+#include "NOX_SolverStats.hpp"
+#include "NOX_LineSearch_Utils_Counters.H"
 
 NOX::LineSearch::MoreThuente::
 MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd,
         Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   print(gd->getUtils()),
+  counter(&gd->getNonConstSolverStatistics()->lineSearch),
   slope(gd),
   paramsPtr(0)
 {
@@ -79,6 +82,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 {
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
+  counter = &gd->getNonConstSolverStatistics()->lineSearch;
   print.reset(gd->getUtils());
   slope.reset(gd);
 
@@ -106,7 +110,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  counter.reset();
+  counter->reset();
 
   std::string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
   if (choice == "Ared/Pred")
@@ -141,14 +145,14 @@ bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
               const Abstract::Vector& dir,
               const Solver::Generic& s)
 {
-  counter.incrementNumLineSearches();
+  counter->incrementNumLineSearches();
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   int info = cvsrch(grp, step, oldGrp, dir, s);
 
   if (step != 1.0)
-    counter.incrementNumNonTrivialLineSearches();
+    counter->incrementNumNonTrivialLineSearches();
 
-  counter.setValues(*paramsPtr);
+  counter->setValues(*paramsPtr);
 
   return (info == 1);
 }
@@ -347,7 +351,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
       if (info != 1)         // Line search failed
       {
     // RPP add
-    counter.incrementNumFailedLineSearches();
+    counter->incrementNumFailedLineSearches();
 
     if (recoveryStepType == Constant)
       stp = recoverystep;
@@ -377,7 +381,7 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
     print.printStep(nfev, stp, finit, f, message);
 
     // RPP add
-    counter.incrementNumIterations();
+    counter->incrementNumIterations();
 
     // In the first stage we seek a step for which the modified
     // function has a nonpositive value and nonnegative derivative.

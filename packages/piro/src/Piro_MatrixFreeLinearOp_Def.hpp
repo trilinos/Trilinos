@@ -240,7 +240,6 @@ Piro::MatrixFreeLinearOp<Scalar>::applyImpl(
 
         // alpha_op_X <- alpha * (1/eta) * (f_pert - f_base)
         Thyra::Vp_StV(alpha_op_X.ptr(), -Teuchos::ScalarTraits<Scalar>::one(), *f_base_);
-        const Scalar alpha_over_eta = alpha / eta;
         Thyra::Vt_S(alpha_op_X.ptr(), alpha_over_eta);
 
         // Y <- alpha_op_X + beta * Y

@@ -50,6 +50,7 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosGmresPolySolMgr.hpp"
 #include "BelosLSQRSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
 #include "BelosPCPGSolMgr.hpp"
@@ -59,6 +60,17 @@
 #include "BelosRCGSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
 
+namespace BelosTpetra {
+namespace Impl {
+
+extern void register_CgPipeline (const bool verbose);
+extern void register_CgSingleReduce (const bool verbose);
+extern void register_GmresPipeline (const bool verbose);
+extern void register_GmresSingleReduce (const bool verbose);
+  
+} // namespace Impl
+} // namespace BelosTpetra  
+
 #include "TpetraCore_ETIHelperMacros.h"
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
@@ -67,6 +79,11 @@ namespace Details {
 namespace Tpetra {
 
 void registerSolverFactory() {
+  ::BelosTpetra::Impl::register_CgPipeline (false);
+  ::BelosTpetra::Impl::register_CgSingleReduce (false);
+  ::BelosTpetra::Impl::register_GmresPipeline (false);
+  ::BelosTpetra::Impl::register_GmresSingleReduce (false);
+  
   #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)   \
     Impl::registerSolverSubclassForTypes<                           \
       manager<SC,::Tpetra::MultiVector<SC, LO, GO, NT>,             \
@@ -91,6 +108,10 @@ void registerSolverFactory() {
 
   #undef LCL_CALL
   #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GCRODRSolMgr, "GCRODR", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GmresPolySolMgr, "HYBRID BLOCK GMRES", SC, LO, GO, NT)
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
 
   #undef LCL_CALL

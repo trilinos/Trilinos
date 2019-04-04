@@ -34,7 +34,7 @@ exampleRoutine (const Epetra_Comm& comm,
 }
 
 int
-main (int argc, char *argv[])
+main (int /* argc */, char * /* argv */[])
 {
   // These "using" declarations make the code more concise, in that
   // you don't have to write the namespace along with the class or

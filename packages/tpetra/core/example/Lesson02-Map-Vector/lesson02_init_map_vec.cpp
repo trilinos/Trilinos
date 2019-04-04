@@ -50,6 +50,8 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 void
 exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -363,7 +365,7 @@ main (int argc, char *argv[])
     // destructor.
     auto comm = Tpetra::getDefaultComm ();
     exampleRoutine (comm, std::cout);
-    
+
     // This tells the Trilinos test framework that the test passed.
     if (comm->getRank () == 0) {
       std::cout << "End Result: TEST PASSED" << std::endl;

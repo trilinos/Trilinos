@@ -20,7 +20,7 @@
 #include <iomanip>
 
 std::ostream& MLAPI::DistributedMatrix::
-Print(std::ostream& os, const bool verbose) const
+Print(std::ostream& os, const bool /* verbose */) const
 {
   if (GetMyPID() == 0) {
 

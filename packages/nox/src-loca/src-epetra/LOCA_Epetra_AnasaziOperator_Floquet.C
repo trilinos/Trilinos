@@ -53,7 +53,7 @@
 
 LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
     const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
     const Teuchos::RCP<NOX::Abstract::Group>& grp_)
@@ -158,8 +158,8 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 }
 
 void
-LOCA::Epetra::AnasaziOperator::Floquet::transformEigenvalue(double& ev_r,
-                           double& ev_i) const
+LOCA::Epetra::AnasaziOperator::Floquet::transformEigenvalue(double& /* ev_r */,
+                           double& /* ev_i */) const
 {
   // Floquet multipliers need no transformations
 }

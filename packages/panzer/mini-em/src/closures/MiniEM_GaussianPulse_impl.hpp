@@ -21,6 +21,7 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
   ir_degree = ir.cubature_degree;
+  ir_dim = ir.spatial_dimension;
 
   current = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
   this->addEvaluatedField(current);
@@ -39,6 +40,14 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
+void GaussianPulse<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
+                                                        PHX::FieldManager<Traits>& /* fm */)
+{
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
+}
+
+//**********************************************************************
+template <typename EvalT,typename Traits>
 void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
@@ -47,15 +56,27 @@ void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
 
   const ScalarT factor = std::exp(-(time-2.0*beta)*(time-2.0*beta)/beta/beta);
   const ScalarT scale = 1.0/alpha/alpha;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < current.extent_int(1); ++point) {
-      const ScalarT& x = coords(cell,point,0);
-      const ScalarT& y = coords(cell,point,1);
-      const ScalarT& z = coords(cell,point,2);
-      const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5);
-      current(cell,point,0) = 0.0;
-      current(cell,point,1) = 0.0;
-      current(cell,point,2) = std::exp(-r2*scale)*factor;
+  if (ir_dim == 3) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+      for (int point = 0; point < current.extent_int(1); ++point) {
+        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        const ScalarT& z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
+        const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5);
+        current(cell,point,0) = 0.0;
+        current(cell,point,1) = 0.0;
+        current(cell,point,2) = std::exp(-r2*scale)*factor;
+      }
+    }
+  } else {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+      for (int point = 0; point < current.extent_int(1); ++point) {
+        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
+        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5);
+        current(cell,point,0) = 0.0;
+        current(cell,point,1) = std::exp(-r2*scale)*factor;
+      }
     }
   }
 }

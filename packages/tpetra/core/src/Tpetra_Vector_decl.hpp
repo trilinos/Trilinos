@@ -51,6 +51,7 @@
 /// (Tpetra_Vector_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
@@ -73,15 +74,14 @@ namespace Tpetra {
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.  Please see the documentation of MultiVector for more
 /// details.
-template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-          class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
-  friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+  using base_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
@@ -174,6 +174,15 @@ public:
   ///   copy.
   Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
           const Teuchos::DataAccess copyOrView);
+
+  /// \brief "Offset view" constructor that views the input Vector's
+  ///   local data, but with the given Map, using the given row offset.
+  ///
+  /// \param source [in] The Vector to view.
+  /// \param map [in] The Map to use to interpret the local data.
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset = 0);
 
   //! \brief Set vector values from an existing array (copy)
   Vector (const Teuchos::RCP<const map_type>& map,
@@ -389,7 +398,6 @@ public:
               Teuchos::Describable::verbLevel_default) const;
   //@}
 }; // class Vector
-
 
 /// \brief Return a deep copy of the given Vector.
 /// \relatesalso Vector

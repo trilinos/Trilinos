@@ -39,11 +39,9 @@
 // ************************************************************************
 // @HEADER
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include <map>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_VerboseObject.hpp>
@@ -51,7 +49,7 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
@@ -63,29 +61,12 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include <memory>
+#include <sstream>
 
 namespace {
-
-  // Get a Teuchos::ArrayView which views the host Kokkos::View of the
-  // input 1-D Kokkos::DualView.
-  template<class DualViewType>
-  Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
-  getArrayViewFromDualView (const DualViewType& x)
-  {
-    static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
-                   "The input DualView must have rank 1.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
-       "input Kokkos::DualView was most recently modified on device, but this "
-       "function needs the host view of the data to be the most recently "
-       "modified.");
-
-    auto x_host = x.template view<Kokkos::HostSpace> ();
-    typedef typename DualViewType::t_dev::value_type value_type;
-    return Teuchos::ArrayView<value_type> (x_host.data (),
-                                           x_host.extent (0));
-  }
 
   using Teuchos::as;
   using Teuchos::Array;
@@ -113,7 +94,6 @@ namespace {
   using Tpetra::createContigMap;
   using Tpetra::CrsGraph;
   using Tpetra::CrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::DynamicProfile;
   using Tpetra::Export;
   using Tpetra::Import;
@@ -127,7 +107,7 @@ namespace {
   using std::ostream_iterator;
   using std::endl;
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+  using Node = Tpetra::Map<>::node_type;
 
   // Command-line argument values (initially set to defaults).
   bool testMpi = true;
@@ -165,7 +145,7 @@ namespace {
   getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform ().getComm ();
+      return Tpetra::getDefaultComm ();
     }
     else {
       return rcp (new Teuchos::SerialComm<int> ());
@@ -1761,8 +1741,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ReverseImportExport, doImport, LO, GO, Scalar
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::Export<LO, GO> ExportType;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
-  typedef Tpetra::Vector<Scalar,LO, GO, Node> VectorType;
-  typedef Tpetra::CrsMatrix<Scalar,LO, GO> CrsMatrixType;
+  typedef Tpetra::Vector<Scalar, LO, GO> VectorType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A;
@@ -1844,11 +1824,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ReverseImportExport, doImport, LO, GO, Scalar
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, GetPids, LO, GO )  {
   // Unit Test the functionality in Tpetra_Import_Util
   RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::Export<LO, GO> ExportType;
-  typedef Tpetra::Vector<int, LO, GO, Node> IntVectorType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::Vector<int, LO, GO> IntVectorType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A;
@@ -1983,7 +1964,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
 
     // This test reads exports2 on the host, so sync there.
     exports2.template sync<Kokkos::HostSpace> ();
-    Teuchos::ArrayView<char> exports2_av = getArrayViewFromDualView (exports2);
+    Teuchos::ArrayView<char> exports2_av =
+      Tpetra::Details::getArrayViewFromDualView (exports2);
 
     // Loop through the parts that should be the same
     const size_t numExportLIDs = Importer->getExportLIDs().size();
@@ -2043,6 +2025,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   int MyPID = Comm->getRank();
   RCP<const MapType> MapSource, MapTarget;
 
+  const bool debug = ::Tpetra::Details::Behavior::debug ();
+  const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+  std::unique_ptr<std::string> prefix;
+  if (verbose) {
+    std::ostringstream os;
+    os << "Proc " << MyPID << ": Import_Util,UnpackAndCombineWithOwningPIDs "
+      "test: ";
+    prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+
+    std::ostringstream os2;
+    os2 << *prefix << "start" << std::endl;
+    std::cerr << os2.str ();
+  }
+
+  ::Tpetra::Details::Behavior::disable_verbose_behavior ();
+
   // mfh 01 Aug 2017: Deal with fix for #1088, by not using
   // Kokkos::CudaUVMSpace for communication buffers.
 #ifdef KOKKOS_ENABLE_CUDA
@@ -2062,6 +2060,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   size_t constantNumPackets=0;
 
   // Build sample matrix & sourceMap
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Build test matrix and source Map" << std::endl;
+    std::cerr << os.str ();
+  }
   build_test_matrix<CrsMatrixType>(Comm,A);
   GST num_global = A->getRowMap()->getGlobalNumElements();
   MapSource = A->getRowMap();
@@ -2071,12 +2074,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   MapTarget = rcp(new MapType(num_global,num_local,0,Comm));
 
   // Build Importer
+  if (verbose) {
+    std::ostringstream os;
+    os << *prefix << "Build Import" << std::endl;
+    std::cerr << os.str ();
+  }
   RCP<ImportType> Importer = rcp (new ImportType (MapSource, MapTarget));
   if (Importer != Teuchos::null)  {
     /////////////////////////////////////////////////////////
     // Test #1: Count test
     /////////////////////////////////////////////////////////
     // Do the traditional import
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Count test: do traditional Import" << std::endl;
+      std::cerr << os.str ();
+    }
+
     test_err=0;
     B = rcp(new CrsMatrixType(MapTarget,0));
     B->doImport(*A, *Importer, Tpetra::INSERT);
@@ -2091,22 +2106,74 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     numExportPackets.resize(Importer->getExportLIDs().size());
     numImportPackets.resize(Importer->getRemoteLIDs().size());
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Calling packCrsMatrixWithOwningPIDs" << std::endl;
+      std::cerr << os.str ();
+    }
     Tpetra::Details::packCrsMatrixWithOwningPIDs<Scalar, LO, GO, Node>(
         *A, exports, numExportPackets(), Importer->getExportLIDs(),
         SourcePids(), constantNumPackets, distor);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done with packCrsMatrixWithOwningPIDs" << std::endl;
+      std::cerr << os.str ();
+    }
 
+    ::Tpetra::Details::Behavior::enable_verbose_behavior ();
+
+    if (debug) {
+      Comm->barrier ();
+    }
     // This test reads exports on the host, so sync there.
-    exports.template sync<Kokkos::HostSpace> ();
-    Teuchos::ArrayView<char> exports_av = getArrayViewFromDualView (exports);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Sync'ing exports to host" << std::endl;
+      std::cerr << os.str ();
+    }
+    exports.sync_host ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Getting Teuchos::ArrayView" << std::endl;
+      std::cerr << os.str ();
+    }
+    Teuchos::ArrayView<char> exports_av =
+      Tpetra::Details::getArrayViewFromDualView (exports);
+    if (debug) {
+      Comm->barrier ();
+    }
 
     // Do the moral equivalent of doTransfer
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Calling 3-arg doPostsAndWaits" << std::endl;
+      std::cerr << os.str ();
+    }
     distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done with 3-arg doPostsAndWaits" << std::endl;
+      std::cerr << os.str ();
+    }
+
     size_t totalImportPackets = 0;
     for(size_t i = 0; i < (size_t)numImportPackets.size(); i++) {
       totalImportPackets += numImportPackets[i];
     }
     imports.resize(totalImportPackets);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Calling 4-arg doPostsAndWaits" << std::endl;
+      std::cerr << os.str ();
+    }
     distor.doPostsAndWaits<PacketType>(exports_av,numExportPackets(),imports(),numImportPackets());
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done with 4-arg doPostsAndWaits" << std::endl;
+      std::cerr << os.str ();
+    }
+
+    ::Tpetra::Details::Behavior::enable_verbose_behavior ();
 
     // Run the count... which should get the same NNZ as the traditional import
     using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
@@ -2118,6 +2185,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
                                                                  Importer->getNumSameIDs (),
                                                                  Importer->getPermuteToLIDs (),
                                                                  Importer->getPermuteFromLIDs ());
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done with unpackAndCombineWithOwningPIDsCount; "
+        "nnz1=" << nnz1 << ", nnz2=" << nnz2 << std::endl;
+      std::cerr << os.str ();
+    }
+
     if(nnz1!=nnz2) test_err++;
     total_err+=test_err;
 
@@ -2128,6 +2202,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Teuchos::Array<GO>      colind (nnz2);
     Teuchos::Array<Scalar>  vals (nnz2);
     Teuchos::Array<int>     TargetPids;
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Calling unpackAndCombineIntoCrsArrays" << std::endl;
+      std::cerr << os.str ();
+    }
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
@@ -2149,6 +2229,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       Teuchos::av_reinterpret_cast<IST> (vals ()),
       SourcePids (),
       TargetPids);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done with unpackAndCombineIntoCrsArrays" << std::endl;
+      std::cerr << os.str ();
+    }
+
     // Do the comparison
     Teuchos::ArrayRCP<const size_t>  Browptr;
     Teuchos::ArrayRCP<const LO>      Bcolind;
@@ -2176,8 +2263,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
         colind[i]=Bmap.getLocalElement(colind[i]);
       }
 
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Calling sortCrsEntries" << std::endl;
+        std::cerr << os.str ();
+      }
+
       // Sort the GIDs
       Tpetra::Import_Util::sortCrsEntries<Scalar, GO> (rowptr (), colind (), vals ());
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Done with sortCrsEntries" << std::endl;
+        std::cerr << os.str ();
+      }
 
       // Compare the gids
       for (size_t i=0; i < static_cast<size_t> (rowptr.size()-1); ++i) {
@@ -2199,7 +2298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndReindex, LO, GO)  {
   // Test the colmap...
   RCP<const Comm<int> > Comm = getDefaultComm();
-  typedef double Scalar;
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO,GO> MapType;
   typedef Tpetra::Import<LO,GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> CrsMatrixType;
@@ -2272,9 +2371,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
   // Test the remotePIDs Tpetra::Import constructor
   RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,B;
 
   RCP<const ImportType> Import1, Import2;
@@ -2303,7 +2403,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
 
     // Generate PID vector via getRemotePIDs
     Teuchos::Array<int> pids;
-    Tpetra::Import_Util::getRemotePIDs<LO, GO,Node>(*Import1,pids);
+    Tpetra::Import_Util::getRemotePIDs<LO, GO, Node>(*Import1,pids);
 
     // Build a new (identical) importer via the other constructor
     Import2 = rcp(new ImportType(Import1->getSourceMap(),Import1->getTargetMap(),pids));
@@ -2353,7 +2453,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
   /////////////////////////////////////////////////////////
   {
     // Create Transpose
-    Tpetra::RowMatrixTransposer<double, LO, GO, Node> transposer(A);
+    Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(A);
     B = transposer.createTranspose();
 
     // Build Importer
@@ -2376,7 +2476,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,Ptent,P,R,AP,RAP,rebalancedP;
   RCP<MapType> Map0;
   RCP<const ImportType> Import0,ImportTemp;
@@ -2418,12 +2518,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     build_test_prolongator<CrsMatrixType>(A,P);
 
     // Build R
-    Tpetra::RowMatrixTransposer<double, LO, GO, Node> transposer(P);
+    Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
 
     ArrayRCP<const size_t> rowptr;
     ArrayRCP<const LO> colind;
-    ArrayRCP<const double> vals;
+    ArrayRCP<const Scalar> vals;
     R->getAllValues(rowptr,colind,vals);
 
     // Form AP
@@ -2465,7 +2565,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     Tpetra::MatrixMatrix::Multiply(*A,false,*Ptent,false,*P);
 
     // Build R
-    Tpetra::RowMatrixTransposer<double, LO, GO, Node> transposer(P);
+    Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
 
     // Form AP
@@ -2517,10 +2617,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
 // Test the remotePIDs Tpetra::Import constructor
   RCP<const Comm<int> > Comm = getDefaultComm();
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::Vector<double, LO, GO, Node> VectorType;
-  typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef Tpetra::Vector<Scalar, LO, GO> VectorType;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   RCP<CrsMatrixType> A,B;
 
   RCP<const ImportType> Import1, Import2;
@@ -2592,7 +2693,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
   /////////////////////////////////////////////////////////
   try {
     // Import reference vector
-    Teuchos::ScalarTraits< double >::seedrandom(24601);
+    Teuchos::ScalarTraits< Scalar >::seedrandom(24601);
     SourceVector->randomize();
     TargetVector->doImport(*SourceVector,*Import1,Tpetra::INSERT);
 
@@ -2607,8 +2708,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
     TestVector->doImport(*SourceVector,*Import2,Tpetra::INSERT);
 
     // Compare vector output
-    Teuchos::ArrayRCP<const double> view1 = TargetVector->get1dView();
-    Teuchos::ArrayRCP<const double> view2 = TestVector->get1dView();
+    Teuchos::ArrayRCP<const Scalar> view1 = TargetVector->get1dView();
+    Teuchos::ArrayRCP<const Scalar> view2 = TestVector->get1dView();
     double diff=0;
     size_t NumComps = Map0->getNodeNumElements();
     for(size_t i=0; i < NumComps; i++) {
@@ -2644,7 +2745,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Map<LO, GO> MapType;
   typedef Tpetra::Import<LO, GO> ImportType;
-  typedef Tpetra::Vector<int,LO, GO, Node> IntVectorType;
+  typedef Tpetra::Vector<int, LO, GO> IntVectorType;
   RCP<const ImportType> ImportOwn, ImportXfer;
   RCP<MapType> Map0, Map1, Map2;
 

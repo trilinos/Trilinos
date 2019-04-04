@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.BorderedSystem is the python interface to namespace
 BorderedSystem of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.BorderedSystem is to provide an interface for
 groups that are bordered systems.  The python version of
@@ -70,7 +70,7 @@ LOCA.BorderedSystem supports the following classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 

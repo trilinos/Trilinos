@@ -66,21 +66,23 @@
 #include <Xpetra_RowMatrix.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 namespace Zoltan2{
 
 // Default local ordinal
-typedef int default_lno_t;
+typedef ::Tpetra::Details::DefaultTypes::local_ordinal_type default_lno_t;
 
 // Default global ordinal
-typedef int default_gno_t;
+typedef ::Tpetra::Details::DefaultTypes::global_ordinal_type default_gno_t;
 
 // Default offset type
-typedef int default_offset_t;
+typedef size_t default_offset_t;
 
 // Default scalar type (for weights, coordinates)
-typedef double default_scalar_t;
+typedef ::Tpetra::Details::DefaultTypes::scalar_type default_scalar_t;
+
+// Until Kokkos node types are supported, use default
+typedef ::Tpetra::Details::DefaultTypes::node_type default_node_t;
 
 // Default part number type.
 typedef int default_part_t;  // Restrictions in MPI interface will make it
@@ -89,9 +91,6 @@ typedef int default_part_t;  // Restrictions in MPI interface will make it
                              // and we sometimes broadcast arrays whose
                              // size has type part_t.
                              // part_t must be a signed data type.
-
-// Until Kokkos node types are supported, use default
-typedef Tpetra::Map<>::node_type default_node_t;
 
 /*! \brief A simple class that can be the User template argument
  *             for an InputAdapter.
@@ -134,7 +133,9 @@ typedef Tpetra::Map<>::node_type default_node_t;
     \li \c gno (global number) is the integral data type used by the application and Zoltan2 to represent global identifiers and global counts.
  */
 
-template <typename scalar=double, typename lno=int, typename gno=int>
+template <typename scalar=default_scalar_t, 
+          typename lno=default_lno_t,
+          typename gno=default_gno_t>
 class BasicUserTypes{
 };
 

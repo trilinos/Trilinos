@@ -26,7 +26,6 @@ main (int argc, char *argv[])
   using std::cout;
   using std::endl;
   using Teuchos::Comm;
-  using Teuchos::SerialComm;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -36,7 +35,7 @@ main (int argc, char *argv[])
 #else
   // Not building with MPI, so default comm won't use MPI.
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
-#endif // HAVE_TPETRA_MPI  
+#endif // HAVE_TPETRA_MPI
   {
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 

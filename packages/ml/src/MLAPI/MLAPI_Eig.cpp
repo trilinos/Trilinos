@@ -86,6 +86,8 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
   ML_Anasazi_Get_SpectralNorm_Anasazi(Op.GetML_Operator(), 0, 10, 1e-5,
                                       ML_FALSE, DiagScal, &MaxEigen);
 #else
+  (void)Op;
+  (void)DiagonalScaling;
   //ML_THROW("Configure w/ --enable-epetra --enable-anasazi --enable-teuchos", -1);
   ML_THROW("Anasazi is no longer supported", -1);
 #endif

@@ -43,27 +43,19 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_DECL_HPP_
-#define MUELU_STRUCTUREDAGGREGATIONFACTORY_DECL_HPP_
+#ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_DECL_HPP
+#define MUELU_STRUCTUREDAGGREGATIONFACTORY_DECL_HPP
 
 
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
+// #include <Xpetra_Map_fwd.hpp>
+// #include <Xpetra_CrsGraph_fwd.hpp>
+// #include <Xpetra_CrsGraphFactory.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_StructuredAggregationFactory_fwd.hpp"
-
-#include "MueLu_AggregationAlgorithmBase.hpp"
-
 #include "MueLu_Level_fwd.hpp"
-// #include "MueLu_Graph_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_LocalLexicographicIndexManager.hpp"
-#include "MueLu_GlobalLexicographicIndexManager.hpp"
 
 namespace MueLu {
 
@@ -141,7 +133,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -149,7 +141,7 @@ namespace MueLu {
     //@{
 
     /*! @brief Build aggregates. */
-    void Build(Level &currentLevel) const;
+    void Build(Level& currentLevel) const;
 
     //@}
 
@@ -165,4 +157,4 @@ namespace MueLu {
 }
 
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_SHORT
-#endif /* MUELU_STRUCTUREDAGGREGATIONFACTORY_DECL_HPP_ */
+#endif /* MUELU_STRUCTUREDAGGREGATIONFACTORY_DECL_HPP */

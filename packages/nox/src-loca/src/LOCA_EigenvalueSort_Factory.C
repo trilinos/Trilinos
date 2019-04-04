@@ -67,7 +67,7 @@ LOCA::EigenvalueSort::Factory::~Factory()
 
 Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>
 LOCA::EigenvalueSort::Factory::create(
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   std::string methodName = "LOCA::EigenvalueSort::Factory::create()";

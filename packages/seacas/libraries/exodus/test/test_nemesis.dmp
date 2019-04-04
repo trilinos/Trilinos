@@ -1,11 +1,11 @@
 *********************Output Tests***********************
-creating ExodusII file... successful
+creating ExodusII file...successful
 testing init info output...successful
 testing global init info output...successful
 testing global element block ID output...successful
 testing global node-set params output...successful
 testing global side-set params output...successful
-testing concatenated load balance info output...succesful
+testing concatenated load balance info output...successful
 testing node map output...successful
 testing element map output...successful
 testing concatenated communication map params output...successful

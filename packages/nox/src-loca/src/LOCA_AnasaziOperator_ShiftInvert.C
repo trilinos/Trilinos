@@ -55,7 +55,7 @@
 
 LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
     const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
     const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp_)

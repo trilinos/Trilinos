@@ -46,15 +46,10 @@
 #ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_STRUCTUREDAGGREGATIONFACTORY_DEF_HPP_
 
-#include <Xpetra_Matrix.hpp>
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_CrsGraph.hpp>
 
 #include "MueLu_AggregationStructuredAlgorithm.hpp"
-#include "MueLu_StructuredAggregationFactory_decl.hpp"
-
 #include "MueLu_Level.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -65,6 +60,7 @@
 #include "MueLu_LocalLexicographicIndexManager.hpp"
 #include "MueLu_GlobalLexicographicIndexManager.hpp"
 
+#include "MueLu_StructuredAggregationFactory_decl.hpp"
 
 namespace MueLu {
 
@@ -82,39 +78,37 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
+
+    // general variables needed in StructuredAggregationFactory
+    SET_VALID_ENTRY("aggregation: mesh layout");
+    SET_VALID_ENTRY("aggregation: mode");
+    SET_VALID_ENTRY("aggregation: output type");
+    SET_VALID_ENTRY("aggregation: coarsening rate");
+    SET_VALID_ENTRY("aggregation: coarsening order");
 #undef  SET_VALID_ENTRY
-
-    // general variables needed in AggregationFactory
-    validParamList->set<std::string >           ("aggregation: mesh layout","Global Lexicographic",
-                                                 "Type of mesh ordering");
-    validParamList->set<std::string >           ("aggregation: coupling","coupled",
-                                                 "aggregation coupling mode: coupled or uncoupled");
-    validParamList->set<int>                    ("aggregation: number of spatial dimensions", 3,
-                                                  "The number of spatial dimensions in the problem");
-    validParamList->set<int>                    ("aggregation: coarsening order", 0,
-                                                  "The interpolation order used to construct grid transfer operators based off these aggregates.");
-    validParamList->set<std::string>            ("aggregation: coarsening rate", "{3}",
-                                                  "Coarsening rate per spatial dimensions");
-    validParamList->set<RCP<const FactoryBase> >("aggregation: mesh data",  Teuchos::null,
-                                                 "Mesh ordering associated data");
-
     validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
                                                  "Graph of the matrix after amalgamation but without dropping.");
+    validParamList->set<RCP<const FactoryBase> >("numDimensions",           Teuchos::null,
+                                                 "Number of spatial dimension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("gNodesPerDim",            Teuchos::null,
-                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+                                                 "Global number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
-                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
+                                                 "Local number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
+    validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
+                                                 "Generating factory for variable \'DofsPerNode\', usually the same as the \'Graph\' factory");
 
     return validParamList;
-  }
+  } // GetValidParameterList()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
+    Input(currentLevel, "DofsPerNode");
 
     ParameterList pL = GetParameterList();
-    std::string coupling = pL.get<std::string>("aggregation: coupling");
+    std::string coupling = pL.get<std::string>("aggregation: mode");
     const bool coupled = (coupling == "coupled" ? true : false);
     if(coupled) {
       // Request the global number of nodes per dimensions
@@ -133,6 +127,13 @@ namespace MueLu {
 
     // Request the local number of nodes per dimensions
     if(currentLevel.GetLevelID() == 0) {
+      if(currentLevel.IsAvailable("numDimensions", NoFactory::get())) {
+        currentLevel.DeclareInput("numDimensions", NoFactory::get(), this);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("numDimensions", NoFactory::get()),
+                                   Exceptions::RuntimeError,
+                                   "numDimensions was not provided by the user on level0!");
+      }
       if(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
         currentLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
       } else {
@@ -141,9 +142,10 @@ namespace MueLu {
                                    "lNodesPerDim was not provided by the user on level0!");
       }
     } else {
+      Input(currentLevel, "numDimensions");
       Input(currentLevel, "lNodesPerDim");
     }
-  }
+  } // DeclareInput()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -164,29 +166,34 @@ namespace MueLu {
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
     // General problem informations are gathered from data stored in the problem matix.
-    RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
-    RCP<const Map> fineMap      = graph->GetDomainMap();
-    const int myRank            = fineMap->getComm()->getRank();
-    const int numRanks          = fineMap->getComm()->getSize();
-    const GO  minGlobalIndex    = fineMap->getMinGlobalIndex();
+    RCP<const GraphBase> graph  = Get< RCP<GraphBase> >(currentLevel, "Graph");
+    RCP<const Map> fineMap     = graph->GetDomainMap();
+    const int myRank           = fineMap->getComm()->getRank();
+    const int numRanks         = fineMap->getComm()->getSize();
+    const GO  minGlobalIndex   = fineMap->getMinGlobalIndex();
+    const LO  dofsPerNode      = Get<LO>(currentLevel, "DofsPerNode");
 
     // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
     // obtain a nodeMap.
-    const int numDimensions = pL.get<int>("aggregation: number of spatial dimensions");
     const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
-    std::string meshLayout = pL.get<std::string>("aggregation: mesh layout");
-    std::string coupling = pL.get<std::string>("aggregation: coupling");
-    const bool coupled = (coupling == "coupled" ? true : false);
+    std::string meshLayout       = pL.get<std::string>("aggregation: mesh layout");
+    std::string coupling         = pL.get<std::string>("aggregation: mode");
+    const bool coupled           = (coupling == "coupled" ? true : false);
+    std::string outputType       = pL.get<std::string>("aggregation: output type");
+    const bool outputAggregates  = (outputType == "Aggregates" ? true : false);
+    int numDimensions;
     Array<GO> gFineNodesPerDir(3);
     Array<LO> lFineNodesPerDir(3);
     if(currentLevel.GetLevelID() == 0) {
       // On level 0, data is provided by applications and has no associated factory.
+      numDimensions = currentLevel.Get<int>("numDimensions", NoFactory::get());
       if(coupled) {
         gFineNodesPerDir = currentLevel.Get<Array<GO> >("gNodesPerDim", NoFactory::get());
       }
       lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
     } else {
       // On level > 0, data is provided directly by generating factories.
+      numDimensions = Get<int>(currentLevel, "numDimensions");
       if(coupled) {
         gFineNodesPerDir = Get<Array<GO> >(currentLevel, "gNodesPerDim");
       }
@@ -218,7 +225,7 @@ namespace MueLu {
                                " components as the number of spatial dimensions in the problem.");
 
     // Now that we have extracted info from the level, create the IndexManager
-    RCP<MueLu::IndexManager<LO,GO,NO> > geoData;
+    RCP<IndexManager > geoData;
     if(!coupled) {
       geoData = rcp(new MueLu::UncoupledIndexManager<LO,GO,NO>(fineMap->getComm(),
                                                                coupled,
@@ -272,6 +279,8 @@ namespace MueLu {
 
 
     *out << "The index manager has now been built" << std::endl;
+    *out << "graph num nodes: " << fineMap->getNodeNumElements()
+         << ", structured aggregation num nodes: " << geoData->getNumLocalFineNodes() << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                Exceptions::RuntimeError,
@@ -288,34 +297,49 @@ namespace MueLu {
     *out << "Compute coarse mesh data" << std::endl;
     std::vector<std::vector<GO> > coarseMeshData = geoData->getCoarseMeshData();
 
-    // Create aggregates object and set basic parameters
-    RCP<Aggregates> aggregates = rcp(new Aggregates(fineMap));
-    aggregates->setObjectLabel("ST");
-    aggregates->SetIndexManager(geoData);
-    aggregates->AggregatesCrossProcessors(coupled);
-    std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
-    aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
-
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
-    LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
     RCP<const FactoryBase> graphFact = GetFactory("Graph");
+    RCP<const Map> coarseCoordinatesFineMap, coarseCoordinatesMap;
     RCP<MueLu::AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node> >
       myStructuredAlgorithm = rcp(new AggregationStructuredAlgorithm(graphFact));
-    myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
-                               "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
+    if(interpolationOrder == 0 && outputAggregates){
+      RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
+      aggregates->setObjectLabel("ST");
+      aggregates->SetIndexManager(geoData);
+      aggregates->AggregatesCrossProcessors(coupled);
+      aggregates->SetNumAggregates(geoData->getNumLocalCoarseNodes());
+      std::vector<unsigned> aggStat(geoData->getNumLocalFineNodes(), READY);
+      LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
 
-    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
+      myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat,
+                                             numNonAggregatedNodes);
 
-    Set(currentLevel, "Aggregates",         aggregates);
-    Set(currentLevel, "gCoarseNodesPerDim", geoData->getGlobalCoarseNodesPerDir());
+      TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
+                                 "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
+      aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
+      GetOStream(Statistics1) << aggregates->description() << std::endl;
+      Set(currentLevel, "Aggregates", aggregates);
+
+    } else {
+      // Create Coarse Data
+      RCP<CrsGraph> myGraph;
+      myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
+                                        coarseCoordinatesFineMap, coarseCoordinatesMap);
+      Set(currentLevel, "prolongatorGraph", myGraph);
+    }
+
+    if(coupled) {
+      Set(currentLevel, "gCoarseNodesPerDim", geoData->getGlobalCoarseNodesPerDir());
+    }
     Set(currentLevel, "lCoarseNodesPerDim", geoData->getLocalCoarseNodesPerDir());
+    Set(currentLevel, "coarseCoordinatesFineMap", coarseCoordinatesFineMap);
+    Set(currentLevel, "coarseCoordinatesMap", coarseCoordinatesMap);
+    Set(currentLevel, "interpolationOrder", interpolationOrder);
+    Set(currentLevel, "numDimensions", numDimensions);
 
-    GetOStream(Statistics1) << aggregates->description() << std::endl;
-  }
-
+  } // Build()
 } //namespace MueLu
 
 

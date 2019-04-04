@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ template <typename INT>
 int read_mesh_params(const std::string &    exo_file, /* Name of ExodusII geometry file */
                      Problem_Description *  problem,  /* Pointer to problem info structure */
                      Mesh_Description<INT> *mesh,     /* Mesh information structure */
-                     Sphere_Info *          sphere);  /* Sphere element info structure */
+                     Sphere_Info *          sphere);            /* Sphere element info structure */
 
 template <typename INT>
 int read_mesh(const std::string &      exo_file, /* Name of ExodusII geometry file */

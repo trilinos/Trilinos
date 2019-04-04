@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -90,11 +90,7 @@ namespace Iogn {
 
   int64_t DashSurfaceMesh::communication_node_count_proc() const
   {
-    if (mDashSurfaceData.sharedNodes != nullptr) {
-      return mDashSurfaceData.sharedNodes->size();
-    }
-
-    return 0;
+    return mDashSurfaceData.sharedNodes.size();
   }
 
   void DashSurfaceMesh::coordinates(double *coord) const
@@ -165,13 +161,13 @@ namespace Iogn {
 
   void DashSurfaceMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
   {
-    if (mDashSurfaceData.sharedNodes == nullptr) {
+    if (mDashSurfaceData.sharedNodes.empty()) {
       return;
     }
 
-    for (unsigned int i = 0; i < mDashSurfaceData.sharedNodes->size(); i++) {
-      map[i]  = (*mDashSurfaceData.sharedNodes)[i].nodeId;
-      proc[i] = (*mDashSurfaceData.sharedNodes)[i].procId;
+    for (unsigned int i = 0; i < mDashSurfaceData.sharedNodes.size(); i++) {
+      map[i]  = mDashSurfaceData.sharedNodes[i].nodeId;
+      proc[i] = mDashSurfaceData.sharedNodes[i].procId;
     }
     return;
   }
@@ -316,11 +312,7 @@ namespace Iogn {
 
   int64_t ExodusMesh::communication_node_count_proc() const
   {
-    if (mExodusData.sharedNodes != nullptr) {
-      return mExodusData.sharedNodes->size();
-    }
-
-    return 0;
+    return mExodusData.sharedNodes.size();
   }
 
   void ExodusMesh::coordinates(double *coord) const
@@ -371,13 +363,9 @@ namespace Iogn {
 
   void ExodusMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
   {
-    if (mExodusData.sharedNodes == nullptr) {
-      return;
-    }
-
-    for (unsigned int i = 0; i < mExodusData.sharedNodes->size(); i++) {
-      map[i]  = (*mExodusData.sharedNodes)[i].nodeId;
-      proc[i] = (*mExodusData.sharedNodes)[i].procId;
+    for (unsigned int i = 0; i < mExodusData.sharedNodes.size(); i++) {
+      map[i]  = mExodusData.sharedNodes[i].nodeId;
+      proc[i] = mExodusData.sharedNodes[i].procId;
     }
   }
 

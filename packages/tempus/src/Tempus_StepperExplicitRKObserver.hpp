@@ -45,28 +45,28 @@ public:
 
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
 
   /// Observe Stepper at beginning of each stage.
   virtual void observeBeginStage(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperExplicitRK<Scalar> & stepperExplicitRK){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    StepperExplicitRK<Scalar> & /* stepperExplicitRK */){}
 
   /// Observe Stepper before Explicit evaluation of Implicit ODE ME.
   virtual void observeBeforeExplicit(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperExplicitRK<Scalar> & stepperExplicitRK){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    StepperExplicitRK<Scalar> & /* stepperExplicitRK */){}
 
   /// Observe Stepper at end of each stage.
   virtual void observeEndStage(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperExplicitRK<Scalar> & stepperExplicitRK){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    StepperExplicitRK<Scalar> & /* stepperExplicitRK */){}
 
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Stepper<Scalar> & stepper){}
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Stepper<Scalar> & /* stepper */){}
 };
 } // namespace Tempus
 #endif // Tempus_StepperExplicitRKObserver_hpp

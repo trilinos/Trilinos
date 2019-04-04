@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -70,15 +70,15 @@ namespace Skinner {
 
   public:
     std::string decomp_method;
-    std::string compose_output;
-    int         compression_level;
-    bool        shuffle;
-    bool        debug;
-    bool        statistics;
-    bool        ints64Bit_;
-    bool        netcdf4;
-    bool        ignoreFaceIds_;
-    bool        noOutput_;
+    std::string compose_output{"none"};
+    int         compression_level{0};
+    bool        shuffle{false};
+    bool        debug{false};
+    bool        statistics{false};
+    bool        ints64Bit_{false};
+    bool        netcdf4_{false};
+    bool        ignoreFaceIds_{false};
+    bool        noOutput_{false};
   };
 } // namespace Skinner
 #endif

@@ -33,16 +33,23 @@
 #ifndef GENERATED_MESH_TO_FILE_H_
 #define GENERATED_MESH_TO_FILE_H_
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <stddef.h>                             // for size_t
+#include <stk_io/StkMeshIoBroker.hpp>           // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>           // for BulkData, etc
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>              // for Field
+#include <stk_mesh/base/MetaData.hpp>           // for MetaData
+#include <string>                               // for string
+#include <vector>                               // for vector
+#include "stk_topology/topology.hpp"            // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine
+namespace stk { namespace unit_test_util { class FieldValueSetter; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-#include "mpi.h"
 
-#include "ioUtils.hpp"
 
 namespace stk
 {

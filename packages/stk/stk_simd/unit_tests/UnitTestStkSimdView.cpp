@@ -37,7 +37,7 @@ TEST_F(StkSimdViewFixture, SimdParallelFor) {
 
 double reduce_sum_velocity_field(stk::simd::View<double*[3]> veloField, int direction) {
   double reducedVelo=0.0;
-  stk::simd::parallel_reduce_sum("reduce_velo", veloField.dimension_0(), 
+  stk::simd::parallel_reduce_sum("reduce_velo", veloField.extent(0),
                                  STK_LAMBDA(stk::simd::DeviceIndex i, stk::simd::DeviceDouble& sum) {
     sum += veloField(i, direction);
   }, reducedVelo);
@@ -57,7 +57,7 @@ TEST_F(StkSimdViewFixture, SimdParallelReduce) {
 // simpler for_each and reduce_sum_each only work on host for now.
 
 double double_and_reduce_sum_each(stk::simd::View<double*[3]>::HostMirror veloField, int direction) {
-  const int numNodes = veloField.dimension_0();
+  const int numNodes = veloField.extent(0);
   stk::simd::for_each(numNodes, [&](stk::simd::Index i) {
     veloField(i, direction) *= 2;
   });

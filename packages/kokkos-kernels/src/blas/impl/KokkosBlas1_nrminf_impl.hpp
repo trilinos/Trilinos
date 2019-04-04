@@ -224,7 +224,7 @@ V_NrmInf_Invoke (const RV& r, const XV& X)
 
   typedef V_NrmInf_Functor<RV, XV, SizeType> functor_type;
   functor_type op (X);
-  Kokkos::parallel_reduce (policy, op, Kokkos::Max<typename RV::non_const_value_type>(r()));
+  Kokkos::parallel_reduce ("KokkosBlas::NrmInf::S0", policy, op, Kokkos::Max<typename RV::non_const_value_type>(r()));
 }
 
 
@@ -262,7 +262,7 @@ MV_NrmInf_Invoke (const RV& r, const XMV& X)
   else {
     typedef MV_NrmInf_Right_FunctorVector<RV, XMV, SizeType> functor_type;
     functor_type op (X);
-    Kokkos::parallel_reduce (policy, op, r);
+    Kokkos::parallel_reduce ("KokkosBlas::NrmInf::S1", policy, op, r);
   }
 }
 

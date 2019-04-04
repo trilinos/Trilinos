@@ -52,19 +52,19 @@
 #define NOX_SOLVER_GENERIC_H
 
 #include "NOX_StatusTest_Generic.H"  // for NOX::StatusTest::StatusType
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace Teuchos {
   class ParameterList;
 }
 namespace NOX {
+  struct SolverStats;
   namespace Abstract {
     class Vector;
     class Group;
   }
 }
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Assert.hpp"
 
 namespace NOX {
 
@@ -102,15 +102,24 @@ public:
   //! Destructor (does nothing)
   virtual ~Generic() {};
 
+  /** \brief Resets the solver for another solve. This resets the
+      counters and status only. Uses the final solution from the last
+      solve as the initial guess for the next solve.
+
+      NOTE: All NOX solvers will call reset() automatically at teh
+      beginning of the solve() method. We add the reset() method to
+      the solver interface for the application to call in case the
+      application needs to reset counters and status manually before
+      the next call to solve() is made.
+  */
+  virtual void reset() = 0;
+
   //! Resets the solver and sets a new initial guess.
   virtual void reset(const NOX::Abstract::Vector& initial_guess) = 0;
 
   //! Resets the solver, sets a new status test, and sets a new initial guess.
   virtual void reset(const NOX::Abstract::Vector& initial_guess,
              const Teuchos::RCP<NOX::StatusTest::Generic>& test) = 0;
-
-  //! Check current convergence and failure status.
-  virtual NOX::StatusTest::StatusType getStatus() = 0;
 
   //! Do one nonlinear step in the iteration sequence and return status.
   virtual NOX::StatusTest::StatusType step() = 0;
@@ -128,6 +137,9 @@ public:
 
   //! Return a reference to the previous solution group.
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const = 0;
+
+  //! Returns the current status of the solver.
+  virtual NOX::StatusTest::StatusType getStatus() const = 0;
 
   //! Get number of iterations.
   virtual int getNumIterations() const = 0;
@@ -147,6 +159,9 @@ public:
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const = 0;
 
   //@}
+
+  //! Return a RCP to the solver statistics.
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const = 0;
 
 };
 } // namespace Solver

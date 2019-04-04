@@ -42,10 +42,9 @@
 #ifndef TPETRA_CONFIGDEFS_HPP
 #define TPETRA_CONFIGDEFS_HPP
 
-#include "TpetraCore_config.h"
-#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp"
+#include "Teuchos_ConfigDefs.hpp"
 
-//! %Tpetra namespace
 namespace Tpetra {
   // Used in all Tpetra code that explicitly must a type (like a loop index)
   // that is used with the Teuchos::Array[View,RCP] classes.
@@ -99,7 +98,6 @@ namespace Tpetra {
 #include "Teuchos_ParameterList.hpp"
 //#endif
 
-//! Namespace for Tpetra classes and methods
 namespace Tpetra {
 
   /// \brief Global size_t object.
@@ -139,39 +137,6 @@ namespace Tpetra {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
-
-
-  /// \brief Namespace for Tpetra implementation details.
-  /// \warning Do NOT rely on the contents of this namespace.
-  namespace Details {
-
-    //! Declarations of values of Tpetra classes' default template parameters.
-    namespace DefaultTypes {
-      //! Default value of Scalar template parameter.
-      typedef double scalar_type;
-      //! Default value of LocalOrdinal template parameter.
-      typedef int local_ordinal_type;
-
-      /// \typedef global_ordinal_type
-      /// \brief Default value of GlobalOrdinal template parameter.
-#if defined(HAVE_TPETRA_INST_INT_INT)
-      typedef int global_ordinal_type;
-#elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-      typedef long long global_ordinal_type;
-#elif defined(HAVE_TPETRA_INST_INT_LONG)
-      typedef long global_ordinal_type;
-#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
-      typedef unsigned long global_ordinal_type;
-#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
-      typedef unsigned global_ordinal_type;
-#else
-#  error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
-#endif
-      //! Default value of Node template parameter.
-      typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
-    } // namespace DefaultTypes
-
-  } // namespace Details
 
   enum EPrivateComputeViewConstructor {
     COMPUTE_VIEW_CONSTRUCTOR
@@ -240,7 +205,7 @@ namespace Tpetra {
 // We include this after the above Tpetra namespace declaration,
 // so that we don't interfere with Doxygen's ability to find the
 // Tpetra namespace declaration.
-#include <Tpetra_CombineMode.hpp>
+#include "Tpetra_CombineMode.hpp"
 
 
 //! Namespace for %Tpetra example classes and methods

@@ -1,3 +1,4 @@
+#include <cmath>
 #include <vector>
 #include <Zoltan2_MeshAdapter.hpp>      // for MeshEntityType, etc
 #include "Vertices.hpp"
@@ -43,9 +44,10 @@ template<typename ZoltanAdapter>
 std::vector<unsigned> get_solution_from_zoltan(ZoltanAdapter& adapter, Teuchos::ParameterList& params, MPI_Comm comm)
 {
     Zoltan2::PartitioningProblem<ZoltanAdapter> problem(&adapter, &params, comm);
-    internal::print_statistics(adapter, stk::parallel_machine_rank(comm));
+    internal::print_statistics(adapter, comm, stk::parallel_machine_rank(comm));
+    std::srand(stk::parallel_machine_rank(comm)); // KHP: Temporary until an API is added to Zoltan2 for random seeds.
     problem.solve();
-    internal::print_solution_statistics(adapter, problem.getSolution(), stk::parallel_machine_rank(comm));
+    internal::print_solution_statistics(adapter, problem.getSolution(), comm, stk::parallel_machine_rank(comm));
     std::vector<unsigned> proc_decomp = get_decomp_per_entity<ZoltanAdapter>(adapter.getLocalNumOf(Zoltan2::MESH_REGION), problem.getSolution().getPartListView());
     return proc_decomp;
 }

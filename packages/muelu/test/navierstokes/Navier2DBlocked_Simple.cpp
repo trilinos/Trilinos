@@ -340,6 +340,7 @@ int main(int argc, char *argv[]) {
     M11->SetFactory("Nullspace", nspFact11);
     // M11->SetFactory("Ptent", P11Fact);
     M11->SetFactory("CoarseMap", coarseMapFact11);
+    M11->SetFactory("Graph", dropFact11);
 #endif
     M11->SetIgnoreUserData(true);               // always use data from factories defined in factory manager
 

@@ -34,7 +34,7 @@
 #include <iostream>                     // for operator<<, ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for operator==, basic_string, etc
 
@@ -59,7 +59,7 @@ TEST(UnitTestRuntimeWarning, Throttle)
   stk::RuntimeWarningAdHoc(id) << "runtime-warning XY" << std::endl;
 
   std::string warningstring = s_os.str();
-  std::string expected("0: runtime-warning XX\n; 0: runtime-warning XX\n; 0: runtime-warning XX\n; -2147483648: Maximum count for this unknown has been exceeded and will no longer be displayed; ");
+  std::string expected("0: runtime-warning XX\n; 0: runtime-warning XX\n; 0: runtime-warning XX\n; -2147483648: Maximum count for this unknown (previous message) has been exceeded and will no longer be displayed; ");
   EXPECT_EQ(expected, warningstring);
 }
 

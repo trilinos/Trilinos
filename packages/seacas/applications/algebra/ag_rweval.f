@@ -1,23 +1,23 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE RWEVAL (NDBIN, NDBOUT, A, ia, C, NPTIMS, NUMSTO,
      &  LTMENT, MAXSTK, NWRIT, IOERR, MERR)
@@ -82,7 +82,7 @@ C   --   Uses ISZOOM of /ZOOM/
       include 'ag_filter.blk'
       include 'ag_remove.blk'
       include 'ag_dbws.blk'
-      
+
       DIMENSION A(1)
       integer   ia(1)
       CHARACTER*1 C(1)
@@ -206,15 +206,15 @@ C ... Get space to hold the element variable used for filtering...
             MERR = 1
             RETURN
           END IF
-          
+
 C ... Find the step
           istep = locrea(timflt, nsteps, a(ktimes))
-          
+
           IEL = 0
           DO IELB = 1, NELBLK
             IDEB = iarray(ia(kidelb), ielb)
             NELEM = iarray(ia(knelb), ielb)
-            IF (i2array(ia(kievok), nelblk, ielb, idxflt) .eq. 1) THEN
+            IF (i2array(ia(kievok), nelblk, ielb, idxflt) .ne. 0) THEN
               call exgev(ndbin, istep, idxflt, IDEB, NELEM,
      *          a(kelvar+iel), ierr)
             ELSE
@@ -312,36 +312,45 @@ C                    for all node sets
           END IF
 
 C           if (num_of_node_sets > 0) then
-          IF (numnps .gt. 0 .and. LNPSNL .gt. 0) THEN
-C              Read the concatenated node sets
-            CALL EXGCNS(ndbin, a(kidns), a(knnns), a(kndnps),
-     &        a(kixnns), a(kdisns), a(kltnns), a(kfacns), ierr)
+          IF (numnps .gt. 0) then
+             if (LNPSNL .gt. 0) THEN
+C     Read the concatenated node sets
+                CALL EXGCNS(ndbin, ia(kidns), ia(knnns), ia(kndnps),
+     &               ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns),
+     $               ierr)
 
-C              Reserve scratch arrays for subroutine ZMNPS
-            CALL MDRSRV ('NEWIX', KNEWIX, NUMNP)
-            CALL MDRSRV ('IXNPS', KIXNPS, LNPSNO)
-            CALL MDSTAT (NERR, MEM)
-            IF (NERR .GT. 0) THEN
-              CALL MEMERR
-              MERR = 1
-              RETURN
-            END IF 
-C              Compress the node set information by renumbering the
-C              nodes and removing deleted nodes
-            CALL ZMNPS (NUMNP, NUMNPO, A(KXNODE), NNPSO, LNPSNO,
-     &        A(KIDNS), A(KNNNS), A(KIXNNS), A(KNDNPS), A(KDISNS),
-     &        A(KLTNNS), A(KFACNS), A(KNEWIX), A(KIXNPS))
-C              Remove scratch arrays
-            CALL MDDEL ('NEWIX')
-            CALL MDDEL ('IXNPS')
-            CALL MDSTAT (NERR, MEM)
-            IF (NERR .GT. 0) THEN
-              CALL MEMERR
-              MERR = 1
-              RETURN
-            END IF
+C     Reserve scratch arrays for subroutine ZMNPS
+                CALL MDRSRV ('NEWIX', KNEWIX, NUMNP)
+                CALL MDRSRV ('IXNPS', KIXNPS, LNPSNO)
+                CALL MDSTAT (NERR, MEM)
+                IF (NERR .GT. 0) THEN
+                   CALL MEMERR
+                   MERR = 1
+                   RETURN
+                END IF
+C     Compress the node set information by renumbering the
+C     nodes and removing deleted nodes
+                CALL ZMNPS (NUMNP, NUMNPO, A(KXNODE), NNPSO, LNPSNO,
+     &               IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KNDNPS),
+     $               IA(KDISNS), IA(KLTNNS), A(KFACNS), IA(KNEWIX),
+     $               IA(KIXNPS))
+C     Remove scratch arrays
+                CALL MDDEL ('NEWIX')
+                CALL MDDEL ('IXNPS')
+                CALL MDSTAT (NERR, MEM)
+                IF (NERR .GT. 0) THEN
+                   CALL MEMERR
+                   MERR = 1
+                   RETURN
+                END IF
+             ELSE
+C ... Even though there are no nodes in the node set, we have told the output 
+C     database that there are (empty) node sets.  We need to read and write 
+C     the node set ids
+                CALL EXGNSI (NDBIN, IA(KIDNS), IERR)
+             END IF
           END IF
-        END IF
+       END IF
 
 C ****************************************************************
 C        Read and munch the side sets
@@ -361,10 +370,10 @@ C           IDESS - array containing side set IDS
           CALL MDRSRV ('IDESS' , KIDSS , NUMESS)
 C           NEESS - array containing the number of sides for each sets
           CALL MDRSRV ('NEESS' , KNESS , NUMESS)
-C           KNDSS - Returned array containing the number of dist 
+C           KNDSS - Returned array containing the number of dist
 C                   factors for each set
           CALL MDRSRV ('NDESS' , KNDSS , NUMESS )
-C           IXEESS - returned array containing the indices into the 
+C           IXEESS - returned array containing the indices into the
 C                    LTEESS array which are the locations of the 1st
 C                    element of each set
           CALL MDRSRV ('IXEESS', KIXESS, NUMESS)
@@ -416,8 +425,9 @@ C              Reserve scratch arrays for ZMESS
 
 C              Delete scratch arrays
             CALL MDDEL ('LTNNN')
-            CALL MDDEL ('NEWIX')
             CALL MDDEL ('IXESS')
+            CALL MDDEL ('NEWSD')
+            CALL MDDEL ('NEWIX')
             CALL MDSTAT(NERR, MEM)
             IF (NERR .GT. 0) THEN
               CALL MEMERR
@@ -473,7 +483,7 @@ C     including element block connectivity and attributed
 C ****************************************************************
 
       CALL WELB (NDBOUT, NELBLK, A(KVISEB),
-     &  (NUMEL .EQ. NUMELO), C(KNMLB), A(KNLNK), A(KNATR), 
+     &  (NUMEL .EQ. NUMELO), C(KNMLB), A(KNLNK), A(KNATR),
      &  A(KLINK), A(KATRIB), A(KNELB), A(KIXELB), A(KIXEBO),
      &  A(KXELEM),(NUMNP .NE. NUMNPO), A(KNODIX),
      &  A(KIDELB), A, IA, C, MERR)
@@ -482,7 +492,7 @@ C ****************************************************************
       CALL MDDEL ('LINK')
       CALL MDDEL ('ATRIB')
       CALL MDDEL ('NUMLNK')
-      CALL MDDEL ('NUMATR')     
+      CALL MDDEL ('NUMATR')
 
 C ****************************************************************
 C     Write the database names
@@ -592,10 +602,10 @@ C          IDESS - array containing side set IDS
           CALL MDRSRV ('IDESS' , KIDSS , NUMESS)
 C          NEESS - array containing the number of sides/elements for each sets
           CALL MDRSRV ('NEESS' , KNESS , NUMESS)
-C          KNDSS - Returned array containing the number of dist 
+C          KNDSS - Returned array containing the number of dist
 C             factors for each set
           CALL MDRSRV ('NDESS' , KNDSS , NUMESS )
-C          IXEESS - returned array containing the indices into the 
+C          IXEESS - returned array containing the indices into the
 C              LTEESS array which are the locations of the 1st
 C              element of each set
           CALL MDRSRV ('IXEESS', KIXESS, NUMESS)
@@ -714,7 +724,7 @@ C     Cumulative element counts for each output block
       CALL MCFIND ('NAMES', KNAMES, namlen*(NVARGL+NVARNP+NVAREL))
       CALL MCFIND ('BLKTYP', KNMLB, NELBLK * MXSTLN)
       CALL MDFIND ('SELELB', KSELEB, NELBLK)
-      
+
       IF (NSTEPS .GT. 0) THEN
         CALL MDFIND ('IPTIMS', KPTIMS, NSTEPS)
         CALL MDFIND ('TIMES',  KTIMES, NSTEPS)
@@ -802,7 +812,7 @@ C     --Evaluate the equations to get the output variables
 
 C     --Write the variables for the time step
 
-            CALL WRSTEP (NDBOUT, 1, MAXNE, A(KVVAL), A(KVISEB), 
+            CALL WRSTEP (NDBOUT, 1, MAXNE, A(KVVAL), A(KVISEB),
      *           A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM),
      *           A(KIDELB), A(KIEVOK), A(KGVSCR), A(KVARSC), MERR)
             IF (MERR .EQ. 1) RETURN
@@ -845,7 +855,7 @@ C      --Evaluate the equations to get the output variables
 
 C      --Write the variables for the time step
 
-          CALL WRSTEP (NDBOUT, NPT, MAXNE, A(KVVAL), A(KVISEB), 
+          CALL WRSTEP (NDBOUT, NPT, MAXNE, A(KVVAL), A(KVISEB),
      *      A(KXNODE), A(KIXELB), A(KIXEBO), A(KXELEM),
      *      A(KIDELB), A(KIEVOK), A(KGVSCR), A(KVARSC), MERR)
           IF (MERR .EQ. 1) RETURN
@@ -868,6 +878,12 @@ c         CALL NCSNC (NDBOUT, IERR)
       CALL MDDEL ('STACK')
       CALL MDDEL ('GVSCR')
       CALL MDDEL ('VARVAL')
+      CALL MDDEL ('IXELB')
+      CALL MDDEL ('IXELBO')
+      if (iszoom .or. isfilter .or. (nelblk .ne. nelbo)) then
+        call mddel ('IXNODE')
+        CALL MDdel ('IXELEM')
+      end if
       CALL MDSTAT(NERR, MEM)
       IF (NERR .GT. 0) THEN
         CALL MEMERR
@@ -894,5 +910,3 @@ c         CALL NCSNC (NDBOUT, IERR)
       i2array = intarr(irow, icol)
       return
       end
-
-

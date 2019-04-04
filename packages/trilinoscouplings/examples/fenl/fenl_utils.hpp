@@ -84,6 +84,10 @@ struct CMD {
   int ECHO;
   int ERROR;
   int COUNT;
+  bool UNIT_TEST;
+  double TEST_MEAN;
+  double TEST_STD_DEV;
+  double TEST_TOL;
 
   CMD() : USE_SERIAL(0),
           USE_THREADS(0),
@@ -132,7 +136,11 @@ struct CMD {
           VERBOSE(false),
           PRINT(false),
           PRINT_ITS(false),
-          SUMMARIZE(false)
+          SUMMARIZE(false),
+          UNIT_TEST(false),
+          TEST_MEAN(0.0),
+          TEST_STD_DEV(0.0),
+          TEST_TOL(1.0e-3)
     {}
 };
 

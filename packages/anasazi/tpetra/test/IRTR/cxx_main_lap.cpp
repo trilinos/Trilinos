@@ -51,8 +51,7 @@
 #include "AnasaziRTRSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 using namespace Teuchos;
@@ -76,13 +75,12 @@ int main(int argc, char *argv[])
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   const ST ONE  = SCT::one();
 
-  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   int MyPID = 0;
   int NumImages = 1;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   MyPID = rank(*comm);
   NumImages = size(*comm);
@@ -122,7 +120,7 @@ int main(int argc, char *argv[])
 
   // create map
   RCP<const Map<> > map = rcp (new Map<> (dim, 0, comm));
-  RCP<CrsMatrix<ST> > K = rcp(new CrsMatrix<ST>(map,4));
+  RCP<CrsMatrix<ST> > K = rcp(new CrsMatrix<ST>(map,4,Tpetra::StaticProfile));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {

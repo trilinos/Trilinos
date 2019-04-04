@@ -287,9 +287,9 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
   crsMat_t output_mat2;
   run_spgemm<crsMat_t, device>(input_mat, input_mat, SPGEMM_DEBUG, output_mat2);
 
-  SPGEMMAlgorithm algorithms [] = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED, SPGEMM_CUSPARSE,SPGEMM_MKL};
+  SPGEMMAlgorithm algorithms [] = {SPGEMM_KK_MEMORY, SPGEMM_KK_SPEED, SPGEMM_KK_MEMSPEED, /*SPGEMM_CUSPARSE, */SPGEMM_MKL};
 
-  for (int ii = 0; ii < 5; ++ii){
+  for (int ii = 0; ii < 4; ++ii){
 
     SPGEMMAlgorithm spgemm_algorithm = algorithms[ii];
 
@@ -301,14 +301,14 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
     case SPGEMM_CUSPARSE:
       //TODO: add these test failure cases for cusparse too.
       algo = "SPGEMM_CUSPARSE";
-#ifndef KERNELS_HAVE_CUSPARSE
+#if !defined(KERNELS_HAVE_CUSPARSE) && !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       is_expected_to_fail = true;
 #endif
       break;
 
     case SPGEMM_MKL:
       algo = "SPGEMM_MKL";
-#ifndef HAVE_KOKKOSKERNELS_MKL
+#if !defined(HAVE_KOKKOSKERNELS_MKL) && !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
       is_expected_to_fail = true;
 #endif
       //MKL requires scalar to be either float or double

@@ -435,7 +435,7 @@ setFieldData(const PHX::any& a)
       throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
     }
   }
-  catch (std::exception& e) {
+  catch (std::exception& ) {
     
     //std::string type_cast_name = Teuchos::demangleName(typeid(non_const_view).name());
     std::string type_cast_name = "???";

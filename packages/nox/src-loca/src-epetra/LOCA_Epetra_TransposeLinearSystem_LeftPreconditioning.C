@@ -62,7 +62,7 @@
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 LeftPreconditioning(
          const Teuchos::RCP<LOCA::GlobalData>& global_data,
-         const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+         const Teuchos::RCP<Teuchos::ParameterList>& /* solverParams */,
          const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys_) :
   globalData(global_data),
   linsys(linsys_),

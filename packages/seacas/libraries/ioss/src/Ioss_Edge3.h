@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "edge3";
+    static constexpr const char *name = "edge3";
 
     static void factory();
     ~Edge3() override;
@@ -75,7 +75,7 @@ namespace Ioss {
   private:
     static Edge3 instance_;
 
-    Edge3(const Edge3 &); // Do not implement
+    Edge3(const Edge3 &) = delete;
   };
 } // namespace Ioss
 #endif

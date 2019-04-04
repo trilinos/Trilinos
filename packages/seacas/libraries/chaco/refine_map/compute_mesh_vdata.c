@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,7 +42,7 @@ void compute_mesh_vdata(struct refine_vdata *vdata,        /* preference data fo
                         int *                vtx2node,     /* maps graph vtxs to mesh nodes */
                         int                  mesh_dims[3], /* size of mesh */
                         int                  dim /* dimension we are currently working in */
-                        )
+)
 {
   float above;      /* my preference to move up in each dimension */
   float below;      /* my preference to move down in each dimension */

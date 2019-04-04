@@ -36,22 +36,19 @@
 
 #include <algorithm>
 
-#include <boost/utility.hpp>
+#include <type_traits>
 
 namespace stk { namespace topology_detail {
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
 inline
-typename boost::enable_if_c< (Topology::num_permutations > 0u), std::pair<bool,unsigned> >::type
+typename std::enable_if< (Topology::num_permutations > 0u), std::pair<bool,unsigned> >::type
 equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
   Node permutation[Topology::num_nodes];
 
   for (unsigned i=0; i<Topology::num_permutations; ++i) {
-    Topology::permutation_nodes(a,i,permutation);
+    Topology::permutation_nodes(&a[0],i,permutation);
 
     if ( std::equal(permutation, permutation + Topology::num_nodes, &b[0]) )
       return std::make_pair(true,i);
@@ -59,12 +56,9 @@ equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
   return std::make_pair(false, 0);
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
 inline
-typename boost::enable_if_c< (Topology::num_permutations == 0u), std::pair<bool,unsigned> >::type
+typename std::enable_if< (Topology::num_permutations == 0u), std::pair<bool,unsigned> >::type
 equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
   if ( std::equal(&a[0], &a[0] + Topology::num_nodes, &b[0]) )
@@ -72,12 +66,71 @@ equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
   return std::make_pair(false, 0);
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
+template <class InputIt1, class InputIt2>
+STK_INLINE_FUNCTION
+bool stk_equal(InputIt1 first1, InputIt1 last1, InputIt2 first2)
+{
+  for (; first1 != last1; ++first1, ++first2) {
+    if (!(*first1 == *first2)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
+STK_INLINE_FUNCTION
+typename std::enable_if< (Topology::num_permutations > 0u), EquivalentPermutation >::type
+is_equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
+{
+  Node permutedNodes[Topology::num_nodes];
+
+  for (unsigned i = 0; i < Topology::num_permutations; ++i) {
+    Topology::permutation_nodes(&a[0], i, permutedNodes);
+
+    if ( stk_equal(permutedNodes, permutedNodes + Topology::num_nodes, &b[0]) ) {
+      return EquivalentPermutation(true, i);
+    }
+  }
+  return EquivalentPermutation(false, 0);
+}
+
+template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
+STK_INLINE_FUNCTION
+typename std::enable_if< (Topology::num_permutations == 0u), EquivalentPermutation>::type
+is_equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
+{
+  if ( stk_equal(&a[0], &a[0] + Topology::num_nodes, &b[0]) ) {
+    return EquivalentPermutation(true, 0);
+  }
+  return EquivalentPermutation(false, 0);
+}
+
+template<class InputIt, class OutputIt>
+STK_INLINE_FUNCTION
+OutputIt stk_copy(InputIt first, InputIt last, OutputIt d_first)
+{
+    while (first != last) {
+        *d_first++ = *first++;
+    }
+    return d_first;
+}
+
+template<class InputIt1, class InputIt2>
+STK_INLINE_FUNCTION
+bool stk_lexicographical_compare(InputIt1 first1, InputIt1 last1,
+                                 InputIt2 first2, InputIt2 last2)
+{
+    for ( ; (first1 != last1) && (first2 != last2); ++first1, (void) ++first2 ) {
+        if (*first1 < *first2) return true;
+        if (*first2 < *first1) return false;
+    }
+    return (first1 == last1) && (first2 != last2);
+}
+
 template <typename Topology, typename NodeArray, typename Node>
-inline
-typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
+STK_INLINE_FUNCTION
+typename std::enable_if< (Topology::num_permutations > 0u), unsigned >::type
 lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
 {
   Node permutation[Topology::num_nodes];
@@ -88,28 +141,28 @@ lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bo
   unsigned min_permutation_index = 0;
   Node min_permutation[Topology::num_nodes];
 
-  std::copy(nbegin,nend,min_permutation);
+  stk_copy(nbegin,nend,min_permutation);
 
   if (!only_positive_permutations) {
     for (unsigned i=1; i<Topology::num_permutations; ++i) {
-      Topology::permutation_nodes(nodes,i,permutation);
+      Topology::permutation_nodes(nbegin,i,permutation);
 
-      if ( std::lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
-                                         min_permutation, min_permutation + Topology::num_nodes ) )
+      if ( stk_lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
+                                        min_permutation, min_permutation + Topology::num_nodes ) )
       {
-        std::copy(permutation, permutation + Topology::num_nodes, min_permutation);
+        stk_copy(permutation, permutation + Topology::num_nodes, min_permutation);
         min_permutation_index = i;
       }
     }
   }
   else {
     for (unsigned i=1; i<Topology::num_positive_permutations; ++i) {
-      Topology::permutation_nodes(nodes,i,permutation);
+      Topology::permutation_nodes(nbegin,i,permutation);
 
-      if ( std::lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
-                                         min_permutation, min_permutation + Topology::num_nodes ) )
+      if ( stk_lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
+                                        min_permutation, min_permutation + Topology::num_nodes ) )
       {
-        std::copy(permutation, permutation + Topology::num_nodes, min_permutation);
+        stk_copy(permutation, permutation + Topology::num_nodes, min_permutation);
         min_permutation_index = i;
       }
     }
@@ -119,12 +172,9 @@ lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bo
 
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
-inline
-typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
+STK_INLINE_FUNCTION
+typename std::enable_if< (Topology::num_permutations > 0u), unsigned >::type
 lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &nodes, const NodeArray &element_nodes, Node)
 {
   Node permutation[Topology::num_nodes];
@@ -133,10 +183,9 @@ lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const No
 
   //am i positive or negative
   for (unsigned i=0; i<Topology::num_permutations; ++i) {
-      Topology::permutation_nodes(nodes, i, permutation);
+      Topology::permutation_nodes(&nodes[0], i, permutation);
 
-      if ( std::equal( permutation,     permutation     + Topology::num_nodes,
-                         &element_nodes[0] ) )
+      if ( stk_equal( permutation, permutation + Topology::num_nodes, &element_nodes[0] ) )
       {
           my_permutation_index = i;
           break;
@@ -155,14 +204,14 @@ lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const No
       }
       min_permutation_index = low;
       Node min_permutation[Topology::num_nodes];
-      Topology::permutation_nodes(element_nodes, min_permutation_index, min_permutation);
+      Topology::permutation_nodes(&element_nodes[0], min_permutation_index, min_permutation);
       for (unsigned i=low + 1; i<high; ++i) {
-          Topology::permutation_nodes(element_nodes, i, permutation);
+          Topology::permutation_nodes(&element_nodes[0], i, permutation);
 
-          if ( std::lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
-                                             min_permutation, min_permutation + Topology::num_nodes ) )
+          if ( stk_lexicographical_compare( permutation,     permutation     + Topology::num_nodes,
+                                            min_permutation, min_permutation + Topology::num_nodes ) )
           {
-              std::copy(permutation, permutation + Topology::num_nodes, min_permutation);
+              stk_copy(permutation, permutation + Topology::num_nodes, min_permutation);
               min_permutation_index = i;
           }
       }
@@ -171,24 +220,17 @@ lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const No
       min_permutation_index = Topology::num_permutations;
   }
   return min_permutation_index;
-
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
-inline
-typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
+STK_INLINE_FUNCTION
+typename std::enable_if< (Topology::num_permutations == 0u), unsigned >::type
 lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &, const NodeArray &, Node)
 { return 0; }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
-inline
-typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
+STK_INLINE_FUNCTION
+typename std::enable_if< (Topology::num_permutations == 0u), unsigned >::type
 lexicographical_smallest_permutation_helper(Topology, const NodeArray &, bool , Node)
 { return 0; }
 

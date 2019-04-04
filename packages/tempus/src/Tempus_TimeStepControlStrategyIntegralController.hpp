@@ -67,7 +67,7 @@ public:
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc,
     Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
-    Status & integratorStatus) override
+    Status & /* integratorStatus */) override
   {
 
      // Take first step with initial time step provided
@@ -84,7 +84,6 @@ public:
      // assumes the embedded solution is the low order solution
      int order = metaData->getOrder() - 1;
      Scalar dt = metaData->getDt();
-     Teuchos::RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
      //bool printChanges = solutionHistory->getVerbLevel() !=
         //Teuchos::as<int>(Teuchos::VERB_NONE);
 
@@ -128,7 +127,8 @@ public:
      // new (optimal) suggested time step
      dt = beta * dt;
 
-     if (stepperState->stepperStatus_ == Status::PASSED) {
+     if (workingState->getSolutionStatus() == Status::PASSED or
+         workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
            dt = std::min(dt, metaData->getDt());
         } else {

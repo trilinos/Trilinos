@@ -264,6 +264,23 @@ public:
     this->applyUnary(Elementwise::Fill<Real>(C));
   }
 
+  /** \brief Set vector to be uniform random between [l,u].
+
+             @param[in]      l     is a the lower bound.
+             @param[in]      u     is a the upper bound.
+
+             On return the components of \f$\mathtt{*this}\f$ are uniform
+             random numbers on the interval \f$[l,u]\f$.
+       	     The default implementation uses #applyUnary methods for the
+       	     computation. Please overload if a more efficient implementation is
+             needed.
+
+             ---
+  */
+  virtual void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    Elementwise::UniformlyRandom<Real> ur(l,u);
+    this->applyUnary(ur);
+  }
 
   /** \brief Verify vector-space methods.
 

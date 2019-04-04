@@ -63,8 +63,8 @@ Amesos2LinearOpWithSolve<Scalar>::Amesos2LinearOpWithSolve(
   const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
   const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
   const Teuchos::RCP< Solver > &amesos2Solver,
-  const EOpTransp amesos2SolverTransp,
-  const Scalar amesos2SolverScalar
+  const EOpTransp /* amesos2SolverTransp */,
+  const Scalar /* amesos2SolverScalar */
   )
 {
   this->initialize(fwdOp,fwdOpSrc,amesos2Solver);
@@ -221,7 +221,7 @@ bool Amesos2LinearOpWithSolve<Scalar>::solveSupportsImpl(EOpTransp M_trans) cons
 
 template<typename Scalar>
 bool Amesos2LinearOpWithSolve<Scalar>::solveSupportsSolveMeasureTypeImpl(
-  EOpTransp M_trans, const SolveMeasureType& solveMeasureType
+  EOpTransp /* M_trans */, const SolveMeasureType& /* solveMeasureType */
   ) const
 {
   return true; // I am a direct solver so I should be able to do it all!
@@ -231,10 +231,10 @@ bool Amesos2LinearOpWithSolve<Scalar>::solveSupportsSolveMeasureTypeImpl(
 template<typename Scalar>
 SolveStatus<Scalar>
 Amesos2LinearOpWithSolve<Scalar>::solveImpl(
-  const EOpTransp M_trans,
+  const EOpTransp /* M_trans */,
   const MultiVectorBase<Scalar> &B,
   const Ptr<MultiVectorBase<Scalar> > &X,
-  const Ptr<const SolveCriteria<Scalar> > solveCriteria
+  const Ptr<const SolveCriteria<Scalar> > /* solveCriteria */
   ) const
 {
   auto Btpetra = ConverterT::getConstTpetraMultiVector(Teuchos::rcpFromRef(B));

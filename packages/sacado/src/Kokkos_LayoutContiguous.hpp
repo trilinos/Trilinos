@@ -40,21 +40,13 @@ namespace Kokkos {
 template <typename Layout, unsigned Stride = 1>
 struct LayoutContiguous : public Layout {
 
-  enum { stride = Stride };
+  enum { scalar_stride = Stride };
 
   //! Tag this class as a kokkos array layout
   typedef LayoutContiguous array_layout ;
 
-  LayoutContiguous( LayoutContiguous const & ) = default ;
-  LayoutContiguous( LayoutContiguous && ) = default ;
-  LayoutContiguous & operator = ( LayoutContiguous const & ) = default ;
-  LayoutContiguous & operator = ( LayoutContiguous && ) = default ;
-
-  KOKKOS_INLINE_FUNCTION
-  constexpr LayoutContiguous(
-    size_t N0 = 0 , size_t N1 = 0 , size_t N2 = 0 , size_t N3 = 0
-  , size_t N4 = 0 , size_t N5 = 0 , size_t N6 = 0 , size_t N7 = 0 )
-    : Layout( N0 , N1 , N2 , N3 , N4 , N5 , N6 , N7 ) {}
+  // Pull in Layout's constructors
+  using Layout::Layout;
 
   KOKKOS_INLINE_FUNCTION
   constexpr LayoutContiguous( Layout const & layout ) : Layout(layout) {}
@@ -84,23 +76,8 @@ struct inner_layout< LayoutContiguous<Layout> > {
   typedef Layout type;
 };
 
-template <class Layout, int32_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
-  typedef Layout type;
-};
-
-template <class Layout, int64_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
-  typedef Layout type;
-};
-
-template <class Layout, uint32_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
-  typedef Layout type;
-};
-
-template <class Layout, uint64_t N>
-struct inner_layout< LayoutContiguous<Layout, N> > {
+template <class Layout, unsigned Stride>
+struct inner_layout< LayoutContiguous<Layout, Stride> > {
   typedef Layout type;
 };
 

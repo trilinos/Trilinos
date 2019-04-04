@@ -5,7 +5,7 @@ namespace panzer{
 void reorder(std::vector<int> & order,std::function<void(int,int)> swapper) 
 {
   // each entry has to be sorted
-  for(std::size_t i=0;i<order.size();i++) { 
+  for(int i=0;i<static_cast<int>(order.size());i++) { 
 
     // a, b, c
     // 2, 0, 1

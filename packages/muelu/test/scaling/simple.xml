@@ -1,3 +1,4 @@
 <ParameterList name="MueLu">
+  <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
   <Parameter name="max levels" type="int" value="2"/>
 </ParameterList>

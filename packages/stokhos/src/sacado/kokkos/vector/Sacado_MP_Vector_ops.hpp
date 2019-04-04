@@ -224,6 +224,7 @@ MP_UNARYOP_MACRO(asinh, ASinhOp, std::asinh)
 MP_UNARYOP_MACRO(atanh, ATanhOp, std::atanh)
 MP_UNARYOP_MACRO(abs, AbsOp, std::abs)
 MP_UNARYOP_MACRO(fabs, FAbsOp, std::fabs)
+MP_UNARYOP_MACRO(ceil, CeilOp, std::ceil)
 
 #undef MP_UNARYOP_MACRO
 
@@ -962,3 +963,16 @@ namespace Sacado {
   } // namespace MP
 
 } // namespace Sacado
+
+//-------------------------- Standard library -----------------------
+namespace std {
+  template <typename T>
+  bool isfinite(const Sacado::MP::Expr<T>& xx) {
+    using std::isfinite;
+    const typename Sacado::MP::Expr<T>::derived_type& x = xx.derived();
+    for (int i=0; i<x.size(); i++)
+      if (!isfinite(x.coeff(i)))
+        return false;
+      return true;
+  }
+}

@@ -37,11 +37,14 @@
 #include "Sacado_Fad_ExpressionFwd.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
 
+// Note:  Sacado::Fad::Ops are forward-declared here, instead of in macros
+// below.
+#include "Sacado_Fad_Ops_Fwd.hpp"
+
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-    template <typename T> class FADOP;                                  \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
@@ -140,7 +143,6 @@ UNARYFUNC_MACRO(cbrt, CbrtOp)
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-    template <typename T1, typename T2> class FADOP;                    \
     template <typename T> class ConstExpr;                              \
     template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \

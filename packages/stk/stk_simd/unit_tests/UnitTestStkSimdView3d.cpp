@@ -10,7 +10,6 @@
 #include <unit_tests/StkSimdViewFixture.hpp>
 
 
-
 template <typename ArrayStyle, typename Real, typename Layout, int dim>
 struct ViewMaker {
   stk::simd::View<ArrayStyle, Layout> make_view(int N, int M, int L) {

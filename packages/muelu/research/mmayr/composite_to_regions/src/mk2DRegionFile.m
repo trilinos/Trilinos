@@ -1,4 +1,16 @@
-function [globalDims,localDims,relCorner,regionCorner] = mk2RegionFile(filename)
+% mk2DRegionFile.m
+%
+% Input
+%   filename  filename of case file
+%   outDir    path to output directory
+%
+% Output
+%   globalDims
+%   localDims
+%   relCorner
+%   regionCorner
+%
+function [globalDims,localDims,relCorner,regionCorner] = mk2RegionFile(filename, outDir)
 %
 %  writes mapping to a file based on information below.
 %
@@ -199,7 +211,7 @@ elseif(strcmp(filename, 'caseSeventeen') == true)  % caseSeventeen
   pxProcChange         = [31];
   pyProcChange         = [31];
   
-elseif(strcmp(filename, 'caseEightteen') == true)  % caseEightteen
+elseif(strcmp(filename, 'caseEighteen') == true)  % caseEightteen
 
 %px:0   0   0   0   1   1   1
 %px:            1                
@@ -258,7 +270,9 @@ elseif(strcmp(filename, 'caseTwenty') == true)  % caseTwenty
   ryInterfaceLocations = [9 18];   
   pxProcChange         = [10];
   pyProcChange         = [10];
-
+  
+else
+  error('Unknown case %s', filename);
 end
 
 nrx = length(rxInterfaceLocations);
@@ -276,7 +290,7 @@ relCorner   = -ones(nRegions,nProcs,2);
 regionCorner= -ones(nRegions,2);
 localDims =  -ones(nRegions,nProcs,2);
 
-fp = fopen(filename,'w');
+fp = fopen(sprintf('%s/%s', outDir, filename), 'w');
 if fp ~= -1, 
     fprintf(fp,'     #nodes  #regions   #procs   #which case\n');
     fprintf(fp,'%8d %8d %8d       %s\n',nNodes,nRegions,nProcs,whichCase);

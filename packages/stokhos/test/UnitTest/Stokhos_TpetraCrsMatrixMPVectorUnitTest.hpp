@@ -41,6 +41,7 @@
 
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 
 // Teuchos
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
@@ -48,8 +49,7 @@
 // Tpetra
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -116,12 +116,7 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 // Tests
 //
 
-// Vector size used in tests -- Needs to be what is instantiated for CPU/MIC/GPU
-#if defined(__CUDACC__)
-const int VectorSize = 16;
-#else
-const int VectorSize = 16;
-#endif
+const int VectorSize = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 //
 // Test vector addition
@@ -147,8 +142,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
@@ -227,8 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
@@ -329,8 +322,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
@@ -418,8 +410,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
@@ -534,8 +525,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     Kokkos::initialize();
 
   // Comm
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
 
   // Map
   GlobalOrdinal nrow = 10;
@@ -661,8 +651,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -783,8 +772,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -921,8 +909,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -1043,8 +1030,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -1189,8 +1175,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -1345,8 +1330,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -1498,8 +1482,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Build banded matrix
   GlobalOrdinal nrow = 10;
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -1661,8 +1644,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
@@ -1849,8 +1831,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // 1-D Laplacian matrix
   GlobalOrdinal nrow = 50;
   BaseScalar h = 1.0 / static_cast<BaseScalar>(nrow-1);
-  RCP<const Tpetra_Comm> comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Tpetra_Comm> comm = Tpetra::getDefaultComm();
   RCP<const Tpetra_Map> map =
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);

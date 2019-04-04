@@ -34,7 +34,7 @@
 #include <stk_mesh/baseImpl/PartImpl.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/Part.hpp>       // for insert
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, operator<<, etc
 #include "stk_topology/topology.hpp"    // for topology::rank
@@ -48,14 +48,14 @@ namespace mesh {
 
 namespace impl {
 
-void PartImpl::add_part_to_subset( Part & part)
+bool PartImpl::add_part_to_subset( Part & part)
 {
-  insert( m_subsets, part );
+  return insert( m_subsets, part );
 }
 
-void PartImpl::add_part_to_superset( Part & part )
+bool PartImpl::add_part_to_superset( Part & part )
 {
-  insert( m_supersets, part );
+  return insert( m_supersets, part );
 }
 
 // Subset part constructor:

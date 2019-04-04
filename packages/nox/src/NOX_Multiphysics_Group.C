@@ -50,8 +50,8 @@
 
 NOX::Multiphysics::Group::Group(
           const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
-          const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-          const Teuchos::RCP<Teuchos::ParameterList>& p) :
+          const Teuchos::RCP<NOX::StatusTest::Generic>& /* t */,
+          const Teuchos::RCP<Teuchos::ParameterList>& /* p */) :
   solversVecPtr(solvers),
   normRHS(0.0)
 {
@@ -107,20 +107,20 @@ NOX::Multiphysics::Group::operator=(const NOX::Abstract::Group& source)
 }
 
 NOX::Abstract::Group &
-NOX::Multiphysics::Group::operator=(const Group& source)
+NOX::Multiphysics::Group::operator=(const Group& /* source */)
 {
   return *this;
 }
 
 void
-NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector& y)
+NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector& /* y */)
 {
   resetIsValid();
 }
 
 void
-NOX::Multiphysics::Group::computeX(const NOX::Abstract::Group& grp,
-             const NOX::Abstract::Vector& d, double step)
+NOX::Multiphysics::Group::computeX(const NOX::Abstract::Group& /* grp */,
+             const NOX::Abstract::Vector& /* d */, double /* step */)
 {
   resetIsValid();
 }

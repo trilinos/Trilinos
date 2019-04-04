@@ -105,7 +105,7 @@ void test_sincos_fsa(const bool use_combined_method,
     for (int i=0; i<num_param; ++i)
       Thyra::assign(DxDp0->col(i).ptr(),
                     *(model->getExactSensSolution(i, t0).get_x()));
-    integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+    integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                 DxDp0, Teuchos::null, Teuchos::null);
 
     // Integrate to timeMax
@@ -140,7 +140,7 @@ void test_sincos_fsa(const bool use_combined_method,
         Thyra::createMembers(model->get_x_space(), num_param);
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
+        double time_i = solutionState->getTime();
         RCP<const DMVPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
         RCP<const Thyra::VectorBase<double> > x_plot =
@@ -148,12 +148,12 @@ void test_sincos_fsa(const bool use_combined_method,
         RCP<const Thyra::MultiVectorBase<double> > DxDp_plot =
           x_prod_plot->getMultiVector()->subView(Teuchos::Range1D(1,num_param));
         RCP<const Thyra::VectorBase<double> > x_exact_plot =
-          model->getExactSolution(time).get_x();
+          model->getExactSolution(time_i).get_x();
         for (int j=0; j<num_param; ++j)
           Thyra::assign(DxDp_exact_plot->col(j).ptr(),
-                        *(model->getExactSensSolution(j, time).get_x()));
+                        *(model->getExactSensSolution(j, time_i).get_x()));
         ftmp << std::fixed << std::setprecision(7)
-             << time
+             << time_i
              << std::setw(11) << get_ele(*(x_plot), 0)
              << std::setw(11) << get_ele(*(x_plot), 1);
         for (int j=0; j<num_param; ++j)

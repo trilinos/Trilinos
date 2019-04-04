@@ -42,14 +42,6 @@
 #ifndef _TRILINOS_UTIL_H_
 #define _TRILINOS_UTIL_H_
 
-class Epetra_Comm;
-class Epetra_Vector;
-class Epetra_Map;
-class Epetra_BlockMap;
-class Epetra_CrsMatrix;
-class Epetra_VbrMatrix;
-class Epetra_MultiVector;
-
 #define Trilinos_Util_max(x,y) (( x > y ) ? x : y)     /* max function  */
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
 
@@ -173,9 +165,6 @@ using std::sqrt;
 
 #endif /*ndef TRILINOS_NO_CONFIG_H*/
 
-#include "Epetra_ConfigDefs.h"
-#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
-
 void Trilinos_Util_read_hb(const char *data_file, int MyPID,
     int *N_global, int *n_nonzeros,
     double **val, int **bindx,
@@ -189,6 +178,114 @@ void Trilinos_Util_read_coo(const char *data_file, int MyPID,
     int *N_global, int *n_nonzeros,
     double **val, int **bindx,
     double **x, double **b, double **xexact);
+
+double Trilinos_Util_smsrres (int m, int n,
+    double *val, int *indx,
+    double *xlocal, double *x, double *b);
+
+double Trilinos_Util_scscres (int isym, int m, int n,
+    double *val, int *indx, int *pntr,
+    double *x, double *b);
+
+void  Trilinos_Util_scscmv (int isym, int m, int n,
+    double *val, int *indx, int *pntr,
+    double *x, double *b);
+
+double Trilinos_Util_svbrres (int m, int n, int m_blk,
+    double *val, int *indx, int *bindx, int *rpntr,
+    int *cpntr, int *bpntrb, int *bpntre,
+    double *x, double *b);
+
+void Trilinos_Util_msr2vbr(
+    double val[], int indx[], int rnptr[],
+    int cnptr[], int bnptr[],
+    int bindx[], int msr_bindx[], double msr_val[],
+    int total_blk_rows, int total_blk_cols, int blk_space,
+    int nz_space, int blk_type);
+
+int Trilinos_Util_find_block_col(int cnptr[], int column, int
+    max_blocks, int blk_size);
+
+int Trilinos_Util_find_block_in_row(int bindx[], int bnptr[], int
+    blk_row, int blk_col,
+    int indx[], int no_elements, double val[],
+    int blk_space, int nz_space);
+
+
+void Trilinos_Util_add_new_ele(int cnptr[], int col, int blk_row, int
+    bindx[], int bnptr[],
+    int indx[], double val[], int row, double new_ele,
+    int maxcols, int blk_space, int nz_space, int blk_type);
+
+int Trilinos_Util_find_closest_not_larger(int key, int list[], int length);
+
+void Trilinos_Util_convert_values_to_ptrs(int array[], int length, int start);
+
+int Trilinos_Util_csrcsc(int n, int n2, int job, int ipos, double * a,
+    int *ja, int *ia, double *ao, int *jao, int *iao);
+
+int Trilinos_Util_csrmsr( int n, double *a, int *ja, int *ia, double *ao,
+    int *jao, double *wk, int *iwk);
+
+int Trilinos_Util_ssrcsr( int job, int value2, int nrow, double *a,
+    int *ja, int *ia, int nzmax,
+    double *ao, int *jao, int *iao, int *indu,
+    int *iwk);
+
+int Trilinos_Util_coocsr( int nrow, int nnz, double *a, int *ir, int *jc,
+    double *ao, int *jao, int *iao);
+
+
+struct SPBLASMAT_STRUCT {
+  int n;
+  double *val;
+  int *indx;
+  int *bindx;
+  int *rpntr;
+  int *cpntr;
+  int *bpntrb;
+  int *bpntre;
+  int buffersize;
+  int bufferstride;
+  double *buffer;
+  int *ncolvec;
+  double nops_per_rhs;
+  int minblocksize;
+  int maxblocksize;
+};
+typedef struct SPBLASMAT_STRUCT SPBLASMAT;
+
+#define MAXNRHS 1
+
+void  Trilinos_Util_duscr_vbr(
+    int n, double *val, int *indx, int *bindx,
+    int *rpntr, int *cpntr, int *bpntrb, int *bpntre,
+    SPBLASMAT *A
+    );
+
+void Trilinos_Util_dusmm(
+    int m, int nrhs, int k, double alpha, SPBLASMAT *A,
+    double *x, int xstride, double beta, double *b, int bstride
+    );
+void  Trilinos_Util_dusds_vbr( SPBLASMAT *A);
+
+void Trilinos_Util_write_vec(const char *filename, int n_equations, double *x);
+
+void Trilinos_Util_read_vec(const char *filename, int n_equations, double *x);
+
+// Start of Epetra dependencies
+#ifdef HAVE_TRIUTILS_EPETRA
+
+class Epetra_Comm;
+class Epetra_Vector;
+class Epetra_Map;
+class Epetra_BlockMap;
+class Epetra_CrsMatrix;
+class Epetra_VbrMatrix;
+class Epetra_MultiVector;
+
+#include "Epetra_ConfigDefs.h"
+#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 
 void Trilinos_Util_ReadHb2Epetra_internal(const char *data_file,
     const Epetra_Comm  &comm,
@@ -301,96 +398,6 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, const char *part_file,
     double **val, int **indx, int **rpntr, int **cpntr,
     int **bpntr, int **bindx);
 
-double Trilinos_Util_smsrres (int m, int n,
-    double *val, int *indx,
-    double *xlocal, double *x, double *b);
-
-double Trilinos_Util_scscres (int isym, int m, int n,
-    double *val, int *indx, int *pntr,
-    double *x, double *b);
-
-void  Trilinos_Util_scscmv (int isym, int m, int n,
-    double *val, int *indx, int *pntr,
-    double *x, double *b);
-
-double Trilinos_Util_svbrres (int m, int n, int m_blk,
-    double *val, int *indx, int *bindx, int *rpntr,
-    int *cpntr, int *bpntrb, int *bpntre,
-    double *x, double *b);
-
-void Trilinos_Util_msr2vbr(
-    double val[], int indx[], int rnptr[],
-    int cnptr[], int bnptr[],
-    int bindx[], int msr_bindx[], double msr_val[],
-    int total_blk_rows, int total_blk_cols, int blk_space,
-    int nz_space, int blk_type);
-
-int Trilinos_Util_find_block_col(int cnptr[], int column, int
-    max_blocks, int blk_size);
-
-int Trilinos_Util_find_block_in_row(int bindx[], int bnptr[], int
-    blk_row, int blk_col,
-    int indx[], int no_elements, double val[],
-    int blk_space, int nz_space);
-
-
-void Trilinos_Util_add_new_ele(int cnptr[], int col, int blk_row, int
-    bindx[], int bnptr[],
-    int indx[], double val[], int row, double new_ele,
-    int maxcols, int blk_space, int nz_space, int blk_type);
-
-int Trilinos_Util_find_closest_not_larger(int key, int list[], int length);
-
-void Trilinos_Util_convert_values_to_ptrs(int array[], int length, int start);
-
-int Trilinos_Util_csrcsc(int n, int n2, int job, int ipos, double * a,
-    int *ja, int *ia, double *ao, int *jao, int *iao);
-
-int Trilinos_Util_csrmsr( int n, double *a, int *ja, int *ia, double *ao,
-    int *jao, double *wk, int *iwk);
-
-int Trilinos_Util_ssrcsr( int job, int value2, int nrow, double *a,
-    int *ja, int *ia, int nzmax,
-    double *ao, int *jao, int *iao, int *indu,
-    int *iwk);
-
-int Trilinos_Util_coocsr( int nrow, int nnz, double *a, int *ir, int *jc,
-    double *ao, int *jao, int *iao);
-
-
-struct SPBLASMAT_STRUCT {
-  int n;
-  double *val;
-  int *indx;
-  int *bindx;
-  int *rpntr;
-  int *cpntr;
-  int *bpntrb;
-  int *bpntre;
-  int buffersize;
-  int bufferstride;
-  double *buffer;
-  int *ncolvec;
-  double nops_per_rhs;
-  int minblocksize;
-  int maxblocksize;
-};
-typedef struct SPBLASMAT_STRUCT SPBLASMAT;
-
-#define MAXNRHS 1
-
-void  Trilinos_Util_duscr_vbr(
-    int n, double *val, int *indx, int *bindx,
-    int *rpntr, int *cpntr, int *bpntrb, int *bpntre,
-    SPBLASMAT *A
-    );
-
-void Trilinos_Util_dusmm(
-    int m, int nrhs, int k, double alpha, SPBLASMAT *A,
-    double *x, int xstride, double beta, double *b, int bstride
-    );
-void  Trilinos_Util_dusds_vbr( SPBLASMAT *A);
-
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void Trilinos_Util_GenerateCrsProblem(
@@ -493,8 +500,6 @@ int Trilinos_Util_ReadTriples2Epetra64(
 
 #endif
 
-void Trilinos_Util_write_vec(const char *filename, int n_equations, double *x);
-
-void Trilinos_Util_read_vec(const char *filename, int n_equations, double *x);
+#endif //ifdef HAVE_TRIUTILS_EPETRA
 
 #endif /* _TRILINOS_UTIL_H_ */

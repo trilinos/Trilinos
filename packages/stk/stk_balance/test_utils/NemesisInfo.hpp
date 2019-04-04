@@ -108,14 +108,14 @@ struct NemesisInfo
         }
         else
         {
-            ex_get_node_num_map(exoid, node_num_map.data());
+            ex_get_id_map(exoid, EX_NODE_MAP, node_num_map.data());
         }
     }
 
     void fill_elem_num_map(int exoid, size_t num_elements_this_subdomain)
     {
         elem_num_map.resize(num_elements_this_subdomain,0);
-        ex_get_elem_num_map(exoid, elem_num_map.data());
+        ex_get_id_map(exoid, EX_ELEM_MAP, elem_num_map.data());
     }
 
     void add_nemesis_info_to_exodus_file(int exoid, stk::mesh::Part* this_subdomain, int which_proc, int num_total_procs)

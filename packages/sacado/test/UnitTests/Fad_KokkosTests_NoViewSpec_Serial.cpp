@@ -38,6 +38,7 @@
 #include "Kokkos_Core.hpp"
 
 // Instantiate tests for Serial device
+#define SACADO_TEST_DFAD 1
 using Kokkos::Serial;
 VIEW_FAD_TESTS_D( Serial )
 

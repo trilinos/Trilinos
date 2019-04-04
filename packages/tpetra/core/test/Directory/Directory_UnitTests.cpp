@@ -41,8 +41,7 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Directory.hpp>
 
 #include <Teuchos_UnitTestHarness.hpp>
@@ -59,7 +58,6 @@ namespace {
   using Teuchos::outArg;
   using Tpetra::Map;
   using Tpetra::Directory;
-  using Tpetra::DefaultPlatform;
   using Tpetra::LookupStatus;
   using Tpetra::IDNotPresent;
   using Tpetra::AllIDsPresent;
@@ -89,7 +87,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::getDefaultComm ();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

@@ -22,6 +22,7 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
+
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::
 predictVelocity(Thyra::VectorBase<Scalar>& vPred,
@@ -127,6 +128,19 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 
 
 template<class Scalar>
+StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
+  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
+
+template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
@@ -135,13 +149,16 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
 
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -171,6 +188,7 @@ void StepperHHTAlpha<Scalar>::initialize()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
 }
 
@@ -233,14 +251,22 @@ void StepperHHTAlpha<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
-      Thyra::put_scalar(0.0, a_init.ptr());
-      wrapperModel->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
+      if (this->initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
+        //Throw an exception if initial_guess is not compatible with solution
+        bool is_compatible = (a_init->space())->isCompatible(*this->initial_guess_->space());
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            is_compatible != true, std::logic_error,
+              "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
+              << "for Newton is not compatible with solution vector!\n");
+        Thyra::copy(*this->initial_guess_, a_init.ptr());
+      }
+      else { //if no initial_guess_ provide, set 0 initial guess
+        Thyra::put_scalar(0.0, a_init.ptr());
+      }
+      wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
-      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-      else
-        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(sStatus);  // Converged --> pass.
       Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
@@ -262,7 +288,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     predictVelocity_alpha_f(*v_pred, *v_old);
 
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(a_old,v_pred,d_pred,dt,t,beta_,gamma_);
+    wrapperModel->initializeNewmark(v_pred,d_pred,dt,t,beta_,gamma_);
 
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
@@ -274,10 +300,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
-    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
   }
   return;
@@ -319,7 +342,7 @@ std::string StepperHHTAlpha<Scalar>::description() const
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -448,10 +471,11 @@ StepperHHTAlpha<Scalar>::getValidParameters() const
 #endif
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", this->description());
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
-          "Name of ParameterList containing the solver specifications.");
+  pl->set<std::string>("Stepper Type", this->description());
+  this->getValidParametersBasic(pl);
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
+    "Name of ParameterList containing the solver specifications.");
 
   return pl;
 }
@@ -464,13 +488,12 @@ StepperHHTAlpha<Scalar>::getDefaultParameters() const
 #endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  pl->set<bool>       ("Zero Initial Guess", false);
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 

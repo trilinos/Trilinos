@@ -379,6 +379,8 @@ int parallel_size();
  */
 int parallel_rank();
 
+void set_mpi_communicator(MPI_Comm communicator);
+
 /// @}
 ///
 

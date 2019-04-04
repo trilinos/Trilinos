@@ -44,7 +44,8 @@
 
 #include "Sacado_Traits.hpp"
 
-#include "Kokkos_Core.hpp"
+#include "Kokkos_Macros.hpp"
+#include "Kokkos_Core_fwd.hpp"
 
 namespace Sacado {
 

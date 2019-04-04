@@ -97,6 +97,7 @@ namespace MueLuTests {
     out << "equal to the number of fine degrees of freedom." << std::endl;
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+    typedef typename Xpetra::MultiVector<magnitude_type,LO,GO,NO> RealValuedMultiVector;
 
     Level fineLevel, coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -104,9 +105,14 @@ namespace MueLuTests {
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
     fineLevel.Set("A",A);
 
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
+
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
     fineLevel.Set("onesVector",fineOnes);
+    fineLevel.Set("Coordinates", coordinates);
 
     RCP<TentativePFactory>    TentativePFact = rcp(new TentativePFactory());
     RCP<TransPFactory>        RFact = rcp(new TransPFactory());
@@ -151,8 +157,15 @@ namespace MueLuTests {
 
     out << "Tests usage on a three-level hierarchy." << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     GO nx = 199;
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx);
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
 
 
     // Set up three level hierarchy.
@@ -164,7 +177,8 @@ namespace MueLuTests {
     fineLevel->Set("A",A);                       // set fine level matrix
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),1);
     nullSpace->putScalar( (SC) 1.0);
-    fineLevel->Set("Nullspace",nullSpace);       // set null space information for finest level
+    fineLevel->Set("Nullspace", nullSpace);       // set null space information for finest level
+    fineLevel->Set("Coordinates", coordinates);   // set coordinates on finest level
 
     RCP<CoupledAggregationFactory> CoupledAggFact = rcp(new CoupledAggregationFactory());
     CoupledAggFact->SetMinNodesPerAggregate(3);

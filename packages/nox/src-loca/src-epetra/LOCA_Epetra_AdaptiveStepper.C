@@ -393,7 +393,7 @@ LOCA::Epetra::AdaptiveStepper::start() {
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Epetra::AdaptiveStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
+LOCA::Epetra::AdaptiveStepper::finish(LOCA::Abstract::Iterator::IteratorStatus /* itStatus */)
 {
   std::string callingFunction = "LOCA_AdaptiveStepper::finish()";
 
@@ -786,7 +786,7 @@ LOCA::Epetra::AdaptiveStepper::iterate()
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::Epetra::AdaptiveStepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Epetra::AdaptiveStepper::compute(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   NOX::StatusTest::StatusType solverStatus;
 

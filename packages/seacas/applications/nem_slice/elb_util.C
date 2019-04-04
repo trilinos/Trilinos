@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,8 +31,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
-* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -221,17 +221,17 @@ void clean_string(char inp_str[], const char *tokens)
 } /*---------------- End clean_string() -----------------*/
 
 namespace {
-/*
- * The following 'qsort' routine is modified from Sedgewicks
- * algorithm It selects the pivot based on the median of the left,
- * right, and center values to try to avoid degenerate cases ocurring
- * when a single value is chosen.  It performs a quicksort on
- * intervals down to the GDS_QSORT_CUTOFF size and then performs a final
- * insertion sort on the almost sorted final array.  Based on data in
- * Sedgewick, the GDS_QSORT_CUTOFF value should be between 5 and 20.
- *
- * See Sedgewick for further details
- */
+  /*
+   * The following 'qsort' routine is modified from Sedgewicks
+   * algorithm It selects the pivot based on the median of the left,
+   * right, and center values to try to avoid degenerate cases ocurring
+   * when a single value is chosen.  It performs a quicksort on
+   * intervals down to the GDS_QSORT_CUTOFF size and then performs a final
+   * insertion sort on the almost sorted final array.  Based on data in
+   * Sedgewick, the GDS_QSORT_CUTOFF value should be between 5 and 20.
+   *
+   * See Sedgewick for further details
+   */
 
 #define GDS_QSORT_CUTOFF 12
 
@@ -400,7 +400,7 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
   *first    = i; /* Save this location */
 
   if (i != -1) {
-    /* Value is in vector, find first occurance */
+    /* Value is in vector, find first occurrence */
     while (i >= 0 && vector[i] == val) {
       i--;
     }
@@ -482,7 +482,7 @@ template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector)
 /* Function roundfloat() begins:
  *----------------------------------------------------------------------------
  * This function rounds off the float "value" to the nearest integer,
- * and returns that interger.
+ * and returns that integer.
  *****************************************************************************/
 int roundfloat(float value)
 {
@@ -507,15 +507,15 @@ int roundfloat(float value)
 /*****************************************************************************/
 /* Function find_inter() begins:
  *----------------------------------------------------------------------------
- * This function finds the intersection between two lists of interger values,
+ * This function finds the intersection between two lists of integer values,
  * and returns the number of values in the intersection.
  *****************************************************************************/
 template <typename INT>
-size_t find_inter(const INT set1[],      /* the first set of integers */
-                  const INT set2[],      /* the second set of integers */
-                  size_t    length1,     /* the length of the first set */
-                  size_t    length2,     /* the length of the second set */
-                  INT       inter_ptr[]) /* the values in the intersection */
+size_t find_inter(const INT set1[],  /* the first set of integers */
+                  const INT set2[],  /* the second set of integers */
+                  size_t    length1, /* the length of the first set */
+                  size_t    length2, /* the length of the second set */
+                  INT       inter_ptr[])   /* the values in the intersection */
 /*
  *
  *      Function which finds the intersection of two integer lists.
@@ -857,8 +857,8 @@ template <typename INT> void qsort4(INT *v1, INT *v2, INT *v3, INT *v4, size_t N
 #endif
 }
 
-template void qsort2(int *v1, int *v2, size_t N);
-template void qsort2(int64_t *v1, int64_t *v2, size_t N);
+template void                qsort2(int *v1, int *v2, size_t N);
+template void                qsort2(int64_t *v1, int64_t *v2, size_t N);
 template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
 {
   if (N <= 1) {
@@ -875,8 +875,8 @@ template <typename INT> void qsort2(INT *v1, INT *v2, size_t N)
 #endif
 }
 
-template void sort2(ssize_t N, int *v1, int *v2);
-template void sort2(ssize_t N, int64_t *v1, int64_t *v2);
+template void                sort2(ssize_t N, int *v1, int *v2);
+template void                sort2(ssize_t N, int64_t *v1, int64_t *v2);
 template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[])
 {
   if (count <= 1) {
@@ -894,8 +894,8 @@ template <typename INT> void sort2(ssize_t count, INT ra[], INT rb[])
   }
 }
 
-template void sort3(ssize_t count, int ra[], int rb[], int rc[]);
-template void sort3(ssize_t count, int64_t ra[], int64_t rb[], int64_t rc[]);
+template void                sort3(ssize_t count, int ra[], int rb[], int rc[]);
+template void                sort3(ssize_t count, int64_t ra[], int64_t rb[], int64_t rc[]);
 template <typename INT> void sort3(ssize_t count, INT ra[], INT rb[], INT rc[])
 {
   if (count <= 1) {
@@ -914,8 +914,8 @@ template <typename INT> void sort3(ssize_t count, INT ra[], INT rb[], INT rc[])
   }
 }
 
-template ssize_t bin_search2(int value, size_t num, int List[]);
-template ssize_t bin_search2(int64_t value, size_t num, int64_t List[]);
+template ssize_t                bin_search2(int value, size_t num, int List[]);
+template ssize_t                bin_search2(int64_t value, size_t num, int64_t List[]);
 template <typename INT> ssize_t bin_search2(INT value, size_t num, INT List[])
 {
 

@@ -50,6 +50,7 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Version.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 void
 exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -73,7 +74,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   }
 
   // Type of the Tpetra::Map specialization to use.
-  typedef Tpetra::Map<> map_type;
+  using map_type = Tpetra::Map<>;
 
   // The type of the Tpetra::Vector specialization to use.  The first
   // template parameter is the Scalar type.  The "Scalar" type is the
@@ -81,16 +82,16 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Tpetra::Vector<>::scalar_type to get the default Scalar type.  We
   // will assume that it's double.
   //
-  // typedef Tpetra::Vector<>::scalar_type scalar_type;
-  typedef Tpetra::Vector<double> vector_type;
+  // using scalar_type = Tpetra::Vector<>::scalar_type;
+  using vector_type = Tpetra::Vector<double>;
 
   // The "LocalOrdinal" (LO) type is the type of "local" indices.
   // The typedef is commented out to avoid "unused typedef" warnings.
   //
-  //typedef vector_type::local_ordinal_type local_ordinal_type;
+  //using local_ordinal_type = vector_type::local_ordinal_type;
 
   // The "GlobalOrdinal" (GO) type is the type of "global" indices.
-  typedef vector_type::global_ordinal_type global_ordinal_type;
+  using global_ordinal_type = vector_type::global_ordinal_type;
 
   //////////////////////////////////////////////////////////////////////
   // Create a Tpetra Map
@@ -164,8 +165,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // We want a _host_ View.  Vector implements "dual view"
     // semantics.  This is really only relevant for architectures with
     // two memory spaces.
-    x.sync<Kokkos::HostSpace> ();
-    auto x_2d = x.getLocalView<Kokkos::HostSpace> ();
+    x.sync_host ();
+    auto x_2d = x.getLocalViewHost ();
     // getLocalView returns a 2-D View by default.  We want a 1-D
     // View, so we take a subview.
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
@@ -196,8 +197,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // pluralizing the word "entry" conditionally on globalCount.
     if (myRank == 0) {
       out << "x has " << globalCount << " entr"
-	  << (globalCount != 1 ? "ies" : "y")
-	  << " less than 0.5." << endl;
+          << (globalCount != 1 ? "ies" : "y")
+          << " less than 0.5." << endl;
     }
   }
 
@@ -213,11 +214,11 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // away.  If you create two nonconst persisting views of the same
     // Vector, and modify the entries of one view during the lifetime
     // of the other view, the entries of the other view are undefined.
-    x.sync<Kokkos::HostSpace> ();
-    auto x_2d = x.getLocalView<Kokkos::HostSpace> ();
+    x.sync_host ();
+    auto x_2d = x.getLocalViewHost ();
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
     // We're going to modify the data on host.
-    x.modify<Kokkos::HostSpace> ();
+    x.modify_host ();
 
     // Use local indices to access the entries of x_data.
     // x_data.extent (0) may be longer than the number of local
@@ -229,9 +230,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
       // as a function to convert k (an integer) to double.
       x_1d(k) += double (k);
     }
-    // Vector now has a device_type typedef that you could use
-    // instead of node_type here.
-    typedef vector_type::node_type::memory_space memory_space;
+    using memory_space = vector_type::device_type::memory_space;
     x.sync<memory_space> ();
   }
 

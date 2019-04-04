@@ -53,7 +53,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
 
-int main (int argc, char *argv[]) 
+int main (int argc, char *argv[])
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -71,11 +71,11 @@ int main (int argc, char *argv[])
     // object's lifetime.
     auto comm = Tpetra::getDefaultComm ();
 
-    int num_halo_expansions = 1;  
+    int num_halo_expansions = 1;
     Teuchos::CommandLineProcessor clp;
     clp.addOutputSetupOptions(true);
     clp.setOption("halo-expansions", &num_halo_expansions ,
-		  "Number of times to expand the halo for Additive Schwarz");
+                  "Number of times to expand the halo for Additive Schwarz");
     switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -83,15 +83,15 @@ int main (int argc, char *argv[])
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    using Scalar = double;
     using LO = Tpetra::Map<>::local_ordinal_type;
     using GO = Tpetra::Map<>::global_ordinal_type;
     using Node = Tpetra::Map<>::node_type;
+    using MAT = Tpetra::CrsMatrix<>;
+    using Scalar = MAT::scalar_type;
     using ST = Teuchos::ScalarTraits<Scalar>;
-    using MAT = Tpetra::CrsMatrix<Scalar>;
-    using MV = Tpetra::MultiVector<Scalar>;
+    //using MV = Tpetra::MultiVector<>;
     using IMP = Tpetra::Import<>;
-  
+
     const GO ONE = Teuchos::OrdinalTraits<GO>::one();
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
 
@@ -101,52 +101,52 @@ int main (int argc, char *argv[])
 
       const size_t numImages = comm->getSize();
       const size_t myImageID = comm->getRank();
-   
+
       if (numImages < 2) return -1;
       // create a Map
-      RCP<const Tpetra::Map<> > map = 
-	Tpetra::createContigMapWithNode<LO,GO,Node>(GO_INVALID, ONE, comm);
+      RCP<const Tpetra::Map<> > map =
+        Tpetra::createContigMapWithNode<LO,GO,Node>(GO_INVALID, ONE, comm);
       /* create the following matrix:
-	 [2 1           ]
-	 [1 1 1         ]
-	 [  1 1 1       ]
-	 [   . . .      ]
-	 [     . . .    ]
-	 [       . . .  ]
-	 [         1 1 1]
-	 [           1 2]
-	 this matrix has an eigenvalue lambda=3, with eigenvector v = [1 ... 1]
+         [2 1           ]
+         [1 1 1         ]
+         [  1 1 1       ]
+         [   . . .      ]
+         [     . . .    ]
+         [       . . .  ]
+         [         1 1 1]
+         [           1 2]
+         this matrix has an eigenvalue lambda=3, with eigenvector v = [1 ... 1]
       */
       A = rcp (new MAT(map, 3, Tpetra::StaticProfile));
       if (myImageID == 0) {
-	Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(), ST::one()));
-	Array<GO> cols(tuple<GO>(myImageID, myImageID+1));
-	A->insertGlobalValues(myImageID,cols(),vals());
+        Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(), ST::one()));
+        Array<GO> cols(tuple<GO>(myImageID, myImageID+1));
+        A->insertGlobalValues(myImageID,cols(),vals());
       }
       else if (myImageID == numImages-1) {
-	Array<Scalar> vals(tuple<Scalar>(ST::one(), static_cast<Scalar>(2)*ST::one()));
-	Array<GO> cols(tuple<GO>(myImageID-1,myImageID));
-	A->insertGlobalValues(myImageID,cols(),vals());
+        Array<Scalar> vals(tuple<Scalar>(ST::one(), static_cast<Scalar>(2)*ST::one()));
+        Array<GO> cols(tuple<GO>(myImageID-1,myImageID));
+        A->insertGlobalValues(myImageID,cols(),vals());
       }
       else {
-	Array<Scalar> vals(3,ST::one());
-	Array<GO> cols(tuple<GO>(myImageID-1, myImageID, myImageID+1));
-	A->insertGlobalValues(myImageID,cols(),vals());
+        Array<Scalar> vals(3,ST::one());
+        Array<GO> cols(tuple<GO>(myImageID-1, myImageID, myImageID+1));
+        A->insertGlobalValues(myImageID,cols(),vals());
       }
       A->fillComplete();
     }
 
-    RCP<MAT> Mold, Mnew;    
+    RCP<MAT> Mold, Mnew;
     {
       TimeMonitor tm (*TimeMonitor::getNewTimer("2) Halo Generation"));
 
       Mold = A;
       Mnew = Mold;
-  
+
       for (int i=0; i<num_halo_expansions; ++i) {
-	RCP<const IMP> rowImporter = Mold->getGraph()->getImporter();
-	Mnew = Tpetra::importAndFillCompleteCrsMatrix<MAT>(Mold,*rowImporter);
-	Mold = Mnew;
+        RCP<const IMP> rowImporter = Mold->getGraph()->getImporter();
+        Mnew = Tpetra::importAndFillCompleteCrsMatrix<MAT>(Mold,*rowImporter);
+        Mold = Mnew;
       }
     }
 

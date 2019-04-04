@@ -415,7 +415,7 @@ public:
 
   /*! \brief returns the part box boundary list.
    */
-  std::vector<Zoltan2::coordinateModelPartBox<scalar_t, part_t> > &
+  std::vector<Zoltan2::coordinateModelPartBox> &
   getPartBoxesView() const
   {
     return this->algorithm_->getPartBoxesView();
@@ -551,7 +551,7 @@ private:
   const RCP<const Comm<int> > comm_;       // the problem communicator
 
   //part box boundaries as a result of geometric partitioning algorithm.
-  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > partBoxes;
+  RCP<std::vector<Zoltan2::coordinateModelPartBox> > partBoxes;
 
   part_t nGlobalParts_;// target global number of parts
   part_t nLocalParts_; // number of parts to be on this process
@@ -1325,7 +1325,7 @@ template <typename Adapter>
           double dNum = partCounter[part];
           double dProcs = numprocs;
   
-          //cout << "dNum:" << dNum << " dProcs:" << dProcs << endl;
+          //std::cout << "dNum:" << dNum << " dProcs:" << dProcs << std::endl;
           double each = floor(dNum/dProcs);
           double extra = fmod(dNum,dProcs);
   
@@ -1806,7 +1806,7 @@ void PartitioningSolution<Adapter>::RemapParts()
     }
 
 #ifdef KDDKDD_DEBUG
-    cout << "IDX ";
+    std::cout << "IDX ";
     for (part_t i = 0; i <= tnVtx; i++) std::cout << idx[i] << " ";
     std::cout << std::endl;
 
@@ -1884,8 +1884,8 @@ void PartitioningSolution<Adapter>::RemapParts()
     delete [] match;
 
 #ifdef KDDKDD_DEBUG
-    cout << "Remap vector: ";
-    for (part_t i = 0; i < nGlobalParts_; i++) cout << remap[i] << " ";
+    std::cout << "Remap vector: ";
+    for (part_t i = 0; i < nGlobalParts_; i++) std::cout << remap[i] << " ";
     std::cout << std::endl;
 #endif
 

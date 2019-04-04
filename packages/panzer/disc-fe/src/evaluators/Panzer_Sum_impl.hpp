@@ -69,7 +69,7 @@ Sum(
   TEUCHOS_ASSERT(static_cast<int>(value_names->size()) < MAX_VALUES);
 
   // check if the user wants to scale each term independently
-  auto local_scalars = Kokkos::View<double *,PHX::Device>("scalars",value_names->size());
+  auto local_scalars = Kokkos::View<double *,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",value_names->size());
   if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
     auto scalars_v = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
 
@@ -112,12 +112,8 @@ void
 Sum<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
+  PHX::FieldManager<Traits>&  /* fm */)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < scalars.extent(0); ++i)
-    this->utils.setFieldData(values[i],fm);
-
   cell_data_size = sum.size() / sum.fieldTag().dataLayout().extent(0);
 }
 
@@ -273,18 +269,6 @@ SumStatic(const Teuchos::ParameterList& p)
 
 template<typename EvalT, typename TRAITS,typename Tag0>
 void SumStatic<EvalT,TRAITS,Tag0,void,void>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
-}
-
-//**********************************************************************
-
-template<typename EvalT, typename TRAITS,typename Tag0>
-void SumStatic<EvalT,TRAITS,Tag0,void,void>::
 evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
@@ -315,8 +299,8 @@ SumStatic(const Teuchos::ParameterList& p)
     TEUCHOS_ASSERT(scalar_values->size()==value_names->size());
     useScalars = true;
 
-    Kokkos::View<double*,PHX::Device> scalars_nc
-        = Kokkos::View<double*,PHX::Device>("scalars",scalar_values->size());
+    Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device> scalars_nc
+      = Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",scalar_values->size());
 
     for(std::size_t i=0;i<scalar_values->size();i++)
       scalars_nc(i) = (*scalar_values)[i];
@@ -363,8 +347,8 @@ SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
   else {
     useScalars = true;
 
-    Kokkos::View<double*,PHX::Device> scalars_nc
-        = Kokkos::View<double*,PHX::Device>("scalars",scalar_values.size());
+    Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device> scalars_nc
+      = Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",scalar_values.size());
 
     for(std::size_t i=0;i<scalar_values.size();i++)
       scalars_nc(i) = scalar_values[i];
@@ -395,13 +379,10 @@ SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i) {
-    this->utils.setFieldData(values[i],fm);
+  for (std::size_t i=0; i < values.size(); ++i)
     value_views[i] = values[i].get_static_view();
-  }
 }
 
 //**********************************************************************
@@ -475,20 +456,6 @@ SumStatic(const Teuchos::ParameterList& p)
  
   std::string n = "Sum Evaluator";
   this->setName(n);
-}
-*/
-
-//**********************************************************************
-/*
-
-template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
-void SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2>::
-postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
 }
 */
 

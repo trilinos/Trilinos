@@ -99,14 +99,14 @@ localApplyBlockNoTrans (Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Nod
   // NOTE (mfh 01 Jun 2016) This is a host code, so we have to sync
   // all the objects to host.  We sync them back to device after we're
   // done.  That's why all objects come in by nonconst reference.
-  A.template sync<Kokkos::HostSpace> ();
-  X.template sync<Kokkos::HostSpace> ();
-  Y.template sync<Kokkos::HostSpace> ();
-  Y.template modify<Kokkos::HostSpace> (); // only Y gets modified here
+  A.sync_host ();
+  X.sync_host ();
+  Y.sync_host ();
+  Y.modify_host (); // only Y gets modified here
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
-  auto val = A.template getValues<Kokkos::HostSpace> ();
+  auto val = A.getValuesHost ();
 
   auto gblGraph = A.getCrsGraph ();
   auto lclGraph = G.getLocalGraph ();
@@ -537,8 +537,8 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   RCP<matrix_type> A = rcp (new matrix_type (*graph, blkSize));
 
   // We're filling on the host.
-  A->sync<Kokkos::HostSpace> ();
-  A->modify<Kokkos::HostSpace> ();
+  A->sync_host ();
+  A->modify_host ();
 
   // This only matters if filling with random values.  We only do that
   // if opts.runTest is true (that is, if we're testing correctness of

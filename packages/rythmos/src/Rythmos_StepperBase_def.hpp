@@ -78,7 +78,7 @@ StepperBase<Scalar>::cloneStepperAlgorithm() const
 
 
 template<class Scalar>
-void StepperBase<Scalar>::setStepControlData(const StepperBase & stepper)
+void StepperBase<Scalar>::setStepControlData(const StepperBase & /* stepper */)
 {
   // 2009/08/31: rabartl ToDo: Should this really be left empty?
 }

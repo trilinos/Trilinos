@@ -67,8 +67,8 @@ public:
     virtual void startIntegrator();
     /// Start time step.
     virtual void startTimeStep();
-    /// Only accept step after meeting time step criteria.
-    virtual void acceptTimeStep();
+    /// Check if time step has passed or failed.
+    virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
@@ -105,10 +105,10 @@ public:
     /// Set the Stepper
     virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     /// Set the initial state which has the initial conditions
-    virtual void setInitialState(
+    virtual void initializeSolutionHistory(
       Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
     /// Set the initial state from Thyra::VectorBase(s)
-    virtual void setInitialState(Scalar t0,
+    virtual void initializeSolutionHistory(Scalar t0,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);

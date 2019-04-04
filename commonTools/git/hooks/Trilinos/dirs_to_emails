@@ -50,7 +50,6 @@ packages/moocho moocho-checkins@software.sandia.gov
 packages/optipack optipack-checkins@software.sandia.gov
 packages/sacado sacado-checkins@software.sandia.gov
 packages/stokhos stokhos-checkins@software.sandia.gov
-packages/ThreadPool threadpool-checkins@software.sandia.gov
 packages/TivaBuena tivabuena-checkins@software.sandia.gov
 packages/optika optika-checkins@software.sandia.gov
 packages/TriKota Trikota-checkins@software.sandia.gov
@@ -64,7 +63,6 @@ packages/stk stk-checkins@software.sandia.gov
 packages/trios trios-checkins@software.sandia.gov
 packages/seacas seacas-checkins@software.sandia.gov
 packages/teko teko-checkins@software.sandia.gov
-packages/meshinggenie Geofracturemeshingcodes@software.sandia.gov
 packages/muelu muelu-checkins@software.sandia.gov
 packages/xpetra xpetra-checkins@software.sandia.gov
 packages/panzer panzer-checkins@software.sandia.gov

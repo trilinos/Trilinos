@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -46,8 +46,14 @@
 #define TEST_SINGLE_AMESOS2_TPETRA_SOLVER_HPP
 
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_RCP.hpp"
 
-namespace Teuchos { class ParameterList; }
+namespace Teuchos {
+  class ParameterList;
+
+  template<class OrdinalType>
+  class Comm;
+}
 
 namespace Thyra {
 
@@ -65,6 +71,7 @@ bool test_single_amesos2_tpetra_solver(
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *amesos2LOWSFPL
   ,Teuchos::FancyOStream                  *out
+  ,const Teuchos::RCP<const Teuchos::Comm<int> >& comm
   );
 
 } // namespace Thyra

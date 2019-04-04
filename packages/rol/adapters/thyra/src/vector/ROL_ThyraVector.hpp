@@ -299,6 +299,12 @@ public:
       ::Thyra::put_scalar(C, thyra_vec_.ptr());
     }
 
+  /**  \brief Set entries of the vector to uniform random between l and u.
+    */
+  void randomize(const Real l=0.0, const Real u=1.0) {
+      ::Thyra::randomize(l, u, thyra_vec_.ptr());
+    }
+
   /**  \brief Set all entries of the vector to alpha.
     */
   void putScalar(Real alpha) {

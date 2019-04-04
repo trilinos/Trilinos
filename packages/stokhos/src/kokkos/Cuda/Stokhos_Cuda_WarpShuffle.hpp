@@ -54,81 +54,38 @@
 #  define HAVE_CUDA_SHUFFLE 0
 #endif
 
-
 namespace Stokhos {
 
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_down(const Scalar &val, const int& delta, const int& width){
-  return val;
+  return Kokkos::shfl_down(val, delta, width);
 }
 
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_up(const Scalar &val, const int& delta, const int& width){
-  return val;
+  return Kokkos::shfl_up(val, delta, width);
 }
 
-
-#if HAVE_CUDA_SHUFFLE
-
+template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
-unsigned int shfl_down(
-  const unsigned int &val, const int& delta, const int& width) {
-  unsigned int tmp1 = val;
-  int tmp = *reinterpret_cast<int*>(&tmp1);
-  tmp = __shfl_down(tmp,delta,width);
-  return *reinterpret_cast<unsigned int*>(&tmp);
+Scalar shfl_down(const Scalar &val, const int& delta, const int& width,
+		 const int& mask){
+  return KOKKOS_IMPL_CUDA_SHFL_DOWN_MASK(mask, val, delta, width);
 }
 
+template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
-int shfl_down(const int &val, const int& delta, const int& width) {
-  return __shfl_down(val,delta,width);
+Scalar shfl_up(const Scalar &val, const int& delta, const int& width,
+	       const int& mask){
+  return KOKKOS_IMPL_CUDA_SHFL_UP_MASK(mask, val, delta, width);
 }
 
 KOKKOS_INLINE_FUNCTION
-float shfl_down(const float &val, const int& delta, const int& width) {
-  return __shfl_down(val,delta,width);
+void sync_warp(const int& mask) {
+  KOKKOS_IMPL_CUDA_SYNCWARP_MASK(mask);
 }
-
-KOKKOS_INLINE_FUNCTION
-double shfl_down(const double &val, const int& delta, const int& width) {
-  int lo = __double2loint(val);
-  int hi = __double2hiint(val);
-  lo = __shfl_down(lo,delta,width);
-  hi = __shfl_down(hi,delta,width);
-  return __hiloint2double(hi,lo);
-}
-
-KOKKOS_INLINE_FUNCTION
-unsigned int shfl_up(
-  const unsigned int &val, const int& delta, const int& width) {
-  unsigned int tmp1 = val;
-  int tmp = *reinterpret_cast<int*>(&tmp1);
-  tmp = __shfl_up(tmp,delta,width);
-  return *reinterpret_cast<unsigned int*>(&tmp);
-}
-
-KOKKOS_INLINE_FUNCTION
-int shfl_up(const int &val, const int& delta, const int& width) {
-  return __shfl_up(val,delta,width);
-}
-
-KOKKOS_INLINE_FUNCTION
-float shfl_up(const float &val, const int& delta, const int& width) {
-  return __shfl_up(val,delta,width);
-}
-
-KOKKOS_INLINE_FUNCTION
-double shfl_up(const double &val, const int& delta, const int& width) {
-  int lo = __double2loint(val);
-  int hi = __double2hiint(val);
-  lo = __shfl_up(lo,delta,width);
-  hi = __shfl_up(hi,delta,width);
-  return __hiloint2double(hi,lo);
-}
-
-#endif // #if HAVE_CUDA_SHUFFLE
 
 } // namespace Stokhos
 

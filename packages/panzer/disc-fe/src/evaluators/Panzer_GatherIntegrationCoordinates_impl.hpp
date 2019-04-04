@@ -78,10 +78,8 @@ GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
 template<typename EvalT,typename TRAITS>
 void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData sd, 
-		      PHX::FieldManager<TRAITS>& fm)
+		      PHX::FieldManager<TRAITS>& /* fm */)
 {
-  this->utils.setFieldData(quadCoordinates_,fm);
-
   quadIndex_ = panzer::getIntegrationRuleIndex(quadDegree_, (*sd.worksets_)[0], this->wda);
 }
 

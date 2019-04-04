@@ -68,6 +68,10 @@ public:
 
     void set_proc_rank(int proc) { m_other_proc = proc; }
 
+    bool operator!=(const RemoteElementData& rhs) const {
+        return m_other_proc != rhs.m_other_proc;
+    }
+
 private:
     int m_other_proc;
 };
@@ -110,6 +114,11 @@ public:
     int m_permutation;
     stk::topology m_remote_element_toplogy;
 
+    bool operator!=(const ParallelInfo& rhs) const {
+        return m_permutation != rhs.m_permutation ||
+                m_remote_element_toplogy != rhs.m_remote_element_toplogy ||
+                remoteElementData != rhs.remoteElementData;
+    }
 private:
     RemoteElementData remoteElementData;
 };
@@ -157,7 +166,7 @@ public:
     void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { m_perm = perm; }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return m_sideNodes.begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
 
 private:
     LocalId m_elementLocalId;
@@ -193,7 +202,7 @@ struct ParallelElementData
     void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { serialElementData.set_element_side_nodes(nodes); }
     void set_permutation(stk::mesh::Permutation perm) { serialElementData.set_permutation(perm); }
 
-    stk::mesh::EntityVector::iterator side_nodes_begin() { return serialElementData.side_nodes_begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return serialElementData.side_nodes_begin(); }
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
@@ -281,6 +290,17 @@ struct GraphEdge
     GraphEdge() :
         vertex1(std::numeric_limits<impl::LocalId>::max()), vertex2(std::numeric_limits<impl::LocalId>::max())
     {}
+
+    GraphEdge(const GraphEdge& rhs)
+    : vertex1(rhs.vertex1), vertex2(rhs.vertex2)
+    {}
+
+    GraphEdge(const GraphEdge&& rhs)
+    : vertex1(std::move(rhs.vertex1)), vertex2(std::move(rhs.vertex2))
+    {}
+
+    GraphEdge& operator=(const GraphEdge&) = default;
+    GraphEdge& operator=(GraphEdge&&) = default;
 
     int side1() const { return get_side(vertex1); }
     int side2() const { return get_side(vertex2); }

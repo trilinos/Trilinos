@@ -1,4 +1,4 @@
-// Copyright(C) 2010 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,11 +36,11 @@
 #include "Ioss_NodeBlock.h" // for NodeBlock
 #include "Ioss_Property.h"  // for Property
 #include "Ioss_Region.h"    // for Region, NodeBlockContainer
-#include "smart_assert.h"   // for SMART_ASSERT
-#include <algorithm>        // for max, min
-#include <cfloat>           // for FLT_MAX
-#include <cstddef>          // for size_t
-#include <iostream>         // for operator<<, cout, ostream, etc
+#include "Ioss_SmartAssert.h"
+#include <algorithm> // for max, min
+#include <cfloat>    // for FLT_MAX
+#include <cstddef>   // for size_t
+#include <iostream>  // for operator<<, cout, ostream, etc
 
 namespace {
   template <typename INT>

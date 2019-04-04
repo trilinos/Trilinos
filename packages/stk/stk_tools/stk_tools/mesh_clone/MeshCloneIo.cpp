@@ -3,7 +3,7 @@
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "MeshCloneUtils.hpp"
 
 namespace stk

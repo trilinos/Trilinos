@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, application_test)
 TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, application_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
    RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromStratimikos();
    RCP<Teko::InverseFactory> invFact = invLibrary->getInverseFactory("Ifpack2");
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test)
 TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
    // setup diagnostic inverse parameter list: uses Amesos under neady
    Teuchos::ParameterList pl;
@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test)
 TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
    // build operator and solver
    Teko::LinearOp A = buildSystem(Comm,2000);
@@ -438,7 +438,7 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test)
 TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test_tpetra)
 {
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm ();
 
    RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromStratimikos();
    RCP<Teko::InverseFactory> invFact = invLibrary->getInverseFactory("Ifpack2");

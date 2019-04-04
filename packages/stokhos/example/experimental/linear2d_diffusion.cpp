@@ -55,6 +55,7 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
 // Stokhos Stochastic Galerkin
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
   typedef double BasisScalar;
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

@@ -36,6 +36,8 @@
 
 #include <stddef.h>                     // for size_t
 #include <vector>                       // for vector
+#include <stk_mesh/base/Types.hpp>
+
 namespace stk { namespace mesh { class BulkData; } }
 
 //----------------------------------------------------------------------
@@ -62,6 +64,9 @@ void comm_mesh_counts( const BulkData & M,
                        const Selector *selector = 0);
 
 //----------------------------------------------------------------------
+
+stk::mesh::EntityProcVec
+send_non_owned_entities_to_owner(stk::mesh::BulkData& stkBulk, const stk::mesh::EntityProcVec& entities_to_ghost);
 
 /** \} */
 
