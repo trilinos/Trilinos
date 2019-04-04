@@ -915,7 +915,7 @@ namespace Tpetra {
         // do first-touch reallocation (a NUMA (Non-Uniform Memory
         // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
                                        DynamicProfile, constructorParams));
 
         // List of the global indices of my rows.

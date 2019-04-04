@@ -984,21 +984,23 @@ namespace Tpetra {
       colMap_->getNodeNumElements ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
+  global_size_t TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiagsImpl () const
+  getGlobalNumDiags () const
   {
-    return nodeNumDiags_;
+    return this->getGlobalNumDiagsImpl ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
+  size_t TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumDiags () const
   {
     return this->getNodeNumDiagsImpl ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
@@ -1015,11 +1017,11 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t
+  size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiags () const
+  getNodeNumDiagsImpl () const
   {
-    return this->getGlobalNumDiagsImpl ();
+    return nodeNumDiags_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1222,20 +1224,30 @@ namespace Tpetra {
     return ! fillComplete_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TPETRA_DEPRECATED
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isLowerTriangular () const
+  {
+    return this->isLowerTriangularImpl ();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TPETRA_DEPRECATED
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangular () const
+  {
+    return this->isUpperTriangularImpl ();
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   isLowerTriangularImpl () const
   {
     return this->lowerTriangular_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  isLowerTriangular () const
-  {
-    return this->isLowerTriangularImpl ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1249,20 +1261,10 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangular () const
-  {
-    return this->isUpperTriangularImpl ();
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   isLocallyIndexed () const
   {
     return indicesAreLocal_;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1271,7 +1273,6 @@ namespace Tpetra {
   {
     return indicesAreGlobal_;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
@@ -1326,7 +1327,6 @@ namespace Tpetra {
     }
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::Comm<int> >
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -1334,7 +1334,6 @@ namespace Tpetra {
   {
     return this->rowMap_.is_null () ? Teuchos::null : this->rowMap_->getComm ();
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal
@@ -1344,7 +1343,6 @@ namespace Tpetra {
     return rowMap_->getIndexBase ();
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -1352,7 +1350,6 @@ namespace Tpetra {
   {
     return indicesAreAllocated_;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1362,7 +1359,6 @@ namespace Tpetra {
     return indicesAreSorted_;
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -1370,7 +1366,6 @@ namespace Tpetra {
   {
     return noRedundancies_;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1389,7 +1384,6 @@ namespace Tpetra {
     // constants like the number of diagonal entries on this process.
     haveLocalConstants_ = false;
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1556,7 +1550,6 @@ namespace Tpetra {
          "not a subclass of std::exception.");
     }
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
@@ -4481,13 +4474,6 @@ namespace Tpetra {
 
     // Build the local graph.
     lclGraph_ = local_graph_type (ind_d, ptr_d_const);
-
-    // TODO (mfh 13 Mar 2014) getNodeNumDiags(), isUpperTriangular(),
-    // and isLowerTriangular() depend on computeGlobalConstants(), in
-    // particular the part where it looks at the local matrix.  You
-    // have to use global indices to determine which entries are
-    // diagonal, or above or below the diagonal.  However, lower or
-    // upper triangularness is a local property.
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

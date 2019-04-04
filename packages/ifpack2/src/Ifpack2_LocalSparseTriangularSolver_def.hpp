@@ -486,14 +486,6 @@ initialize ()
                                        ignoreMapsForTriangularStructure);
   using LO = local_ordinal_type;
   const LO lclNumRows = lclRowMap.getNodeNumElements ();
-  //const LO lclNumCols = lclColMap.getNodeNumElements ();
-  // NOTE (mfh 30 Apr 2018) Original test for implicit unit diagonal was
-  //
-  // (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
-  //
-  // I don't agree with this test -- it's not an implicitly stored
-  // unit diagonal if there are SOME entries -- but I'm leaving it for
-  // backwards compatibility.
   this->diag_ = (result.diagCount < lclNumRows) ? "U" : "N";
   this->uplo_ = result.couldBeLowerTriangular ? "L" :
     (result.couldBeUpperTriangular ? "U" : "N");

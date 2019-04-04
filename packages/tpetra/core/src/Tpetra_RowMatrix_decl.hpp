@@ -176,27 +176,7 @@ namespace Tpetra {
     /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if
     ///   the specified local row is not valid for this graph, else
     ///   the number of entries.
-    virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
-
-    /// \brief Number of diagonal entries in the matrix's graph, over
-    ///   all processes in the matrix's communicator.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
-
-    /// \brief Number of diagonal entries in the matrix's graph, on
-    ///   the calling process.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
+    virtual size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const = 0;
 
     /// \brief Maximum number of entries in any row of the matrix,
     ///   over all processes.
@@ -220,30 +200,6 @@ namespace Tpetra {
 
     //! Whether this matrix has a well-defined column Map.
     virtual bool hasColMap () const = 0;
-
-    /// \brief Whether the matrix is locally lower triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
-
-    /// \brief Whether the matrix is locally upper triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre Subclasses reserve the right to impose preconditions on
-    ///   the matrix's state.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
 
     /// \brief Whether matrix indices are locally indexed.
     ///
@@ -272,6 +228,52 @@ namespace Tpetra {
 
     //! Whether this object implements getLocalRowView() and getGlobalRowView().
     virtual bool supportsRowViews() const = 0;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Number of diagonal entries in the matrix's graph, over
+    ///   all processes in the matrix's communicator.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
+
+    /// \brief Number of diagonal entries in the matrix's graph, on
+    ///   the calling process.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
+
+    /// \brief Whether the matrix is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
+
+    /// \brief Whether the matrix is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
     //! @name Extraction Methods

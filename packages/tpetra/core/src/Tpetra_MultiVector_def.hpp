@@ -1931,7 +1931,7 @@ namespace Tpetra {
     this->normImpl (norms, NORM_TWO);
   }
 
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TPETRA_DEPRECATED
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -2024,7 +2024,7 @@ namespace Tpetra {
       }
     }
   }
-
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2037,7 +2037,6 @@ namespace Tpetra {
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
     this->norm1 (normsHostView); // Do the computation on the device.
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2058,7 +2057,6 @@ namespace Tpetra {
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
     this->normInf (normsHostView); // Do the computation on the device.
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4402,12 +4400,15 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type
+  TPETRA_DEPRECATED
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getDualView () const {
     return view_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
