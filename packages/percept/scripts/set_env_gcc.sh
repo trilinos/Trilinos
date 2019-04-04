@@ -5,6 +5,6 @@ else
     return
 fi
 
-. $TRILINOS_DIR/cmake/std/atdm/load-env.sh RHEL6-BDW-gnu-7.2.0-openmp-release-debug
+. $TRILINOS_DIR/cmake/std/atdm/load-env.sh RHEL6-None-gnu-7.2.0-openmp-release-debug
 
 module load sems-yaml_cpp
