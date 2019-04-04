@@ -46,7 +46,7 @@
 /*! \file Teuchos_ParameterList.hpp
     \brief Templated Parameter List class
 */  
-#include <deque>
+
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -1513,47 +1513,6 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterList& l)
   return l.print(os);
 }
 
-
-class ParameterListTraversal{
-public:
-  /** \brief Create an object for traversing parameter lists
-   *
-   *  \param left_to_right [in] Add sublists in left-to-right order.
-   *
-   *  This isn't currently used for any of the recursion routines in ModifiedParameterList but was
-   *  used as a model to create the recursive reconciliation routine and could be generalized if
-   *  needed.  It has limited use for other recursion routines such as the recursive modification
-   *  because additional sublists are created on-the-fly that aren't captured in these traversals.
-   */
-  ParameterListTraversal(bool left_to_right);
-
-  ~ParameterListTraversal();
-
-  bool isDisabled(ParameterList &pl);
-
-  /** \brief Creates a deque containing references to all of the sublists at the current level of a given
-   * parameter list.
-   *
-   * \param pl[in] The parameter list with possible sublists.
-   *
-   * This produces a deque of references to `pl`'s sublists.
-   */
-  std::deque<std::reference_wrapper<ParameterList>> getSublists(ParameterList &pl);
-
-  /** \brief Creates a deque containing references to all of the sublists at all levels of a given
-   * parameter list in breadth-first order.
-   *
-   * \param pl[in] The parameter list with possible sublists.
-   *
-   * This produces a deque of references to `pl`'s sublists in breadth-first search order.  It can be
-   * used to traverse the parameter list in either breadth-first or reverse-breadth-first search order
-   * by either going forward or backwards through the deque.
-   */
-  std::deque<std::reference_wrapper<ParameterList>> breadthTraversal(ParameterList &pl);
-
-protected:
-  bool left_to_right_;
-};
   
 } // end of Teuchos namespace
 

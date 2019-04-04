@@ -71,8 +71,8 @@ public:
 };
 
 
-class SimpleModifier : public Teuchos::ParameterListModifier {
-
+class SimpleModifier : public Teuchos::ParameterListModifier
+{
 public:
 
   SimpleModifier() : Teuchos::ParameterListModifier("Simple Modifier"){}
@@ -88,6 +88,53 @@ public:
     if (pl.get<double>("A") < 0.0 && pl.get<double>("B") < 0.0){
       throw std::logic_error("Parameters A and B can't both be less than 0.0");
     }
+  }
+};
+
+
+class SimpleSubModifier : public Teuchos::ParameterListModifier {
+
+public:
+
+  SimpleSubModifier() : Teuchos::ParameterListModifier("Simple Modifier"){}
+
+  void modify(Teuchos::ParameterList &pl, Teuchos::ParameterList &valid_pl) const
+  {
+    expandSublistsUsingBaseName("SubB", pl, valid_pl);
+  }
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // If E and F are less than 10 then throw an error
+    const int max_CD = 10;
+    if (pl.get<int>("C") > max_CD && pl.get<int>("D") > max_CD){
+      throw std::logic_error("Parameters C and D can't both be greater than 10");
+    }
+  }
+};
+
+
+class ReconciliationModifier1 : public Teuchos::ParameterListModifier
+{
+public:
+  ReconciliationModifier1() : Teuchos::ParameterListModifier("Reconciliation Modifier 1"){}
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // This reconciliation routine needs the ReconciliationModifier2's reconcile method
+    // to be run first to create the "e" parameter.
+    Teuchos::ParameterList &subA = pl.sublist("A");
+    pl.set("b", subA.get<int>("e"));
+  }
+};
+
+
+class ReconciliationModifier2 : public Teuchos::ParameterListModifier
+{
+public:
+  ReconciliationModifier2() : Teuchos::ParameterListModifier("Reconciliation Modifier 2"){}
+  void reconcile(Teuchos::ParameterList &pl) const
+  {
+    // Add a convenience parameter
+    pl.set("e", pl.get<int>("c") + pl.get<int>("d"));
   }
 };
 
@@ -806,7 +853,7 @@ TEUCHOS_UNIT_TEST( ParameterList, getIntegralValue_int )
 }
 
 
-TEUCHOS_UNIT_TEST( ParameterList, ValidSimpleInput )
+TEUCHOS_UNIT_TEST( ParameterList, simpleModifierModifyReconcile )
 {
   RCP<SimpleModifier> modifier = rcp(new SimpleModifier());
   ParameterList valid_pl("My Valid Parameter List with a Modifier", modifier);

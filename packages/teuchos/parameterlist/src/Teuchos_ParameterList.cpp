@@ -40,7 +40,8 @@
 // @HEADER
 
 //#define TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-
+#include <deque>
+#include <functional>
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -549,7 +550,7 @@ void ParameterList::reconcileParameterList(ParameterList & valid_pl,
       if (valid_cur_node.isSublist(entry_name)){
         const ParameterEntry &entry = itr->second;
         ParameterList &valid_cur_node_sublist = valid_cur_node.sublist(entry_name);
-        if (!valid_cur_node_sublist.disable_reconciliation_){
+        if (!valid_cur_node_sublist.disableRecursiveReconciliation_){
           TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
             !cur_node.isSublist(entry_name), Exceptions::InvalidParameterName
             ,"Error, the parameter {name=\"" << entry_name <<"\","
@@ -578,7 +579,7 @@ void ParameterList::reconcileParameterList(ParameterList & valid_pl,
   for(ref = refs.rbegin(), valid_ref = valid_refs.rbegin();
       ref != refs.rend() && valid_ref != valid_refs.rend();
       ++ref, ++valid_ref){
-    if (nonnull(modifier = valid_ref->get().modifier())) {
+    if (nonnull(modifier = valid_ref->get().getModifier())) {
       modifier->reconcile(ref->get());
     }
   }
@@ -758,7 +759,6 @@ void ParameterList::validateMissingSublistMustExist(const std::string &baselist_
     ,"The sublist "<<baselist_name<<"->\""<<sublist_name<<"\" does not exist!"
     );
 }
-
 
 
 } // namespace Teuchos
