@@ -902,11 +902,9 @@ globalizeColumnOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val
     // domain Map to the column Map.
     std::unique_ptr<mv_type> rowNorms_colMap;
     if (imp.is_null ()) {
-      // Shallow copy of rowNorms_domMap, since the two must have the
-      // same Maps.
+      // Shallow copy of rowNorms_domMap.
       rowNorms_colMap =
-        std::unique_ptr<mv_type> (new mv_type (G->getColMap (),
-                                               rowNorms_domMap.getDualView ()));
+        std::unique_ptr<mv_type> (new mv_type (rowNorms_domMap, * (G->getColMap ())));
     }
     else {
       rowNorms_colMap =

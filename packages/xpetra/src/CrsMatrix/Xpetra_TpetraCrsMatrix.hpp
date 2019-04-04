@@ -114,7 +114,7 @@ namespace Xpetra {
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
     //! Constructor specifying a previously constructed graph.
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)

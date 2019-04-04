@@ -175,6 +175,15 @@ public:
   Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
           const Teuchos::DataAccess copyOrView);
 
+  /// \brief "Offset view" constructor that views the input Vector's
+  ///   local data, but with the given Map, using the given row offset.
+  ///
+  /// \param source [in] The Vector to view.
+  /// \param map [in] The Map to use to interpret the local data.
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset = 0);
+
   //! \brief Set vector values from an existing array (copy)
   Vector (const Teuchos::RCP<const map_type>& map,
           const Teuchos::ArrayView<const Scalar>& A);
