@@ -121,9 +121,7 @@ namespace MueLu {
     /*! @brief Local aggregation. */
 
     void BuildGraph(const LWGraph_kokkos& graph, RCP<IndexManager_kokkos>& geoData,
-                    const LO dofsPerNode, RCP<CrsGraph>& myGraph,
-                    RCP<const Map>& coarseCoordinatesFineMap,
-                    RCP<const Map>& coarseCoordinatesMap) const;
+                    const LO dofsPerNode, RCP<CrsGraph>& myGraph) const;
     //@}
 
     std::string description() const { return "Aggretation: structured algorithm"; }

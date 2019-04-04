@@ -131,10 +131,6 @@ namespace MueLu {
     //! This method requires you to have set this->coarseRate.
     void computeMeshParameters();
 
-    void getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
-                            Array<GO>& coarseNodeCoarseGIDs,
-                            Array<GO>& coarseNodeFineGIDs) const;
-
     int getNumDimensions()      const {return numDimensions;}
 
     int getInterpolationOrder() const {return interpolationOrder_;}
