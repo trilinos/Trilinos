@@ -349,11 +349,11 @@ weight=${JENKINS_JOB_WEIGHT:-29}
 n_cpu=$(lscpu | grep "^CPU(s):" | cut -d" " -f17)
 n_K=$(cat /proc/meminfo | grep MemTotal | cut -d" " -f8)
 let n_G=$n_K/1024000
-# this is aimed at keeping approximately 2.1G per core so we don't bottleneck
+# this is aimed at keeping approximately 3.0G per core so we don't bottleneck
 ## weight - the next bit works because the shell is only doing integer arithmetic
 let n_jobs=${n_cpu}/${weight}
 # using bc to get floating point input and integer output
-parallel_level=$(echo "$n_G/( 2.1*$n_jobs )" | bc )
+parallel_level=$(echo "$n_G/( 3.0*$n_jobs )" | bc )
 
 if [ ${parallel_level} -gt ${weight} ]; then
     parallel_level=${weight}
