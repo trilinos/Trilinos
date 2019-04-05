@@ -82,7 +82,10 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
     return
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
-  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=Power8,Pascal60
+    export ATDM_CONFIG_QUEUE=dev  # ToDo: Update once ready for production!
+  elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
     export ATDM_CONFIG_QUEUE=rhel7F
   elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Power8" ]] ; then
