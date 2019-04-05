@@ -36,9 +36,11 @@ inline std::string get_option(const std::string& option, const std::string defau
 template <typename T>
 T get_command_line_option(const std::string &option, const T &defaultValue)
 {
-    std::string str = get_option(option, std::to_string(defaultValue));
+    std::ostringstream os;
+    os << defaultValue;
+    std::string str = get_option(option, os.str());
     std::istringstream ss(str);
-    T val=0;
+    T val = 0;
     ss >> val;
     return val;
 }

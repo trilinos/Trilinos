@@ -52,6 +52,8 @@ constexpr bool topology_data<topology::LINE_2_1D       >::spatial_dimension_vect
 constexpr bool topology_data<topology::LINE_3_1D       >::spatial_dimension_vector[];
 constexpr bool topology_data<topology::SHELL_LINE_2    >::spatial_dimension_vector[];
 constexpr bool topology_data<topology::SHELL_LINE_3    >::spatial_dimension_vector[];
+constexpr bool topology_data<topology::SPRING_2        >::spatial_dimension_vector[];
+constexpr bool topology_data<topology::SPRING_3        >::spatial_dimension_vector[];
 constexpr bool topology_data<topology::TRI_3           >::spatial_dimension_vector[];
 constexpr bool topology_data<topology::TRI_3_2D        >::spatial_dimension_vector[];
 constexpr bool topology_data<topology::TRI_4_2D        >::spatial_dimension_vector[];
