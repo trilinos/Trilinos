@@ -2716,7 +2716,7 @@ void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   if (ftypelen != 1) {
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
-    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %d in file id %d\n",
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %lu in file id %d\n",
              ftypelen, *idne);
     ex_err_fn(*idne, __func__, errmsg, EX_MSG);
 #endif
@@ -3290,7 +3290,7 @@ void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int
   if (elem_typelen != MAX_STR_LENGTH) {
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     char errmsg[MAX_ERR_LENGTH];
-    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: element type string length is %d in file id %d\n",
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: element type string length is %lu in file id %d\n",
              elem_typelen, *idne);
     ex_err_fn(*idne, __func__, errmsg, EX_MSG);
 #endif

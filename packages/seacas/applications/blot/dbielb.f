@@ -133,9 +133,11 @@ C   --   *      - OUT - return statement if end of file or read error
             IEATR = IEATR + NUMATR(IELB) * NUMELB(IELB)
          END IF
 
-         CALL DBIEBI (NDB, OPTION, IDELB(IELB), NEL, NLNK, NATR,
-     &                IA(KLINK+ISLNK-1), A(KATRIB+ISATR-1),
-     &                MAX(NATR,1), MAX(NLNK,1), *130)
+         if (numelb(ielb) .gt. 0) then
+           CALL DBIEBI (NDB, OPTION, IDELB(IELB), NEL, NLNK, NATR,
+     &       IA(KLINK+ISLNK-1), A(KATRIB+ISATR-1),
+     &       MAX(NATR,1), MAX(NLNK,1), *130)
+         end if
   100 CONTINUE
 
 C ... Read element block names (if they exist)
@@ -157,4 +159,3 @@ C     Store the first pointers for each element block link array
       RETURN 1
 
       END
-

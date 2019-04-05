@@ -39,6 +39,7 @@
 #include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
 #include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
+#include "scopeguard.h"
 #include <cstddef>    // for size_t, nullptr
 #include <cstdio>     // for printf, sprintf, fprintf, etc
 #include <cstdlib>    // for free, malloc, realloc

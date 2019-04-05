@@ -15,3 +15,5 @@
 #cmakedefine SEACAS_HAVE_PAMGEN
 
 #cmakedefine PARALLEL_AWARE_EXODUS
+
+#cmakedefine HAVE_SEACASIOSS_ADIOS2

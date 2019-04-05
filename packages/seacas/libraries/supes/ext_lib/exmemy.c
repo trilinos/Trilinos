@@ -245,7 +245,7 @@ int main(int argc, char **argv)
 
   assert(sizeof(FTNREAL) == sizeof(FTNINT));
 
-  printf("Size of FORTRAN int/real  = %d bytes\n", sizeof(FTNINT));
+  printf("Size of FORTRAN int/real  = %lu bytes\n", sizeof(FTNINT));
 
   memreq = 10000000; /* 10 Million words */
   for (i = 0; i < 1000; i++) {

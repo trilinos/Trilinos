@@ -71,6 +71,7 @@
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_Hex8.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
@@ -111,9 +112,8 @@ namespace {
   struct SBlock
   {
     SBlock() = default;
-    SBlock(char *names, int *data)
+    SBlock(char *names, int *data) : name(std::string{names})
     {
-      name    = std::string{names};
       int idx = 0;
       proc    = data[idx++];
       unpack(idx, data, range.data(), 3);
@@ -211,9 +211,7 @@ namespace {
       block->m_zoneConnectivity.back().m_donorProcessor = donorname_proc.second;
     }
   }
-#endif
 
-#ifdef SEACAS_HAVE_MPI
   int adjacent_block(const SBlock &b, int ijk, std::map<int, int> &proc_block_map)
   {
     // Find a block the the 'left|right|up|down|front|back' (ijk) of blocks[br]
@@ -301,9 +299,7 @@ namespace {
     }
     return face;
   }
-#endif
 
-#ifdef SEACAS_HAVE_MPI
   bool generate_inter_proc_adjacency(int cgns_file_ptr, int base, int zone, int myProcessor,
                                      const std::string &zone_name, std::vector<int> &adjacency)
   {
@@ -360,9 +356,6 @@ namespace {
     }
   }
 
-#endif
-
-#ifdef SEACAS_HAVE_MPI
   void add_empty_bc(Ioss::SideSet *sset, Ioss::StructuredBlock *block, int base, int zone, int face,
                     const std::string &fam_name, const std::string &boco_name)
   {
@@ -389,6 +382,60 @@ namespace {
   }
 #endif
 
+  size_t handle_block_ids(const Ioss::EntityBlock *eb, Ioss::Map &entity_map, void *ids,
+                          size_t num_to_get, const Ioss::Field::BasicType &size)
+  {
+    /*!
+     * CGNS doesn't support element global ids, so the only use of this
+     * routine is the case where we may be translating from a mesh that
+     * *does* support global ids and we will then need to map those
+     * global ids back to local ids in, for example, the sideset element list.
+     *
+     * There will be two maps the 'entity_map.map' map is a 'direct lookup'
+     * map which maps current local position to global id and the
+     * 'entity_map.reverse' is an associative lookup which maps the
+     * global id to 'original local'.  There is also a
+     * 'entity_map.reorder' which is direct lookup and maps current local
+     * position to original local.
+
+     * The ids coming in are the global ids; their position is the
+     * local id -1 (That is, data[0] contains the global id of local
+     * element 1 in this element block).  The 'model-local' id is
+     * given by eb_offset + 1 + position:
+     *
+     * int local_position = entity_map.reverse[ElementMap[i+1]]
+     * (the entity_map.map and entity_map.reverse are 1-based)
+     *
+     * But, this assumes 1..numel elements are being output at the same
+     * time; we are actually outputting a blocks worth of elements at a
+     * time, so we need to consider the block offsets.
+     * So... local-in-block position 'i' is index 'eb_offset+i' in
+     * 'entity_map.map' and the 'local_position' within the element
+     * blocks data arrays is 'local_position-eb_offset'.  With this, the
+     * position within the data array of this element block is:
+     *
+     * int eb_position =
+     * entity_map.reverse[entity_map.map[eb_offset+i+1]]-eb_offset-1
+     *
+     * NOTE: the maps are built an element block at a time...
+     */
+
+    // Overwrite this portion of the 'entity_map.map', but keep other
+    // parts as they were.  We are adding elements starting at position
+    // 'eb_offset+offset' and ending at
+    // 'eb_offset+offset+num_to_get'. If the entire block is being
+    // processed, this reduces to the range 'eb_offset..eb_offset+my_element_count'
+
+    int64_t eb_offset = eb->get_offset();
+    if (size == Ioss::Field::INT64) {
+      entity_map.set_map(static_cast<int64_t *>(ids), num_to_get, eb_offset, true);
+    }
+    else {
+      entity_map.set_map(static_cast<int *>(ids), num_to_get, eb_offset, true);
+    }
+
+    return num_to_get;
+  }
 } // namespace
 
 namespace Iocgns {
@@ -441,12 +488,26 @@ namespace Iocgns {
           (!is_input() && properties.exists("MEMORY_WRITE"))) {
         strcpy(hdf5_access, "PARALLEL");
       }
-      int mode = is_input() ? CG_MODE_READ : CG_MODE_WRITE;
-      if (!is_input() && m_cgnsFilePtr == -2) {
-        // Writing multiple steps with a "flush" (cg_close() / cg_open())
-        mode = CG_MODE_MODIFY;
-      }
+
       CGCHECKM(cg_set_file_type(CG_FILE_HDF5));
+
+      int mode = is_input() ? CG_MODE_READ : CG_MODE_WRITE;
+      if (!is_input()) {
+        if (m_cgnsFilePtr == -2) {
+          // Writing multiple steps with a "flush" (cg_close() / cg_open())
+          mode = CG_MODE_MODIFY;
+        }
+        else {
+          // Check whether appending to existing file...
+          if (open_create_behavior() == Ioss::DB_APPEND) {
+            // Append to file if it already exists -- See if the file exists.
+            Ioss::FileInfo file = Ioss::FileInfo(decoded_filename());
+            if (file.exists()) {
+              mode = CG_MODE_MODIFY;
+            }
+          }
+        }
+      }
 
 #ifdef SEACAS_HAVE_MPI
       // Kluge to get fpp and dof CGNS working at same time.
@@ -1005,7 +1066,7 @@ namespace Iocgns {
       int zone = 1;
 #endif
       for (const auto &sb : blocks) {
-        assert(sb->get_property("zone").get_int() == zone++);
+        assert(sb->get_property("zone").get_int() == zone++); // Modification of zone OK in assert
         my_offsets.push_back(sb->get_property("offset_i").get_int());
         my_offsets.push_back(sb->get_property("offset_j").get_int());
         my_offsets.push_back(sb->get_property("offset_k").get_int());
@@ -1348,7 +1409,7 @@ namespace Iocgns {
       // Flag all nodes used by this block...
       std::vector<size_t> I_nodes(node_count);
       for (size_t i = 0; i < I_map->size(); i++) {
-        auto global     = I_map->map()[i + 1] - 1;
+        auto global = I_map->map()[i + 1] - 1;
         assert(global < node_count);
         I_nodes[global] = i + 1;
       }
@@ -2188,7 +2249,8 @@ namespace Iocgns {
         // Handle the MESH fields required for a CGNS file model.
         // (The 'genesis' portion)
         if (field.get_name() == "ids") {
-          // Ignored...
+          elemMap.set_size(elementCount);
+          handle_block_ids(eb, elemMap, data, num_to_get, field.get_type());
         }
         else if (field.get_name() == "connectivity") {
           // This blocks zone has not been defined.
@@ -2550,8 +2612,9 @@ namespace Iocgns {
           int *  idata = reinterpret_cast<int *>(data);
           size_t j     = 0;
           for (ssize_t i = 0; i < num_to_get; i++) {
-            parent[num_to_get * 0 + i] = idata[j++] - offset; // Element
-            parent[num_to_get * 2 + i] = idata[j++];
+            cgsize_t element           = elemMap.global_to_local(idata[j++]) - offset;
+            parent[num_to_get * 0 + i] = element;
+            parent[num_to_get * 2 + i] = idata[j++]; // side
           }
           // Adjust face numbers to IOSS convention instead of CGNS convention...
           Utils::map_ioss_face_to_cgns(sb->parent_element_topology(), num_to_get, parent);
@@ -2560,7 +2623,8 @@ namespace Iocgns {
           int64_t *idata = reinterpret_cast<int64_t *>(data);
           size_t   j     = 0;
           for (ssize_t i = 0; i < num_to_get; i++) {
-            parent[num_to_get * 0 + i] = idata[j++] - offset; // Element
+            cgsize_t element           = elemMap.global_to_local(idata[j++]) - offset;
+            parent[num_to_get * 0 + i] = element; // Element
             parent[num_to_get * 2 + i] = idata[j++];
           }
           // Adjust face numbers to IOSS convention instead of CGNS convention...
@@ -2570,7 +2634,15 @@ namespace Iocgns {
         CGCHECKM(cg_parent_data_write(get_file_pointer(), base, zone, sect, TOPTR(parent)));
         return num_to_get;
       }
-
+      else if (field.get_name() == "distribution_factors") {
+        static bool warning_output = false;
+        if (!warning_output) {
+          std::cerr << "IOSS: WARNING: For CGNS output, the sideset distribution factors are not "
+                       "output.\n";
+          warning_output = true;
+        }
+        return 0;
+      }
       num_to_get = Ioss::Utils::field_warning(sb, field, "output");
     }
     else {
@@ -2582,7 +2654,7 @@ namespace Iocgns {
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field,
                                          void * /* data */, size_t /* data_size */) const
   {
-    return Ioss::Utils::field_warning(ss, field, "output");
+    return 0;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
                                          void * /* data */, size_t /* data_size */) const

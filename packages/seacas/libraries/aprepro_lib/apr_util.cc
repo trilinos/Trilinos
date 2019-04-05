@@ -124,17 +124,16 @@ namespace SEAMS {
   char *get_temp_filename()
   {
     static char tmp_name[] = "./aprepro_temp_XXXXXX";
-    int         fd;
 
     std::strcpy(tmp_name, "./aprepro_temp_XXXXXX");
 #if defined(__CYGWIN__) && defined(__NO_CYGWIN_OPTION__)
-    fd = mkstemps(tmp_name, 0);
+    int fd = mkstemps(tmp_name, 0);
     if (fd >= 0)
       close(fd);
 #elif defined(_WIN32)
     std::strcpy(tmp_name, _mktemp(tmp_name));
 #else
-    fd = mkstemp(tmp_name);
+    int fd = mkstemp(tmp_name);
     if (fd >= 0) {
       close(fd);
     }
