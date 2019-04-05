@@ -768,7 +768,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   auto e_ugi = sourceGlobalIndexer->getFieldDOFManagers()[sourceGlobalIndexer->getFieldBlock(sourceGlobalIndexer->getFieldNum("E_Field"))];
   auto lids = e_ugi->getLIDs();
 
-  // set up a global and ghosted mass matrix 
+  // set up a global and ghosted mass matrix
   std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> indexers;
   indexers.push_back(e_ugi);
   panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,LO,GO,panzer::TpetraNodeType> factory(comm,indexers);
@@ -1228,4 +1228,132 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   options.output_histogram = false;
   options.num_histogram = 5;
   timer->report(out,comm,options);
+}
+
+
+// Tests the element block multiplier
+TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
+{
+  using namespace Teuchos;
+  using namespace panzer;
+  using namespace panzer_stk;
+
+  RCP<MpiComm<int>> comm = rcp(new MpiComm<int>(MPI_COMM_WORLD));
+
+  auto timer = Teuchos::TimeMonitor::getStackedTimer();
+  timer->start("Total Time");
+
+  const int numProcs = comm->getSize();
+  const int numXElements = 3;
+  const int numYElements = numXElements;
+  const double boxLength = 1.0;
+  TEUCHOS_ASSERT(numXElements >= numProcs);
+
+  RCP<panzer_stk::STK_Interface> mesh;
+  {
+    PANZER_FUNC_TIME_MONITOR("L2Projection: mesh construction");
+    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",2);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",numXElements);
+    pl->set("Y Elements",numYElements);
+    pl->set("X Procs",numProcs);
+    pl->set("Y Procs",1);
+    pl->set("X0",0.0);
+    pl->set("Y0",0.0);
+    pl->set("Xf",boxLength);
+    pl->set("Yf",boxLength);
+    panzer_stk::SquareTriMeshFactory factory;
+    factory.setParameterList(pl);
+    mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+  }
+
+  // Build Worksets
+
+  const int basisOrder = 1;
+  BasisDescriptor hgradBD(basisOrder,"HGrad");
+
+  const int intOrder = 2;
+  IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
+
+  WorksetNeeds worksetNeeds;
+  worksetNeeds.addBasis(hgradBD);
+  worksetNeeds.addIntegrator(integrationDescriptor);
+
+  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
+  std::map<std::string,WorksetNeeds> eblockNeeds;
+  for (const auto& block : eBlockNames)
+    eblockNeeds[block] = worksetNeeds;
+  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
+
+  // Build Connection Manager
+  using LO = int;
+  using GO = panzer::Ordinal64;
+  timer->start("ConnManager ctor");
+  const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  timer->stop("ConnManager ctor");
+
+  // Set up bases for projections
+  auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
+
+  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
+  RCP<const panzer::FieldPattern> hgradFP(new panzer::Intrepid2FieldPattern(hgradBasis));
+
+  // Build source DOF Manager that mimics multi-fluid plasma dof manager
+  timer->start("Build sourceGlobalIndexer");
+  RCP<panzer::DOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  sourceGlobalIndexer->addField("PHI",hgradFP); // Electric Potential for ES
+  sourceGlobalIndexer->addField("Chaff0",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("Chaff1",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("Chaff2",hgradFP); // Dummy
+  sourceGlobalIndexer->buildGlobalUnknowns();
+  timer->stop("Build sourceGlobalIndexer");
+
+  // Build Target DOF Manager (Separate scalar fields on hgrad)
+  timer->start("Build targetGlobalIndexer");
+  RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  targetGlobalIndexer->addField("Projection to Mesh Vertices",hgradFP);
+  targetGlobalIndexer->buildGlobalUnknowns();
+  timer->stop("Build targetGlobalIndexer");
+
+  // Build projection factory
+  timer->start("projectionFactory.setup()");
+  panzer::L2Projection<LO,GO> projectionFactory;
+  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
+  projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
+  timer->stop("projectionFactory.setup()");
+
+  TEST_ASSERT(nonnull(projectionFactory.getTargetGlobalIndexer()));
+
+  // Build mass matrix
+  std::unordered_map<std::string,double> ebMultipliers = {{"eblock-0_0",1.0},{"eblock-1_0",1.0}};
+
+  timer->start("projectionFactory.buildMassMatrix() 1.0");
+  auto massMatrix_1 = projectionFactory.buildMassMatrix(false,&ebMultipliers);
+  timer->stop("projectionFactory.buildMassMatrix() 1.0");
+
+  const double multiplier = 4.0;
+  ebMultipliers["eblock-0_0"] = multiplier;
+  ebMultipliers["eblock-1_0"] = multiplier;
+
+  timer->start("projectionFactory.buildMassMatrix() 4.0");
+  auto massMatrix_4 = projectionFactory.buildMassMatrix(false,&ebMultipliers);
+  timer->stop("projectionFactory.buildMassMatrix() 4.0");
+
+  const auto view_1 = massMatrix_1->getLocalValuesView();
+  const auto view_4 = massMatrix_4->getLocalValuesView();
+
+  const double tol = 100.0 * std::numeric_limits<double>::epsilon();
+  int valuesCheck = 0; // if check > 0 then multipliers broke
+
+  Kokkos::parallel_reduce(view_1.size(),KOKKOS_LAMBDA (const int i, int& update) {
+      if (std::fabs(multiplier * view_1(i) - view_4(i)) > tol)
+        update += 1;
+  }, valuesCheck);
+  Kokkos::fence();
+
+  TEST_EQUALITY(valuesCheck, 0);
 }
