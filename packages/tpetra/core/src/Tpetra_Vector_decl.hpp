@@ -353,12 +353,14 @@ public:
   //! Return the infinity-norm of this Vector.
   mag_type normInf() const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::normWeighted; // overloading, not hiding
   /// \brief Compute Weighted 2-norm (RMS Norm) of this Vector.
   ///
   /// \warning This method is DEPRECATED.
   mag_type TPETRA_DEPRECATED
   normWeighted (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& weights) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::meanValue; // overloading, not hiding
   //! Compute mean (average) value of this Vector.

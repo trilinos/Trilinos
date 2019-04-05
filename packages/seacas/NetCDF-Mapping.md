@@ -29,8 +29,7 @@ used in an Exodus file.
 * There are about 10 standard dimensions in every file.
 * plus one for each set plus one if any attributes
 * plus two for each block plus one if any attributes
-* plus one for each transient variable on an entity (node, node set, element
-block, element set, ...)
+* plus one for each transient variable on an entity (node, node set, element block, element set, ...)
 
 ## Variables: (NC_MAX_VARS)
 * There are a few standard dimensions
@@ -41,19 +40,25 @@ block, element set, ...)
   * #ndim coordinates (1,2,3)
 
 * Each block adds 1 + 2*#attr_on_block + #var_on_block
+
 * Each set adds 2 + 2*#attr_on_set + #var_on_set
+
 * Each sideset add 3 + 2*#attr_on_sset + #var_on_sset
+
 * Each map adds 1
 
 ## Example
 If we have an exodus file with:
  * Nodes
+
  * 5 Element blocks
    * 4 transient variables per element block
    * 2 attributes per element block
+
  * 4 Node Sets
    * Distribution Factors defined on each set
    * 3 transient variables
+
  * 3 Side Sets
    * Distribution Factors defined on each set
    * 2 transient variables

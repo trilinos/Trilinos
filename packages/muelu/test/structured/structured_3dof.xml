@@ -39,10 +39,12 @@
       <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
     </ParameterList>
 
-    <!-- <ParameterList name="myCoordTransferFact"> -->
-    <!--   <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/> -->
-    <!--   <Parameter name="structured aggregation"              type="bool"   value="true"/> -->
-    <!-- </ParameterList> -->
+    <ParameterList name="myCoordTransferFact">
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+      <Parameter name="structured aggregation"              type="bool"   value="true"/>
+      <Parameter name="numDimensions"                       type="string" value="myAggregationFact"/>
+      <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+    </ParameterList>
 
     <ParameterList name="myNullspaceFact">
       <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
@@ -65,10 +67,10 @@
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <!-- <ParameterList name="TransferFactories"> -->
-      <!--   <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/> -->
-      <!-- <Parameter name="AggregationExportFactory"                type="string" value="myAggExport"/> -->
-      <!-- </ParameterList> -->
+      <ParameterList name="TransferFactories">
+        <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/>
+        <!-- <Parameter name="AggregationExportFactory"                type="string" value="myAggExport"/> -->
+      </ParameterList>
     </ParameterList>
 
     <!-- ===========  SMOOTHING  =========== -->
@@ -130,10 +132,8 @@
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
       <!-- <Parameter name="CoarseSolver"                        type="string"   value="myILU"/> -->
       <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
-      <Parameter name="lNodesPerDim"                        type="string"   value="myProlongatorFact"/>
-      <Parameter name="numDimensions"                       type="string"   value="myProlongatorFact"/>
-      <!-- <Parameter name="CoarseNumZLayers"                    type="string"   value="myLineDetectionFact"/> -->
-      <!-- <Parameter name="LineDetection_VertLineIds"           type="string"   value="myLineDetectionFact"/> -->
+      <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
+      <Parameter name="numDimensions"                       type="string"   value="myCoordTransferFact"/>
     </ParameterList>
   </ParameterList>
 

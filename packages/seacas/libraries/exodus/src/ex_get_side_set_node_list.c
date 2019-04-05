@@ -68,10 +68,10 @@
  */
 static int check_valid_side(size_t side_num, size_t max_sides, char *topology, int exoid)
 {
-  char errmsg[MAX_ERR_LENGTH];
-  int  err_stat = EX_NOERR;
+  int err_stat = EX_NOERR;
 
   if (side_num + 1 < 1 || side_num + 1 > max_sides) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid %s edge number %" ST_ZU " in file id %d",
              topology, side_num + 1, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);

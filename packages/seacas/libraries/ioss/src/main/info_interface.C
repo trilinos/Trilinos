@@ -122,6 +122,9 @@ void Info::Interface::enroll_options()
   options_.enroll("summary", Ioss::GetLongOption::NoValue,
                   "Only output counts of nodes, elements, and entities", nullptr);
 
+  options_.enroll("configuration", Ioss::GetLongOption::NoValue,
+                  "Show configuration of IOSS library (TPL versions)", nullptr);
+
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogenous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
@@ -239,7 +242,11 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("summary") != nullptr) {
-    summary_ = 1;
+    summary_ = true;
+  }
+
+  if (options_.retrieve("configuration") != nullptr) {
+    showConfig_ = true;
   }
 
   {
@@ -344,16 +351,18 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   // Parse remaining options as directory paths.
-  if (option_index < argc) {
-    filename_ = argv[option_index];
-  }
-  else {
-    std::cerr << "\nERROR: filename not specified\n\n";
-    return false;
-  }
+  if (!show_config()) {
+    if (option_index < argc) {
+      filename_ = argv[option_index];
+    }
+    else {
+      std::cerr << "\nERROR: filename not specified\n\n";
+      return false;
+    }
 
-  if (filetype_ == "unknown") {
-    filetype_ = get_type_from_file(filename_);
+    if (filetype_ == "unknown") {
+      filetype_ = get_type_from_file(filename_);
+    }
   }
 
   return true;

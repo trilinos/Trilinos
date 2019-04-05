@@ -155,7 +155,7 @@ namespace {
   template <typename T, typename INT> void check(const T v[], INT iv[], size_t N)
   {
 #if defined(DEBUG_QSORT)
-    fprintf(stderr, "Checking sort of %d values\n", N + 1);
+    std::cerr << "Checking sort of " << N + 1 << " values\n";
     size_t i;
     for (i = 1; i < N; i++) {
       SMART_ASSERT(v[iv[i - 1]] <= v[iv[i]]);

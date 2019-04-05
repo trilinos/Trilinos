@@ -2032,6 +2032,7 @@ namespace Tpetra {
       }
     }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Compute Weighted 2-norm (RMS Norm) of each column.
     ///
     /// \warning This method has been DEPRECATED.
@@ -2073,6 +2074,7 @@ namespace Tpetra {
         norms[i] = theNorms[i];
       }
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Compute mean (average) value of each column.
     ///

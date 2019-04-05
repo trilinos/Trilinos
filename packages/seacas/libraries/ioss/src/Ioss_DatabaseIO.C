@@ -199,6 +199,7 @@ namespace Ioss {
       overlayCount = properties.get("OVERLAY_COUNT").get_int();
     }
 
+    Utils::check_set_bool_property(properties, "ENABLE_TRACING", m_enableTracing);
     Utils::check_set_bool_property(properties, "TIME_STATE_INPUT_OUTPUT", m_timeStateInOut);
     {
       bool logging;
@@ -1070,9 +1071,9 @@ namespace {
         strm << total << " (ms)\n";
       }
       else if (util.parallel_size() > 4) {
-	std::sort(all_times.begin(), all_times.end());
-	strm << " Min: " << all_times.front() << "\tMax: " << all_times.back()
-             << "\tMed: " << all_times[all_times.size()/2];
+        std::sort(all_times.begin(), all_times.end());
+        strm << " Min: " << all_times.front() << "\tMax: " << all_times.back()
+             << "\tMed: " << all_times[all_times.size() / 2];
       }
       else {
         char sep = (util.parallel_size() > 1) ? ':' : ' ';

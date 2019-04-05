@@ -84,15 +84,13 @@ If none of the above functions are required, then an element unknown
 to the exodus library can can be written to and read from an exodus
 file with no loss of information.
 
-
 \section ordering Exodus Node Ordering Convention
 
 Node ordering follows the conventions illustrated in the figures
 below. The node ordering conventions follow the element topology used
 in PATRAN. Thus, for higher-order elements than those illustrated, use
 the ordering prescribed in the PATRAN Element Library Manual Manual
-https://web.mscsoftware.com/training_videos/patran/reverb3/index.html#page/Finite%2520Element%2520Modeling/elem_lib_topics.16.1.html#ww33606.
-
+<https://web.mscsoftware.com/training_videos/patran/reverb3/index.html#page/Finite%2520Element%2520Modeling/elem_lib_topics.16.1.html#ww33606>.
 
 -------------------------
 \section circle Circle and Sphere
@@ -169,8 +167,6 @@ The side numbering for a 2D quadrilateral element and a 3D quadrilateral shell e
 
 ![Shell-Number](../topology/shell-face-numbering.png)
 
-
-
 -------------------------
 \section tet Tetrahedral
 ![Tet4](../topology/tet04.png)
@@ -209,7 +205,6 @@ PYRAMID| 1 | 1, 2, 5 |
 
 ![Pyramid-Number](../topology/pyramid-face-numbering.png)
 
-
 -------------------------
 \section wedge Wedge
 ![Wedge6](../topology/wedge06.png)
@@ -225,7 +220,6 @@ mapping. In exodus, sides 1,2,3 are quadrilateral and sides 4,5 are
 triangular; in MSC/Patran, sides 1,2 are triangular and sides 4,5,6
 are quadrilateral. It is unclear when and why this digression
 occurred.
-
 
  Element Type |Side \#|Node Order  | Patran Side |
 --------------|:-----:|:----------:|:-----------:|

@@ -73,10 +73,15 @@ namespace panzer {
 
   template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>>
-  panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping)
+  panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping,
+                                               const std::unordered_map<std::string,double>* elementBlockMultipliers)
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection::Build Mass Matrix",TopBuildMassMatrix);
     TEUCHOS_ASSERT(setupCalled_);
+
+    if (elementBlockMultipliers != nullptr) {
+      TEUCHOS_ASSERT(elementBlockMultipliers->size() == elementBlockNames_.size());
+    }
 
     // Allocate the owned matrix
     std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> indexers;
@@ -100,6 +105,10 @@ namespace panzer {
     // Loop over element blocks and fill mass matrix
     if(is_scalar){
       for (const auto& block : elementBlockNames_) {
+
+        double ebMultiplier = 1.0;
+        if (elementBlockMultipliers != nullptr)
+          ebMultiplier = elementBlockMultipliers->find(block)->second;
 
         // Based on descriptor, currently assumes there should only be one workset
         panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
@@ -145,7 +154,7 @@ namespace panzer {
               for (int row=0; row < numBasisPoints; ++row) {
                 for (int col=0; col < numIds; ++col) {
                   for (int qp=0; qp < numQP; ++qp) {
-                    auto tmp = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                    auto tmp = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp) * ebMultiplier;
                     total_mass += tmp;
                     if (col == row )
                       trace += tmp;
@@ -162,7 +171,7 @@ namespace panzer {
                 int col = row;
                 vals[col] = 0.0;
                 for (int qp=0; qp < numQP; ++qp)
-                  vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp)*total_mass/trace;
+                  vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp) * ebMultiplier * total_mass / trace;
 
                 M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
               }
@@ -186,7 +195,7 @@ namespace panzer {
                 for (int col=0; col < numIds; ++col) {
                   vals[col] = 0.0;
                   for (int qp=0; qp < numQP; ++qp)
-                    vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                    vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp) * ebMultiplier;
                 }
                 M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
 
@@ -198,6 +207,10 @@ namespace panzer {
       }
     } else {
       for (const auto& block : elementBlockNames_) {
+
+        double ebMultiplier = 1.0;
+        if (elementBlockMultipliers != nullptr)
+          ebMultiplier = elementBlockMultipliers->find(block)->second;
 
         // Based on descriptor, currently assumes there should only be one workset
         panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
@@ -246,7 +259,7 @@ namespace panzer {
                 for (int col=0; col < numIds; ++col){
                   vals[col] = 0.0;
                   for(int dim=0; dim < static_cast<int>(weightedBasis.extent(3)); ++dim)
-                    vals[col] += unweightedBasis(cell,row,qp,dim) * weightedBasis(cell,col,qp,dim);
+                    vals[col] += unweightedBasis(cell,row,qp,dim) * weightedBasis(cell,col,qp,dim) * ebMultiplier;
                 }
 
                 M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);

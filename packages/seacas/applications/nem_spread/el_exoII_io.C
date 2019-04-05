@@ -1517,7 +1517,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       printf("\t\tLocal_block_ID globals.Proc_Num_Elem_In_Blk Nodes_Per_Elem_In_Blk\n");
       printf("\t\t----------------------------------------------------\n");
       for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++)
-        printf("\t\t\t %d   \t   %d \t\t   %d\n", i, globals.Proc_Num_Elem_In_Blk[iproc][i],
+        printf("\t\t\t %d   \t   %d \t\t   %ld\n", i, globals.Proc_Num_Elem_In_Blk[iproc][i],
                globals.Proc_Nodes_Per_Elem[iproc][i]);
       printf("\t\t----------------------------------------------------\n");
       print_line("-", 79);
@@ -2026,7 +2026,6 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
   std::vector<INT> list_length(Proc_Info[2]);
   std::vector<INT> proc_num_ns(Proc_Info[2]);
   std::vector<INT> ns_cntr(Proc_Info[2]);
-  std::vector<INT> first_message(Proc_Info[2]);
   std::vector<INT> ns_on_proc(Proc_Info[2]);
 
   /* pointers into the concatenated node set list which locate the start of the node sets     */
@@ -2114,10 +2113,9 @@ void NemSpread<T, INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set, IN
     if (num_nodes_in_node_set[i] > 0) {
 
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
-        first_message[iproc] = TRUE;
-        proc_num_ns[iproc]   = 0;
-        ns_cntr[iproc]       = 0;
-        ns_on_proc[iproc]    = FALSE;
+        proc_num_ns[iproc] = 0;
+        ns_cntr[iproc]     = 0;
+        ns_on_proc[iproc]  = FALSE;
       }
 
       size_t iss_size = sizeof(INT);
@@ -2461,7 +2459,6 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
                                                       current processor                           */
   std::vector<INT> proc_num_sides_ss(Proc_Info[2]); /* Number of sides in the current side set that
                                                        exist for the current processor */
-  std::vector<INT> first_message(Proc_Info[2]);
   std::vector<INT> ntotal(Proc_Info[2]);
   std::vector<INT> ss_num(Proc_Info[2]);
 
@@ -2519,7 +2516,6 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
       for (int iproc = 0; iproc < Proc_Info[2]; iproc++) {
         ss_on_proc[iproc]        = FALSE;
         proc_num_sides_ss[iproc] = 0;
-        first_message[iproc]     = TRUE;
         ss_elem_cntr[iproc]      = 0;
       }
 

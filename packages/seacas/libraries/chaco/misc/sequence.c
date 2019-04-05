@@ -58,32 +58,25 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   double *          yvecs[MAXDIMS + 1];       /* space for pointing to eigenvectors */
   double            evals[MAXDIMS + 1];       /* corresponding eigenvalues */
   double *          subvwsqrt = NULL;         /* vwsqrt vector for subgraphs */
-  double *          values    = NULL;         /* sorted Fiedler vector values */
   double *          subvals   = NULL;         /* values for one connected component */
   double            goal[2];                  /* needed for eigen convergence mode = 1 */
   double            total_vwgt;               /* sum of all vertex weights */
-  double            time;                     /* time spent sequencing */
   float *           term_wgts[2];             /* dummy vector for terminal weights */
-  int *             setsize     = NULL;       /* size of each connected component */
-  int *             glob2loc    = NULL;       /* maps graph vtxs to subgraph vtxs */
-  int *             loc2glob    = NULL;       /* maps subgraph vtxs to graph vtxs */
-  int *             permutation = NULL;       /* computed permutation */
-  int *             subperm     = NULL;       /* partial permutation */
-  int *             compnum     = NULL;       /* component number for each vertex */
-  int *             degree      = NULL;       /* degrees of vertices in subgraph */
+  int *             setsize  = NULL;          /* size of each connected component */
+  int *             glob2loc = NULL;          /* maps graph vtxs to subgraph vtxs */
+  int *             loc2glob = NULL;          /* maps subgraph vtxs to graph vtxs */
+  int *             subperm  = NULL;          /* partial permutation */
+  int *             degree   = NULL;          /* degrees of vertices in subgraph */
   double            maxdeg;                   /* maximum weighted degree of a vertex */
-  int               using_vwgts;              /* are vertex weights being used? */
   int               subnvtxs;                 /* number of vertices in subgraph */
   int               subnedges;                /* number of edges in subgraph */
   int               maxsize;                  /* size of largest connected component */
   int               subvwgt_max;              /* largest vertex weight in component */
-  int               ncomps;                   /* number of connected components */
   int               comp;                     /* loops over connected components */
   int               nused;                    /* number of vertices already handled */
   int               old_rqi_conv_mode;        /* value of RQI_CONVERGENCE_MODE */
   int               old_lan_conv_mode;        /* value of LANCZOS_CONVERGENCE_MODE */
   int               i;                        /* loop counters */
-  int *             space     = NULL;
   FILE *            orderfile = NULL;
   void              mergesort(), eigensolve(), free_edgeslist(), y2x();
   void              make_subvector(), make_subgraph(), remake_graph();
@@ -91,23 +84,22 @@ void sequence(struct vtx_data **graph,       /* graph data structure */
   double            find_maxdeg(), seconds();
   int               find_edges();
 
-  time        = seconds();
-  using_vwgts = (vwsqrt != NULL);
+  double time        = seconds();
+  int    using_vwgts = (vwsqrt != NULL);
 
   /* Sort each connected component separately. */
-  compnum     = smalloc((nvtxs + 1) * sizeof(int));
-  permutation = smalloc(nvtxs * sizeof(int));
-  values      = smalloc((nvtxs + 1) * sizeof(double));
+  int *   compnum     = smalloc((nvtxs + 1) * sizeof(int));
+  int *   permutation = smalloc(nvtxs * sizeof(int));
+  double *values      = smalloc((nvtxs + 1) * sizeof(double));
 
-  space  = smalloc(nvtxs * sizeof(int));
-  ncomps = find_edges(graph, nvtxs, compnum, space, &edge_list);
+  int *space  = smalloc(nvtxs * sizeof(int));
+  int  ncomps = find_edges(graph, nvtxs, compnum, space, &edge_list);
   ++ncomps;
 
   free_edgeslist(edge_list);
   yvecs[1] = smalloc((nvtxs + 1) * sizeof(double));
 
   term_wgts[1] = NULL;
-  subvwsqrt    = NULL;
 
   old_rqi_conv_mode = RQI_CONVERGENCE_MODE;
   old_lan_conv_mode = LANCZOS_CONVERGENCE_MODE;

@@ -551,7 +551,6 @@ namespace MueLu {
       auto rowsA = kokkosMatrix.graph.row_map;
 
       typedef Kokkos::ArithTraits<SC>     ATS;
-      typedef typename ATS::magnitudeType magnitudeType;
 
       bool reuseGraph = pL.get<bool>("filtered matrix: reuse graph");
       bool lumping    = pL.get<bool>("filtered matrix: use lumping");
@@ -822,7 +821,6 @@ namespace MueLu {
       auto kokkosMatrix = A->getLocalMatrix(); // access underlying kokkos data
 
       //
-      typedef typename Matrix::local_matrix_type          local_matrix_type;
       typedef typename LWGraph_kokkos::local_graph_type   kokkos_graph_type;
       typedef typename kokkos_graph_type::row_map_type    row_map_type;
       //typedef typename row_map_type::HostMirror           row_map_type_h;

@@ -44,6 +44,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,7 +93,6 @@ extern char *ncmpi_inq_libvers();
 
 void ex_print_config(void)
 {
-  fprintf(stderr, "\nExodus Configuration Information:\n");
   fprintf(stderr, "\tExodus Version %.2f\n", EX_API_VERS);
 #if defined(PARALLEL_AWARE_EXODUS)
   fprintf(stderr, "\t\tParallel enabled\n");
@@ -114,6 +114,9 @@ void ex_print_config(void)
 #else
   fprintf(stderr, "\tNetCDF Version < 4.3.3\n");
 #endif
+#if NC_HAS_CDF5
+  fprintf(stderr, "\t\tCDF5 enabled\n");
+#endif
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
@@ -121,20 +124,17 @@ void ex_print_config(void)
     fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
 #endif
+#if NC_HAS_PARALLEL
+  fprintf(stderr, "\t\tparallel IO enabled via HDF5 and/or PnetCDF\n");
+#endif
 #if NC_HAS_PARALLEL4
   fprintf(stderr, "\t\tparallel IO enabled via HDF5\n");
-#endif
-#if NC_HAS_CDF5
-  fprintf(stderr, "\t\tCDF5 enabled\n");
 #endif
 #if NC_HAS_PNETCDF
   {
     char *libver = ncmpi_inq_libvers();
     fprintf(stderr, "\t\tparallel IO enabled via PnetCDF (%s)\n", libver);
   }
-#endif
-#if NC_HAS_PARALLEL
-  fprintf(stderr, "\t\tparallel IO enabled via HDF5 and/or PnetCDF\n");
 #endif
 #if NC_HAS_ERANGE_FILL
   fprintf(stderr, "\t\tERANGE_FILL support\n");
@@ -143,8 +143,14 @@ void ex_print_config(void)
   fprintf(stderr, "\t\tRELAX_COORD_BOUND defined\n");
 #endif
 #if defined(NC_HAVE_META_H)
-  fprintf(stderr, "\t\tNC_HAVE_META_H defined\n\n");
+  fprintf(stderr, "\t\tNC_HAVE_META_H defined\n");
 #endif
+#if defined(NC_HAS_NC2)
+  fprintf(stderr, "\t\tAPI Version 2 support enabled\n");
+#else
+  fprintf(stderr, "\t\tAPI Version 2 support NOT enabled\n");
+#endif
+  fprintf(stderr, "\n");
 }
 
 int ex_check_file_type(const char *path, int *type)
@@ -1410,7 +1416,7 @@ void ex_iqsort64(int64_t v[], int64_t iv[], int64_t N)
   ex_int_iisort64(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of %d values\n", N + 1);
+  fprintf(stderr, "Checking sort of %" PRId64 " values\n", N + 1);
   int i;
   for (i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
@@ -1524,7 +1530,7 @@ void ex_compress_variable(int exoid, int varid, int type)
     int shuffle       = file->shuffle;
     if (deflate_level > 0 && file->is_hdf5) {
       if (type != 3) { /* Do not try to compress character data */
-	nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+        nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
       }
     }
 #if defined(PARALLEL_AWARE_EXODUS)
@@ -1566,7 +1572,8 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   int pariomode = 0;
 
   /* Contains a 1 in all bits corresponding to file modes */
-  static unsigned int all_modes = EX_NORMAL_MODEL | EX_64BIT_OFFSET | EX_64BIT_DATA | EX_NETCDF4;
+  /* Do not include EX_64BIT_DATA in this list */
+  static unsigned int all_modes = EX_NORMAL_MODEL | EX_64BIT_OFFSET | EX_NETCDF4 | EX_PNETCDF;
 
   if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
     int run_version_major = run_version / 100;
@@ -1608,6 +1615,12 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   }
 #endif
 
+  /* EX_64_BIT_DATA is 64-bit integer version of EX_PNETCDF.  If
+     EX_64_BIT_DATA and EX_PNETCDF is not set, then set EX_PNETCDF... */
+  if (my_mode & EX_64BIT_DATA) {
+    my_mode |= EX_PNETCDF;
+  }
+
   /* Check that one and only one format mode is specified... */
   {
     unsigned int set_modes = all_modes & my_mode;
@@ -1622,7 +1635,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "EXODUS: ERROR: More than 1 file format "
                  "(EX_NORMAL_MODEL, EX_LARGE_MODEL, EX_64BIT_OFFSET, "
-                 "EX_64BIT_DATA, or EX_NETCDF4)\nwas specified in the "
+                 "or EX_NETCDF4)\nwas specified in the "
                  "mode argument of the ex_create call. Only a single "
                  "format can be specified.\n");
         ex_err(__func__, errmsg, EX_BADPARAM);
@@ -1653,6 +1666,9 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 #if NC_HAS_CDF5
     else if (my_mode & EX_64BIT_DATA) {
       ; /* Do nothing, already set */
+    }
+    else if (my_mode & EX_PNETCDF) {
+      my_mode |= EX_64BIT_DATA;
     }
 #endif
     else {
@@ -1733,12 +1749,12 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
         tmp_mode = EX_64BIT_DATA;
       }
       else {
-	if (my_mode & EX_64BIT_DATA) {
-	  tmp_mode = EX_64BIT_DATA;
-	}
-	else {
-	  tmp_mode = EX_64BIT_OFFSET;
-	}
+        if (my_mode & EX_64BIT_DATA) {
+          tmp_mode = EX_64BIT_DATA;
+        }
+        else {
+          tmp_mode = EX_64BIT_OFFSET;
+        }
       }
 #if !NC_HAS_PNETCDF
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -1824,8 +1840,15 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 
   /*
    * set error handling mode to no messages, non-fatal errors
+   * unless specified differently via environment.
    */
-  ex_opts(exoptval); /* call required to set ncopts first time through */
+  {
+    char *option = getenv("EXODUS_VERBOSE");
+    if (option != NULL) {
+      exoptval = EX_VERBOSE;
+    }
+    ex_opts(exoptval); /* call required to set ncopts first time through */
+  }
 
   if (my_mode & EX_CLOBBER) {
     nc_mode |= NC_CLOBBER;
