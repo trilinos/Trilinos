@@ -43,9 +43,10 @@
 //
 // @HEADER
 
-/*! \file mj_int_coordinates.cpp
-    \brief Generate a test to partition integer coordinates
-    See definition of myIntScalar_t
+/*! \file mj_imbalanced.cpp
+    \brief Generate a test to partition lots of points, all at the same coord
+    Exposed an overflow in Multijagged partitioning, determining weights to
+    the left of each cut.  #4785
 */
 
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -59,7 +60,7 @@
 typedef Tpetra::Map<> myMap_t;
 typedef myMap_t::local_ordinal_type myLocalId_t;
 typedef myMap_t::global_ordinal_type myGlobalId_t;
-typedef int myIntScalar_t; 
+typedef double myScalar_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 template <typename A, typename B>
@@ -89,13 +90,12 @@ void freeArrays(A *&a, A *b)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-template <typename myScalar_t>
 void test_no_weights(
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
   Teuchos::ParameterList &params,
   size_t localCount, 
   myGlobalId_t *globalIds, 
-  myIntScalar_t *coords, 
+  myScalar_t *coords, 
   int &nFail
 )
 {
@@ -103,9 +103,7 @@ void test_no_weights(
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
 
-  myScalar_t *scoords;
-  copyArrays<myScalar_t, myIntScalar_t>(localCount*3, scoords, coords);
-  myScalar_t *sx = scoords; 
+  myScalar_t *sx = coords; 
   myScalar_t *sy = sx + localCount;
   myScalar_t *sz = sy + localCount;
 
@@ -132,22 +130,19 @@ void test_no_weights(
     std::cout << std::endl;
   }
 
-  freeArrays<myScalar_t, myIntScalar_t>(scoords, coords);
-
   delete metricObject;
   delete problem;
   delete ia;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-template <typename myScalar_t>
 void test_weights(
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
   Teuchos::ParameterList &params,
   size_t localCount, 
   myGlobalId_t *globalIds, 
-  myIntScalar_t *coords, 
-  myIntScalar_t *weights, 
+  myScalar_t *coords, 
+  myScalar_t *weights, 
   int &nFail
 )
 {
@@ -155,21 +150,17 @@ void test_weights(
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
 
-  myScalar_t *scoords, *sweights;
-  copyArrays<myScalar_t, myIntScalar_t>(localCount*3, scoords, coords);
-  copyArrays<myScalar_t, myIntScalar_t>(localCount, sweights, weights);
-
   std::vector<const myScalar_t *> coordVec(3);
   std::vector<int> coordStrides(3);
 
-  coordVec[0] = scoords; coordStrides[0] = 1;
-  coordVec[1] = scoords + localCount; coordStrides[1] = 1;
-  coordVec[2] = scoords + localCount + localCount; coordStrides[2] = 1;
+  coordVec[0] = coords; coordStrides[0] = 1;
+  coordVec[1] = coords + localCount; coordStrides[1] = 1;
+  coordVec[2] = coords + localCount + localCount; coordStrides[2] = 1;
 
   std::vector<const myScalar_t *> weightVec(1);
   std::vector<int> weightStrides(1);
 
-  weightVec[0] = sweights; weightStrides[0] = 1;
+  weightVec[0] = weights; weightStrides[0] = 1;
 
   inputAdapter_t *ia=new inputAdapter_t(localCount, globalIds, coordVec, 
                                          coordStrides,weightVec,weightStrides);
@@ -194,9 +185,6 @@ void test_weights(
     }
     std::cout << std::endl;
   }
-
-  freeArrays<myScalar_t, myIntScalar_t>(scoords, coords);
-  freeArrays<myScalar_t, myIntScalar_t>(sweights, weights);
 
   delete metricObject;
   delete problem;
@@ -225,23 +213,23 @@ int main(int narg, char *arg[])
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
 
-  const size_t minN = 4000000;
+  const size_t minN = 8000000;
   const size_t maxN = 16000000;
   const size_t incN = 1000000;
   size_t maxLocalCount = maxN / np; // biggest test we'll run
 
   // Create coordinates that range from 0 to 999
   const int dim = 3;
-  myIntScalar_t *coords = new myIntScalar_t[dim * maxLocalCount];
+  myScalar_t *coords = new myScalar_t[dim * maxLocalCount];
 
   srand(me);
-  for (size_t i=0; i < maxLocalCount*dim; i++)
-    coords[i] = myIntScalar_t(rand() / (double)RAND_MAX) % 1000;
+  for (size_t i=0; i < maxLocalCount*dim; i++) 
+    coords[i] = myScalar_t(0);
 
   // Create weights for the coordinates
-  myIntScalar_t *weights = new myIntScalar_t[maxLocalCount];
+  myScalar_t *weights = new myScalar_t[maxLocalCount];
   for (size_t i=0; i < maxLocalCount; i++) 
-    weights[i] = 1 + myIntScalar_t(me);
+    weights[i] = myScalar_t(1+me);
 
   // Allocate space for global IDs; they will be generated below
   myGlobalId_t *globalIds = new myGlobalId_t[maxLocalCount];
@@ -264,22 +252,14 @@ int main(int narg, char *arg[])
     }
    
     ///////////////////////////////////////////////////////////////////////
-    // Test one:  No weights; scalar_t = double
+    // Test one:  No weights
     if (me == 0) std::cout << "Test:  no weights, scalar = double" << std::endl;
-    test_no_weights<double>(comm, params, localCount, globalIds, coords, nFail);
+    test_no_weights(comm, params, localCount, globalIds, coords, nFail);
   
-    // Test two:  No weights; scalar_t = myIntScalar_t
-    if (me == 0) std::cout << "Test:  no weights, scalar = myIntScalar_t" << std::endl;
-    test_no_weights<myIntScalar_t>(comm, params, localCount, globalIds, coords, nFail);
-   
     ///////////////////////////////////////////////////////////////////////
-    // Test three:  weighted; scalar_t = double
+    // Test two:  weighted
     if (me == 0) std::cout << "Test:  weights, scalar = double" << std::endl;
-    test_weights<double>(comm, params, localCount, globalIds, coords, weights, nFail);
-
-    // Test four:  weighted; scalar_t = myIntScalar_t
-    if (me == 0) std::cout << "Test:  weights, scalar = myIntScalar_t" << std::endl;
-    test_weights<myIntScalar_t>(comm, params, localCount, globalIds, coords, weights, nFail);
+    test_weights(comm, params, localCount, globalIds, coords, weights, nFail);
 
     // Early exit when failure is detected
     int gnFail;
