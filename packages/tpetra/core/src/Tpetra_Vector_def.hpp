@@ -218,6 +218,7 @@ namespace Tpetra {
     return norm;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
   TPETRA_DEPRECATED
@@ -275,6 +276,7 @@ namespace Tpetra {
 
     return gblNrm;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

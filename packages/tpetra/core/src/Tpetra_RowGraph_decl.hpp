@@ -146,6 +146,25 @@ namespace Tpetra {
     /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
+    //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
+    virtual size_t getGlobalMaxNumRowEntries() const = 0;
+
+    //! \brief Returns the maximum number of entries across all rows/columns on this node.
+    virtual size_t getNodeMaxNumRowEntries() const = 0;
+
+    //! Whether the graph has a well-defined column Map.
+    virtual bool hasColMap() const = 0;
+
+    //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
+    virtual bool isLocallyIndexed() const = 0;
+
+    //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
+    virtual bool isGloballyIndexed() const = 0;
+
+    //! Whether fillComplete() has been called (without an intervening resumeFill()).
+    virtual bool isFillComplete() const = 0;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Number of diagonal entries over all processes in the
     ///   graph's communicator.
     ///
@@ -158,15 +177,6 @@ namespace Tpetra {
     /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
     ///   and will DISAPPEAR VERY SOON per #2630.
     virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
-
-    //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
-    virtual size_t getGlobalMaxNumRowEntries() const = 0;
-
-    //! \brief Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
-
-    //! Whether the graph has a well-defined column Map.
-    virtual bool hasColMap() const = 0;
 
     /// \brief Whether the graph is locally lower triangular.
     ///
@@ -191,49 +201,52 @@ namespace Tpetra {
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
     virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
-
-    //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    virtual bool isLocallyIndexed() const = 0;
-
-    //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    virtual bool isGloballyIndexed() const = 0;
-
-    //! Whether fillComplete() has been called (without an intervening resumeFill()).
-    virtual bool isFillComplete() const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
-    //! @name Extraction Methods
+    //! @name Access to entries in a row
     //@{
 
-    //! Extract a list of entries in a specified global row of the graph. Put into pre-allocated storage.
-    /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param NumIndices - (Out) Number of indices.
-
-      Note: A std::runtime_error exception is thrown if \c Indices is not large enough to hold the column indices associated
-      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices is unchanged and \c NumIndices is
-      returned as Teuchos::OrdinalTraits<size_t>::invalid().
-    */
+    /// \brief Get a copy of the global column indices in a given row
+    ///   of the graph.
+    ///
+    /// Given the global index of a row of the graph, get a copy of
+    /// all the global column indices in that row that the calling
+    /// process stores.
+    ///
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [in/out] On output: All the global column
+    ///   indices in that row on the calling process.
+    /// \param numColInds [out] Number of indices in the row on the
+    ///   calling process.
+    ///
+    /// \pre <tt>getRowMap()->isNodeGlobalElement(gblRow)<tt> is <tt>true</tt>.
+    /// \pre <tt>gblColInds.size() >= getNumEntriesInGlobalRow(gblRow)</tt> is <tt>true</tt>.
     virtual void
-    getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                      size_t &NumIndices) const = 0;
+    getGlobalRowCopy (GlobalOrdinal gblRow,
+                      const Teuchos::ArrayView<GlobalOrdinal>& gblColInds,
+                      size_t& numColInds) const = 0;
 
-    //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices - (Out) Local column indices corresponding to values.
-      \param NumIndices - (Out) Number of indices.
-
-      Note: A std::runtime_error exception is thrown if \c Indices is not large enough to hold the column indices associated
-      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices is unchanged and \c NumIndices is
-      returned as Teuchos::OrdinalTraits<size_t>::invalid().
-    */
+    /// \brief Get a copy of the local column indices in a given row
+    ///   of the graph.
+    ///
+    /// Given the local index of a row of the graph, get a copy of
+    /// all the local column indices in that row that the calling
+    /// process stores.
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [in/out] On output: All the local column
+    ///   indices in that row on the calling process.
+    /// \param numColInds [out] Number of indices in the row on the
+    ///   calling process.
+    ///
+    /// \pre <tt>hasColMap()</tt> is <tt>true</tt>.
+    /// \pre <tt>getRowMap()->isNodeLocalElement(lclRow)<tt> is <tt>true</tt>.
+    /// \pre <tt>lclColInds.size() >= getNumEntriesInLocalRow(lclRow)</tt> is <tt>true</tt>.
     virtual void
-    getLocalRowCopy (LocalOrdinal LocalRow,
-                     const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                     size_t &NumIndices) const = 0;
+    getLocalRowCopy (LocalOrdinal lclRow,
+                     const Teuchos::ArrayView<LocalOrdinal>& lclColInds,
+                     size_t& numColInds) const = 0;
 
     /// \brief Whether this class implements getLocalRowView() and
     ///   getGlobalRowView().

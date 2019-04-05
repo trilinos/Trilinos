@@ -1094,6 +1094,7 @@ public:
     graph_.getLocalDiagOffsets (offsets);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LO, class GO, class Node>
   void TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar,LO,GO,Node>::
@@ -1131,6 +1132,7 @@ public:
       Kokkos::deep_copy (offsetsOut, offsetsTmp);
     }
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LO, class GO, class Node>
   void
@@ -1280,6 +1282,7 @@ public:
       "reorderedGaussSeidelCopy: Not implemented.");
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LO, class GO, class Node>
   void TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar,LO,GO,Node>::
@@ -1309,7 +1312,7 @@ public:
       }
     }
   }
-
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LO, class GO, class Node>
   void
@@ -3758,8 +3761,9 @@ public:
     return graph_.getNumEntriesInGlobalRow(globalRow);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
-  global_size_t
+  global_size_t TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getGlobalNumDiags() const
   {
@@ -3768,13 +3772,14 @@ public:
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  size_t
+  size_t TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumDiags() const
   {
     using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LO, class GO, class Node>
   size_t
@@ -3792,8 +3797,9 @@ public:
     return graph_.hasColMap();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
-  bool
+  bool TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   isLowerTriangular () const
   {
@@ -3802,13 +3808,14 @@ public:
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  bool
+  bool TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   isUpperTriangular () const
   {
     using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (this->graph_).isUpperTriangularImpl ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LO, class GO, class Node>
   bool
