@@ -86,6 +86,14 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset) :
+    base_type (source, map, rowOffset)
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const Teuchos::ArrayView<const Scalar>& values)
     : base_type (map, values, values.size (), 1)

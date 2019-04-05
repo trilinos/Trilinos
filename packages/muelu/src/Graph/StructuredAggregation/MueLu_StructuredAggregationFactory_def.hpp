@@ -337,6 +337,7 @@ namespace MueLu {
     Set(currentLevel, "coarseCoordinatesFineMap", coarseCoordinatesFineMap);
     Set(currentLevel, "coarseCoordinatesMap", coarseCoordinatesMap);
     Set(currentLevel, "interpolationOrder", interpolationOrder);
+    Set(currentLevel, "numDimensions", numDimensions);
 
   } // Build()
 } //namespace MueLu
