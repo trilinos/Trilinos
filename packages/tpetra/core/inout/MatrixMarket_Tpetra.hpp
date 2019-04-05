@@ -820,7 +820,7 @@ namespace Tpetra {
         // constructor specifying the number of nonzeros for each row.
         RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
-                                       DynamicProfile));
+                                       StaticProfile));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -969,9 +969,7 @@ namespace Tpetra {
         typedef global_ordinal_type GO;
 
         // Construct the CrsMatrix.
-        //
-        // Create with DynamicProfile, so that the fillComplete() can
-        // do first-touch reallocation.
+
         RCP<sparse_matrix_type> A; // the matrix to return.
         if (colMap.is_null ()) { // the user didn't provide a column Map
           A = rcp (new sparse_matrix_type (rowMap, myNumEntriesPerRow, StaticProfile));
@@ -1561,8 +1559,36 @@ namespace Tpetra {
         }
 
         // Create the graph where the root owns EVERYTHING
+	std::map<global_ordinal_type, size_t> numEntriesPerRow_map;
+	if (myRank == rootRank) {
+	  const auto& entries = pAdder()->getAdder()->getEntries();
+	  // This will count duplicates, but it's better than dense.
+	  // An even better approach would use a classic algorithm, 
+	  // likely in Saad's old textbook, for converting COO (entries)
+	  // to CSR (the local part of the sparse matrix data structure).
+	  for (const auto& entry : entries) {
+	    const global_ordinal_type gblRow = entry.rowIndex () + indexBase;
+	    ++numEntriesPerRow_map[gblRow];
+	  } 
+	}
+
+	Teuchos::Array<size_t> numEntriesPerRow (proc0Map->getNodeNumElements ());
+	for (const auto& ent : numEntriesPerRow_map) {
+	  const local_ordinal_type lclRow = proc0Map->getLocalElement (ent.first);
+	  numEntriesPerRow[lclRow] = ent.second;
+	}
+	// Free anything we don't need before allocating the graph.
+	// Swapping with an empty data structure is the standard idiom
+	// for freeing memory used by Standard Library containers.
+	// (Just resizing to 0 doesn't promise to free memory.)
+	{
+	  std::map<global_ordinal_type, size_t> empty_map;
+	  std::swap (numEntriesPerRow_map, empty_map);
+	}
+	    
         RCP<sparse_graph_type> proc0Graph =
-	  rcp(new sparse_graph_type(proc0Map,proc0Map->getGlobalNumElements(),StaticProfile,constructorParams));
+	  rcp(new sparse_graph_type(proc0Map,numEntriesPerRow (),
+				    StaticProfile,constructorParams));
         if(myRank == rootRank) {
           typedef Teuchos::MatrixMarket::Raw::GraphElement<global_ordinal_type> element_type;
 
