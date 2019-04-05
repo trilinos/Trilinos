@@ -93,6 +93,9 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0_gnu-7.4.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1-gnu-7.2.0"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.1_gnu-7.2.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
