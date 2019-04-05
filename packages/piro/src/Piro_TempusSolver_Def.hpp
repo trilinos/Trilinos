@@ -187,15 +187,14 @@ void Piro::TempusSolver<Scalar>::initialize(
             << "Please re-run with 'Abort on Failure = false' or use Tempus Time Step Control.\n"); 
       }
       abort_on_failure_ = false;  
-      //IKT FIXME: put better defaults for all of these
-      //IKT FIXME: add error checking for parameters 
-      t_initial = albTimeStepControlPL->get<Scalar>("Initial Time");
+      t_initial = albTimeStepControlPL->get<Scalar>("Initial Time", 0.0);
       t_final = albTimeStepControlPL->get<Scalar>("Final Time");
+      Scalar dt_initial; 
       dt_initial = albTimeStepControlPL->get<Scalar>("Initial Time Step");
-      dt_min = albTimeStepControlPL->get<Scalar>("Minimum Time Step");
-      dt_max = albTimeStepControlPL->get<Scalar>("Maximum Time Step");
-      reduc_factor = albTimeStepControlPL->get<Scalar>("Reduction Factor", 1.0);
-      ampl_factor = albTimeStepControlPL->get<Scalar>("Amplification Factor", 1.0);
+      Scalar dt_min = albTimeStepControlPL->get<Scalar>("Minimum Time Step", dt_initial);
+      Scalar dt_max = albTimeStepControlPL->get<Scalar>("Maximum Time Step", dt_initial);
+      Scalar reduc_factor = albTimeStepControlPL->get<Scalar>("Reduction Factor", 1.0);
+      Scalar ampl_factor = albTimeStepControlPL->get<Scalar>("Amplification Factor", 1.0);
       timeStepControlPL = sublist(integratorPL, "Time Step Control", false);
       timeStepControlPL->set<Scalar>("Initial Time", t_initial); 
       timeStepControlPL->set<Scalar>("Final Time", t_final); 
@@ -221,9 +220,15 @@ void Piro::TempusSolver<Scalar>::initialize(
       *out << "\n    Using Tempus 'Time Step Control'.\n";
       RCP<Teuchos::ParameterList> timeStepControlPL = sublist(integratorPL, "Time Step Control", true);
       t_initial = timeStepControlPL->get<Scalar>("Initial Time", 0.0);
-      t_final = timeStepControlPL->get<Scalar>("Final Time", 0.1);
+      if (timeStepControlPL->isParameter("Final Time")) {
+        t_final = timeStepControlPL->get<Scalar>("Final Time");
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
+            "\n Error!  'Time Step Control' Parameter List does not set Final Time, a required parameter!\n"); 
+      }
     }
-    *out << "tempusPL = " << *tempusPL << "\n";
+    //*out << "tempusPL = " << *tempusPL << "\n";
     RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
     //*out << "stepperPL = " << *stepperPL << "\n";
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
@@ -835,6 +840,13 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
     Teuchos::rcp(new Teuchos::ParameterList("ValidTempusSolverParams"));
   validPL->sublist("Tempus", false, "");
   validPL->sublist("Albany Time Step Control Options", false, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Initial Time", 0.0, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Initial Time Step", 0.1, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Minimum Time Step", 0.1, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Maximum Time Step", 0.1, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Final Time", 1.0, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Reduction Factor", 1.0, "");
+  validPL->sublist("Albany Time Step Control Options", false, "").set<Scalar>("Amplification Factor", 1.0, "");
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NonLinear Solver", false, "");
   //validPL->set<std::string>("Verbosity Level", "", "");

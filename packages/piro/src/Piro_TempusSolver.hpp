@@ -211,11 +211,6 @@ private:
 
   Scalar t_initial;
   Scalar t_final;
-  Scalar dt_initial; 
-  Scalar dt_min; 
-  Scalar dt_max; 
-  Scalar reduc_factor; 
-  Scalar ampl_factor; 
 
   int num_p;
   int num_g;
