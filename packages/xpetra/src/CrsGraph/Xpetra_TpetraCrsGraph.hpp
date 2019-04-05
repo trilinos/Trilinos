@@ -96,7 +96,7 @@ namespace Xpetra {
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
-      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
+      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
@@ -104,7 +104,7 @@ namespace Xpetra {
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
-      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
+      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
