@@ -32,6 +32,7 @@
 
 #include <cgns/Iocgns_DatabaseIO.h> // for DatabaseIO -- serial
 #include <cgns/Iocgns_IOFactory.h>
+#include <cgns/Iocgns_Utils.h>
 #include <cstddef> // for nullptr
 #if defined(SEACAS_HAVE_MPI)
 #include <cgns/Iocgns_ParallelDatabaseIO.h> // for DatabaseIO -- parallel
@@ -105,6 +106,8 @@ namespace Iocgns {
 #endif
       return new Iocgns::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
+
+  void IOFactory::show_config() const { Iocgns::Utils::show_config(); }
 } // namespace Iocgns
 
 #if defined(SEACAS_HAVE_MPI)

@@ -67,10 +67,6 @@
 #define PI 3.141592653589793238462643
 #endif
 
-namespace SEAMS {
-  unsigned hash_symbol(const char *symbol);
-}
-
 namespace {
   std::unordered_map<size_t, std::vector<std::string>> tokenized_strings;
 
@@ -1034,6 +1030,16 @@ namespace SEAMS {
     return array_data;
   }
 
+  array *do_make_array_init(double rows, double cols, double init)
+  {
+    auto array_data = new array(rows, cols);
+    int  isize      = (int)rows * int(cols);
+    for (int i = 0; i < isize; i++) {
+      array_data->data[i] = init;
+    }
+    return array_data;
+  }
+
   array *do_identity(double size)
   {
     int  i;
@@ -1042,6 +1048,20 @@ namespace SEAMS {
 
     for (i = 0; i < isize; i++) {
       array_data->data[i * isize + i] = 1.0;
+    }
+    return array_data;
+  }
+
+  array *do_linear_array(double init, double final, double count)
+  {
+    // Create 1D array with `count` rows and 1 column.
+    // Values are linearly spaced from `init` to `final`
+    int  isize      = count;
+    auto array_data = new array(count, 1);
+
+    double inc = (final - init) / (count - 1);
+    for (int i = 0; i < isize; i++) {
+      array_data->data[i] = init + (double)i * inc;
     }
     return array_data;
   }
@@ -1111,12 +1131,12 @@ namespace SEAMS {
 
   array *do_csv_array2(const char *filename, const char *comment)
   {
-    const char *  delim = ",\t ";
-    std::fstream *file  = aprepro->open_file(filename, "r");
+    std::fstream *file = aprepro->open_file(filename, "r");
     if (file != nullptr) {
 
-      size_t rows = 0;
-      size_t cols = 0;
+      size_t      rows  = 0;
+      size_t      cols  = 0;
+      const char *delim = ",\t ";
 
       std::string line;
       while (std::getline(*file, line)) {

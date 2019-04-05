@@ -805,7 +805,7 @@ int *ibuffer, *iprompt;
 
     /* if there wasn't a newline, flush input */
     if (buffer[istat - 1] != '\n') {
-      istat = read(1, buffer, CDR_MAXLEN);
+      read(1, buffer, CDR_MAXLEN);
     }
   }
 }

@@ -167,6 +167,8 @@ namespace SEAMS {
   array *do_csv_array1(const char *filename);
   array *do_csv_array2(const char *filename, const char *comment);
   array *do_make_array(double rows, double cols);
+  array *do_make_array_init(double rows, double cols, double init);
+  array *do_linear_array(double init, double final, double count);
   array *do_identity(double size);
   array *do_transpose(const array *a);
   array *do_array_from_string(const char *string, const char *delm);

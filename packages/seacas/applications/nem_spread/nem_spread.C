@@ -160,7 +160,8 @@ int main(int argc, char *argv[])
   int int64api = 0;
   int int64db  = ex_int64_status(exoid) & EX_ALL_INT64_DB;
   if (int64db != 0) {
-    int64api = EX_ALL_INT64_API;
+    int64api     = EX_ALL_INT64_API;
+    force_64_bit = true;
   }
 
   int status;

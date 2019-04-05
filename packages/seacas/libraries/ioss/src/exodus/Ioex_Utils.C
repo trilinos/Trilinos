@@ -275,7 +275,6 @@ namespace Ioex {
     // we don't overwrite an existing one.
 
     // Avoid a few string constructors/destructors
-    static std::string prop_name("name");
     static std::string id_prop("id");
 
     bool succeed = false;

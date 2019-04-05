@@ -742,6 +742,9 @@ namespace Iofx {
 
     bool nemesis_file = true;
     int  error = ex_get_init_info(get_file_pointer(), &num_proc, &num_proc_in_file, &file_type[0]);
+    if (error < 0) {
+      Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+    }
 
     if (num_proc == 1 && num_proc_in_file == 1) {
       // Not a nemesis file

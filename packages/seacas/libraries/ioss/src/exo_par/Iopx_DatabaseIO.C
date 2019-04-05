@@ -304,9 +304,8 @@ namespace Iopx {
                                         bool abort_if_error) const
   {
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = exodusFilePtr;
     assert(isParallel);
-    global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+    int global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
 
     if (global_file_ptr < 0) {
       if (write_message || error_msg != nullptr || bad_count != nullptr) {
@@ -769,7 +768,7 @@ namespace Iopx {
     }
 
     Ioss::Region *this_region = get_region();
-    for (int i = 0; i < timestep_count; i++) {
+    for (int i = 0; i < max_step; i++) {
       if (tsteps[i] <= last_time) {
         this_region->add_state(tsteps[i] * timeScaleFactor);
       }
@@ -1300,19 +1299,19 @@ namespace Iopx {
                                    Ioss::Field::MESH, number_sides);
 
             Ioss::IntVector e32(number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
-            std::copy(e32.begin(), e32.end(), sides.begin());
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(e32));
             std::copy(e32.begin(), e32.end(), element.begin());
+            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
+            std::copy(e32.begin(), e32.end(), sides.begin());
           }
           else {
             Ioss::Field side_field("sides", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
                                    number_sides);
             Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
                                    number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field,
                                      TOPTR(element));
+            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
           }
 
           if (!blockOmissions.empty() || !blockInclusions.empty()) {
