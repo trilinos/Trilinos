@@ -54,8 +54,29 @@ namespace iceProp{
 	    is_art = false; 
             bcc_name = -1;
 	  }
+
+	  vtxLabel(volatile const vtxLabel& other){
+	    id = other.id;
+            //gid = other.gid;
+	    first_label = other.first_label;
+	    first_sender = other.first_sender;
+	    second_label = other.second_label;
+	    second_sender = other.second_sender;
+	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
+	  }
+	  vtxLabel(const vtxLabel& other){
+	    id = other.id;
+            //gid = other.gid;
+	    first_label = other.first_label;
+	    first_sender = other.first_sender;
+	    second_label = other.second_label;
+	    second_sender = other.second_sender;
+	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
+	  }
 	  // vtxLabel assignment
-	  vtxLabel& operator=(const vtxLabel& other)  { 
+	  vtxLabel& operator=(volatile const vtxLabel& other)  { 
 	    id = other.id;
             //gid = other.gid;
 	    first_label = other.first_label;
@@ -66,6 +87,18 @@ namespace iceProp{
             bcc_name = other.bcc_name;
 	    return *this;
 	  }
+          vtxLabel& operator=(const vtxLabel& other){
+	    id = other.id;
+            //gid = other.gid;
+	    first_label = other.first_label;
+	    first_sender = other.first_sender;
+	    second_label = other.second_label;
+	    second_sender = other.second_sender;
+	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
+	    return *this; 
+	  }
+
 	  // int assignment
 	  vtxLabel& operator=(const int& other) { 
 	    first_label = other;
@@ -373,7 +406,7 @@ public:
       //std::cout<<me<<": art queue front = "<<iceProp::art.front()<<"\n";
       //std::cout<<me<<": art queue size = "<<iceProp::art.size()<<"\n";
       femv->endFill();
-      femv->doSourceToTarget(Tpetra::ADD);
+      femv->doOwnedPlusSharedToOwned(Tpetra::ADD);
       //std::cout<<me<<": reg queue front = "<<iceProp::reg.front()<<"\n";
       //std::cout<<me<<": reg queue size = "<<iceProp::reg.size()<<"\n";
       int local_done = iceProp::reg.empty() && iceProp::art.empty();
