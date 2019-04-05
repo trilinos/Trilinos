@@ -90,7 +90,8 @@ template <typename Scalar>
 Piro::TempusSolver<Scalar>::TempusSolver() :
 #endif
   out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  isInitialized(false)
+  isInitialized(false),
+  abort_on_fail_at_min_dt_(false)
 {
 #ifdef DEBUT_OUTPUT
   *out << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -175,6 +176,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     RCP<Teuchos::ParameterList> albTimeStepControlPL = Teuchos::null; 
     if (tempusPL->isSublist("Albany Time Step Control Options")) {
       *out << "\n    Using 'Albany Time Step Control Options'.\n";
+      abort_on_fail_at_min_dt_ = true; 
       albTimeStepControlPL = sublist(tempusPL, "Albany Time Step Control Options"); 
       if (integratorPL->isSublist("Time Step Control")) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
@@ -986,7 +988,7 @@ setObserver()
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
     //Create Tempus::IntegratorObserverBasic object
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
-                                timeStepControl, piroObserver_, supports_x_dotdot_));
+                                timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_));
   }
   if (Teuchos::nonnull(observer)) {
     //Set observer in integrator
