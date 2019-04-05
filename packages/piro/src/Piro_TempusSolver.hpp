@@ -211,6 +211,11 @@ private:
 
   Scalar t_initial;
   Scalar t_final;
+  Scalar dt_initial; 
+  Scalar dt_min; 
+  Scalar dt_max; 
+  Scalar reduc_factor; 
+  Scalar ampl_factor; 
 
   int num_p;
   int num_g;
@@ -235,7 +240,8 @@ private:
   void setObserver(); 
 
   //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
-  bool abort_on_failure_; 
+  bool abort_on_failure_;
+
 
 };
 
