@@ -222,13 +222,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       *out << "\n    Using Tempus 'Time Step Control'.\n";
       RCP<Teuchos::ParameterList> timeStepControlPL = sublist(integratorPL, "Time Step Control", true);
       t_initial = timeStepControlPL->get<Scalar>("Initial Time", 0.0);
-      if (timeStepControlPL->isParameter("Final Time")) {
-        t_final = timeStepControlPL->get<Scalar>("Final Time");
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter, 
-            "\n Error!  'Time Step Control' Parameter List does not set Final Time, a required parameter!\n"); 
-      }
+      t_final = timeStepControlPL->get<Scalar>("Final Time", t_initial);
     }
     //*out << "tempusPL = " << *tempusPL << "\n";
     RCP<Teuchos::ParameterList> stepperPL = sublist(tempusPL, "Tempus Stepper", true);
