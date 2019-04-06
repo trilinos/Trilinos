@@ -82,6 +82,8 @@ const char * topology::char_name() const
   case BEAM_3:           return "BEAM_3";
   case SHELL_LINE_2:     return "SHELL_LINE_2";
   case SHELL_LINE_3:     return "SHELL_LINE_3";
+  case SPRING_2:         return "SPRING_2";
+  case SPRING_3:         return "SPRING_3";
   case TRI_3_2D:         return "TRIANGLE_3_2D";
   case TRI_4_2D:         return "TRIANGLE_4_2D";
   case TRI_6_2D:         return "TRIANGLE_6_2D";

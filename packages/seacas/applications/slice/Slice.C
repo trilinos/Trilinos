@@ -613,7 +613,6 @@ namespace {
 
         std::vector<Ioss::SideBlock *> proc_sb(proc_count);
         std::vector<std::vector<INT>>  psb_elems(proc_count);
-        std::vector<std::vector<INT>>  psb_sides(proc_count);
         for (size_t p = 0; p < proc_count; p++) {
           proc_sb[p]        = proc_ss[p]->get_side_block(sb_name);
           size_t elem_count = proc_sb[p]->entity_count();
@@ -623,7 +622,6 @@ namespace {
         std::vector<INT> ss_elems;
         gsb->get_field_data("element_side_raw", ss_elems);
 
-        std::vector<INT> pss(proc_count);
         for (size_t i = 0; i < ss_elems.size(); i += 2 /* elem,side pairs */) {
           int64_t elem = ss_elems[i] - 1;
           int     p    = elem_to_proc[elem];
@@ -817,8 +815,7 @@ namespace {
       if (debug_level & 4) {
         progress("\tNodeSet " + std::to_string(s + 1));
       }
-      std::vector<INT> pns(proc_count);
-      Ioss::NodeSet *  gns = ns[s];
+      Ioss::NodeSet *gns = ns[s];
 
       std::vector<INT> ns_nodes;
       gns->get_field_data("ids_raw", ns_nodes);

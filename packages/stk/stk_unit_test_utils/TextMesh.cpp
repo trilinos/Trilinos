@@ -85,6 +85,8 @@ stk::topology get_topology_by_name(const std::string& name)
        {  "BEAM_3"        , stk::topology::BEAM_3       },
        {  "SHELL_LINE_2"  , stk::topology::SHELL_LINE_2 },
        {  "SHELL_LINE_3"  , stk::topology::SHELL_LINE_3 },
+       {  "SPRING_2"      , stk::topology::SPRING_2     },
+       {  "SPRING_3"      , stk::topology::SPRING_3     },
        {  "TRI_3_2D"      , stk::topology::TRI_3_2D     },
        {  "TRI_4_2D"      , stk::topology::TRI_4_2D     },
        {  "TRI_6_2D"      , stk::topology::TRI_6_2D     },

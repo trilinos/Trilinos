@@ -44,7 +44,7 @@
 extern int Proc;
 #endif
 
-static double *smalloc(size_t n, char *filename, int lineno);
+static void *smalloc(size_t n, char *filename, int lineno);
 
 /******************************************************************************
  *
@@ -118,7 +118,7 @@ static double *smalloc(size_t n, char *filename, int lineno);
 /*****************************************************************************/
 /*****************************************************************************/
 
-double *array_alloc(const char *file, int lineno, int numdim, ...)
+void *array_alloc(const char *file, int lineno, int numdim, ...)
 {
   const char *yo = "array_alloc";
   struct dim
@@ -129,7 +129,7 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
     size_t off;   /* offset from beginning of array	*/
   } dim[3];       /* Info about each dimension 		*/
   size_t  total;  /* Total size of the array		*/
-  double *dfield; /* ptr to avoid lint complaints		*/
+  void *  dfield; /* ptr to avoid lint complaints		*/
   char *  field;  /* The multi-dimensional array		*/
   char ** ptr;    /* Pointer offset			*/
   char *  data;   /* Data offset				*/
@@ -158,7 +158,7 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
             yo, file, lineno);
 #endif
     va_end(va);
-    return ((double *)nullptr);
+    return (nullptr);
   }
 
   dim[0].total = dim[0].index;
@@ -166,13 +166,13 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
   dim[0].off   = 0;
   for (int i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, size_t);
-    if (dim[i].index <= 0) {
+    if (dim[i].index == 0) {
       fprintf(stderr,
               "WARNING: %s (%s: %d) called with dimension %d == 0, "
               " will return nullptr\n",
               yo, file, lineno, i + 1);
       va_end(va);
-      return ((double *)nullptr);
+      return (nullptr);
     }
     dim[i].total = dim[i - 1].total * dim[i].index;
     dim[i].size  = sizeof(void *);
@@ -209,17 +209,14 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
 /*****************************************************************************/
 /*****************************************************************************/
 
-static double *smalloc(size_t n, char *filename, int lineno)
+static void *smalloc(size_t n, char *filename, int lineno)
 
 {
-  const char *yo = "smalloc";
-  double *    pntr; /* return value */
+  const char *yo   = "smalloc";
+  void *      pntr = nullptr; /* return value */
 
-  if (n == 0) {
-    pntr = nullptr;
-  }
-  else {
-    pntr = reinterpret_cast<double *>(malloc(n));
+  if (n != 0) {
+    pntr = malloc(n);
   }
 
   if (pntr == nullptr && n != 0) {

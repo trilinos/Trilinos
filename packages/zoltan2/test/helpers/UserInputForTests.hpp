@@ -316,7 +316,7 @@ private:
   void readZoltanTestData(string path, string testData,
                           bool distributeInput);
 
-  // Modify the Maps of an input matrix to make them non-contiguous 
+  // Modify the Maps of an input matrix to make them non-contiguous
   RCP<tcrsMatrix_t> modifyMatrixGIDs(RCP<tcrsMatrix_t> &in);
   inline zgno_t newID(const zgno_t id) { return id * 2 + 10001; }
 
@@ -1056,10 +1056,10 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
               << "nGlobal " << inMap->getGlobalNumElements() << " "
                             << outMap->getGlobalNumElements() << "; "
               << "nLocal  " << inMap->getNodeNumElements() << " "
-                            << outMap->getNodeNumElements() << "; " 
+                            << outMap->getNodeNumElements() << "; "
               << std::endl;
     std::cout << inMap->getComm()->getRank() << " KDDKDD ";
-    for (size_t i = 0; i < nRows; i++) 
+    for (size_t i = 0; i < nRows; i++)
       std::cout << "(" << inMap->getMyGlobalIndices()[i] << ", "
                 << outMap->getMyGlobalIndices()[i] << ") ";
     std::cout << std::endl;
@@ -1110,7 +1110,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
       inMatrix->getGlobalRowCopy(inMap->getGlobalElement(i), in, inval, nIn);
       outMatrix->getGlobalRowCopy(outMap->getGlobalElement(i), out, outval,
                                   nOut);
-  
+
       std::cout << nIn << ", " << nOut << "): ";
       for (size_t j = 0; j < nIn; j++) {
         std::cout << "(" << in[j] << " " << inval[j] << ", "
@@ -1127,7 +1127,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
 /////////////////////////////////////////////////////////////////////////////
 
 void UserInputForTests::readMatrixMarketFile(
-  string path, 
+  string path,
   string testData,
   bool distributeInput
 )
@@ -1186,9 +1186,9 @@ void UserInputForTests::readMatrixMarketFile(
 
   M_ = toMatrix;
 #ifdef INCLUDE_LENGTHY_OUTPUT
-  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows() 
+  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows()
             << " " << M_->getGlobalNumRows()
-            << " " << M_->getNodeNumEntries() 
+            << " " << M_->getNodeNumEntries()
             << " " << M_->getGlobalNumEntries() << std::endl;
 #endif // INCLUDE_LENGTHY_OUTPUT
 
@@ -1304,14 +1304,14 @@ void UserInputForTests::readMatrixMarketFile(
     if (verbose_ && tcomm_->getRank() == 0)
     {
       std::cout << "Matrix was null. ";
-      std::cout << "Constructing distribution map for coordinate vector." 
+      std::cout << "Constructing distribution map for coordinate vector."
                 <<  std::endl;
     }
 
     if(!distributeInput)
     {
       if (verbose_ && tcomm_->getRank() == 0)
-        std::cout << "Constructing serial distribution map for coordinates." 
+        std::cout << "Constructing serial distribution map for coordinates."
                   <<  std::endl;
 
       size_t numLocalCoords = this->tcomm_->getRank()==0 ? numGlobalCoords : 0;
@@ -1693,7 +1693,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     fromMap = rcp(new map_t(nvtxs, nvtxs, base, tcomm_));
 
     fromMatrix =
-    rcp(new tcrsMatrix_t(fromMap, rowSizes, Tpetra::StaticProfile));
+      rcp(new tcrsMatrix_t(fromMap, rowSizes(), Tpetra::StaticProfile));
 
     if (haveEdges){
 
@@ -1741,7 +1741,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     fromMap = rcp(new map_t(nvtxs, 0, base, tcomm_));
 
     fromMatrix =
-    rcp(new tcrsMatrix_t(fromMap, rowSizes, Tpetra::StaticProfile));
+      rcp(new tcrsMatrix_t(fromMap, rowSizes(), Tpetra::StaticProfile));
 
     fromMatrix->fillComplete();
   }
@@ -2697,7 +2697,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
   }
 
   char * file_data = new char[len+1];
-  file_data[len] = '\0'; // critical to null terminate buffer 
+  file_data[len] = '\0'; // critical to null terminate buffer
   if(rank == 0){
     file.read(file_data,len); // if proc 0 then read file
   }
@@ -2860,7 +2860,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
 
 //  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
-  Teuchos::ArrayView<const zgno_t> rowMapElementList = 
+  Teuchos::ArrayView<const zgno_t> rowMapElementList =
                                         rowMap->getNodeElementList();
   for (Teuchos_Ordinal ii = 0; ii < rowMapElementList.size(); ii++)
   {

@@ -102,12 +102,12 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   {
     // Compute midpoints of each element and place into x,y,z arrays.
-    size_t num_blocks = file2.Num_Elmt_Blocks(), num_elmts_in_block, num_nodes_per_elmt, e = 0;
+    size_t num_blocks = file2.Num_Elmt_Blocks(), e = 0;
     double sum_x, sum_y, sum_z;
     for (size_t b = 0; b < num_blocks; ++b) {
-      const Exo_Block<INT> *block = file2.Get_Elmt_Block_by_Index(b);
-      num_elmts_in_block          = block->Size();
-      num_nodes_per_elmt          = block->Num_Nodes_per_Elmt();
+      const Exo_Block<INT> *block              = file2.Get_Elmt_Block_by_Index(b);
+      size_t                num_elmts_in_block = block->Size();
+      size_t                num_nodes_per_elmt = block->Num_Nodes_per_Elmt();
       for (size_t i = 0; i < num_elmts_in_block; ++i) {
         const INT *conn = block->Connectivity(i); // Connectivity for element i.
         sum_x           = 0.0;
@@ -162,18 +162,16 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   // Match elmts in first file to their corresponding elmts in second.
   size_t num_blocks = file1.Num_Elmt_Blocks();
-  size_t num_elmts_in_block;
-  size_t num_nodes_per_elmt;
-  size_t e1 = 0;
-  size_t e2 = 0;
+  size_t e1         = 0;
+  size_t e2         = 0;
   INT    sort_idx;
   double mid_x, mid_y, mid_z;
 
   for (size_t b = 0; b < num_blocks; ++b) {
     const Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
     file1.Load_Elmt_Block_Description(b);
-    num_elmts_in_block = block1->Size();
-    num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
+    size_t num_elmts_in_block = block1->Size();
+    size_t num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
     for (size_t i = 0; i < num_elmts_in_block; ++i) {
       // Connectivity for element i.
       const INT *conn1 = block1->Connectivity(i);
@@ -414,12 +412,12 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   {
     // Compute midpoints of each element and place into x,y,z arrays.
-    size_t num_blocks2 = file2.Num_Elmt_Blocks(), num_elmts_in_block, num_nodes_per_elmt, e = 0;
+    size_t num_blocks2 = file2.Num_Elmt_Blocks(), e = 0;
     double sum_x, sum_y, sum_z;
     for (size_t b = 0; b < num_blocks2; ++b) {
-      const Exo_Block<INT> *block = file2.Get_Elmt_Block_by_Index(b);
-      num_elmts_in_block          = block->Size();
-      num_nodes_per_elmt          = block->Num_Nodes_per_Elmt();
+      const Exo_Block<INT> *block              = file2.Get_Elmt_Block_by_Index(b);
+      size_t                num_elmts_in_block = block->Size();
+      size_t                num_nodes_per_elmt = block->Num_Nodes_per_Elmt();
       for (size_t i = 0; i < num_elmts_in_block; ++i) {
         const INT *conn = block->Connectivity(i); // Connectivity for element i.
         sum_x           = 0.0;
@@ -474,10 +472,8 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   // Match elmts in first file to their corresponding elmts in second.
   size_t num_blocks1 = file1.Num_Elmt_Blocks();
-  size_t num_elmts_in_block;
-  size_t num_nodes_per_elmt;
-  size_t e1 = 0;
-  size_t e2 = 0;
+  size_t e1          = 0;
+  size_t e2          = 0;
   INT    sort_idx;
   double mid_x, mid_y, mid_z;
 
@@ -486,8 +482,8 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   for (size_t b = 0; b < num_blocks1; ++b) {
     const Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
     file1.Load_Elmt_Block_Description(b);
-    num_elmts_in_block = block1->Size();
-    num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
+    size_t num_elmts_in_block = block1->Size();
+    size_t num_nodes_per_elmt = block1->Num_Nodes_per_Elmt();
     for (size_t i = 0; i < num_elmts_in_block; ++i) {
       // Connectivity for element i.
       const INT *conn1 = block1->Connectivity(i);

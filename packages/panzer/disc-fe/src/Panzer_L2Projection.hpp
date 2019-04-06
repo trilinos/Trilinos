@@ -13,6 +13,7 @@
 #include "Tpetra_MultiVector_fwd.hpp"
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace Teuchos {
   template<typename T> class MpiComm;
@@ -71,10 +72,12 @@ namespace panzer {
         projection onto a target basis.
 
         \param use_lumping (optional) If set to true, the returned mass matrix is a lumped diagonal mass matrix following Hinton, et al. 1976.
+        \param elementBlockMultipliers (optional) If non-null, a multiplier will be used for each element block. The elements should be ordered corresponding to commManger block ordering. 
         \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildMassMatrix(bool use_lumping=false);
+      buildMassMatrix(bool use_lumping=false,
+                      const std::unordered_map<std::string,double>* elementBlockMultipliers = nullptr);
 
     /** \brief Allocates, fills and returns a Tpetra::MultiVector
         containing the inverse lumped mass matrix values as computed via Hinton 1976. 
@@ -82,7 +85,7 @@ namespace panzer {
         References:
 
         [1] E. Hinton, T. Rock and O. C. Zienkiewicz, "A Note
-        on MAss Lumping and Related Processes in the Finite Element
+        on Mass Lumping and Related Processes in the Finite Element
         Method," Earthquake Engineering and Structural Dynamics, 4
         (1976), 245-249.
 

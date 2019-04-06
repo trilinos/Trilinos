@@ -508,7 +508,7 @@ C   --Scan element number map (global id)
       CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 160
-      if (mapel) then
+      if (mapel .and. numel .gt. 0) then
         call exgenm (ndb, ia(kmapel), ierr)
       else
         call iniseq(numel, ia(kmapel))
@@ -847,24 +847,15 @@ C   --Reserve memory for all programs
 C   --Reserve memory for mesh plots
 
       CALL MDRSRV ('BLKCOL', KBKCOL, 1+NELBLK)
-      IF (MESHOK) THEN
-        CALL MDRSRV ('IELBST', KELBST, NELBLK)
-        CALL MDRSRV ('ISSNPS', KSSNPS, NUMNPS*4)
-        CALL MDRSRV ('ISSESS', KSSESS, NUMESS*4)
-        CALL MDRSRV ('SHDCOL', KSHDCL, NELBLK*7)
-        CALL MDRSRV ('ISHDCL', KISHCL, NELBLK*3)
-        CALL MDSTAT (NERR, MEM)
-        IF (NERR .GT. 0) GOTO 160
-        CALL INIREA (NELBLK*7, 0.0,  A(KSHDCL))
-        CALL INIINT (NELBLK*3, 0,   IA(KISHCL))
-      ELSE
-        KELBST = 1
-        KSSNPS = 1
-        KSSESS = 1
-        KBKCOL = 1
-        KSHDCL = 1
-        KISHCL = 1
-      END IF
+      CALL MDRSRV ('IELBST', KELBST, NELBLK)
+      CALL MDRSRV ('ISSNPS', KSSNPS, NUMNPS*4)
+      CALL MDRSRV ('ISSESS', KSSESS, NUMESS*4)
+      CALL MDRSRV ('SHDCOL', KSHDCL, NELBLK*7)
+      CALL MDRSRV ('ISHDCL', KISHCL, NELBLK*3)
+      CALL MDSTAT (NERR, MEM)
+      IF (NERR .GT. 0) GOTO 160
+      CALL INIREA (NELBLK*7, 0.0,  A(KSHDCL))
+      CALL INIINT (NELBLK*3, 0,   IA(KISHCL))
 
 C   --Reserve memory for DETOUR, if able to run
 
@@ -914,16 +905,16 @@ C   --Reserve memory for SPLOT, if able to run
         KIPATH = 1
       END IF
 
-C        Initialize array containing list of display variables
-
+C     Initialize array containing list of display variables
       IF (EXODUS) CALL DISPV (.TRUE., ' ', IDUM, IDUM,
      &  ' ', C(KNAMES), A(KLIDP), NAMLEN)
 
-C        Initialize BLKCOL array.
+C     Initialize BLKCOL array.
+      if (meshok) then
+        CALL BCOLOR (.TRUE., ' ', IDUM, IDUM, IDUM,' ', A(KBKCOL))
+      end if
 
-      CALL BCOLOR (.TRUE., ' ', IDUM, IDUM, IDUM,' ', A(KBKCOL))
-
-C        Initialize line thicknesses for mesh plots
+C     Initialize line thicknesses for mesh plots
       CALL LINTHK (CDUM, IDUM, IDUM, IDUM, RDUM, CDUM, .TRUE.)
 
         write (*,9999)
@@ -1057,6 +1048,7 @@ C   --Close files
      &  13X,'BBBBBBBBB   LLLLLLLLLL   OOOOOOOO       TT    ', /
      &  12X,'BBBBBBBB    LLLLLLLLLL    OOOOOO        TT    II-2')
 10030 FORMAT ('@ world ',A4,1x,1pe15.7E3)
+
       END
 
       subroutine inimap(num, iar)

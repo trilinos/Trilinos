@@ -39,7 +39,8 @@
 #include <tokenize.h>
 
 #include <cstddef> // for nullptr
-#include <string>  // for string
+#include <exodusII.h>
+#include <string> // for string
 
 #include "Ioss_CodeTypes.h" // for MPI_Comm
 #include "Ioss_DBUsage.h"   // for DatabaseUsage
@@ -118,6 +119,8 @@ namespace Ioex {
 #endif
       return new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
+
+  void IOFactory::show_config() const { ex_print_config(); }
 } // namespace Ioex
 
 #if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)

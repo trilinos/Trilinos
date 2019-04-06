@@ -42,12 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.08 (beta-cmake)"
+EXODUS_PY_VERSION = "1.09 (beta-cmake)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.08 (beta-cmake), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.09 (beta-cmake), a python wrapper of some of the exodus library.
 
-Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018 National Technology &
+Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.
@@ -4993,7 +4993,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None,
         (connectivity, numElem, nodesPerElem) = exoFrom.get_elem_connectivity(blkId)
         exo_to.put_elem_connectivity(blkId, connectivity)
         if numAttr > 0:
-            exo_to.put_element_attribute_names(blkId, e_attr_names[blk_id])
+            exo_to.put_element_attribute_names(blkId, e_attr_names[blkId])
             exo_to.put_elem_attr(blkId, e_attr_vals[blkId])
         elemProps = exoFrom.get_element_property_names()
         for elemProp in elemProps:

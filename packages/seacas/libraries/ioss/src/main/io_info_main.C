@@ -50,15 +50,18 @@ int main(int argc, char *argv[])
   Info::Interface interface;
   interface.parse_options(argc, argv);
 
-  std::string in_type = "exodusII";
+  Ioss::Init::Initializer io;
+
+  if (interface.show_config()) {
+    Ioss::IOFactory::show_configuration();
+    exit(EXIT_SUCCESS);
+  }
 
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {
     codename = codename.substr(ind + 1, codename.size());
   }
-
-  Ioss::Init::Initializer io;
 
   OUTPUT << "Input:    '" << interface.filename() << "', Type: " << interface.type() << '\n';
   OUTPUT << '\n';
