@@ -51,7 +51,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_Complex.hpp"
+#include "Kokkos_ArithTraits.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -65,11 +65,20 @@ namespace Details {
 //
 namespace { // (anonymous)
 
+  // We need separate implementations for both (T,complex) and
+  // (complex,T), but we can't just overload for both cases, because
+  // that would be ambiguous (e.g., (complex,complex)).
   template<class OutputValueType,
-           class InputValueType>
-  struct ConvertValue {
+           class InputValueType,
+           const bool outputIsComplex =
+             Kokkos::ArithTraits<OutputValueType>::is_complex,
+           const bool inputIsComplex =
+             Kokkos::ArithTraits<InputValueType>::is_complex>
+  struct ConvertValue
+  {
     static KOKKOS_INLINE_FUNCTION void
-    convert (OutputValueType& dst, const InputValueType& src) {
+    convert (OutputValueType& dst, const InputValueType& src)
+    {
       // This looks trivial, but it actually invokes OutputValueType's
       // constructor, so that needs to be marked as a __host__
       // __device__ function (e.g., via the KOKKOS_FUNCTION or
@@ -78,55 +87,107 @@ namespace { // (anonymous)
     }
   };
 
-  template<class RealType>
-  struct ConvertValue<RealType, Kokkos::complex<RealType> > {
+  template<class OutputRealType, class InputComplexType>
+  struct ConvertValue<OutputRealType, InputComplexType, false, true>
+  {
     static KOKKOS_INLINE_FUNCTION void
-    convert (RealType& dst, const Kokkos::complex<RealType>& src) {
-      // RealType's constructor needs to be marked as a __host__
-      // __device__ function (e.g., via the KOKKOS_FUNCTION or
-      // KOKKOS_INLINE_FUNCTION macros).
-      dst = RealType (src.real ());
+    convert (OutputRealType& dst,
+             const InputComplexType& src)
+    {
+      // OutputRealType's constructor needs to be marked with either
+      // KOKKOS_FUNCTION or KOKKOS_INLINE_FUNCTION.
+      using KAI = Kokkos::ArithTraits<InputComplexType>;
+      dst = OutputRealType (KAI::real (src));
     }
   };
+
+  template<class OutputComplexType, class InputRealType>
+  struct ConvertValue<OutputComplexType, InputRealType, true, false>
+  {
+    static KOKKOS_INLINE_FUNCTION void
+    convert (OutputComplexType& dst,
+             const InputRealType& src)
+    {
+      // OutputComplexType's constructor needs to be marked with
+      // either KOKKOS_FUNCTION or KOKKOS_INLINE_FUNCTION.
+      using output_mag_type =
+        typename Kokkos::ArithTraits<OutputComplexType>::mag_type;
+      using KAM = Kokkos::ArithTraits<output_mag_type>;
+      dst = OutputComplexType (src, KAM::zero ());
+    }
+  };
+  
+  template<class OutputValueType,
+           class InputValueType>
+  KOKKOS_INLINE_FUNCTION void
+  convertValue (OutputValueType& dst, const InputValueType& src) {
+    ConvertValue<OutputValueType, InputValueType>::convert (dst, src);
+  }
 
   /// \brief Functor that helps implement copyConvert (see below).
   ///
   /// \tparam OutputViewType Type of the output Kokkos::View.
   /// \tparam InputViewType Type of the input Kokkos::View.
   template<class OutputViewType,
+           class InputViewType,
+           const int rank = OutputViewType::Rank>
+  class CopyConvertFunctor {};
+
+  template<class OutputViewType,
            class InputViewType>
-  class CopyConvertFunctor {
+  class CopyConvertFunctor<OutputViewType, InputViewType, 1> {
   private:
+    static_assert
+    (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
+     "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
+     "OutputViewType and InputViewType must both have rank 1.");
     OutputViewType dst_;
     InputViewType src_;
 
   public:
-    typedef typename std::decay<decltype (dst_[0])>::type output_type;
-    typedef typename OutputViewType::size_type index_type;
+    using index_type = typename OutputViewType::size_type;
 
-    CopyConvertFunctor (const OutputViewType& dst, const InputViewType& src) :
+    CopyConvertFunctor (const OutputViewType& dst,
+                        const InputViewType& src) :
       dst_ (dst),
       src_ (src)
-    {
-      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
-      // a memory space, rather than an execution space, as the first
-      // argument of VerifyExecutionCanAccessMemorySpace.
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
-                       typename OutputViewType::memory_space,
-                       typename InputViewType::memory_space>::value,
-                     "CopyConvertFunctor (implements copyConvert): Output "
-                     "View's space must be able to access the input View's "
-                     "memory space.");
-      static_assert (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
-                     "CopyConvertFunctor (implements copyConvert): "
-                     "OutputViewType and InputViewType must be rank-1 "
-                     "Kokkos::View specializations.");
-    }
+    {}
 
     KOKKOS_INLINE_FUNCTION void
-    operator () (const index_type& i) const {
-      using input_type = typename std::decay<decltype (src_[i])>::type;
-      ConvertValue<output_type, input_type>::convert (dst_(i), src_(i));
+    operator () (const index_type i) const {
+      convertValue (dst_(i), src_(i));
+    }
+  };
+
+  template<class OutputViewType,
+           class InputViewType>
+  class CopyConvertFunctor<OutputViewType, InputViewType, 2> {
+  public:
+    using index_type = typename OutputViewType::size_type;
+
+  private:
+    static_assert
+    (OutputViewType::Rank == 2 && InputViewType::Rank == 2,
+     "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
+     "OutputViewType and InputViewType must both have rank 2.");
+    OutputViewType dst_;
+    InputViewType src_;
+    index_type numCols_;
+
+  public:
+    CopyConvertFunctor (const OutputViewType& dst,
+                        const InputViewType& src) :
+      dst_ (dst),
+      src_ (src),
+      numCols_ (dst.extent (1))
+    {}
+
+    KOKKOS_INLINE_FUNCTION void
+    operator () (const index_type i) const {
+      const index_type numCols = numCols_;
+      for (index_type j = 0; j < numCols; ++j) {
+        convertValue (dst_(i,j), src_(i,j));
+      }
     }
   };
 
@@ -154,8 +215,6 @@ namespace { // (anonymous)
   template<class OutputViewType,
            class InputViewType,
            const bool canUseKokkosDeepCopy =
-             std::is_same<typename OutputViewType::array_layout,
-                          typename InputViewType::array_layout>::value &&
              std::is_same<typename OutputViewType::non_const_value_type,
                           typename InputViewType::non_const_value_type>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
@@ -163,7 +222,9 @@ namespace { // (anonymous)
                typename OutputViewType::memory_space,
                typename InputViewType::memory_space>::value>
   struct CopyConvertImpl {
-    static void run (const OutputViewType& dst, const InputViewType& src);
+    static void
+    run (const OutputViewType& dst,
+         const InputViewType& src);
   };
 
   // Specialization for canUseKokkosDeepCopy = true:
@@ -177,22 +238,22 @@ namespace { // (anonymous)
            class InputViewType,
            const bool outputExecSpaceCanAccessInputMemSpace>
   struct CopyConvertImpl<OutputViewType, InputViewType,
-                         true, outputExecSpaceCanAccessInputMemSpace> {
-    static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (std::is_same<typename OutputViewType::non_const_value_type,
-                       typename InputViewType::non_const_value_type>::value,
-                     "CopyConvertImpl (implementation of copyConvert): In order"
-                     " to call this specialization, the input and output must "
-                     "use the same offset type.");
-      static_assert (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
+                         true, outputExecSpaceCanAccessInputMemSpace>
+  {
+    static void
+    run (const OutputViewType& dst,
+         const InputViewType& src)
+    {
+      static_assert (OutputViewType::Rank == InputViewType::Rank,
                      "CopyConvertImpl (implementation of copyConvert): "
-                     "OutputViewType and InputViewType must be rank-1 "
-                     "Kokkos::View specializations.");
-      static_assert (std::is_same<typename OutputViewType::array_layout,
-                       typename InputViewType::array_layout>::value,
-                     "CopyConvertImpl (implementation of copyConvert): In order"
-                     " to call this specialization, src and dst must have the "
-                     "the same array_layout.");
+                     "The two Views must have the same rank.");
+      constexpr bool same_value_type =
+        std::is_same<typename OutputViewType::non_const_value_type,
+                     typename InputViewType::non_const_value_type>::value;
+      static_assert (same_value_type,
+                     "CopyConvertImpl (implementation of copyConvert): In "
+                     "order to call this specialization, the input and output "
+                     "Views must have the same value type.");
       Kokkos::deep_copy (dst, src);
     }
   };
@@ -207,35 +268,42 @@ namespace { // (anonymous)
   struct CopyConvertImpl<OutputViewType,
                          InputViewType,
                          false,
-                         true> {
-    static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (! std::is_same<typename OutputViewType::array_layout,
-                         typename InputViewType::array_layout>::value ||
-                     ! std::is_same<typename OutputViewType::non_const_value_type,
-                         typename InputViewType::non_const_value_type>::value,
-                     "CopyConvertImpl (implementation of copyConvert): We "
-                     "should not be calling this specialization if "
-                     "OutputViewType and InputViewType have the same entry "
-                     "and layout types.");
-      static_assert (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
+                         true>
+  {
+    static void
+    run (const OutputViewType& dst,
+         const InputViewType& src)
+    {
+      static_assert (OutputViewType::Rank == InputViewType::Rank,
                      "CopyConvertImpl (implementation of copyConvert): "
-                     "OutputViewType and InputViewType must both be rank-1 "
-                     "Kokkos::View types.");
+                     "The two Views must have the same rank.");
+      constexpr bool same_value_type =
+        std::is_same<typename OutputViewType::non_const_value_type,
+                     typename InputViewType::non_const_value_type>::value;
+      static_assert (! same_value_type,
+                     "CopyConvertImpl (implementation of copyConvert): We "
+                     "should not be calling this specialization if the two "
+                     "Views have the same value types.  It's correct to do "
+                     "so, but could be slower.");
       // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
       // a memory space, rather than an execution space, as the first
       // argument of VerifyExecutionCanAccessMemorySpace.
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
-                       typename OutputViewType::memory_space,
-                       typename InputViewType::memory_space>::value,
+      constexpr bool output_exec_space_can_access_input_mem_space =
+        Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+          typename OutputViewType::memory_space,
+          typename InputViewType::memory_space>::value;
+      static_assert (output_exec_space_can_access_input_mem_space,
                      "CopyConvertImpl (implements copyConvert): In order to "
-                     "call this specialization, the output View's space must "
-                     "be able to access the input View's memory space.");
+                     "call this specialization, the output View's execution "
+                     "space must be able to access the input View's memory "
+                     "space.");
 
-      typedef CopyConvertFunctor<OutputViewType, InputViewType> functor_type;
-      typedef typename OutputViewType::execution_space execution_space;
-      typedef typename OutputViewType::size_type index_type;
-      typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-      Kokkos::parallel_for (range_type (0, dst.extent (0)),
+      using functor_type = CopyConvertFunctor<OutputViewType, InputViewType>;
+      using execution_space = typename OutputViewType::execution_space;
+      using index_type = typename OutputViewType::size_type;
+      using range_type = Kokkos::RangePolicy<execution_space, index_type>;
+      Kokkos::parallel_for ("Tpetra::Details::copyConvert",
+                            range_type (0, dst.extent (0)),
                             functor_type (dst, src));
     }
   };
@@ -259,43 +327,48 @@ namespace { // (anonymous)
   // offset type than Kokkos' host spaces.
   template<class OutputViewType,
            class InputViewType>
-  struct CopyConvertImpl<OutputViewType,
-                         InputViewType,
-                         false,
-                         false> {
-    static void run (const OutputViewType& dst, const InputViewType& src) {
+  struct CopyConvertImpl<OutputViewType, InputViewType, false, false>
+  {
+    static void
+    run (const OutputViewType& dst,
+         const InputViewType& src)
+    {
+      static_assert (OutputViewType::Rank == InputViewType::Rank,
+                     "CopyConvertImpl (implementation of copyConvert): "
+                     "OutputViewType and InputViewType must have the "
+                     "same rank.");
       const bool canUseKokkosDeepCopy =
-        std::is_same<typename OutputViewType::array_layout,
-          typename InputViewType::array_layout>::value &&
         std::is_same<typename OutputViewType::non_const_value_type,
           typename InputViewType::non_const_value_type>::value;
       static_assert (! canUseKokkosDeepCopy,
                      "CopyConvertImpl (implementation of copyConvert): We "
                      "should not be calling this specialization if we could "
                      "have used Kokkos::deep_copy instead.");
-      static_assert (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
-                     "CopyConvertImpl (implementation of copyConvert): "
-                     "OutputViewType and InputViewType must both be rank-1 "
-                     "Kokkos::View types.");
+      constexpr bool output_exec_space_can_access_input_mem_space =
+        Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+          typename OutputViewType::memory_space,
+          typename InputViewType::memory_space>::value;
+      static_assert (! output_exec_space_can_access_input_mem_space,
+                     "CopyConvertImpl (implements copyConvert): We should not "
+                     "call this specialization if the output View's execution "
+                     "space can access the input View's memory space.  It's "
+                     "correct, but may be slow.");
 
-      using Kokkos::ViewAllocateWithoutInitializing;
-      typedef Kokkos::View<typename InputViewType::non_const_value_type*,
-        typename InputViewType::array_layout,
-        typename OutputViewType::device_type> output_space_copy_type;
-      output_space_copy_type
-        outputSpaceCopy (ViewAllocateWithoutInitializing ("outputSpace"),
-                         src.extent (0));
-      Kokkos::deep_copy (outputSpaceCopy, src);
+      using output_memory_space = typename OutputViewType::memory_space;
+      auto src_outputSpaceCopy =
+        Kokkos::create_mirror_view (output_memory_space (), src);
+      Kokkos::deep_copy (src_outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
-      typedef CopyConvertFunctor<OutputViewType,
-        output_space_copy_type> functor_type;
-      typedef typename OutputViewType::execution_space execution_space;
-      typedef typename OutputViewType::size_type index_type;
-      typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
+      using output_space_copy_type = decltype (src_outputSpaceCopy);
+      using functor_type =
+        CopyConvertFunctor<OutputViewType, output_space_copy_type>;
+      using execution_space = typename OutputViewType::execution_space;
+      using index_type = typename OutputViewType::size_type;
+      using range_type = Kokkos::RangePolicy<execution_space, index_type>;
       Kokkos::parallel_for (range_type (0, dst.extent (0)),
-                            functor_type (dst, outputSpaceCopy));
+                            functor_type (dst, src_outputSpaceCopy));
     }
   };
 } // namespace (anonymous)
@@ -315,16 +388,15 @@ copyConvert (const OutputViewType& dst,
              const InputViewType& src)
 {
   static_assert (Kokkos::Impl::is_view<OutputViewType>::value,
-                 "OutputViewType (the type of dst) must be a Kokkos::View.");
+                 "OutputViewType must be a Kokkos::View.");
   static_assert (Kokkos::Impl::is_view<InputViewType>::value,
-                 "InputViewType (the type of src) must be a Kokkos::View.");
+                 "InputViewType must be a Kokkos::View.");
   static_assert (std::is_same<typename OutputViewType::value_type,
                    typename OutputViewType::non_const_value_type>::value,
-                 "OutputViewType (the type of dst) must be a nonconst Kokkos::View.");
-  static_assert (static_cast<int> (OutputViewType::rank) == 1,
-                 "OutputViewType (the type of dst) must be a rank-1 Kokkos::View.");
-  static_assert (static_cast<int> (InputViewType::rank) == 1,
-                 "InputViewType (the type of src) must be a rank-1 Kokkos::View.");
+                 "OutputViewType must be a nonconst Kokkos::View.");
+  static_assert (OutputViewType::Rank == InputViewType::Rank,
+                 "src and dst must have the same rank.");
+
   if (dst.extent (0) != src.extent (0)) {
     std::ostringstream os;
     os << "Tpetra::Details::copyConvert: "
@@ -333,6 +405,15 @@ copyConvert (const OutputViewType& dst,
        << ".";
     throw std::invalid_argument (os.str ());
   }
+  if (OutputViewType::Rank > 1 && dst.extent (1) != src.extent (1)) {
+    std::ostringstream os;
+    os << "Tpetra::Details::copyConvert: "
+       << "dst.extent(1) = " << dst.extent (1)
+       << " != src.extent(1) = " << src.extent (1)
+       << ".";
+    throw std::invalid_argument (os.str ());
+  }
+
   // Canonicalize the View types in order to avoid redundant instantiations.
   typedef typename OutputViewType::non_const_type output_view_type;
   typedef typename InputViewType::const_type input_view_type;
