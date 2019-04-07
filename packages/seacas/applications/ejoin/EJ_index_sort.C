@@ -150,7 +150,7 @@ namespace {
     ex_int_iisort(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-    fprintf(stderr, "Checking sort of %d values\n", N + 1);
+    fprintf(stderr, "Checking sort of %lu values\n", N + 1);
     int i;
     for (i = 1; i < N; i++) {
       assert(v[iv[i - 1]] <= v[iv[i]]);

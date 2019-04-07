@@ -91,8 +91,6 @@ int main(int argc, char *argv[])
   std::cout.imbue(std::locale(std::locale(), new my_numpunct));
   std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
 
-  std::string in_type = "exodusII";
-
   codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {

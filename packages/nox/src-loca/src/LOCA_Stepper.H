@@ -360,6 +360,9 @@ namespace LOCA {
     //! Flag indicating whether to compute eigenvalues after each step
     bool calcEigenvalues;
 
+    //! Flag indicating whether to compute eigenvalues on last (target) step
+    bool calcEigenvaluesTargetStep;
+
     //! Flag indicating whether to return failed upon reaching max steps
     bool return_failed_on_max_steps;
 

@@ -253,12 +253,7 @@ public:
     , g_nodal_solution( ColMap, 1 )
     , g_nodal_residual( RowMap, 1 )
     , g_nodal_delta(    RowMap, 1 )
-    , g_nodal_solution_no_overlap(
-        RowMap ,
-        Kokkos::subview( g_nodal_solution.getDualView()
-                       , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
-                       , Kokkos::ALL()
-                                            ) )
+    , g_nodal_solution_no_overlap (g_nodal_solution, RowMap)
     , g_jacobian( RowMap, ColMap, LocalMatrixType( "jacobian" , mesh_to_graph.graph ) )
     , perf()
     , num_sensitivities(num_sens)
@@ -331,13 +326,7 @@ public:
         g_nodal_delta_dp =
           GlobalMultiVectorType( RowMap, num_sensitivities );
         g_nodal_solution_no_overlap_dp =
-          GlobalMultiVectorType(
-            RowMap ,
-            Kokkos::subview(
-              g_nodal_solution_dp.getDualView()
-              , std::pair<unsigned,unsigned>(0,fixture.node_count_owned())
-              , Kokkos::ALL()
-              ) );
+          GlobalMultiVectorType(g_nodal_solution_dp, *RowMap);
       }
     }
 
@@ -374,17 +363,16 @@ public:
 
       LocalMatrixType jacobian = g_jacobian.getLocalMatrix();
 
-      // Extract DualViews
-      const LocalDualVectorType k_nodal_solution = g_nodal_solution.getDualView();
-      const LocalDualVectorType k_nodal_residual = g_nodal_residual.getDualView();
-      const LocalDualVectorType k_nodal_delta    = g_nodal_delta   .getDualView();
+      const auto k_nodal_solution = g_nodal_solution.getLocalViewDevice();
+      const auto k_nodal_residual = g_nodal_residual.getLocalViewDevice();
+      const auto k_nodal_delta    = g_nodal_delta   .getLocalViewDevice();
 
       const LocalVectorType nodal_solution =
-        Kokkos::subview(k_nodal_solution.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_solution,Kokkos::ALL(),0);
       const LocalVectorType nodal_residual =
-        Kokkos::subview(k_nodal_residual.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_residual,Kokkos::ALL(),0);
       const LocalVectorType nodal_delta =
-        Kokkos::subview(k_nodal_delta.d_view,Kokkos::ALL(),0);
+        Kokkos::subview(k_nodal_delta,Kokkos::ALL(),0);
 
       LocalVectorType nodal_solution_no_overlap =
         Kokkos::subview(nodal_solution,std::pair<unsigned,unsigned>(0,fixture.node_count_owned()));
@@ -618,20 +606,12 @@ public:
           std::logic_error,
           "Response gradient length must match number of sensitivities specified in constuctor");
 
-        // Extract DualViews
-        const LocalDualVectorType k_nodal_solution_dp =
-          g_nodal_solution_dp.getDualView();
-        const LocalDualVectorType k_nodal_residual_dp =
-          g_nodal_residual_dp.getDualView();
-        const LocalDualVectorType k_nodal_delta_dp    =
-          g_nodal_delta_dp.getDualView();
-
-        const LocalMultiVectorType nodal_solution_dp =
-          k_nodal_solution_dp.d_view;
-        const LocalMultiVectorType nodal_residual_dp =
-          k_nodal_residual_dp.d_view;
-        const LocalMultiVectorType nodal_delta_dp =
-          k_nodal_delta_dp.d_view;
+        const auto nodal_solution_dp =
+          g_nodal_solution_dp.getLocalViewDevice();
+        const auto nodal_residual_dp =
+          g_nodal_residual_dp.getLocalViewDevice();
+        const auto nodal_delta_dp =
+          g_nodal_delta_dp.getLocalViewDevice();
 
         LocalMultiVectorType nodal_solution_no_overlap_dp =
           Kokkos::subview(

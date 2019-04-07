@@ -166,21 +166,21 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size
                                const std::string &name, bool *diff_flag);
 
 template <typename INT>
-void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, TimeInterp t2,
+void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, const TimeInterp &t2,
               int out_file_id, std::vector<MinMaxData> &mm_glob, std::vector<MinMaxData> &mm_node,
               std::vector<MinMaxData> &mm_elmt, std::vector<MinMaxData> &mm_ns,
               std::vector<MinMaxData> &mm_ss, INT *node_map, const INT *node_id_map, INT *elmt_map,
               const INT *elem_id_map, Exo_Block<INT> **blocks2, double *var_vals, bool *diff_flag);
 
 template <typename INT>
-bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, std::vector<MinMaxData> &mm_glob, double *gvals);
 template <typename INT>
-bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                  int out_file_id, INT *node_map, const INT *id_map,
                  std::vector<MinMaxData> &mm_node, double *nvals);
 template <typename INT>
-bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, INT *elmt_map, const INT *id_map, Exo_Block<INT> **blocks2,
                   std::vector<MinMaxData> &mm_elmt, double *evals);
 
@@ -189,11 +189,11 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
                              const INT *id_map, Exo_Block<INT> **blocks2);
 
 template <typename INT>
-bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_ns, double *vals);
 
 template <typename INT>
-bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_ss, double *vals);
 
 template <typename INT>
@@ -1191,7 +1191,7 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size
 }
 
 template <typename INT>
-void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, TimeInterp t2,
+void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, const TimeInterp &t2,
               int out_file_id, std::vector<MinMaxData> &mm_glob, std::vector<MinMaxData> &mm_node,
               std::vector<MinMaxData> &mm_elmt, std::vector<MinMaxData> &mm_ns,
               std::vector<MinMaxData> &mm_ss, INT *node_map, const INT *node_id_map, INT *elmt_map,
@@ -1233,7 +1233,7 @@ void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, Ti
 }
 
 template <typename INT>
-bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, std::vector<MinMaxData> &mm_glob, double *gvals)
 {
   bool diff_flag = false;
@@ -1336,7 +1336,7 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 }
 
 template <typename INT>
-bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                  int out_file_id, INT *node_map, const INT *id_map,
                  std::vector<MinMaxData> &mm_node, double *nvals)
 {
@@ -1507,7 +1507,7 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Time
 }
 
 template <typename INT>
-bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, INT *elmt_map, const INT *id_map, Exo_Block<INT> **blocks2,
                   std::vector<MinMaxData> &mm_elmt, double *evals)
 {
@@ -1715,11 +1715,10 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 }
 
 template <typename INT>
-bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_ns, double *vals)
 {
-  std::string serr;
-  bool        diff_flag = false;
+  bool diff_flag = false;
 
   if (out_file_id >= 0) {
     SMART_ASSERT(vals != nullptr);
@@ -1892,11 +1891,10 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 }
 
 template <typename INT>
-bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
+bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
                   int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_ss, double *vals)
 {
-  std::string serr;
-  bool        diff_flag = false;
+  bool diff_flag = false;
 
   if (out_file_id >= 0) {
     SMART_ASSERT(vals != nullptr);
@@ -2069,8 +2067,7 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 template <typename INT>
 bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *id_map)
 {
-  std::string serr;
-  bool        diff_flag = false;
+  bool diff_flag = false;
 
   std::string name        = "Distribution Factors";
   int         name_length = name.length();

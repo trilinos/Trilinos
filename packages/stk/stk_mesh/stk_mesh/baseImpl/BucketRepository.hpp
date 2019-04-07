@@ -79,7 +79,7 @@ public:
   {
     static const BucketVector emptyBucketVector;
 
-    if( rank < m_buckets.size() )
+    if( rank < static_cast<EntityRank>(m_buckets.size()) )
     {
       if (m_need_sync_from_partitions[rank])
       {

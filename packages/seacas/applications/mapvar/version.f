@@ -48,8 +48,8 @@ C      --   (6) = time of current run
 
 
       qainfo(1) = 'mapvar                          '
-      qainfo(2) = '2019/02/20                      '
-      qainfo(3) = ' 1.21                           '
+      qainfo(2) = '2019/02/28                      '
+      qainfo(3) = ' 2.00                           '
       qainfo(4) = '                                '
       qainfo(5) = '                                '
       qainfo(6) = '                                '

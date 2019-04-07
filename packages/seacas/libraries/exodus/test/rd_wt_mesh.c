@@ -37,10 +37,6 @@
 #define _LARGEFILE_SOURCE
 #define _LARGE_FILES 1
 
-#if defined(__LIBCATAMOUNT__)
-#include <catamount/dclock.h>
-#endif
-
 #ifdef PARALLEL_AWARE_EXODUS
 #include <mpi.h>
 #else
@@ -98,17 +94,11 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 
 double my_timer()
 {
-  double t1 = 0.0;
-
-#if !defined(__LIBCATAMOUNT__)
 #ifdef PARALLEL_AWARE_EXODUS
-  t1 = MPI_Wtime();
+  double t1 = MPI_Wtime();
 #else
-  clock_t ctime = clock();
-  t1            = ctime / (double)CLOCKS_PER_SEC;
-#endif
-#else
-  return dclock();
+  clock_t ctime     = clock();
+  double  t1        = ctime / (double)CLOCKS_PER_SEC;
 #endif
   return t1;
 }
@@ -525,13 +515,13 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     /* read element and node maps */
     t_tmp1 = my_timer();
 
-    err    = ex_get_id_map(exoid, EX_NODE_MAP, *node_map);
+    ex_get_id_map(exoid, EX_NODE_MAP, *node_map);
     t_tmp2 = my_timer();
     raw_data_vol += sizeof(int) * (*num_nodes);
     raw_read_time += t_tmp2 - t_tmp1;
 
     t_tmp1 = my_timer();
-    err    = ex_get_id_map(exoid, EX_ELEM_MAP, *elem_map);
+    ex_get_id_map(exoid, EX_ELEM_MAP, *elem_map);
     t_tmp2 = my_timer();
     raw_data_vol += sizeof(int) * (*num_elems);
     raw_read_time += t_tmp2 - t_tmp1;
@@ -547,7 +537,6 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     *num_nodal_fields = num_vars;
 
     err = ex_get_variable_param(exoid, EX_GLOBAL, &num_vars);
-
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
@@ -560,10 +549,11 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     }
 
     err = ex_get_variable_param(exoid, EX_ELEM_BLOCK, &num_vars);
-
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
+      if (globals)
+        free(globals);
       return (1);
     }
     *num_element_fields = num_vars;
@@ -777,10 +767,8 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
   char **nvar_name = NULL;
   char **evar_name = NULL;
 
-  int *exoid = NULL;
-  exoid      = malloc(files_per_domain * sizeof(int));
+  int *exoid = malloc(files_per_domain * sizeof(int));
 
-  raw_open_close_time = 0.0;
   for (iter = 0; iter < num_iterations; iter++) {
     if (!close_files) {
       t_tmp1 = my_timer();

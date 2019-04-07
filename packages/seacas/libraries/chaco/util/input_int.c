@@ -35,17 +35,16 @@
 
 #include "defs.h"   // for FALSE, TRUE
 #include "params.h" // for LINE_LENGTH
-#include <stdio.h>  // for getchar, sscanf
+#include <ctype.h>
+#include <stdio.h> // for getchar, sscanf
 
 /* Robust routine to read an integer */
 int input_int(void)
 {
-  int  c;
   char line[LINE_LENGTH]; /* space to read input line */
   int  done;              /* flag for end of integer */
   int  val;               /* value returned */
   int  i;                 /* loop counter */
-  int  isdigit(int);
 
   for (i = 0; i < LINE_LENGTH; i++) {
     line[i] = '\0';
@@ -54,7 +53,7 @@ int input_int(void)
   i    = 0;
   done = FALSE;
   while (!done) {
-    c = getchar();
+    int c = getchar();
     if (c >= 0 && c <= 127) {
       line[i] = (char)c;
       if (isdigit(line[i]) || line[i] == '-') {

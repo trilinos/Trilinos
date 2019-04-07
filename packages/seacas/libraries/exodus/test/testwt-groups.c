@@ -100,7 +100,7 @@ int main(int argc, char **argv)
                      EX_CLOBBER | EX_NETCDF4 | EX_NOCLASSIC, /* create mode */
                      &CPU_word_size,                         /* CPU float word size in bytes */
                      &IO_word_size);                         /* I/O float word size in bytes */
-  printf("after ex_create for test-groups.exo, exoid = %d\n", exoid);
+  printf("after ex_create for test-groups.exo, rootid = %d\n", rootid);
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
   group_names[0] = "Group_0";

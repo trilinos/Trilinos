@@ -483,6 +483,13 @@ namespace Ioss {
     int  parallel_size() const { return util().parallel_size(); }
     bool is_parallel() const { return isParallel; }
 
+    void progress(const std::string &output) const
+    {
+      if (m_enableTracing) {
+        util().progress(output);
+      }
+    }
+
   protected:
     DatabaseIO(Region *region, std::string filename, Ioss::DatabaseUsage db_usage,
                MPI_Comm communicator, const Ioss::PropertyManager &props);
@@ -765,6 +772,7 @@ namespace Ioss {
     // block adjacencies has been calculated.
 
     bool m_timeStateInOut{false};
+    bool m_enableTracing{false};
     std::chrono::time_point<std::chrono::high_resolution_clock>
         m_stateStart; // Used for optional output step timing.
   };

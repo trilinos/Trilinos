@@ -207,9 +207,7 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
     sfree(vwgts);
     vwgts = NULL;
     sfree(ewgts);
-    ewgts     = NULL;
-    start     = NULL;
-    adjacency = NULL;
+    ewgts = NULL;
   }
 
   if (global_method == 3 ||
@@ -260,13 +258,9 @@ skip:
 
   if (flag && FREE_GRAPH) {
     sfree(start);
-    start = NULL;
     sfree(adjacency);
-    adjacency = NULL;
     sfree(vwgts);
-    vwgts = NULL;
     sfree(ewgts);
-    ewgts = NULL;
   }
 
   if (!Using_Main && params_file != NULL) {

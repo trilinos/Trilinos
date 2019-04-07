@@ -165,7 +165,6 @@ getStatic2dDualView (const size_t num_rows, const size_t num_cols)
     Kokkos::DualView<ValueType**, Kokkos::LayoutLeft, DeviceType>;
   using d_view_type = typename dual_view_type::t_dev;
   using h_view_type = typename dual_view_type::t_host;
-  using host_device_type = typename h_view_type::device_type;
 
   auto d_view = getStatic2dView<ValueType, DeviceType> (num_rows, num_cols);
   // Preserve the invariant that Kokkos::create_mirror_view returns

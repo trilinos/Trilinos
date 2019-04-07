@@ -171,9 +171,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #if defined(pumagon) || defined(p6)
 
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char hardname[MAXCHAR];
+  char softname[MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* 860 has 32 bit words */
@@ -189,9 +188,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #if defined(p6)
 
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char hardname[MAXCHAR];
+  char softname[MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* P6 has 32 bit words */
@@ -206,9 +204,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 /********************************************************************/
 #if defined(cougar)
 
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
+  char hardname[MAXCHAR];
+  char softname[MAXCHAR];
 
   *idau = 0;
   *kcsu = sizeof(FTNREAL); /* p6 has 32 bit words */
@@ -263,7 +260,6 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 
 #else
 
-  char  hardname[MAXCHAR];
   char  softname[MAXCHAR];
   char *darg;
   FILE *pipe;

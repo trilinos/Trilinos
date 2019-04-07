@@ -566,7 +566,6 @@ namespace MueLu {
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
-    typedef typename ATS::magnitudeType Magnitude;
     const SC zero = ATS::zero(), one = ATS::one();
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();

@@ -210,6 +210,7 @@ namespace Iocgns {
                             double load_balance, int proc_rank, int proc_count);
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
                                         std::vector<size_t> &                      work_vector);
+    static void   show_config();
   };
 } // namespace Iocgns
 

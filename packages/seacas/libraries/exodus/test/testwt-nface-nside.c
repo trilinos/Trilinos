@@ -49,23 +49,18 @@ int main(int argc, char **argv)
   int  exoid, num_dim, num_nodes, num_elem, num_elem_blk;
   int  num_elem_in_block[10], num_total_nodes_per_blk[10];
   int  num_face_in_block[10], num_total_faces_per_blk[10];
-  int  num_face_in_sset[10], num_nodes_in_nset[10];
-  int  num_node_sets, num_side_sets, error;
-  int  i, j, k, m, *elem_map, *connect;
-  int  node_list[100], elem_list[100], side_list[100];
-  int  bids[10], ssids[10], nsids[10], nnpe[10];
+  int  num_node_sets, error;
+  int  i, j, k, m, *connect;
+  int  bids[10], nnpe[10];
   int  num_qa_rec, num_info;
-  int  num_glo_vars, num_nod_vars, num_ele_vars, num_sset_vars, num_nset_vars;
+  int  num_glo_vars, num_nod_vars, num_ele_vars;
   int *truth_tab;
   int  whole_time_step, num_time_steps;
   int  CPU_word_size, IO_word_size;
-  int  prop_array[2];
 
   float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
-  float *sset_var_vals, *nset_var_vals;
   float  time_value;
   float  x[100], y[100], z[100];
-  float  dist_fact[100];
   char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
   char * block_names[10], *nset_names[10], *sset_names[10];
   char * prop_names[2], *attrib_names[2];
@@ -292,7 +287,6 @@ int main(int argc, char **argv)
   block_names[0] = "nfaced_1";
 
   num_elem_in_block[0]       = 1;
-  num_total_nodes_per_blk[0] = 6; /* Do we need this; does it make sense... */
   num_total_faces_per_blk[0] = 5;
 
   bids[0] = 10;
