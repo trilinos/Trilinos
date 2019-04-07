@@ -363,15 +363,6 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source) :
-    base_type (source),
-    view_ (source.view_),
-    origView_ (source.origView_),
-    whichVectors_ (source.whichVectors_)
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                const Teuchos::DataAccess copyOrView) :
     base_type (source),
@@ -3166,34 +3157,6 @@ namespace Tpetra {
 
     return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
   }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source)
-  {
-    if (this != &source) {
-      base_type::operator= (source);
-      //
-      // operator= implements view semantics (shallow copy).
-      //
-
-      // Kokkos::View operator= also implements view semantics.
-      view_ = source.view_;
-      origView_ = source.origView_;
-
-      // NOTE (mfh 24 Mar 2014) Christian wrote here that assigning
-      // whichVectors_ is "probably not ok" (probably constitutes deep
-      // copy).  I would say that it's OK, because whichVectors_ is
-      // immutable (from the user's perspective); it's analogous to
-      // the dimensions or stride.  Once we make whichVectors_ a
-      // Kokkos::View instead of a Teuchos::Array, all debate will go
-      // away and we will unquestionably have view semantics.
-      whichVectors_ = source.whichVectors_;
-    }
-    return *this;
-  }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >

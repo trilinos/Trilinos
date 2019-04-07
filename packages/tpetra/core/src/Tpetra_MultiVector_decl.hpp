@@ -527,9 +527,6 @@ namespace Tpetra {
                  const size_t numVecs,
                  const bool zeroOut = true);
 
-    //! Copy constructor (shallow copy!).
-    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
-
     /// \brief Copy constructor, with option to do deep or shallow copy.
     ///
     /// The current (so-called "Kokkos refactor," circa >= 2014/5)
@@ -802,6 +799,42 @@ namespace Tpetra {
                  const map_type& subMap,
                  const size_t offset = 0);
 
+    /// \brief Copy constructor (shallow copy).
+    ///
+    /// MultiVector's copy constructor always does a shallow copy.
+    /// Use the nonmember function <tt>Tpetra::deep_copy</tt> (see
+    /// below) to deep-copy one existing MultiVector to another, and
+    /// use the two-argument "copy constructor" (in this file, with
+    /// <tt>copyOrView=Teuchos::Copy</tt>) to create a MultiVector
+    /// that is a deep copy of an existing MultiVector.
+    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+    //! Move constructor (shallow move).
+    MultiVector (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+    /// \brief Copy assigment (shallow copy).
+    ///
+    /// MultiVector's copy constructor always does a shallow copy.
+    /// Use the nonmember function <tt>Tpetra::deep_copy</tt> (see
+    /// below) to deep-copy one existing MultiVector to another.
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+    //! Move assigment (shallow move).
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~MultiVector () = default;
+
     /// \brief Return a deep copy of this MultiVector, with a
     ///   different Node type.
     ///
@@ -816,9 +849,6 @@ namespace Tpetra {
 
     //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
-
-    //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector () = default;
 
     //@}
     //! @name Post-construction modification routines
@@ -1236,10 +1266,6 @@ namespace Tpetra {
     ///
     /// \pre isDistributed() == false
     void reduce();
-
-    //! Shallow copy: assign \c source to \c *this.
-    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
 
     //@}
 
