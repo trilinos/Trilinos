@@ -2563,8 +2563,8 @@ namespace Tpetra {
     }
     else {
       auto dstWhichVecs = getMultiVectorWhichVectors (dst);
-      auto srcWhichVecs = getMultiVectorWhichVectors (src);        
-      
+      auto srcWhichVecs = getMultiVectorWhichVectors (src);
+
       if (srcMostUpToDateOnDevice) {
         Details::localDeepCopy (dst.getLocalViewDevice (),
                                 src.getLocalViewDevice (),
