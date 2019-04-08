@@ -1326,7 +1326,6 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
           // Thread coordination stuff
           size_t my_thread_start = tid * thread_chunk;
           size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
-          size_t my_thread_m     = my_thread_stop - my_thread_start;
 
           std::vector<size_t> c_status(n, INVALID);
 

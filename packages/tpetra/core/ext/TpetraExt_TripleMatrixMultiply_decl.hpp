@@ -159,53 +159,7 @@ namespace Tpetra {
                                const std::string& label = std::string(),
                                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    template<class Scalar,
-             class LocalOrdinal,
-             class GlobalOrdinal,
-             class Node>
-    void mult_R_A_P_newmatrix_kernel_wrapper(
-                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
-                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                             CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                             const std::string& label = std::string(),
-                                             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-    template<class Scalar,
-             class LocalOrdinal,
-             class GlobalOrdinal,
-             class Node>
-    void mult_R_A_P_reuse_kernel_wrapper(
-                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
-                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                             CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                             const std::string& label = std::string(),
-                                             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-    template<class Scalar,
-             class LocalOrdinal,
-             class GlobalOrdinal,
-             class Node>
-    void mult_PT_A_P_newmatrix_kernel_wrapper(
-                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                              const std::string& label = std::string(),
-                                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-
-   template<class Scalar,
-             class LocalOrdinal,
-             class GlobalOrdinal,
-             class Node>
-    void mult_PT_A_P_reuse_kernel_wrapper(
-                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                              const std::string& label = std::string(),
-                                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-   
+  
 
     // Kernel wrappers struct (for non-specialized kernels)
     // Because C++ doesn't support partial template specialization of functions.
