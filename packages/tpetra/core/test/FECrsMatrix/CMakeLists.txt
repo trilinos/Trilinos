@@ -1,5 +1,4 @@
 
-IF( ${PACKAGE_NAME}_ENABLE_Experimental) 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     FECrsMatrix_UnitTests
     SOURCES
@@ -9,4 +8,3 @@ IF( ${PACKAGE_NAME}_ENABLE_Experimental)
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
-ENDIF()

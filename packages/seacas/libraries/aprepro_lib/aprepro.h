@@ -104,6 +104,7 @@ namespace SEAMS {
       array *(*arrfnct_c)(const char *){nullptr};
       array *(*arrfnct_cc)(const char *, const char *){nullptr};
       array *(*arrfnct_cd)(const char *, double){nullptr};
+      array *(*arrfnct_ddd)(double, double, double){nullptr};
       array *(*arrfnct_dd)(double, double){nullptr};
       array *(*arrfnct_d)(double){nullptr};
       array *(*arrfnct_a)(const array *){nullptr};

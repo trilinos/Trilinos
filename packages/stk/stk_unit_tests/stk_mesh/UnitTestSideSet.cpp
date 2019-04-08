@@ -161,7 +161,7 @@ typedef TestTextMesh TestQuad4;
 
 TEST_F(TestQuad4, createNodeOrderingAndTestPolarity)
 {
-    std::string meshDesc = "0,1,QUAD_4,1,2,3,4";
+    std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4";
     if (get_bulk().parallel_size() == 1)
     {
         inititalize_2D_mesh();
@@ -186,7 +186,7 @@ typedef TestTextMesh TestQuad9;
 
 TEST_F(TestQuad9, createNodeOrderingAndTestPolarity)
 {
-    std::string meshDesc = "0,1,QUAD_9,1,2,3,4,5,6,7,8,9";
+    std::string meshDesc = "0,1,QUAD_9_2D,1,2,3,4,5,6,7,8,9";
     if (get_bulk().parallel_size() == 1)
     {
         inititalize_2D_mesh();
@@ -211,7 +211,7 @@ typedef TestTextMesh TestTri3;
 
 TEST_F(TestTri3, createNodeOrderingAndTestPolarity)
 {
-    std::string meshDesc = "0,1,TRI_3,1,2,3";
+    std::string meshDesc = "0,1,TRI_3_2D,1,2,3";
     if (get_bulk().parallel_size() == 1)
     {
         inititalize_2D_mesh();
@@ -236,7 +236,7 @@ typedef TestTextMesh TestTri6;
 
 TEST_F(TestTri6, createNodeOrderingAndTestPolarity)
 {
-    std::string meshDesc = "0,1,TRI_6,1,2,3,4,5,6";
+    std::string meshDesc = "0,1,TRI_6_2D,1,2,3,4,5,6";
     if (get_bulk().parallel_size() == 1)
     {
         inititalize_2D_mesh();

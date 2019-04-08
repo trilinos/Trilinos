@@ -651,6 +651,7 @@ public:
   getLocalDiagOffsets (const Kokkos::View<size_t*, device_type,
                          Kokkos::MemoryUnmanaged>& offsets) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief DEPRECATED overload of this method that writes offsets to
   ///   a Teuchos::ArrayRCP instead of a Kokkos::View.
   ///
@@ -658,6 +659,7 @@ public:
   /// writes offsets a Kokkos::View instead of to a Teuchos::ArrayRCP.
   void TPETRA_DEPRECATED
   getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Variant of getLocalDiagCopy() that uses precomputed
   ///   offsets and puts diagonal blocks in a 3-D Kokkos::View.
@@ -696,6 +698,7 @@ public:
                                        Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Variant of getLocalDiagCopy() that uses precomputed offsets.
   ///
   /// \warning This overload of the method is DEPRECATED.  Call the
@@ -712,6 +715,7 @@ public:
   void TPETRA_DEPRECATED
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
@@ -1181,6 +1185,7 @@ public:
   ///   the number of entries.
   virtual size_t getNumEntriesInGlobalRow (GO globalRow) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Number of diagonal entries in the matrix's graph, over
   ///   all processes in the matrix's communicator.
   ///
@@ -1198,6 +1203,7 @@ public:
   /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
   ///   go away at any time.
   virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
@@ -1205,6 +1211,7 @@ public:
   //! Whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Whether the matrix's graph is locally lower triangular.
   ///
   /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -1228,6 +1235,7 @@ public:
   /// \note This is entirely a local property.  That means this
   ///   method may return different results on different processes.
   virtual bool TPETRA_DEPRECATED isUpperTriangular () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Whether matrix indices are locally indexed.
   ///

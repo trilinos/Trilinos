@@ -203,6 +203,12 @@ aexp:   AVAR                    { $$ = $1->value.avar;}
 	  else
 	    yyerrok;
 	}
+        | AFNCT LPAR exp COMMA exp COMMA exp RPAR {
+	  if (arg_check($1, $1->value.arrfnct_ddd == NULL))
+	    $$ = (*($1->value.arrfnct_ddd))($3,$5,$7);
+	  else
+	    yyerrok;
+	}
         | AFNCT LPAR exp COMMA exp RPAR {
 	  if (arg_check($1, $1->value.arrfnct_dd == NULL))
 	    $$ = (*($1->value.arrfnct_dd))($3,$5);

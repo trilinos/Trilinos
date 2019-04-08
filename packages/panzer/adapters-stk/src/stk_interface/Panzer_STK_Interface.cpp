@@ -1223,7 +1223,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
-     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData)));
+     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
    }
 
    // construct cell topology object for this block

@@ -58,7 +58,7 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   double *          comm_vals = NULL;       /* edge wgts of comm graph for sorting */
   float *           term_wgts[2];           /* terminal propagation vector */
   int               hops[MAXSETS][MAXSETS]; /* preference weighting */
-  double *          temp           = NULL;  /* return argument from srealloc_ret() */
+  void *            temp           = NULL;  /* return argument from srealloc_ret() */
   int *             indices        = NULL;  /* sorted order for communication edges */
   int *             space          = NULL;  /* space for mergesort */
   int *             sizes          = NULL;  /* sizes of the different sets */

@@ -216,7 +216,7 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
     }
 
     size_t length;
@@ -234,7 +234,7 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid edge weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
     }
 
     size_t length;
@@ -366,7 +366,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   size_t nvtx = getLocalNumVertices();
@@ -400,7 +400,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid vertex weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   vertexDegreeWeight_[idx] = true;
@@ -418,7 +418,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid edge weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   size_t nedges = getLocalNumEdges();
@@ -482,9 +482,9 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsGraph<lno_t, gno_t, node_t> tcrsgraph_t;
 
-  // We cannot create a Tpetra::RowGraph, unless the underlying type is 
+  // We cannot create a Tpetra::RowGraph, unless the underlying type is
   // something we know (like Tpetra::CrsGraph).
-  // If the underlying type is something different, the user probably doesn't 
+  // If the underlying type is something different, the user probably doesn't
   // want a Tpetra::CrsGraph back, so we throw an error.
 
   // Try to cast "from" graph to a TPetra::CrsGraph
@@ -544,8 +544,8 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
   }
 
   // target graph
-  RCP<tcrsgraph_t> G = rcp(new tcrsgraph_t(tmap, nnz_size_t,
-                                           Tpetra::StaticProfile));
+  RCP<tcrsgraph_t> G =
+    rcp(new tcrsgraph_t(tmap, nnz_size_t(), Tpetra::StaticProfile));
 
   G->doImport(*pCrsGraphSrc, importer, Tpetra::INSERT);
   G->fillComplete();

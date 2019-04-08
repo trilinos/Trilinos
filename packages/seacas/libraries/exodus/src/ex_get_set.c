@@ -108,7 +108,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
     entryptr = VAR_ELEM_SS(set_id_ndx);
     extraptr = VAR_SIDE_SS(set_id_ndx);
   }
-  if (set_type == EX_ELEM_SET) {
+  else if (set_type == EX_ELEM_SET) {
     entryptr = VAR_ELEM_ELS(set_id_ndx);
     extraptr = NULL;
   }

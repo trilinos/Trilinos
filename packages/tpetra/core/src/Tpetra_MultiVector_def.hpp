@@ -1735,7 +1735,6 @@ namespace Tpetra {
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef typename dual_view_type::t_dev XMV;
-    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Kokkos::View)");
@@ -1815,7 +1814,7 @@ namespace Tpetra {
 
       auto map = x.getMap ();
       Teuchos::RCP<const Teuchos::Comm<int> > comm =
-	map.is_null () ? Teuchos::null : map->getComm ();
+        map.is_null () ? Teuchos::null : map->getComm ();
       if (comm.is_null ()) {
         return Kokkos::ArithTraits<dot_type>::zero ();
       }
@@ -1832,11 +1831,11 @@ namespace Tpetra {
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
         if (x.need_sync_device ()) {
-	  x.sync_device ();
-	}
+          x.sync_device ();
+        }
         if (y.need_sync_device ()) {
-	  const_cast<MV&>(y).sync_device ();
-	}
+          const_cast<MV&>(y).sync_device ();
+        }
 
         x.modify_device ();
         auto x_2d = x.getLocalViewDevice ();
@@ -1932,7 +1931,7 @@ namespace Tpetra {
     this->normImpl (norms, NORM_TWO);
   }
 
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TPETRA_DEPRECATED
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -2025,7 +2024,7 @@ namespace Tpetra {
       }
     }
   }
-
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2038,7 +2037,6 @@ namespace Tpetra {
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
     this->norm1 (normsHostView); // Do the computation on the device.
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2059,7 +2057,6 @@ namespace Tpetra {
     host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
     this->normInf (normsHostView); // Do the computation on the device.
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2382,7 +2379,7 @@ namespace Tpetra {
     const bool useHostVersion = this->need_sync_device ();
     if (useHostVersion) {
       // DualView was last modified on host, so run the local kernel there.
-      auto X_lcl = subview (getDualView().view_host (),
+      auto X_lcl = subview (getLocalViewHost (),
                             rowRng, Kokkos::ALL ());
       // Compute the local sum of each column.
       Kokkos::View<impl_scalar_type*, Kokkos::HostSpace> lclSums ("MV::meanValue tmp", numVecs);
@@ -2569,6 +2566,9 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::Comm;
     using Teuchos::RCP;
+    using ST = Scalar;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
 
     // mfh 28 Mar 2013: This method doesn't forget whichVectors_, so
     // it might work if the MV is a column view of another MV.
@@ -2641,7 +2641,7 @@ namespace Tpetra {
       const size_t numCols = this->getNumVectors ();
 
       if (origNumRows != newNumRows || view_.extent (1) != numCols) {
-        view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
+        view_ = allocDualView<ST, LO, GO, Node> (newNumRows, numCols);
       }
     }
     else if (newMap.is_null ()) { // Case 2: current Map is nonnull, new Map is null
@@ -2649,7 +2649,7 @@ namespace Tpetra {
       // have 0 rows.  Keep the number of columns as before.
       const size_t newNumRows = static_cast<size_t> (0);
       const size_t numCols = this->getNumVectors ();
-      view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (newNumRows, numCols);
+      view_ = allocDualView<ST, LO, GO, Node> (newNumRows, numCols);
     }
 
     this->map_ = newMap;
@@ -2660,12 +2660,15 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Scalar& alpha)
   {
-    const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    if (theAlpha == Kokkos::Details::ArithTraits<impl_scalar_type>::one ()) {
+    using Kokkos::ALL;
+    using IST = impl_scalar_type;
+
+    const IST theAlpha = static_cast<IST> (alpha);
+    if (theAlpha == Kokkos::ArithTraits<IST>::one ()) {
       return; // do nothing
     }
-    const size_t lclNumRows = this->getLocalLength ();
-    const size_t numVecs = this->getNumVectors ();
+    const size_t lclNumRows = getLocalLength ();
+    const size_t numVecs = getNumVectors ();
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
@@ -2675,35 +2678,29 @@ namespace Tpetra {
     // IEEE 754 requires to be NaN.
 
     // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->need_sync_device ();
+    const bool useHostVersion = need_sync_device ();
     if (useHostVersion) {
-      auto Y_lcl =
-        Kokkos::subview (getDualView().view_host (),
-                         rowRng, Kokkos::ALL ());
+      auto Y_lcl = Kokkos::subview (getLocalViewHost (), rowRng, ALL ());
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = this->isConstantStride () ? k :
-            this->whichVectors_[k];
-          auto Y_k = Kokkos::subview (Y_lcl, Kokkos::ALL (), Y_col);
+          const size_t Y_col = isConstantStride () ? k : whichVectors_[k];
+          auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
     }
     else { // work on device
-      auto Y_lcl =
-        Kokkos::subview (this->getLocalViewDevice (),
-                         rowRng, Kokkos::ALL ());
+      auto Y_lcl = Kokkos::subview (getLocalViewDevice (), rowRng, ALL ());
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = this->isConstantStride () ? k :
-            this->whichVectors_[k];
-          auto Y_k = Kokkos::subview (Y_lcl, Kokkos::ALL (), Y_col);
+          const size_t Y_col = isConstantStride () ? k : whichVectors_[k];
+          auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
@@ -2789,12 +2786,12 @@ namespace Tpetra {
         KokkosBlas::scal (Y_lcl, alphas, Y_lcl);
       }
       else {
-	// FIXME (mfh 15 Mar 2019) We need one coefficient at a time,
-	// as values on host, so copy them to host.  Another approach
-	// would be to fix scal() so that it takes a 0-D View as the
-	// second argument.
-	auto alphas_h = Kokkos::create_mirror_view (alphas);
-	Kokkos::deep_copy (alphas_h, alphas);
+        // FIXME (mfh 15 Mar 2019) We need one coefficient at a time,
+        // as values on host, so copy them to host.  Another approach
+        // would be to fix scal() so that it takes a 0-D View as the
+        // second argument.
+        auto alphas_h = Kokkos::create_mirror_view (alphas);
+        Kokkos::deep_copy (alphas_h, alphas);
 
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t Y_col = this->isConstantStride () ? k :
@@ -2815,8 +2812,6 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
-
     const char tfecfFuncName[] = "scale: ";
 
     const size_t lclNumRows = getLocalLength ();
@@ -2872,9 +2867,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
-
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "reciprocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2923,10 +2916,9 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
-
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "abs";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
        getLocalLength () != A.getLocalLength (), std::runtime_error,
        ": MultiVectors do not have the same local length.  "
@@ -2978,8 +2970,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "update: ";
     using Kokkos::subview;
     using Kokkos::ALL;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
 
@@ -3042,8 +3033,7 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
@@ -3115,8 +3105,8 @@ namespace Tpetra {
   getData (size_t j) const
   {
     using Kokkos::ALL;
-    using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getData: ";
 
     // Any MultiVector method that called the (classic) Kokkos Node's
@@ -3125,15 +3115,10 @@ namespace Tpetra {
     // well.
     const_cast<MV*> (this)->sync_host ();
 
-    // Get a host view of the entire MultiVector's data.
-    auto hostView = getDualView().view_host ();
-
-    // Get a subview of column j.
+    auto hostView = getLocalViewHost ();
     const size_t col = isConstantStride () ? j : whichVectors_[j];
-    auto hostView_j = subview (hostView, ALL (), col);
-
-    // Wrap up the subview of column j in an ArrayRCP<const impl_scalar_type>.
-    Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
+    auto hostView_j = Kokkos::subview (hostView, ALL (), col);
+    Teuchos::ArrayRCP<const IST> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3153,7 +3138,8 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getDataNonConst: ";
 
     // Any MultiVector method that called the (classic) Kokkos Node's
@@ -3161,20 +3147,14 @@ namespace Tpetra {
     // device->host synchronization.  Thus, we synchronize here as
     // well.
     const_cast<MV*> (this)->sync_host ();
-
     // Calling getDataNonConst() implies that the user plans to modify
     // the values in the MultiVector, so we mark the host data as modified.
-    this->modify_host ();
+    modify_host ();
 
-    // Get a host view of the entire MultiVector's data.
-    auto hostView = getDualView().view_host ();
-
-    // Get a subview of column j.
+    auto hostView = getLocalViewHost ();
     const size_t col = isConstantStride () ? j : whichVectors_[j];
     auto hostView_j = subview (hostView, ALL (), col);
-
-    // Wrap up the subview of column j in an ArrayRCP<const impl_scalar_type>.
-    Teuchos::ArrayRCP<impl_scalar_type> dataAsArcp =
+    Teuchos::ArrayRCP<IST> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3275,9 +3255,9 @@ namespace Tpetra {
   template <class Scalar, class LO, class GO, class Node>
   MultiVector<Scalar, LO, GO, Node>::
   MultiVector (const MultiVector<Scalar, LO, GO, Node>& X,
-               const map_type& subMap,
-               const size_t offset) :
-    base_type (Teuchos::null) // to be replaced below
+               const Teuchos::RCP<const map_type>& subMap,
+               const local_ordinal_type rowOffset) :
+    base_type (subMap)
   {
     using Kokkos::ALL;
     using Kokkos::subview;
@@ -3299,29 +3279,33 @@ namespace Tpetra {
     // Be careful to use the input Map's communicator, not X's.  The
     // idea is that, on return, *this is a subview of X, using the
     // input Map.
-    const auto comm = subMap.getComm ();
+    const auto comm = subMap->getComm ();
     TEUCHOS_ASSERT( ! comm.is_null () );
     const int myRank = comm->getRank ();
 
-    const size_t lclNumRowsBefore = X.getLocalLength ();
-    const size_t numCols = X.getNumVectors ();
-    const size_t newNumRows = subMap.getNodeNumElements ();
+    const LO lclNumRowsBefore = static_cast<LO> (X.getLocalLength ());
+    const LO numCols = static_cast<LO> (X.getNumVectors ());
+    const LO newNumRows = static_cast<LO> (subMap->getNodeNumElements ());
     if (verbose) {
       std::ostringstream os;
-      os << "Proc " << myRank << ": " << prefix << "X: {lclNumRows: "
-         << lclNumRowsBefore << ", origLclNumRows: " << X.getOrigNumLocalRows ()
-         << ", numCols: " << numCols << "}, subMap: " << newNumRows << endl;
+      os << "Proc " << myRank << ": " << prefix
+         << "X: {lclNumRows: " << lclNumRowsBefore
+         << ", origLclNumRows: " << X.getOrigNumLocalRows ()
+         << ", numCols: " << numCols << "}, "
+         << "subMap: {lclNumRows: " << newNumRows << "}" << endl;
       std::cerr << os.str ();
     }
     // We ask for the _original_ number of rows in X, because X could
     // be a shorter (fewer rows) view of a longer MV.  (For example, X
     // could be a domain Map view of a column Map MV.)
-    const bool tooManyElts = newNumRows + offset > X.getOrigNumLocalRows ();
+    const bool tooManyElts =
+      newNumRows + rowOffset > static_cast<LO> (X.getOrigNumLocalRows ());
     if (tooManyElts) {
       errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
-      *errStrm << "  Proc " << myRank << ": subMap.getNodeNumElements() (="
-        << newNumRows << ") + offset (=" << offset << ") > X.getOrigNumLocal"
-        "Rows() (=" << X.getOrigNumLocalRows () << ")." << endl;
+      *errStrm << "  Proc " << myRank << ": subMap->getNodeNumElements() (="
+               << newNumRows << ") + rowOffset (=" << rowOffset
+               << ") > X.getOrigNumLocalRows() (=" << X.getOrigNumLocalRows ()
+               << ")." << endl;
       lclGood = 0;
       TEUCHOS_TEST_FOR_EXCEPTION
         (! debug && tooManyElts, std::invalid_argument,
@@ -3340,8 +3324,11 @@ namespace Tpetra {
       }
     }
 
-    const std::pair<size_t, size_t> origRowRng (offset, X.origView_.extent (0));
-    const std::pair<size_t, size_t> rowRng (offset, offset + newNumRows);
+    using range_type = std::pair<LO, LO>;
+    const range_type origRowRng
+      (rowOffset, static_cast<LO> (X.origView_.extent (0)));
+    const range_type rowRng
+      (rowOffset, rowOffset + newNumRows);
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
     // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
@@ -3349,13 +3336,13 @@ namespace Tpetra {
     // ability to create domain Map views of column Map MultiVectors,
     // and then get the original column Map MultiVector out again).
     // If we just use X.origView_ here, it breaks the fix for #46.
-    // The test for offset == 0 is a hack that makes both tests pass,
-    // but doesn't actually fix the more general issue.  In
+    // The test for rowOffset == 0 is a hack that makes both tests
+    // pass, but doesn't actually fix the more general issue.  In
     // particular, the right way to fix Gauss-Seidel would be to fix
     // #385; that would make "getting the original column Map
     // MultiVector out again" unnecessary.
     dual_view_type newView =
-      subview (offset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
+      subview (rowOffset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
 
     // NOTE (mfh 06 Jan 2015) Work-around to deal with Kokkos not
     // handling subviews of degenerate Views quite so well.  For some
@@ -3364,23 +3351,22 @@ namespace Tpetra {
     // desired (degenerate) dimensions.
     if (newOrigView.extent (0) == 0 &&
         newOrigView.extent (1) != X.origView_.extent (1)) {
-      newOrigView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
-                                                         X.getNumVectors ());
+      newOrigView =
+        allocDualView<Scalar, LO, GO, Node> (0, X.getNumVectors ());
     }
     if (newView.extent (0) == 0 &&
         newView.extent (1) != X.view_.extent (1)) {
-      newView = allocDualView<Scalar, LO, GO, Node> (size_t (0),
-                                                     X.getNumVectors ());
+      newView =
+        allocDualView<Scalar, LO, GO, Node> (0, X.getNumVectors ());
     }
 
     MV subViewMV = X.isConstantStride () ?
-      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView) :
-      MV (Teuchos::rcp (new map_type (subMap)), newView, newOrigView,
-          X.whichVectors_ ());
+      MV (subMap, newView, newOrigView) :
+      MV (subMap, newView, newOrigView, X.whichVectors_ ());
 
     if (debug) {
-      const size_t lclNumRowsRet = subViewMV.getLocalLength ();
-      const size_t numColsRet = subViewMV.getNumVectors ();
+      const LO lclNumRowsRet = static_cast<LO> (subViewMV.getLocalLength ());
+      const LO numColsRet = static_cast<LO> (subViewMV.getNumVectors ());
       if (newNumRows != lclNumRowsRet || numCols != numColsRet) {
         lclGood = 0;
         if (errStrm.get () == nullptr) {
@@ -3422,6 +3408,15 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
   }
+
+  template <class Scalar, class LO, class GO, class Node>
+  MultiVector<Scalar, LO, GO, Node>::
+  MultiVector (const MultiVector<Scalar, LO, GO, Node>& X,
+               const map_type& subMap,
+               const size_t rowOffset) :
+    MultiVector (X, Teuchos::RCP<const map_type> (new map_type (subMap)),
+                 static_cast<local_ordinal_type> (rowOffset))
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
@@ -3699,8 +3694,8 @@ namespace Tpetra {
     using host_view_type = typename dual_view_type::t_host;
     using IST = impl_scalar_type;
     using input_view_type = Kokkos::View<IST**, Kokkos::LayoutLeft,
-					 Kokkos::HostSpace,
-					 Kokkos::MemoryUnmanaged>;
+                                         Kokkos::HostSpace,
+                                         Kokkos::MemoryUnmanaged>;
     const char tfecfFuncName[] = "get1dCopy: ";
 
     const size_t numRows = this->getLocalLength ();
@@ -3720,7 +3715,7 @@ namespace Tpetra {
     const std::pair<size_t, size_t> colRange (0, numCols);
 
     input_view_type A_view_orig (reinterpret_cast<IST*> (A.getRawPtr ()),
-				 LDA, numCols);
+                                 LDA, numCols);
     auto A_view = Kokkos::subview (A_view_orig, rowRange, colRange);
 
     // Use the most recently updated version of this MultiVector's
@@ -3741,25 +3736,25 @@ namespace Tpetra {
 
     if (this->isConstantStride ()) {
       if (useHostVersion) {
-	Kokkos::deep_copy (A_view, srcView_host);
+        Kokkos::deep_copy (A_view, srcView_host);
       }
       else {
-	Kokkos::deep_copy (A_view, srcView_dev);
+        Kokkos::deep_copy (A_view, srcView_dev);
       }
     }
     else {
       for (size_t j = 0; j < numCols; ++j) {
-	const size_t srcCol = this->whichVectors_[j];
-	auto dstColView = Kokkos::subview (A_view, rowRange, j);
+        const size_t srcCol = this->whichVectors_[j];
+        auto dstColView = Kokkos::subview (A_view, rowRange, j);
 
-	if (useHostVersion) {
-	  auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
-	  Kokkos::deep_copy (dstColView, srcColView_host);
-	}
-	else {
-	  auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
-	  Kokkos::deep_copy (dstColView, srcColView_dev);
-	}
+        if (useHostVersion) {
+          auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
+          Kokkos::deep_copy (dstColView, srcColView_host);
+        }
+        else {
+          auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
+          Kokkos::deep_copy (dstColView, srcColView_dev);
+        }
       }
     }
   }
@@ -3817,9 +3812,7 @@ namespace Tpetra {
       if (markModified) {
         X.modify_host ();
       }
-      // get{1,2}dView() and get{1,2}dViewNonConst() all return a host
-      // view of the data.
-      return X.getDualView().view_host();
+      return X.getLocalViewHost ();
     }
   } // namespace (anonymous)
 
@@ -4123,7 +4116,7 @@ namespace Tpetra {
 
     {
       if (A_tmp->need_sync_device ()) {
-	const_cast<MV&> (*A_tmp).sync_device (); // const is a lie
+        const_cast<MV&> (*A_tmp).sync_device (); // const is a lie
       }
       const LO A_lclNumRows = A_tmp->getLocalLength ();
       const LO A_numVecs = A_tmp->getNumVectors ();
@@ -4133,7 +4126,7 @@ namespace Tpetra {
                                     std::make_pair (LO (0), A_numVecs));
 
       if (B_tmp->need_sync_device ()) {
-	const_cast<MV&> (*B_tmp).sync_device (); // const is a lie
+        const_cast<MV&> (*B_tmp).sync_device (); // const is a lie
       }
       const LO B_lclNumRows = B_tmp->getLocalLength ();
       const LO B_numVecs = B_tmp->getNumVectors ();
@@ -4143,7 +4136,7 @@ namespace Tpetra {
                                     std::make_pair (LO (0), B_numVecs));
 
       if (C_tmp->need_sync_device ()) {
-	const_cast<MV&> (*C_tmp).sync_device (); // const is a lie
+        const_cast<MV&> (*C_tmp).sync_device (); // const is a lie
       }
       const LO C_lclNumRows = C_tmp->getLocalLength ();
       const LO C_numVecs = C_tmp->getNumVectors ();
@@ -4159,7 +4152,7 @@ namespace Tpetra {
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
-			beta_local, C_sub);
+                        beta_local, C_sub);
     }
 
     if (! isConstantStride ()) {
@@ -4186,10 +4179,8 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
-    typedef typename MV::dual_view_type::t_dev::memory_space dev_memory_space;
-
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using V = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "elementWiseMultiply: ";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -4409,11 +4400,77 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (X_col.d_view);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type
+  TPETRA_DEPRECATED
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getDualView () const {
     return view_;
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  clear_sync_state () {
+    view_.clear_sync_state ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  sync_host () {
+    view_.sync_host ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  sync_device () {
+    view_.sync_device ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  need_sync_host () const {
+    return view_.need_sync_host ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  need_sync_device () const {
+    return view_.need_sync_device ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  modify_device () {
+    view_.modify_device ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  modify_host () {
+    view_.modify_host ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewDevice () const {
+    return view_.view_device ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewHost () const {
+    return view_.view_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4497,15 +4554,14 @@ namespace Tpetra {
         // VERB_EXTREME prints values.  Get a host View of the
         // Vector's local data, so we can print it.  (Don't assume
         // that we can access device data directly in host code.)
-        auto X_dual = this->getDualView ();
         typename dual_view_type::t_host X_host;
-        if (X_dual.need_sync_host ()) {
+        if (need_sync_host ()) {
           // Device memory has the latest version.  Don't actually
           // sync to host; that changes the Vector's state, and may
           // change future computations (that use the data's current
           // place to decide where to compute).  Instead, create a
           // temporary host copy and print that.
-          auto X_dev = this->getLocalViewDevice ();
+          auto X_dev = getLocalViewDevice ();
           auto X_host_copy = Kokkos::create_mirror_view (X_dev);
           Kokkos::deep_copy (X_host_copy, X_dev);
           X_host = X_host_copy;
@@ -4514,7 +4570,7 @@ namespace Tpetra {
           // Either host and device are in sync, or host has the
           // latest version of the Vector's data.  Thus, we can use
           // the host version directly.
-          X_host = getDualView ().view_host ();
+          X_host = getLocalViewHost ();
         }
         // The square braces [] and their contents are in Matlab
         // format, so users may copy and paste directly into Matlab.

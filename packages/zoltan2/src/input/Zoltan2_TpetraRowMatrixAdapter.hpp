@@ -91,8 +91,8 @@ public:
    */
   ~TpetraRowMatrixAdapter() { }
 
-  /*! \brief Constructor   
-   *    \param inmatrix The user's Tpetra RowMatrix object 
+  /*! \brief Constructor
+   *    \param inmatrix The user's Tpetra RowMatrix object
    *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
    *        the set \c nWeightsPerRow to the number of weights per row.
    */
@@ -104,10 +104,10 @@ public:
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for entity \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow
    *                  argument to the constructor.
    *
-   * The order of weights should correspond to the order of the primary 
+   * The order of weights should correspond to the order of the primary
    * entity type; see, e.g.,  setRowWeights below.
    */
 
@@ -118,7 +118,7 @@ public:
    *    \stride          A stride to be used in reading the values.  The
    *        index \c idx weight for row \k should be found at
    *        <tt>weightVal[k*stride]</tt>.
-   *    \param idx  A value between zero and one less that the \c nWeightsPerRow 
+   *    \param idx  A value between zero and one less that the \c nWeightsPerRow
    *                  argument to the constructor.
    *
    * The order of weights should correspond to the order of rows
@@ -132,7 +132,7 @@ public:
 
   /*! \brief Specify an index for which the weight should be
               the degree of the entity
-   *    \param idx Zoltan2 will use the entity's 
+   *    \param idx Zoltan2 will use the entity's
    *         degree as the entity weight for index \c idx.
    */
   void setWeightIsDegree(int idx);
@@ -148,11 +148,11 @@ public:
   // The MatrixAdapter interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumRows() const { 
+  size_t getLocalNumRows() const {
     return matrix_->getNodeNumRows();
   }
 
-  size_t getLocalNumColumns() const { 
+  size_t getLocalNumColumns() const {
     return matrix_->getNodeNumCols();
   }
 
@@ -162,7 +162,7 @@ public:
 
   bool CRSViewAvailable() const { return true; }
 
-  void getRowIDsView(const gno_t *&rowIds) const 
+  void getRowIDsView(const gno_t *&rowIds) const
   {
     ArrayView<const gno_t> rowView = rowMap_->getNodeElementList();
     rowIds = rowView.getRawPtr();
@@ -193,7 +193,7 @@ public:
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
     }
 
 
@@ -237,7 +237,7 @@ private:
 template <typename User, typename UserCoord>
   TpetraRowMatrixAdapter<User,UserCoord>::TpetraRowMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
-      matrix_(inmatrix), rowMap_(), colMap_(), 
+      matrix_(inmatrix), rowMap_(), colMap_(),
       offset_(), columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
@@ -249,9 +249,9 @@ template <typename User, typename UserCoord>
 
   size_t nrows = matrix_->getNodeNumRows();
   size_t nnz = matrix_->getNodeNumEntries();
-  size_t maxnumentries = 
+  size_t maxnumentries =
          matrix_->getNodeMaxNumRowEntries(); // Diff from CrsMatrix
- 
+
   offset_.resize(nrows+1, 0);
   columnIds_.resize(nnz);
   values_.resize(nnz);
@@ -268,7 +268,7 @@ template <typename User, typename UserCoord>
       columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
     }
     offset_[i+1] = offset_[i] + nnz;
-  } 
+  }
 
   if (nWeightsPerRow_ > 0){
     rowWeights_ = arcp(new input_t [nWeightsPerRow_], 0, nWeightsPerRow_, true);
@@ -307,7 +307,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
   size_t nvtx = getLocalNumRows();
@@ -342,7 +342,7 @@ template <typename User, typename UserCoord>
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
            << "  Invalid row weight index " << idx << std::endl;
-      throw std::runtime_error(emsg.str()); 
+      throw std::runtime_error(emsg.str());
   }
 
 
@@ -353,9 +353,9 @@ template <typename User, typename UserCoord>
 template <typename User, typename UserCoord>
   template <typename Adapter>
     void TpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
-      const User &in, User *&out, 
+      const User &in, User *&out,
       const PartitioningSolution<Adapter> &solution) const
-{ 
+{
   // Get an import list (rows to be received)
   size_t numNewRows;
   ArrayRCP<gno_t> importList;
@@ -376,9 +376,9 @@ template <typename User, typename UserCoord>
 template <typename User, typename UserCoord>
   template <typename Adapter>
     void TpetraRowMatrixAdapter<User,UserCoord>::applyPartitioningSolution(
-      const User &in, RCP<User> &out, 
+      const User &in, RCP<User> &out,
       const PartitioningSolution<Adapter> &solution) const
-{ 
+{
   // Get an import list (rows to be received)
   size_t numNewRows;
   ArrayRCP<gno_t> importList;
@@ -398,16 +398,16 @@ template <typename User, typename UserCoord>
 template < typename User, typename UserCoord>
 RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   const User &from,
-  size_t numLocalRows, 
+  size_t numLocalRows,
   const gno_t *myNewRows
 ) const
 {
   typedef Tpetra::Map<lno_t, gno_t, node_t> map_t;
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsmatrix_t;
 
-  // We cannot create a Tpetra::RowMatrix, unless the underlying type is 
+  // We cannot create a Tpetra::RowMatrix, unless the underlying type is
   // something we know (like Tpetra::CrsMatrix).
-  // If the underlying type is something different, the user probably doesn't 
+  // If the underlying type is something different, the user probably doesn't
   // want a Tpetra::CrsMatrix back, so we throw an error.
 
   // Try to cast "from" matrix to a TPetra::CrsMatrix
@@ -438,12 +438,12 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   Tpetra::Import<lno_t, gno_t, node_t> importer(smap, tmap);
 
   // target matrix
-  // Chris Siefert proposed using the following to make migration 
-  // more efficient.  
+  // Chris Siefert proposed using the following to make migration
+  // more efficient.
   // By default, the Domain and Range maps are the same as in "from".
-  // As in the original code, we instead set them both to tmap.  
+  // As in the original code, we instead set them both to tmap.
   // The assumption is a square matrix.
-  // TODO:  what about rectangular matrices?  
+  // TODO:  what about rectangular matrices?
   // TODO:  Should choice of domain/range maps be an option to this function?
 
   // KDD 3/7/16:  disabling Chris' new code to avoid dashboard failures;
@@ -477,8 +477,9 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
     }
   }
 
-  RCP<tcrsmatrix_t> M = rcp(new tcrsmatrix_t(tmap, nnz,
-                                               Tpetra::StaticProfile));
+  RCP<tcrsmatrix_t> M =
+    rcp(new tcrsmatrix_t(tmap, nnz(), Tpetra::StaticProfile));
+
   M->doImport(from, importer, Tpetra::INSERT);
   M->fillComplete();
 
@@ -487,5 +488,5 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
 }
 
 }  //namespace Zoltan2
-  
+
 #endif

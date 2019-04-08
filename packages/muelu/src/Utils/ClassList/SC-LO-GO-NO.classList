@@ -37,6 +37,7 @@ FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
 GeometricInterpolationPFactory
+GeometricInterpolationPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 GMRESSolver
 Hierarchy
 HierarchyManager

@@ -483,7 +483,6 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto localMatrix = A->getLocalMatrix();
@@ -562,7 +561,6 @@ namespace MueLu {
   ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                     Scalar replaceWith) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto localMatrix = A->getLocalMatrix();

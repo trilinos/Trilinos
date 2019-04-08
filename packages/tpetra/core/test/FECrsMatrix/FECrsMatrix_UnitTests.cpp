@@ -1,3 +1,4 @@
+
 /*
 // @HEADER
 // ***********************************************************************
@@ -45,7 +46,7 @@
 #include "Tpetra_FECrsMatrix.hpp"
 #include "Tpetra_FEMultiVector.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
-
+#include "KokkosCompat_View.hpp"
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
 // TODO: add test where dynamic profile initially has no allocation, then entries are added. this will test new view functionality.
@@ -98,7 +99,12 @@ bool compare_final_matrix_structure_impl(Teuchos::FancyOStream &out,Tpetra::CrsM
   TEST_COMPARE_ARRAYS(colind1,colind2);
   if (!success) {out<<"Compare: colind match failed"<<endl;return false;}
 
-  TEST_COMPARE_FLOATING_ARRAYS(values1,values2,tol);
+  // This is necessary to make sure that complex works (since Teuchos::ScalarTraits does not have a Kokkos::complex specialization)
+  auto values1_h = Kokkos::create_mirror_view(values1);
+  auto values2_h = Kokkos::create_mirror_view(values2);
+  auto values1_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values1_h));
+  auto values2_av = Teuchos::av_reinterpret_cast<Scalar>(Kokkos::Compat::getArrayView(values2_h));  
+  TEST_COMPARE_FLOATING_ARRAYS(values1_av,values2_av,tol);
   if (!success) {out<<"Compare: values match failed"<<endl;return false;}
 
   return true;
@@ -270,17 +276,80 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
+
+////
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, Scalar, Node )
+{
+  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
+  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+
+  // get a comm
+  RCP<const Comm<int> > comm = getDefaultComm();
+  
+  // Generate a mesh
+  size_t numLocal = 10;
+  GraphPack<LO,GO,Node> pack;
+  generate_fem1d_graph(numLocal,comm,pack);
+  
+  // Make the graph    
+  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
+  // not being handled correctly. 
+  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,4));
+
+  graph->beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      LO lid_j = pack.overlapMap->getLocalElement(gid_j);
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        LO lid_k = pack.overlapMap->getLocalElement(gid_k);
+        //        printf("[%d] Inserting gid (%d,%d) lid (%d,%d)\n",comm->getRank(),gid_j,gid_k,lid_j,lid_k);fflush(stdout);
+        graph->insertLocalIndices(lid_j,1,&lid_k);
+      }
+    }
+  }
+  graph->endFill();
+
+
+  // Generate the "local stiffness matrix"
+  std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
+
+  // Make the matrix two ways
+  FEMAT mat1(graph); // Here we use graph as a FECrsGraph
+  CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
+  mat1.beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      LO lid_j = pack.overlapMap->getLocalElement(gid_j);
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        LO lid_k = pack.overlapMap->getLocalElement(gid_k);
+        mat1.sumIntoLocalValues(lid_j,1,&localValues[j][k],&lid_k);
+        mat2.sumIntoGlobalValues(gid_j,1,&localValues[j][k],&gid_k);
+      }
+    }
+  }
+  mat1.endFill();
+  mat2.fillComplete();
+
+  success = compare<Scalar,LO,GO,Node>::compare_final_matrix_structure(out,mat1,mat2);
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
+}
+
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 } // end namespace (anonymous)
-
-
