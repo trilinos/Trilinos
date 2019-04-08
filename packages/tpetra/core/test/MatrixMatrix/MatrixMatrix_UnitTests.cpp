@@ -589,15 +589,17 @@ mult_test_results multiply_RAP_reuse_test(
   SC one = Teuchos::ScalarTraits<SC>::one();
 
   // First cut
-  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1, true);  
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1);  
 
   if(!Ac->getDomainMap()->isSameAs(*computedC1->getDomainMap())) throw std::runtime_error("Domain map mismatch");
   if(!Ac->getRangeMap()->isSameAs(*computedC1->getRangeMap())) throw std::runtime_error("Range map mismatch");
   if(!Ac->getRowMap()->isSameAs(*computedC1->getRowMap())) throw std::runtime_error("Row map mismatch");
 
   RCP<Matrix_t> computedC2 = rcp( new Matrix_t(computedC1->getCrsGraph()) );
-  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2, true);  
-  
+  computedC2->fillComplete(computedC2->getDomainMap(), computedC2->getRangeMap());
+  computedC2->resumeFill();
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2);  
+
   // Only check the second "reuse" matrix
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(map,0);
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);

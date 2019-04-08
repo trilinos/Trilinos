@@ -693,6 +693,7 @@ void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::PT_A_P reuse unknown kernel");
   }
+  Ac.fillComplete(Ac.getDomainMap(), Ac.getRangeMap());
 }
 
 
