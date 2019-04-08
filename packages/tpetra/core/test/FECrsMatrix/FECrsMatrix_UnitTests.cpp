@@ -204,7 +204,7 @@ void generate_fem1d_graph(size_t numLocalNodes, RCP<const Comm<int> > comm , Gra
   Kokkos::resize(pack.k_element2node,numLocalElements);
   auto k_e2n = pack.k_element2node;
   auto l_umap = pack.uniqueMap->getLocalMap();
-  Kokkos::parallel_for(numLocalElements, KOKKOS_LAMBDA(const size_t i) {
+  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,numLocalElements), KOKKOS_LAMBDA(const size_t i) {
       GO gid = l_umap.getGlobalElement(i);
       k_e2n(i,0) = gid;
       k_e2n(i,1) = gid+1;
