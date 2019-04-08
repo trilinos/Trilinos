@@ -157,7 +157,7 @@ bool validate_topology_data()
            && check_face_node_offsets<Topology>()
            && check_permutation_node_offsets<Topology>()
            );
-};
+}
 
 } //unnamed namespace
 
