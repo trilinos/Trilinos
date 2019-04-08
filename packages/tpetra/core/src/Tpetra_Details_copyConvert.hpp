@@ -130,7 +130,7 @@ namespace { // (anonymous)
   /// \tparam InputViewType Type of the input Kokkos::View.
   template<class OutputViewType,
            class InputViewType,
-           const int rank = OutputViewType::Rank>
+           const int rank = static_cast<int> (OutputViewType::Rank)>
   class CopyConvertFunctor {};
 
   template<class OutputViewType,
@@ -138,7 +138,8 @@ namespace { // (anonymous)
   class CopyConvertFunctor<OutputViewType, InputViewType, 1> {
   private:
     static_assert
-    (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
+    (static_cast<int> (OutputViewType::Rank) == 1 &&
+     static_cast<int> (InputViewType::Rank) == 1,
      "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
      "OutputViewType and InputViewType must both have rank 1.");
     OutputViewType dst_;
@@ -167,7 +168,8 @@ namespace { // (anonymous)
 
   private:
     static_assert
-    (OutputViewType::Rank == 2 && InputViewType::Rank == 2,
+    (static_cast<int> (OutputViewType::Rank) == 2 &&
+     static_cast<int> (InputViewType::Rank) == 2,
      "CopyConvertFunctor (implements Tpetra::Details::copyConvert): "
      "OutputViewType and InputViewType must both have rank 2.");
     OutputViewType dst_;
@@ -244,7 +246,8 @@ namespace { // (anonymous)
     run (const OutputViewType& dst,
          const InputViewType& src)
     {
-      static_assert (OutputViewType::Rank == InputViewType::Rank,
+      static_assert (static_cast<int> (OutputViewType::Rank) ==
+                     static_cast<int> (InputViewType::Rank),
                      "CopyConvertImpl (implementation of copyConvert): "
                      "The two Views must have the same rank.");
       constexpr bool same_value_type =
@@ -274,7 +277,8 @@ namespace { // (anonymous)
     run (const OutputViewType& dst,
          const InputViewType& src)
     {
-      static_assert (OutputViewType::Rank == InputViewType::Rank,
+      static_assert (static_cast<int> (OutputViewType::Rank) ==
+                     static_cast<int> (InputViewType::Rank),
                      "CopyConvertImpl (implementation of copyConvert): "
                      "The two Views must have the same rank.");
       constexpr bool same_value_type =
@@ -333,7 +337,8 @@ namespace { // (anonymous)
     run (const OutputViewType& dst,
          const InputViewType& src)
     {
-      static_assert (OutputViewType::Rank == InputViewType::Rank,
+      static_assert (static_cast<int> (OutputViewType::Rank) ==
+                     static_cast<int> (InputViewType::Rank),
                      "CopyConvertImpl (implementation of copyConvert): "
                      "OutputViewType and InputViewType must have the "
                      "same rank.");
@@ -394,7 +399,8 @@ copyConvert (const OutputViewType& dst,
   static_assert (std::is_same<typename OutputViewType::value_type,
                    typename OutputViewType::non_const_value_type>::value,
                  "OutputViewType must be a nonconst Kokkos::View.");
-  static_assert (OutputViewType::Rank == InputViewType::Rank,
+  static_assert (static_cast<int> (OutputViewType::Rank) ==
+                 static_cast<int> (InputViewType::Rank),
                  "src and dst must have the same rank.");
 
   if (dst.extent (0) != src.extent (0)) {
@@ -405,7 +411,8 @@ copyConvert (const OutputViewType& dst,
        << ".";
     throw std::invalid_argument (os.str ());
   }
-  if (OutputViewType::Rank > 1 && dst.extent (1) != src.extent (1)) {
+  if (static_cast<int> (OutputViewType::Rank) > 1 &&
+      dst.extent (1) != src.extent (1)) {
     std::ostringstream os;
     os << "Tpetra::Details::copyConvert: "
        << "dst.extent(1) = " << dst.extent (1)
