@@ -565,6 +565,61 @@ mult_test_results multiply_RAP_test_autofc(
 }
 
 template<class Matrix_t>
+mult_test_results multiply_RAP_reuse_test(
+  const std::string& name,
+  RCP<Matrix_t> R,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> P,
+  bool RT,
+  bool AT,
+  bool PT,
+  RCP<Matrix_t> Ac,
+  RCP<const Comm<int> > comm,
+  FancyOStream& out)
+{
+  typedef typename Matrix_t::scalar_type SC;
+  typedef typename Matrix_t::local_ordinal_type LO;
+  typedef typename Matrix_t::global_ordinal_type GO;
+  typedef typename Matrix_t::node_type NT;
+  typedef Map<LO,GO,NT> Map_t;
+
+  RCP<const Map_t> map = Ac->getRowMap();
+
+  RCP<Matrix_t> computedC1 = rcp( new Matrix_t(map, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+
+  // First cut
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC1, true);  
+
+  if(!Ac->getDomainMap()->isSameAs(*computedC1->getDomainMap())) throw std::runtime_error("Domain map mismatch");
+  if(!Ac->getRangeMap()->isSameAs(*computedC1->getRangeMap())) throw std::runtime_error("Range map mismatch");
+  if(!Ac->getRowMap()->isSameAs(*computedC1->getRowMap())) throw std::runtime_error("Row map mismatch");
+
+  RCP<Matrix_t> computedC2 = rcp( new Matrix_t(computedC1->getCrsGraph()) );
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedC2, true);  
+  
+  // Only check the second "reuse" matrix
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(map,0);
+  Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
+  diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
+
+  mult_test_results results;
+  results.cNorm    = Ac->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
+  if(results.epsilon > 1e-3) {    
+    if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+  }
+
+
+  return results;
+}
+
+
+
+
+template<class Matrix_t>
 mult_test_results multiply_reuse_test(
   const std::string& name,
   RCP<Matrix_t> A,
@@ -1035,21 +1090,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       }
     }
     else if (op == "RAP") {
-      // if (verbose)
-      //   newOut << "Running RAP multiply test (manual FC) for " << currentSystem.name() << endl;
-
-      // mult_test_results results = multiply_RAP_test_manualfc(name, A, B, C, AT, BT, CT, D, comm, newOut);
-
-      // if (verbose) {
-      //   newOut << "Results:"     << endl;
-      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
-      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
-      //   newOut << "\tcompNorm: " << results.compNorm << endl;
-      // }
-      // TEST_COMPARE(results.epsilon, <, epsilon);
-
       if (verbose)
-        newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
+        newOut << "Running multiply RAP test for " << currentSystem.name() << endl;
 
       mult_test_results results = multiply_RAP_test_autofc(name, A, B, C, AT, BT, CT, D, comm, newOut);
 
@@ -1061,18 +1103,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
 
-      // if (verbose)
-      //   newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
+      if (verbose)
+        newOut << "Running multiply RAP reuse test for " << currentSystem.name() << endl;
 
-      // results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
+      results = multiply_RAP_reuse_test(name, A, B, C, AT, BT, CT, D, comm, newOut);
 
-      // if (verbose) {
-      //   newOut << "Results:"     << endl;
-      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
-      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
-      //   newOut << "\tcompNorm: " << results.compNorm << endl;
-      // }
-      // TEST_COMPARE(results.epsilon, <, epsilon);
+      if (verbose) {
+        newOut << "Results:"     << endl;
+        newOut << "\tEpsilon: "  << results.epsilon  << endl;
+        newOut << "\tcNorm: "    << results.cNorm    << endl;
+        newOut << "\tcompNorm: " << results.compNorm << endl;
+      }
+      TEST_COMPARE(results.epsilon, <, epsilon);
     }
   }
 
