@@ -122,6 +122,7 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
   disableRecursiveModification_= source.disableRecursiveModification_;
   disableRecursiveReconciliation_ = source.disableRecursiveReconciliation_;
+  modifier_ = source.modifier_;
   return *this;
 }
 
@@ -309,6 +310,22 @@ ParameterList& ParameterList::sublist(
   }
 
   return any_cast<ParameterList>(sublist_entry_ptr->getAny(false));
+}
+
+
+ParameterList& ParameterList::sublist(
+  const std::string& name_in, RCP<const ParameterListModifier> const& modifier_in,
+  const std::string& docString
+  )
+{
+  bool alreadyExists = this->isParameter(name_in);
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+    alreadyExists, Exceptions::InvalidParameterName
+    ,"The parameter "<<this->name()<<"->\""<<name_in<<"\" already exists."
+    );
+  ParameterList &subpl = this->sublist(name_in, false, docString);
+  subpl.setModifier(modifier_in);
+  return subpl;
 }
 
 
@@ -772,6 +789,9 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
   //if ( paramListName1 != paramListName2 ) {
   //  return false;
   //}
+  if (!Teuchos::haveSameModifiers(list1, list2)){
+    return false;
+  }
   ParameterList::ConstIterator itr1, itr2;
   for(
     itr1 = list1.begin(), itr2 = list2.begin();
@@ -797,6 +817,33 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
   // Check that the two parameter lists are the same length:
   if ((itr1 != list1.end()) || (itr2 != list2.end())) {
     return false;
+  }
+  return true;
+}
+
+
+bool Teuchos::haveSameModifiers(const ParameterList &list1, const ParameterList &list2) {
+  // Check that the modifiers are the same
+  ParameterList::ConstIterator itr1, itr2;
+  for(
+    itr1 = list1.begin(), itr2 = list2.begin();
+    itr1 != list1.end() && itr2 != list2.end();
+    ++itr1, ++itr2
+    )
+  {
+    const Teuchos::RCP<const ParameterListModifier> &modifier1 = list1.getModifier();
+    const Teuchos::RCP<const ParameterListModifier> &modifier2 = list2.getModifier();
+    if( modifier1 != modifier2 ) {
+      return false;
+    }
+    const Teuchos::ParameterEntry &entry1 = itr1->second;
+    const Teuchos::ParameterEntry &entry2 = itr2->second;
+    if (entry1.isList() && entry2.isList()){
+      if ( !haveSameModifiers( Teuchos::getValue<ParameterList>(entry1),
+                               Teuchos::getValue<ParameterList>(entry2) ) ){
+        return false;
+      }
+    }
   }
   return true;
 }

@@ -177,7 +177,7 @@ public:
 
   //! Constructor that names the entire parameter list.
   ParameterList(const std::string &name,
-      Teuchos::RCP<const ParameterListModifier> const& modifier = null);
+      RCP<const ParameterListModifier> const& modifier = null);
   
   //! Copy constructor
   ParameterList(const ParameterList& source);
@@ -317,6 +317,15 @@ public:
    * from XML. KL 7 August 2004 
    */
   ParameterList& setEntry(const std::string& name, const ParameterEntry& entry);
+
+  /** \brief Recursively attach a validator to parameters of type T.
+   *
+   * \param depth [in] Determines the number of levels of depth that the validator attachment
+   * will recurse into.
+   */
+  template<typename T>
+  void recursivelySetValidator(RCP<const ParameterEntryValidator> const& validator,
+      int const depth = 1000);
 
   //@}
   //! @name Get Functions 
@@ -506,8 +515,17 @@ public:
    *  thrown.
    */
   ParameterList& sublist(
-    const std::string& name, bool mustAlreadyExist = false
-    ,const std::string& docString = ""
+    const std::string& name, bool mustAlreadyExist = false,
+    const std::string& docString = ""
+    );
+
+  /*! \brief Creates an empty sublist with an optional \c modifier and returns
+   *  a reference to the sublist \c name.  If a list or parameter with the same
+   *  name already exists then an std::exception is thrown.
+   */
+  ParameterList& sublist(
+    const std::string& name, RCP<const ParameterListModifier> const& modifier,
+    const std::string& docString = ""
     );
   
   /*! \brief Return a const reference to an existing sublist \c name.  If the
@@ -870,6 +888,19 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
 }
 
 
+/** \brief Returns true if two parameter lists have the same modifiers.
+ *
+ * Recursively compares the modifiers in two parameter lists for equality.
+ *
+ * \relates ParameterList
+ */
+
+/// Return true if a modified parameter list has the same modifiers as the modified parameter
+/// list being used as input.
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameModifiers (const ParameterList& list1,
+    const ParameterList& list2);
+
+
 /** \brief Returns true if two parameter lists have the same values.
  *
  * Two parameter lists may have the same values but may not be identical.  For
@@ -980,6 +1011,24 @@ ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntr
 {
   params_.setObj(name_in, entry_in);
   return *this;
+}
+
+
+template<typename T>
+void ParameterList::recursivelySetValidator(
+    RCP<const ParameterEntryValidator> const& validator, int const depth){
+  ConstIterator itr;
+  for (itr = this->begin(); itr != this->end(); ++itr){
+    const std::string &entry_name = itr->first;
+    if (this->isSublist(entry_name) && depth > 0){
+      this->sublist(entry_name).recursivelySetValidator<T>(validator, depth - 1);
+    } else{
+      ParameterEntry *entry = this->getEntryPtr(entry_name);
+      if (entry->isType<T>()){
+        entry->setValidator(validator);
+      }
+    }
+  }
 }
 
 
