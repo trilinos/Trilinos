@@ -557,8 +557,8 @@ namespace Tpetra {
       LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
       // Build the final importer / column map, hash table lookups for Ac
-      RCP<const import_type> Cimport = Ac->getImporter();
-      RCP<const map_type>    Ccolmap = Ac->getColMap();
+      RCP<const import_type> Cimport = Ac.getGraph()->getImporter();
+      RCP<const map_type>    Ccolmap = Ac.getColMap();
       RCP<const import_type> Pimport = Pview.origMatrix->getGraph()->getImporter();
       RCP<const import_type> Iimport = Pview.importMatrix.is_null() ?  Teuchos::null : Pview.importMatrix->getGraph()->getImporter();
       local_map_type Acolmap_local = Aview.colMap->getLocalMap();
