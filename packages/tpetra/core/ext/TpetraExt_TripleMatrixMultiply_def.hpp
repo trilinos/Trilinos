@@ -265,10 +265,8 @@ namespace Tpetra {
         else
           MMdetails::mult_R_A_P_newmatrix(Rview, Aview, Pview, *Actemp, label, params);
       } else if (call_FillComplete_on_result) {
-        // MMdetails::mult_A__reuse(Aview, Bview, C, label,params);
-        // Not implemented
         if (transposeR && &R == &P)
-          MMdetails::mult_PT_A_P_newmatrix(Aview, Pview, *Actemp, label, params);
+          MMdetails::mult_PT_A_P_reuse(Aview, Pview, *Actemp, label, params);
         else
           MMdetails::mult_R_A_P_reuse(Rview, Aview, Pview, *Actemp, label, params);
       } else {
@@ -778,6 +776,105 @@ namespace Tpetra {
                                             Ac, Cimport, label, params);
     }
 
+    // Kernel method for computing the local portion of Ac = R*A*P (reuse mode)
+    template<class Scalar,
+             class LocalOrdinal,
+             class GlobalOrdinal,
+             class Node>
+    void mult_PT_A_P_reuse(
+                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                              const std::string& label,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      //typedef Scalar            SC; // unused
+      typedef LocalOrdinal      LO;
+      typedef GlobalOrdinal     GO;
+      typedef Node              NO;
+
+      typedef Import<LO,GO,NO>  import_type;
+      typedef Map<LO,GO,NO>     map_type;
+
+      // Kokkos typedefs
+      typedef typename map_type::local_map_type local_map_type;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename KCRS::StaticCrsGraphType graph_t;
+      typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+      typedef typename NO::execution_space execution_space;
+      typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+      typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+      using Teuchos::TimeMonitor;
+      RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP M5 Cmap")))));
+#endif
+      LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+      // Build the final importer / column map, hash table lookups for Ac
+      RCP<const import_type> Cimport = Ac.getGraph()->getImporter();
+      RCP<const map_type>    Ccolmap = Ac.getColMap();
+      RCP<const import_type> Pimport = Pview.origMatrix->getGraph()->getImporter();
+      RCP<const import_type> Iimport = Pview.importMatrix.is_null() ?  Teuchos::null : Pview.importMatrix->getGraph()->getImporter();
+      local_map_type Acolmap_local = Aview.colMap->getLocalMap();
+      local_map_type Prowmap_local = Pview.origMatrix->getRowMap()->getLocalMap();
+      local_map_type Irowmap_local;  if(!Pview.importMatrix.is_null()) Irowmap_local = Pview.importMatrix->getRowMap()->getLocalMap();
+      local_map_type Pcolmap_local = Pview.origMatrix->getColMap()->getLocalMap();
+      local_map_type Icolmap_local;  if(!Pview.importMatrix.is_null()) Icolmap_local = Pview.importMatrix->getColMap()->getLocalMap();
+      local_map_type Ccolmap_local = Ccolmap->getLocalMap();
+      
+      // Build the final importer / column map, hash table lookups for C
+      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
+      {
+        // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
+        // So, column map of C may be a strict subset of the column map of B
+        Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+            Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
+          });
+        
+        if (!Pview.importMatrix.is_null()) {
+          TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
+                                     std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
+
+          Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getNodeNumElements());
+          Kokkos::parallel_for(range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+              Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
+            });
+        }
+      }
+      
+      // Run through all the hash table lookups once and for all
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+      Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+          GO aidx = Acolmap_local.getGlobalElement(i);
+          LO B_LID = Prowmap_local.getLocalElement(aidx);
+          if (B_LID != LO_INVALID) {
+            targetMapToOrigRow(i)   = B_LID;
+            targetMapToImportRow(i) = LO_INVALID;
+          } else {
+            LO I_LID = Irowmap_local.getLocalElement(aidx);
+            targetMapToOrigRow(i)   = LO_INVALID;
+            targetMapToImportRow(i) = I_LID;
+            
+          }
+        });   
+      
+      // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
+      // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
+      KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
+        mult_PT_A_P_reuse_kernel_wrapper(Aview, Pview,
+                                            targetMapToOrigRow,targetMapToImportRow, Bcol2Ccol, Icol2Ccol,
+                                            Ac, Cimport, label, params);
+    }
+
 
     /*********************************************************************************************************/
     // RAP NewMatrix Kernel wrappers (Default non-threaded version)
@@ -1234,7 +1331,44 @@ namespace Tpetra {
       mult_R_A_P_newmatrix_kernel_wrapper(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
     }
 
+   /*********************************************************************************************************/
+    // PT_A_P Reuse Kernel wrappers (Default, general, non-threaded version)
+    // Computes P.T * A * P -> Ac
+    template<class Scalar,
+             class LocalOrdinal,
+             class GlobalOrdinal,
+             class Node,
+             class LocalOrdinalViewType>
+    void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_PT_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                                                                                       const LocalOrdinalViewType & Acol2Prow,
+                                                                                                       const LocalOrdinalViewType & Acol2PIrow,
+                                                                                                       const LocalOrdinalViewType & Pcol2Accol,
+                                                                                                       const LocalOrdinalViewType & PIcol2Accol,
+                                                                                                       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                                                                                       Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
+                                                                                                       const std::string& label,
+                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& params) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+      using Teuchos::TimeMonitor;
+      Teuchos::TimeMonitor MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("PTAP local transpose"))));
+#endif
 
+      // We don't need a kernel-level PTAP, we just transpose here
+      typedef RowMatrixTransposer<Scalar,LocalOrdinal,GlobalOrdinal, Node>  transposer_type;
+      transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
+      Teuchos::RCP<Teuchos::ParameterList> transposeParams = Teuchos::rcp(new Teuchos::ParameterList);
+      if (!params.is_null())
+        transposeParams->set("compute global constants",
+                             params->get("compute global constants: temporaries",
+                                           false));
+      Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans = transposer.createTransposeLocal(transposeParams);
+      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node> Rview;
+      Rview.origMatrix = Ptrans;       
+      
+      mult_R_A_P_reuse_kernel_wrapper(Rview,Aview,Pview,Acol2Prow,Acol2PIrow,Pcol2Accol,PIcol2Accol,Ac,Acimport,label,params);
+    }
 
     /*********************************************************************************************************/
     // PT_A_P NewMatrix Kernel wrappers (Default non-threaded version)
