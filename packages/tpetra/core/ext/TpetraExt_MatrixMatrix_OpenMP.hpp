@@ -129,6 +129,18 @@ struct KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosO
                                                          const std::string& label = std::string(),
                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+static inline void mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Rview,
+                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
+                                                         const LocalOrdinalViewType & Acol2Prow,
+                                                         const LocalOrdinalViewType & Acol2PIrow,
+                                                         const LocalOrdinalViewType & Pcol2Ccol,
+                                                         const LocalOrdinalViewType & PIcol2Ccol,
+                                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Ac,
+                                                         Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Acimport,
+                                                         const std::string& label = std::string(),
+                                                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
   static inline void mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,                                                        
                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
                                                          const LocalOrdinalViewType & Acol2Prow,

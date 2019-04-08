@@ -270,7 +270,7 @@ namespace Tpetra {
         if (transposeR && &R == &P)
           MMdetails::mult_PT_A_P_newmatrix(Aview, Pview, *Actemp, label, params);
         else
-          MMdetails::mult_R_A_P_newmatrix(Rview, Aview, Pview, *Actemp, label, params);
+          MMdetails::mult_R_A_P_reuse(Rview, Aview, Pview, *Actemp, label, params);
       } else {
         // mfh 27 Sep 2016: Is this the "slow" case?  This
         // "CrsWrapper_CrsMatrix" thing could perhaps be made to support
@@ -513,7 +513,105 @@ namespace Tpetra {
     }
 
 
+    // Kernel method for computing the local portion of Ac = R*A*P (reuse mode)
+    template<class Scalar,
+             class LocalOrdinal,
+             class GlobalOrdinal,
+             class Node>
+    void mult_R_A_P_reuse(
+                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
+                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                              const std::string& label,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params)
+    {
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
 
+      //typedef Scalar            SC; // unused
+      typedef LocalOrdinal      LO;
+      typedef GlobalOrdinal     GO;
+      typedef Node              NO;
+
+      typedef Import<LO,GO,NO>  import_type;
+      typedef Map<LO,GO,NO>     map_type;
+
+      // Kokkos typedefs
+      typedef typename map_type::local_map_type local_map_type;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename KCRS::StaticCrsGraphType graph_t;
+      typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+      typedef typename NO::execution_space execution_space;
+      typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+      typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+      using Teuchos::TimeMonitor;
+      RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP M5 Cmap")))));
+#endif
+      LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+      // Build the final importer / column map, hash table lookups for Ac
+      RCP<const import_type> Cimport;
+      RCP<const map_type>    Ccolmap;
+      RCP<const import_type> Pimport = Pview.origMatrix->getGraph()->getImporter();
+      RCP<const import_type> Iimport = Pview.importMatrix.is_null() ?  Teuchos::null : Pview.importMatrix->getGraph()->getImporter();
+      local_map_type Acolmap_local = Aview.colMap->getLocalMap();
+      local_map_type Prowmap_local = Pview.origMatrix->getRowMap()->getLocalMap();
+      local_map_type Irowmap_local;  if(!Pview.importMatrix.is_null()) Irowmap_local = Pview.importMatrix->getRowMap()->getLocalMap();
+      local_map_type Pcolmap_local = Pview.origMatrix->getColMap()->getLocalMap();
+      local_map_type Icolmap_local;  if(!Pview.importMatrix.is_null()) Icolmap_local = Pview.importMatrix->getColMap()->getLocalMap();
+      local_map_type Ccolmap_local = Ccolmap->getLocalMap();
+      
+      // Build the final importer / column map, hash table lookups for C
+      lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Pview.colMap->getNodeNumElements()), Icol2Ccol;
+      {
+        // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
+        // So, column map of C may be a strict subset of the column map of B
+        Kokkos::parallel_for(range_type(0,Pview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+            Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Pcolmap_local.getGlobalElement(i));
+          });
+        
+        if (!Pview.importMatrix.is_null()) {
+          TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Pview.origMatrix->getDomainMap()),
+                                     std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
+
+          Kokkos::resize(Icol2Ccol,Pview.importMatrix->getColMap()->getNodeNumElements());
+          Kokkos::parallel_for(range_type(0,Pview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+              Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
+            });
+        }
+      }
+      
+      // Run through all the hash table lookups once and for all
+      lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+      lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+      Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+          GO aidx = Acolmap_local.getGlobalElement(i);
+          LO B_LID = Prowmap_local.getLocalElement(aidx);
+          if (B_LID != LO_INVALID) {
+            targetMapToOrigRow(i)   = B_LID;
+            targetMapToImportRow(i) = LO_INVALID;
+          } else {
+            LO I_LID = Irowmap_local.getLocalElement(aidx);
+            targetMapToOrigRow(i)   = LO_INVALID;
+            targetMapToImportRow(i) = I_LID;
+            
+          }
+        });   
+      
+      // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
+      // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
+      KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::
+        mult_R_A_P_reuse_kernel_wrapper(Rview, Aview, Pview,
+                                            targetMapToOrigRow,targetMapToImportRow, Bcol2Ccol, Icol2Ccol,
+                                            Ac, Cimport, label, params);
+    }
 
 
    // Kernel method for computing the local portion of Ac = R*A*P
@@ -919,6 +1017,182 @@ namespace Tpetra {
                                   labelList);
 
     }
+
+    /*********************************************************************************************************/
+    // RAP Reuse Kernel wrappers (Default non-threaded version)
+    // Computes R * A * P -> Ac using reuse Gustavson
+    template<class Scalar,
+             class LocalOrdinal,
+             class GlobalOrdinal,
+             class Node,
+             class LocalOrdinalViewType>
+    void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
+                                                                                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                                                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                                                                                                           const LocalOrdinalViewType & Acol2Prow,
+                                                                                                                           const LocalOrdinalViewType & Acol2PIrow,
+                                                                                                                           const LocalOrdinalViewType & Pcol2Accol,
+                                                                                                                           const LocalOrdinalViewType & PIcol2Accol,
+                                                                                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                                                                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
+                                                                                                                           const std::string& label,
+                                                                                                                           const Teuchos::RCP<Teuchos::ParameterList>& params) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+      using Teuchos::TimeMonitor;
+      Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse SerialCore"))));
+#endif
+
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      // Lots and lots of typedefs
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename KCRS::StaticCrsGraphType graph_t;
+      typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+      typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+      typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+      typedef Scalar            SC;
+      typedef LocalOrdinal      LO;
+      typedef GlobalOrdinal     GO;
+      typedef Node              NO;
+      typedef Map<LO,GO,NO>     map_type;
+      const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+      const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+      // Sizes
+      RCP<const map_type> Accolmap = Ac.getColMap();
+      size_t m = Rview.origMatrix->getNodeNumRows();
+      size_t n = Accolmap->getNodeNumElements();
+      size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+
+      // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+      const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+      const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
+      const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
+      const KCRS & Cmat = Ac.getLocalMatrix();
+      
+      c_lno_view_t Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map,  Rrowptr = Rmat.graph.row_map, Crowptr =  Cmat.graph.row_map;
+      const lno_nnz_view_t Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries , Rcolind = Rmat.graph.entries, Ccolind = Cmat.graph.entries;
+      const scalar_view_t Avals = Amat.values, Pvals = Pmat.values, Rvals = Rmat.values;
+      scalar_view_t Cvals = Cmat.values;
+
+      c_lno_view_t  Irowptr;
+      lno_nnz_view_t  Icolind;
+      scalar_view_t  Ivals;
+      if(!Pview.importMatrix.is_null()) {
+        Irowptr = Pview.importMatrix->getLocalMatrix().graph.row_map;
+        Icolind = Pview.importMatrix->getLocalMatrix().graph.entries;
+        Ivals   = Pview.importMatrix->getLocalMatrix().values;
+        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
+      }
+      
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+      RCP<TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse SerialCore - Compare"))));
+#endif
+
+      // mfh 27 Sep 2016: The ac_status array is an implementation detail
+      // of the local sparse matrix-matrix multiply routine.
+
+      // The status array will contain the index into colind where this entry was last deposited.
+      //   ac_status[i] <  nnz - not in the row yet
+      //   ac_status[i] >= nnz - this is the entry where you can find the data
+      // We start with this filled with INVALID's indicating that there are no entries yet.
+      // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+      Array<size_t> ac_status(n, ST_INVALID);
+
+      // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
+      // routine.  The routine computes Ac := R * A * (P_local + P_remote).
+      //
+      // For column index Aik in row i of A, Acol2Prow[Aik] tells
+      // you whether the corresponding row of P belongs to P_local
+      // ("orig") or P_remote ("Import").
+
+      // For each row of R
+      size_t OLD_ip = 0, CSR_ip = 0;
+      for (size_t i = 0; i < m; i++) {
+        // First fill the c_status array w/ locations where we're allowed to
+        // generate nonzeros for this row
+        OLD_ip = Crowptr[i];
+        CSR_ip = Crowptr[i+1];
+        for (size_t k = OLD_ip; k < CSR_ip; k++) {
+          ac_status[Ccolind[k]] = k;
+          
+          // Reset values in the row of C
+          Cvals[k] = SC_ZERO;
+        }
+        
+        // mfh 27 Sep 2016: For each entry of R in the current row of R
+        for (size_t kk = Rrowptr[i]; kk < Rrowptr[i+1]; kk++) {
+          LO k  = Rcolind[kk]; // local column index of current entry of R
+          const SC Rik = Rvals[kk];   // value of current entry of R
+          if (Rik == SC_ZERO)
+            continue; // skip explicitly stored zero values in R
+          // For each entry of A in the current row of A
+          for (size_t ll = Arowptr[k]; ll < Arowptr[k+1]; ll++) {
+            LO l = Acolind[ll]; // local column index of current entry of A
+            const SC Akl = Avals[ll];   // value of current entry of A
+            if (Akl == SC_ZERO)
+              continue; // skip explicitly stored zero values in A
+
+
+            if (Acol2Prow[l] != LO_INVALID) {
+              // mfh 27 Sep 2016: If the entry of Acol2Prow
+              // corresponding to the current entry of A is populated, then
+              // the corresponding row of P is in P_local (i.e., it lives on
+              // the calling process).
+
+              // Local matrix
+              size_t Pl = Teuchos::as<size_t>(Acol2Prow[l]);
+
+              // mfh 27 Sep 2016: Go through all entries in that row of P_local.
+              for (size_t jj = Prowptr[Pl]; jj < Prowptr[Pl+1]; jj++) {
+                LO j = Pcolind[jj];
+                LO Cij = Pcol2Accol[j];
+                SC Plj = Pvals[jj];
+
+                TEUCHOS_TEST_FOR_EXCEPTION(ac_status[Cij] < OLD_ip || ac_status[Cij] >= CSR_ip,
+                                           std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+                                           "(c_status = " << ac_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+                
+                Cvals[ac_status[Cij]] += Rik*Akl*Plj;
+              }
+            } else {
+              // mfh 27 Sep 2016: If the entry of Acol2PRow
+              // corresponding to the current entry of A is NOT populated (has
+              // a flag "invalid" value), then the corresponding row of P is
+              // in P_remote (i.e., it does not live on the calling process).
+
+              // Remote matrix
+              size_t Il = Teuchos::as<size_t>(Acol2PIrow[l]);
+              for (size_t jj = Irowptr[Il]; jj < Irowptr[Il+1]; jj++) {
+                LO j = Icolind[jj];
+                LO Cij = PIcol2Accol[j];
+                SC Plj = Ivals[jj];
+
+                TEUCHOS_TEST_FOR_EXCEPTION(ac_status[Cij] < OLD_ip || ac_status[Cij] >= CSR_ip,
+                                           std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+                                           "(c_status = " << ac_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+                
+                Cvals[ac_status[Cij]] += Rik*Akl*Plj;
+              }
+            }
+          }
+        }
+      }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  auto MM3 = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse ESFC"))));
+#endif
+  
+  Ac.fillComplete(Ac.getDomainMap(), Ac.getRangeMap());
+
+}
 
 
     /*********************************************************************************************************/
