@@ -237,7 +237,7 @@ namespace Tpetra {
       static Teuchos::RCP<const map_type>
       makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE  
-                    const TPETRA_DEPRECATED Teuchos::RCP<node_type>& pNode,
+                    const Teuchos::RCP<node_type>& TPETRA_DEPRECATED pNode,
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
                     const global_ordinal_type numRows)
       {
@@ -292,7 +292,7 @@ namespace Tpetra {
       makeRowMap (const Teuchos::RCP<const map_type>& pRowMap,
                   const Teuchos::RCP<const comm_type>& pComm,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                  const TPETRA_DEPRECATED Teuchos::RCP<node_type>& pNode,
+                  const Teuchos::RCP<node_type>& TPETRA_DEPRECATED pNode,
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
                   const global_ordinal_type numRows)
       {
@@ -356,8 +356,11 @@ namespace Tpetra {
           return pRangeMap;
         } else {
           return createUniformContigMapWithNode<LO,GO,NT> (numCols,
-                                                           pRangeMap->getComm (),
-                                                           pRangeMap->getNode ());
+                                                           pRangeMap->getComm ()
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                                           , pRangeMap->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                                          );
         }
       }
 
@@ -1324,7 +1327,7 @@ namespace Tpetra {
       readSparseGraphHelper (std::istream& in,
                              const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                             const TPETRA_DEPRECATED Teuchos::RCP<node_type>& pNode,
+                             const Teuchos::RCP<node_type>& TPETRA_DEPRECATED pNode,
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
                              const Teuchos::RCP<const map_type>& rowMap,
                              Teuchos::RCP<const map_type>& colMap,
@@ -4423,7 +4426,7 @@ namespace Tpetra {
       readDenseImpl (std::istream& in,
                      const Teuchos::RCP<const comm_type>& comm,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-                     const TPETRA_DEPRECATED Teuchos::RCP<node_type>& pNode,
+                     const Teuchos::RCP<node_type>& TPETRA_DEPRECATED pNode,
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
                      Teuchos::RCP<const map_type>& map,
                      const Teuchos::RCP<Teuchos::FancyOStream>& err,
@@ -4670,7 +4673,11 @@ namespace Tpetra {
           const size_t localNumRows = (myRank == 0) ? numRows : 0;
           // At this point, map exists and has a nonnull node.
           proc0Map = createContigMapWithNode<LO, GO, NT> (numRows, localNumRows,
-                                                          comm, map->getNode ());
+                                                          comm
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                                          , map->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                                          );
         }
         else { // The user supplied a Map.
           proc0Map = Details::computeGatherMap<map_type> (map, err, debug);
@@ -5194,7 +5201,11 @@ namespace Tpetra {
           const size_t localNumRows = (myRank == 0) ? numRows : 0;
           // At this point, map exists and has a nonnull node.
           proc0Map = createContigMapWithNode<LO, GO, NT> (numRows, localNumRows,
-                                                          comm, map->getNode ());
+                                                          comm
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                                          , map->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                                          );
         }
         else { // The user supplied a Map.
           proc0Map = Details::computeGatherMap<map_type> (map, err, debug);

@@ -88,7 +88,6 @@ namespace {
   using std::ostream_iterator;
   using std::endl;
 
-  using Tpetra::createContigMap;
   using Tpetra::createContigMapWithNode;
 
   // bool testMpi = true;

@@ -101,7 +101,11 @@ class MultiPrecDriver {
     RCP<ParameterList> fillParams = parameterList();
     fillParams->set("Preserve Local Graph",true);
     // must preserve the local graph in order to do convert() calls later
-    Tpetra::Utils::readHBMatrix(matrixFile,comm,node,A,rowMap,fillParams);
+    Tpetra::Utils::readHBMatrix(matrixFile,comm,
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                node,
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                A,rowMap,fillParams);
     rowMap = A->getRowMap();
 
     // init the solver stack

@@ -343,7 +343,7 @@ run (int argc, char *argv[])
     A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm);
   }
   else {
-    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, Teuchos::null);
+    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm);
   }
 
   if (printMatrix) {
@@ -372,8 +372,11 @@ run (int argc, char *argv[])
                                      map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm (),
-                                          map->getNode ());
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                          , map->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                         );
   }
 
   // The vector x on input is the initial guess for the CG solve.

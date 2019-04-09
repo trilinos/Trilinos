@@ -71,7 +71,7 @@ namespace Stokhos {
 
     const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
-      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(pce_sz, comm, node);
+      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(pce_sz, comm);
     RCP<Graph> graph = Tpetra::createCrsGraph(map);
     if (matrix_pce_size == 1) {
       // Mean-based case -- graph is diagonal
