@@ -1017,7 +1017,9 @@ namespace percept {
                          const EdgeSet& mainEdgeSet)
   {
       {
+#if HAVE_BOOST_GRAPH
         BGraphExternal::findContiguousEdgeSets(m_eMesh, contiguousEdgeSets, nodeToEdgeMap, mainEdgeSet);
+#endif
         return;
       }
 

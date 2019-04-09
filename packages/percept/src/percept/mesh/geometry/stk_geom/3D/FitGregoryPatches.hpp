@@ -282,6 +282,7 @@ public:
   NodeNormalsSetMap m_nodeNormalsSetMap;
 };
 
+#if HAVE_BOOST_GRAPH
   class BGraphExternal {
   public:
     // external interface
@@ -291,6 +292,7 @@ public:
                            FitGregoryPatches::NodeToEdgeMap& nodeToEdgeMap,
                            const FitGregoryPatches::EdgeSet& mainEdgeSet);
   };
+#endif
 
 }
 

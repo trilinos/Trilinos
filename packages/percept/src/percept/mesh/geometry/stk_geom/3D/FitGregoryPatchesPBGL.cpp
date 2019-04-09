@@ -6,6 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#if HAVE_BOOST_GRAPH
 
 // common interface
 //#include "FitGregoryPatchesPBGLDeclCommon.hpp"
@@ -644,3 +645,4 @@ namespace percept {
 #pragma clang diagnostic pop
 #endif 
 
+#endif // HAVE_BOOST_GRAPH
