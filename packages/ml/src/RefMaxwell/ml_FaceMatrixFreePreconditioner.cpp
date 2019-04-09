@@ -93,7 +93,7 @@ ML_Epetra::FaceMatrixFreePreconditioner::~FaceMatrixFreePreconditioner(){
 
 // ================================================ ====== ==== ==== == =
 // Computes the preconditioner
-int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool CheckFiltering)
+int ML_Epetra::FaceMatrixFreePreconditioner::ComputePreconditioner(const bool /* CheckFiltering */)
 {
   Teuchos::ParameterList & ListCoarse=List_.sublist("face matrix free: coarse");
 
@@ -441,7 +441,7 @@ int  ML_Epetra::FaceMatrixFreePreconditioner::FormCoarseMatrix()
 
 // ================================================ ====== ==== ==== == =
 // Print the individual operators in the multigrid hierarchy.
-void ML_Epetra::FaceMatrixFreePreconditioner::Print(int whichHierarchy)
+void ML_Epetra::FaceMatrixFreePreconditioner::Print(int /* whichHierarchy */)
 {
   if(CoarsePC) CoarsePC->Print();
 }/*end Print*/

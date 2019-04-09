@@ -57,8 +57,10 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                EntityRank erank,
                                                const Part & part);
 
-const FieldBase::Restriction& find_restriction(const FieldBase& field,
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
+STK_DEPRECATED const FieldBase::Restriction& find_restriction(const FieldBase& field,
                                                const Bucket & bucket);
+#endif
 
 } // namespace mesh
 } // namespace stk

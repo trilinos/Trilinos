@@ -175,13 +175,10 @@ namespace {
 
   template <typename INT> void gds_qsort(INT v[], size_t left, size_t right)
   {
-    size_t pivot;
-    size_t i, j;
-
     if (left + GDS_QSORT_CUTOFF <= right) {
-      pivot = gds_median3(v, left, right);
-      i     = left;
-      j     = right - 1;
+      size_t pivot = gds_median3(v, left, right);
+      size_t i     = left;
+      size_t j     = right - 1;
 
       for (;;) {
         while (v[++i] < v[pivot]) {
@@ -310,7 +307,7 @@ template <typename INT> void gds_qsort(INT v[], size_t N)
   gds_isort(v, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of %d values\n", N + 1);
+  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)N + 1);
   for (size_t i = 1; i < N; i++) {
     assert(v[i - 1] <= v[i]);
   }

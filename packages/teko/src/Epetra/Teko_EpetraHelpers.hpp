@@ -156,7 +156,7 @@ public:
    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
    //! Can't call ApplyInverse on a zeroed operator
-   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+   int ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
    { return -1; }
 
    //!

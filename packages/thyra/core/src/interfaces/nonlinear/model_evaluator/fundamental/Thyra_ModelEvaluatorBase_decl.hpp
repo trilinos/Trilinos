@@ -601,7 +601,7 @@ public:
     std::string description() const {return "\n";}
     /** \brief . */
     void describe( 
-      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+      Teuchos::FancyOStream &/* out */, const Teuchos::EVerbosityLevel /* verbLevel */
       ) const {}
   private:
     RCP<Stokhos::ProductEpetraMultiVector > mv_;
@@ -666,7 +666,7 @@ public:
     std::string description() const {return "\n";}
     /** \brief . */
     void describe( 
-      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+      Teuchos::FancyOStream &/* out */, const Teuchos::EVerbosityLevel /* verbLevel */
       ) const {}
   private:
     RCP<Stokhos::ProductEpetraOperator > lo_;

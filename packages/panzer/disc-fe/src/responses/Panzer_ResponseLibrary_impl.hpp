@@ -135,7 +135,7 @@ copyResponses(const ResponseLibrary & rl)
   TEUCHOS_ASSERT(false);
 }
 
-namespace {
+namespace panzer_tmp {
   // This is a builder for building a ResponseBase object by evaluation type
   template <typename TraitsT>
   class ResponseBase_Builder {
@@ -145,13 +145,13 @@ namespace {
 
   public:
 
-    ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
-                         const std::string & respName, const std::vector<std::string> & eBlocks)
-      : respFact_(respFact), respName_(respName)
-    {
-      for(std::size_t i=0;i<eBlocks.size();i++)
-        wkstDesc_.push_back(blockDescriptor(eBlocks[i]));
-    }
+    // ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
+    //                      const std::string & respName, const std::vector<std::string> & eBlocks)
+    //   : respFact_(respFact), respName_(respName)
+    // {
+    //   for(std::size_t i=0;i<eBlocks.size();i++)
+    //     wkstDesc_.push_back(blockDescriptor(eBlocks[i]));
+    // }
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
                          const std::string & respName, const std::vector<std::pair<std::string,std::string> > & sidesets)
@@ -246,7 +246,7 @@ addResponse(const std::string & responseName,
    modelFact_tm->buildObjects(builder);
 
    // build a response object for each evaluation type
-   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,sideset_blocks);
+   panzer_tmp::ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,sideset_blocks);
    responseObjects_[responseName].buildObjects(respData_builder);
 
    // associate response objects with all element blocks required
@@ -316,7 +316,7 @@ addResponse(const std::string & responseName,
             const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & modelFact_tm)
 {
   // build a response object for each evaluation type
-  ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,wkst_desc);
+  panzer_tmp::ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,wkst_desc);
   responseObjects_[responseName].buildObjects(respData_builder);
 
   // associate response objects with all workset descriptors
@@ -335,7 +335,7 @@ addResidualResponse()
    std::string responseName = "RESIDUAL";
 
    // setup responses to be constructed
-   ResidualResponse_Builder<TraitsT> respData_builder(responseName,linObjFactory_);
+   panzer_tmp::ResidualResponse_Builder<TraitsT> respData_builder(responseName,linObjFactory_);
 
    // build all the response objects (for each evaluation type)
    responseObjects_[responseName].buildObjects(respData_builder);

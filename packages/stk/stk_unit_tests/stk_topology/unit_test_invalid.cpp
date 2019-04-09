@@ -33,20 +33,19 @@
 
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
+#include <stk_ngp_test/ngp_test.hpp>
+#include "topology_test_utils.hpp"
 
 TEST( stk_topology, invalid_topology)
 {
-  using stk::topology;
-
-  topology t = topology::INVALID_TOPOLOGY;
-
+  stk::topology t = stk::topology::INVALID_TOPOLOGY;
 
   EXPECT_FALSE(t.is_valid());
   EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_FALSE(t.is_shell());
 
-  EXPECT_EQ(t.rank(),topology::INVALID_RANK);
-  EXPECT_EQ(t.side_rank(),topology::INVALID_RANK);
+  EXPECT_EQ(t.rank(),stk::topology::INVALID_RANK);
+  EXPECT_EQ(t.side_rank(),stk::topology::INVALID_RANK);
 
 
   EXPECT_EQ(t.dimension(),0u);
@@ -61,7 +60,43 @@ TEST( stk_topology, invalid_topology)
   EXPECT_FALSE(t.defined_on_spatial_dimension(2));
   EXPECT_FALSE(t.defined_on_spatial_dimension(3));
 
-  EXPECT_EQ(t.base(),topology::INVALID_TOPOLOGY);
+  EXPECT_EQ(t.base(),stk::topology::INVALID_TOPOLOGY);
 
+  EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 }
 
+void check_invalid_on_device()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
+  {
+    stk::topology t = stk::topology::INVALID_TOPOLOGY;
+
+    NGP_EXPECT_FALSE(t.is_valid());
+    NGP_EXPECT_FALSE(t.has_homogeneous_faces());
+    NGP_EXPECT_FALSE(t.is_shell());
+
+    NGP_EXPECT_EQ(t.rank(),stk::topology::INVALID_RANK);
+    NGP_EXPECT_EQ(t.side_rank(),stk::topology::INVALID_RANK);
+
+    NGP_EXPECT_EQ(t.dimension(),0u);
+    NGP_EXPECT_EQ(t.num_nodes(),0u);
+    NGP_EXPECT_EQ(t.num_vertices(),0u);
+    NGP_EXPECT_EQ(t.num_edges(),0u);
+    NGP_EXPECT_EQ(t.num_faces(),0u);
+    NGP_EXPECT_EQ(t.num_permutations(),0u);
+    NGP_EXPECT_EQ(t.num_positive_permutations(),0u);
+
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(1));
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(2));
+    NGP_EXPECT_FALSE(t.defined_on_spatial_dimension(3));
+
+    NGP_EXPECT_EQ(t.base(),stk::topology::INVALID_TOPOLOGY);
+
+    NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
+  });
+}
+
+NGP_TEST(stk_topology_ngp, invalid_topology)
+{
+  check_invalid_on_device();
+}

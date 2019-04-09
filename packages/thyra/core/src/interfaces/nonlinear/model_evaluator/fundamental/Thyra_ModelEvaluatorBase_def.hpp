@@ -123,7 +123,7 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 }
 
 template<class Scalar>
-bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgs_p_mp arg, int l) const
+bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgs_p_mp /* arg */, int l) const
 {
   assert_l(l);
   return supports_p_mp_[l];
@@ -557,7 +557,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
-  EInArgs_p_mp arg, int l, bool supports_in
+  EInArgs_p_mp /* arg */, int l, bool supports_in
   )
 {
   assert_l(l);
@@ -620,7 +620,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(
-  EInArgs_p_mp arg, int l
+  EInArgs_p_mp /* arg */, int l
   ) const
 {
   assert_l(l);
@@ -787,7 +787,7 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDfDp arg, int l
+  EOutArgsDfDp /* arg */, int l
   ) const
 {
   assert_l(l);
@@ -798,7 +798,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDgDx_dot arg, int j
+  EOutArgsDgDx_dot /* arg */, int j
   ) const
 {
   assert_j(j);
@@ -809,7 +809,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDgDx arg, int j
+  EOutArgsDgDx /* arg */, int j
   ) const
 {
   assert_j(j);
@@ -820,7 +820,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDgDp arg, int j, int l
+  EOutArgsDgDp /* arg */, int j, int l
   ) const
 {
   assert_j(j);
@@ -832,7 +832,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 bool
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgs_g_mp arg, int j
+  EOutArgs_g_mp /* arg */, int j
   ) const
 {
   assert_j(j);
@@ -842,7 +842,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDfDp_mp arg, int l
+  EOutArgsDfDp_mp /* arg */, int l
   ) const
 {
   assert_l(l);
@@ -853,7 +853,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDgDx_dot_mp arg, int j
+  EOutArgsDgDx_dot_mp /* arg */, int j
   ) const
 {
   assert_j(j);
@@ -864,7 +864,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDgDx_mp arg, int j
+  EOutArgsDgDx_mp /* arg */, int j
   ) const
 {
   assert_j(j);
@@ -875,7 +875,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
 template<class Scalar>
 const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(
-  EOutArgsDgDp_mp arg, int j, int l
+  EOutArgsDgDp_mp /* arg */, int j, int l
   ) const
 {
   assert_j(j);
@@ -1757,7 +1757,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDfDp arg, int l, const DerivativeSupport& supports_in
+  EOutArgsDfDp /* arg */, int l, const DerivativeSupport& supports_in
   )
 {
   assert_supports(OUT_ARG_f);
@@ -1768,7 +1768,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDgDx_dot arg, int j, const DerivativeSupport& supports_in
+  EOutArgsDgDx_dot /* arg */, int j, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
@@ -1778,7 +1778,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDgDx arg, int j, const DerivativeSupport& supports_in
+  EOutArgsDgDx /* arg */, int j, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
@@ -1788,7 +1788,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports_in
+  EOutArgsDgDp /* arg */, int j, int l, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
@@ -1799,7 +1799,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgs_g_mp arg, int j, bool supports_in
+  EOutArgs_g_mp /* arg */, int j, bool supports_in
   )
 {
   //assert_supports(OUT_ARG_g_mp,j);
@@ -1810,7 +1810,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDfDp_mp arg, int l, const DerivativeSupport& supports_in
+  EOutArgsDfDp_mp /* arg */, int l, const DerivativeSupport& supports_in
   )
 {
   assert_supports(OUT_ARG_f_mp); //JF this is not in epetraext ME
@@ -1821,7 +1821,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& supports_in
+  EOutArgsDgDx_dot_mp /* arg */, int j, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
@@ -1831,7 +1831,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDgDx_mp arg, int j, const DerivativeSupport& supports_in
+  EOutArgsDgDx_mp /* arg */, int j, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
@@ -1841,7 +1841,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
-  EOutArgsDgDp_mp arg, int j, int l, const DerivativeSupport& supports_in
+  EOutArgsDgDp_mp /* arg */, int j, int l, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
@@ -2153,7 +2153,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
-  EOutArgs_g_mp arg, int j
+  EOutArgs_g_mp /* arg */, int j
   ) const
 {
   assert_j(j);

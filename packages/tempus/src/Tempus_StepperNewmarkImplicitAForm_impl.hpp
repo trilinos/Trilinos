@@ -22,6 +22,7 @@ namespace Tempus {
 // Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
 template<class Scalar> class StepperFactory;
 
+
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::
 predictVelocity(Thyra::VectorBase<Scalar>& vPred,
@@ -86,6 +87,19 @@ correctDisplacement(Thyra::VectorBase<Scalar>& d,
 
 
 template<class Scalar>
+StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
+  out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
+
+template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList) :
@@ -94,13 +108,16 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
 
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 
@@ -112,12 +129,10 @@ void StepperNewmarkImplicitAForm<Scalar>::setModel(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   this->validSecondOrderODE_DAE(appModel);
-  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
+  auto wrapperModel =
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                               "Newmark Implicit a-Form"));
   this->wrapperModel_ = wrapperModel;
-  inArgs_  = this->wrapperModel_->getNominalValues();
-  outArgs_ = this->wrapperModel_->createOutArgs();
 }
 
 
@@ -134,6 +149,174 @@ void StepperNewmarkImplicitAForm<Scalar>::initialize()
 #endif
   this->setParameterList(this->stepperPL_);
   this->setSolver();
+}
+
+
+template<class Scalar>
+void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  int numStates = solutionHistory->getNumStates();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
+    "Error - setInitialConditions() needs at least one SolutionState\n"
+    "        to set the initial condition.  Number of States = " << numStates);
+
+  if (numStates > 1) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperNewmarkImplicitAForm::setInitialConditions()");
+    *out << "Warning -- SolutionHistory has more than one state!\n"
+         << "Setting the initial conditions on the currentState.\n"<<std::endl;
+  }
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+  RCP<Thyra::VectorBase<Scalar> > x    = initialState->getX();
+  RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
+
+  auto inArgs = this->wrapperModel_->getNominalValues();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !((x != Teuchos::null && xDot != Teuchos::null) ||
+      (inArgs.get_x() != Teuchos::null &&
+       inArgs.get_x_dot() != Teuchos::null)), std::logic_error,
+    "Error - We need to set the initial conditions for x and xDot from\n"
+    "        either initialState or appModel_->getNominalValues::InArgs\n"
+    "        (but not from a mixture of the two).\n");
+
+  // Use x and xDot from inArgs as ICs, if needed.
+  if ( x == Teuchos::null || xDot == Teuchos::null ) {
+    using Teuchos::rcp_const_cast;
+    TEUCHOS_TEST_FOR_EXCEPTION( (inArgs.get_x() == Teuchos::null) ||
+      (inArgs.get_x_dot() == Teuchos::null), std::logic_error,
+      "Error - setInitialConditions() needs the ICs from the initialState\n"
+      "        or getNominalValues()!\n");
+    x    = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
+    initialState->setX(x);
+    xDot = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
+    initialState->setXDot(xDot);
+  }
+
+  // Check if we need Stepper storage for xDotDot
+  if (initialState->getXDotDot() == Teuchos::null)
+    initialState->setXDotDot(initialState->getX()->clone_v());
+
+  // Perform IC Consistency
+  std::string icConsistency = this->getICConsistency();
+  if (icConsistency == "None") {
+    if (initialState->getXDotDot() == Teuchos::null) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "StepperNewmarkImplicitAForm::setInitialConditions()");
+      *out << "Warning -- Requested IC consistency of 'None' but\n"
+           << "           initialState does not have an xDot.\n"
+           << "           Setting a 'Zero' xDot!\n" << std::endl;
+
+      Thyra::assign(this->getStepperXDotDot(initialState).ptr(), Scalar(0.0));
+    }
+  }
+  else if (icConsistency == "Zero")
+    Thyra::assign(this->getStepperXDotDot(initialState).ptr(), Scalar(0.0));
+  else if (icConsistency == "App") {
+    auto xDotDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
+                inArgs.get_x_dot_dot());
+    TEUCHOS_TEST_FOR_EXCEPTION(xDotDot == Teuchos::null, std::logic_error,
+      "Error - setInitialConditions() requested 'App' for IC consistency,\n"
+      "        but 'App' returned a null pointer for xDotDot!\n");
+    Thyra::assign(this->getStepperXDotDot(initialState).ptr(), *xDotDot);
+  }
+  else if (icConsistency == "Consistent") {
+    // Solve f(x, xDot, xDotDot, t) = 0.
+    const Scalar time = initialState->getTime();
+    auto xDotDot = this->getStepperXDotDot(initialState);
+
+    // Compute initial acceleration using initial displacement
+    // and initial velocity.
+    if (this->initial_guess_ != Teuchos::null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        !((xDotDot->space())->isCompatible(*this->initial_guess_->space())),
+        std::logic_error,
+        "Error - User-provided initial guess for Newton is not compatible\n"
+        "        with solution vector!\n");
+      Thyra::copy(*this->initial_guess_, xDotDot.ptr());
+    }
+    else {
+      Thyra::put_scalar(0.0, xDotDot.ptr());
+    }
+
+    auto wrapperModel =
+      Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorSecondOrder<Scalar> >(
+        this->wrapperModel_);
+
+    wrapperModel->initializeNewmark(xDot, x, 0.0, time, beta_, gamma_);
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(xDotDot);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED, std::logic_error,
+      "Error - Solver failed while determining the initial conditions.\n"
+      "        Solver status is "<<Thyra::toString(sStatus.solveStatus)<<".\n");
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Error - setInitialConditions() invalid IC consistency, "
+      << icConsistency << ".\n");
+  }
+
+  // At this point, x, xDot and xDotDot are sync'ed or consistent
+  // at the same time level for the initialState.
+  initialState->setIsSynced(true);
+
+  // Test for consistency.
+  if (this->getICConsistencyCheck()) {
+    auto f       = initialState->getX()->clone_v();
+    auto xDotDot = this->getStepperXDotDot(initialState);
+
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::InArgs<Scalar>  appInArgs =
+      this->wrapperModel_->getAppModel()->createInArgs();
+    MEB::OutArgs<Scalar> appOutArgs =
+      this->wrapperModel_->getAppModel()->createOutArgs();
+
+    appInArgs.set_x        (x      );
+    appInArgs.set_x_dot    (xDot   );
+    appInArgs.set_x_dot_dot(xDotDot);
+
+    appOutArgs.set_f(appOutArgs.get_f());
+
+    appInArgs.set_W_x_dot_dot_coeff(Scalar(0.0));     // da/da
+    appInArgs.set_alpha            (Scalar(0.0));     // dv/da
+    appInArgs.set_beta             (Scalar(0.0));     // dd/da
+
+    appInArgs.set_t        (initialState->getTime()    );
+
+    this->wrapperModel_->getAppModel()->evalModel(appInArgs, appOutArgs);
+ 
+    Scalar reldiff = Thyra::norm(*f);
+    Scalar normx = Thyra::norm(*x); 
+    Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
+    if (normx > eps*reldiff) reldiff /= normx; 
+
+    if (reldiff > eps) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "StepperNewmarkImplicitAForm::setInitialConditions()");
+      *out << "Warning -- Failed consistency check but continuing!\n"
+         << "  ||f(x,xDot,xDotDot,t)||/||x|| > eps" << std::endl
+         << "  ||f(x,xDot,xDotDot,t)||       = " << Thyra::norm(*f)<< std::endl
+         << "  ||x||                         = " << Thyra::norm(*x)<< std::endl
+         << "  ||f(x,xDot,xDotDot,t)||/||x|| = " << reldiff        << std::endl
+         << "                            eps = " << eps            << std::endl;
+    }
+  }
+
+  if (!(this->getUseFSAL())) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,
+      "StepperNewmarkImplicitAForm::setInitialConditions()");
+    *out << "\nWarning -- The First-Step-As-Last (FSAL) principle is "
+         << "part of the Newmark Implicit A-Form.  The default is to "
+         << "set useFSAL=true, and useFSAL=false will be ignored." << std::endl;
+  }
 }
 
 
@@ -159,98 +342,50 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
-    Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
+    auto wrapperModel =
       Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorSecondOrder<Scalar> >(
         this->wrapperModel_);
 
-    //Get values of d, v and a from previous step
+    // Get values of d, v and a from previous step
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
-    //RCP<const Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
-    RCP<Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
+    RCP<      Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
 
-#ifdef DEBUG_OUTPUT
-    //IKT, 3/21/17, debug output: pring d_old, v_old to check for
-    // correctness.
-    *out_ << "IKT d_old = " << Thyra::max(*d_old) << "\n";
-    *out_ << "IKT v_old = " << Thyra::max(*v_old) << "\n";
-#endif
-
-    //Get new values of d, v and a from current workingState
-    //(to be updated here)
+    // Get new values of d, v and a from workingState
     RCP<Thyra::VectorBase<Scalar> > d_new = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > v_new = workingState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
 
-    //Get time and dt
+    // Get time and dt
     const Scalar time = currentState->getTime();
     const Scalar dt = workingState->getTimeStep();
-    //Update time
     Scalar t = time+dt;
 
-    //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
-    //velocity (v_old) if in 1st time step
-    if (time == solutionHistory->minTime()) {
-      RCP<Thyra::VectorBase<Scalar> > d_init = Thyra::createMember(d_old->space());
-      RCP<Thyra::VectorBase<Scalar> > v_init = Thyra::createMember(v_old->space());
-      RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(a_old->space());
-      Thyra::copy(*d_old, d_init.ptr());
-      Thyra::copy(*v_old, v_init.ptr());
-      if (initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
-        //Throw an exception if initial_guess is not compatible with solution
-        bool is_compatible = (a_init->space())->isCompatible(*initial_guess_->space());
-        TEUCHOS_TEST_FOR_EXCEPTION(
-            is_compatible != true, std::logic_error,
-              "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
-              << "for Newton is not compatible with solution vector!\n");
-        Thyra::copy(*initial_guess_, a_init.ptr());
-      }
-      else { //if no initial_guess_ provide, set 0 initial guess
-        Thyra::put_scalar(0.0, a_init.ptr());
-      }
-      wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<Scalar> sStatus =
-        this->solveImplicitODE(a_init);
+    // Compute acceleration, a_old, using displacement (d_old) and
+    // velocity (v_old), if needed.
+    if (!(this->getUseFSAL()) && workingState->getNConsecutiveFailures() == 0) {
+      wrapperModel->initializeNewmark(v_old, d_old, dt, time,
+                                      Scalar(0.0), Scalar(0.0));
+      const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
 
-      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-        workingState->setSolutionStatus(Status::PASSED);
-      else
-        workingState->setSolutionStatus(Status::FAILED);
-      Thyra::copy(*a_init, a_old.ptr());
+      workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     }
-#ifdef DEBUG_OUTPUT
-    //IKT, 3/30/17, debug output: pring a_old to check for correctness.
-    *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
-#endif
 
+    // Compute displacement and velocity predictors
+    predictDisplacement(*d_new, *d_old, *v_old, *a_old, dt);
+    predictVelocity(*v_new, *v_old, *a_old, dt);
 
-    //allocate d and v predictors
-    RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
-    RCP<Thyra::VectorBase<Scalar> > v_pred =Thyra::createMember(v_old->space());
+    // Inject d_new, v_new, a and other relevant data into wrapperModel
+    wrapperModel->initializeNewmark(v_new,d_new,dt,t,beta_,gamma_);
 
-    //compute displacement and velocity predictors
-    predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
-    predictVelocity(*v_pred, *v_old, *a_old, dt);
+    // Solve nonlinear system with a_new as initial guess
+    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
 
-    //inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(v_pred,d_pred,dt,t,beta_,gamma_);
+    // Correct velocity, displacement.
+    correctVelocity(*v_new, *v_new, *a_new, dt);
+    correctDisplacement(*d_new, *d_new, *a_new, dt);
 
-    //Solve nonlinear system with a_old as initial guess
-    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
-
-    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->setSolutionStatus(Status::PASSED);
-    else
-      workingState->setSolutionStatus(Status::FAILED);
-
-    //solveImplicitODE will return converged solution in a_old.  Copy
-    //it here to a_new, the new acceleration.
-    Thyra::copy(*a_old, a_new.ptr());
-
-    //Correct velocity, displacement.
-    correctVelocity(*v_new, *v_pred, *a_new, dt);
-    correctDisplacement(*d_new, *d_pred, *a_new, dt);
-
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
   }
   return;
@@ -292,7 +427,7 @@ std::string StepperNewmarkImplicitAForm<Scalar>::description() const
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
@@ -401,10 +536,13 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
 #endif
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", this->description());
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
-          "Name of ParameterList containing the solver specifications.");
+  pl->set<std::string>("Stepper Type", this->description());
+  this->getValidParametersBasic(pl);
+  pl->set<bool>       ("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
+    "Name of ParameterList containing the solver specifications.");
 
   return pl;
 }
@@ -417,13 +555,12 @@ StepperNewmarkImplicitAForm<Scalar>::getDefaultParameters() const
 #endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  pl->set<bool>       ("Zero Initial Guess", false);
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 

@@ -36,12 +36,53 @@ namespace Tempus {
  *  is first order accurate.  Some additional properties about the Newmark
  *  scheme can be found
  *<a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
+ *
+ *  The governing equation solved by this stepper is
+ *  \f[
+ *    \mathbf{M}\, \ddot{\mathbf{x}} + \mathbf{C}\, \dot{\mathbf{x}}
+ *    + \mathbf{K}\, \mathbf{x} + \mathbf{F}(t) = 0
+ *  \f]
+ *  For the A-form (i.e., solving for the acceleration,
+ *  \f$\mathbf{a} = \ddot{\mathbf{x}}\f$), we have the following implicit ODE
+ *  \f[
+ *       \mathbf{M}\, \mathbf{a} + \mathbf{C}\, \mathbf{v}
+ *     + \mathbf{K}\, \mathbf{d} + \mathbf{F}(t) =
+ *       \mathbf{f}(\mathbf{d}, \mathbf{v}, \mathbf{a}, t) = 0
+ *  \f]
+ *  where \f$\mathbf{v} = \dot{\mathbf{x}}\f$ and \f$\mathbf{d} = \mathbf{x}\f$.
+ *
+ *  <b> Algorithm </b>
+ *  The algorithm for the Newmark implicit A-form with predictors and
+ *  correctors is
+ *   - \f$\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                            + \Delta t^2 (1-2 \beta) \mathbf{a}^{n-1} / 2\f$
+ *   - \f$\mathbf{v}^{\ast} =
+ *        \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}\f$
+ *   - Solve
+ *        \f$\mathbf{f}(\mathbf{d}^n, \mathbf{v}^n, \mathbf{a}^n, t^n) = 0\f$
+ *     for \f$\mathbf{a}^n\f$ where
+ *     - \f$\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n\f$
+ *     - \f$\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n\f$
+ *
+ *  The First-Step-As-Last (FSAL) principle is part of the Newmark
+ *  implicit A-Form as the acceleration from the previous time step is
+ *  used for the predictors.  The default is to set useFSAL=true,
+ *  and useFSAL=false will be ignored.
  */
 template<class Scalar>
 class StepperNewmarkImplicitAForm
  : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperNewmarkImplicitAForm();
 
   /// Constructor
   StepperNewmarkImplicitAForm(
@@ -54,10 +95,14 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -79,11 +124,16 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
-  
-  /// Pass initial guess to Newton solver  
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
+
+  /// Return W_xDotxDot_coeff = d(xDotDot)/d(xDotDot).
+  virtual Scalar getW_xDotDot_coeff (const Scalar) const {return Scalar(1.0);}
+  /// Return alpha = d(xDot)/d(xDotDot).
+  virtual Scalar getAlpha(const Scalar dt) const { return gamma_*dt; }
+  /// Return beta  = d(x)/d(xDotDot).
+  virtual Scalar getBeta (const Scalar dt) const { return beta_*dt*dt; }
 
   /// \name ParameterList methods
   //@{
@@ -121,25 +171,12 @@ public:
                                const Thyra::VectorBase<Scalar>& dPred,
                                const Thyra::VectorBase<Scalar>& a,
                                const Scalar dt) const;
-
 private:
-
-  /// Default Constructor -- not allowed
-  StepperNewmarkImplicitAForm();
-
-private:
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>                inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>               outArgs_;
 
   Scalar beta_;
   Scalar gamma_;
 
-
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
-
 
 };
 } // namespace Tempus

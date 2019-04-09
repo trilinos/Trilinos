@@ -431,9 +431,8 @@ namespace Tpetra {
     //! @name Typedefs
     //@{
 
-    /// \brief This class' first template parameter; the type of each
-    ///   entry in the matrix.
-    typedef Scalar scalar_type;
+    //! The type of each entry in the matrix.
+    using scalar_type = Scalar;
     /// \brief The type used internally in place of \c Scalar.
     ///
     /// Some \c Scalar types might not work with Kokkos on all
@@ -443,46 +442,54 @@ namespace Tpetra {
     /// internally with the (usually) bitwise identical type
     /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
     /// corresponding to \c Scalar = std::complex.
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
-    //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! This class' fourth template parameter; the Kokkos device type.
-    typedef Node node_type;
-
+    using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+    //! The type of each local index in the matrix.
+    using local_ordinal_type = LocalOrdinal;
+    //! The type of each global index in the matrix.
+    using global_ordinal_type = GlobalOrdinal;
     //! The Kokkos device type.
-    typedef typename Node::device_type device_type;
+    using device_type = typename Node::device_type;
     //! The Kokkos execution space.
-    typedef typename device_type::execution_space execution_space;
+    using execution_space = typename device_type::execution_space;
+
+    /// \brief This class' Kokkos Node type.
+    ///
+    /// This is a leftover that will be deprecated and removed.
+    /// See e.g., GitHub Issue #57.
+    using node_type = Node;
 
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
     /// (absolute value) of <tt>Scalar</tt>, but may differ for
     /// certain <tt>Scalar</tt> types.
-    typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
+    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
 
     //! The Map specialization suitable for this CrsMatrix specialization.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! The Import specialization suitable for this CrsMatrix specialization.
-    typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! The Export specialization suitable for this CrsMatrix specialization.
-    typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+    using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> crs_graph_type;
+    using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! The part of the sparse matrix's graph on each MPI process.
-    typedef typename crs_graph_type::local_graph_type local_graph_type;
+    using local_graph_type = typename crs_graph_type::local_graph_type;
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
-    typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
-                              typename local_graph_type::size_type> local_matrix_type;
+    using local_matrix_type =
+      KokkosSparse::CrsMatrix<impl_scalar_type,
+                              local_ordinal_type,
+                              execution_space,
+                              void,
+                              typename local_graph_type::size_type>;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type</tt> instead.
     typedef typename local_matrix_type::row_map_type t_RowPtrs TPETRA_DEPRECATED;
     //! DEPRECATED; use <tt>local_matrix_type::row_map_type::non_const_type</tt> instead.
@@ -491,9 +498,9 @@ namespace Tpetra {
     typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
     //! DEPRECATED; use <tt>local_matrix_type::values_type</tt> instead.
     typedef typename local_matrix_type::values_type t_ValuesType TPETRA_DEPRECATED;
-
     //! DEPRECATED; use local_matrix_type instead.
     typedef local_matrix_type k_local_matrix_type TPETRA_DEPRECATED;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
     //! @name Constructors and destructor
@@ -525,7 +532,7 @@ namespace Tpetra {
     ///
     /// \param rowMap [in] Distribution of rows of the matrix.
     ///
-    /// \param NumEntriesPerRowToAlloc [in] Maximum number of matrix
+    /// \param numEntPerRowToAlloc [in] Maximum number of matrix
     ///   entries to allocate for each row.  If
     ///   pftype==DynamicProfile, this is only a hint.  If
     ///   pftype==StaticProfile, this sets the amount of storage
@@ -539,9 +546,18 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-               ProfileType pftype = DynamicProfile,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! DEPRECATED; use the version that takes an ArrayView instead.
+    TPETRA_DEPRECATED
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -552,7 +568,7 @@ namespace Tpetra {
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
     ///
-    /// \param maxNumEntriesPerRow [in] Maximum number of matrix
+    /// \param maxNumEntPerRow [in] Maximum number of matrix
     ///   entries per row.  If pftype==DynamicProfile, this is only a
     ///   hint, and you can set this to zero without affecting
     ///   correctness.  If pftype==StaticProfile, this sets the amount
@@ -567,8 +583,8 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               size_t maxNumEntriesPerRow,
-               ProfileType pftype = DynamicProfile,
+               const size_t maxNumEntPerRow,
+               const ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -580,7 +596,7 @@ namespace Tpetra {
     ///
     /// \param colMap [in] Distribution of columns of the matrix.
     ///
-    /// \param NumEntriesPerRowToAlloc [in] Maximum number of matrix
+    /// \param numEntPerRowToAlloc [in] Maximum number of matrix
     ///   entries to allocate for each row.  If
     ///   pftype==DynamicProfile, this is only a hint.  If
     ///   pftype==StaticProfile, this sets the amount of storage
@@ -595,9 +611,19 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const Teuchos::ArrayRCP<const size_t>& NumEntriesPerRowToAlloc,
-               ProfileType pftype = DynamicProfile,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    //! DEPRECATED; use the version that takes an ArrayView instead.
+    TPETRA_DEPRECATED
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
+               const Teuchos::ArrayRCP<const size_t>& numEntPerRowToAlloc,
+               const ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Constructor specifying a previously constructed graph.
     ///
@@ -883,7 +909,7 @@ namespace Tpetra {
         }
         else {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
-                                              numEntriesPerRow, pftype,
+                                              numEntriesPerRow (), pftype,
                                               matParams));
         }
       }
@@ -893,7 +919,8 @@ namespace Tpetra {
                                               pftype, matParams));
         }
         else {
-          clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, numEntriesPerRow,
+          clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap,
+                                              numEntriesPerRow (),
                                               pftype, matParams));
         }
       }
@@ -2533,51 +2560,7 @@ namespace Tpetra {
     /// \return <tt>OrdinalTraits<size_t>::invalid()</tt>if the
     ///   specified local row index is invalid on the calling process,
     ///   else the number of entries in the given row.
-    size_t getNumEntriesInLocalRow (LocalOrdinal localRow) const override;
-
-    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
-    ///
-    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
-    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
-    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
-    ///   SOON PER #2630.
-    ///
-    /// This function exists only to prevent spurious deprecation
-    /// warnings.  We only want users to see deprecated warnings if
-    /// <i>they</i> call deprecated methods, not if <i>we</i> call
-    /// them.
-    global_size_t getGlobalNumDiagsImpl () const override;
-
-    /// \brief Number of diagonal entries in the matrix's graph, over
-    ///   all processes in the matrix's communicator.
-    ///
-    /// \pre <tt>! this->isFillActive()</tt>
-    ///
-    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-    ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override;
-
-    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
-    ///
-    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
-    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
-    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
-    ///   SOON PER #2630.
-    ///
-    /// This function exists only to prevent spurious deprecation
-    /// warnings.  We only want users to see deprecated warnings if
-    /// <i>they</i> call deprecated methods, not if <i>we</i> call
-    /// them.
-    size_t getNodeNumDiagsImpl () const override;
-
-    /// \brief Number of diagonal entries in the matrix's graph, on
-    ///   the calling process.
-    ///
-    /// \pre <tt>! this->isFillActive()</tt>
-    ///
-    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
-    ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
+    size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const override;
 
     /// \brief Maximum number of entries in any row of the matrix,
     ///   over all processes in the matrix's communicator.
@@ -2600,6 +2583,78 @@ namespace Tpetra {
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Number of diagonal entries in the matrix's graph, over
+    ///   all processes in the matrix's communicator.
+    ///
+    /// \pre <tt>! this->isFillActive()</tt>
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override;
+
+    /// \brief Number of diagonal entries in the matrix's graph, on
+    ///   the calling process.
+    ///
+    /// \pre <tt>! this->isFillActive()</tt>
+    ///
+    /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
+    ///   go away at any time.
+    size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings.  We only want users to see deprecated warnings if
+    /// <i>they</i> call deprecated methods, not if <i>we</i> call
+    /// them.
+    global_size_t getGlobalNumDiagsImpl () const override;
+
+    /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
+    ///
+    /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
+    ///   DETAIL OF TPETRA DESIGNED TO PREVENT SPURIOUS BUILD
+    ///   WARNINGS.  DO NOT CALL THIS METHOD.  IT WILL GO AWAY VERY
+    ///   SOON PER #2630.
+    ///
+    /// This function exists only to prevent spurious deprecation
+    /// warnings.  We only want users to see deprecated warnings if
+    /// <i>they</i> call deprecated methods, not if <i>we</i> call
+    /// them.
+    size_t getNodeNumDiagsImpl () const override;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Whether the matrix is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    bool TPETRA_DEPRECATED isLowerTriangular () const override;
+
+    /// \brief Whether the matrix is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre <tt>! isFillActive()</tt>.
+    ///   If fill is active, this method's behavior is undefined.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    bool TPETRA_DEPRECATED isUpperTriangular () const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
     /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
@@ -2613,18 +2668,6 @@ namespace Tpetra {
     /// them.
     bool isLowerTriangularImpl () const override;
 
-    /// \brief Whether the matrix is locally lower triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre <tt>! isFillActive()</tt>.
-    ///   If fill is active, this method's behavior is undefined.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    bool TPETRA_DEPRECATED isLowerTriangular () const override;
-
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
     /// \warning DO NOT CALL THIS METHOD.  THIS IS AN IMPLEMENTATION
@@ -2637,18 +2680,6 @@ namespace Tpetra {
     /// <i>they</i> call deprecated methods, not if <i>we</i> call
     /// them.
     bool isUpperTriangularImpl () const override;
-
-    /// \brief Whether the matrix is locally upper triangular.
-    ///
-    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
-    ///   and will DISAPPEAR VERY SOON per #2630.
-    ///
-    /// \pre <tt>! isFillActive()</tt>.
-    ///   If fill is active, this method's behavior is undefined.
-    ///
-    /// \note This is entirely a local property.  That means this
-    ///   method may return different results on different processes.
-    bool TPETRA_DEPRECATED isUpperTriangular () const override;
 
     /// \brief Whether the matrix is locally indexed on the calling
     ///   process.

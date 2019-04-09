@@ -99,7 +99,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   }
 
   /* Read the initialization parameters */
-  memset(GeomTitle, '\0', (MAX_LINE_LENGTH+1) * sizeof(char));
+  memset(GeomTitle, '\0', (MAX_LINE_LENGTH + 1) * sizeof(char));
   ex_init_params info{};
   info.title[0] = '\0';
   error         = ex_get_init_ext(exoid, &info);

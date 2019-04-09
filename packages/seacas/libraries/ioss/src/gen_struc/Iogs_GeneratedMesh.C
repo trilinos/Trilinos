@@ -675,14 +675,12 @@ namespace Iogs {
     y.reserve(count);
     z.reserve(count);
 
-    int64_t k = 0;
     for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
       for (size_t i = 0; i < numY + 1; i++) {
         for (size_t j = 0; j < numX + 1; j++) {
           x.push_back(sclX * static_cast<double>(j) + offX);
           y.push_back(sclY * static_cast<double>(i) + offY);
           z.push_back(sclZ * static_cast<double>(m) + offZ);
-          ++k;
         }
       }
     }

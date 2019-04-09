@@ -40,7 +40,7 @@ namespace stk
 namespace mesh
 {
 
-class GraphEdge;
+struct GraphEdge;
 
 class GraphEdgesForElement
 {

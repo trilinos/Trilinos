@@ -57,57 +57,57 @@ namespace NOX {
   ObserverLog::~ObserverLog() {}
 
   void ObserverLog::
-  runPreIterate(const NOX::Solver::Generic& solver)
+  runPreIterate(const NOX::Solver::Generic& /* solver */)
   {
     pre_it_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPreIterate");
   }
 
-  void ObserverLog::runPostIterate(const NOX::Solver::Generic& solver)
+  void ObserverLog::runPostIterate(const NOX::Solver::Generic& /* solver */)
   {
     post_it_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPostIterate");
   }
 
-  void ObserverLog::runPreSolve(const NOX::Solver::Generic& solver)
+  void ObserverLog::runPreSolve(const NOX::Solver::Generic& /* solver */)
   {
     pre_solve_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPreSolve");
   }
 
-  void ObserverLog::runPostSolve(const NOX::Solver::Generic& solver)
+  void ObserverLog::runPostSolve(const NOX::Solver::Generic& /* solver */)
   {
     post_solve_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPostSolve");
   }
 
-  void ObserverLog::runPreSolutionUpdate(const NOX::Abstract::Vector& update,
-                                         const NOX::Solver::Generic& solver)
+  void ObserverLog::runPreSolutionUpdate(const NOX::Abstract::Vector& /* update */,
+                                         const NOX::Solver::Generic& /* solver */)
   {
     pre_solution_update_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPreSolutionUpdate");
   }
 
-  void ObserverLog::runPostSolutionUpdate(const NOX::Solver::Generic& solver)
+  void ObserverLog::runPostSolutionUpdate(const NOX::Solver::Generic& /* solver */)
   {
     post_solution_update_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPostSolutionUpdate");
   }
 
-  void ObserverLog::runPreLineSearch(const NOX::Solver::Generic& solver)
+  void ObserverLog::runPreLineSearch(const NOX::Solver::Generic& /* solver */)
   {
     pre_linesearch_count_ += 1;
     if (log_call_order_)
       call_order_.push_back("runPreLineSearch");
   }
 
-  void ObserverLog::runPostLineSearch(const NOX::Solver::Generic& solver)
+  void ObserverLog::runPostLineSearch(const NOX::Solver::Generic& /* solver */)
   {
     post_linesearch_count_ += 1;
     if (log_call_order_)

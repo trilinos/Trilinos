@@ -64,6 +64,7 @@
 #include <cgns/Iocgns_Utils.h>
 
 #include <cgnsconfig.h>
+#include <cgnstypes.h>
 #if CG_BUILD_PARALLEL
 #include <pcgnslib.h>
 #else
@@ -712,6 +713,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   }
 #endif
 
+  region.get_database()->progress("\tEnter common_write_meta_data");
   int base           = 0;
   int phys_dimension = region.get_property("spatial_dimension").get_int();
   CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
@@ -727,6 +729,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
                        CGNS_ENUMV(AngleUnitsUserDefined)))
 
   // Output the sidesets as Family_t nodes
+  region.get_database()->progress("\tOutput Sidesets");
   const auto &sidesets = region.get_sidesets();
   for (const auto &ss : sidesets) {
     int fam = 0;
@@ -754,6 +757,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   // NOTE: Element Block zone write is deferred to put_field_internal so can
   // generate the node count based on connectivity traversal...
   // Just getting processor element count here...
+  region.get_database()->progress("\tElement Blocks");
   const auto &element_blocks = region.get_element_blocks();
   validate_blocks(element_blocks);
 
@@ -773,6 +777,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     element_count += (size_t)local_count;
   }
 
+  region.get_database()->progress("\tStructured Blocks");
   const auto &structured_blocks = region.get_structured_blocks();
   validate_blocks(structured_blocks);
 
@@ -820,6 +825,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     sb->property_update("base", base);
   }
 
+  region.get_database()->progress("\tMapping sb_name to zone");
   if (is_parallel_io || !is_parallel) { // Only for single file output or serial...
     // Create a vector for mapping from sb_name to zone -- used to update zgc instances
     std::map<std::string, int> sb_zone;
@@ -842,10 +848,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     }
   }
 
+  region.get_database()->progress("\tConsolidate zgc");
   if (is_parallel_io) {
     consolidate_zgc(region);
   }
 
+  region.get_database()->progress("\tStructured Block Loop");
   for (const auto &sb : structured_blocks) {
     if (!is_parallel_io && !sb->is_active()) {
       continue;
@@ -863,6 +871,9 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     // Instead of requiring that of the caller, do the union in this routine.
     // TODO: Calculate it outside of the loop...
     // Need to handle possible range == 0,0,0.  Only affects the beg data...
+    if (is_parallel_io) {
+      region.get_database()->progress("\t\tBoundary Conditions");
+    }
     std::vector<cgsize_t> bc_range(sb->m_boundaryConditions.size() * 6);
     size_t                idx = 0;
     for (const auto &bc : sb->m_boundaryConditions) {
@@ -918,6 +929,9 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
       idx += 6;
     }
     // Transfer Zone Grid Connectivity...
+    if (is_parallel_io) {
+      region.get_database()->progress("\t\tZone Grid Connectivity");
+    }
     std::set<std::string>
         zgc_names; // Used to detect duplicate zgc names in parallel but non-parallel-io case
     for (const auto &zgc : sb->m_zoneConnectivity) {
@@ -972,6 +986,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
       }
     }
   }
+  region.get_database()->progress("\tReturn from common_write_meta_data");
   return element_count;
 }
 
@@ -1993,8 +2008,6 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
         continue;
       }
 
-      work_average = zone->work() / (double)split_cnt;
-
       std::vector<std::pair<int, Iocgns::StructuredZoneData *>> active;
       active.push_back(std::make_pair(split_cnt, zone));
       do {
@@ -2113,4 +2126,46 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     new_zone_id             = pre_split(zones, avg_work, new_load_balance, proc_rank, proc_count);
   }
   return new_zone_id;
+}
+
+#ifdef CG_BUILD_HDF5
+extern "C" int H5get_libversion(unsigned *, unsigned *, unsigned *);
+#endif
+
+void Iocgns::Utils::show_config()
+{
+  std::cerr << "\tCGNS Library Version: " << CGNS_DOTVERS << "\n";
+#if CG_BUILD_64BIT
+  std::cerr << "\t\tDefault integer size is 64-bit.\n";
+#else
+  std::cerr << "\t\tDefault integer size is 32-bit.\n";
+#endif
+#if defined(CGNS_SCOPE_ENUMS)
+  std::cerr << "\t\tScoped Enums enabled\n";
+#else
+  std::cerr << "\t\tScoped Enums NOT enabled\n";
+#endif
+#if CG_BUILD_PARALLEL
+  std::cerr << "\t\tParallel enabled\n";
+#else
+  std::cerr << "\t\tParallel NOT enabled\n";
+#endif
+#if CG_BUILD_HDF5
+  unsigned major, minor, release;
+  H5get_libversion(&major, &minor, &release);
+  std::cerr << "\t\tHDF5 enabled (" << major << "." << minor << "." << release << ")\n";
+#else
+#error "Not defined..."
+#endif
+#if HDF5_HAVE_COLL_METADATA
+  std::cerr << "\t\tUsing HDF5 Collective Metadata.\n";
+#else
+  std::cerr << "\t\tHDF5 Collective Metadata NOT Available.\n";
+#endif
+#if HDF5_HAVE_MULTI_DATASET
+  std::cerr << "\t\tHDF5 Multi-Dataset Available.\n";
+#else
+  std::cerr << "\t\tHDF5 Multi-Dataset NOT Available.\n";
+#endif
+  std::cerr << "\n";
 }

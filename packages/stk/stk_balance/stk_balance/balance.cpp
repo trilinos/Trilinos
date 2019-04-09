@@ -26,27 +26,11 @@ namespace balance
 {
 
 namespace {
-    std::string construct_coloring_part_name(int color)
-    {
-        std::ostringstream oss;
-        oss << get_coloring_part_base_name() << "_" << color;
-        return oss.str();
-    }
-
     bool check_if_mesh_has_coloring(const stk::mesh::MetaData& meta)
     {
-        const stk::mesh::PartVector& parts = meta.get_parts();
-        const std::string& coloringPartBaseName = get_coloring_part_base_name();
-        const unsigned length = coloringPartBaseName.length();
-        for (const stk::mesh::Part* part : parts)
-        {
-            std::string partSubName = part->name().substr(0, length);
-            if (!sierra::case_strcmp(partSubName, coloringPartBaseName))
-            {
-                return true;
-            }
-        }
-        return false;
+        stk::mesh::PartVector coloringParts;
+        fill_coloring_parts(meta, coloringParts);
+        return !coloringParts.empty();
     }
 
     void move_entities_to_coloring_part(stk::mesh::BulkData& bulk,
@@ -103,6 +87,13 @@ namespace {
             meta.declare_part(partName);
         }
     }
+}
+
+std::string construct_coloring_part_name(int color)
+{
+    std::ostringstream oss;
+    oss << get_coloring_part_base_name() << "_" << color;
+    return oss.str();
 }
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
@@ -208,16 +199,42 @@ bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData&
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
-  if( balanceSettings.getGraphOption() == BalanceSettings::LOADBALANCE )
-  {
-    return loadBalance(balanceSettings, stkMeshBulkData, stkMeshBulkData.parallel_size(), selectors);
-  }
+    if( balanceSettings.getGraphOption() == BalanceSettings::LOADBALANCE )
+    {
+        return loadBalance(balanceSettings, stkMeshBulkData, stkMeshBulkData.parallel_size(), selectors);
+    }
+    return false;
+}
 
-  if( balanceSettings.getGraphOption() == BalanceSettings::COLORING )
-  {
-    return colorMesh(balanceSettings, stkMeshBulkData, selectors);
-  }
-  return false;
+bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData)
+{
+    std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().locally_owned_part()};
+    return colorStkMesh(colorSettings, stkMeshBulkData, selectors);
+}
+
+bool colorStkMesh(const BalanceSettings& colorSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
+{
+    if(colorSettings.getGraphOption() == BalanceSettings::COLORING )
+    {
+        return colorMesh(colorSettings, stkMeshBulkData, selectors);
+    }
+    return false;
+}
+
+void fill_coloring_parts(const stk::mesh::MetaData& meta, stk::mesh::PartVector& coloringParts)
+{
+    coloringParts.clear();
+    const stk::mesh::PartVector& parts = meta.get_parts();
+    const std::string& coloringPartBaseName = get_coloring_part_base_name();
+    const unsigned length = coloringPartBaseName.length();
+    for (stk::mesh::Part* part : parts)
+    {
+        std::string partSubName = part->name().substr(0, length);
+        if (!sierra::case_strcmp(partSubName, coloringPartBaseName))
+        {
+            coloringParts.push_back(part);
+        }
+    }
 }
 
 void run_static_stk_balance_with_settings(stk::io::StkMeshIoBroker &stkInput, stk::mesh::BulkData &inputBulk, const std::string& outputFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)

@@ -13,13 +13,20 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
-# gcd 26 Oct 2018: Part of the great de-templating effort, 
-# allows users to switch at CMake time between using the old template
-# parameters, using Tpetra_ENABLE_DEPRECATED_CODE.  By default,
-# this will be set to "ON", to keep old behaviors.
-
 SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
-MESSAGE (STATUS "Whether Tpetra enables deprecated code at compile time. Default is ON (deprecated code enabled).")
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_DEPRECATED_CODE
+  TPETRA_ENABLE_DEPRECATED_CODE
+  "Whether Tpetra enables deprecated code (that is, anything marked with the TPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
+ASSERT_DEFINED (Tpetra_ENABLE_DEPRECATED_CODE)
+IF (Tpetra_ENABLE_DEPRECATED_CODE)
+  MESSAGE(STATUS "Tpetra: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "Tpetra: Disabling deprecated code")
+ENDIF ()
 
 # mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
 # This doesn't meant that users actually want to instantiate Tpetra
@@ -929,7 +936,7 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
 ELSE () # Tpetra_INST_COMPLEX_DOUBLE is OFF
 
   IF (DEFINED Teuchos_ENABLE_COMPLEX AND Teuchos_ENABLE_COMPLEX)
-    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = std::complex<double>), but Teuchos_ENABLE_COMPLEX is ON.  This will cause downstream link errors, likely in Thyra or Stratimikos.  See GitHub Issue 4080 for details.  Best practice: Do NOT set Tpetra_INST_COMPLEX_DOUBLE OR Teuchos_ENABLE_COMPLEX explicitly.  Instead, set Trilinos_ENABLE_COMPLEX_DOUBLE explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
+    MESSAGE(WARNING "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is OFF (meaning that you want to disable explicit instantiation and/or tests of Tpetra with Scalar = std::complex<double>), but Teuchos_ENABLE_COMPLEX is ON.  This will cause downstream link errors, likely in Thyra or Stratimikos.  See GitHub Issue 4080 for details.  Best practice: Do NOT set Tpetra_INST_COMPLEX_DOUBLE OR Teuchos_ENABLE_COMPLEX explicitly.  Instead, set Trilinos_ENABLE_COMPLEX_DOUBLE explicitly.  That will set defaults for Teuchos and Tpetra correctly.")
   ENDIF ()
 
 ENDIF ()

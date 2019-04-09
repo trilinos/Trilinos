@@ -144,15 +144,13 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module load atdm-env
+  module load atdm-mkl/18.0.5
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
-#  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
-#  export ATDM_CONFIG_BLAS_LIBS="-mkl"
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+  export ATDM_CONFIG_BLAS_LIBS="-mkl"
   export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
   if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
     export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
@@ -186,6 +184,7 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-hdf5/1.8.12/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
+module unload sems-python/2.7.9 
 module load sems-superlu/4.3/base
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \

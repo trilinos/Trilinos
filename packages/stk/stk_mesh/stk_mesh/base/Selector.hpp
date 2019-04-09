@@ -39,6 +39,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert
 #include <vector>                       // for vector, operator!=, etc
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }

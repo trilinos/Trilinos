@@ -128,7 +128,17 @@ module purge
 #
 
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=64
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
+  [[ "${ATDM_CONFIG_CUDA_RDC}" == "ON" ]] ; then
+  export ATDM_CONFIG_BUILD_COUNT=32
+  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
+  # When CUDA+RDC is enabled, using all 64 cores to build and link results in
+  # build errors as described in #4502.
+else
+  export ATDM_CONFIG_BUILD_COUNT=64
+fi
+
 # NOTE: Above settings are used for running on a single rhel7F (Firestone,
 # Dual-Socket POWER8, 8 cores per socket, K80 GPUs) node.
 

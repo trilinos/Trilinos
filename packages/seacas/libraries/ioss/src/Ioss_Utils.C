@@ -1538,8 +1538,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
 {
   DataPool data_pool;
 
-  bool              memory_stats = options.memory_statistics;
-  Ioss::DatabaseIO *dbi          = region.get_database();
+  Ioss::DatabaseIO *dbi = region.get_database();
 
   int rank = dbi->util().parallel_rank();
 
@@ -1550,9 +1549,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "DEFINING MODEL ... \n";
     }
-    if (memory_stats) {
-      dbi->util().progress("DEFINING MODEL");
-    }
+    dbi->progress("DEFINING MODEL");
     if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
       if (options.verbose && rank == 0) {
         std::cerr << "ERROR: Could not put output region into define model state\n";
@@ -1595,11 +1592,10 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "END STATE_DEFINE_MODEL... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("END STATE_DEFINE_MODEL");
-    }
+    dbi->progress("END STATE_DEFINE_MODEL");
 
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
+    dbi->progress("output_region.end_mode(Ioss::STATE_DEFINE_MODEL) finished");
 
     if (options.verbose && rank == 0) {
       std::cerr << "Maximum Field size = " << max_field_size << " bytes.\n";
@@ -1608,12 +1604,11 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.verbose && rank == 0) {
       std::cerr << "Resize finished...\n";
     }
+
     if (options.debug && rank == 0) {
       std::cerr << "TRANSFERRING MESH FIELD DATA ... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("TRANSFERRING MESH FIELD DATA ... ");
-    }
+    dbi->progress("TRANSFERRING MESH FIELD DATA ... ");
 
     // Model defined, now fill in the model data...
     output_region.begin_mode(Ioss::STATE_MODEL);
@@ -1724,23 +1719,19 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "END STATE_MODEL... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("END STATE_MODEL... ");
-    }
+    dbi->progress("END STATE_MODEL... ");
     output_region.end_mode(Ioss::STATE_MODEL);
 
     if (options.delete_timesteps) {
       Ioss::Utils::clear(data_pool.data);
       return;
     }
-  } // appending
+  } // !appending
 
   if (options.debug && rank == 0) {
     std::cerr << "DEFINING TRANSIENT FIELDS ... " << '\n';
   }
-  if (memory_stats) {
-    dbi->util().progress("DEFINING TRANSIENT FIELDS ... ");
-  }
+  dbi->progress("DEFINING TRANSIENT FIELDS ... ");
 
   if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
     if (options.verbose && rank == 0) {
@@ -1804,18 +1795,14 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "END STATE_DEFINE_TRANSIENT... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("END STATE_DEFINE_TRANSIENT... ");
-    }
+    dbi->progress("END STATE_DEFINE_TRANSIENT... ");
     output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
   }
 
   if (options.debug && rank == 0) {
     std::cerr << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
   }
-  if (memory_stats) {
-    dbi->util().progress("TRANSFERRING TRANSIENT FIELDS... ");
-  }
+  dbi->progress("TRANSFERRING TRANSIENT FIELDS... ");
 
   output_region.begin_mode(Ioss::STATE_TRANSIENT);
   // Get the timesteps from the input database.  Step through them
@@ -1905,9 +1892,8 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
   if (options.debug && rank == 0) {
     std::cerr << "END STATE_TRANSIENT... " << '\n';
   }
-  if (memory_stats) {
-    dbi->util().progress("END STATE_TRANSIENT ... ");
-  }
+  dbi->progress("END STATE_TRANSIENT ... ");
+
   output_region.end_mode(Ioss::STATE_TRANSIENT);
   Ioss::Utils::clear(data_pool.data);
 }
@@ -1917,7 +1903,6 @@ namespace {
                           const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &nbs = region.get_node_blocks();
-    size_t      id  = 1;
     for (const auto &inb : nbs) {
       const std::string &name = inb->name();
       if (options.debug && rank == 0) {
@@ -1927,8 +1912,7 @@ namespace {
       size_t degree    = inb->get_property("component_degree").get_int();
       if (options.verbose && rank == 0) {
         std::cerr << " Number of  Coordinates per Node =" << std::setw(14) << degree << "\n";
-        std::cerr << " Number of                 Nodes =" << std::setw(14) << num_nodes
-                  << "\n";
+        std::cerr << " Number of                 Nodes =" << std::setw(14) << num_nodes << "\n";
       }
       auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
       output_region.add(nb);
@@ -1955,7 +1939,6 @@ namespace {
 
       transfer_fields(inb, nb, Ioss::Field::MESH);
       transfer_fields(inb, nb, Ioss::Field::ATTRIBUTE);
-      ++id;
     }
     if (options.debug && rank == 0) {
       std::cerr << '\n';
@@ -2024,10 +2007,12 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
       if (options.verbose && rank == 0) {
-        std::cerr << " Number of " << std::right << std::setw(20) << (*blocks.begin())->type_string()
-                  << "s =" << std::setw(14) << blocks.size() << "\n"
-                  << " Number of " << std::right << std::setw(20) << (*blocks.begin())->contains_string()
-		  << "s =" << std::setw(14) << total_entities << "\n";
+        std::cerr << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->type_string() << "s =" << std::setw(14) << blocks.size()
+                  << "\n"
+                  << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->contains_string() << "s =" << std::setw(14)
+                  << total_entities << "\n";
       }
       if (options.debug && rank == 0) {
         std::cerr << '\n';
@@ -2056,10 +2041,12 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
       if (options.verbose && rank == 0) {
-        std::cerr << " Number of " << std::right << std::setw(20) << (*blocks.begin())->type_string()
-                  << "s =" << std::setw(14) << blocks.size() << "\n"
-                  << " Number of " << std::right << std::setw(20) << (*blocks.begin())->contains_string()
-		  << "s =" << std::setw(14) << total_entities << "\n";
+        std::cerr << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->type_string() << "s =" << std::setw(14) << blocks.size()
+                  << "\n"
+                  << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->contains_string() << "s =" << std::setw(14)
+                  << total_entities << "\n";
       }
       if (options.debug && rank == 0) {
         std::cerr << '\n';
@@ -2131,9 +2118,9 @@ namespace {
     }
     if (options.verbose && rank == 0 && !fss.empty()) {
       std::cerr << " Number of " << std::right << std::setw(20) << (*fss.begin())->type_string()
-		<< "s =" << std::setw(14) << fss.size() << "\n"
-		<< " Number of " << std::right << std::setw(20) << (*fss.begin())->contains_string()
-		<< "s =" << std::setw(14) << total_sides << "\n";
+                << "s =" << std::setw(14) << fss.size() << "\n"
+                << " Number of " << std::right << std::setw(20) << (*fss.begin())->contains_string()
+                << "s =" << std::setw(14) << total_sides << "\n";
     }
     if (options.debug && rank == 0) {
       std::cerr << '\n';
@@ -2593,7 +2580,7 @@ namespace {
         for (size_t n = 0; n < ids.size(); n++) {
           INT id = ids[n];
           if (my_data[id - 1] == my_processor) {
-            owned++;
+            ++owned;
           }
         }
         ns->property_add(Ioss::Property("locally_owned_count", owned));

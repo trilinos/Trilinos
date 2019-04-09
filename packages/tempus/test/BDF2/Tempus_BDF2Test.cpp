@@ -34,8 +34,7 @@
 #include <sstream>
 #include <vector>
 
-//IKT, 11/20/17: comment out any of the following
-//if you wish not to build/run all the test cases.
+// Comment out any of the following tests to exclude from build/run.
 #define TEST_PARAMETERLIST
 #define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
@@ -46,6 +45,8 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -66,8 +67,7 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
 
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  RCP<SinCosModel<double> > model =
-    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+  auto model = rcp(new SinCosModel<double> (scm_pl));
 
   RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
 
@@ -82,7 +82,13 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     stepperPL->remove("Default Start Up Stepper");
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -94,10 +100,13 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    //std::cout << std::endl;
-    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
-    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 }
 #endif // TEST_PARAMETERLIST
@@ -118,24 +127,15 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-  RCP<SinCosModel<double> > model =
-    Teuchos::rcp(new SinCosModel<double>(scm_pl));
+  auto model = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup Stepper for field solve ----------------------------
-  RCP<Tempus::StepperBDF2<double> > stepper =
-    Teuchos::rcp(new Tempus::StepperBDF2<double>(model));
-  //{
-  //  // Setup a linear NOX solve
-  //  RCP<ParameterList> sPL = stepper->getNonconstParameterList();
-  //  std::string solverName = sPL->get<std::string>("Solver Name");
-  //  RCP<ParameterList> solverPL = Teuchos::sublist(sPL, solverName, true);
-  //  stepper->setSolver(solverPL);
-  //  stepper->initialize();
-  //}
+  auto stepper = rcp(new Tempus::StepperBDF2<double>());
+  stepper->setModel(model);
+  stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
-  RCP<Tempus::TimeStepControl<double> > timeStepControl =
-    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
   timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
@@ -148,10 +148,8 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
-  RCP<Thyra::VectorBase<double> > icSolution =
-    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
@@ -159,8 +157,7 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
-  RCP<Tempus::SolutionHistory<double> > solutionHistory =
-    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(3);
@@ -246,8 +243,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     //pList->print(ftmp);
     //ftmp.close();
 
-    RCP<SinCosModel<double> > model =
-      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+    auto model = rcp(new SinCosModel<double>(scm_pl));
 
     dt /= 2;
 
@@ -259,10 +255,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -280,12 +276,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
         integrator->getSolutionHistory();
       writeSolution(output_file_name, solutionHistory);
 
-      RCP<Tempus::SolutionHistory<double> > solnHistExact =
-        Teuchos::rcp(new Tempus::SolutionHistory<double>());
+      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         double time_i = (*solutionHistory)[i]->getTime();
-        RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
+        auto state = rcp(new Tempus::SolutionState<double>(
             model->getExactSolution(time_i).get_x(),
             model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
@@ -371,8 +365,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     //pList->print(ftmp);
     //ftmp.close();
 
-    RCP<SinCosModel<double> > model =
-      Teuchos::rcp(new SinCosModel<double>(scm_pl));
+    auto model = rcp(new SinCosModel<double>(scm_pl));
 
     dt /= 2;
 
@@ -397,10 +390,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -497,9 +490,9 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
   // Create a communicator for Epetra objects
   RCP<Epetra_Comm> comm;
 #ifdef Tempus_ENABLE_MPI
-  comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  comm = Teuchos::rcp(new Epetra_SerialComm);
+  comm = rcp(new Epetra_SerialComm);
 #endif
 
   RCP<Tempus::IntegratorBasic<double> > integrator;
@@ -529,24 +522,22 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     const double a_convection = model_pl->get<double>("a (convection)");
     const double k_source = model_pl->get<double>("k (source)");
 
-    RCP<Tempus_Test::CDR_Model<double>> model =
-      Teuchos::rcp(new Tempus_Test::CDR_Model<double>(comm,
-                                                      num_elements,
-                                                      left_end,
-                                                      right_end,
-                                                      a_convection,
-                                                      k_source));
+    auto model = rcp(new Tempus_Test::CDR_Model<double>(comm,
+                                                        num_elements,
+                                                        left_end,
+                                                        right_end,
+                                                        a_convection,
+                                                        k_source));
 
     // Set the factory
     ::Stratimikos::DefaultLinearSolverBuilder builder;
 
-    Teuchos::RCP<Teuchos::ParameterList> p =
-      Teuchos::rcp(new Teuchos::ParameterList);
+    auto p = rcp(new ParameterList);
     p->set("Linear Solver Type", "Belos");
     p->set("Preconditioner Type", "None");
     builder.setParameterList(p);
 
-    Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = builder.createLinearSolveStrategy("");
 
     model->set_W_factory(lowsFactory);
@@ -683,8 +674,7 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
   for (int n=0; n<nTimeStepSizes; n++) {
 
     // Setup the VanDerPolModel
-    RCP<VanDerPolModel<double> > model =
-      Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+    auto model = rcp(new VanDerPolModel<double>(vdpm_pl));
 
     // Set the step size
     dt /= 2;

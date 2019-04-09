@@ -445,10 +445,6 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 
 std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
 {
-  if (!m_mesh.in_synchronized_state())
-  {
-    std::vector<Partition *>();
-  }
   std::vector<Partition *> retval;
   std::vector<Partition *> const& bf_vec = m_partitions[rank];
   for (size_t i = 0; i < bf_vec.size(); ++i)

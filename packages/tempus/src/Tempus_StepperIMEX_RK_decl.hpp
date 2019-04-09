@@ -145,12 +145,9 @@ namespace Tempus {
  *                  + F(X_i,t_i) = 0\f$ for \f$X_i\f$
  *       - \f$g_i \leftarrow - \frac{X_i-\tilde{X}}{a_{ii} \Delta t}\f$
  *     - \f$f_i \leftarrow M(X_i,\hat{t}_i)^{-1}\, F(X_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i = - g_i - M(X_i,t_i)^{-1}\,F(X_i,t_i)\f$ [Optional]
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
  *                               - \Delta t\,\sum_{i=1}^{s}      b_i\,g_i\f$
- *   - Solve \f$M(x_n)\, \dot{x}_n + F(x_n,t_n) + G(x_n,t_n) = 0\f$
- *       for \f$\dot{x}_n\f$ [Optional]
  *
  *  The single-timestep algorithm for IMEX-RK using the pseudo time derivative,
  *  \f$\tilde{\dot{X}}\f$, is (which is currently implemented)
@@ -168,12 +165,9 @@ namespace Tempus {
  *           for \f$X_i\f$
  *       - \f$g_i \leftarrow - \tilde{\dot{X}}\f$
  *     - \f$f_i \leftarrow M(X_i,\hat{t}_i)^{-1}\, F(X_i,\hat{t}_i)\f$
- *     - \f$\dot{X}_i = - g_i - M(X_i,t_i)^{-1}\,F(X_i,t_i)\f$ [Optional]
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
  *                               - \Delta t\,\sum_{i=1}^{s}      b_i\,g_i\f$
- *   - Solve \f$M(x_n)\, \dot{x}_n + F(x_n,t_n) + G(x_n,t_n) = 0\f$
- *       for \f$\dot{x}_n\f$ [Optional]
  *
  *  The following table contains the pre-coded IMEX-RK tableaus.
  *  <table>
@@ -216,6 +210,10 @@ namespace Tempus {
  *           \end{array} \f]
  *  </table>
  *
+ *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK.
+ *  The default is to set useFSAL=false, and useFSAL=true will result
+ *  in an error.
+ *
  *  #### References
  *  -# Ascher, Ruuth, Spiteri, "Implicit-explicit Runge-Kutta methods for
  *     time-dependent partial differential equations", Applied Numerical
@@ -231,15 +229,24 @@ class StepperIMEX_RK : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /// Constructor to use default Stepper parameters.
-  StepperIMEX_RK(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    std::string stepperType = "IMEX RK SSP2");
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperIMEX_RK();
 
   /// Constructor to specialize Stepper parameters.
   StepperIMEX_RK(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     Teuchos::RCP<Teuchos::ParameterList> pList);
+
+  /// Constructor to use default Stepper parameters.
+  StepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    std::string stepperType = "IMEX RK SSP2");
 
   /// Constructor for StepperFactory.
   StepperIMEX_RK(
@@ -287,9 +294,9 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -306,7 +313,18 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
+
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A = implicitTableau_->A();
+    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+  }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -334,11 +352,6 @@ public:
     Scalar time, Scalar stepSize, Scalar stageNumber,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
 
-private:
-
-  /// Default Constructor -- not allowed
-  StepperIMEX_RK();
-
 protected:
 
   std::string                                            description_;
@@ -354,9 +367,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >         stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 

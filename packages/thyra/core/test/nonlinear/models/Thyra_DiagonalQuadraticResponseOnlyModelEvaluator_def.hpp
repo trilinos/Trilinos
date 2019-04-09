@@ -209,6 +209,8 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::get_p_space(int l) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
+#else
+  (void)l;
 #endif
   return p_space_;
 }
@@ -220,6 +222,8 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::get_g_space(int j) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
+#else
+  (void)j;
 #endif
   return g_space_;
 }

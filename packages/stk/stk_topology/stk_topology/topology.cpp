@@ -42,6 +42,27 @@ namespace stk {
 
 std::string topology::name() const
 {
+  if (m_value < END_TOPOLOGY) {
+    return char_name();
+  }
+
+  std::ostringstream oss;
+  oss << char_name() << "_";
+  if ( is_superelement() )
+    oss << (static_cast<unsigned>(m_value) - topology::SUPERELEMENT_START);
+  else if ( is_superface() )
+    oss << (static_cast<unsigned>(m_value) - topology::SUPERFACE_START);
+  else if ( is_superedge() )
+    oss << (static_cast<unsigned>(m_value) - topology::SUPEREDGE_START);
+  else
+    oss << (static_cast<unsigned>(m_value));
+
+  return oss.str();
+}
+
+STK_FUNCTION
+const char * topology::char_name() const
+{
   switch (m_value)
   {
   case INVALID_TOPOLOGY:         return "INVALID_TOPOLOGY";
@@ -61,6 +82,8 @@ std::string topology::name() const
   case BEAM_3:           return "BEAM_3";
   case SHELL_LINE_2:     return "SHELL_LINE_2";
   case SHELL_LINE_3:     return "SHELL_LINE_3";
+  case SPRING_2:         return "SPRING_2";
+  case SPRING_3:         return "SPRING_3";
   case TRI_3_2D:         return "TRIANGLE_3_2D";
   case TRI_4_2D:         return "TRIANGLE_4_2D";
   case TRI_6_2D:         return "TRIANGLE_6_2D";
@@ -89,18 +112,17 @@ std::string topology::name() const
   default: break;
   }
 
-// jvo: Superelements require additional calculations? What is value calculated from m_value and SUPERELEMENT_START?
-  std::ostringstream oss;
-  if ( is_superelement() )
-    oss << "SUPERELEMENT_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERELEMENT_START);
-  else if ( is_superface() )
-    oss << "SUPERFACE_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERFACE_START);
-  else if ( is_superedge() )
-    oss << "SUPEREDGE_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPEREDGE_START);
-  else
-    oss << "UNKNOWN_TOPOLOGY_" << (static_cast<unsigned>(m_value));
+  if ( is_superelement() ) {
+    return "SUPERELEMENT_TOPOLOGY";
+  }
+  else if ( is_superface() ) {
+    return "SUPERFACE_TOPOLOGY";
+  }
+  else if ( is_superedge() ) {
+    return "SUPEREDGE_TOPOLOGY";
+  }
 
-  return oss.str();
+  return "UNKNOWN_TOPOLOGY";
 }
 
 // jvo: Overloading << operator?
@@ -123,44 +145,24 @@ std::ostream & operator<<(std::ostream &out, topology t)
   return out << t.name();
 }
 
-bool isTriangle (topology topo)
+bool isTriangleElement (topology topo)
 {
-    bool isTri  = ((topo.name() == "TRI_3_2D")      || (topo.name() == "TRIANGLE_3_2D")           || (topo.name() == "TRI_4_2D")
-            ||(topo.name() == "TRIANGLE_4_2D")      || (topo.name() == "TRI_6_2D")      || (topo.name() == "TRIANGLE_6_2D"));
-
-    isTri = isTri && (topo.rank() == topology::ELEMENT_RANK);
-
-    return isTri;
+    return ((topo == topology::TRI_3_2D) || (topo == topology::TRI_4_2D) || (topo == topology::TRI_6_2D));
 }
 
-bool isQuadrilateral (topology topo)
+bool isQuadrilateralElement (topology topo)
 {
-    bool isQuad = ((topo.name() == "QUAD_4_2D")     || (topo.name() == "QUADRILATERAL_4_2D")          || (topo.name() == "QUAD_8_2D")
-            ||(topo.name() == "QUADRILATERAL_8_2D") || (topo.name() == "QUAD_9_2D") || (topo.name() == "QUADRILATERAL_9_2D"));
-
-    isQuad = isQuad && (topo.rank() == topology::ELEMENT_RANK);
-
-    return isQuad;
+    return ((topo == topology::QUAD_4_2D) || (topo == topology::QUAD_8_2D) || (topo == topology::QUAD_9_2D));
 }
 
-bool isTetrahedron (topology topo)
+bool isTetrahedronElement (topology topo)
 {
-    bool isTet =  ((topo.name() == "TET_4")      || (topo.name() == "TET_8")           || (topo.name() == "TET_10")          || (topo.name() == "TET_11")
-            ||(topo.name() == "TETRAHEDRON_4")   || (topo.name() == "TETRAHEDRON_8")   || (topo.name() == "TETRAHEDRON_10")  || (topo.name() == "TETRAHEDRON_11"));
-
-    isTet = isTet && (topo.rank() == topology::ELEMENT_RANK);
-
-    return isTet;
+    return ((topo == topology::TET_4) || (topo == topology::TET_8) || (topo == topology::TET_10) || (topo == topology::TET_11));
 }
 
-bool isHexahedron (topology topo)
+bool isHexahedronElement (topology topo)
 {
-    bool isHex =    ((topo.name() == "HEX_8")    || (topo.name() == "HEX_20")          || (topo.name() == "HEX_27")
-            ||(topo.name() == "HEXAHEDRON_8")    || (topo.name() == "HEXAHEDRON_20")   || (topo.name() == "HEXAHEDRON_27"));
-
-    isHex = isHex && (topo.rank() == topology::ELEMENT_RANK);
-
-    return isHex;
+    return ((topo == topology::HEX_8) || (topo == topology::HEX_20) || (topo == topology::HEX_27));
 }
 
 void verbose_print_topology(std::ostream &out, topology t)

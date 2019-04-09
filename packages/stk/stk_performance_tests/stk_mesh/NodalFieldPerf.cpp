@@ -87,7 +87,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
     stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
     createNodalVectorFields(stkMeshMetaData);
 
-    auto arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, NULL, fieldDataManager));
+    auto arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, fieldDataManager));
     exodusFileReader.set_bulk_data(*arg_bulk_data);
     stk::mesh::BulkData& stkMeshBulkData = *arg_bulk_data;
 

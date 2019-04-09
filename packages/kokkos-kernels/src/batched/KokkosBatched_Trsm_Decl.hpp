@@ -4,6 +4,9 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Vector.hpp"
+
 
 namespace KokkosBatched {
   namespace Experimental {

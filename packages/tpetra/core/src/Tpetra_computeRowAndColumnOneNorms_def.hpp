@@ -398,9 +398,9 @@ public:
   using local_map_type = typename ::Tpetra::Map<LO, GO, NT>::local_map_type;
 
   ComputeLocalRowOneNorms (const equib_info_type& equib,   // in/out
-			   const local_matrix_type& A_lcl, // in
-			   const local_map_type& rowMap,   // in
-			   const local_map_type& colMap) : // in
+                           const local_matrix_type& A_lcl, // in
+                           const local_map_type& rowMap,   // in
+                           const local_map_type& colMap) : // in
     equib_ (equib),
     A_lcl_ (A_lcl),
     rowMap_ (rowMap),
@@ -440,7 +440,6 @@ public:
 
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
-    const bool assumeSymmetric = equib_.assumeSymmetric;
 
     mag_type rowNorm {0.0};
     val_type diagVal {0.0};
@@ -534,7 +533,6 @@ public:
 
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
-    const bool assumeSymmetric = equib_.assumeSymmetric;
 
     mag_type rowNorm {0.0};
     val_type diagVal {0.0};
@@ -553,7 +551,7 @@ public:
       if (lclCol == lclDiagColInd) {
         diagVal = curRow.value (k); // assume no repeats
       }
-      if (! assumeSymmetric) {
+      if (! equib_.assumeSymmetric) {
         Kokkos::atomic_add (&(equib_.colNorms[lclCol]), matrixAbsVal);
       }
     } // for each entry in row
@@ -572,7 +570,7 @@ public:
     // norms are the same as the global row norms).
     equib_.rowDiagonalEntries[lclRow] = diagVal;
     equib_.rowNorms[lclRow] = rowNorm;
-    if (! assumeSymmetric &&
+    if (! equib_.assumeSymmetric &&
         lclDiagColInd != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
       // Don't need an atomic update here, since this lclDiagColInd is
       // a one-to-one function of lclRow.
@@ -657,7 +655,7 @@ computeLocalRowAndColumnOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, 
 /// \param A [in] The input sparse matrix A.
 template<class SC, class LO, class GO, class NT>
 EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
-		  typename NT::device_type>
+                  typename NT::device_type>
 computeLocalRowOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 {
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
@@ -904,11 +902,9 @@ globalizeColumnOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val
     // domain Map to the column Map.
     std::unique_ptr<mv_type> rowNorms_colMap;
     if (imp.is_null ()) {
-      // Shallow copy of rowNorms_domMap, since the two must have the
-      // same Maps.
+      // Shallow copy of rowNorms_domMap.
       rowNorms_colMap =
-        std::unique_ptr<mv_type> (new mv_type (G->getColMap (),
-                                               rowNorms_domMap.getDualView ()));
+        std::unique_ptr<mv_type> (new mv_type (rowNorms_domMap, * (G->getColMap ())));
     }
     else {
       rowNorms_colMap =

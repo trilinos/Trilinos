@@ -34,6 +34,9 @@
 #define BALANCETYPES_HPP_
 
 typedef int BalanceLocalNumber;
-typedef ssize_t BalanceGlobalNumber;
+
+//Zoltan2 insists that long long is supported at compile time so
+//it is safe for us to use it here.
+typedef long long BalanceGlobalNumber;
 
 #endif /* BALANCETYPES_HPP_ */

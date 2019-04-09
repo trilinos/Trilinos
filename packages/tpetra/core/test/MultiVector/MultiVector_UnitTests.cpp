@@ -276,15 +276,15 @@ namespace {
       auto dcmv_map = defaultConstructedMultiVector.getMap ();
       TEST_ASSERT( dcmv_map.get () != nullptr );
       if (dcmv_map.get () != nullptr) {
-	TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
-		       Tpetra::global_size_t (0) );
+        TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
       }
       vec_type defaultConstructedVector;
       auto dcv_map = defaultConstructedVector.getMap ();
       TEST_ASSERT( dcv_map.get () != nullptr );
       if (dcv_map.get () != nullptr) {
-	TEST_EQUALITY( dcv_map->getGlobalNumElements (),
-		       Tpetra::global_size_t (0) );
+        TEST_EQUALITY( dcv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
       }
     }
 
@@ -1647,6 +1647,103 @@ namespace {
         TEST_EQUALITY_CONST( A2_aft2[i] , M0 );                   // was set to zero
       }
     }
+
+    {
+      // contig source multivector: repeat with "offset view"
+      // constructor that takes RCP<const Map>.
+      MV A1 (*A, map1, 0);
+      MV A2 (*A, map2, numLocal1);
+      TEST_EQUALITY( A1.getLocalLength(), numLocal1 );
+      TEST_EQUALITY( A2.getLocalLength(), numLocal2 );
+      TEST_EQUALITY( A1.getNumVectors(), numVectors );
+      TEST_EQUALITY( A2.getNumVectors(), numVectors );
+      Array<Mag>  A_befr(numVectors),
+                 A1_befr(numVectors),
+                 A2_befr(numVectors),
+                  A_aft1(numVectors),
+                 A1_aft1(numVectors),
+                 A2_aft1(numVectors),
+                  A_aft2(numVectors),
+                 A1_aft2(numVectors),
+                 A2_aft2(numVectors);
+      // compute norms of A, A1 and A2
+      A->randomize();
+      A->norm2(A_befr());
+      A1.norm2(A1_befr());
+      A2.norm2(A2_befr());
+      // set A1 = zeros, compute norms of A, A1 and A2
+      A1.putScalar(S0);
+      A->norm2(A_aft1());
+      A1.norm2(A1_aft1());
+      A2.norm2(A2_aft1());
+      // set A2 = zeros, compute norms of A, A1 and A2
+      A2.putScalar(S0);
+      A->norm2(A_aft2());
+      A1.norm2(A1_aft2());
+      A2.norm2(A2_aft2());
+      // change to A1 should not affect A2
+      // change to A2 should not affect A1
+      // change to A1 or A2 should change A
+      // A should be zero after setting A1 to zero and A2 to zero
+      for (size_t i=0; i<numVectors; ++i) {
+        TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0
+        TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shrunk as A2 = 0
+        TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
+        TEST_EQUALITY_CONST( A1_aft1[i] , M0 );                   // was set to zero
+        TEST_EQUALITY_CONST( A1_aft2[i] , M0 );                   // should not have been changed
+        TEST_FLOATING_EQUALITY( A2_befr[i], A2_aft1[i], tol);     // should not have been changed
+        TEST_EQUALITY_CONST( A2_aft2[i] , M0 );                   // was set to zero
+      }
+    }
+
+    {
+      // contig source multivector: repeat with "offset view"
+      // constructor that takes const Map.
+      MV A1 (*A, *map1, 0);
+      MV A2 (*A, *map2, numLocal1);
+      TEST_EQUALITY( A1.getLocalLength(), numLocal1 );
+      TEST_EQUALITY( A2.getLocalLength(), numLocal2 );
+      TEST_EQUALITY( A1.getNumVectors(), numVectors );
+      TEST_EQUALITY( A2.getNumVectors(), numVectors );
+      Array<Mag>  A_befr(numVectors),
+                 A1_befr(numVectors),
+                 A2_befr(numVectors),
+                  A_aft1(numVectors),
+                 A1_aft1(numVectors),
+                 A2_aft1(numVectors),
+                  A_aft2(numVectors),
+                 A1_aft2(numVectors),
+                 A2_aft2(numVectors);
+      // compute norms of A, A1 and A2
+      A->randomize();
+      A->norm2(A_befr());
+      A1.norm2(A1_befr());
+      A2.norm2(A2_befr());
+      // set A1 = zeros, compute norms of A, A1 and A2
+      A1.putScalar(S0);
+      A->norm2(A_aft1());
+      A1.norm2(A1_aft1());
+      A2.norm2(A2_aft1());
+      // set A2 = zeros, compute norms of A, A1 and A2
+      A2.putScalar(S0);
+      A->norm2(A_aft2());
+      A1.norm2(A1_aft2());
+      A2.norm2(A2_aft2());
+      // change to A1 should not affect A2
+      // change to A2 should not affect A1
+      // change to A1 or A2 should change A
+      // A should be zero after setting A1 to zero and A2 to zero
+      for (size_t i=0; i<numVectors; ++i) {
+        TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0
+        TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shrunk as A2 = 0
+        TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
+        TEST_EQUALITY_CONST( A1_aft1[i] , M0 );                   // was set to zero
+        TEST_EQUALITY_CONST( A1_aft2[i] , M0 );                   // should not have been changed
+        TEST_FLOATING_EQUALITY( A2_befr[i], A2_aft1[i], tol);     // should not have been changed
+        TEST_EQUALITY_CONST( A2_aft2[i] , M0 );                   // was set to zero
+      }
+    }
+
     {
       // non-contig source multivector
       RCP<MV> A1e = A->subViewNonConst(even)->offsetViewNonConst(map1, 0);
@@ -1693,6 +1790,56 @@ namespace {
         }
       }
     }
+
+    {
+      // non-contig source multivector: repeat with "offset view"
+      // constructor that takes RCP<const Map>.
+      RCP<MV> A1e (new MV (* (A->subViewNonConst (even)), map1, 0));
+      RCP<MV> A2e (new MV (* (A->subViewNonConst (even)), map2, numLocal1));
+      RCP<MV> A1o (new MV (* (A->subViewNonConst (odd)), map1, 0));
+      RCP<MV> A2o (new MV (* (A->subViewNonConst (odd)), map2, numLocal1));
+
+      TEST_EQUALITY( A1e->getLocalLength(), numLocal1 );
+      TEST_EQUALITY( A1o->getLocalLength(), numLocal1 );
+      TEST_EQUALITY( A2e->getLocalLength(), numLocal2 );
+      TEST_EQUALITY( A2o->getLocalLength(), numLocal2 );
+      const size_t numSubVecs = (size_t)even.size();
+      TEST_EQUALITY( A1e->getNumVectors(), numSubVecs );
+      TEST_EQUALITY( A2e->getNumVectors(), numSubVecs );
+      TEST_EQUALITY( A1o->getNumVectors(), numSubVecs );
+      TEST_EQUALITY( A2o->getNumVectors(), numSubVecs );
+      A->randomize();
+      Array<Mag> b1(numSubVecs), b2(numSubVecs), b3(numSubVecs), bw(numVectors); // before putScalar(): unchanged 1, 2, 3; whole
+      Array<Mag> a1(numSubVecs), a2(numSubVecs), a3(numSubVecs), aw(numVectors); // after putScalar(): ...
+      Array<Mag> changed(numSubVecs), zeros(numSubVecs,M0);
+      for (int i=0; i<4; ++i) {
+        std::vector<RCP<MV> > allMVs; // (changed,three unchanged)
+        switch (i) {
+        case 0:
+          allMVs = {A1e, A2e, A1o, A2o}; break;
+        case 1:
+          allMVs = {A2e, A1o, A2o, A1e}; break;
+        case 2:
+          allMVs = {A1o, A2o, A1e, A2e}; break;
+        case 3:
+          allMVs = {A2o, A1e, A2e, A1o}; break;
+        }
+        allMVs[1]->norm2(b1()); allMVs[2]->norm2(b2()); allMVs[3]->norm2(b3());
+        A->norm2(bw());
+        allMVs[0]->putScalar(S0);
+        allMVs[0]->norm2(changed());
+        allMVs[1]->norm2(a1()); allMVs[2]->norm2(a2()); allMVs[3]->norm2(a3());
+        A->norm2(aw());
+        TEST_COMPARE_FLOATING_ARRAYS(b1,a1,tol);
+        TEST_COMPARE_FLOATING_ARRAYS(b2,a2,tol);
+        TEST_COMPARE_FLOATING_ARRAYS(b3,a3,tol);
+        TEST_COMPARE_ARRAYS(changed(), zeros());
+        for (size_t ii = 0; ii < numVectors; ++ii) {
+          TEST_EQUALITY_CONST( aw[ii] < bw[ii] + tol, true ); // shrunk
+        }
+      }
+    }
+
     {
       RCP<const MV> A1 = A->offsetView(map1, 0);
       RCP<const MV> A2 = A->offsetView(map2, numLocal1);
@@ -2171,12 +2318,10 @@ namespace {
           {
             std::ostringstream os;
             os << ">>> Proc " << comm->getSize ();
-            auto A_dv = A.getDualView ();
-            os << ": A.modified_host: " << (A_dv.need_sync_device ()?1:0);
-            os  << ", A.modified_device: " << (A_dv.need_sync_host ()?1:0);
-            auto B_dv = B.getDualView ();
-            os << ": B.modified_host: " << (B_dv.need_sync_device ()?1:0);
-            os << ", B.modified_device: " << (B_dv.need_sync_host ()?1:0);
+            os << ": A.modified_host: " << (A.need_sync_device ()?1:0);
+            os  << ", A.modified_device: " << (A.need_sync_host ()?1:0);
+            os << ": B.modified_host: " << (B.need_sync_device ()?1:0);
+            os << ", B.modified_device: " << (B.need_sync_host ()?1:0);
             os << std::endl;
             std::cerr << os.str ();
           }
@@ -3490,7 +3635,7 @@ namespace {
   //
   // This tests ensures that getLocalView() actually returns a view of
   // the data, NOT a deep copy.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, getDualView, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewSemantics, LO, GO, Scalar, Node )
   {
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -3498,7 +3643,7 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename MV::device_type device_type;
 
-    out << "Test: MultiVector, getDualView" << endl;
+    out << "Test: MultiVector's DualView semantics" << endl;
     Teuchos::OSTab tab0 (out);
 
     int lclSuccess = 1;
@@ -3870,9 +4015,8 @@ namespace {
     {
       std::ostringstream os;
       os << ">>> Proc " << comm->getSize ();
-      auto X_gbl_dv = X_gbl.getDualView ();
-      os << ": X_gbl.modified_host: " << (X_gbl_dv.need_sync_device()?1:0)
-         << ", X_gbl.modified_device: " << (X_gbl_dv.need_sync_host()?1:0);
+      os << ": X_gbl.modified_host: " << (X_gbl.need_sync_device()?1:0)
+         << ", X_gbl.modified_device: " << (X_gbl.need_sync_host()?1:0);
       os << std::endl;
       std::cerr << os.str ();
     }
@@ -4636,7 +4780,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ReplaceMap        , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeepCopy          , LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, getDualView       , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewSemantics , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewCtor      , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \

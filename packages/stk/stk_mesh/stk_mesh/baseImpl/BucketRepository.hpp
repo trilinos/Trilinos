@@ -42,6 +42,7 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class EntitySorterBase; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
 
@@ -78,7 +79,7 @@ public:
   {
     static const BucketVector emptyBucketVector;
 
-    if( rank < m_buckets.size() )
+    if( rank < static_cast<EntityRank>(m_buckets.size()) )
     {
       if (m_need_sync_from_partitions[rank])
       {

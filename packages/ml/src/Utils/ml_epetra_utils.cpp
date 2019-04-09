@@ -118,7 +118,7 @@ int Epetra_ML_GetCrsDataptrs(ML_Operator *mlA, double **values, int **cols,
      return ierr;
 } //Epetra_ML_GetCrsDataptrs()
 
-int ML_Epetra_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
+int ML_Epetra_matvec(ML_Operator *data, int /* in */, double *p, int /* out */, double *ap)
 {
   ML_Operator *mat_in;
 
@@ -148,8 +148,8 @@ int ML_Epetra_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 
 // ======================================================================
 
-int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
-                                                  int out, double *ap)
+int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int /* in */, double *p,
+                                                  int /* out */, double *ap)
 {
   ML_Operator *mat_in;
 
@@ -178,8 +178,8 @@ int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
 
 // ======================================================================
 
-int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
-                                                  int out, double *ap)
+int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int /* in */, double *p,
+                                                  int /* out */, double *ap)
 {
   ML_Operator *mat_in;
 
@@ -197,8 +197,8 @@ int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
 
 // ======================================================================
 
-int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
-                            int out, double *ap)
+int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int /* in */, double *p,
+                            int /* out */, double *ap)
 {
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
   int NumMyRows = A->NumMyRows();
@@ -233,9 +233,9 @@ int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
 // - ML_Epetra_VbrMatrix_getrow
 // ======================================================================
 
-int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
-		    int allocated_space, int columns[], double values[],
-		    int row_lengths[])
+int ML_Epetra_getrow(ML_Operator * /* data */, int /* N_requested_rows */, int /* requested_rows */[],
+		    int /* allocated_space */, int /* columns */[], double /* values */[],
+		    int /* row_lengths */[])
 {
 
   std::cout << "Function ML_Epetra_getrow() is no longer supported." << std::endl;
@@ -963,7 +963,7 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 
 // ======================================================================
 //! Does an P^TAP for Epetra_CrsMatrices using ML's kernels.
-int ML_Epetra::Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool keep_zero_rows,bool verbose){
+int ML_Epetra::Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool keep_zero_rows,bool /* verbose */){
 #ifdef HAVE_ML_EPETRAEXT
   Epetra_CrsMatrix AP(Copy,A.RowMap(),0);
   Result = new Epetra_CrsMatrix(Copy,P.DomainMap(),0);
@@ -1423,8 +1423,8 @@ Epetra_RowMatrix* ML_Epetra::ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
 
 // ======================================================================
 
-int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
-                              int out, double *ap)
+int ML_Epetra_CrsGraph_matvec(ML_Operator * /* data */, int /* in */, double * /* p */,
+                              int /* out */, double * /* ap */)
 {
   std::cerr << "ML_Epetra_CrsGraph_matvec() not implemented." << std::endl;
   ML_RETURN(-1);

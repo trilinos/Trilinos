@@ -456,13 +456,10 @@ static void gl_error(const char *const buf)
 static void gl_init(void)
 /* set up variables and terminal */
 {
-  const char *cp;
-  int         w;
-
   if (gl_init_done < 0) { /* -1 only on startup */
-    cp = (const char *)getenv("COLUMNS");
+    const char *cp = (const char *)getenv("COLUMNS");
     if (cp != NULL) {
-      w = atoi(cp);
+      int w = atoi(cp);
       if (w > 20)
         gl_setwidth(w);
     }
@@ -881,11 +878,10 @@ static void gl_addchar(int c)
 
 /* adds the character c to the input buffer at current location */
 {
-  int i;
-
   if (gl_cnt >= GL_BUF_SIZE - 1)
     gl_error("\n*** Error: getline(): input buffer overflow\n");
   if (gl_overwrite == 0 || gl_pos == gl_cnt) {
+    int i;
     for (i = gl_cnt; i >= gl_pos; i--)
       gl_buf[i + 1] = gl_buf[i];
     gl_buf[gl_pos] = (char)c;
@@ -1016,17 +1012,17 @@ static void gl_killword(int direction)
   int i;
 
   if (direction > 0) { /* forward */
-    while (!isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && !isspace(gl_buf[pos]))
       pos++;
-    while (isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && isspace(gl_buf[pos]))
       pos++;
   }
   else { /* backword */
     if (pos > 0)
       pos--;
-    while (isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && isspace(gl_buf[pos]))
       pos--;
-    while (!isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && !isspace(gl_buf[pos]))
       pos--;
     if (pos < gl_cnt && isspace(gl_buf[pos])) /* move onto word */
       pos++;
@@ -1052,17 +1048,17 @@ static void gl_word(int direction)
   int pos = gl_pos;
 
   if (direction > 0) { /* forward */
-    while (!isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && !isspace(gl_buf[pos]))
       pos++;
-    while (isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && isspace(gl_buf[pos]))
       pos++;
   }
   else { /* backword */
     if (pos > 0)
       pos--;
-    while (isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && isspace(gl_buf[pos]))
       pos--;
-    while (!isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && !isspace(gl_buf[pos]))
       pos--;
     if (pos < gl_cnt && isspace(gl_buf[pos])) /* move onto word */
       pos++;
@@ -2150,7 +2146,6 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
 char *gl_win_getpass(const char *const prompt, char *const pass, int dsize)
 {
   char *cp;
-  int   c;
 
   FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
   ZeroMemory(pass, (DWORD)sizeof(dsize));
@@ -2160,7 +2155,7 @@ char *gl_win_getpass(const char *const prompt, char *const pass, int dsize)
     _cputs(prompt);
 
   for (cp = pass;;) {
-    c = (int)_getch();
+    int c = (int)_getch();
     if ((c == '\r') || (c == '\n'))
       break;
     if ((c == '\010') || (c == '\177')) {

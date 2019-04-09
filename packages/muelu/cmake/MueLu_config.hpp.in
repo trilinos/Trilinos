@@ -90,6 +90,10 @@
 
 #cmakedefine HAVE_MUELU_AVATAR
 
+#cmakedefine HAVE_MUELU_CUSPARSE
+
+#cmakedefine HAVE_MUELU_MAGMASPARSE
+
 /* Flags for active Tpetra nodes if Tpetra is enabled */
 #cmakedefine HAVE_MUELU_SERIAL
 #cmakedefine HAVE_MUELU_PTHREAD

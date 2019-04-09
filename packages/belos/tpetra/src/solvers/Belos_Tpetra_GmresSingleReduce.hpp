@@ -38,8 +38,7 @@ public:
     this->input_.computeRitzValues = true;
   }
 
-  virtual ~GmresSingleReduce ()
-  {}
+  virtual ~GmresSingleReduce () = default;
 
   virtual void
   setParameters (Teuchos::ParameterList& params) {

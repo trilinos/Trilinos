@@ -196,9 +196,6 @@ namespace MueLu {
 
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;
 
-    Array<LO> lNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
-    Set(coarseLevel, "numDimensions", numDimensions);
-    Set(coarseLevel, "lNodesPerDim", lNodesPerDir);
     Set(coarseLevel, "P", P);
 
     *out << "GeometricInterpolationPFactory::BuildP has completed." << std::endl;

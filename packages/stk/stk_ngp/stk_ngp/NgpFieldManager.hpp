@@ -51,7 +51,7 @@ public:
   {
   }
 
-  FieldManager(stk::mesh::BulkData & bulk)
+  FieldManager(const stk::mesh::BulkData & bulk)
     : m_bulk(&bulk)
   {
     m_fields.resize(m_bulk->mesh_meta_data().get_fields().size(), nullptr);
@@ -138,7 +138,7 @@ private:
     m_fields.clear();
   }
 
-  stk::mesh::BulkData * m_bulk;
+  const stk::mesh::BulkData * m_bulk;
   mutable std::vector<ngp::FieldBase*> m_fields;
 
 };

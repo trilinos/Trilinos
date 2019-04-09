@@ -69,7 +69,7 @@ public:
   /** @name Overridden from ParameterListAcceptor (simple forwarding functions) */
   //@{
 
-  void setParameterList(RCP<ParameterList> const& paramList)
+  void setParameterList(RCP<ParameterList> const& /* paramList */)
   {
   }
 
@@ -100,22 +100,22 @@ public:
   /** @name Overridden from PreconditionerFactoryBase */
   //@{
 
-  bool isCompatible(const LinearOpSourceBase<Scalar> &fwdOpSrc) const
+  bool isCompatible(const LinearOpSourceBase<Scalar> &/* fwdOpSrc */) const
   { return false; }
 
    RCP<PreconditionerBase<Scalar> > createPrec() const
   { return prec_; }
 
   void initializePrec(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    PreconditionerBase<Scalar> *precOp,
-    const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+    const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
+    PreconditionerBase<Scalar> * /* precOp */,
+    const ESupportSolveUse /* supportSolveUse */ = SUPPORT_SOLVE_UNSPECIFIED
     ) const
   {
   }
 
   void uninitializePrec(
-    PreconditionerBase<Scalar> *precOp,
+    PreconditionerBase<Scalar> * /* precOp */,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
     ESupportSolveUse *supportSolveUse = NULL
     ) const

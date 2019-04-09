@@ -24,7 +24,6 @@ ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(USE_SPARC_TPL_FIND_SETTINGS
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_NAME})
 
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_COUNT})
-ASSERT_DEFINED(ENV{ATDM_CONFIG_CTEST_PARALLEL_LEVEL})
 
 ASSERT_DEFINED(ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_COMPILER})
@@ -47,7 +46,8 @@ IF (ATDM_ENABLE_SPARC_SETTINGS)
   ASSERT_DEFINED(ENV{ATDM_CONFIG_SUPERLUDIST_LIBS})
 ENDIF()
 
-ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_JOB_POOL_LINK "")
+ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(PARALLEL_COMPILE_JOBS_LIMIT "")
+ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(PARALLEL_LINK_JOBS_LIMIT "")
 
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(USE_OPENMP OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(USE_PTHREADS OFF)
@@ -90,6 +90,7 @@ ENDIF()
 
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS "")
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(SHARED_LIBS OFF)
+ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(PT_PACKAGES OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CMAKE_SKIP_INSTALL_RPATH OFF)
 
@@ -161,7 +162,11 @@ ASSERT_DEFINED(ENV{MPIF90})
 ATDM_SET_CACHE(CMAKE_C_COMPILER "$ENV{MPICC}" CACHE FILEPATH)
 ATDM_SET_CACHE(CMAKE_CXX_COMPILER "$ENV{MPICXX}" CACHE FILEPATH)
 ATDM_SET_CACHE(CMAKE_Fortran_COMPILER "$ENV{MPIF90}" CACHE FILEPATH)
-ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran ${ATDM_ENABLE_SPARC_SETTINGS})
+IF (ATDM_ENABLE_SPARC_SETTINGS  OR  ATDM_PT_PACKAGES)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran ON)
+ELSE()
+  ATDM_SET_ENABLE(Trilinos_ENABLE_Fortran OFF)
+ENDIF()
 
 #
 # D) Set up basic compiler flags, link flags etc.
@@ -202,15 +207,21 @@ ENDIF()
 # E) Set up other misc options
 #
 
-# Currently, EMPIRE configures of Trilinos have this enabled by default.  But
-# really we should elevate every subpackage that ATDM uses to Primary Tested.
-# That is the right solution.
-ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+IF (ATDM_PT_PACKAGES)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)
+ELSE()
+  # Currently, EMPIRE configures of Trilinos have this enabled by default.  But
+  # really we should elevate every subpackage that ATDM uses to Primary Tested.
+  # That is the right solution.
+  ATDM_SET_ENABLE(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+ENDIF()
 
 # Other various options
 ATDM_SET_CACHE(CTEST_BUILD_FLAGS "-j$ENV{ATDM_CONFIG_BUILD_COUNT}" CACHE STRING)
 ATDM_SET_CACHE(CMAKE_JOB_POOL_LINK "${ATDM_CMAKE_JOB_POOL_LINK}" CACHE STRING)
-ATDM_SET_CACHE(CTEST_PARALLEL_LEVEL "$ENV{ATDM_CONFIG_CTEST_PARALLEL_LEVEL}"
+ATDM_SET_CACHE(Trilinos_PARALLEL_COMPILE_JOBS_LIMIT "${ATDM_PARALLEL_COMPILE_JOBS_LIMIT}"
+  CACHE STRING)
+ATDM_SET_CACHE(Trilinos_PARALLEL_LINK_JOBS_LIMIT "${ATDM_PARALLEL_LINK_JOBS_LIMIT}"
   CACHE STRING)
 IF (NOT ATDM_CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS STREQUAL "")
   ATDM_SET_CACHE(CXX_USE_RESPONSE_FILE_FOR_OBJECTS
@@ -370,17 +381,28 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # NOTE: Not clear why you need this since the TPL DLlib is not explicilty
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
 
+# Don't have stuff for Matio and some SEACAS subpackage has required
+# dependency on this
+ATDM_SET_ENABLE(TPL_ENABLE_Matio OFF)
+
 #
-# G) Test Disables
+# G) Package and Test Disables
 #
-# There are some tests that have to be disabled for a braod set of builds
-# for example, if all openmp builds are failing a certain test then it 
+# There are some package tests that have to be disabled for a braod set of
+# builds for example, if all openmp builds are failing a certain test then it
 # makes more sense to disbale it once in this file instead of in every openmp
 # buid's tweaks file
 #
 
-# issue 3638
+# Issue #3638
 ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
+
+# Disable MueLu for all cuda+complex builds for now since there are build
+# errors in the MueLu library that takes out everything downstream that
+# depends on MueLu (see #4599).
+IF (ATDM_USE_CUDA AND ATDM_COMPLEX)
+  ATDM_SET_ENABLE(Trilinos_ENABLE_MueLu OFF)
+ENDIF()
 
 #
 # H) ATDM env config install hooks
@@ -389,7 +411,7 @@ ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
 # else!
 #
 
-IF (COMMAND INSTALL)
+IF (COMMAND INSTALL AND NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
 
   IF (NOT "$ENV{ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX}" STREQUAL "")
     ATDM_SET_CACHE_FORCE(CMAKE_INSTALL_PREFIX
@@ -423,10 +445,10 @@ IF (COMMAND INSTALL)
     CACHE STRING
     "Name of env var set to <CMAKE_INSTALL_PREFIX> set in installed script <ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME>." )
   
-  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/load_matching_env.sh.in
-    ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh @ONLY )
+  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/utils/load_matching_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh @ONLY )
   
-  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh
+  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/cmake/std/atdm/utils/load_matching_env.sh
     DESTINATION ${CMAKE_INSTALL_PREFIX}
     RENAME ${ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME} )
 

@@ -15,66 +15,27 @@
 
 namespace Tempus {
 
-// StepperLeapfrog definitions:
+template<class Scalar>
+StepperLeapfrog<Scalar>::StepperLeapfrog()
+{
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
-}
 
-template<class Scalar>
-void StepperLeapfrog<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->validExplicitODE(appModel);
-  appModel_ = appModel;
-
-  inArgs_  = appModel_->getNominalValues();
-  outArgs_ = appModel_->createOutArgs();
-}
-
-template<class Scalar>
-void StepperLeapfrog<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-template<class Scalar>
-void StepperLeapfrog<Scalar>::setSolver(std::string solverName)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setSolver()");
-  *out << "Warning -- No solver to set for StepperLeapfrog "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperLeapfrog<Scalar>::setSolver(
-  Teuchos::RCP<Teuchos::ParameterList> solverPL)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setSolver()");
-  *out << "Warning -- No solver to set for StepperLeapfrog "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
-}
-
-template<class Scalar>
-void StepperLeapfrog<Scalar>::setSolver(
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver)
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setSolver()");
-  *out << "Warning -- No solver to set for StepperLeapfrog "
-       << "(i.e., explicit method).\n" << std::endl;
-  return;
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template<class Scalar>
@@ -83,17 +44,17 @@ void StepperLeapfrog<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (this->stepperObserver_ == Teuchos::null) {
       stepperLFObserver_ =
         Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
-      stepperObserver_ =
+      this->stepperObserver_ =
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperLFObserver_);
      }
   } else {
-    stepperObserver_ = obs;
+    this->stepperObserver_ = obs;
     stepperLFObserver_ =
       Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >
-        (stepperObserver_);
+        (this->stepperObserver_);
   }
 }
 
@@ -107,6 +68,31 @@ void StepperLeapfrog<Scalar>::initialize()
 
   this->setParameterList(this->stepperPL_);
   this->setObserver();
+}
+
+template<class Scalar>
+void StepperLeapfrog<Scalar>::setInitialConditions(
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+
+  // Check if we need Stepper storage for xDotDot
+  if (initialState->getXDotDot() == Teuchos::null)
+    this->setStepperXDotDot(initialState->getX()->clone_v());
+
+  StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
+
+  if (this->getUseFSAL()) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setInitialConditions()");
+    *out << "Warning -- The First-Step-As-Last (FSAL) principle is not "
+         << "used with Leapfrog because of the algorithm's prescribed "
+         << "order of solution update. The default is to set useFSAL=false, "
+         << "however useFSAL=true will also work but have no affect "
+         << "(i.e., no-op).\n" << std::endl;
+  }
 }
 
 template<class Scalar>
@@ -125,8 +111,7 @@ void StepperLeapfrog<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    typedef Thyra::ModelEvaluatorBase MEB;
-    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar time = currentState->getTime();
@@ -135,28 +120,6 @@ void StepperLeapfrog<Scalar>::takeStep(
     // Perform half-step startup if working state is synced
     // (i.e., xDot and x are at the same time level).
     if (workingState->getIsSynced() == true) {
-      if (getIsXDotXDotInitialized() == false) {
-        inArgs_.set_x(currentState->getX());
-        if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
-
-        // For model evaluators whose state function f(x, x_dot, x_dot_dot, t)
-        // describes an implicit ODE, and which accept the optional input
-        // arguments, x_dot and x_dot_dot, make sure they are set to null in
-        // order to request the evaluation of a state function corresponding
-        // to the explicit ODE formulation x_dot_dot = f(x, t) for leapfrog.
-        if (inArgs_.supports(MEB::IN_ARG_x_dot))
-          inArgs_.set_x_dot(Teuchos::null);
-        if (inArgs_.supports(MEB::IN_ARG_x_dot_dot))
-          inArgs_.set_x_dot_dot(Teuchos::null);
-        outArgs_.set_f(currentState->getXDotDot());
-
-        if (!Teuchos::is_null(stepperLFObserver_))
-          stepperLFObserver_->observeBeforeExplicitInitialize(
-          solutionHistory, *this);
-        appModel_->evalModel(inArgs_,outArgs_);
-        setIsXDotXDotInitialized(true);
-      }
-
       if (!Teuchos::is_null(stepperLFObserver_))
         stepperLFObserver_->observeBeforeXDotUpdateInitialize(
           solutionHistory, *this);
@@ -171,22 +134,13 @@ void StepperLeapfrog<Scalar>::takeStep(
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
       *(currentState->getX()),dt,*(workingState->getXDot()));
 
-    inArgs_.set_x(workingState->getX());
-    if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time+dt);
-
-    // For model evaluators whose state function f(x, x_dot, x_dot_dot, t)
-    // describes an implicit ODE, and which accept the optional input
-    // arguments, x_dot and x_dot_dot, make sure they are set to null in
-    // order to request the evaluation of a state function corresponding
-    // to the explicit ODE formulation x_dot_dot = f(x, t) for leapfrog.
-    if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-      if (inArgs_.supports(MEB::IN_ARG_x_dot_dot))
-        inArgs_.set_x_dot_dot(Teuchos::null);
-    outArgs_.set_f(workingState->getXDotDot());
-
     if (!Teuchos::is_null(stepperLFObserver_))
       stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
-    appModel_->evalModel(inArgs_,outArgs_);
+
+    // Evaluate xDotDot = f(x,t).
+    this->evaluateExplicitODE(workingState->getXDotDot(),
+                              workingState->getX(),
+                              Teuchos::null, time+dt);
 
     if (!Teuchos::is_null(stepperLFObserver_))
       stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
@@ -204,7 +158,7 @@ void StepperLeapfrog<Scalar>::takeStep(
 
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
-    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -237,10 +191,10 @@ std::string StepperLeapfrog<Scalar>::description() const
 template<class Scalar>
 void StepperLeapfrog<Scalar>::describe(
    Teuchos::FancyOStream               &out,
-   const Teuchos::EVerbosityLevel      verbLevel) const
+   const Teuchos::EVerbosityLevel      /* verbLevel */) const
 {
   out << description() << "::describe:" << std::endl
-      << "appModel_ = " << appModel_->description() << std::endl;
+      << "appModel_ = " << this->appModel_->description() << std::endl;
 }
 
 
@@ -250,13 +204,15 @@ void StepperLeapfrog<Scalar>::setParameterList(
 {
   if (pList == Teuchos::null) {
     // Create default parameters if null, otherwise keep current parameters.
-    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+    if (this->stepperPL_ == Teuchos::null)
+      this->stepperPL_ = this->getDefaultParameters();
   } else {
-    stepperPL_ = pList;
+    this->stepperPL_ = pList;
   }
-  stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
+  this->stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
-  std::string stepperType = stepperPL_->get<std::string>("Stepper Type");
+  std::string stepperType =
+    this->stepperPL_->template get<std::string>("Stepper Type");
   TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Leapfrog",
     std::logic_error,
        "Error - Stepper Type is not 'Leapfrog'!\n"
@@ -270,13 +226,10 @@ StepperLeapfrog<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", "Leapfrog",
-          "'Stepper Type' must be 'Leapfrog'.");
-  pl->set<bool>("Is xDotDot Initialized", 0,
-    "At the beginning of an integration, the solution may or may not "
-    "be initialized.  If false, the Leapfrog steppers will initialize "
-    "xDotDot during the first timestep.");
-
+  pl->set<std::string>("Stepper Type", "Leapfrog",
+                       "'Stepper Type' must be 'Leapfrog'.");
+  this->getValidParametersBasic(pl);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
 }
 
@@ -285,8 +238,13 @@ template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperLeapfrog<Scalar>::getDefaultParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  *pl = *(this->getValidParameters());
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
+
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   return pl;
 }
 
@@ -295,7 +253,7 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperLeapfrog<Scalar>::getNonconstParameterList()
 {
-  return(stepperPL_);
+  return(this->stepperPL_);
 }
 
 
@@ -303,8 +261,8 @@ template <class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 StepperLeapfrog<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> temp_plist = stepperPL_;
-  stepperPL_ = Teuchos::null;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = this->stepperPL_;
+  this->stepperPL_ = Teuchos::null;
   return(temp_plist);
 }
 

@@ -117,3 +117,47 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   ${MAXNP}
   )
+
+ASSERT_DEFINED( ${PACKAGE_NAME}_ENABLE_TeuchosNumerics )
+IF (${PACKAGE_NAME}_ENABLE_TeuchosNumerics)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    deep_copy_SerialDenseMatrix_to_MultiVector
+    SOURCES
+      deep_copy_from_SDM
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    deep_copy_MultiVector_to_SerialDenseMatrix
+    SOURCES
+      deep_copy_from_SDM
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+# Regression test for Trilinos GitHub Issue #4639.
+# It must run with at least 2 MPI processes to exercise
+# the fix for that issue.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MV_reduce_strided
+  SOURCES
+    MV_reduce_strided
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  NUM_MPI_PROCS 2-4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Vector_offsetViewCtor
+  SOURCES
+    MultiVector_UnitTests
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )

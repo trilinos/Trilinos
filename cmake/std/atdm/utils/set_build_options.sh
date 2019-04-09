@@ -20,6 +20,7 @@
 #   ATDM_CONFIG_CUDA_RDC
 #   ATDM_CONFIG_COMPLEX
 #   ATDM_CONFIG_SHARED_LIBS
+#   ATDM_CONFIG_PT_PACKAGES
 #
 # or will error out.
 #
@@ -257,4 +258,11 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
   export ATDM_CONFIG_SHARED_LIBS=ON
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
   export ATDM_CONFIG_SHARED_LIBS=OFF
+fi
+
+# Allow enable of all Primary Tested (pt) packages are not
+export ATDM_CONFIG_PT_PACKAGES=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"-pt" ]] || \
+  [[ $ATDM_CONFIG_BUILD_NAME == *"_pt" ]] ; then
+  export ATDM_CONFIG_PT_PACKAGES=ON
 fi

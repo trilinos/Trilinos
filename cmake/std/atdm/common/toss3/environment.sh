@@ -18,6 +18,9 @@ export ATDM_CONFIG_BUILD_COUNT=8
 # NOTE: Above, currently setting CMAKE_JOB_POOL_LINK results in a build
 # failures with Ninja.  See https://gitlab.kitware.com/snl/project-1/issues/60
 
+# We do this twice since sems modules are wacked and we get errors to the screen on a purge
+# The second purge will catch any real errors with purging ...
+module purge &> /dev/null
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env

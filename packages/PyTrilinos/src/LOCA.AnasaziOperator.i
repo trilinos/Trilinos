@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.AnasaziOperator is the python interface to namespace
 AnasaziOperator of the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.AnasaziOperator is to provide ***.  The python
 version of LOCA.AnasaziOperator supports the following classes:

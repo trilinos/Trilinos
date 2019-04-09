@@ -52,7 +52,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
-#include "Tpetra_Details_padCrsArrays.hpp"
+#include "Tpetra_Details_crsUtils.hpp"
 #include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
@@ -961,11 +961,11 @@ void
 unpackCrsGraphAndCombineNew(
     CrsGraph<LO, GO, Node>& /* sourceGraph */,
     const Kokkos::DualView<const typename CrsGraph<LO,GO,Node>::packet_type*,
-                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& imports,
+                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& /* imports */,
     const Kokkos::DualView<const size_t*,
-                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& numPacketsPerLID,
+                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& /* numPacketsPerLID */,
     const Kokkos::DualView<const LO*,
-                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& importLIDs,
+                           typename CrsGraph<LO,GO,Node>::buffer_device_type>& /* importLIDs */,
     const size_t /* constantNumPackets */,
     Distributor& /* distor */,
     const CombineMode /* combineMode */)

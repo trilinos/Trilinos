@@ -1286,7 +1286,7 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   create_vector.push_back ( &node_part );
 
   const unsigned non_standard_bucket_capacity = 42;
-  BulkData bulk ( meta , MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA , true, NULL, NULL, non_standard_bucket_capacity);
+  BulkData bulk ( meta , MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA , true, nullptr, non_standard_bucket_capacity);
 
   bulk.modification_begin();
 

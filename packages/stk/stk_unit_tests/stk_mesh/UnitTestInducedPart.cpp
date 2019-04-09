@@ -72,7 +72,7 @@ protected:
     void setup_serial_mesh()
     {
         unranked_part = &get_meta().declare_part("unranked_part");
-        element_rank_part = &get_meta().declare_part_with_topology("element_rank_part", stk::topology::TRI_3);
+        element_rank_part = &get_meta().declare_part_with_topology("element_rank_part", stk::topology::TRI_3_2D);
         element_rank_superset_part = &get_meta().declare_part("element_rank_superset_part", stk::topology::ELEMENT_RANK);
         side_rank_part = &get_meta().declare_part_with_topology("side_rank_part", stk::topology::LINE_2);
         unranked_superset_part = &get_meta().declare_part("unranked_superset_part");

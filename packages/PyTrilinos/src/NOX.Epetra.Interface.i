@@ -47,7 +47,7 @@
 PyTrilinos.NOX.Epetra.Interface is the python interface to the
 Epetra::Interface namespace of the Trilinos package NOX:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of NOX.Epetra.Interface is to provide base classes the
 user should derive from in order to define the nonlinear function to
@@ -61,10 +61,23 @@ NOX.Epetra.Interface provides the following user-level classes:
 "
 %enddef
 
+%define %nox_epetra_interface_importcode
+"
+if not __package__:
+    __package__ = 'PyTrilinos.NOX.Epetra'
+from . import _Interface
+try:
+    from .. import Abstract
+except (ValueError, SystemError, ImportError):
+    import Abstract
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
+        moduleimport = %nox_epetra_interface_importcode,
 	docstring    = %nox_epetra_interface_docstring) Interface
 
 %{
@@ -104,17 +117,12 @@ NOX.Epetra.Interface provides the following user-level classes:
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
-// Allow import from the parent directory
 %pythoncode
 %{
 import sys, os.path as op
 parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-try:
-    from .. import Abstract
-except (ValueError, SystemError, ImportError):
-    import Abstract
 %}
 
 // Include typemaps for Abstract base classes

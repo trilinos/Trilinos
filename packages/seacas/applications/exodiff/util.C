@@ -55,7 +55,6 @@ void free_name_array(char **names, int size)
     delete[] names[i];
   }
   delete[] names;
-  names = nullptr;
 }
 
 namespace {

@@ -41,6 +41,7 @@ project votd
     $(sierra-warnings)
     <include>$(stk_performance_tests-root)
     <define>STK_BUILT_IN_SIERRA
+    <define>STK_HIDE_DEPRECATED_CODE
   : usage-requirements
     <include>$(stk_performance_tests-root)
   : build-dir $(stk_performance_tests-builddir)

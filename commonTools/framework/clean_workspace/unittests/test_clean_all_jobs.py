@@ -44,3 +44,6 @@ class TestRun(unittest.TestCase):
              mock.patch('sys.stderr', new_callable=StringIO):
             with self.assertRaises(SystemExit):
                 cleanRefInst.run()
+
+if __name__ == '__main__':
+    unittest.main()

@@ -65,6 +65,15 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include <type_traits>
 
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  template<class OrdinalType, class ScalarType>
+  class SerialDenseMatrix; // forward declaration
+}
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
+
 namespace Tpetra {
 
   namespace Details {
@@ -129,6 +138,30 @@ namespace Tpetra {
   void
   deep_copy (MultiVector<DS, DL, DG, DN>& dst,
              const MultiVector<SS, SL, SG, SN>& src);
+
+#ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
+  /// \brief Copy the contents of a Teuchos::SerialDenseMatrix into
+  ///   the local part of the given Tpetra::MultiVector.
+  /// \relatesalso MultiVector
+  ///
+  /// \pre <tt>src.numRows() == dst.getLocalLength()</tt>
+  /// \pre <tt>src.numCols() == dst.getNumVectors()</tt>
+  template <class ST, class LO, class GO, class NT>
+  void
+  deep_copy (MultiVector<ST, LO, GO, NT>& dst,
+             const Teuchos::SerialDenseMatrix<int, ST>& src);
+
+  /// \brief Copy the local part of the Tpetra::MultiVector into the
+  ///   Teuchos::SerialDenseMatrix.
+  /// \relatesalso MultiVector
+  ///
+  /// \pre <tt>src.numRows() == dst.getLocalLength()</tt>
+  /// \pre <tt>src.numCols() == dst.getNumVectors()</tt>
+  template <class ST, class LO, class GO, class NT>
+  void
+  deep_copy (Teuchos::SerialDenseMatrix<int, ST>& dst,
+             const MultiVector<ST, LO, GO, NT>& src);
+#endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 
   /// \brief Return a deep copy of the given MultiVector.
   /// \relatesalso MultiVector
@@ -725,12 +758,14 @@ namespace Tpetra {
     /// MultiVector<> X (...); // the input MultiVector
     /// // ... fill X with data ...
     ///
+    /// using Teuchos::RCP;
+    ///
     /// // Map that on each process in X's communicator,
     /// // contains the global indices of the rows of X1.
-    /// Map<> map1 (...);
+    /// RCP<const Map<>> map1 (new Map<> (...));
     /// // Map that on each process in X's communicator,
     /// // contains the global indices of the rows of X2.
-    /// Map<> map2 (...);
+    /// RCP<const Map<>> map2 (new Map<> (...));
     ///
     /// // Create the first view X1.  The second argument, the offset,
     /// // is the index of the local row at which to start the view.
@@ -754,6 +789,16 @@ namespace Tpetra {
     /// offset may equal the number of local entries in
     /// <tt>*this</tt>.
     MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                 const Teuchos::RCP<const map_type>& subMap,
+                 const local_ordinal_type rowOffset = 0);
+
+    /// \brief "Offset view" constructor, that takes the new Map as a
+    ///   <tt>const Map&</tt> rather than by RCP.
+    ///
+    /// This constructor exists for backwards compatibility.  It
+    /// invokes the input Map's copy constructor, which is a shallow
+    /// copy.  Maps are immutable anyway, so the copy is harmless.
+    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
                  const map_type& subMap,
                  const size_t offset = 0);
 
@@ -769,14 +814,11 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2>& node2) const;
 
-    /// \brief Swaps the data from *this with the data and maps from mv
-    /// \param mv [in/out] a MultiVector
-    ///
-    /// Note: This is done with minimal copying of data
-    void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & mv);
+    //! Swap contents of \c mv with contents of \c *this.
+    void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
 
     //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector ();
+    virtual ~MultiVector () = default;
 
     //@}
     //! @name Post-construction modification routines
@@ -1393,21 +1435,32 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
-    /// \warning This method is scheduled for DEPRECATION.
+    /// \warning This method is DEPRECATED.  Do not call it any more.
     ///
-    /// \warning This method is ONLY for expert developers.  Its
-    ///   interface may change or it may disappear at any time.
+    /// If you want to sync or modify this MultiVector, call methods
+    /// with the same names as in <tt>Kokkos::DualView</tt>:
+    /// <ul>
+    /// <li> <tt>sync_device</tt> </li>
+    /// <li> <tt>sync_host</tt> </li>
+    /// <li> <tt>modify_device</tt> </li>
+    /// <li> <tt>modify_host</tt> </li>
+    /// </ul>
     ///
-    /// Instead of getting the Kokkos::DualView, we highly recommend
-    /// calling the templated getLocalView() method, that returns a
-    /// Kokkos::View of the MultiVector's data in a given memory
-    /// space.  Since that MultiVector itself implements DualView
-    /// semantics, it's much better to use MultiVector's interface to
-    /// do "DualView things," like calling modify(), need_sync(), and
-    /// sync().
-    dual_view_type getDualView () const;
+    /// If you want to get a Kokkos::View of this MultiVector's local
+    /// data, call <tt>getLocalViewDevice()</tt> to get a device-side
+    /// View, or <tt>getLocalViewHost()</tt> to get a host-side View.
+    ///
+    /// If you want to create a MultiVector that views this
+    /// MultiVector's local data, but with a different Map, use the
+    /// "offset view" constructor (see above).
+    dual_view_type TPETRA_DEPRECATED getDualView () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    //! Clear "modified" flags on both host and device sides.
+    void clear_sync_state ();
 
     /// \brief Update data on device or host only if data in the other
     ///   space has been marked as modified.
@@ -1429,34 +1482,26 @@ namespace Tpetra {
     ///   template parameter.
     template<class TargetDeviceType>
     void sync () {
-      getDualView ().template sync<TargetDeviceType> ();
+      view_.template sync<TargetDeviceType> ();
     }
 
     //! Synchronize to Host
-    inline void sync_host () {
-      getDualView().sync_host();
-    }
+    void sync_host ();
 
     //! Synchronize to Device
-    inline void sync_device () {
-      getDualView().sync_device();
-    }
+    void sync_device ();
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
     bool need_sync () const {
-      return getDualView ().template need_sync<TargetDeviceType> ();
+      return view_.template need_sync<TargetDeviceType> ();
     }
 
     //! Whether this MultiVector needs synchronization to the host.
-    inline bool need_sync_host () const {
-      return getDualView().need_sync_host();
-    }
+    bool need_sync_host () const;
 
     //! Whether this MultiVector needs synchronization to the device.
-    inline bool need_sync_device () const {
-      return getDualView().need_sync_device();
-    }
+    bool need_sync_device () const;
 
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
     ///
@@ -1465,18 +1510,15 @@ namespace Tpetra {
     /// Otherwise, mark the host's data as modified.
     template<class TargetDeviceType>
     void modify () {
-      getDualView ().template modify<TargetDeviceType> ();
+      view_.template modify<TargetDeviceType> ();
     }
 
-    /// \brief Mark data as modified on the device
-    inline void modify_device () {
-      getDualView().modify_device();
-    }
+    //! Mark data as modified on the device side.
+    void modify_device ();
 
-    /// \brief Mark data as modified on the host
-    inline void modify_host () {
-      getDualView().modify_host();
-    }
+    //! Mark data as modified on the host side.
+    void modify_host ();
+
     /// \brief Return a view of the local data on a specific device.
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
@@ -1516,18 +1558,14 @@ namespace Tpetra {
       typename dual_view_type::t_dev,
       typename dual_view_type::t_host>::type
     getLocalView () const {
-      return getDualView ().template view<TargetDeviceType> ();
+      return view_.template view<TargetDeviceType> ();
     }
 
-    /// Return a local view on the host
-    typename dual_view_type::t_host getLocalViewHost () const {
-      return getDualView().view_host();
-    }
+    //! A local Kokkos::View of host memory
+    typename dual_view_type::t_host getLocalViewHost () const;
 
-    /// Return a local view on the device
-    typename dual_view_type::t_dev getLocalViewDevice () const {
-      return getDualView().view_device();
-    }
+    //! A local Kokkos::View of device memory
+    typename dual_view_type::t_dev getLocalViewDevice () const;
 
     //@}
     //! @name Mathematical methods
@@ -1994,6 +2032,7 @@ namespace Tpetra {
       }
     }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Compute Weighted 2-norm (RMS Norm) of each column.
     ///
     /// \warning This method has been DEPRECATED.
@@ -2035,6 +2074,7 @@ namespace Tpetra {
         norms[i] = theNorms[i];
       }
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Compute mean (average) value of each column.
     ///

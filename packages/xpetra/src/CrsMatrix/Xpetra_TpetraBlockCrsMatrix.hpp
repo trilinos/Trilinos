@@ -321,7 +321,11 @@ namespace Xpetra {
 
     //! @name Overridden from Teuchos::LabeledObject
     //@{
-    void setObjectLabel( const std::string &objectLabel ) { XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel"); mtx_->setObjectLabel(objectLabel);}
+    void setObjectLabel( const std::string &objectLabel ) {
+      XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel");
+      Teuchos::LabeledObject::setObjectLabel(objectLabel);
+      mtx_->setObjectLabel(objectLabel);
+    }
     //@}
 
     //! Deep copy constructor

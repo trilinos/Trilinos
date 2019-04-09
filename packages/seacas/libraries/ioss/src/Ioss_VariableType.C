@@ -213,9 +213,7 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
     // This indicates a "component" variable type that is
     // constructed "on-the-fly" for use in Sierra
     //
-    // Maximum suffix size is 3.  If changed, then code in
-    // src/framewk/Frio_RestartUtils::variable_name_kluge must also
-    // be changed.
+    // Maximum suffix size is currently 5.
 
     char digits[6]; // Include trailing null
     assert(size < 100000);

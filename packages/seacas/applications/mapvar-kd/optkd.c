@@ -314,7 +314,6 @@ void KillOptTree(optkdNode *P)
   }
 
   free(P);
-  P = NULL;
 }
 
 void KDKILLTREE()

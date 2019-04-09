@@ -41,6 +41,7 @@
 #include <sys/types.h>                  // for int64_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
+#include <stk_util/stk_config.h>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -271,17 +272,18 @@ public:
   Part &declare_part_with_topology( const std::string &name, stk::topology::topology_t topology, bool arg_force_no_induce = false )
   {
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
-    Part* root_part = nullptr;
+
     stk::topology topo = topology;
     if (topo.is_super_topology()) {
-        root_part = &get_cell_topology_root_part(register_super_cell_topology(topo));
+      if (!has_topology_root_part(topo)) {
+        register_topology(topo);
+      }
     }
-    else {
-        root_part = &get_cell_topology_root_part(stk::mesh::get_cell_topology(topology));
-    }
-    EntityRank primary_entity_rank = root_part->primary_entity_rank();
+
+    Part & root_part = get_topology_root_part(topo);
+    EntityRank primary_entity_rank = root_part.primary_entity_rank();
     Part & part = declare_part(name, primary_entity_rank, arg_force_no_induce);
-    declare_part_subset(*root_part, part);
+    declare_part_subset(root_part, part);
     return part;
   }
 
@@ -526,6 +528,8 @@ public:
   /** \brief Return the topology part given a stk::topology.
    */
   Part &get_topology_root_part(stk::topology topology) const;
+
+  bool has_topology_root_part(stk::topology topology) const;
 
   /** \brief Return the cell topology associated with the given part.
    * The cell topology is set on a part through part subsetting with the root
@@ -1135,7 +1139,7 @@ MetaData::remove_attribute( FieldBase & field , const T * attribute )
 inline
 bool MetaData::check_rank(EntityRank rank) const
 {
-  return rank < m_entity_rank_names.size();
+  return rank < static_cast<EntityRank>(m_entity_rank_names.size());
 }
 
 inline

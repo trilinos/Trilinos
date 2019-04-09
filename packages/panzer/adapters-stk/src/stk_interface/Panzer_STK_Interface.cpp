@@ -897,7 +897,7 @@ void STK_Interface::buildMaxEntityIds()
 {
    // developed to mirror "comm_mesh_counts" in stk_mesh/base/Comm.cpp
 
-   const unsigned entityRankCount =  metaData_->entity_rank_count();
+   const auto entityRankCount =  metaData_->entity_rank_count();
    const size_t   commCount        = 10; // entityRankCount
 
    TEUCHOS_ASSERT(entityRankCount<10);
@@ -909,7 +909,8 @@ void STK_Interface::buildMaxEntityIds()
 
    // determine maximum ID for this processor for each entity type
    stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
-   for(stk::mesh::EntityRank i=stk::topology::NODE_RANK; i<entityRankCount; ++i) {
+   for(stk::mesh::EntityRank i=stk::topology::NODE_RANK;
+       i < static_cast<stk::mesh::EntityRank>(entityRankCount); ++i) {
       std::vector<stk::mesh::Entity> entities;
 
       stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(i),entities);
@@ -1222,7 +1223,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
-     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData)));
+     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(shards::CellTopology(ctData), dimension_));
    }
 
    // construct cell topology object for this block

@@ -534,8 +534,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   }
 
   if (globals.Num_Coordinate_Frames > 0) {
-    T *Coordinate_Frame_Coordinates = nullptr;
-    Coordinate_Frame_Coordinates    = globals.Coordinate_Frame_Coordinates;
+    T *Coordinate_Frame_Coordinates = globals.Coordinate_Frame_Coordinates;
     if (ex_put_coordinate_frames(mesh_exoid, globals.Num_Coordinate_Frames,
                                  globals.Coordinate_Frame_Ids, Coordinate_Frame_Coordinates,
                                  globals.Coordinate_Frame_Tags) < 0) {

@@ -162,6 +162,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   ViennaCL        "cmake/TPLs/"    EX
   Avatar          "cmake/TPLs/"    EX
   pebbl           "cmake/TPLs/"    EX
+  MAGMASparse     "cmake/TPLs/"    EX
   )
 
 # NOTES:

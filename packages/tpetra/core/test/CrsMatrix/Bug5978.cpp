@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug5978, SC, LO, GO, NT)
   // 4.3.3 from confusing the non-template method assign(size_type,
   // const T&) from the template method assign(Iter, Iter).
   count.assign (rowGIDs.size (), static_cast<size_t> (1));
-  MatrixType A (rowMap, colMap, count);
+  MatrixType A (rowMap, colMap, count ());
 
   out << "Proc " << myRank << ": Filling matrix" << endl;
   comm->barrier ();

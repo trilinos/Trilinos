@@ -600,7 +600,10 @@ public:
 
   //! @name Overridden from Teuchos::LabeledObject
   //@{
-  void setObjectLabel( const std::string &objectLabel ) { matrixData_->setObjectLabel(objectLabel);}
+  void setObjectLabel( const std::string &objectLabel ) {
+    Teuchos::LabeledObject::setObjectLabel(objectLabel);
+    matrixData_->setObjectLabel(objectLabel);
+  }
   //@}
 
 

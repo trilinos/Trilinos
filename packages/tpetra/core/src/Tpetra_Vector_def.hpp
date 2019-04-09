@@ -86,6 +86,14 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+          const Teuchos::RCP<const map_type>& map,
+          const local_ordinal_type rowOffset) :
+    base_type (source, map, rowOffset)
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Teuchos::RCP<const map_type>& map,
           const Teuchos::ArrayView<const Scalar>& values)
     : base_type (map, values, values.size (), 1)
@@ -210,6 +218,7 @@ namespace Tpetra {
     return norm;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type
   TPETRA_DEPRECATED
@@ -267,6 +276,7 @@ namespace Tpetra {
 
     return gblNrm;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

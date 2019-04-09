@@ -41,12 +41,9 @@ PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt-one-attrib create_mesh rd_wt_mesh \
 	testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
 	testrd-nfaced testwt-long-name testrd-long-name \
-	MakeTestData test_nemesis 
+	test_nemesis 
 
 all:: check
-
-MakeTestData: MakeTestData.o  $(LOCALEXO)
-	$(CC) -o $@ $(CFLAGS) MakeTestData.o   $(LIBS) $(LDFLAGS) 
 
 testwt:     testwt.o     $(LOCALEXO)
 	$(CC) -o $@ $(CFLAGS)     testwt.o   $(LIBS) $(LDFLAGS) 

@@ -395,7 +395,7 @@ TEST(CEOME, TwoElemGiveAllEntitiesToOneProcAndCheckParts)
         stk::mesh::Part * owned_part     = &meta.locally_owned_part();
         stk::mesh::Part * aura_part      = &meta.aura_part();
         stk::mesh::Part * elem_part = meta.get_part("elem_part");
-        stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
+        stk::mesh::Part * topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
         if(p_rank == 0)
         {
             EXPECT_TRUE(CEOUtils::check_parts(mesh, stk::mesh::EntityKey(stk::topology::ELEMENT_RANK, 2), universal_part, aura_part, elem_part, topo_part));

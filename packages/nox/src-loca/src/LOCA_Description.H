@@ -167,6 +167,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
               </ul>
                 </ul>
       <li> <B>"Compute Eigenvalues"</B> -- [bool] (default: false) Flag for requesting eigenvalue calculation after each continuation step
+      <li> <B>"Compute Eigenvalues On Target Step"</B> -- [bool] (default: false) Compute eigenvalues after last continuation step when attempting to hit parameter target
           <li> <B>"Eigensolver"</B> sublist -- used by LOCA::Eigensolver::Factory to determine eigensolver strategies
           <ul>
           <li> <B>"Method"</B> -- [string] (default "Default") Choices are

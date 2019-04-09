@@ -185,23 +185,24 @@ namespace Iogn {
 
     assert(m_generatedMesh != nullptr);
 
-    Ioss::Region *this_region = get_region();
-    auto glob_node_count = m_generatedMesh->node_count();
-    auto glob_elem_count = m_generatedMesh->element_count();
+    Ioss::Region *this_region     = get_region();
+    auto          glob_node_count = m_generatedMesh->node_count();
+    auto          glob_elem_count = m_generatedMesh->element_count();
 
     this_region->property_add(Ioss::Property("global_node_count", glob_node_count));
-    this_region->property_add(
-        Ioss::Property("global_element_count", glob_elem_count));
+    this_region->property_add(Ioss::Property("global_element_count", glob_elem_count));
 
     const int64_t two_billion = 2ll << 30;
-    if (( glob_node_count > two_billion || glob_elem_count > two_billion) && int_byte_size_api() == 4) {
+    if ((glob_node_count > two_billion || glob_elem_count > two_billion) &&
+        int_byte_size_api() == 4) {
       std::ostringstream errmsg;
-      errmsg << "The node count is " <<  glob_node_count << " and the element count is " << glob_elem_count
-	     << " which exceeds the capacity\nof the 32-bit integers (" << two_billion << ") which are being requested by the client.\n"
-	     << "This mesh requires 64-bit integers which can be requested by setting the `INTEGER_SIZE_API=8` property.";
+      errmsg << "The node count is " << glob_node_count << " and the element count is "
+             << glob_elem_count << " which exceeds the capacity\nof the 32-bit integers ("
+             << two_billion << ") which are being requested by the client.\n"
+             << "This mesh requires 64-bit integers which can be requested by setting the "
+                "`INTEGER_SIZE_API=8` property.";
       IOSS_ERROR(errmsg);
     }
-
 
     spatialDimension  = 3;
     nodeCount         = m_generatedMesh->node_count_proc();
