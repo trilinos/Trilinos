@@ -41,11 +41,13 @@
 // @HEADER
 */
 
+#include <utility>
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_FECrsGraph.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Assembly_Helpers.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
+
 
 namespace { // (anonymous)
 
@@ -118,6 +120,10 @@ public:
   RCP<const Tpetra::Map<LO,GO,Node> > overlapMap;
   std::vector<std::vector<GO> > element2node;
 
+  // NOTE: This is hardwired for 1D bar elements
+  typedef Kokkos::View<LO*[2], Kokkos::LayoutLeft, typename Node::device_type > k_element2node_type;
+  k_element2node_type k_element2node;
+
   void print(int rank, std::ostream & out) {
     using std::endl;
     out << "["<<rank<<"] Unique Map  : ";
@@ -169,6 +175,17 @@ void generate_fem1d_graph(size_t numLocalNodes, RCP<const Comm<int> > comm , Gra
     pack.element2node[i][0] = pack.uniqueMap->getGlobalElement(i);
     pack.element2node[i][1] = pack.uniqueMap->getGlobalElement(i) + 1;
   }
+
+  // Kokkos version of the element2node array
+  Kokkos::resize(pack.k_element2node,numLocalElements);
+  auto k_e2n = pack.k_element2node;
+  auto l_umap = pack.uniqueMap->getLocalMap();
+  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,numLocalElements),KOKKOS_LAMBDA(const size_t i) {
+      GO gid = l_umap.getGlobalElement(i);
+      k_e2n(i,0) = gid;
+      k_e2n(i,1) = gid+1;
+    });
+  Kokkos::fence();
 }
 
 //
@@ -287,6 +304,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   success = compare_final_graph_structure(out,g1,g2);
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
+
 
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, Node )
