@@ -42,7 +42,7 @@
 #include "rf_io_const.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR "6.16 (2016/08/25)"
+#define VER_STR "6.17 (2019/03/11)"
 
 extern void   check_exodus_error(int, const char *);
 extern double second(void);

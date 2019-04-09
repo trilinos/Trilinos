@@ -630,7 +630,6 @@ namespace {
   {
     const Ioss::NodeBlockContainer &         nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
-    int                                      id  = 1;
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -650,7 +649,6 @@ namespace {
       transfer_fields(*i, nb, Ioss::Field::MESH);
       transfer_fields(*i, nb, Ioss::Field::ATTRIBUTE);
       ++i;
-      ++id;
     }
     if (debug) {
       std::cerr << '\n';

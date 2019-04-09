@@ -1605,7 +1605,7 @@ TEST(BulkData, testFamilyTreeGhosting)
 
     MetaData meta_data(spatial_dim, entity_rank_names);
     const unsigned nodes_per_elem = 4, nodes_per_side = 2;
-    Part &elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4);
+    Part &elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
     meta_data.commit();
     BulkData mesh(meta_data, pm);
     int p_rank = mesh.parallel_rank();
@@ -1857,7 +1857,7 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
     const EntityRank side_rank = stk::topology::EDGE_RANK;
 
     stk::mesh::Part& side_part = meta_data.declare_part_with_topology("side_part", stk::topology::LINE_2);
-    stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4);
+    stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
 
     meta_data.commit();
 

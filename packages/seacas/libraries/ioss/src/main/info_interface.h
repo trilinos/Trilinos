@@ -49,13 +49,14 @@ namespace Info {
 
     bool parse_options(int argc, char **argv);
 
-    int  summary() const { return summary_; }
+    bool summary() const { return summary_; }
     bool check_node_status() const { return checkNodeStatus_; }
     bool compute_volume() const { return computeVolume_; }
     bool compute_bbox() const { return computeBBox_; }
     bool adjacencies() const { return adjacencies_; }
     bool ints_64_bit() const { return ints64Bit_; }
     bool list_groups() const { return listGroups_; }
+    bool show_config() const { return showConfig_; }
 
     int         surface_split_scheme() const { return surfaceSplitScheme_; }
     char        field_suffix_separator() const { return fieldSuffixSeparator_; }
@@ -85,9 +86,11 @@ namespace Info {
     bool listGroups_{false};
     bool useGenericNames_{false};
     bool disableFieldRecognition_{false};
+    bool showConfig_{false};
+    bool summary_{false};
+
     char fieldSuffixSeparator_{'_'};
 
-    int summary_{0};
     int surfaceSplitScheme_{1};
   };
 } // namespace Info

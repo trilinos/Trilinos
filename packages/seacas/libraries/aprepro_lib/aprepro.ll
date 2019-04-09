@@ -544,25 +544,25 @@ integer {D}+({E})?
 <INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME); 
                              file_must_exist = true; }
 <INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
-                             file_must_exist = !true; }
+                             file_must_exist = false; }
 <GET_FILENAME>.+")"{WS}"}"{NL}* {
   BEGIN(INITIAL); 
   {
     symrec *s;
-    int quoted = false;
+    int quoted = 0;
     char *pt = strchr(yytext, ')');
     *pt = '\0';
     /* Check to see if surrounded by double quote */ 
     if ((pt = strchr(yytext, '"')) != nullptr) {
       yytext++;
-      quoted = true;
+      quoted = 1;
     }
     if ((pt = strrchr(yytext, '"')) != nullptr) {
       *pt = '\0';
-      quoted = true;
+      quoted = 1;
     }
     
-    if (quoted == false) {
+    if (quoted == 0) {
       /* See if this is an aprepro variable referring to a name */
       s = aprepro.getsym(yytext);
       if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {

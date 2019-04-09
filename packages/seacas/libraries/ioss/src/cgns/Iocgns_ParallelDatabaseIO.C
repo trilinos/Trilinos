@@ -66,6 +66,7 @@
 #include "Ioss_ElementTopology.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_ParallelUtils.h"
@@ -220,9 +221,21 @@ namespace Iocgns {
   {
     if (m_cgnsFilePtr < 0) {
       int mode = is_input() ? CG_MODE_READ : CG_MODE_WRITE;
-      if (!is_input() && m_cgnsFilePtr == -2) {
-        // Writing multiple steps with a "flush" (cg_close() / cg_open())
-        mode = CG_MODE_MODIFY;
+      if (!is_input()) {
+        if (m_cgnsFilePtr == -2) {
+          // Writing multiple steps with a "flush" (cg_close() / cg_open())
+          mode = CG_MODE_MODIFY;
+        }
+        else {
+          // Check whether appending to existing file...
+          if (open_create_behavior() == Ioss::DB_APPEND) {
+            // Append to file if it already exists -- See if the file exists.
+            Ioss::FileInfo file = Ioss::FileInfo(decoded_filename());
+            if (file.exists()) {
+              mode = CG_MODE_MODIFY;
+            }
+          }
+        }
       }
 
       bool do_timer = false;
@@ -301,7 +314,19 @@ namespace Iocgns {
   void ParallelDatabaseIO::closeDatabase__() const
   {
     if (m_cgnsFilePtr != -1) {
+      bool do_timer = false;
+      Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
+      double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+
       CGCHECKM(cgp_close(m_cgnsFilePtr));
+
+      if (do_timer) {
+        double t_end    = Ioss::Utils::timer();
+        double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
+        if (myProcessor == 0) {
+          std::cerr << "File Close Time = " << duration << "\n";
+        }
+      }
     }
     m_cgnsFilePtr = -1;
   }

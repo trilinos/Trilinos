@@ -312,7 +312,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
         if (only_owner_can_change_parts)
         {
           PartVector add_parts(skin_parts);
-          add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( side_topology )));
+          add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part(side_topology) );
           mesh.change_entity_parts(side,add_parts);
         }
     }

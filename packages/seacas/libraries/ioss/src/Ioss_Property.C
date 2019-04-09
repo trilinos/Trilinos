@@ -153,10 +153,8 @@ Ioss::Property::Property(const Ioss::GroupingEntity *ge, std::string name, const
  *  \param[in] from The Ioss::Property to copy
  */
 Ioss::Property::Property(const Ioss::Property &from)
+    : name_(from.name_), type_(from.type_), isImplicit_(from.isImplicit_)
 {
-  name_       = from.name_;
-  type_       = from.type_;
-  isImplicit_ = from.isImplicit_;
   if (!isImplicit_ && type_ == STRING) {
     data_.sval = new std::string(*(from.data_.sval));
   }

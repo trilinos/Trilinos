@@ -167,7 +167,7 @@ struct create_face_impl
                       m_count_faces++;
 
                       PartVector add_parts;
-                      add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology)));
+                      add_parts.push_back( & mesh.mesh_meta_data().get_topology_root_part(faceTopology) );
 
                       face = mesh.declare_solo_side(face_id, add_parts);
                       m_face_map[permuted_face_nodes] = face;
@@ -193,7 +193,7 @@ struct create_face_impl
               else { //
                   topology faceTopology = elemTopology.face_topology(side_ordinal);
                   stk::mesh::Entity elem = m_bucket[ielem];
-                  stk::mesh::Part & face_topology_part = mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology));
+                  stk::mesh::Part & face_topology_part = mesh.mesh_meta_data().get_topology_root_part(faceTopology);
                   stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(
                           mesh, elem, side_ordinal, m_available_ids[m_count_faces], stk::mesh::PartVector(1,&face_topology_part));
                   if (mesh.identifier(new_face) == m_available_ids[m_count_faces]) {

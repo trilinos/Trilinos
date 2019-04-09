@@ -269,6 +269,40 @@ c
       call debug('RDA1')
       CALL RDA1 (A(NAX),A(NAY),A(NAZ),A(NADX),A(NADY),A(NADZ))
 C
+C
+C ... Mapvar is buggy if mesh contains:
+C     * nodal variable(s)
+C     * multiple element blocks
+C     * multiple timesteps
+C
+C     The interpolated mesh will have invalid values for most of the
+C     nodes except for those connected to the last element block.
+C     Since this is not what the user wants. We check this situation
+C     here and then refuse to run...
+      if (nvarnp .gt. 0) then
+        if (ntimes .gt. 1 .and. nblksa .gt. 1) then
+        write (*,500)
+ 500      format(10x,/,
+     *      'FATAL ERROR: Mapvar is buggy and cannot correctly'
+     *      ' handle interpolating a mesh with nodal variables,',
+     *      /,14x,'multiple timesteps and multiple element blocks.',
+     *      /,14x'See https://github.com/gsjaardema/seacas/packages'
+     *      '/seacas/MAPVAR.md')
+        stop('INTERNAL ERROR')
+      end if
+
+C ... Warn if multiple blocks...
+        if (ntimes .gt. 1 .and. nblksa .gt. 1) then
+          write (*,600)
+ 600      format(10x,/,
+     *      'WARNING: Mapvar is buggy and might not correctly'
+     *      ' handle interpolating a mesh with nodal variables',
+     *      /,9x,'and multiple element blocks. Shared nodes',
+     *      ' might be incorrect.',
+     *      /,9x'See https://github.com/gsjaardema/seacas/packages'
+     *      '/seacas/MAPVAR.md')
+        end if
+      end if
       call mddel('DISXA')
       call mddel('DISYA')
       call mddel('DISZA')

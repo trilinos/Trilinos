@@ -10,7 +10,6 @@ ne_get_init_global    |      ex_get_init_global()
 ne_put_init_global    |      ex_put_init_global()
 ne_put_version        |      ex_put_nemesis_version()
 
-
 \section lb Loadbalance Parameter Routines
 
 Nemesis API	      |      Exodus API
@@ -84,4 +83,3 @@ ne_put_node_cmap        |     ex_put_node_cmap()
 ne_get_elem_cmap        |     ex_get_elem_cmap()
 ne_put_elem_cmap        |     ex_put_elem_cmap()
 ne_get_idx              |     ex_get_idx()
-

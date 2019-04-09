@@ -67,7 +67,7 @@ namespace MatrixMatrix {
                                        size_t m, double thread_chunk,
                                        OutRowptrType & Outrowptr, OutColindType &Outcolind, OutValsType & Outvals);
 
-    /***************************** OpenMP Only Kernels *****************************/
+    /***************************** Matrix-Matrix OpenMP Only Kernels *****************************/
 #ifdef HAVE_TPETRA_INST_OPENMP
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
     static inline void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
@@ -122,13 +122,13 @@ namespace MatrixMatrix {
                                                                      const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
 
-    /***************************** Generic Kernels *****************************/
+    /***************************** Matrix-Matrix Generic Kernels *****************************/
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
     static inline void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
                                                                    const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Node> & Dinv,
                                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                                   const LocalOrdinalViewType & Acol2Brow,
+                                                                   const LocalOrdinalViewType & Acol2rrow,
                                                                    const LocalOrdinalViewType & Acol2Irow,
                                                                    const LocalOrdinalViewType & Bcol2Ccol,
                                                                    const LocalOrdinalViewType & Icol2Ccol,
@@ -136,6 +136,24 @@ namespace MatrixMatrix {
                                                                    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
                                                                    const std::string& label,
                                                                    const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+
+    /***************************** Triple Product OpenMP Only Kernels *****************************/
+#ifdef HAVE_TPETRA_INST_OPENMP
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
+    static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Rview,
+                                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Pview,
+                                                                     const LocalOrdinalViewType & Acol2Prow,
+                                                                     const LocalOrdinalViewType & Acol2PIrow,
+                                                                     const LocalOrdinalViewType & Pcol2Accol,
+                                                                     const LocalOrdinalViewType & PIcol2Accol,
+                                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Ac,
+                                                                     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Acimport,
+                                                                     const std::string& label = std::string(),
+                                                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif
+
 
   }// ExtraKernels
 }//MatrixMatrix
