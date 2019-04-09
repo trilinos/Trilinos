@@ -251,12 +251,6 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsGraph(rowMap,maxNumEntriesPerRow,"
       "pftype,params): ";
     staticAssertions ();
@@ -301,12 +295,6 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,"
       "pftype,params): ";
     staticAssertions ();
@@ -349,12 +337,6 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
     staticAssertions ();
 
@@ -504,12 +486,6 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
     staticAssertions ();
 
@@ -571,12 +547,6 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
     staticAssertions ();
 
@@ -637,12 +607,6 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_ (true)
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsGraph(rowMap,colMap,numEntPerRow,pftype,"
       "params): ";
     staticAssertions ();

@@ -160,11 +160,6 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
       "ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
@@ -236,12 +231,6 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
@@ -279,12 +268,6 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "size_t, ProfileType[, RCP<ParameterList>]): ";
 
@@ -335,12 +318,6 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-#ifndef TPETRA_ENABLE_DEPRECATED_CODE
-#if (pftype == DynamicProfile)
-#error("DynamicProfile unsupported without TPETRA_ENABLE_DEPRECATED_CODE")
-#endif
-#endif
-
     const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
       "ArrayView<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
