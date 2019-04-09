@@ -46,6 +46,7 @@
 #include "Teuchos_CommHelpers.hpp"
 #include <iterator>
 #include <set>
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
 namespace Tpetra {
 namespace Details {
@@ -68,9 +69,12 @@ namespace Details {
   // newEntries into allEntries and make the results unique.  (This is
   // cheaper than sorting the whole array.)
   //
+  // \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+  //   and will DISAPPEAR VERY SOON.
+  //
   // \return A view of all the entries (current and new) in allEntries.
   template<class T>
-  Teuchos::ArrayView<T>
+  Teuchos::ArrayView<T> TPETRA_DEPRECATED
   sortAndMergeIn (Teuchos::Array<T>& allEntries,
                   Teuchos::ArrayView<T> currentEntries,
                   Teuchos::ArrayView<T> newEntries)
@@ -107,7 +111,7 @@ namespace Details {
   ///
   /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
-  class MultiVectorFillerData {
+  class TPETRA_DEPRECATED MultiVectorFillerData {
   public:
     typedef typename MV::scalar_type scalar_type;
     typedef typename MV::local_ordinal_type local_ordinal_type;
@@ -366,7 +370,7 @@ namespace Details {
   ///
   /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
-  class MultiVectorFillerData2 : public Teuchos::Describable {
+  class TPETRA_DEPRECATED MultiVectorFillerData2 : public Teuchos::Describable {
   public:
     typedef typename MV::scalar_type scalar_type;
     typedef typename MV::local_ordinal_type local_ordinal_type;
@@ -972,7 +976,7 @@ namespace Tpetra {
   ///
   /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
-  class MultiVectorFiller {
+  class TPETRA_DEPRECATED MultiVectorFiller {
   public:
     typedef typename MV::scalar_type scalar_type;
     typedef typename MV::local_ordinal_type local_ordinal_type;
@@ -1394,7 +1398,7 @@ namespace Tpetra {
     ///
     /// \tparam MV A specialization of Tpetra::MultiVector.
     template<class MV>
-    class MultiVectorFillerTester {
+    class TPETRA_DEPRECATED MultiVectorFillerTester {
     public:
       typedef typename MV::scalar_type scalar_type;
       typedef typename MV::local_ordinal_type local_ordinal_type;
@@ -1661,5 +1665,6 @@ namespace Tpetra {
   } // namespace Test
 } // namespace Tpetra
 
+#endif// TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif // __Tpetra_MultiVectorFiller_hpp
