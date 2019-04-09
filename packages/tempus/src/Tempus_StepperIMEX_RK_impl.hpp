@@ -247,11 +247,9 @@ void StepperIMEX_RK<Scalar>::setExplicitTableau(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  explicitTableau_ = createRKBT<Scalar>(stepperType,pList);
-  TEUCHOS_TEST_FOR_EXCEPTION(explicitTableau_->isImplicit() == true,
-    std::logic_error,
-       "Error - Received an implicit Tableau for setExplicitTableau()!\n"
-    << "  Stepper Type = " << stepperType << "\n");
+  Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau =
+    createRKBT<Scalar>(stepperType,pList);
+  this->setExplicitTableau(explicitTableau);
 }
 
 
@@ -261,8 +259,8 @@ void StepperIMEX_RK<Scalar>::setExplicitTableau(
 {
   TEUCHOS_TEST_FOR_EXCEPTION(explicitTableau->isImplicit() == true,
     std::logic_error,
-       "Error - Received an implicit Tableau for setExplicitTableau()!\n"
-    << "  explicitTableau = " << explicitTableau->description() << "\n");
+    "Error - Received an implicit Tableau for setExplicitTableau()!\n" <<
+    "        Tableau = " << explicitTableau->description() << "\n");
   explicitTableau_ = explicitTableau;
 }
 
@@ -272,14 +270,9 @@ void StepperIMEX_RK<Scalar>::setImplicitTableau(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  implicitTableau_ = createRKBT<Scalar>(stepperType,pList);
-  //Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  //Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  //implicitTableau_->describe(*out,verbLevel);
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau_->isDIRK() != true,
-    std::logic_error,
-       "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n"
-    << "  Stepper Type = " << stepperType << "\n");
+  Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau =
+    createRKBT<Scalar>(stepperType,pList);
+  this->setImplicitTableau(implicitTableau);
 }
 
 
@@ -287,10 +280,10 @@ template<class Scalar>
 void StepperIMEX_RK<Scalar>::setImplicitTableau(
   Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau_->isDIRK() != true,
+  TEUCHOS_TEST_FOR_EXCEPTION( implicitTableau->isDIRK() != true,
     std::logic_error,
-       "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n"
-    << "  implicitTableau = " << implicitTableau->description() << "\n");
+    "Error - Did not receive a DIRK Tableau for setImplicitTableau()!\n" <<
+    "        Tableau = " << implicitTableau->description() << "\n");
   implicitTableau_ = implicitTableau;
 }
 
