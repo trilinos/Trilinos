@@ -147,13 +147,13 @@ namespace Xpetra {
     GlobalOrdinal getMaxAllGlobalIndex() const { return 0; }
 
     //! The local index corresponding to the given global index.
-    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { return 0; }
+    LocalOrdinal getLocalElement(GlobalOrdinal /* globalIndex */) const { return 0; }
 
     //! Return the process ranks and corresponding local indices for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { return Xpetra::IDNotPresent; }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */, const Teuchos::ArrayView< LocalOrdinal > &/* LIDList */) const { return Xpetra::IDNotPresent; }
 
     //! Return the process ranks for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return Xpetra::IDNotPresent; }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */) const { return Xpetra::IDNotPresent; }
 
     //! Return a view of the global indices owned by this process.
     //Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
@@ -165,10 +165,10 @@ namespace Xpetra {
     //@{
 
     //! Whether the given local index is valid for this Map on this process.
-    bool isNodeLocalElement(LocalOrdinal localIndex) const { return false; }
+    bool isNodeLocalElement(LocalOrdinal /* localIndex */) const { return false; }
 
     //! Whether the given global index is valid for this Map on this process.
-    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { return false; }
+    bool isNodeGlobalElement(GlobalOrdinal /* globalIndex */) const { return false; }
 
     //! True if this Map is distributed contiguously, else false.
     bool isContiguous() const { return false; }
@@ -177,10 +177,10 @@ namespace Xpetra {
     bool isDistributed() const { return false; }
 
     //! True if and only if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return false; }
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &/* map */) const { return false; }
 
     //! True if and only if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return false; }
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &/* map */) const { return false; }
 
     //@}
 
@@ -205,7 +205,7 @@ namespace Xpetra {
     std::string description() const { return std::string(""); }
 
     //! Print this object with the given verbosity level to the given Teuchos::FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  }
+    void describe(Teuchos::FancyOStream &/* out */, const Teuchos::EVerbosityLevel /* verbLevel */=Teuchos::Describable::verbLevel_default) const {  }
 
     //@}
 
@@ -216,12 +216,12 @@ namespace Xpetra {
     RCP<const Map<int,GlobalOrdinal,Node> > removeEmptyProcesses() const { return Teuchos::null; }
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const { return Teuchos::null; }
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const { return Teuchos::null; }
 
     //@}
 
     //! Return the global index for a given local index.  Note that this returns -1 if not found on this processor.  (This is different than Epetra's behavior!)
-    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return -1; }
+    GlobalOrdinal getGlobalElement(LocalOrdinal /* localIndex */) const { return -1; }
 
     //! @name Xpetra specific
     //@{
@@ -290,7 +290,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
+               const Teuchos::RCP< Node > &/* node */ = Teuchos::rcp(new Node))
     {
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
@@ -342,7 +342,7 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Teuchos::rcp(new Node))
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &/* node */=Teuchos::rcp(new Node))
     {
       // This test come from Tpetra
       using Teuchos::outArg;
@@ -446,7 +446,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
+               const Teuchos::RCP< Node > &/* node */ = Teuchos::rcp(new Node))
     {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, static_cast<int>(elementList.size()), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
@@ -650,7 +650,7 @@ namespace Xpetra {
     }
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
       throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
@@ -817,7 +817,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+               const Teuchos::RCP< Node > &/* node */ = Teuchos::rcp(new Node)) {
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
       std::string errPrefix;
@@ -868,7 +868,7 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Teuchos::rcp(new Node)) {
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &/* node */=Teuchos::rcp(new Node)) {
       // This test come from Tpetra
       using Teuchos::outArg;
 
@@ -971,7 +971,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
+               const Teuchos::RCP< Node > &/* node */ = Teuchos::rcp(new Node)) {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
       } else {
@@ -1174,7 +1174,7 @@ namespace Xpetra {
     }
 
     //! Replace this Map's communicator with a subset communicator.
-    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
+    RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
       throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
       // return Teuchos::null; // unreachable
     }

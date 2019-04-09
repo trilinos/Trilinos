@@ -104,7 +104,7 @@ namespace Xpetra {
   // This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
   template<class SC,class LO,class GO,class NO>
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
-  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB) {
+  Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &/* epAB */) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
       "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
