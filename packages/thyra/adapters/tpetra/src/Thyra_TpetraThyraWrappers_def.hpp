@@ -90,7 +90,7 @@ getOrCreateLocallyReplicatedTpetraVectorSpace(
   }
   else {
     tpetraSpace = tpetraVectorSpace<Scalar>(
-      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
         numCols, tpetraComm
         )
       );
