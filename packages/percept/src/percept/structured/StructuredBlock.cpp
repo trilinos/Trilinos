@@ -157,12 +157,14 @@ namespace percept {
     sgi->m_boundaryConditions.emplace_back("BCWall",    Ioss::IJK_t({{1,          1,                   1}}), Ioss::IJK_t({{isize[0], isize[1],          1}}) );
     sgi->m_boundaryConditions.emplace_back("BCWall",    Ioss::IJK_t({{1,          1,          isize[2]}}), Ioss::IJK_t({{isize[0], isize[1], isize[2]}}) );
 
+#if HAVE_CGNS
     sgi->m_bc_types.push_back(CGNS_ENUMV( BCInflow ));
     sgi->m_bc_types.push_back(CGNS_ENUMV( BCOutflow ));
     sgi->m_bc_types.push_back(CGNS_ENUMV( BCWall ));
     sgi->m_bc_types.push_back(CGNS_ENUMV( BCWall ));
     sgi->m_bc_types.push_back(CGNS_ENUMV( BCWall ));
     sgi->m_bc_types.push_back(CGNS_ENUMV( BCWall ));
+#endif
 
     return sgi;
   }

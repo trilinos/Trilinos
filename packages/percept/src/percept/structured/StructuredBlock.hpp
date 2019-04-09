@@ -14,7 +14,9 @@
 
 #include <Ioss_StructuredBlock.h>
 
+#if HAVE_CGNS
 #include <cgnslib.h>
+#endif
 
 #include <percept/function/MDArray.hpp>
 #include <percept/MeshType.hpp>
@@ -58,7 +60,9 @@ namespace percept {
     // boundary condition info - either (ilo,jlo,klo),(ihi,jhi,khi) or specify each point (i,j,k)
     std::vector<Ioss::BoundaryCondition> m_boundaryConditions;
     //enum FaceDir { FACE_I_MIN, FACE_I_MAX, FACE_J_MIN, FACE_J_MAX, FACE_K_MIN, FACE_K_MAX };
+#if HAVE_CGNS
     std::vector<CG_BCType_t> m_bc_types;
+#endif
 
     std::vector<Ioss::ZoneConnectivity> m_zoneConnectivity;
 

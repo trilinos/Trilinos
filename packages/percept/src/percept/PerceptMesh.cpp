@@ -1952,7 +1952,7 @@
       m_comm          = comm;
       m_ownData       = true;
 
-#if defined(STK_PERCEPT_LITE) &&  !STK_PERCEPT_LITE
+#if HAVE_CGNS
       m_iocgns_init.reset(new Iocgns::Initializer());
 #endif
       set_io_broker( new stk::io::StkMeshIoBroker(comm) );

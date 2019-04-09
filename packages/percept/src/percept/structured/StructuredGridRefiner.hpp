@@ -10,7 +10,7 @@
 #define percept_StructuredGridRefiner_hpp
 
 #include <percept/structured/BlockStructuredGrid.hpp>
-#if !STK_PERCEPT_LITE
+#if HAVE_CGNS
 #  if defined(STK_BUILT_IN_SIERRA)
 #    include <cgns/Iocgns_DatabaseIO.h>
 #  else

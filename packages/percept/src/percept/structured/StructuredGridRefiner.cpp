@@ -35,6 +35,7 @@ namespace percept {
 
   unsigned StructuredGridRefiner::do_refine_structured()
   {
+#if HAVE_CGNS
     m_output->m_sblocks.resize(0);
     const int my_rank = stk::parallel_machine_rank(m_output->m_comm);
 
@@ -164,6 +165,7 @@ namespace percept {
     }
 
     return num_refined_cells;
+#endif
   }
 
   unsigned StructuredGridRefiner::do_refine()

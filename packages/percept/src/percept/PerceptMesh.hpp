@@ -59,8 +59,8 @@
 #include <Ioss_SubSystem.h>
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#if !STK_PERCEPT_LITE
 
+#if HAVE_CGNS
 #  if defined(STK_BUILT_IN_SIERRA)
 #    include <cgns/Iocgns_Initializer.h>
 #  else
@@ -1214,7 +1214,7 @@ private:
       bool m_markNone;
     private:
 
-#if !STK_PERCEPT_LITE
+#if HAVE_CGNS
       std::shared_ptr<Iocgns::Initializer> m_iocgns_init;
 #endif
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
