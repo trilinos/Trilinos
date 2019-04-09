@@ -453,7 +453,7 @@ namespace Belos {
              << "\"" << endl;
         const bool callFillComplete = true;
         RCP<sparse_matrix_type> A =
-          reader_type::readSparseFile (filename, comm_, node_, callFillComplete,
+          reader_type::readSparseFile (filename, comm_, callFillComplete,
                                        tolerant_, debug_);
         return A;
       }

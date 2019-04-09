@@ -296,8 +296,6 @@ namespace Tpetra {
 
     ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
     ArrayView<const GO> targetGIDs = target->getNodeElementList ();
-    const size_type numSrcGids = sourceGIDs.size ();
-    const size_type numTgtGids = targetGIDs.size ();
 
     Array<GO> tRemoteGIDs;
     if (this->verbose ()) {

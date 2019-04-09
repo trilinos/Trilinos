@@ -60,13 +60,14 @@
 
 namespace TpetraExamples
 {
-using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
-int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts);
+int executeLocalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                               const struct CmdLineOpts& opts);
 
 
 
-int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
+int executeLocalElementLoopDP(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                              const struct CmdLineOpts & opts)
 {
   using Teuchos::RCP;
 
@@ -89,7 +90,8 @@ int executeLocalElementLoopDP(const comm_ptr_t& comm, const struct CmdLineOpts &
 
 
 
-int executeLocalElementLoopDP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
+int executeLocalElementLoopDP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                               const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;

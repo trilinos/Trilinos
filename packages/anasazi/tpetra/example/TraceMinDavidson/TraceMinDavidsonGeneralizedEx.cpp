@@ -133,9 +133,8 @@ int main(int argc, char *argv[]) {
   //
   // Read the matrices from a file
   //
-  RCP<Tpetra::Map<>::node_type> node; // can be null
-  RCP<const CrsMatrix> K = Reader::readSparseFile(filenameA, comm, node);
-  RCP<const CrsMatrix> M = Reader::readSparseFile(filenameB, comm, node);
+  RCP<const CrsMatrix> K = Reader::readSparseFile(filenameA, comm);
+  RCP<const CrsMatrix> M = Reader::readSparseFile(filenameB, comm);
 
   //
   // Compute the norm of the matrix
