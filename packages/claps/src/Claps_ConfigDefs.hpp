@@ -44,6 +44,10 @@
 #ifndef EPETRA_CONFIGDEFS_H
 #define EPETRA_CONFIGDEFS_H
 
+#ifdef __GNUC__
+#  warning "The package Claps is deprecated in April 2019; it will be removed from Trilinos in May 2019."
+#endif
+
 #ifndef __cplusplus
 #define __cplusplus
 #endif
