@@ -9,6 +9,8 @@
 #ifndef GeometryRecoverySplineFit_hpp
 #define GeometryRecoverySplineFit_hpp
 
+#if HAVE_OPENNURBS
+
 #include <percept/PerceptMesh.hpp>
 
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
@@ -56,4 +58,6 @@
     };
 
   }
+#endif
+
 #endif

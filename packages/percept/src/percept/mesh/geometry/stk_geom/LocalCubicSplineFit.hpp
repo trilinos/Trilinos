@@ -9,6 +9,8 @@
 #ifndef LocalCubicSplineFit_hpp
 #define LocalCubicSplineFit_hpp
 
+#if HAVE_OPENNURBS
+
 #include <percept/mesh/geometry/stk_geom/BSplineFit.hpp>
 
   namespace geom {
@@ -24,5 +26,7 @@
     };
 
   }
+
+#endif
 
 #endif

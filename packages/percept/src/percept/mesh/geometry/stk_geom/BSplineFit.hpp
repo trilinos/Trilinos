@@ -9,6 +9,8 @@
 #ifndef BSplineFit_hpp
 #define BSplineFit_hpp
 
+#if HAVE_OPENNURBS
+
 #include <percept/mesh/geometry/stk_geom/SplineFit.hpp>
 
   namespace geom {
@@ -74,5 +76,7 @@
       ON_NurbsCurve *m_curve;
     };
   }
+
+#endif
 
 #endif

@@ -9,6 +9,8 @@
 #ifndef SplineFit_hpp
 #define SplineFit_hpp
 
+#if HAVE_OPENNURBS
+
 #include <stdexcept>
 #include <iostream>
 #include <vector>
@@ -52,5 +54,7 @@
     std::ostream& operator<<(std::ostream& out, const Point3D& pt);
     std::ostream& operator<<(std::ostream& out, const Vector3D& pt);
   }
+
+#endif
 
 #endif

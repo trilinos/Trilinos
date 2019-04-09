@@ -9,6 +9,8 @@
 #ifndef GEOMETRYKERNEL_OPENNURBS_HPP
 #define GEOMETRYKERNEL_OPENNURBS_HPP
 
+#if HAVE_OPENNURBS
+
 #include <opennurbs.h>
 #include <percept/mesh/geometry/kernel/GeometryKernel.hpp>
 
@@ -39,4 +41,7 @@ private:
     ONX_Model onModel;
 };
 }
+
+#endif
+
 #endif // GEOMETRYKERNEL_OPENNURBS_HPP

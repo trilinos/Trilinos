@@ -9,6 +9,8 @@
 #ifndef Point_hpp
 #define Point_hpp
 
+#if HAVE_OPENNURBS
+
 #include <opennurbs.h>
 #include <vector>
 
@@ -23,4 +25,7 @@
     typedef std::vector<Point3D> Points3D;
 
   }
+
+#endif
+
 #endif

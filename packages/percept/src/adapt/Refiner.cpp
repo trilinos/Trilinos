@@ -10,6 +10,7 @@
 #include <fstream>
 #include <set>
 #include <typeinfo>
+#include <sys/stat.h>
 
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
@@ -30,7 +31,9 @@
 
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
 #include <percept/mesh/geometry/kernel/GeometryKernelGregoryPatch.hpp>
+#if HAVE_OPENNURBS
 #include <percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
+#endif
 #if HAVE_CUBIT
 #include <percept/mesh/geometry/kernel/GeometryKernelPGEOM.hpp>
 #endif
@@ -1444,7 +1447,11 @@
               }
             else
               {
+#if HAVE_OPENNURBS
                 geomKernel = new GeometryKernelOpenNURBS();
+#else
+                throw std::runtime_error("OPENNURBS not supported on this platform");
+#endif
               }
           }
         else if (geomFile.find(".e") != std::string::npos || geomFile.find(".g") != std::string::npos || geomFile.find(".exo") != std::string::npos)

@@ -47,7 +47,9 @@
 
 #  if defined( STK_PERCEPT_HAS_GEOMETRY )
 
+#if HAVE_OPENNURBS
 #include <percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
+#endif
 #include <percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <percept/mesh/geometry/kernel/GeometryFactory.hpp>
 
@@ -4817,7 +4819,7 @@
 
     void PerceptMesh::remove_geometry_blocks_on_output(std::string geometry_file_name)
     {
-#if defined(STK_PERCEPT_HAS_GEOMETRY)
+#if HAVE_OPENNURBS
       GeometryKernelOpenNURBS gk;
       // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
       double doCheckMovement = 0.0;
@@ -5889,7 +5891,7 @@
 
     void PerceptMesh::setup_geometry_parts(const std::string& geometry_file_name)
     {
-#if defined(STK_PERCEPT_HAS_GEOMETRY)
+#if HAVE_OPENNURBS
       if (geometry_file_name.size() == 0) return;
       if (geometry_file_name.find(".3dm") == std::string::npos)
         return;

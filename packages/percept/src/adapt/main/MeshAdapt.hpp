@@ -64,7 +64,9 @@
 #include <percept/DihedralAngleCheck.hpp>
 #include <percept/mesh/geometry/stk_geom/LocalCubicSplineFit.hpp>
 #endif
+#if HAVE_OPENNURBS
 #include <percept/mesh/geometry/recovery/GeometryRecoverySplineFit.hpp>
+#endif
 
 #define ALLOW_MEM_TEST 1
 
@@ -230,7 +232,9 @@ namespace percept {
     int main(int argc, char **argv);
 
     std::shared_ptr<FitGregoryPatches> fitter; // 3D
+#if HAVE_OPENNURBS
     std::shared_ptr<GeometryRecoverySplineFit> grsf; // 2D
+#endif
 
     std::shared_ptr<UniformRefinerPatternBase> pattern;
     std::shared_ptr<Refiner> refiner;

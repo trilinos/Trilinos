@@ -9,6 +9,8 @@
 #ifndef LocalQuadraticRationalSplineFit_hpp
 #define LocalQuadraticRationalSplineFit_hpp
 
+#if HAVE_OPENNURBS
+
 #include <percept/mesh/geometry/stk_geom/BSplineFit.hpp>
 
   namespace geom {
@@ -21,5 +23,7 @@
     };
 
   }
+
+#endif
 
 #endif

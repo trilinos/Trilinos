@@ -6,6 +6,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#if HAVE_OPENNURBS
+
 #include <iostream>
 #include <typeinfo>
 #include <stdexcept>
@@ -194,3 +196,5 @@ bool GeometryKernelOpenNURBS::debug_is_surface(int geom) const
 }
 
 } //namespace percept
+
+#endif

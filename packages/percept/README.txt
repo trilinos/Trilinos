@@ -5,7 +5,7 @@
 
 mkdir BUILD
 cd BUILD
-export TRILINOS_DIR=/home/rppawlo/BUILD_SEMS/Trilinos
+export TRILINOS_DIR=/gpfs1/bcarnes/percept_trilinos
 . $TRILINOS_DIR/packages/percept/scripts/set_env_gcc.sh 
 $TRILINOS_DIR/packages/percept/scripts/build_gcc.sh 
 ninja

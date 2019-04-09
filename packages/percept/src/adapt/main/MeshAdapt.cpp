@@ -6,7 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-
+#include <sys/stat.h>
 
 #include <adapt/main/MeshAdapt.hpp>
 #include <Teuchos_RCPStdSharedPtrConversions.hpp>
@@ -1111,6 +1111,7 @@ namespace percept {
         eMeshP->add_input_field(eMeshP->m_node_normals);
       }
 
+#if HAVE_OPENNURBS
     grsf.reset(new GeometryRecoverySplineFit(*eMeshP, fit_angle));
 #if defined(STK_PERCEPT_HAS_GEOMETRY)
     if (fit_geometry_file != "")
@@ -1121,6 +1122,7 @@ namespace percept {
     std::ostringstream oss;
     oss << "\nERROR: Geometry and/or smoothing is not currently supported on this platform. Try running with geometry turned off.";
     throw std::runtime_error(oss.str());
+#endif
 #endif
   }
   void MeshAdapt::mesh_based_geometry_fitting()
@@ -1138,10 +1140,12 @@ namespace percept {
       }
 
 #if defined(STK_PERCEPT_HAS_GEOMETRY)
+#if HAVE_OPENNURBS
     if (fit_geometry_file != "")
       {
         grsf->fit_geometry(fit_geometry_file);
       }
+#endif
 #endif
   }
 
@@ -2091,8 +2095,10 @@ namespace percept {
 #if defined( STK_PERCEPT_HAS_GEOMETRY )
     if (dump_geometry_file && input_geometry.find(".3dm") != std::string::npos)
       {
+#if HAVE_OPENNURBS
         GeometryKernelOpenNURBS gko;
         gko.debug_dump_file(input_geometry);
+#endif
       }
 #endif
 
