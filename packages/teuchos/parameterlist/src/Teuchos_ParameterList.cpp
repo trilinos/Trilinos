@@ -78,17 +78,9 @@ namespace Teuchos {
 // Constructors/Destructor/Info
 
 
-ParameterList::ParameterList()
-  :name_("ANONYMOUS"), disableRecursiveValidation_(false),
-   disableRecursiveModification_(false), disableRecursiveReconciliation_(false)
-{}
-
-
 ParameterList::ParameterList(const std::string &name_in,
     RCP<const ParameterListModifier> const& modifier_in)
-  :name_(name_in), disableRecursiveValidation_(false),
-   disableRecursiveModification_(false), disableRecursiveReconciliation_(false),
-   modifier_(modifier_in)
+  :name_(name_in), shortname_(name_in), modifier_(modifier_in)
 {}
 
 

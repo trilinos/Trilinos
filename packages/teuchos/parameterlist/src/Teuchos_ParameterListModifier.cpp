@@ -47,17 +47,14 @@
 namespace Teuchos {
 
 
-// Constructors
-
-
-ParameterListModifier::ParameterListModifier()
-  :name_("ANONYMOUS")
-{}
-
-
+// Constructors and/or destructors
 ParameterListModifier::ParameterListModifier(const std::string &name_in)
   :name_(name_in)
 {}
+
+ParameterListModifier::~ParameterListModifier()
+{}
+
 
 void ParameterListModifier::printDoc(std::string const& docString, std::ostream &out) const{
   StrUtils::printLines(out,"# ",docString);

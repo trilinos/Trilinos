@@ -73,10 +73,13 @@ public:
   //@{
 
   //! Constructor
-  ParameterListModifier();
+  ParameterListModifier() = default;
 
   //! Constructor that names the modifier.
   ParameterListModifier(const std::string &name);
+
+  //! Destructor
+  virtual ~ParameterListModifier();
 
   //@}
   //! @name Set Functions
@@ -221,7 +224,7 @@ public:
 
 
 protected:
-  std::string name_;
+  std::string name_ = "ANONYMOUS";
 
 };
 

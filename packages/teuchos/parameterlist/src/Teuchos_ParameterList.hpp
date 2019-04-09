@@ -173,7 +173,7 @@ public:
   //@{
 
   //! Constructor
-  ParameterList();
+  ParameterList() = default;
 
   //! Constructor that names the entire parameter list.
   ParameterList(const std::string &name,
@@ -540,7 +540,7 @@ public:
   //@{
 
   //! The name of this ParameterList.
-  const std::string& name() const;
+  const std::string& name(bool fullPath=true) const;
 
   /// \brief Whether the given parameter exists in this list.
   ///
@@ -776,7 +776,8 @@ private: // Functions
 private: // Data members
 
   //! Name of the (sub)list
-  std::string name_;
+  std::string name_ = "ANONYMOUS";
+  std::string shortname_ = "ANONYMOUS";
 
   //! Parameter list
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
@@ -790,15 +791,15 @@ private: // Data members
 //#endif
 
   //! Validate into list or not
-  bool disableRecursiveValidation_;
+  bool disableRecursiveValidation_ = false;
 
   //! Modify into list or not
-  bool disableRecursiveModification_;
+  bool disableRecursiveModification_ = false;
 
   //! Reconcile into list or not
-  bool disableRecursiveReconciliation_;
+  bool disableRecursiveReconciliation_ = false;
 
-  RCP<const ParameterListModifier> modifier_;
+  RCP<const ParameterListModifier> modifier_ = null;
 };
 
 
@@ -1196,9 +1197,13 @@ ParameterList::getModifier() const
 
 
 inline
-const std::string& ParameterList::name() const
+const std::string& ParameterList::name(bool full_path) const
 {
-  return name_;
+  if (full_path){
+    return name_;
+  } else{
+    return shortname_;
+  }
 }
 
   
