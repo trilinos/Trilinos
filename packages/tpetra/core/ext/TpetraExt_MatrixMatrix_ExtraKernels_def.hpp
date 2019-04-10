@@ -98,7 +98,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix LTGCore"))));
+  // do we need RCPs at all?
+  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix LTGCore")));
 #endif
 
   using Teuchos::Array;
@@ -171,8 +172,17 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
   }
 
+  // 2019 Apr 10 jje: We can do rowptr in place, and no need to inialize since we can fault as we go
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
+  // we will not touch these until the final copyout step
+  lno_nnz_view_t entriesC;
+  scalar_view_t  valuesC;
+
+  // add this, since we do the rowptr in place, we could figure this out
+  // using the rowptr, but it requires an unusual loop (that jumps all over memory)
+  lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
+
   // Thread-local memory
-  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
   Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
   Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
 
@@ -192,7 +202,6 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       // Allocations
       std::vector<size_t> c_status(n,INVALID);
 
-      u_lno_view_t Crowptr((typename u_lno_view_t::data_type)malloc(u_lno_view_t::shmem_size(my_thread_m+1)),my_thread_m+1);
       u_lno_nnz_view_t Ccolind((typename u_lno_nnz_view_t::data_type)malloc(u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
       u_scalar_view_t Cvals((typename u_scalar_view_t::data_type)malloc(u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
 
@@ -201,7 +210,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       for (size_t i = my_thread_start; i < my_thread_stop; i++) {
         // mfh 27 Sep 2016: m is the number of rows in the input matrix A
         // on the calling process.
-        Crowptr(i-my_thread_start) = CSR_ip;
+        // JJE 10 Apr 2019 index directly into the rowptr
+        row_mapC(i) = CSR_ip;
 
         // mfh 27 Sep 2016: For each entry of A in the current row of A
         for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
@@ -270,28 +280,17 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
         }
         OLD_ip = CSR_ip;
       }
-
-      tl_rowptr(tid) = Crowptr;
+      thread_total_nnz(tid) = CSR_ip;
       tl_colind(tid) = Ccolind;
       tl_values(tid) = Cvals;
-      Crowptr(my_thread_m) = CSR_ip;
   });
 
   // Do the copy out
-  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
-  lno_nnz_view_t  entriesC;
-  scalar_view_t   valuesC;
-  copy_out_from_thread_memory(tl_rowptr,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
-
-  //Free the unamanged views
-  for(size_t i=0; i<thread_max; i++) {
-    if(tl_rowptr(i).data()) free(tl_rowptr(i).data());
-    if(tl_colind(i).data()) free(tl_colind(i).data());
-    if(tl_values(i).data()) free(tl_values(i).data());
-  }
+  copy_out_from_thread_memory(thread_total_nnz,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
+  MM.~(); // destruct the 'Core'
+  Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort")));
 #endif
     // Sort & set values
     if (params.is_null() || params->get("sort entries",true))
@@ -317,8 +316,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse LTGCore"))));
+  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse LTGCore")));
 #endif
 
   using Teuchos::Array;
@@ -468,8 +466,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix LTGCore"))));
+  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix LTGCore")));
 #endif
 
   using Teuchos::Array;
@@ -548,8 +545,17 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
       thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
   }
 
+  // 2019 Apr 10 jje: We can do rowptr in place, and no need to inialize since we can fault as we go
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
+  // we will not touch these until the final copyout step
+  lno_nnz_view_t entriesC;
+  scalar_view_t  valuesC;
+
+  // add this, since we do the rowptr in place, we could figure this out
+  // using the rowptr, but it requires an unusual loop (that jumps all over memory)
+  lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
+
   // Thread-local memory
-  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
   Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
   Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
 
@@ -569,7 +575,6 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
       // Allocations
       std::vector<size_t> c_status(n,INVALID);
 
-      u_lno_view_t Crowptr((typename u_lno_view_t::data_type)malloc(u_lno_view_t::shmem_size(my_thread_m+1)),my_thread_m+1);
       u_lno_nnz_view_t Ccolind((typename u_lno_nnz_view_t::data_type)malloc(u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
       u_scalar_view_t Cvals((typename u_scalar_view_t::data_type)malloc(u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
 
@@ -579,7 +584,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
         //        printf("CMS: row %d CSR_alloc = %d\n",(int)i,(int)CSR_alloc);fflush(stdout);
         // mfh 27 Sep 2016: m is the number of rows in the input matrix A
         // on the calling process.
-        Crowptr(i-my_thread_start) = CSR_ip;
+        // JJE: directly access the rowptr here (indexed using our loop var)
+        row_mapC(i) = CSR_ip;
         // NOTE: Vector::getLocalView returns a rank 2 view here
         SC minusOmegaDval = -omega*Dvals(i,0);
 
@@ -666,30 +672,19 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
         }
         OLD_ip = CSR_ip;
       }
-
-      tl_rowptr(tid) = Crowptr;
+      thread_total_nnz(tid) = CSR_ip;
       tl_colind(tid) = Ccolind;
       tl_values(tid) = Cvals;
-      Crowptr(my_thread_m) = CSR_ip;
   });
 
 
+  // Do the copy out (removed the tl_rowptr!)
+  copy_out_from_thread_memory(thread_total_nnz,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
 
-  // Do the copy out
-  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
-  lno_nnz_view_t  entriesC;
-  scalar_view_t   valuesC;
-  copy_out_from_thread_memory(tl_rowptr,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
-
-  //Free the unamanged views
-  for(size_t i=0; i<thread_max; i++) {
-    if(tl_rowptr(i).data()) free(tl_rowptr(i).data());
-    if(tl_colind(i).data()) free(tl_colind(i).data());
-    if(tl_values(i).data()) free(tl_values(i).data());
-  }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort"))));
+  MM.~();
+  Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort")));
 #endif
     // Sort & set values
     if (params.is_null() || params->get("sort entries",true))
@@ -719,8 +714,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse LTGCore"))));
+  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse LTGCore")));
 #endif
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -876,11 +870,16 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
 
 
 /*********************************************************************************************************/
-template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,
+template<class InColindArrayType, class InValsArrayType,
          class OutRowptrType, class OutColindType, class OutValsType>
-void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InColindArrayType &Incolind, const InValsArrayType & Invalues,
-                                   size_t m, double thread_chunk,
-                                   OutRowptrType & row_mapC, OutColindType &entriesC, OutValsType & valuesC ) {
+void copy_out_from_thread_memory(const OutColindType& thread_total_nnz,
+                                 const InColindArrayType& Incolind,
+                                 const InValsArrayType& Invalues,
+                                 const size_t m,
+                                 const double thread_chunk,
+                                 OutRowptrType& row_mapC,
+                                 OutColindType& entriesC,
+                                 OutValsType& valuesC ) {
   typedef OutRowptrType lno_view_t;
   typedef OutColindType lno_nnz_view_t;
   typedef OutValsType scalar_view_t;
@@ -888,16 +887,23 @@ void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InCol
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
 
   // Generate the starting nnz number per thread
-  size_t thread_max =  Inrowptr.size();
+  size_t thread_max =  Incolind.size();
   size_t c_nnz_size=0;
+  // since this kernel is 'low thread count' is very likely, that we could
+  // sum over the thread_total_nnz and not go parallel, but since it is a view
+  // we don't know where the memory actually lives... so we kinda need to go parallel
+
   lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
   Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
-      size_t mynnz = Inrowptr(i)(Inrowptr(i).extent(0)-1);
+      size_t mynnz = thread_total_nnz(i);
       if(final) thread_start_nnz(i) = update;
       update+=mynnz;
       if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
     });
   c_nnz_size = thread_start_nnz(thread_max);
+
+  // 2019 Apr 10 JJE: update the rowptr's final entry here
+  row_mapC(m) = thread_start_nnz(thread_max);
 
   // Allocate output
   lno_nnz_view_t  entriesC_(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size); entriesC = entriesC_;
@@ -905,25 +911,51 @@ void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InCol
 
   // Copy out
   Kokkos::parallel_for("LTG::CopyOut", range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid) {
-      size_t my_thread_start =  tid * thread_chunk;
-      size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
-      size_t nnz_thread_start = thread_start_nnz(tid);
+    const size_t my_thread_start =  tid * thread_chunk;
+    const size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
+    const size_t nnz_thread_start = thread_start_nnz(tid);
+    // we need this info, since we did the rowptr in place
+    const size_t nnz_thread_stop  = thread_start_nnz(tid+1);
 
+    // There are two fundamental operations:
+    // * Updateing the rowptr with the correct offset
+    // * copying entries and values
+
+    // First, update the rowptr, it since we did it inplace, it is a += operation
+    // in the paper, I experimented with a coloring scheme that had threads do
+    // do their copies in different orders. It wasn't obvious it was beneficial
+    // but it can be replicated, by choosing the array to copy first based on your
+    // thread id % 3
+    if (my_thread_start != 0 ) {
       for (size_t i = my_thread_start; i < my_thread_stop; i++) {
-        size_t ii = i - my_thread_start;
-        // Rowptr
-        row_mapC(i) = nnz_thread_start + Inrowptr(tid)(ii);
-        if (i==m-1) {
-          row_mapC(m) = nnz_thread_start + Inrowptr(tid)(ii+1);
-        }
-
-        // Colind / Values
-        for(size_t j = Inrowptr(tid)(ii); j<Inrowptr(tid)(ii+1); j++) {
-          entriesC(nnz_thread_start + j) = Incolind(tid)(j);
-          valuesC(nnz_thread_start + j)  = Invalues(tid)(j);
-        }
+        row_mapC(i) += nnz_thread_start;
       }
-    });
+    }
+
+    // try to Kokkos::single() the alloc here. It should implicitly barrier
+    // thread 0 doesn't copy the rowptr, so it could hit the single first
+    // in the paper, I played a game that effectively got LTG down to a single
+    // OpenMP barrier. But doing that requires the ability to spawn a single
+    // parallel region.  The Scan above was implemented using atomic adds
+    // and the barrier was only needed so you could allocate
+    //
+    // Since we can't spawn a single region, we could move the allocations
+    // here, and using 'single'. Most likely, thread 0 will hit it first allowing
+    // the other threads to update the rowptr while it allocates.
+
+
+    // next, bulk copy the vals/colind arrays
+    const size_t my_num_nnz = nnz_thread_stop - nnz_thread_start;
+    for (size_t i = 0; i < my_num_nnz; ++i) {
+      entriesC(nnz_thread_start + i) = Incolind(tid)(i);
+      valuesC(nnz_thread_start + i)  = Invalues(tid)(i);
+    }
+
+    //Free the unamanged views, let each thread deallocate its memory
+    // May need to cast away const here..
+    if(Incolind(tid).data()) free(Incolind(tid).data());
+    if(Invalues(tid).data()) free(Invalues(tid).data());
+  });
 }//end copy_out
 
 #endif // OpenMP
@@ -946,8 +978,8 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Multiply"))));
+  Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK")));
+  Teuchos::TimeMonitor MMmult (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Multiply")));
 #endif
   typedef  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
 
@@ -958,14 +990,16 @@ void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
   Tpetra::MMdetails::mult_A_B_newmatrix(Aview,Bview,*AB,label+std::string(" MSAK"),params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale"))));
+  MMmult.~();
+  Teuchos::TimeMonitor MMscale (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale")));
 #endif
 
   // 2) Scale A by Dinv
   AB->leftScale(Dinv);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add"))));
+  MMscale.~();
+  Teuchos::TimeMonitor MMadd (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add")));
 #endif
 
   // 3) Add [-omega Dinv A] + B
@@ -1000,8 +1034,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         using Tpetra::MatrixMatrix::UnmanagedView;
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-        using Teuchos::TimeMonitor;
-        Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix LTGCore"))));
+        Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix LTGCore")));
   #endif
 
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
@@ -1072,6 +1105,16 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
         double thread_chunk = (double)(m) / thread_max;
 
+        // we can construct the rowptr inplace, allocate here and fault in parallel
+        lno_view_t rowmapAc(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
+        // we do not touch these until copy out
+        lno_nnz_view_t entriesAc;
+        scalar_view_t valuesAc;
+
+        // add this, since we do the rowptr in place, we could figure this out
+        // using the rowptr, but it requires an unusual loop (that jumps all over memory)
+        lno_nnz_view_t thread_total_nnz("thread_total_nnz",thread_max+1);
+
         // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
         // routine.  The routine computes Ac := R * A * (P_local + P_remote).
         //
@@ -1080,7 +1123,6 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // ("orig") or P_remote ("Import").
 
         // Thread-local memory
-        Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr", thread_max);
         Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind", thread_max);
         Kokkos::View<u_scalar_view_t*> tl_values("top_values", thread_max);
 
@@ -1105,7 +1147,8 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
           size_t nnz = 0, nnz_old = 0;
           // bmk: loop over the rows of R which are assigned to thread tid
           for (size_t i = my_thread_start; i < my_thread_stop; i++) {
-            Acrowptr(i - my_thread_start) = nnz;
+            // directly index into the rowptr
+            rowmapAc(i) = nnz;
             // mfh 27 Sep 2016: For each entry of R in the current row of R
             for (size_t kk = Rrowptr(i); kk < Rrowptr(i+1); kk++) {
               LO k  = Rcolind(kk); // local column index of current entry of R
@@ -1190,28 +1233,20 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
             }
             nnz_old = nnz;
           }
-          Acrowptr(my_thread_m) = nnz;
-          tl_rowptr(tid) = Acrowptr;
+          thread_total_nnz(tid) = nnz;
           tl_colind(tid) = Accolind;
           tl_values(tid) = Acvals;
         });
   #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix copy from thread local"))));
+        MM.~();
+        Teuchos::TimeMonitor MMcopy (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix copy from thread local")));
   #endif
 
-        lno_view_t rowmapAc(Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), m + 1);
-        lno_nnz_view_t entriesAc;
-        scalar_view_t valuesAc;
-        copy_out_from_thread_memory(tl_rowptr, tl_colind, tl_values, m, thread_chunk, rowmapAc, entriesAc, valuesAc);
-
-        for(size_t i=0; i<thread_max; i++) {
-          if(tl_rowptr(i).data()) free(tl_rowptr(i).data());
-          if(tl_colind(i).data()) free(tl_colind(i).data());
-          if(tl_values(i).data()) free(tl_values(i).data());
-        }   
+        copy_out_from_thread_memory(thread_total_nnz,tl_colind, tl_values, m, thread_chunk, rowmapAc, entriesAc, valuesAc);
 
   #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort"))));
+        MMcopy.~();
+        Teuchos::TimeMonitor MMsort (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort")));
   #endif
 
         // Final sort & set of CRS arrays
@@ -1220,7 +1255,8 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         Ac.setAllValues(rowmapAc, entriesAc, valuesAc);
 
   #ifdef HAVE_TPETRA_MMM_TIMINGS
-        MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC"))));
+        MMsort.~();
+        Teuchos::TimeMonitor MMfill (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC")));
   #endif
 
         // Final FillComplete
@@ -1262,8 +1298,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         using Tpetra::MatrixMatrix::UnmanagedView;
   #ifdef HAVE_TPETRA_MMM_TIMINGS
         std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-        using Teuchos::TimeMonitor;
-        Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse LTGCore"))));
+        Teuchos::TimeMonitor MM (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Reuse LTGCore")));
   #endif
 
         typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
