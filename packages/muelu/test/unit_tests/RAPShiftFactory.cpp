@@ -745,22 +745,22 @@ namespace MueLuTests {
     A->getLocalDiagCopy(*Mdiag);
 
     // The pretty way of managing input decks
-    double shift = 2.0;
-    Teuchos::Array<double> cfls(2); cfls[0]=1.0; cfls[1]=cfls[0] - 1/shift;
+    double shift = 1.0;
+    Teuchos::Array<double> cfls(2); cfls[0]=1.0; cfls[1]=cfls[0] - 1/(1.0+shift);
     RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
     Params->set("rap: algorithm","shift");    
     Params->set("rap: shift diagonal M",true);
     Params->set("rap: shift low storage",true);
     Params->set("rap: cfl array",cfls);
     Params->set("coarse: max size",1000);
-    Params->set("verbosity","none");
+    Params->set("verbosity","high");
     Params->set("coarse: max size",10);
     Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
     Teuchos::ParameterList & user = Params->sublist("user data");
-    user.set("dt",1.0);
-    user.set("cfl",1.0);
+    user.set("double deltaT",1.0);
+    user.set("double cfl",1.0);
     
 
     // Build hierarchy

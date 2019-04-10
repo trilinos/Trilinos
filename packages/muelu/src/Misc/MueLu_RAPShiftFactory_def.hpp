@@ -169,8 +169,6 @@ namespace MueLu {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);      
       const Teuchos::ParameterList& pL = GetParameterList();
 
-      std::cout<<pL<<std::endl;
-
       bool M_is_diagonal = false; 
       if(pL.isParameter("rap: shift diagonal M"))
          M_is_diagonal = pL.get<bool>("rap: shift diagonal M");
@@ -183,6 +181,7 @@ namespace MueLu {
       }
 
       Teuchos::ArrayView<const double> doubleShifts;
+      Teuchos::Array<double> myshifts;
       if(pL.isParameter("rap: shift array") && pL.get<Teuchos::Array<double> >("rap: shift array").size() > 0 ) {
         // Do we have an array of shifts?  If so, we set doubleShifts_
         doubleShifts = pL.get<Teuchos::Array<double> >("rap: shift array")();
@@ -194,7 +193,7 @@ namespace MueLu {
           double dt  = Get<double>(fineLevel,"deltaT");
           double cfl = Get<double>(fineLevel,"cfl");
           double ts_at_cfl1 = dt / cfl;
-          Teuchos::Array<double> myshifts(CFLs.size());
+          myshifts.resize(CFLs.size());
           Teuchos::Array<double> myCFLs(CFLs.size());
           myCFLs[0] = cfl;
 
@@ -207,12 +206,12 @@ namespace MueLu {
             ofs<<"RAPShiftFactory: CFL schedule = ";
             for(int i=0; i<(int)CFLs.size(); i++)
               ofs<<" "<<myCFLs[i];
-            GetOStream(Statistics0) <<ofs.str();
+            GetOStream(Statistics0) <<ofs.str() << std::endl;
           }
-          GetOStream(Statistics0)<< "RAPShiftFactory: Timestep at CFL=1 is "<< ts_at_cfl1 << "    ";
+          GetOStream(Statistics0)<< "RAPShiftFactory: Timestep at CFL=1 is "<< ts_at_cfl1 << "    " <<std::endl;
 
           // The shift array needs to be 1/dt
-          for(int i=0; i<(int)doubleShifts.size(); i++)
+          for(int i=0; i<(int)myshifts.size(); i++)
             myshifts[i] =  1.0 / (ts_at_cfl1*myCFLs[i]);
           doubleShifts = myshifts();
           
@@ -221,7 +220,7 @@ namespace MueLu {
             ofs<<"RAPShiftFactory: shift schedule = ";
             for(int i=0; i<(int)doubleShifts.size(); i++)
               ofs<<" "<<doubleShifts[i];
-            GetOStream(Statistics0) <<ofs.str();
+            GetOStream(Statistics0) <<ofs.str() << std::endl;
           }
           Set(coarseLevel,"cfl-based shift array",myshifts);
         }
@@ -321,7 +320,6 @@ namespace MueLu {
             GetOStream(Warnings1) << "WARNING: RAPShiftFactory has detected a negative shift... This implies a less stable coarse grid."<<std::endl;
           shift = Teuchos::as<Scalar>(d_shift);
         }
-
         else {
           double base_shift = pL.get<double>("rap: shift");
           if(level == 1) shift = Teuchos::as<Scalar>(base_shift);
