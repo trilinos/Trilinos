@@ -80,7 +80,7 @@ namespace Teuchos {
 
 ParameterList::ParameterList(const std::string &name_in,
     RCP<const ParameterListModifier> const& modifier_in)
-  :name_(name_in), shortname_(name_in), modifier_(modifier_in)
+  :name_(name_in), modifier_(modifier_in)
 {}
 
 

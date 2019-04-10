@@ -540,7 +540,7 @@ public:
   //@{
 
   //! The name of this ParameterList.
-  const std::string& name(bool fullPath=true) const;
+  const std::string& name() const;
 
   /// \brief Whether the given parameter exists in this list.
   ///
@@ -777,7 +777,6 @@ private: // Data members
 
   //! Name of the (sub)list
   std::string name_ = "ANONYMOUS";
-  std::string shortname_ = "ANONYMOUS";
 
   //! Parameter list
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
@@ -1197,13 +1196,9 @@ ParameterList::getModifier() const
 
 
 inline
-const std::string& ParameterList::name(bool full_path) const
+const std::string& ParameterList::name() const
 {
-  if (full_path){
-    return name_;
-  } else{
-    return shortname_;
-  }
+  return name_;
 }
 
   

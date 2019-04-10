@@ -61,95 +61,11 @@ public:
 
 };
 
-using Teuchos::ParameterListModifier;
-using Teuchos::ParameterList;
-using Teuchos::getValue;
-
-class TimeSteppingModifier: public ParameterListModifier{
-public:
-  TimeSteppingModifier(): ParameterListModifier("Time Stepping Modifier"){}
-
-  void reconcile(ParameterList &pl) const{
-    double &tf = pl.get<double>("Final Time");
-    double &dt = pl.get<double>("Time Step");
-    int &num_dt = pl.get<int>("Number of Time Steps");
-    double tf_new, dt_new;
-    int num_dt_new;
-    if (tf > 0.0 and dt > 0.0){
-      num_dt_new = std::ceil(tf / dt);
-      if (num_dt > 0){
-        TEUCHOS_ASSERT_EQUALITY(num_dt, num_dt_new);
-      } else{
-        num_dt = num_dt_new;
-      }
-    } else if (dt > 0.0 and num_dt > 0){
-      tf_new = num_dt * dt;
-      if (tf > 0.0){
-        TEUCHOS_ASSERT_EQUALITY(tf, tf_new);
-      } else{
-        tf = tf_new;
-      }
-    } else if (tf > 0.0 and num_dt > 0){
-      dt_new = tf / static_cast<double>(num_dt);
-      if (dt > 0.0){
-        TEUCHOS_ASSERT_EQUALITY(dt, dt_new);
-      } else{
-        dt = dt_new;
-      }
-    } else{
-      throw std::logic_error("Less than two positive time parameters, "
-          "(""Final Time"", ""Time Step"", ""Number of Timesteps""), given.");
-    }
-  }
-};
-
-class EquationsModifier: public ParameterListModifier{
-public:
-  EquationsModifier(): ParameterListModifier("Equations Modifier"){}
-
-  void modify(ParameterList &pl, ParameterList &valid_pl) const{
-    int num_expanded = 0;
-    num_expanded += expandSublistsUsingBaseName("Laguerre", pl, valid_pl);
-    num_expanded += expandSublistsUsingBaseName("Hermite", pl, valid_pl);
-    num_expanded += expandSublistsUsingBaseName("Hypergeometric", pl, valid_pl);
-    if (num_expanded < 1){
-      throw std::logic_error("There must be at least one equation.");
-    }
-  }
-};
 
 } // namespace
 
 
 namespace Teuchos {
-
-TEUCHOS_UNIT_TEST( ParameterListModifier, nontrivialModifierExample ){
-  RCP<TimeSteppingModifier> time_stepping_modifier = rcp(new TimeSteppingModifier());
-  RCP<EquationsModifier> equations_modifier = rcp(new EquationsModifier());
-  ParameterList valid_pl = ParameterList("valid_pl");
-  valid_pl.sublist("Time Stepping", time_stepping_modifier);
-  valid_pl.sublist("Time Stepping").set("Final Time", 0.0);
-  valid_pl.sublist("Time Stepping").set("Time Step", 0.0);
-  valid_pl.sublist("Time Stepping").set("Number of Time Steps", 0);
-  valid_pl.sublist("Equations", equations_modifier);
-  valid_pl.sublist("Equations").sublist("Laguerre").set("Order", 0);
-  valid_pl.sublist("Equations").sublist("Hermite").set("Order", 0);
-  valid_pl.sublist("Equations").sublist("Hypergeometric").set("Order", 0);
-  ParameterList pl = ParameterList("pl");
-  pl.sublist("Time Stepping").set("Final Time", 1.0);
-  pl.sublist("Time Stepping").set("Time Step", 1e-3);
-  // If "Number of Time Steps" is set below then it must be consistent with
-  // "Final Time" and "Time Step" above.
-//  pl.sublist("Time Stepping").set("Number of Time Steps", 10);
-  pl.sublist("Equations").sublist("Laguerre 1").set("Order", 3);
-  pl.sublist("Equations").sublist("Laguerre 2").set("Order", 5);
-  pl.sublist("Equations").sublist("Hermite 1").set("Order", 0);
-  pl.modifyParameterList(valid_pl);
-  pl.validateParametersAndSetDefaults(valid_pl);
-  pl.reconcileParameterList(valid_pl);
-  pl.print();
-  std::cout << pl.sublist("Equations").sublist("Laguerre 1").name() << std::endl;
-}
 
 
 TEUCHOS_UNIT_TEST( ParameterListModifier, findMatchingBaseNames ){
