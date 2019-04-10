@@ -752,10 +752,10 @@ namespace MueLuTests {
     Params->set("rap: shift diagonal M",true);
     Params->set("rap: shift low storage",true);
     Params->set("rap: cfl array",cfls);
-    Params->set("coarse: max size",1000);
+    Params->set("coarse: max size",10);
     Params->set("verbosity","high");
     Params->set("coarse: max size",10);
-    Params->set("max levels",2);
+    Params->set("max levels",4);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
     Teuchos::ParameterList & user = Params->sublist("user data");

@@ -225,7 +225,9 @@ namespace MueLu {
           Set(coarseLevel,"cfl-based shift array",myshifts);
         }
         else {
-          doubleShifts = Get<Teuchos::Array<double> > (fineLevel,"cfl-based shift array")();
+          Teuchos::Array<double> myshifs = Get<Teuchos::Array<double> > (fineLevel,"cfl-based shift array");
+          doubleShifts = myshifts();
+          Set(coarseLevel,"cfl-based shift array",myshifts);
           // NOTE: If we're not on level zero, then we should have a shift array
         }
       }
