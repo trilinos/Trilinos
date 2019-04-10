@@ -160,14 +160,24 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 template<typename LO, typename GO, typename NT>
 void
 packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
-                 Kokkos::DualView<typename CrsGraph<LO,GO,NT>::packet_type*,
-                                  typename CrsGraph<LO,GO,NT>::buffer_device_type>&
-                                  exports,
-                 const Kokkos::DualView<size_t*,
-                                        typename CrsGraph<LO,GO,NT>::buffer_device_type>&
-                                        numPacketsPerLID,
-                 const Kokkos::DualView<const LO*, typename NT::device_type>& exportLIDs,
+                 const Kokkos::DualView<
+                   const LO*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 >& exportLIDs,
+                 const Kokkos::DualView<
+                   const int*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 >& exportPIDs,
+                 Kokkos::DualView<
+                   typename CrsGraph<LO, GO, NT>::packet_type*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 >& exports,
+                 Kokkos::DualView<
+                   size_t*,
+                   typename CrsGraph<LO, GO, NT>::buffer_device_type
+                 > numPacketsPerLID,
                  size_t& constantNumPackets,
+                 const bool pack_pids,
                  Distributor& distor);
 
 /// \brief Pack specified entries of the given local sparse graph for
