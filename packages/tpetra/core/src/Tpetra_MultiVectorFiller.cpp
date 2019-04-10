@@ -1,5 +1,6 @@
-#include <Tpetra_MultiVectorFiller.hpp>
+#include "TpetraCore_config.h"
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+#include "Tpetra_MultiVectorFiller.hpp"
 namespace Tpetra {
   namespace Test {
 

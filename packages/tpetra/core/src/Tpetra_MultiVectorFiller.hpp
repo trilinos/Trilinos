@@ -40,13 +40,14 @@
 // @HEADER
 #ifndef __Tpetra_MultiVectorFiller_hpp
 #define __Tpetra_MultiVectorFiller_hpp
-
+#include "TpetraCore_config.h"
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include <iterator>
 #include <set>
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
 
 namespace Tpetra {
 namespace Details {
@@ -74,7 +75,7 @@ namespace Details {
   //
   // \return A view of all the entries (current and new) in allEntries.
   template<class T>
-  Teuchos::ArrayView<T> TPETRA_DEPRECATED
+  Teuchos::ArrayView<T> 
   sortAndMergeIn (Teuchos::Array<T>& allEntries,
                   Teuchos::ArrayView<T> currentEntries,
                   Teuchos::ArrayView<T> newEntries)
@@ -1664,6 +1665,8 @@ namespace Tpetra {
 
   } // namespace Test
 } // namespace Tpetra
+#else
+#error "Compile Error: The header Tpetra_MultiVectorFiller.hpp is DEPRECATED and you have compiled with Tpetra_ENABLE_DEPRECATED_CODE off"
 
 #endif// TPETRA_ENABLE_DEPRECATED_CODE
 
