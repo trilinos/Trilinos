@@ -5561,7 +5561,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   useNewInterface ()
   {
-    return false;
+    return true;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -6083,7 +6083,10 @@ namespace Tpetra {
                      Distributor& distor)
   {
     using Tpetra::Details::ProfilingRegion;
+    using GO = global_ordinal_type;
     using std::endl;
+    using crs_graph_type =
+      CrsGraph<local_ordinal_type, global_ordinal_type, node_type>;
     using row_graph_type =
       RowGraph<local_ordinal_type, global_ordinal_type, node_type>;
     const char tfecfFuncName[] = "packAndPrepareNew: ";
@@ -6096,7 +6099,7 @@ namespace Tpetra {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       os << "Proc " << myRank << ": Tpetra::CrsGraph::packAndPrepareNew: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << endl;
+      os << "Start" << endl;
       std::cerr << os.str ();
     }
 
@@ -6106,13 +6109,12 @@ namespace Tpetra {
        "exportLIDs.extent(0) = " << exportLIDs.extent (0)
        << " != numPacketsPerLID.extent(0) = " << numPacketsPerLID.extent (0)
        << ".");
-    const row_graph_type* srcGraphPtr =
+    const row_graph_type* srcRowGraphPtr =
       dynamic_cast<const row_graph_type*> (&source);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (srcGraphPtr == nullptr, std::invalid_argument, "Source of an Export "
+      (srcRowGraphPtr == nullptr, std::invalid_argument, "Source of an Export "
        "or Import operation to a CrsGraph must be a RowGraph with the same "
        "template parameters.");
-
     // We don't check whether src_graph has had fillComplete called,
     // because it doesn't matter whether the *source* graph has been
     // fillComplete'd. The target graph can not be fillComplete'd yet.
@@ -6120,8 +6122,49 @@ namespace Tpetra {
       (this->isFillComplete (), std::runtime_error,
        "The target graph of an Import or Export must not be fill complete.");
 
+    const crs_graph_type* srcCrsGraphPtr =
+      dynamic_cast<const crs_graph_type*> (&source);
+
+    if (srcCrsGraphPtr == nullptr) {
+      using Teuchos::ArrayView;
+      using LO = local_ordinal_type;
+
+      if (debug) {
+        std::ostringstream os;
+        os << *prefix << "Source is a RowGraph but not a CrsGraph" << endl;
+        std::cerr << os.str ();
+      }
+      // RowGraph::pack serves the "old" DistObject interface.  It
+      // takes Teuchos::ArrayView and Teuchos::Array&.  The latter
+      // entails deep-copying the exports buffer on output.  RowGraph
+      // is a convenience interface when not a CrsGraph, so we accept
+      // the performance hit.
+      TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
+      auto exportLIDs_h = exportLIDs.view_host ();
+      ArrayView<const LO> exportLIDs_av (exportLIDs_h.data (),
+                                         exportLIDs_h.extent (0));
+      Teuchos::Array<GO> exports_a;
+
+      numPacketsPerLID.clear_sync_state ();
+      numPacketsPerLID.modify_host ();
+      auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
+      ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
+                                             numPacketsPerLID_h.extent (0));
+      srcRowGraphPtr->pack (exportLIDs_av, exports_a, numPacketsPerLID_av,
+                            constantNumPackets, distor);
+      const size_t newSize = static_cast<size_t> (exports_a.size ());
+      if (static_cast<size_t> (exports.extent (0)) != newSize) {
+        using exports_dv_type = Kokkos::DualView<packet_type*, buffer_device_type>;
+        exports = exports_dv_type ("exports", newSize);
+      }
+      Kokkos::View<const packet_type*, Kokkos::HostSpace,
+        Kokkos::MemoryUnmanaged> exports_a_h (exports_a.getRawPtr (), newSize);
+      exports.clear_sync_state ();
+      exports.modify_host ();
+      Kokkos::deep_copy (exports.view_host (), exports_a_h);
+    }
     // packCrsGraphNew requires a valid localGraph.
-    if (! getColMap ().is_null () &&
+    else if (! getColMap ().is_null () &&
         (lclGraph_.row_map.extent (0) != 0 ||
          getRowMap ()->getNodeNumElements () == 0)) {
       if (debug) {
@@ -6136,13 +6179,13 @@ namespace Tpetra {
       using GO = global_ordinal_type;
       using NT = node_type;
       using Tpetra::Details::packCrsGraphNew;
-      packCrsGraphNew<LO,GO,NT> (*this, exportLIDs, exportPIDs,
+      packCrsGraphNew<LO,GO,NT> (*srcCrsGraphPtr, exportLIDs, exportPIDs,
                                  exports, numPacketsPerLID,
                                  constantNumPackets, false, distor);
     }
     else {
-      this->packFillActiveNew (exportLIDs, exports, numPacketsPerLID,
-                               constantNumPackets, distor);
+      srcCrsGraphPtr->packFillActiveNew (exportLIDs, exports, numPacketsPerLID,
+                                         constantNumPackets, distor);
     }
 
     if (debug) {
@@ -6394,6 +6437,8 @@ namespace Tpetra {
     using GO = global_ordinal_type;
     using host_execution_space = typename Kokkos::View<size_t*,
       device_type>::HostMirror::execution_space;
+    using host_device_type =
+      Kokkos::Device<host_execution_space, Kokkos::HostSpace>;
     using device_execution_space = typename device_type::execution_space;
     using exports_dv_type =
       Kokkos::DualView<packet_type*, buffer_device_type>;
@@ -6406,14 +6451,16 @@ namespace Tpetra {
       std::ostringstream os;
       os << "Proc " << myRank << ": Tpetra::CrsGraph::packFillActiveNew: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
-      os << endl;
+      os << "Start" << endl;
       std::cerr << os.str ();
     }
 
     const auto numExportLIDs = exportLIDs.extent (0);
     if (debug) {
       std::ostringstream os;
-      os << *prefix << "numExportLIDs: " << numExportLIDs << endl;
+      os << *prefix << "numExportLIDs: " << numExportLIDs
+         << ", numPacketsPerLID.extent(0): " << numPacketsPerLID.extent (0)
+         << endl;
       std::cerr << os.str ();
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6421,6 +6468,8 @@ namespace Tpetra {
        "exportLIDs.extent(0) = " << numExportLIDs
        << " != numPacketsPerLID.extent(0) = "
        << numPacketsPerLID.extent (0) << ".");
+    TEUCHOS_ASSERT( ! exportLIDs.need_sync_host () );
+    auto exportLIDs_h = exportLIDs.view_host ();
 
     // We may be accessing UVM data on host below, so ensure that the
     // device is done accessing it.
@@ -6440,7 +6489,6 @@ namespace Tpetra {
     numPacketsPerLID.clear_sync_state ();
     numPacketsPerLID.modify_host ();
     auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
-    auto exportLIDs_h = exportLIDs.view_host ();
 
     // Count the total number of packets (column indices, in the case
     // of a CrsGraph) to pack.  While doing so, set
@@ -6453,8 +6501,6 @@ namespace Tpetra {
     size_t errCount = 0;
     // lambdas turn what they capture const, so we can't
     // atomic_add(&errCount,1).  Instead, we need a View to modify.
-    using host_device_type =
-      Kokkos::Device<host_execution_space, Kokkos::HostSpace>;
     Kokkos::View<size_t, host_device_type> errCountView (&errCount);
     constexpr size_t ONE = 1;
 
