@@ -333,6 +333,22 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockCrsMatrix" "EXPERIMENTAL_BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Experimental::BlockMultiVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockMultiVector" "EXPERIMENTAL_BLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${BLOCKMULTIVECTOR_OUTPUT_FILES})
+
+  # Don't add ETI for packBlockMultiVector and unpackBlockMultiVector
+  # quite just yet.  I want to make sure that the ETI we just added
+  # for BlockMultiVector and BlockVector works correctly.
+
+  # Generate ETI .cpp files for Tpetra::Details::packBlockMultiVector.
+  #TPETRA_PROCESS_ALL_SLGN_TEMPLATES(PACKBLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_packBlockMultiVector" "DETAILS_PACKBLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  #LIST(APPEND SOURCES ${PACKBLOCKMULTIVECTOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Details::unpackBlockMultiVector.
+  #TPETRA_PROCESS_ALL_SLGN_TEMPLATES(UNPACKBLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_unpackBlockMultiVector" "DETAILS_UNPACKBLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  #LIST(APPEND SOURCES ${UNPACKBLOCKMULTIVECTOR_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix helpers.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_HELPER_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl"
   "Experimental_BlockCrsMatrix_Helpers" "EXPERIMENTAL_BLOCKCRSMATRIX_HELPERS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
