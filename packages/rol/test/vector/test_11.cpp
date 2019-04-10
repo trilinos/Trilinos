@@ -55,10 +55,13 @@
 
 using RealT = double;
 
+constexpr auto dim = 100u;
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  ROL::StdArray<RealT,dim>::initialize_pool();
 
   int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
@@ -66,22 +69,30 @@ int main(int argc, char *argv[]) {
   if (iprint > 0) outStream = ROL::makePtrFromRef(std::cout);
   else            outStream = ROL::makePtrFromRef(bhs);
 
+  auto print_pool_count = [&outStream]() {
+    *outStream << "Currently using " << ROL::StdArray<RealT, dim>::pool_count() 
+               << " Vectors from the pool" << std::endl;
+  };
+
   int errorFlag  = 0;
 
   RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
   // *** Test body.
-
-  constexpr auto dim = 100u;
+ 
+  print_pool_count(); 
 
   try {
 
+
     ROL::StdArray<RealT, dim> x, y, z;
+
+    print_pool_count(); 
 
     x.randomize();
     y.randomize();
     z.randomize();
-    x.print(*outStream);
+
     // Standard tests.
     auto consistency = x.checkVector(y, z, true, *outStream);
     ROL::StdVector<RealT> checkvec( ROL::makePtrFromRef(consistency) );
@@ -124,14 +135,18 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     }
 
+    print_pool_count(); 
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
 
+  print_pool_count(); 
+
   if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
   else                std::cout << "End Result: TEST PASSED\n";
+
 
   return 0;
 
