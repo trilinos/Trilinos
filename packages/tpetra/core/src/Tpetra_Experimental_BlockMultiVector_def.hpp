@@ -43,6 +43,9 @@
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 
 #include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
+#include "Tpetra_Details_copyAndPermuteBlockMultiVector.hpp"
+#include "Tpetra_Details_packBlockMultiVector.hpp"
+#include "Tpetra_Details_unpackBlockMultiVector.hpp"
 
 namespace { // anonymous
 
@@ -484,155 +487,86 @@ checkSizes (const Tpetra::SrcDistObject& src)
 }
 
 template<class Scalar, class LO, class GO, class Node>
-void BlockMultiVector<Scalar, LO, GO, Node>::
-copyAndPermute (const Tpetra::SrcDistObject& src,
-                const size_t numSameIDs,
-                const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                const Teuchos::ArrayView<const LO>& permuteFromLIDs)
+bool BlockMultiVector<Scalar, LO, GO, Node>::
+useNewInterface ()
 {
-  const char tfecfFuncName[] = "copyAndPermute: ";
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-    "permuteToLIDs and permuteFromLIDs must have the same size."
-    << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-    << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
-
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    srcAsBmvPtr.is_null (), std::invalid_argument,
-    "The source of an Import or Export to a BlockMultiVector "
-    "must also be a BlockMultiVector.");
-  const BMV& srcAsBmv = *srcAsBmvPtr;
-
-  // FIXME (mfh 23 Apr 2014) This implementation is sequential and
-  // assumes UVM.
-
-  const LO numVecs = getNumVectors ();
-  const LO numSame = static_cast<LO> (numSameIDs);
-  for (LO j = 0; j < numVecs; ++j) {
-    for (LO lclRow = 0; lclRow < numSame; ++lclRow) {
-      deep_copy (getLocalBlock (lclRow, j), srcAsBmv.getLocalBlock (lclRow, j));
-    }
-  }
-
-  // FIXME (mfh 20 June 2012) For an Export with duplicate GIDs on the
-  // same process, this merges their values by replacement of the last
-  // encountered GID, not by the specified merge rule (such as ADD).
-  const LO numPermuteLIDs = static_cast<LO> (permuteToLIDs.size ());
-  for (LO j = 0; j < numVecs; ++j) {
-    for (LO k = numSame; k < numPermuteLIDs; ++k) {
-      deep_copy (getLocalBlock (permuteToLIDs[k], j), srcAsBmv.getLocalBlock (permuteFromLIDs[k], j));
-    }
-  }
+  return true;
 }
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-packAndPrepare (const Tpetra::SrcDistObject& src,
-                const Teuchos::ArrayView<const LO>& exportLIDs,
-                Teuchos::Array<impl_scalar_type>& exports,
-                const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                size_t& constantNumPackets,
-                Tpetra::Distributor& /* distor */)
+copyAndPermuteNew (const SrcDistObject& src,
+                   const size_t numSameIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     buffer_device_type>& permuteToLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     buffer_device_type>& permuteFromLIDs)
 {
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  const char tfecfFuncName[] = "packAndPrepare: ";
+  using ::Tpetra::Details::copyAndPermuteBlockMultiVector;
+  const char tfecfFuncName[] = "copyAndPermuteNew: ";
 
-  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    srcAsBmvPtr.is_null (), std::invalid_argument,
-    "The source of an Import or Export to a BlockMultiVector "
-    "must also be a BlockMultiVector.");
-  const BMV& srcAsBmv = *srcAsBmvPtr;
-
-  const LO numVecs = getNumVectors ();
-  const LO blockSize = getBlockSize ();
-
-  // Number of things to pack per LID is the block size, times the
-  // number of columns.  Input LIDs correspond to the mesh points, not
-  // the degrees of freedom (DOFs).
-  constantNumPackets =
-    static_cast<size_t> (blockSize) * static_cast<size_t> (numVecs);
-  const size_type numMeshLIDs = exportLIDs.size ();
-
-  const size_type requiredExportsSize = numMeshLIDs *
-    static_cast<size_type> (blockSize) * static_cast<size_type> (numVecs);
-  exports.resize (requiredExportsSize);
-
-  try {
-    size_type curExportPos = 0;
-    for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
-      for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
-        const LO meshLid = exportLIDs[meshLidIndex];
-        impl_scalar_type* const curExportPtr = &exports[curExportPos];
-        typename little_vec_type::HostMirror X_dst (curExportPtr, blockSize);
-        auto X_src = srcAsBmv.getLocalBlock (meshLid, j);
-
-        Kokkos::deep_copy (X_dst, X_src);
-      }
-    }
-  } catch (std::exception& e) {
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      true, std::logic_error, "Oh no!  packAndPrepare on Process "
-      << meshMap_.getComm ()->getRank () << " raised the following exception: "
-      << e.what ());
-  }
+  auto srcPtr = getBlockMultiVectorFromSrcDistObject (src);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (srcPtr.is_null (), std::invalid_argument,
+     "The source of an Import or Export to a BlockMultiVector "
+     "must also be a BlockMultiVector.");
+  const auto ret =
+    copyAndPermuteBlockMultiVector (*this, *srcPtr, numSameIDs,
+                                    permuteToLIDs, permuteFromLIDs);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (ret.first != 0, std::runtime_error, "copyAndPermuteBlockMultiVector "
+     "reports an error: " << * (ret.second));
 }
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
-                  const Teuchos::ArrayView<const impl_scalar_type>& imports,
-                  const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                  const size_t /* constantNumPackets */,
-                  Tpetra::Distributor& /* distor */,
-                  Tpetra::CombineMode CM)
+packAndPrepareNew (const SrcDistObject& src,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     buffer_device_type>& exportLIDs,
+                   Kokkos::DualView<packet_type*,
+                     buffer_device_type>& exports,
+                   Kokkos::DualView<size_t*,
+                     buffer_device_type> numPacketsPerLID,
+                   size_t& constantNumPackets,
+                   Distributor& distor)
 {
-  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  const char tfecfFuncName[] = "unpackAndCombine: ";
+  using ::Tpetra::Details::packBlockMultiVector;
+  const char tfecfFuncName[] = "packAndPrepareNew: ";
 
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX && CM != ZERO,
-    std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
-    "CombineMode values are ADD, REPLACE, INSERT, ABSMAX, and ZERO.");
+  auto srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (srcAsBmvPtr.is_null (), std::invalid_argument,
+     "The source of an Import or Export to a BlockMultiVector "
+     "must also be a BlockMultiVector.");
+  const auto ret =
+    packBlockMultiVector (*srcAsBmvPtr, exportLIDs, exports,
+                          numPacketsPerLID, constantNumPackets, distor);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (ret.first != 0, std::runtime_error, "packBlockMultiVector "
+     "reports an error: " << * (ret.second));
+}
 
-  if (CM == ZERO) {
-    return; // Combining does nothing, so we don't have to combine anything.
-  }
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                       buffer_device_type>& importLIDs,
+                     Kokkos::DualView<packet_type*,
+                       buffer_device_type> imports,
+                     Kokkos::DualView<size_t*,
+                       buffer_device_type> numPacketsPerLID,
+                     const size_t constantNumPackets,
+                     Distributor& distor,
+                     const CombineMode combineMode)
+{
+  using ::Tpetra::Details::unpackBlockMultiVector;
+  const char tfecfFuncName[] = "unpackAndCombineNew: ";
 
-  // Number of things to pack per LID is the block size.
-  // Input LIDs correspond to the mesh points, not the DOFs.
-  const size_type numMeshLIDs = importLIDs.size ();
-  const LO blockSize = getBlockSize ();
-  const LO numVecs = getNumVectors ();
-
-  const size_type requiredImportsSize = numMeshLIDs *
-    static_cast<size_type> (blockSize) * static_cast<size_type> (numVecs);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    imports.size () < requiredImportsSize, std::logic_error,
-    ": imports.size () = " << imports.size ()
-    << " < requiredImportsSize = " << requiredImportsSize << ".");
-
-  size_type curImportPos = 0;
-  for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
-    for (LO j = 0; j < numVecs; ++j, curImportPos += blockSize) {
-      const LO meshLid = importLIDs[meshLidIndex];
-      const impl_scalar_type* const curImportPtr = &imports[curImportPos];
-
-      typename const_little_vec_type::HostMirror::const_type X_src (curImportPtr, blockSize);
-      auto X_dst = getLocalBlock (meshLid, j);
-
-      if (CM == INSERT || CM == REPLACE) {
-        deep_copy (X_dst, X_src);
-      } else if (CM == ADD) {
-        AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
-      } else if (CM == ABSMAX) {
-        Impl::absMax (X_dst, X_src);
-      }
-    }
-  }
+  const auto ret =
+    unpackBlockMultiVector (*this, importLIDs, imports, numPacketsPerLID,
+                            constantNumPackets, distor, combineMode);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (ret.first != 0, std::runtime_error, "unpackBlockMultiVector "
+     "reports an error: " << * (ret.second));
 }
 
 template<class Scalar, class LO, class GO, class Node>
