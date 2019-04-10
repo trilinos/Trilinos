@@ -2091,9 +2091,8 @@ namespace Tpetra {
   {
     typedef impl_scalar_type IST;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
-
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
 #endif // HAVE_TPETRA_DEBUG
 
@@ -2109,8 +2108,7 @@ namespace Tpetra {
       rowInfo = graph.getRowInfo (rowInfo.localRow);
     }
 
-    if (this->getProfileType() == StaticProfile)
-    {
+    if (this->getProfileType () == StaticProfile) {
       Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
       auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
                    valsView[offset] += vals[k]; };
@@ -2119,8 +2117,7 @@ namespace Tpetra {
         graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
       newNumEnt = curNumEnt + numInserted;
     }
-    else
-    {
+    else {
       // NOTE (DYNAMICPROFILE_REMOVAL) remove this block
       newNumEnt = curNumEnt + numInputEnt;
       if (newNumEnt > rowInfo.allocSize) {
