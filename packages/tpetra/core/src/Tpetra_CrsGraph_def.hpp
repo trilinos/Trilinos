@@ -5567,111 +5567,6 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermute (const SrcDistObject& source,
-                  const size_t numSameIDs,
-                  const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                  const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
-  {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "copyAndPermute";
-    typedef CrsGraph<LO, GO, node_type> this_type;
-    typedef RowGraph<LO, GO, node_type> row_graph_type;
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-      ": permuteToLIDs and permuteFromLIDs must have the same size.");
-
-    // Make sure that the source object has the right type.  We only
-    // actually need it to be a RowGraph, with matching first three
-    // template parameters.  If it's a CrsGraph, we can use view mode
-    // instead of copy mode to get each row's data.
-    //
-    // FIXME (mfh 07 Jul 2013) It should not be necessary for any of
-    // the template parameters but GO to match.  GO has to match
-    // because the graph has to send indices as global ordinals, if
-    // the source and target graphs do not have the same column Map.
-    // If LO doesn't match, the graphs could communicate using global
-    // indices.  It could be possible that Node affects the graph's
-    // storage format, but packAndPrepare should assume a common
-    // communication format in any case.
-    const row_graph_type* srcRowGraph = dynamic_cast<const row_graph_type*> (&source);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      srcRowGraph == nullptr, std::invalid_argument,
-      ": The source object must be a RowGraph with matching first three "
-      "template parameters.");
-
-    if (this->getProfileType () == StaticProfile) {
-      auto padding = computeCrsPadding(*srcRowGraph, numSameIDs, permuteToLIDs, permuteFromLIDs);
-      this->applyCrsPadding(padding);
-    }
-
-    // If the source object is actually a CrsGraph, we can use view
-    // mode instead of copy mode to access the entries in each row,
-    // if the graph is not fill complete.
-    const this_type* srcCrsGraph = dynamic_cast<const this_type*> (&source);
-
-    const map_type& srcRowMap = * (srcRowGraph->getRowMap ());
-    const map_type& tgtRowMap = * (this->getRowMap ());
-    const bool src_filled = srcRowGraph->isFillComplete ();
-    Array<GO> row_copy;
-    LO myid = 0;
-
-    //
-    // "Copy" part of "copy and permute."
-    //
-    if (src_filled || srcCrsGraph == nullptr) {
-      // If the source graph is fill complete, we can't use view mode,
-      // because the data might be stored in a different format not
-      // compatible with the expectations of view mode.  Also, if the
-      // source graph is not a CrsGraph, we can't use view mode,
-      // because RowGraph only provides copy mode access to the data.
-      for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-        const GO gid = srcRowMap.getGlobalElement (myid);
-        size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (gid);
-        row_copy.resize (row_length);
-        size_t check_row_length = 0;
-        srcRowGraph->getGlobalRowCopy (gid, row_copy (), check_row_length);
-        this->insertGlobalIndices (gid, row_copy ());
-      }
-    } else {
-      for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
-        const GO gid = srcRowMap.getGlobalElement (myid);
-        ArrayView<const GO> row;
-        srcCrsGraph->getGlobalRowView (gid, row);
-        this->insertGlobalIndices (gid, row);
-      }
-    }
-
-    //
-    // "Permute" part of "copy and permute."
-    //
-    if (src_filled || srcCrsGraph == nullptr) {
-      for (LO i = 0; i < permuteToLIDs.size (); ++i) {
-        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
-        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
-        size_t row_length = srcRowGraph->getNumEntriesInGlobalRow (srcgid);
-        row_copy.resize (row_length);
-        size_t check_row_length = 0;
-        srcRowGraph->getGlobalRowCopy (srcgid, row_copy (), check_row_length);
-        this->insertGlobalIndices (mygid, row_copy ());
-      }
-    } else {
-      for (LO i = 0; i < permuteToLIDs.size (); ++i) {
-        const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs[i]);
-        const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs[i]);
-        ArrayView<const GO> row;
-        srcCrsGraph->getGlobalRowView (srcgid, row);
-        this->insertGlobalIndices (mygid, row);
-      }
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteNew (const SrcDistObject& source,
                      const size_t numSameIDs,
                      const Kokkos::DualView<const local_ordinal_type*,
@@ -6041,37 +5936,6 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepare (const SrcDistObject& source,
-                  const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-                  Teuchos::Array<GlobalOrdinal> &exports,
-                  const Teuchos::ArrayView<size_t> & numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Distributor& distor)
-  {
-    using Tpetra::Details::ProfilingRegion;
-    typedef RowGraph<LocalOrdinal, GlobalOrdinal, node_type> row_graph_type;
-    const char tfecfFuncName[] = "packAndPrepare: ";
-    ProfilingRegion regionPackAndPrepare ("Tpetra::CrsGraph::packAndPrepare");
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (exportLIDs.size () != numPacketsPerLID.size (), std::runtime_error,
-       "exportLIDs.size() = " << exportLIDs.size ()
-       << " != numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
-    const row_graph_type& srcGraph = dynamic_cast<const row_graph_type&> (source);
-
-    // We don't check whether src_graph has had fillComplete called,
-    // because it doesn't matter whether the *source* graph has been
-    // fillComplete'd. The target graph can not be fillComplete'd yet.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isFillComplete (), std::runtime_error,
-       "The target graph of an Import or Export must not be fill complete.");
-    srcGraph.pack (exportLIDs, exports, numPacketsPerLID,
-                   constantNumPackets, distor);
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   packAndPrepareNew (const SrcDistObject& source,
                      const Kokkos::DualView<const local_ordinal_type*,
                        buffer_device_type>& exportLIDs,
@@ -6220,18 +6084,18 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  packFillActive(const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                     Teuchos::Array<GlobalOrdinal>& exports,
-                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& /* distor */) const
+  packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                  Teuchos::Array<GlobalOrdinal>& exports,
+                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                  size_t& constantNumPackets,
+                  Distributor& /* distor */) const
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename Kokkos::View<size_t*,
       device_type>::HostMirror::execution_space host_execution_space;
     typedef typename device_type::execution_space device_execution_space;
-    const char tfecfFuncName[] = "pack: ";
+    const char tfecfFuncName[] = "packFillActive: ";
     const bool debug = ::Tpetra::Details::Behavior::debug("CrsGraph::pack");
     const int myRank = debug ? this->getMap ()->getComm ()->getRank () : 0;
 
@@ -6694,89 +6558,6 @@ namespace Tpetra {
       std::ostringstream os;
       os << *prefix << "errCount = " << errCount << "; Done" << endl;
       std::cerr << os.str ();
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                    const Teuchos::ArrayView<const GlobalOrdinal> &imports,
-                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t /* constantNumPackets */,
-                    Distributor& /* distor */,
-                    CombineMode /* CM */)
-  {
-    const char tfecfFuncName[] = "unpackAndCombine: ";
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-
-    if (this->getProfileType () == StaticProfile) {
-      auto padding = computeCrsPadding(importLIDs, numPacketsPerLID);
-      applyCrsPadding(padding);
-    }
-    // FIXME (mfh 02 Apr 2012) REPLACE combine mode has a perfectly
-    // reasonable meaning, whether or not the matrix is fill complete.
-    // It's just more work to implement.
-
-    // We are not checking the value of the CombineMode input
-    // argument.  For CrsGraph, we only support import/export
-    // operations if fillComplete has not yet been called.  Any
-    // incoming column-indices are inserted into the target graph. In
-    // this context, CombineMode values of ADD vs INSERT are
-    // equivalent. What is the meaning of REPLACE for CrsGraph? If a
-    // duplicate column-index is inserted, it will be compressed out
-    // when fillComplete is called.
-    //
-    // Note: I think REPLACE means that an existing row is replaced by
-    // the imported row, i.e., the existing indices are cleared. CGB,
-    // 6/17/2010
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
-      "importLIDs and numPacketsPerLID must have the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isFillComplete (), std::runtime_error,
-      "Import or Export operations are not allowed on the destination "
-      "CrsGraph if it is fill complete.");
-
-    const size_t numImportLIDs = static_cast<size_t> (importLIDs.size ());
-
-    // If we're inserting in local indices, let's pre-allocate
-    Teuchos::Array<LO> lclColInds;
-    if(this->isLocallyIndexed()) {
-      size_t maxNumInserts = 0;
-      for (size_t i = 0; i < numImportLIDs; ++i)
-        maxNumInserts = std::max(maxNumInserts,numPacketsPerLID[i]);
-      lclColInds.resize(maxNumInserts);
-    }
-
-    const map_type& rowMap = * (this->rowMap_);
-    size_t importsOffset = 0;
-    for (size_t i = 0; i < numImportLIDs; ++i) {
-      const LO lclRow = importLIDs[i];
-      const GO gblRow = rowMap.getGlobalElement (lclRow);
-      const LO numEnt = numPacketsPerLID[i];
-      const GO* const gblColInds = (numEnt == 0) ? nullptr : &imports[importsOffset];
-      if(!this->isLocallyIndexed()) {
-        if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
-          // This row is not in the row Map on the calling process.
-          this->insertGlobalIndicesIntoNonownedRows (gblRow, gblColInds, numEnt);
-        }
-        else {
-          this->insertGlobalIndicesFiltered (lclRow, gblColInds, numEnt);
-        }
-      }
-      else {
-        for(LO j = 0; j < numEnt; j++)  {
-          lclColInds[j] = this->colMap_->getLocalElement(gblColInds[j]);
-        }
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid (),
-                                              std::runtime_error,
-                                              "cannot insert into unowned rows if isLocallyIndexed().");
-        this->insertLocalIndices(lclRow,numEnt,lclColInds.data());
-      }
-      importsOffset += numEnt;
     }
   }
 

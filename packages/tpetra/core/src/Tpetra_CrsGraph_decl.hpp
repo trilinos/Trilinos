@@ -1265,12 +1265,6 @@ namespace Tpetra {
     useNewInterface () override;
 
     virtual void
-    copyAndPermute (const SrcDistObject& source,
-                    const size_t numSameIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs) override;
-
-    virtual void
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,
                        const Kokkos::DualView<const local_ordinal_type*,
@@ -1306,14 +1300,6 @@ namespace Tpetra {
                             buffer_device_type> numPacketsPerLID) const;
 
     virtual void
-    packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
-                    Teuchos::Array<global_ordinal_type>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor) override;
-
-    virtual void
     packAndPrepareNew (const SrcDistObject& source,
                        const Kokkos::DualView<const local_ordinal_type*,
                          buffer_device_type>& exportLIDs,
@@ -1347,14 +1333,6 @@ namespace Tpetra {
                          buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets,
                        Distributor& distor) const;
-
-    virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
-                      const Teuchos::ArrayView<const global_ordinal_type>& imports,
-                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor& distor,
-                      CombineMode CM) override;
 
     virtual void
     unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
