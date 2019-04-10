@@ -83,7 +83,7 @@ APPEND_SET(SOURCES_BLOCKED
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )
-IF (TPL_ENABLE_MPI)
+IF (TPL_ENABLE_MPI AND ${PACKAGE_NAME}_ENABLE_Experimental)
   APPEND_SET(SOURCES_BLOCKED
   BlockedRepartition.cpp
   )
