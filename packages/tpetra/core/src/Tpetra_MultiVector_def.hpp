@@ -58,9 +58,10 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_lclDot.hpp"
+#include "Tpetra_Details_normImpl.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
-#include "Tpetra_Details_PackTraits.hpp"
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
 #  include "Teuchos_SerialDenseMatrix.hpp"
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -329,6 +330,66 @@ namespace { // (anonymous)
     }
   }
 
+  template <class SC, class LO, class GO, class NT>
+  bool
+  multiVectorRunNormOnHost (const ::Tpetra::MultiVector<SC, LO, GO, NT>& X)
+  {
+    if (! X.need_sync_device ()) {
+      return false; // most up-to-date on device
+    }
+    else { // most up-to-date on host
+      constexpr size_t localLengthThreshold = 10000;
+      return X.getLocalLength () <= localLengthThreshold;
+    }
+  }
+
+  template <class SC, class LO, class GO, class NT>
+  void
+  multiVectorNormImpl (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::mag_type norms[],
+                       ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
+                       const ::Tpetra::Details::EWhichNorm whichNorm)
+  {
+    using ::Tpetra::Details::normImpl;
+    using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
+    using val_type = typename MV::impl_scalar_type;
+    using mag_type = typename MV::mag_type;
+    using dual_view_type = typename MV::dual_view_type;
+
+    const size_t lclNumRows = X.getLocalLength ();
+    auto map = X.getMap ();
+    auto comm = map.is_null () ? nullptr : map->getComm ().getRawPtr ();
+    auto whichVecs = getMultiVectorWhichVectors (X);
+    const bool isConstantStride = X.isConstantStride ();
+    const bool isDistributed = X.isDistributed ();
+
+    const bool runOnHost = multiVectorRunNormOnHost (X);
+    if (runOnHost) {
+      using view_type = typename dual_view_type::t_host;
+      using array_layout = typename view_type::array_layout;
+      using device_type = typename view_type::device_type;
+
+      if (X.need_sync_host ()) {
+        X.sync_host ();
+      }
+      view_type X_lcl = X.getLocalViewHost ();
+      normImpl<val_type, Kokkos::LayoutLeft, device_type,
+        mag_type> (norms, X_lcl, whichNorm, whichVecs,
+                   isConstantStride, isDistributed, comm);
+    }
+    else {
+      using view_type = typename dual_view_type::t_dev;
+      using array_layout = typename view_type::array_layout;
+      using device_type = typename view_type::device_type;
+
+      if (X.need_sync_device ()) {
+        X.sync_device ();
+      }
+      view_type X_lcl = X.getLocalViewDevice ();
+      normImpl<val_type, array_layout, device_type,
+        mag_type> (norms, X_lcl, whichNorm, whichVecs,
+                   isConstantStride, isDistributed, comm);
+    }
+  }
 } // namespace (anonymous)
 
 
@@ -1907,28 +1968,28 @@ namespace Tpetra {
     }
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm2 (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    typedef Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using ::Tpetra::Details::NORM_TWO;
+    using ::Tpetra::Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::MV::norm2 (host output)");
 
-    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::norm2 (Teuchos::ArrayView)");
-
-    const size_t numNorms = static_cast<size_t> (norms.size ());
-    host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
-    this->norm2 (normsHostView); // Do the computation on the device.
+    // The function needs to be able to sync X.
+    MV& X = const_cast<MV&> (*this);
+    multiVectorNormImpl (norms.getRawPtr (), X, NORM_TWO);
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const
   {
-    this->normImpl (norms, NORM_TWO);
+    Teuchos::ArrayView<mag_type> norms_av (norms.data (), norms.extent (0));
+    this->norm2 (norms_av);
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -1945,8 +2006,8 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::reduceAll;
     using Teuchos::REDUCE_SUM;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
-    typedef Kokkos::Details::ArithTraits<mag_type> ATM;
+    typedef Kokkos::ArithTraits<impl_scalar_type> ATS;
+    typedef Kokkos::ArithTraits<mag_type> ATM;
     typedef Kokkos::View<mag_type*, Kokkos::HostSpace> norms_view_type;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "normWeighted: ";
@@ -2031,11 +2092,14 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm1 (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using ::Tpetra::Details::NORM_ONE;
+    using ::Tpetra::Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::MV::norm1 (host output)");
 
-    const size_t numNorms = static_cast<size_t> (norms.size ());
-    host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
-    this->norm1 (normsHostView); // Do the computation on the device.
+    // The function needs to be able to sync X.
+    MV& X = const_cast<MV&> (*this);
+    multiVectorNormImpl (norms.data (), X, NORM_ONE);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2043,7 +2107,8 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const
   {
-    this->normImpl (norms, NORM_ONE);
+    Teuchos::ArrayView<mag_type> norms_av (norms.data (), norms.extent (0));
+    this->norm1 (norms_av);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2051,11 +2116,14 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   normInf (const Teuchos::ArrayView<mag_type>& norms) const
   {
-    typedef Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using ::Tpetra::Details::NORM_INF;
+    using ::Tpetra::Details::ProfilingRegion;
+    ProfilingRegion region ("Tpetra::MV::normInf (host output)");
 
-    const size_t numNorms = static_cast<size_t> (norms.size ());
-    host_norms_view_type normsHostView (norms.getRawPtr (), numNorms);
-    this->normInf (normsHostView); // Do the computation on the device.
+    // The function needs to be able to sync X.
+    MV& X = const_cast<MV&> (*this);
+    multiVectorNormImpl (norms.getRawPtr (), X, NORM_INF);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2063,277 +2131,8 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const
   {
-    this->normImpl (norms, NORM_INF);
-  }
-
-  namespace { // (anonymous)
-
-    //! Input argument for localNormImpl() (which see).
-    enum EWhichNormImpl {
-      IMPL_NORM_ONE, //<! Use the one-norm
-      IMPL_NORM_TWO, //<! Use the two-norm
-      IMPL_NORM_INF  //<! Use the infinity-norm
-    };
-
-    template<class RV, class XMV>
-    void
-    lclNormImpl (const RV& normsOut,
-                 const XMV& X_lcl,
-                 const size_t lclNumRows,
-                 const size_t numVecs,
-                 const Teuchos::ArrayView<const size_t>& whichVecs,
-                 const bool constantStride,
-                 const EWhichNormImpl whichNorm)
-    {
-      using Kokkos::ALL;
-      using Kokkos::subview;
-      typedef typename RV::non_const_value_type mag_type;
-
-      static_assert (Kokkos::Impl::is_view<RV>::value,
-                     "Tpetra::MultiVector::lclNormImpl: "
-                     "The first argument RV is not a Kokkos::View.");
-      static_assert (RV::rank == 1, "Tpetra::MultiVector::lclNormImpl: "
-                     "The first argument normsOut must have rank 1.");
-      static_assert (Kokkos::Impl::is_view<XMV>::value,
-                     "Tpetra::MultiVector::lclNormImpl: "
-                     "The second argument X_lcl is not a Kokkos::View.");
-      static_assert (XMV::rank == 2, "Tpetra::MultiVector::lclNormImpl: "
-                     "The second argument X_lcl must have rank 2.");
-
-      // In case the input dimensions don't match, make sure that we
-      // don't overwrite memory that doesn't belong to us, by using
-      // subset views with the minimum dimensions over all input.
-      const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-      const std::pair<size_t, size_t> colRng (0, numVecs);
-      RV theNorms = subview (normsOut, colRng);
-      XMV X = subview (X_lcl, rowRng, Kokkos::ALL());
-
-      // mfh 10 Mar 2015: Kokkos::(Dual)View subviews don't quite
-      // behave how you think when they have zero rows.  In that case,
-      // it returns a 0 x 0 (Dual)View.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        lclNumRows != 0 && constantStride && ( \
-          ( X.extent (0) != lclNumRows ) ||
-          ( X.extent (1) != numVecs    ) ),
-        std::logic_error, "Constant Stride X's dimensions are " << X.extent (0) << " x "
-        << X.extent (1) << ", which differ from the local dimensions "
-        << lclNumRows << " x " << numVecs << ".  Please report this bug to "
-        "the Tpetra developers.");
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        lclNumRows != 0 && !constantStride && ( \
-          ( X.extent (0) != lclNumRows ) ||
-          ( X.extent (1) < numVecs    ) ),
-        std::logic_error, "Strided X's dimensions are " << X.extent (0) << " x "
-        << X.extent (1) << ", which are incompatible with the local dimensions "
-        << lclNumRows << " x " << numVecs << ".  Please report this bug to "
-        "the Tpetra developers.");
-
-      if (lclNumRows == 0) {
-        const mag_type zeroMag = Kokkos::Details::ArithTraits<mag_type>::zero ();
-        Kokkos::deep_copy(theNorms, zeroMag);
-      }
-      else { // lclNumRows != 0
-        if (constantStride) {
-          if (whichNorm == IMPL_NORM_INF) {
-            KokkosBlas::nrminf (theNorms, X);
-          }
-          else if (whichNorm == IMPL_NORM_ONE) {
-            KokkosBlas::nrm1 (theNorms, X);
-          }
-          else if (whichNorm == IMPL_NORM_TWO) {
-            KokkosBlas::nrm2_squared (theNorms, X);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-          }
-        }
-        else { // not constant stride
-          // NOTE (mfh 15 Jul 2014) This does a kernel launch for
-          // every column.  It might be better to have a kernel that
-          // does the work all at once.  On the other hand, we don't
-          // prioritize performance of MultiVector views of
-          // noncontiguous columns.
-          for (size_t k = 0; k < numVecs; ++k) {
-            const size_t X_col = constantStride ? k : whichVecs[k];
-            if (whichNorm == IMPL_NORM_INF) {
-              KokkosBlas::nrminf (subview (theNorms, k),
-                                  subview (X, ALL (), X_col));
-            }
-            else if (whichNorm == IMPL_NORM_ONE) {
-              KokkosBlas::nrm1 (subview (theNorms, k),
-                                subview (X, ALL (), X_col));
-            }
-            else if (whichNorm == IMPL_NORM_TWO) {
-              KokkosBlas::nrm2_squared (subview (theNorms, k),
-                                        subview (X, ALL (), X_col));
-            }
-            else {
-              TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-            }
-          } // for each column
-        } // constantStride
-      } // lclNumRows != 0
-    }
-
-    // Kokkos::parallel_for functor for applying square root to each
-    // entry of a 1-D Kokkos::View.
-    template<class ViewType>
-    class SquareRootFunctor {
-    public:
-      typedef typename ViewType::execution_space execution_space;
-      typedef typename ViewType::size_type size_type;
-
-      SquareRootFunctor (const ViewType& theView) :
-        theView_ (theView)
-      {}
-
-      KOKKOS_INLINE_FUNCTION void
-      operator() (const size_type& i) const
-      {
-        typedef typename ViewType::non_const_value_type value_type;
-        typedef Kokkos::Details::ArithTraits<value_type> KAT;
-        theView_(i) = KAT::sqrt (theView_(i));
-      }
-
-    private:
-      ViewType theView_;
-    };
-
-    template<class RV>
-    void
-    gblNormImpl (const RV& normsOut,
-                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                 const bool distributed,
-                 const EWhichNormImpl whichNorm)
-    {
-      using Teuchos::REDUCE_MAX;
-      using Teuchos::REDUCE_SUM;
-      using Teuchos::reduceAll;
-      typedef typename RV::non_const_value_type mag_type;
-
-      const size_t numVecs = normsOut.extent (0);
-
-      // If the MultiVector is distributed over multiple processes, do
-      // the distributed (interprocess) part of the norm.  We assume
-      // that the MPI implementation can read from and write to device
-      // memory.
-      //
-      // replaceMap() may have removed some processes.  Those processes
-      // have a null Map.  They must not participate in any collective
-      // operations.  We ask first whether the Map is null, because
-      // isDistributed() defers that question to the Map.  We still
-      // compute and return local norms for processes not participating
-      // in collective operations; those probably don't make any sense,
-      // but it doesn't hurt to do them, since it's illegal to call
-      // norm*() on those processes anyway.
-      if (distributed && ! comm.is_null ()) {
-        // The calling process only participates in the collective if
-        // both the Map and its Comm on that process are nonnull.
-        //
-        // MPI doesn't allow aliasing of arguments, so we have to make
-        // a copy of the local sum.
-        RV lclNorms ("MV::normImpl lcl", numVecs);
-        Kokkos::deep_copy (lclNorms, normsOut);
-        const mag_type* const lclSum = lclNorms.data ();
-        mag_type* const gblSum = normsOut.data ();
-        const int nv = static_cast<int> (numVecs);
-        if (whichNorm == IMPL_NORM_INF) {
-          reduceAll<int, mag_type> (*comm, REDUCE_MAX, nv, lclSum, gblSum);
-        } else {
-          reduceAll<int, mag_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
-        }
-      }
-
-      if (whichNorm == IMPL_NORM_TWO) {
-        // Replace the norm-squared results with their square roots in
-        // place, to get the final output.  If the device memory and
-        // the host memory are the same, it probably doesn't pay to
-        // launch a parallel kernel for that, since there isn't enough
-        // parallelism for the typical MultiVector case.
-        const bool inHostMemory =
-          Kokkos::Impl::is_same<typename RV::memory_space,
-            typename RV::host_mirror_space::memory_space>::value;
-        if (inHostMemory) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            normsOut(j) = Kokkos::Details::ArithTraits<mag_type>::sqrt (normsOut(j));
-          }
-        }
-        else {
-          // There's not as much parallelism now, but that's OK.  The
-          // point of doing parallel dispatch here is to keep the norm
-          // results on the device, thus avoiding a copy to the host
-          // and back again.
-          SquareRootFunctor<RV> f (normsOut);
-          typedef typename RV::execution_space execution_space;
-          typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-          Kokkos::parallel_for (range_type (0, numVecs), f);
-        }
-      }
-    }
-
-  } // namespace (anonymous)
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
-            const EWhichNorm whichNorm) const
-  {
-    using Kokkos::subview;
-    // View of all the norm results.
-    using RV = Kokkos::View<mag_type*, Kokkos::HostSpace>;
-
-    const size_t numVecs = this->getNumVectors ();
-    if (numVecs == 0) {
-      return; // nothing to do
-    }
-    const size_t lclNumRows = this->getLocalLength ();
-    const size_t numNorms = static_cast<size_t> (norms.extent (0));
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numNorms < numVecs, std::runtime_error, "Tpetra::MultiVector::normImpl: "
-      "'norms' must have at least as many entries as the number of vectors in "
-      "*this.  norms.extent(0) = " << numNorms << " < this->getNumVectors()"
-      " = " << numVecs << ".");
-
-    const std::pair<size_t, size_t> colRng (0, numVecs);
-    RV normsOut = subview (norms, colRng);
-
-    EWhichNormImpl lclNormType;
-    if (whichNorm == NORM_ONE) {
-      lclNormType = IMPL_NORM_ONE;
-    } else if (whichNorm == NORM_TWO) {
-      lclNormType = IMPL_NORM_TWO;
-    } else {
-      lclNormType = IMPL_NORM_INF;
-    }
-
-    auto map = this->getMap ();
-    auto comm = map.is_null () ? Teuchos::null : map->getComm ();
-
-    // If we need sync to device, then host has the most recent version.
-    const bool runOnHost = this->need_sync_device ();
-    if (runOnHost) {
-      // DualView was last modified on host, so run the local kernel there.
-      // This means we need a host mirror of the array of norms too.
-      using XMV = typename dual_view_type::t_host;
-
-      auto thisView = this->getLocalViewHost ();
-      lclNormImpl<RV, XMV> (normsOut, thisView, lclNumRows, numVecs,
-                            this->whichVectors_, this->isConstantStride (),
-                            lclNormType);
-      gblNormImpl (normsOut, comm, this->isDistributed (), lclNormType);
-    }
-    else {
-      // DualView was last modified on device, so run the local kernel there.
-      using XMV = typename dual_view_type::t_dev;
-
-      auto thisView = this->getLocalViewDevice ();
-      lclNormImpl<RV, XMV> (normsOut, thisView, lclNumRows, numVecs,
-                            this->whichVectors_, this->isConstantStride (),
-                            lclNormType);
-      gblNormImpl (normsOut, comm, this->isDistributed (), lclNormType);
-    }
+    Teuchos::ArrayView<mag_type> norms_av (norms.data (), norms.extent (0));
+    this->normInf (norms_av);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
