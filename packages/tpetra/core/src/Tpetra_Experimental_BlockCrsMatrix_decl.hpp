@@ -47,7 +47,7 @@
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
