@@ -45,8 +45,6 @@
 #include "Tpetra_Experimental_BlockMultiVector_fwd.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
-#include "Teuchos_OrdinalTraits.hpp"
 
 namespace Tpetra {
 namespace Experimental {
@@ -655,10 +653,7 @@ protected:
 
   /// \brief True if and only if \c meshLocalIndex is a valid local
   ///   index in the mesh Map.
-  bool isValidLocalMeshIndex (const LO meshLocalIndex) const {
-    return meshLocalIndex != Teuchos::OrdinalTraits<LO>::invalid () &&
-      meshMap_.isNodeLocalElement (meshLocalIndex);
-  }
+  bool isValidLocalMeshIndex (const LO meshLocalIndex) const;
 
 private:
   /// \brief Mesh Map given to constructor.

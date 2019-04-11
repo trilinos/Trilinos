@@ -42,10 +42,11 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 
-#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
 #include "Tpetra_Details_copyAndPermuteBlockMultiVector.hpp"
 #include "Tpetra_Details_packBlockMultiVector.hpp"
 #include "Tpetra_Details_unpackBlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace { // anonymous
 
@@ -567,6 +568,14 @@ unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (ret.first != 0, std::runtime_error, "unpackBlockMultiVector "
      "reports an error: " << * (ret.second));
+}
+
+template<class Scalar, class LO, class GO, class Node>
+bool BlockMultiVector<Scalar, LO, GO, Node>::
+isValidLocalMeshIndex (const LO meshLocalIndex) const
+{
+  return meshLocalIndex != Teuchos::OrdinalTraits<LO>::invalid () &&
+    meshMap_.isNodeLocalElement (meshLocalIndex);
 }
 
 template<class Scalar, class LO, class GO, class Node>

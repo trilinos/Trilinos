@@ -43,6 +43,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
