@@ -79,22 +79,25 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    TPETRA_DEPRECATED
     void
     generateMatrix (const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                     const Teuchos::RCP<Node> &node,
                     Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    TPETRA_DEPRECATED
     void
     generateMatrix (const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                     Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
+    TPETRA_DEPRECATED
     readHBMatrix (const std::string &filename,
                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                   const Teuchos::RCP<Node> &node,

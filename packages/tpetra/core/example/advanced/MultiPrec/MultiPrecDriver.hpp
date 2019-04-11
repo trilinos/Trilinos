@@ -71,7 +71,7 @@ class MultiPrecDriver {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Node> 
   TPETRA_DEPRECATED
-  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) 
+  void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> & /* node */) 
   {
     run<Node>(myMachPL, comm);
   }

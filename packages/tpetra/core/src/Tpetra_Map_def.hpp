@@ -2046,7 +2046,7 @@ TPETRA_DEPRECATED
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createUniformContigMapWithNode (const global_size_t numElements,
                                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                        const Teuchos::RCP<Node>& node
+                                        const Teuchos::RCP<Node>& /* node */
 )
 {
   return Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>
@@ -2073,7 +2073,7 @@ TPETRA_DEPRECATED
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createLocalMapWithNode (const size_t numElements,
                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
-                                const Teuchos::RCP<Node>& node
+                                const Teuchos::RCP<Node>& /* node */
 )
 {
   return Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>
