@@ -342,8 +342,7 @@ NonlinearCG<Scalar>::doSolve(
   ScalarMag
     alpha_km1 = SMT::zero(),
     g_km1 = SMT::zero(),
-    g_grad_km1_inner_g_grad_km1 = SMT::zero(),
-    g_grad_km1_inner_d_km1 = SMT::zero();
+    g_grad_km1_inner_g_grad_km1 = SMT::zero();
 
   if (compute_beta_PR || compute_beta_HS) {
     g_grad_km1 = createMember(p_space);
@@ -640,7 +639,6 @@ NonlinearCG<Scalar>::doSolve(
     alpha_km1 = alpha_k;
     g_km1 = g_k;
     g_grad_km1_inner_g_grad_km1 = g_grad_k_inner_g_grad_k;
-    g_grad_km1_inner_d_km1 = g_grad_k_inner_d_k;
     std::swap(p_k, p_kp1);
     if (!is_null(g_grad_km1))
       std::swap(g_grad_km1, g_grad_k);

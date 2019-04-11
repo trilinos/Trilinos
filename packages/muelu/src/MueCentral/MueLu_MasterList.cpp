@@ -271,6 +271,7 @@ namespace MueLu {
   "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift array\" type=\"Array(double)\" value=\"{}\"/>"
+  "<Parameter name=\"rap: cfl array\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
   "<Parameter name=\"matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
@@ -702,6 +703,8 @@ namespace MueLu {
          ("rap: shift low storage","rap: shift low storage")
       
          ("rap: shift array","rap: shift array")
+      
+         ("rap: cfl array","rap: cfl array")
       
          ("rap: algorithm","rap: algorithm")
       

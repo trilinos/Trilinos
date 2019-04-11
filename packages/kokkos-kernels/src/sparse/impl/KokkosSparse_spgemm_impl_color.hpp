@@ -513,7 +513,7 @@ void
       handle->get_graph_coloring_handle()->set_algorithm(KokkosGraph::COLORING_SERIAL2);
       //for now only sequential one exists.
       //find distance-2 graph coloring
-      KokkosGraph::Experimental::d2_graph_color
+      KokkosGraph::Experimental::graph_compute_distance2_color_serial
     <HandleType,
     c_row_view_t, c_nnz_view_t,
     row_lno_temp_work_view_t, nnz_lno_temp_work_view_t>

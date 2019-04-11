@@ -493,7 +493,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "    KExecSName     : " << Kokkos::DefaultExecutionSpace::name() << std::endl
               << "    Filename       : " << a_mtx_bin_file << std::endl
               << "    Num Verts      : " << crsGraph.numRows() << std::endl
-              << "    Num Edges      : " << crsGraph.entries.dimension_0() << std::endl
+              << "    Num Edges      : " << crsGraph.entries.extent(0) << std::endl
               << "    Concurrency    : " << Kokkos::DefaultExecutionSpace::concurrency() << std::endl
               << "    Algorithm      : " << label_algorithm << std::endl
               #if defined(USE_EXPERIMENTAL_MAXD2DEGREE) && USE_EXPERIMENTAL_MAXD2DEGREE
@@ -547,7 +547,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << hostname
               << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
-              << "," << crsGraph.entries.dimension_0()
+              << "," << crsGraph.entries.extent(0)
               << "," << Kokkos::DefaultExecutionSpace::name()
               << "," << label_algorithm
               << "," << Kokkos::DefaultExecutionSpace::concurrency()
@@ -585,7 +585,7 @@ void run_experiment(crsGraph_t crsGraph, Parameters params)
               << "," << hostname
               << "," << currentDateTimeStr
               << "," << crsGraph.numRows()
-              << "," << crsGraph.entries.dimension_0()
+              << "," << crsGraph.entries.extent(0)
               << "," << Kokkos::DefaultExecutionSpace::name()
               << "," << label_algorithm
               << "," << Kokkos::DefaultExecutionSpace::concurrency()

@@ -31,6 +31,14 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
     TRIBITS_ADD_TEST(
       Structured
+      NAME "Structured_Laplace2D_Shift_Tpetra"
+      ARGS "--linAlgebra=Tpetra --xml=structured_1dof_shift.xml --matrixType=Laplace2D"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
+    TRIBITS_ADD_TEST(
+      Structured
       NAME "Structured_Elasticity3D_Tpetra"
       ARGS "--linAlgebra=Tpetra --xml=structured_3dof.xml --matrixType=Elasticity3D --nx=25 --ny=25 --nz=25"
       COMM serial mpi
@@ -84,6 +92,14 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
     TRIBITS_ADD_TEST(
       Structured
+      NAME "Structured_Laplace2D_Shift_Epetra"
+      ARGS "--linAlgebra=Epetra --xml=structured_1dof_shift.xml --matrixType=Laplace2D"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
+    TRIBITS_ADD_TEST(
+      Structured
       NAME "Structured_Elasticity3D_Epetra"
       ARGS "--linAlgebra=Epetra --xml=structured_3dof.xml --matrixType=Elasticity3D --nx=25 --ny=25 --nz=25"
       COMM serial mpi
@@ -101,7 +117,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Structured_cp
-    SOURCE_FILES structured_1dof.xml structured_2dof.xml structured_3dof.xml structured_interp_line.xml structured_interp_kokkos.xml structured_interp_sa_kokkos.xml structured_tentative_kokkos.xml
+    SOURCE_FILES structured_1dof.xml structured_1dof_shift.xml structured_2dof.xml structured_3dof.xml structured_interp_line.xml structured_interp_kokkos.xml structured_interp_sa_kokkos.xml structured_tentative_kokkos.xml
     )
 
 
