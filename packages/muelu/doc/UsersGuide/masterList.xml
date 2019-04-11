@@ -1224,6 +1224,14 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>rap: cfl array</name>
+      <type>Array(double)</type>
+      <default>{}</default>
+      <description>Effective CFl at each level to use in the RAPShiftFactory (the string must be interpretable as an array by Teuchos).  </description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
 
     <parameter>
       <name>rap: algorithm</name>
