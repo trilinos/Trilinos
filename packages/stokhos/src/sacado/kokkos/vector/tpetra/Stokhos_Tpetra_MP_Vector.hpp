@@ -74,6 +74,14 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy_MP_Vector.hpp"
 #include "Tpetra_Details_fill_MP_Vector.hpp"
 #include "Kokkos_Random_MP_Vector.hpp"
+// mfh 12 Apr 2019: Tpetra's ETI macro for Tpetra::Details::normImpl
+// only takes 2 template parameters (Scalar and Node), so we can't
+// just add it to Stokhos' list of Tpetra ETI types (for which Stokhos
+// assumes their ETI macros all take 4 template parameters).  This is
+// why we include the decl and (especially the) def header files for
+// Tpetra::Details::normImpl here.
+#include "Tpetra_Details_normImpl_decl.hpp"
+#include "Tpetra_Details_normImpl_def.hpp"
 #endif
 
 namespace Stokhos {
