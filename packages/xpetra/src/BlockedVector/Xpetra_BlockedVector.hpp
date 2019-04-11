@@ -355,7 +355,7 @@ namespace Xpetra {
     }
 
     //! Compute mean (average) value of each vector in vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
-    virtual void meanValue(const Teuchos::ArrayView< Scalar > &means) const {
+    virtual void meanValue(const Teuchos::ArrayView< Scalar > &/* means */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::meanValue: Not (yet) supported by BlockedVector.");
     }
 
@@ -364,21 +364,21 @@ namespace Xpetra {
     }
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
-    virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const Vector&A, const Vector&B, const Scalar &beta) {
+    virtual void multiply(Teuchos::ETransp /* transA */, Teuchos::ETransp /* transB */, const Scalar &/* alpha */, const Vector&/* A */, const Vector&/* B */, const Scalar &/* beta */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::multiply: Not (yet) supported by BlockedVector.");
     }
 
-    virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector&A, const MultiVector&B, const Scalar &beta) {
+    virtual void multiply(Teuchos::ETransp /* transA */, Teuchos::ETransp /* transB */, const Scalar &/* alpha */, const MultiVector&/* A */, const MultiVector&/* B */, const Scalar &/* beta */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::multiply: Not (yet) supported by BlockedVector.");
     }
 
 
-    virtual void elementWiseMultiply(Scalar scalarAB, const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&A, const MultiVector&B, Scalar scalarThis) {
+    virtual void elementWiseMultiply(Scalar /* scalarAB */, const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&/* A */, const MultiVector&/* B */, Scalar /* scalarThis */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::elementWiseMultiply: Not (yet) supported by BlockedVector.");
     }
 
     //! Element-wise multiply of a Vector A with a Vector B.
-    virtual void elementWiseMultiply(Scalar scalarAB, const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&A, const Vector&B, Scalar scalarThis) {
+    virtual void elementWiseMultiply(Scalar /* scalarAB */, const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&A, const Vector&B, Scalar /* scalarThis */) {
       XPETRA_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(this->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedVector::elementWiseMultipy: B must have same blocked map than this.");
       TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getNodeNumElements() != B.getMap()->getNodeNumElements(), Xpetra::Exceptions::RuntimeError, "BlockedVector::elementWiseMultipy: A has " << A.getMap()->getNodeNumElements() << " elements, B has " << B.getMap()->getNodeNumElements() << ".");
       TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getGlobalNumElements() != B.getMap()->getGlobalNumElements(), Xpetra::Exceptions::RuntimeError, "BlockedVector::elementWiseMultipy: A has " << A.getMap()->getGlobalNumElements() << " elements, B has " << B.getMap()->getGlobalNumElements() << ".");
@@ -422,7 +422,7 @@ namespace Xpetra {
     }
 
     //! Local number of rows on the calling process.
-    virtual bool isSameSize(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const {
+    virtual bool isSameSize(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & /* vec */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::isSameSize: routine not implemented. It has no value as one must iterate on the partial vectors.");
       TEUCHOS_UNREACHABLE_RETURN(0);
     }
@@ -449,22 +449,22 @@ namespace Xpetra {
     }
 
     //! Import.
-    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import& importer, CombineMode CM) {
+    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* source */, const Import& /* importer */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::doImport: Not supported by BlockedVector.");
     }
 
     //! Export.
-    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import& importer, CombineMode CM) {
+    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* dest */, const Import& /* importer */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::doExport: Not supported by BlockedVector.");
     }
 
     //! Import (using an Exporter).
-    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Export& exporter, CombineMode CM) {
+    virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* source */, const Export& /* exporter */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::doImport: Not supported by BlockedVector.");
     }
 
     //! Export (using an Importer).
-    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export& exporter, CombineMode CM) {
+    virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &/* dest */, const Export& /* exporter */, CombineMode /* CM */) {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::doExport: Not supported by BlockedVector.");
     }
 
