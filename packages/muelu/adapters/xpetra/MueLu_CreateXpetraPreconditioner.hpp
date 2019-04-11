@@ -28,27 +28,29 @@
 #include <stdlib.h>
 
 namespace MueLu {
+
   /*!
     @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
     @ingroup MueLuAdapters
     Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
     @param[in] inA Matrix
     @param[in] inParamList Parameter list
-    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
-    @param[in] inNullspace (optional) Near nullspace of the matrix.
   */
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
-                             const Teuchos::ParameterList& inParamList,
-                             Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > coords = Teuchos::null,
-                             Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace = Teuchos::null) {
-    typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
-    typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
-    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
-    typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
-    typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
+                             const Teuchos::ParameterList& inParamList) {
+    using SC = Scalar;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    using NO = Node;
+
+    using HierarchyManager = MueLu::HierarchyManager<SC, LO, GO, NO>;
+    using HierarchyUtils = MueLu::HierarchyUtils<SC, LO, GO, NO>;
+    using Hierarchy = MueLu::Hierarchy<SC, LO, GO, NO>;
+    using MLParameterListInterpreter = MLParameterListInterpreter<SC, LO, GO, NO>;
+    using ParameterListInterpreter = ParameterListInterpreter<SC, LO, GO, NO>;
 
     bool hasParamList = inParamList.numParams();
 
@@ -91,14 +93,6 @@ namespace MueLu {
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
     H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
-
-    // Set coordinates if available
-    if (coords != Teuchos::null)
-      H->GetLevel(0)->Set("Coordinates", coords);
-
-    // Set nullspace if available
-    if (nullspace != Teuchos::null)
-      H->GetLevel(0)->Set("Nullspace", nullspace);
 
     mueLuFactory->SetupHierarchy(*H);
 
@@ -120,77 +114,35 @@ namespace MueLu {
     return H;
   }
 
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
+    @ingroup MueLuAdapters
+    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] xmlFileName std::string
+  */
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
-                             const Teuchos::ParameterList& inParamList,
-                             const Teuchos::ParameterList& dummy) {
-    typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
-    typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
-    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
-    typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
-    typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
+                             const std::string& xmlFileName) {
+    Teuchos::ParameterList paramList;
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *op->getDomainMap()->getComm());
+    return CreateXpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op, paramList);
+  }
 
-    bool hasParamList = inParamList.numParams();
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
+    @ingroup MueLuAdapters
+    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+  */
 
-    RCP<HierarchyManager> mueLuFactory;
-
-    // Rip off non-serializable data before validation
-    Teuchos::ParameterList nonSerialList,paramList;
-    MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
-
-    std::string label;
-    if (hasParamList && paramList.isParameter("hierarchy label")) {
-      label = paramList.get<std::string>("hierarchy label");
-      paramList.remove("hierarchy label");
-    } else
-      label = op->getObjectLabel();
-
-    std::string timerName;
-    if (label != "")
-      timerName = "MueLu setup time (" + label + ")";
-    else
-      timerName = "MueLu setup time";
-    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
-    tm->start();
-
-    std::string syntaxStr = "parameterlist: syntax";
-    if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
-      paramList.remove(syntaxStr);
-      mueLuFactory = rcp(new MLParameterListInterpreter(paramList));
-    } else {
-      mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
-    }
-
-    // Create Hierarchy
-    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);
-    H->setlib(op->getDomainMap()->lib());
-
-    // Stick the non-serializible data on the hierarchy.
-    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
-
-    // Set fine level operator
-    H->GetLevel(0)->Set("A", op);
-    H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
-
-    mueLuFactory->SetupHierarchy(*H);
-
-    tm->stop();
-    tm->incrementNumCalls();
-
-    if (H->GetVerbLevel() & Statistics0) {
-      const bool alwaysWriteLocal = true;
-      const bool writeGlobalStats = true;
-      const bool writeZeroTimers  = false;
-      const bool ignoreZeroTimers = true;
-      const std::string filter    = timerName;
-      Teuchos::TimeMonitor::summarize(op->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
-                                      writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
-    }
-
-    tm->reset();
-
-    return H;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op) {
+    Teuchos::ParameterList paramList;
+    return CreateXpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op, paramList);
   }
 
   /*!
@@ -255,6 +207,65 @@ namespace MueLu {
 
     tm->reset();
   }
+
+
+#ifdef HAVE_MUELU_DEPRECATED_CODE
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
+    @ingroup MueLuAdapters
+    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inParamList Parameter list
+    @param[in] inCoords  Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+    @param[in] inNullspace Near nullspace of the matrix.
+  */
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MUELU_DEPRECATED
+  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
+                             const Teuchos::ParameterList& inParamList,
+                             Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords,
+                             Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) {
+
+    Teuchos::ParameterList userParamList = inParamList.sublist("user data");
+    if (Teuchos::nonnull(coords)) {
+      userParamList.set<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates", coords);
+    }
+    if(Teuchos::nonnull(nullspace)) {
+      userParamList.set<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Nullspace", nullspace);
+    }
+
+    return CreateXpetraPreconditioner(op, inParamList);
+
+  }
+
+  /*!
+    @brief Helper function to create a MueLu preconditioner that can be used by Xpetra.
+    @ingroup MueLuAdapters
+    Given an Xpetra::Matrix, this function returns a constructed MueLu preconditioner.
+    @param[in] inA Matrix
+    @param[in] inParamList Parameter list
+    @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
+  */
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MUELU_DEPRECATED
+  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op,
+                             const Teuchos::ParameterList& inParamList,
+                             Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > coords) {
+
+    Teuchos::ParameterList mueluParams = inParamList;
+    Teuchos::ParameterList& userParamList = mueluParams.sublist("user data");
+    if (Teuchos::nonnull(coords)) {
+      userParamList.set<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates", coords);
+    }
+    return CreateXpetraPreconditioner(op, mueluParams);
+  }
+
+#endif // HAVE_MUELU_DEPRECATED_CODE
 
 } //namespace
 
