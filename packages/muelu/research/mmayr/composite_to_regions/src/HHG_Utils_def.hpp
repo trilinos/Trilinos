@@ -84,7 +84,7 @@ struct widget {
   int *myRegions;
   Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> *colMap;
   int maxRegPerGID;
-  Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> regionsPerGIDWithGhosts;
+  Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>> regionsPerGIDWithGhosts;
   int *gDim, *lDim, *lowInd;
   int *trueCornerx; // global coordinates of region
   int *trueCornery; // corner within entire 2D mesh

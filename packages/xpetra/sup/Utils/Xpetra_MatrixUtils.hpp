@@ -61,6 +61,10 @@
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
+#ifdef HAVE_XPETRA_TPETRA
+#include <Tpetra_RowMatrixTransposer.hpp>
+#endif
+
 namespace Xpetra {
 
 /*!
@@ -73,9 +77,9 @@ namespace Xpetra {
 
 */
 template <class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class MatrixUtils {
 #undef XPETRA_MATRIXUTILS_SHORT
 #include "Xpetra_UseShortNames.hpp"
@@ -432,7 +436,7 @@ public:
       }
     }
     return bA;
-  }
+  } // SplitMatrix
 
   /** Given a matrix A, detect too small diagonals and replace any found with ones. */
 

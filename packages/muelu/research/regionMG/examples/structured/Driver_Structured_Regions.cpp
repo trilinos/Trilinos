@@ -138,10 +138,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   // Convenient definitions
   // =========================================================================
-  typedef Teuchos::ScalarTraits<SC> STS;
+  using STS = Teuchos::ScalarTraits<SC>;
   SC zero = STS::zero(), one = STS::one();
-  typedef typename STS::magnitudeType real_type;
-  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  using real_type = typename STS::coordinateType;
+  using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+  const real_type realOne = Teuchos::ScalarTraits<real_type>::one();
 
   // =========================================================================
   // Parameters initialization
@@ -213,15 +214,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   comm->barrier();
   Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
-  RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
+  RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Build Composite Matrix")));
 
 
   RCP<Matrix>      A;
-  RCP<const Map>   map;
+  RCP<Xpetra::Map<LO,GO,NO> > nodeMap, dofMap;
   RCP<RealValuedMultiVector> coordinates;
-  typedef typename RealValuedMultiVector::scalar_type Real;
-  RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nullspace;
-  RCP<MultiVector> X, B;
+  RCP<Vector> X, B;
 
   galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -246,26 +245,29 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
   if (matrixType == "Laplace1D") {
     numDimensions = 1;
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
+    nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", nodeMap, galeriList);
 
   } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
              matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
     numDimensions = 2;
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
+    nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
     numDimensions = 3;
-    map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
+    nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
   }
 
   // Expand map to do multiple DOF per node for block problems
-  if (matrixType == "Elasticity2D")
-    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2);
-  if (matrixType == "Elasticity3D")
-    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
+  if (matrixType == "Elasticity2D") {
+    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 2);
+  } else if (matrixType == "Elasticity3D") {
+    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 3);
+  } else {
+    dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, 1);
+  }
 
   galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
                << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
@@ -282,7 +284,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   }
 
   RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
+    Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
   A = Pr->BuildMatrix();
 
   if(matrixType == "Elasticity2D") {
@@ -293,8 +295,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   A->SetFixedBlockSize(numDofsPerNode);
 
-  X = VectorFactory::Build(map);
-  B = VectorFactory::Build(map);
+  X = VectorFactory::Build(dofMap);
+  B = VectorFactory::Build(dofMap);
 
   // we set seed for reproducibility
   Utilities::SetRandomSeed(*comm);
@@ -354,7 +356,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   Teuchos::Array<GO> startIndices(3);
   Teuchos::Array<GO> endIndices(3);
-  const GO startGID = map->getMinGlobalIndex();
+  const GO startGID = dofMap->getMinGlobalIndex();
   startIndices[2] = startGID / (gNodesPerDim[1]*gNodesPerDim[0]);
   const GO rem    = startGID % (gNodesPerDim[1]*gNodesPerDim[0]);
   startIndices[1] = rem / gNodesPerDim[0];
@@ -362,6 +364,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   endIndices[0] = startIndices[0] + lNodesPerDim[0] - 1;
   endIndices[1] = startIndices[1] + lNodesPerDim[1] - 1;
   endIndices[2] = startIndices[2] + lNodesPerDim[2] - 1;
+
+  const LO numLocalCompositeNodes = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
 
   int leftBC = 0, rightBC = 0, frontBC = 0, backBC = 0, bottomBC = 0, topBC = 0;
   if(startIndices[0] == 0) {leftBC = 1;}
@@ -372,13 +376,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   if(endIndices[1] == gNodesPerDim[1] - 1) {backBC = 1;}
   if(endIndices[2] == gNodesPerDim[2] - 1) {topBC = 1;}
 
-  std::cout << "p=" << myRank << " | startGID= " << startGID
-            << ", startIndices: " << startIndices
-            << ", endIndices: " << endIndices
-            << ", gNodesPerDim: " << gNodesPerDim
-            << ", BCs={" << leftBC << ", " << rightBC << ", "
-            << frontBC << ", " << backBC << ", "
-            << bottomBC << ", " << topBC << "}" << std::endl;
+  // std::cout << "p=" << myRank << " | startGID= " << startGID
+  //           << ", startIndices: " << startIndices
+  //           << ", endIndices: " << endIndices
+  //           << ", gNodesPerDim: " << gNodesPerDim
+  //           << ", BCs={" << leftBC << ", " << rightBC << ", "
+  //           << frontBC << ", " << backBC << ", "
+  //           << bottomBC << ", " << topBC << "}" << std::endl;
 
   // Rule for boundary duplication
   // For any two ranks that share an interface:
@@ -386,16 +390,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // First we count how many nodes the region needs to send and receive
   // and allocate arrays accordingly
+  const int maxRegPerProc = 1;
+  int maxRegPerGID = 0;
   LO numReceive = 0, numSend = 0;
   Teuchos::Array<GO>  receiveGIDs;
   Teuchos::Array<int> receivePIDs;
+  Teuchos::Array<LO>  receiveLIDs;
   Teuchos::Array<GO>  sendGIDs;
   Teuchos::Array<int> sendPIDs;
+  Teuchos::Array<LO>  sendLIDs;
   if(numDimensions == 1) {
+    maxRegPerGID = 2;
     if(leftBC == 0) {
       numReceive = 1;
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       receiveGIDs[0] = startIndices[0] - 1;
       receivePIDs[0] = myRank - 1;
@@ -404,16 +414,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numSend = 1;
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       sendGIDs[0] = endIndices[0];
       sendGIDs[0] = myRank + 1;
+      sendLIDs[0] = lNodesPerDim[0] - 1;
     }
   } else if(numDimensions == 2) {
+    maxRegPerGID = 4;
     // Received nodes
     if(frontBC == 0 && leftBC == 0) {
       numReceive = lNodesPerDim[0] + lNodesPerDim[1] + 1;
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive front-left corner node
@@ -436,6 +450,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[0];
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive front edge nodes
@@ -448,6 +463,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[1];
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive left edge nodes
@@ -463,51 +479,60 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numSend = lNodesPerDim[0] + lNodesPerDim[1] + 1;
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right edge
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + 1;
+        sendLIDs[countIDs] = (j + 1)*lNodesPerDim[0] - 1;
         ++countIDs;
       }
       // Send nodes of back edge
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
         sendPIDs[countIDs] = myRank + procsPerDim[0];
+        sendLIDs[countIDs] = (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
         ++countIDs;
       }
       // Send node of back-right corner
       sendGIDs[countIDs] = startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0] + lNodesPerDim[0] - 1;
       sendPIDs[countIDs] = myRank + procsPerDim[1] + 1;
+      sendLIDs[countIDs] = lNodesPerDim[1]*lNodesPerDim[0] - 1;
       ++countIDs;
     } else if(backBC == 0) {
       numSend = lNodesPerDim[0];
 
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of back edge
       for(LO i = 0; i < lNodesPerDim[0]; ++i) {
         sendGIDs[countIDs] = i + startGID + (lNodesPerDim[1] - 1)*gNodesPerDim[0];
         sendPIDs[countIDs] = myRank + procsPerDim[0];
+        sendLIDs[countIDs] = (lNodesPerDim[1] - 1)*lNodesPerDim[0] + i;
         ++countIDs;
       }
     } else if(rightBC == 0) {
       numSend = lNodesPerDim[1];
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right edge
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         sendGIDs[countIDs] = j*gNodesPerDim[0] + startGID + lNodesPerDim[0] - 1;
         sendPIDs[countIDs] = myRank + 1;
+        sendLIDs[countIDs] = (j + 1)*lNodesPerDim[0] - 1;
         ++countIDs;
       }
     }
   } else if(numDimensions == 3) {
+    maxRegPerGID = 8;
     // Received nodes
     if( (bottomBC == 0) && (frontBC == 0) && (leftBC == 0) ) {
       numReceive = lNodesPerDim[0]*lNodesPerDim[1]     // bottom face
@@ -515,6 +540,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         + (lNodesPerDim[1] + 1)*(lNodesPerDim[2] + 1); // left face
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive front-left-bottom corner node
@@ -580,6 +606,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         + lNodesPerDim[0]*(lNodesPerDim[2] + 1);       // front face;
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive front-bottom edge nodes
@@ -613,6 +640,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[1]*(lNodesPerDim[0] + lNodesPerDim[2] + 1);
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive left-bottom edge nodes
@@ -645,6 +673,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[2]*(lNodesPerDim[1] + lNodesPerDim[0] + 1);
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive front-left edge nodes
@@ -678,6 +707,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[0]*lNodesPerDim[1];
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive bottom face nodes
@@ -694,6 +724,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[0]*lNodesPerDim[2];
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Receive front face nodes
@@ -710,6 +741,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numReceive = lNodesPerDim[1]*lNodesPerDim[2];
       receiveGIDs.resize(numReceive);
       receivePIDs.resize(numReceive);
+      receiveLIDs.resize(numReceive);
 
       LO countIDs = 0;
       // Recive left face nodes
@@ -735,6 +767,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         + 1;
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right face
@@ -799,6 +832,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
               + (lNodesPerDim[0]); // top-back edge
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of back face
@@ -834,6 +868,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
               + (lNodesPerDim[1]); // top-right edge
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right face
@@ -867,6 +902,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numSend = lNodesPerDim[2]*(lNodesPerDim[0] + lNodesPerDim[1] + 1);
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right face
@@ -899,6 +935,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numSend = lNodesPerDim[0]*lNodesPerDim[1];
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of top face
@@ -915,6 +952,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numSend = lNodesPerDim[0]*lNodesPerDim[2];
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of back face
@@ -931,6 +969,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       numSend = lNodesPerDim[1]*lNodesPerDim[2];
       sendGIDs.resize(numSend);
       sendPIDs.resize(numSend);
+      sendLIDs.resize(numSend);
 
       LO countIDs = 0;
       // Send nodes of right face
@@ -949,109 +988,347 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Second we actually fill the send and receive arrays with appropriate data
   // which will allow us to compute the region and composite maps.
 
-  std::cout << "p=" << myRank << " | numReceive=" << numReceive
-            << ", numSend=" << numSend << std::endl;
-  std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
-  std::cout << "p=" << myRank << " | receivePIDs: " << receivePIDs << std::endl;
-  std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
-  std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
+  // std::cout << "p=" << myRank << " | numReceive=" << numReceive
+  //           << ", numSend=" << numSend << std::endl;
+  // std::cout << "p=" << myRank << " | receiveGIDs: " << receiveGIDs << std::endl;
+  // std::cout << "p=" << myRank << " | receivePIDs: " << receivePIDs << std::endl;
+  // std::cout << "p=" << myRank << " | sendGIDs: " << sendGIDs << std::endl;
+  // std::cout << "p=" << myRank << " | sendPIDs: " << sendPIDs << std::endl;
+
+  // Now we can construct a list of GIDs that corresponds to rowMapPerGrp
+  const LO numLocalRegionNodes = numLocalCompositeNodes + numReceive;
+  Array<LO> rNodesPerDim(3);
+  Array<GO> quasiRegionGIDs(numLocalRegionNodes*numDofsPerNode);
+  Array<GO> regionGIDs(numLocalRegionNodes*numDofsPerNode);
+
+  rNodesPerDim[0] = lNodesPerDim[0];
+  rNodesPerDim[1] = lNodesPerDim[1];
+  rNodesPerDim[2] = lNodesPerDim[2];
+  if(leftBC   == 0) {rNodesPerDim[0] += 1;}
+  if(frontBC  == 0) {rNodesPerDim[1] += 1;}
+  if(bottomBC == 0) {rNodesPerDim[2] += 1;}
+
+  // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
+  //           << ", rNodesPerDim: " << rNodesPerDim << std::endl;
+
+  Array<LO> compositeToRegionLIDs(nodeMap->getNodeNumElements());
+
+  // Using receiveGIDs, rNodesPerDim and numLocalRegionNodes, build quasi-region row map
+  // This will potentially be done by the application or in a MueLu interface but for now
+  // doing it in the driver seem to avoid design hassle...
+  LO interfaceCount = 0, compositeIdx = 0;
+  Array<LO> regionIJK(3);
+  for(LO nodeRegionIdx = 0; nodeRegionIdx < numLocalRegionNodes; ++nodeRegionIdx) {
+    regionIJK[2] = nodeRegionIdx / (rNodesPerDim[1]*rNodesPerDim[0]);
+    LO tmp       = nodeRegionIdx % (rNodesPerDim[1]*rNodesPerDim[0]);
+    regionIJK[1] = tmp / rNodesPerDim[0];
+    regionIJK[0] = tmp % rNodesPerDim[0];
+
+    // std::cout << "p=" << myRank << " | regionIJK=" << regionIJK << std::endl;
+
+    if( (regionIJK[0] == 0 && leftBC   == 0) ||
+        (regionIJK[1] == 0 && frontBC  == 0) ||
+        (regionIJK[2] == 0 && bottomBC == 0) ) {
+      for(int dof = 0; dof < numDofsPerNode; ++dof) {
+        quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof] =
+          receiveGIDs[interfaceCount]*numDofsPerNode + dof;
+      }
+      receiveLIDs[interfaceCount] = nodeRegionIdx;
+      ++interfaceCount;
+    } else {
+      compositeIdx = (regionIJK[2] + bottomBC - 1)*lNodesPerDim[1]*lNodesPerDim[0]
+        + (regionIJK[1] + frontBC  - 1)*lNodesPerDim[0]
+        + (regionIJK[0] + leftBC - 1);
+      for(int dof = 0; dof < numDofsPerNode; ++dof) {
+        quasiRegionGIDs[nodeRegionIdx*numDofsPerNode + dof]
+          = dofMap->getGlobalElement(compositeIdx*numDofsPerNode + dof);
+      }
+      compositeToRegionLIDs[compositeIdx] = nodeRegionIdx;
+    }
+  }
+
+  // std::cout << "p=" << myRank << " | receiveLIDs: " << receiveLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | sendLIDs: " << sendLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | compositeToRegionLIDs: " << compositeToRegionLIDs() << std::endl;
+  // std::cout << "p=" << myRank << " | quasiRegionGIDs: " << quasiRegionGIDs << std::endl;
+
+  // In our very particular case we know that a node is at most shared by 4 regions.
+  // Other geometries will certainly have different constrains and a parallel reduction using MAX
+  // would be appropriate.
+  RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGID
+    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(dofMap, maxRegPerGID, false);
+
+  { // Scope for regionsPerGIDView
+    Array<ArrayRCP<LO> > regionsPerGIDView(maxRegPerGID);
+    for(int regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
+      regionsPerGIDView[regionIdx] = regionsPerGID->getDataNonConst(regionIdx);
+    }
+
+    // Initialize all entries to myRank in first column and to -1 in other columns
+    for(LO dofIdx = 0; dofIdx < numLocalCompositeNodes*numDofsPerNode; ++dofIdx) {
+      regionsPerGIDView[0][dofIdx] = myRank;
+      for(int regionIdx = 1; regionIdx < maxRegPerGID; ++regionIdx) {
+        regionsPerGIDView[regionIdx][dofIdx] = -1;
+      }
+    }
+
+    // Now loop over the sendGIDs array to fill entries with values in sendPIDs
+    LO nodeIdx = 0;
+    for(LO sendIdx = 0; sendIdx < numSend; ++sendIdx) {
+      nodeIdx = nodeMap->getLocalElement(sendGIDs[sendIdx]);
+      for(int dof = 0; dof < numDofsPerNode; ++dof) {
+        LO dofIdx = nodeIdx*numDofsPerNode + dof;
+        for(int regionIdx = 1; regionIdx < maxRegPerGID; ++regionIdx) {
+          if(regionsPerGIDView[regionIdx][dofIdx] == -1) {
+            regionsPerGIDView[regionIdx][dofIdx] = sendPIDs[sendIdx];
+            break;
+          }
+        }
+      }
+    }
+  } // end of regionsPerGIDView's scope
+
+  // if(myRank == 0) std::cout << "regionsPerGID:" << std::endl;
+  // regionsPerGID->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
   comm->barrier();
   tm = Teuchos::null;
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - Build Region Matrix")));
 
-  std::vector<LO> myRegions(1, 0);
-  std::vector<Teuchos::RCP<Map> > rowMapPerGrp(1);
+  std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
+  std::vector<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
+  rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
+                                                          Teuchos::OrdinalTraits<GO>::invalid(),
+                                                          quasiRegionGIDs(),
+                                                          dofMap->getIndexBase(),
+                                                          dofMap->getComm());
+  colMapPerGrp[0] = rowMapPerGrp[0];
+  revisedRowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
+                                                                 Teuchos::OrdinalTraits<GO>::invalid(),
+                                                                 numLocalRegionNodes,
+                                                                 dofMap->getIndexBase(),
+                                                                 dofMap->getComm());
+  revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
 
-  // MakeGroupRegionRowMaps(myRank, A, myLIDRegion, appData, myRegions, rowMapPerGrp);
+  // Setup importers
+  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
+  std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
+  rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
+  colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+
+  RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts
+    = Xpetra::MultiVectorFactory<LO, LO, GO, NO>::Build(A->getColMap(), maxRegPerGID, false);
+  RCP<Import> regionsPerGIDImport = ImportFactory::Build(A->getRowMap(), A->getColMap());
+  regionsPerGIDWithGhosts->doImport(*regionsPerGID, *regionsPerGIDImport, Xpetra::INSERT);
+
+  // if(myRank == 0) std::cout << "regionsPerGIDWithGhosts:" << std::endl;
+  // regionsPerGIDWithGhosts->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+
+  std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > quasiRegionGrpMats(1);
+  MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
+                          regionsPerGIDWithGhosts, rowMapPerGrp, colMapPerGrp, rowImportPerGrp,
+                          quasiRegionGrpMats);
+
+  std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats(1);
+  MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMapPerGrp,
+                     revisedRowMapPerGrp, revisedColMapPerGrp,
+                     rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
+
+  // if(myRank == 0) std::cout << "composite A:" << std::endl;
+  // A->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+
+  // if(myRank == 0) std::cout << "quasi-region A:" << std::endl;
+  // quasiRegionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+
+  // if(myRank == 0) std::cout << "region A:" << std::endl;
+  // regionGrpMats[0]->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
   comm->barrier();
   tm = Teuchos::null;
 
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Build Region Hierarchy")));
+
+  // Setting up parameters before hierarchy construction
+  // These need to stay in the driver as they would be provide by an app
+  Array<Array<int> > regionNodesPerDim(maxRegPerProc);
+  Array<std::string> aggregationRegionType(maxRegPerProc);
+  Array<RCP<MultiVector> > nullspace(maxRegPerProc);
+  Array<RCP<RealValuedMultiVector> > regionCoordinates(maxRegPerProc);
+
+  // Set mesh structure data
+  regionNodesPerDim[0] = rNodesPerDim;
+
+  // Set aggregation type for each region
+  aggregationRegionType[0] = "structured";
+
+  // create nullspace vector
+  nullspace[0] = MultiVectorFactory::Build(revisedRowMapPerGrp[0], 1);
+  nullspace[0]->putScalar(one);
+
+  // create region coordinates vector
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(revisedRowMapPerGrp[0],
+                                                                               numDimensions);
+
+  /* Stuff for multi-level algorithm
+   *
+   * To allow for multi-level schemes with more than two levels, we need to store
+   * maps, matrices, vectors, and stuff like that on each level. Since we call the
+   * multi-level scheme recursively, this should be reflected in the design of
+   * variables.
+   *
+   * We use Teuchos::Array<T> to store each quantity on each level.
+   */
+  Array<RCP<Xpetra::Map<LO,GO,NO> > > compRowMaps; // composite row maps on each level
+  Array<RCP<Xpetra::Map<LO,GO,NO> > > compColMaps; // composite columns maps on each level
+  Array<std::vector<RCP<Xpetra::Map<LO,GO,NO> > > > regRowMaps; // regional row maps on each level
+  Array<std::vector<RCP<Xpetra::Map<LO,GO,NO> > > > regColMaps; // regional column maps on each level
+  Array<std::vector<RCP<Xpetra::Map<LO,GO,NO> > > > quasiRegRowMaps; // quasiRegional row maps on each level
+  Array<std::vector<RCP<Xpetra::Map<LO,GO,NO> > > > quasiRegColMaps; // quasiRegional column maps on each level
+  Array<std::vector<RCP<Matrix> > > regMatrices; // regional matrices on each level
+  Array<std::vector<RCP<Matrix> > > regProlong; // regional prolongators on each level
+  Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
+  Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
+  Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
 
 
-// #ifdef HAVE_MUELU_CUDA
-//   if(profileSetup) cudaProfilerStart();
-// #endif
+  // Create multigrid hierarchy
+  createRegionHierarchy(maxRegPerProc,
+                        numDimensions,
+                        regionNodesPerDim,
+                        aggregationRegionType,
+                        xmlFileName,
+                        nullspace,
+                        regionCoordinates,
+                        regionGrpMats,
+                        dofMap,
+                        rowMapPerGrp,
+                        colMapPerGrp,
+                        revisedRowMapPerGrp,
+                        revisedColMapPerGrp,
+                        rowImportPerGrp,
+                        compRowMaps,
+                        compColMaps,
+                        regRowMaps,
+                        regColMaps,
+                        quasiRegRowMaps,
+                        quasiRegColMaps,
+                        regMatrices,
+                        regProlong,
+                        regRowImporters,
+                        regInterfaceScalings,
+                        coarseCompOp,
+                        maxRegPerGID,
+                        compositeToRegionLIDs());
 
-//   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-//   RCP<Hierarchy> H;
-//   RCP<Operator> Prec;
-//   A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
 
-//   const std::string userName = "user data";
-//   Teuchos::ParameterList& userParamList = paramList.sublist(userName);
-//   userParamList.set<int>("int numDimensions", numDimensions);
-//   userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-//   userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-//   H = MueLu::CreateXpetraPreconditioner(A, paramList, paramList);
+  comm->barrier();
+  tm = Teuchos::null;
 
-//   comm->barrier();
-//   tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
-// #ifdef HAVE_MUELU_CUDA
-//   if(profileSolve) cudaProfilerStop();
-// #endif
+  {
+    std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
-//   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
-//   X->putScalar(zero);
-//   tm = Teuchos::null;
+    // Extract the number of levels from the prolongator data structure
+    int numLevels = regProlong.size();
 
-// #ifdef HAVE_MUELU_BELOS
-//   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
-// #ifdef HAVE_MUELU_CUDA
-//   if(profileSolve) cudaProfilerStart();
-// #endif
-//   // Operator and Multivector type that will be used with Belos
-//   typedef MultiVector          MV;
-//   typedef Belos::OperatorT<MV> OP;
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
 
-//   // Define Operator and Preconditioner
-//   Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-//   Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-//   H->IsPreconditioner(true);
-//   belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+    /* We first use the non-level container variables to setup the fine grid problem.
+     * This is ok since the initial setup just mimics the application and the outer
+     * Krylov method.
+     *
+     * We switch to using the level container variables as soon as we enter the
+     * recursive part of the algorithm.
+     */
 
-//   // Construct a Belos LinearProblem object
-//   RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-//   if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
+    // residual vector
+    RCP<Vector> compRes = VectorFactory::Build(dofMap, true);
+    {
+      A->apply(*X, *compRes, Teuchos::NO_TRANS);
+      compRes->update(one, *B, -one);
+    }
 
-//   bool set = belosProblem->setProblem();
-//   if (set == false) {
-//     out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-//     return EXIT_FAILURE;
-//   }
+    // transform composite vectors to regional layout
+    std::vector<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);
+    std::vector<Teuchos::RCP<Vector> > regX(maxRegPerProc);
+    compositeToRegional(X, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+                        revisedRowMapPerGrp, rowImportPerGrp);
 
-//   // Belos parameter list
-//   Teuchos::ParameterList belosList;
-//   belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-//   belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-//   belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-//   belosList.set("Output Frequency",      1);
-//   belosList.set("Output Style",          Belos::Brief);
-//   if (!scaleResidualHist)
-//     belosList.set("Implicit Residual Scaling", "None");
+    std::vector<RCP<Vector> > quasiRegB(maxRegPerProc);
+    std::vector<RCP<Vector> > regB(maxRegPerProc);
+    compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+                        revisedRowMapPerGrp, rowImportPerGrp);
 
-//   // Create an iterative solver manager
-//   RCP< Belos::SolverManager<SC, MV, OP> > solver;
-//   solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 
-//   // Perform solve
-//   Belos::ReturnType retStatus = Belos::Unconverged;
-//   retStatus = solver->solve();
+    std::vector<RCP<Vector> > regRes(maxRegPerProc);
+    for (int j = 0; j < maxRegPerProc; j++) { // step 1
+      regRes[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
+    }
 
-//   // Get the number of iterations for this solve.
-//   out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-//   // Check convergence
-//   if (retStatus != Belos::Converged)
-//     out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-//   else
-//     out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-// #ifdef HAVE_MUELU_CUDA
-//   if(profileSolve) cudaProfilerStop();
-// #endif
-// #endif //ifdef HAVE_MUELU_BELOS
+    /////////////////////////////////////////////////////////////////////////
+    // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
+    /////////////////////////////////////////////////////////////////////////
+
+    // define max iteration counts
+    const int maxVCycle = 200;
+    const int maxFineIter = 20;
+    const int maxCoarseIter = 100;
+    const double omega = 0.67;
+
+    // Prepare output of residual norm to file
+    RCP<std::ofstream> log;
+    if (myRank == 0)
+      {
+        std::string s = "residual_norm.txt";
+        log = rcp(new std::ofstream(s.c_str()));
+        (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
+               << "# iteration | res-norm\n"
+               << "#\n";
+      }
+
+    // Richardson iterations
+    for (int cycle = 0; cycle < maxVCycle; ++cycle) {
+      // check for convergence
+      {
+        ////////////////////////////////////////////////////////////////////////
+        // SWITCH BACK TO NON-LEVEL VARIABLES
+        ////////////////////////////////////////////////////////////////////////
+
+        computeResidual(regRes, regX, regB, regionGrpMats, dofMap,
+                        rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+        //        printRegionalObject<Vector>("regB 1", regB, myRank, *fos);
+
+        compRes = VectorFactory::Build(dofMap, true);
+        regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
+                            rowImportPerGrp, Xpetra::ADD);
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
+
+        // Output current residual norm to screen (on proc 0 only)
+        if (myRank == 0)
+          {
+            std::cout << cycle << "\t" << normRes << std::endl;
+            (*log) << cycle << "\t" << normRes << "\n";
+          }
+
+        if (normRes < 1.0e-12)
+          break;
+      }
+
+      /////////////////////////////////////////////////////////////////////////
+      // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
+      /////////////////////////////////////////////////////////////////////////
+
+      //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
+      vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB,
+             regMatrices,
+             regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
+             regInterfaceScalings, coarseCompOp);
+    }
+  }
 
   comm->barrier();
   tm = Teuchos::null;

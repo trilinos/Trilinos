@@ -55,6 +55,8 @@
 
 #include <Kokkos_DefaultNode.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Export.hpp>
 #include <Xpetra_Import.hpp>
@@ -64,8 +66,15 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
+#include <MueLu_Utilities.hpp>
 
 #include "SetupRegionMatrix_def.hpp"
+
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#include <Amesos2_config.h>
+#include <Amesos2.hpp>
+#endif
 
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
@@ -115,7 +124,10 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
   std::vector<RCP<Matrix> > quasiRegMat(maxRegPerProc);
   {
     for (int j = 0; j < maxRegPerProc; j++) {
-      quasiRegMat[j] = rcp(new CrsMatrixWrap(rowMapPerGrp[j], colMapPerGrp[j], 9, Xpetra::DynamicProfile));
+      quasiRegMat[j] = rcp(new CrsMatrixWrap(rowMapPerGrp[j],
+                                             colMapPerGrp[j],
+                                             regMat[j]->getCrsGraph()->getNodeMaxNumRowEntries(),
+                                             Xpetra::StaticProfile));
 
       // Extract current quasi-region CrsMatrix
       RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegMat[j])->getCrsMatrix();
@@ -155,9 +167,11 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
   // Export from quasiRegional format to composite layout
   std::vector<RCP<Matrix> > partialCompMat(maxRegPerProc);
   for (int j = 0; j < maxRegPerProc; j++) {
-    partialCompMat[j] = MatrixFactory::Build(compMat->getRowMap(), 3, Xpetra::DynamicProfile);
+    partialCompMat[j] = MatrixFactory::Build(compMat->getRowMap(),
+                                             8*regMat[0]->getCrsGraph()->getNodeMaxNumRowEntries(),
+                                             Xpetra::StaticProfile);
     partialCompMat[j]->doExport(*(quasiRegMat[j]), *(rowImportPerGrp[j]), Xpetra::INSERT);
-    partialCompMat[j]->fillComplete(compMat->getDomainMap(), compMat->getRangeMap());
+    partialCompMat[j]->fillComplete();
   }
 
   // Add all partialCompMat together
@@ -168,7 +182,7 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
   compMat->fillComplete();
 
   return;
-}
+} // regionalToComposite
 
 /*! \brief Create coarse level maps with continuous GIDs
  *
@@ -180,8 +194,8 @@ void regionalToComposite(const std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdin
  *  to deal with them in particular.
  */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void createContinuousCoarseLevelMaps(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap, ///< row map
-                                     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap, ///< column map
+void createContinuousCoarseLevelMaps(const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap, ///< row map
+                                     const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap, ///< column map
                                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& contRowMap, ///< row map with continuous GIDs
                                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& contColMap ///< column map with continuous GIDs
                                      )
@@ -193,36 +207,40 @@ void createContinuousCoarseLevelMaps(RCP<const Xpetra::Map<LocalOrdinal, GlobalO
 
   // Create row map with continuous GIDs
   contRowMap = MapFactory::Build(rowMap->lib(),
-                                 Teuchos::OrdinalTraits<GO>::invalid(),
+                                 rowMap->getGlobalNumElements(),
                                  rowMap->getNodeNumElements(),
-                                 Teuchos::OrdinalTraits<GO>::zero(),
+                                 rowMap->getIndexBase(),
                                  rowMap->getComm());
 
-  /* Create column map based on row map with continuous GIDs
-   *
-   * We use an Importer to create an auxiliary vector in colMap format containing
-   * the GIDs of the contRowMap as its entries. By looping over its LIDs, we can
-   * then form the contColMap.
-   */
-  RCP<Import> rowColImport = ImportFactory::Build(rowMap, colMap);
-  RCP<Xpetra::Vector<GO, LO, GO, Node> > colGIDVec = Xpetra::VectorFactory<GO, LO, GO, Node>::Build(rowMap, true);
-  ArrayRCP<GO> colGIDVecData = colGIDVec->getDataNonConst(0);
-  RCP<Xpetra::Vector<GO, LO, GO, Node> > contColGIDVec = Xpetra::VectorFactory<GO, LO, GO, Node>::Build(colMap, true);
-  contColGIDVec->doImport(*colGIDVec, *rowColImport, Xpetra::INSERT);
+  // It is not clear what the code below tries to achieve but based on the empty colGIDVec
+  // I am guessing that this was not tested or finished...
 
-  ArrayRCP<const GO> constColGIDVecData = colGIDVec->getData(0);
-  std::vector<GO> contColGIDs;
-  for (size_t i = 0; i < contColGIDVec->getLocalLength(); ++i) {
-    contColGIDs.push_back(constColGIDVecData[i]);
-  }
-  contColMap = MapFactory::Build(rowMap->lib(),
-                                 Teuchos::OrdinalTraits<GO>::invalid(),
-                                 contColGIDs,
-                                 Teuchos::OrdinalTraits<GO>::zero(),
-                                 rowMap->getComm());
+  // /* Create column map based on row map with continuous GIDs
+  //  *
+  //  * We use an Importer to create an auxiliary vector in colMap format containing
+  //  * the GIDs of the contRowMap as its entries. By looping over its LIDs, we can
+  //  * then form the contColMap.
+  //  */
+  // RCP<Import> rowColImport = ImportFactory::Build(rowMap, colMap);
+  // RCP<Xpetra::Vector<GO, LO, GO, Node> > colGIDVec = Xpetra::VectorFactory<GO, LO, GO, Node>::Build(rowMap, true);
+  // ArrayRCP<GO> colGIDVecData = colGIDVec->getDataNonConst(0);
+  // RCP<Xpetra::Vector<GO, LO, GO, Node> > contColGIDVec = Xpetra::VectorFactory<GO, LO, GO, Node>::Build(colMap, true);
+  // contColGIDVec->doImport(*colGIDVec, *rowColImport, Xpetra::INSERT);
+
+  // ArrayRCP<const GO> constColGIDVecData = colGIDVec->getData(0);
+  // std::cout << "p=" << rowMap->getComm()->getRank() << " | constColGIDVecData: " << constColGIDVecData() << std::endl;
+  // std::vector<GO> contColGIDs;
+  // for (size_t i = 0; i < contColGIDVec->getLocalLength(); ++i) {
+  //   contColGIDs.push_back(constColGIDVecData[i]);
+  // }
+  // contColMap = MapFactory::Build(rowMap->lib(),
+  //                                Teuchos::OrdinalTraits<GO>::invalid(),
+  //                                contColGIDs,
+  //                                rowMap->getIndexBase(),
+  //                                rowMap->getComm());
 
   return;
-}
+} // createContinuousCoarseLevelMaps
 
 
 
@@ -240,7 +258,8 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
                          Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& regColMaps,
                          Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegColMaps,
                          Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters,
-                         Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regProlong) {
+                         Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regProlong)
+{
   /* General strategy to create coarse level maps:
    * =============================================
    *
@@ -289,8 +308,13 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
 #include "Xpetra_UseShortNames.hpp"
 
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  const SC SC_ONE = Teuchos::ScalarTraits<SC>::one();
+  const MT MT_ONE  = Teuchos::ScalarTraits<MT>::one();
+  const GO GO_ONE  = Teuchos::OrdinalTraits<GO>::one();
+  const GO GO_ZERO = Teuchos::OrdinalTraits<GO>::zero();
+  const GO GO_INV  = Teuchos::OrdinalTraits<GO>::invalid();
   const Xpetra::UnderlyingLib lib = regRowMaps[0][0]->lib();
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm = regRowMaps[0][0]->getComm();
 
@@ -298,10 +322,10 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
   // IDENTIFY DUPLICATED GIDS ON FINE LEVEL
   ////////////////////////////////////////////////////////////////////////
 
-  RCP<Matrix> summedDuplicateMatrix = Teuchos::null;
+  RCP<Xpetra::Matrix<MT,LO,GO,NO> > summedDuplicateMatrix = Teuchos::null;
 
-  Array<std::vector<std::vector<LocalOrdinal> > > interfaceLIDs; // local IDs of interface nodes on each level in each group
-  Array<std::vector<std::vector<std::vector<GlobalOrdinal> > > > interfaceGIDPairs; // pairs of GIDs of interface nodes on each level in each group
+  Array<std::vector<std::vector<LO> > > interfaceLIDs; // local IDs of interface nodes on each level in each group
+  Array<std::vector<std::vector<std::vector<GO> > > > interfaceGIDPairs; // pairs of GIDs of interface nodes on each level in each group
 
   // Find lists of duplicated GIDs locally
   interfaceLIDs.resize(numLevels);
@@ -334,12 +358,12 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       }
     }
 
-    //        for (int j = 0; j < maxRegPerProc; j++) {
-    //          std::cout << myRank << " | group = " << j << " | LIDs = ";
-    //          for (std::size_t i = 0; i < interfaceLIDs[l][j].size(); ++i)
-    //            std::cout << interfaceLIDs[l][j][i] << ", ";
-    //          std::cout << std::endl;
-    //        }
+    for (int j = 0; j < maxRegPerProc; j++) {
+      std::cout << "p=" << Comm->getRank() << " | group = " << j << " | LIDs = ";
+      for (std::size_t i = 0; i < interfaceLIDs[l][j].size(); ++i)
+        std::cout << interfaceLIDs[l][j][i] << ", ";
+      std::cout << std::endl;
+    }
 
     for (int j = 0; j < maxRegPerProc; j++)
       interfaceGIDPairs[l][j].resize(interfaceLIDs[l][j].size());
@@ -353,38 +377,45 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
         if (regRowMaps[l][j]->getGlobalElement(interfaceLIDs[l][j][i]) != quasiRegRowMaps[l][j]->getGlobalElement(interfaceLIDs[l][j][i]))
           interfaceGIDPairs[l][j][i].push_back(regRowMaps[l][j]->getGlobalElement(interfaceLIDs[l][j][i]));
 
-    //        std::cout << myRank << " | Print interfaceGIDPairs:" << std::endl;
-    //        for (int j = 0; j < maxRegPerProc; j++) {
-    //          std::cout << myRank << " | " << "Level " << l <<" | Group " << j << ":" << std::endl;
-    //          for (std::size_t i = 0; i < interfaceGIDPairs[l][j].size(); ++i) {
-    //            std::cout << "   " << myRank << " | ";
-    //            for (std::size_t k = 0; k < interfaceGIDPairs[l][j][i].size(); ++k)
-    //              std::cout << interfaceGIDPairs[l][j][i][k] << ", ";
-    //            std::cout << std::endl;
-    //          }
-    //        }
-
-    std::vector<RCP<Vector> > regDupGIDVec(maxRegPerProc); // Vector with zeros everywhere, but ones at duplicated GID spots
-    std::vector<RCP<Vector> > quasiRegDupGIDVec(maxRegPerProc); // Vector with zeros everywhere, but ones at duplicated GID spots
-    for (int j = 0; j < maxRegPerProc; ++j) {
-      regDupGIDVec[j] = VectorFactory::Build(regRowMaps[l][j], true);
-      quasiRegDupGIDVec[j] = VectorFactory::Build(quasiRegRowMaps[l][j], true);
-
-      for (std::size_t i = 0; i < interfaceLIDs[l][j].size(); ++i)
-        regDupGIDVec[j]->replaceLocalValue(interfaceLIDs[l][j][i], SC_ONE);
+    std::cout << "p=" << Comm->getRank() << " | Print interfaceGIDPairs:" << std::endl;
+    for (int j = 0; j < maxRegPerProc; j++) {
+      std::cout << "p=" << Comm->getRank() << " | " << "Level " << l <<" | Group " << j << ":" << std::endl;
+      for (std::size_t i = 0; i < interfaceGIDPairs[l][j].size(); ++i) {
+        std::cout << "p=" << Comm->getRank() << "    | ";
+        for (std::size_t k = 0; k < interfaceGIDPairs[l][j][i].size(); ++k)
+          std::cout << interfaceGIDPairs[l][j][i][k] << ", ";
+        std::cout << std::endl;
+      }
     }
 
-    RCP<Vector> compDupGIDVec = VectorFactory::Build(compRowMaps[l], true);
+    std::vector<RCP<Xpetra::Vector<MT,LO,GO,NO> > > regDupGIDVec(maxRegPerProc); // Vector with zeros everywhere, but ones at duplicated GID spots
+    std::vector<RCP<Xpetra::Vector<MT,LO,GO,NO> > > quasiRegDupGIDVec(maxRegPerProc); // Vector with zeros everywhere, but ones at duplicated GID spots
+    for (int j = 0; j < maxRegPerProc; ++j) {
+      regDupGIDVec[j] = Xpetra::VectorFactory<MT,LO,GO,NO>::Build(regRowMaps[l][j], true);
+      quasiRegDupGIDVec[j] = Xpetra::VectorFactory<MT,LO,GO,NO>::Build(quasiRegRowMaps[l][j], true);
+
+      for (std::size_t i = 0; i < interfaceLIDs[l][j].size(); ++i)
+        regDupGIDVec[j]->replaceLocalValue(interfaceLIDs[l][j][i], GO_ONE);
+    }
+
+    RCP<Xpetra::Vector<MT,LO,GO,NO> > compDupGIDVec
+      = Xpetra::VectorFactory<MT,LO,GO,NO>::Build(compRowMaps[l], true);
     regionalToComposite(regDupGIDVec, compDupGIDVec, maxRegPerProc,
                         quasiRegRowMaps[l], regRowImporters[l], Xpetra::ADD);
+
+    std::cout << "p=" << Comm->getRank()
+              << " | First regional to composite completed on level " << l << " !" << std::endl;
 
     compositeToRegional(compDupGIDVec, quasiRegDupGIDVec, regDupGIDVec,
                         maxRegPerProc, quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
 
+    std::cout << "p=" << Comm->getRank()
+              << " | First composite to regional completed on level " << l << " !" << std::endl;
+
     // create row/range/domain map for fine level duplicates mapping matrix
-    RCP<Map> duplicateMap = Teuchos::null;
+    RCP<Xpetra::Map<LO,GO,NO> > duplicateMap = Teuchos::null;
     {
-      Teuchos::Array<GlobalOrdinal> myIntGIDs;
+      Teuchos::Array<GO> myIntGIDs;
       for (int j = 0; j < maxRegPerProc; j++) {
         for (std::size_t i = 0; i < interfaceGIDPairs[l][j].size(); ++i) {
           for (std::size_t k = 0; k < interfaceGIDPairs[l][j][i].size(); ++k) {
@@ -394,8 +425,11 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
         }
       }
 
-      duplicateMap = MapFactory::Build(lib, Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-                                       myIntGIDs,Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), Comm);
+      duplicateMap = MapFactory::Build(lib,
+                                       GO_INV,
+                                       myIntGIDs,
+                                       GO_ZERO,
+                                       Comm);
 
       //          sleep(1);
       //          Comm->barrier();
@@ -403,14 +437,17 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       //          duplicateMap->describe(*fos, Teuchos::VERB_HIGH);
     }
 
+    std::cout << "p=" << Comm->getRank()
+              << " | duplicateMap created on level " << l << " !" << std::endl;
+
     // create row/range/domain map for the transpose of the fine level duplicates mapping matrix
-    RCP<Map> fullDuplicateMap = Teuchos::null;
+    RCP<Xpetra::Map<LO,GO,NO> > fullDuplicateMap = Teuchos::null;
     {
-      Array<GlobalOrdinal> myIntGIDs;
-      ArrayRCP<const Scalar> regDupGIDVecData = regDupGIDVec[0]->getData(0);
+      Array<GO> myIntGIDs;
+      ArrayRCP<const MT> regDupGIDVecData = regDupGIDVec[0]->getData(0);
       for (size_t i = 0; i < regRowMaps[l][0]->getNodeNumElements(); ++i) {
         if (regDupGIDVecData[i] != 0)
-          myIntGIDs.push_back(Teuchos::as<GlobalOrdinal>(regRowMaps[l][0]->getGlobalElement(i)));
+          myIntGIDs.push_back(Teuchos::as<GO>(regRowMaps[l][0]->getGlobalElement(i)));
       }
 
       //          std::cout << myRank << " | myIntGIDs = ";
@@ -418,8 +455,11 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       //            std::cout << gid << ", ";
       //          std::cout << std::endl;
 
-      fullDuplicateMap = MapFactory::Build(lib, Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-                                           myIntGIDs, Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), Comm);
+      fullDuplicateMap = MapFactory::Build(lib,
+                                           GO_INV,
+                                           myIntGIDs,
+                                           GO_ZERO,
+                                           Comm);
 
       //          sleep(1);
       //          Comm->barrier();
@@ -427,17 +467,21 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       //          fullDuplicateMap->describe(*fos, TEUCHOS::VERB_HIGH);
     }
 
+    std::cout << "p=" << Comm->getRank()
+              << " | fullDuplicateMap created on level " << l << " !" << std::endl;
+
     // Create and fill matrix
-    RCP<Matrix> duplicateMatrix = MatrixFactory::Build(fullDuplicateMap, 2, Xpetra::DynamicProfile);
+    RCP<Xpetra::Matrix<MT,LO,GO,NO> > duplicateMatrix
+      = Xpetra::MatrixFactory<MT,LO,GO,NO>::Build(fullDuplicateMap, 2, Xpetra::StaticProfile);
     {
       // Fill diagonal
       {
-        Array<Scalar> vals(1);
-        Array<GlobalOrdinal> cols(1);
+        Array<MT> vals(1);
+        Array<GO> cols(1);
         for (size_t i = 0; i < fullDuplicateMap->getNodeNumElements(); ++i) {
-          GlobalOrdinal globalRow = fullDuplicateMap->getGlobalElement(i);
+          GO globalRow = fullDuplicateMap->getGlobalElement(i);
 
-          vals[0] = static_cast<Scalar>(globalRow);
+          vals[0] = globalRow;
           cols[0] = globalRow;
 
           duplicateMatrix->insertGlobalValues(globalRow, cols, vals);
@@ -445,13 +489,13 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       }
 
       // Fill off-diagonals (if known)
-      Array<Scalar> vals(2);
-      Array<GlobalOrdinal> cols(2);
+      Array<MT> vals(2);
+      Array<GO> cols(2);
       for (size_t i = 0; i < duplicateMap->getNodeNumElements(); ++i) {
-        GlobalOrdinal globalRow = duplicateMap->getGlobalElement(i);
+        GO globalRow = duplicateMap->getGlobalElement(i);
 
         for (std::size_t k = 0; k < interfaceGIDPairs[l][0][i].size(); ++k) {
-          vals[k] = static_cast<Scalar>(globalRow);
+          vals[k] = globalRow;
           cols[k] = interfaceGIDPairs[l][0][i][k];
         }
 
@@ -460,6 +504,9 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
     }
 
     duplicateMatrix->fillComplete();
+
+    std::cout << "p=" << Comm->getRank()
+              << " | duplicateMatrix created and fillComplete() on level " << l << " !" << std::endl;
 
     //        sleep(1);
     //        Comm->barrier();
@@ -482,8 +529,9 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
     //        duplicateMatrix->getColMap()->describe(*fos, Teuchos::VERB_HIGH);
 
     {
-      RCP<Matrix> transDuplicateMatrix = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Transpose(*duplicateMatrix);
-      TEUCHOS_ASSERT(!transDuplicateMatrix.is_null());
+      RCP<Xpetra::Matrix<MT,LO,GO,NO> > transDuplicateMatrix
+        = MueLu::Utilities<MT,LO,GO,NO>::Transpose(*duplicateMatrix);
+      TEUCHOS_ASSERT(Teuchos::nonnull(transDuplicateMatrix));
 
       transDuplicateMatrix->fillComplete();
       TEUCHOS_ASSERT(transDuplicateMatrix->isFillComplete());
@@ -493,29 +541,41 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       //          std::cout << myRank << " | transDuplicateMatrix:" << std::endl;
       //          transDuplicateMatrix->describe(*fos, Teuchos::VERB_HIGH);
 
-      summedDuplicateMatrix = MatrixFactory::Build(fullDuplicateMap, 2, Xpetra::DynamicProfile);
-      MatrixMatrix::TwoMatrixAdd(*transDuplicateMatrix, false, SC_ONE, *duplicateMatrix, false, SC_ONE, summedDuplicateMatrix, *fos);
+      summedDuplicateMatrix = Xpetra::MatrixFactory<MT,LO,GO,NO>::Build(fullDuplicateMap,
+                                                                        2,
+                                                                        Xpetra::DynamicProfile);
+      Xpetra::MatrixMatrix<MT,LO,GO,NO>::TwoMatrixAdd(*transDuplicateMatrix,
+                                                      false,
+                                                      MT_ONE,
+                                                      *duplicateMatrix,
+                                                      false,
+                                                      MT_ONE,
+                                                      summedDuplicateMatrix,
+                                                      *fos);
     }
 
     summedDuplicateMatrix->fillComplete(fullDuplicateMap, fullDuplicateMap);
     //        summedDuplicateMatrix->fillComplete();
+
+    std::cout << "p=" << Comm->getRank()
+              << " | summedDuplicateMatrix created and fillComplete() on level " << l << " !" << std::endl;
 
     //        sleep(1);
     //        Comm->barrier();
     //        std::cout << myRank << " | summedDuplicateMatrix:" << std::endl;
     //        summedDuplicateMatrix->describe(*fos, Teuchos::VERB_HIGH);
 
-    std::vector<std::vector<GlobalOrdinal> > myDuplicates; // pairs of duplicates with locally owned GID listed first.
+    std::vector<std::vector<GO> > myDuplicates; // pairs of duplicates with locally owned GID listed first.
     myDuplicates.resize(summedDuplicateMatrix->getNodeNumRows());
     for (size_t lRow = 0; lRow < summedDuplicateMatrix->getNodeNumRows(); ++lRow) {
 
-      ArrayView<const LocalOrdinal> inds;
-      ArrayView<const Scalar> vals;
+      ArrayView<const LO> inds;
+      ArrayView<const MT> vals;
 
       summedDuplicateMatrix->getLocalRowView(lRow, inds, vals);
 
-      std::vector<GlobalOrdinal> gidsToSort;
-      for (typename ArrayView<const LocalOrdinal>::size_type k = 0; k < inds.size(); ++k) {
+      std::vector<GO> gidsToSort;
+      for (typename ArrayView<const LO>::size_type k = 0; k < inds.size(); ++k) {
         //            std::cout << myRank << " | inds[" << k << "] = " << inds[k] << std::endl;
         gidsToSort.push_back(summedDuplicateMatrix->getColMap()->getGlobalElement(inds[k]));
       }
@@ -585,16 +645,16 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
     // IDENTIFY DUPLICATED GIDS ON COARSE LEVEL
     ////////////////////////////////////////////////////////////////////////
 
-    std::vector<std::vector<GlobalOrdinal> > myCoarseDuplicates; // pairs of duplicates with locally owned GID listed first on coarse level.
+    std::vector<std::vector<GO> > myCoarseDuplicates; // pairs of duplicates with locally owned GID listed first on coarse level.
     myCoarseDuplicates.resize(myDuplicates.size());
 
-    std::vector<GlobalOrdinal> myCoarseInterfaceGIDs;
+    std::vector<GO> myCoarseInterfaceGIDs;
     for (size_t i = 0; i < myDuplicates.size(); ++i) {
-      const GlobalOrdinal rowGID = myDuplicates[i][0];
-      const LocalOrdinal rowLID = regProlong[l+1][0]->getRowMap()->getLocalElement(rowGID);
+      const GO rowGID = myDuplicates[i][0];
+      const LO rowLID = regProlong[l+1][0]->getRowMap()->getLocalElement(rowGID);
 
-      ArrayView<const Scalar> vals;
-      ArrayView<const LocalOrdinal> inds;
+      ArrayView<const SC> vals;
+      ArrayView<const LO> inds;
       regProlong[l+1][0]->getLocalRowView(rowLID, inds, vals);
       //          std::cout << myRank << " | ExtractMyRowView err = " << err << std::endl;
       TEUCHOS_ASSERT(inds.size() == 1); // tentative P: only one entry per row
@@ -610,9 +670,9 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
     //        std::cout << std::endl;
 
     // Build row/range/domain map of duplicate mapping matrix
-    RCP<Map> interfaceMap = Teuchos::null;
+    RCP<const Xpetra::Map<LO,GO,NO> > interfaceMap = Teuchos::null;
     {
-      std::vector<GlobalOrdinal> interfaceMapGIDs(myDuplicates.size());
+      std::vector<GO> interfaceMapGIDs(myDuplicates.size());
       for (std::size_t i = 0; i < myDuplicates.size(); ++i) {
         interfaceMapGIDs[i] = myDuplicates[i][0];
       }
@@ -623,19 +683,25 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       //          }
       //          std::cout << std::endl;
 
-      interfaceMap = MapFactory::Build(lib, Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-                                       interfaceMapGIDs, Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), Comm);
+      interfaceMap = Xpetra::MapFactory<LO,GO,NO>::Build(lib,
+                                                         GO_INV,
+                                                         interfaceMapGIDs,
+                                                         GO_ZERO,
+                                                         Comm);
     }
 
-    RCP<Matrix> duplicateMapping = MatrixFactory::Build(interfaceMap, 2, Xpetra::DynamicProfile);
+    RCP<Xpetra::Matrix<MT, LO, GO, NO> > duplicateMapping
+      = Xpetra::MatrixFactory<MT, LO, GO, NO>::Build(interfaceMap,
+                                                     2,
+                                                     Xpetra::DynamicProfile);
 
     // Fill the matrix
-    RCP<Matrix> transDuplicateMapping = Teuchos::null;
+    RCP<Xpetra::Matrix<MT, LO, GO, NO> > transDuplicateMapping = Teuchos::null;
     {
       size_t numRows = myDuplicates.size();
-      std::vector<GlobalOrdinal> rowPtr(numRows);
-      std::vector<Array<Scalar> > vals(numRows);
-      std::vector<Array<LocalOrdinal> > colInds(numRows);
+      Array<GO> rowPtr(numRows);
+      std::vector<Array<MT> > vals(numRows);
+      std::vector<Array<GO> > colInds(numRows);
 
       for (size_t rowIdx = 0; rowIdx < numRows; ++rowIdx) {
         rowPtr[rowIdx] = myDuplicates[rowIdx][0];
@@ -654,7 +720,7 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
       // local dummy insertion
       for (size_t rowIdx = 0; rowIdx < numRows; ++rowIdx) {
-        duplicateMapping->insertGlobalValues(rowPtr[rowIdx], colInds[rowIdx], vals[rowIdx]);
+        duplicateMapping->insertGlobalValues(rowPtr[rowIdx], colInds[rowIdx](), vals[rowIdx]());
       }
 
       duplicateMapping->fillComplete();
@@ -664,7 +730,7 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       //          Comm.Barrier();
       //          duplicateMapping->Print(std::cout);
 
-      transDuplicateMapping = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Transpose(*duplicateMapping);
+      transDuplicateMapping = MueLu::Utilities<MT,LO,GO,NO>::Transpose(*duplicateMapping);
 
       Comm->barrier();
 
@@ -689,11 +755,11 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
      *    vec.erase( unique( vec.begin(), vec.end() ), vec.end() );
      *
      */
-    std::vector<std::vector<GlobalOrdinal> > myCoarseInterfaceDuplicates(transDuplicateMapping->getNodeNumRows());
+    std::vector<std::vector<GO> > myCoarseInterfaceDuplicates(transDuplicateMapping->getNodeNumRows());
     {
       for (size_t lRow = 0; lRow < transDuplicateMapping->getNodeNumRows(); ++lRow) {
-        ArrayView<const Scalar> vals;
-        ArrayView<const LocalOrdinal> inds;
+        ArrayView<const MT> vals;
+        ArrayView<const LO> inds;
         transDuplicateMapping->getLocalRowView(lRow, inds, vals);
 
         const size_t numEntries = inds.size();
@@ -720,12 +786,12 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
       // create quasiRegional row map
       {
-        std::vector<GlobalOrdinal> myQuasiRegGIDs;
+        std::vector<GO> myQuasiRegGIDs;
 
         for (size_t i = 0; i < regRowMaps[l+1][0]->getNodeNumElements(); ++i) {
           // grab current regional GID to be processed
-          GlobalOrdinal currGID = regRowMaps[l+1][0]->getGlobalElement(i);
-          GlobalOrdinal quasiGID = currGID; // assign dummy value
+          GO currGID = regRowMaps[l+1][0]->getGlobalElement(i);
+          GO quasiGID = currGID; // assign dummy value
 
           // find quasiRegional counterpart
           {
@@ -748,7 +814,7 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
                 if (found) {
                   for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk)
-                    quasiGID = std::min(quasiGID, Teuchos::as<const GlobalOrdinal>(myCoarseInterfaceDuplicates[k][kk]));
+                    quasiGID = std::min(quasiGID, Teuchos::as<const GO>(myCoarseInterfaceDuplicates[k][kk]));
 
                   //                      std::cout << myRank << " | Interface GID " << currGID << " is replaced by quasiGID " << quasiGID << std::endl;
                   break;
@@ -764,8 +830,11 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
           myQuasiRegGIDs.push_back(quasiGID);
         }
 
-        quasiRegRowMaps[l+1][0] = MapFactory::Build(lib, Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-                                                    myQuasiRegGIDs, Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), Comm);
+        quasiRegRowMaps[l+1][0] = MapFactory::Build(lib,
+                                                    GO_INV,
+                                                    myQuasiRegGIDs,
+                                                    GO_ZERO,
+                                                    Comm);
         TEUCHOS_ASSERT(!quasiRegRowMaps[l+1][0].is_null());
 
         //            sleep(1);
@@ -776,18 +845,21 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
       // create composite row map
       {
-        std::vector<GlobalOrdinal> myCompGIDs;
+        std::vector<GO> myCompGIDs;
         for (int j = 0; j < maxRegPerProc; j++) {
           for (size_t i = 0; i < quasiRegRowMaps[l+1][j]->getNodeNumElements(); ++i) {
-            const GlobalOrdinal trialGID = quasiRegRowMaps[l+1][j]->getGlobalElement(i);
+            const GO trialGID = quasiRegRowMaps[l+1][j]->getGlobalElement(i);
 
             if (regRowMaps[l+1][j]->isNodeGlobalElement(trialGID))
               myCompGIDs.push_back(trialGID);
           }
         }
 
-        compRowMaps[l+1] = MapFactory::Build(lib, Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-                                             myCompGIDs, Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), Comm);
+        compRowMaps[l+1] = MapFactory::Build(lib,
+                                             GO_INV,
+                                             myCompGIDs,
+                                             GO_ZERO,
+                                             Comm);
         TEUCHOS_ASSERT(!compRowMaps[l+1].is_null());
 
         //            sleep(1);
@@ -804,12 +876,12 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
       // Create quasiRegional column map
       {
-        std::vector<GlobalOrdinal> myQuasiRegGIDs;
+        std::vector<GO> myQuasiRegGIDs;
 
         for (size_t i = 0; i < regColMaps[l+1][0]->getNodeNumElements(); ++i) {
           // grab current regional GID to be processed
-          GlobalOrdinal currGID = regColMaps[l+1][0]->getGlobalElement(i);
-          GlobalOrdinal quasiGID = currGID; // assign dummy value
+          GO currGID = regColMaps[l+1][0]->getGlobalElement(i);
+          GO quasiGID = currGID; // assign dummy value
 
           /* Find quasiRegional counterpart
            *
@@ -840,7 +912,7 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
 
                 if (found) {
                   for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk)
-                    quasiGID = std::min(quasiGID, Teuchos::as<GlobalOrdinal>(myCoarseInterfaceDuplicates[k][kk]));
+                    quasiGID = std::min(quasiGID, Teuchos::as<GO>(myCoarseInterfaceDuplicates[k][kk]));
 
                   //                      std::cout << myRank << " | Interface GID " << currGID << " is replaced by quasiGID " << quasiGID << std::endl;
                   break;
@@ -856,8 +928,11 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
           myQuasiRegGIDs.push_back(quasiGID);
         }
 
-        quasiRegColMaps[l+1][0] = MapFactory::Build(lib, Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
-                                                    myQuasiRegGIDs, Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), Comm);
+        quasiRegColMaps[l+1][0] = MapFactory::Build(lib,
+                                                    GO_INV,
+                                                    myQuasiRegGIDs,
+                                                    GO_ZERO,
+                                                    Comm);
         TEUCHOS_ASSERT(!quasiRegColMaps[l+1][0].is_null());
 
         //            sleep(1);
@@ -867,7 +942,131 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
       }
     }
   }
-}
+} // MakeCoarseLevelMaps
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void MakeCoarseLevelMaps2(const int maxRegPerGID,
+                          Teuchos::ArrayView<LocalOrdinal>  compositeToRegionLIDsFinest,
+                          Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regProlong,
+                          Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowMaps,
+                          Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& regColMaps,
+                          Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegRowMaps,
+                          Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegColMaps,
+                          Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& compRowMaps,
+                          Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters) {
+
+#include "Xpetra_UseShortNames.hpp"
+  // We have a coarse grid in region format and we want to get the associated composite grid.
+  // We need to decompose that process into multiple smaller tasks.
+
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+
+  const GO GO_INV = Teuchos::OrdinalTraits<GO>::invalid();
+
+  RCP<const Teuchos::Comm<int> > comm = regProlong[1][0]->getRowMap()->getComm();
+  const int numLevels = regProlong.size();
+
+  Teuchos::Array<LO> coarseCompositeToRegionLIDs;
+  Teuchos::ArrayView<LO> compositeToRegionLIDs = compositeToRegionLIDsFinest;
+  for(int currentLevel = 1; currentLevel < numLevels; ++currentLevel) {
+
+    // Extracting some basic information about local mesh in composite/region format
+    const size_t numFineRegionNodes    = regProlong[currentLevel][0]->getNodeNumRows();
+    const size_t numFineCompositeNodes = compositeToRegionLIDs.size();
+    const size_t numFineDuplicateNodes = numFineRegionNodes - numFineCompositeNodes;
+
+    const size_t numCoarseRegionNodes  = regProlong[currentLevel][0]->getColMap()->getNodeNumElements();
+
+    // Find the regionLIDs associated with local duplicated nodes
+    // This will allow us to later loop only on duplicated nodes
+    size_t countComposites = 0, countDuplicates = 0;
+    Array<LO> fineDuplicateLIDs(numFineDuplicateNodes);
+    for(size_t regionIdx = 0; regionIdx < numFineRegionNodes; ++regionIdx) {
+      if(compositeToRegionLIDs[countComposites] == regionIdx) {
+        ++countComposites;
+      } else {
+        fineDuplicateLIDs[countDuplicates] = regionIdx;
+        ++countDuplicates;
+      }
+    }
+
+    // We want to communicate the coarse GIDs associated with each fine points.
+    RCP<Xpetra::Vector<MT,LO,GO,NO> > coarseCompositeGIDs
+      = Xpetra::VectorFactory<MT,LO,GO,NO>::Build(regRowImporters[currentLevel - 1][0]->getSourceMap(), false);
+    Teuchos::ArrayRCP<MT> coarseCompositeGIDsData = coarseCompositeGIDs->getDataNonConst(0);
+
+    for(size_t compositeNodeIdx = 0; compositeNodeIdx < numFineCompositeNodes; ++compositeNodeIdx) {
+      ArrayView<const LO> coarseRegionLID; // Should contain a single value
+      ArrayView<const SC> dummyData; // Should contain a single value
+      regProlong[currentLevel][0]->getLocalRowView(compositeToRegionLIDs[compositeNodeIdx],
+                                                   coarseRegionLID,
+                                                   dummyData);
+      coarseCompositeGIDsData[compositeNodeIdx] = regProlong[currentLevel][0]->getColMap()->getGlobalElement(coarseRegionLID[0]);
+    }
+
+    std::vector<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseQuasiregionGIDs(1), coarseRegionGIDs(1);
+    compositeToRegional(coarseCompositeGIDs,
+                        coarseQuasiregionGIDs,
+                        coarseRegionGIDs,
+                        1,
+                        quasiRegRowMaps[currentLevel - 1],
+                        regRowMaps[currentLevel - 1],
+                        regRowImporters[currentLevel - 1]);
+
+    Array<GO> fineRegionDuplicateCoarseLIDs(numFineDuplicateNodes);
+    Array<GO> fineRegionDuplicateCoarseGIDs(numFineDuplicateNodes);
+    for(size_t duplicateIdx = 0; duplicateIdx < numFineDuplicateNodes; ++duplicateIdx) {
+      ArrayView<const LO> coarseRegionLID; // Should contain a single value
+      ArrayView<const SC> dummyData; // Should contain a single value
+      regProlong[currentLevel][0]->getLocalRowView(fineDuplicateLIDs[duplicateIdx],
+                                                   coarseRegionLID,
+                                                   dummyData);
+      fineRegionDuplicateCoarseLIDs[duplicateIdx] = regProlong[currentLevel][0]->getColMap()->getGlobalElement(coarseRegionLID[0]);
+      fineRegionDuplicateCoarseGIDs[duplicateIdx] = (coarseQuasiregionGIDs[0]->getDataNonConst(0))[fineDuplicateLIDs[duplicateIdx]];
+    }
+
+    // Create the coarseQuasiregRowMap, it will be based on the coarseRegRowMap
+    LO countCoarseComposites = 0;
+    coarseCompositeToRegionLIDs.resize(numCoarseRegionNodes);
+    Array<GO> coarseQuasiregRowMapData = regProlong[currentLevel][0]->getColMap()->getNodeElementList();
+    Array<GO> coarseCompRowMapData(numCoarseRegionNodes, -1);
+    for(size_t regionIdx = 0; regionIdx < numCoarseRegionNodes; ++regionIdx) {
+      const GO initialValue = coarseQuasiregRowMapData[regionIdx];
+      for(size_t duplicateIdx = 0; duplicateIdx < numFineDuplicateNodes; ++duplicateIdx) {
+        if((initialValue == fineRegionDuplicateCoarseLIDs[duplicateIdx]) && (fineRegionDuplicateCoarseGIDs[duplicateIdx] < coarseQuasiregRowMapData[regionIdx])){
+          coarseQuasiregRowMapData[regionIdx] = fineRegionDuplicateCoarseGIDs[duplicateIdx];
+        }
+      }
+      if(initialValue == coarseQuasiregRowMapData[regionIdx]) {
+        coarseCompRowMapData[countCoarseComposites] = coarseQuasiregRowMapData[regionIdx];
+        coarseCompositeToRegionLIDs[countCoarseComposites] = regionIdx;
+        ++countCoarseComposites;
+      }
+    }
+    coarseCompRowMapData.resize(countCoarseComposites);
+    coarseCompositeToRegionLIDs.resize(countCoarseComposites);
+
+    // We are now ready to fill up the outputs
+    regRowMaps[currentLevel][0] = Teuchos::rcp_const_cast<Map>(regProlong[currentLevel][0]->getColMap());
+    regColMaps[currentLevel][0] = Teuchos::rcp_const_cast<Map>(regProlong[currentLevel][0]->getColMap());
+    quasiRegRowMaps[currentLevel][0] = MapFactory::Build(regProlong[currentLevel][0]->getColMap()->lib(),
+                                                         GO_INV,
+                                                         coarseQuasiregRowMapData(),
+                                                         regProlong[currentLevel][0]->getColMap()->getIndexBase(),
+                                                         regProlong[currentLevel][0]->getColMap()->getComm());
+    quasiRegColMaps[currentLevel][0] = quasiRegRowMaps[currentLevel][0];
+    compRowMaps[currentLevel] = MapFactory::Build(regProlong[currentLevel][0]->getColMap()->lib(),
+                                                  GO_INV,
+                                                  coarseCompRowMapData(),
+                                                  regProlong[currentLevel][0]->getColMap()->getIndexBase(),
+                                                  regProlong[currentLevel][0]->getColMap()->getComm());
+    regRowImporters[currentLevel][0] = ImportFactory::Build(compRowMaps[currentLevel], quasiRegRowMaps[currentLevel][0]);
+
+    // Finally reset compositeToRegionLIDs
+    compositeToRegionLIDs = coarseCompositeToRegionLIDs();
+  }
+
+} // MakeCoarseLevelMaps2
 
 
 // Form the composite coarse level operator
@@ -882,7 +1081,10 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc, const int numLevels,
 {
 #include "Xpetra_UseShortNames.hpp"
   const int maxLevel = numLevels - 1;
-  coarseCompOp = MatrixFactory::Build(compRowMaps[maxLevel], 3, Xpetra::DynamicProfile);
+  coarseCompOp = MatrixFactory::Build(compRowMaps[maxLevel],
+                                       // This estimate is very conservative and probably costs us lots of memory...
+                                      8*regMatrices[maxLevel][0]->getCrsGraph()->getNodeMaxNumRowEntries(),
+                                      Xpetra::DynamicProfile);
   //      coarseCompOp->setAllToScalar(SC_ZERO);
   //      coarseCompOp->describe(*fos, Teuchos::VERB_EXTREME);
 
@@ -898,12 +1100,13 @@ void MakeCoarseCompositeOperator(const int maxRegPerProc, const int numLevels,
   //      std::cout << myRank << " | Printing coarseCompOp ..." << std::endl;
   //      Comm->barrier();
   //      coarseCompOp->describe(*fos, Teuchos::VERB_HIGH);
-}
+} // MakeCoarseCompositeOperator
 
 
   // Make interface scaling factors recursively
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MakeInterfaceScalingFactors(const int numLevels, const int maxRegPerProc,
+void MakeInterfaceScalingFactors(const int maxRegPerProc,
+                                 const int numLevels,
                                  Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& compRowMaps,
                                  Array<std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regInterfaceScalings,
                                  Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowMaps,
@@ -936,7 +1139,7 @@ void MakeInterfaceScalingFactors(const int numLevels, const int maxRegPerProc,
                         regInterfaceScalings[l], maxRegPerProc, quasiRegRowMaps[l],
                         regRowMaps[l], regRowImporters[l]);
   }
-}
+} // MakeInterfaceScalingFactors
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -946,7 +1149,7 @@ void createRegionHierarchy(const int maxRegPerProc,
                            const Array<std::string> aggregationRegionType,
                            const std::string xmlFileName,
                            Array<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& nullspace,
-                           Array<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& coordinates,
+                           Array<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >& coordinates,
                            std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
                            const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
                            const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
@@ -964,11 +1167,14 @@ void createRegionHierarchy(const int maxRegPerProc,
                            Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regProlong,
                            Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters,
                            Array<std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regInterfaceScalings,
-                           RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coarseCompOp) {
+                           RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coarseCompOp,
+                           const int maxRegPerGID = 0,
+                           ArrayView<LocalOrdinal> compositeToRegionLIDs = {})
+{
 #include "Xpetra_UseShortNames.hpp"
 
-  typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> Hierarchy;
-  typedef MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> Utilities;
+  typedef MueLu::Hierarchy<SC, LO, GO, NO> Hierarchy;
+  typedef MueLu::Utilities<SC, LO, GO, NO> Utilities;
 
   std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
   int numLevels = 0;
@@ -995,10 +1201,18 @@ void createRegionHierarchy(const int maxRegPerProc,
     userParamList.set<int>("int numDimensions", numDimensions);
     userParamList.set<Array<int> >("Array<LO> lNodesPerDim", lNodesPerDim[j]);
     userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType[j]);
+    if(Teuchos::nonnull(coordinates[j])) {
+      userParamList.set("Coordinates", coordinates[j]);
+    }
+    if(Teuchos::nonnull(nullspace[j])) {
+      userParamList.set("Nullspace", nullspace[j]);
+    }
 
     // Setup hierarchy
-    regGrpHierarchy[j] = MueLu::CreateXpetraPreconditioner(regionGrpMats[j], *mueluParams, coordinates[j], nullspace[j]);
+    regGrpHierarchy[j] = MueLu::CreateXpetraPreconditioner(regionGrpMats[j], *mueluParams);
   }
+
+  std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
 
   // resize Arrays and vectors
   {
@@ -1028,15 +1242,17 @@ void createRegionHierarchy(const int maxRegPerProc,
     }
   }
 
+  std::cout << mapComp->getComm()->getRank() << " | Fill fine level containers..." << std::endl;
+
   // Fill fine level with our data
   {
-    compRowMaps[0] = mapComp;
+    compRowMaps[0]     = mapComp;
     quasiRegRowMaps[0] = rowMapPerGrp;
     quasiRegColMaps[0] = colMapPerGrp;
-    regRowMaps[0] = revisedRowMapPerGrp;
-    regColMaps[0] = revisedColMapPerGrp;
+    regRowMaps[0][0]   = revisedRowMapPerGrp[0];
+    regColMaps[0][0]   = revisedColMapPerGrp[0];
     regRowImporters[0] = rowImportPerGrp;
-    regMatrices[0] = regionGrpMats;
+    regMatrices[0]     = regionGrpMats;
 
     /* MueLu stores prolongator on coarse level, so there is no prolongator
      * on the fine level. To have level containers of the same size, let's
@@ -1048,6 +1264,8 @@ void createRegionHierarchy(const int maxRegPerProc,
     regProlong[0] = fineLevelProlong;
   }
 
+  std::cout << mapComp->getComm()->getRank() << " | Fill coarser level containers..." << std::endl;
+
   /* Get coarse level matrices and prolongators from MueLu hierarchy
    * Note: fine level has been dealt with previously, so we start at level 1 here.
    */
@@ -1058,21 +1276,37 @@ void createRegionHierarchy(const int maxRegPerProc,
       regProlong[l][j] = level->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
       regMatrices[l][j] = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
 
-      regRowMaps[l][j] = Teuchos::rcp_const_cast<Map>(regMatrices[l][j]->getRowMap()); // ToDo (mayr.mt) Should we rather copy?
-      regColMaps[l][j] = Teuchos::rcp_const_cast<Map>(regMatrices[l][j]->getColMap()); // ToDo (mayr.mt) Should we rather copy?
+      regRowMaps[l][j] = Teuchos::rcp_const_cast<Xpetra::Map<LO,GO,NO> >(regMatrices[l][j]->getRowMap()); // ToDo (mayr.mt) Should we rather copy?
+      regColMaps[l][j] = Teuchos::rcp_const_cast<Xpetra::Map<LO,GO,NO> >(regMatrices[l][j]->getColMap()); // ToDo (mayr.mt) Should we rather copy?
     }
   }
 
-  MakeCoarseLevelMaps(maxRegPerProc, numLevels,
-                      compRowMaps,
-                      regRowMaps,
-                      quasiRegRowMaps,
-                      regColMaps,
-                      quasiRegColMaps,
-                      regRowImporters,
-                      regProlong);
+  MakeCoarseLevelMaps2(maxRegPerGID,
+                       compositeToRegionLIDs,
+                       regProlong,
+                       regRowMaps,
+                       regColMaps,
+                       quasiRegRowMaps,
+                       quasiRegColMaps,
+                       compRowMaps,
+                       regRowImporters);
 
-  MakeCoarseCompositeOperator(maxRegPerProc, numLevels,
+  // std::cout << mapComp->getComm()->getRank() << " | MakeCoarseLevelMaps ..." << std::endl;
+
+  // MakeCoarseLevelMaps(maxRegPerProc,
+  //                     numLevels,
+  //                     compRowMaps,
+  //                     regRowMaps,
+  //                     quasiRegRowMaps,
+  //                     regColMaps,
+  //                     quasiRegColMaps,
+  //                     regRowImporters,
+  //                     regProlong);
+
+  std::cout << mapComp->getComm()->getRank() << " | MakeCoarseCompositeOperator ..." << std::endl;
+
+  MakeCoarseCompositeOperator(maxRegPerProc,
+                              numLevels,
                               compRowMaps,
                               quasiRegRowMaps,
                               quasiRegColMaps,
@@ -1080,13 +1314,16 @@ void createRegionHierarchy(const int maxRegPerProc,
                               regMatrices,
                               coarseCompOp);
 
-  MakeInterfaceScalingFactors(numLevels, maxRegPerProc,
+  std::cout << mapComp->getComm()->getRank() << " | MakeInterfaceScalingFactors ..." << std::endl;
+
+  MakeInterfaceScalingFactors(maxRegPerProc,
+                              numLevels,
                               compRowMaps,
                               regInterfaceScalings,
                               regRowMaps,
                               regRowImporters,
                               quasiRegRowMaps);
-}
+} // createRegionHierarchy
 
 
 
@@ -1120,7 +1357,7 @@ void sumInterfaceValues(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, Glo
                       rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
   return;
-}
+} // sumInterfaceValues
 
 
 /*! \brief Compute the residual \f$r = b - Ax\f$
@@ -1165,7 +1402,7 @@ computeResidual(std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdin
   }
 
   return regRes;
-}
+} // computeResidual
 
 
 /*! \brief Do Jacobi smoothing
@@ -1248,7 +1485,7 @@ void jacobiIterate(const int maxIter,
   }
 
   return;
-}
+} // jacobiIterate
 
 
 //! Recursive V-cycle in region fashion
@@ -1332,40 +1569,79 @@ void vCycle(const int l, ///< ID of current level
                   regRowMaps[l], regRowImporters[l]);
   } else {
 
-//    // create row and column maps with continuous GIDs
-//    RCP<Map> contigRowMap = Teuchos::null; //= MapFactory::Build(coarseCompMat->getRowMap());
-//    RCP<Map> contigColMap = Teuchos::null; //MapFactory::Build(coarseCompMat->getColMap());
-//    createContinuousCoarseLevelMaps(coarseCompMat->getRowMap(),
-//                                    coarseCompMat->getColMap(),
-//                                    contigRowMap, contigColMap);
-//
-//    // Store non contiguous maps for later
-//    RCP<const Map> noncontigRowMap = coarseCompMat->getRowMap();
-//    RCP<const Map> noncontigColMap = coarseCompMat->getColMap();
-//
-//    // Create composite error vector (zero initial guess)
-//    RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-//
-//    // Create composite right-hand side vector
-//    RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
-//    {
-//      for (int j = 0; j < maxRegPerProc; j++) {
-//        RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
-//        inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
-//        fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
-//      }
-//
-//      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
-//        regRowImporters[l], Xpetra::ADD);
-//    }
+    // Coarsest grid solve
 
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(0);
+
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+
+    if(coarseCompMat->getRowMap()->lib() == Xpetra::UseTpetra) {
+      using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+      // First get the Xpetra vectors from region to composite format
+      // (the coarseCompMat should already exist)
+      RCP<Vector> compX = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+      RCP<Vector> compRhs = VectorFactory::Build(coarseCompMat->getRowMap(), true);
+      {
+        for (int j = 0; j < maxRegPerProc; j++) {
+          RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(regInterfaceScalings[l][j]->getMap());
+          inverseInterfaceScaling->reciprocal(*regInterfaceScalings[l][j]);
+          fineRegB[j]->elementWiseMultiply(SC_ONE, *fineRegB[j], *inverseInterfaceScaling, SC_ZERO);
+        }
+
+        regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+                            regRowImporters[l], Xpetra::ADD);
+      }
+
+      // From here on we switch to Tpetra for simplicity
+      // we could also implement a similar Epetra branch
+      using Tpetra_CrsMatrix   = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+      using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+      *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;
+      RCP<Tpetra_CrsMatrix> tMat = Utilities::Op2NonConstTpetraCrs(coarseCompMat);
+      RCP<Tpetra_MultiVector> tX = Utilities::MV2NonConstTpetraMV2(*compX);
+      RCP<Tpetra_MultiVector> tB = Utilities::MV2NonConstTpetraMV2(*compRhs);
+
+      // Now we can modify the row map of tMat, tX and tB to make it Amesos friendly
+
+
+      // With all the pieces in place we can call Amesos to solve the coarse grid problem
+      //! amesos2-specific key phrase that denote smoother type
+      std::string amesos2SolverName = "KLU2";
+      RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > coarseSolver;
+      TEUCHOS_ASSERT(Amesos2::query(amesos2SolverName));
+      coarseSolver = Amesos2::create<Tpetra_CrsMatrix,Tpetra_MultiVector>(amesos2SolverName, tMat);
+
+      Teuchos::ParameterList amesos2_params("Amesos2");
+      amesos2_params.sublist(amesos2SolverName).set("IsContiguous", false, "Are GIDs Contiguous");
+      coarseSolver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+
+
+      coarseSolver->setX(tX);
+      coarseSolver->setB(tB);
+
+      coarseSolver->solve();
+
+      coarseSolver->setX(Teuchos::null);
+      coarseSolver->setB(Teuchos::null);
+
+      std::vector<RCP<Vector> > quasiRegX(maxRegPerProc);
+      compositeToRegional(compX, quasiRegX, fineRegX,
+                          maxRegPerProc,
+                          quasiRegRowMaps[l],
+                          regRowMaps[l],
+                          regRowImporters[l]);
+    }
+#else
     *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
          << "+ Coarse level solver has not been migrated to Xpetra, yet. +\n"
          << "+ We skip it for now.                                       +\n"
          << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
         << std::endl;
+#endif
 
 //    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Coarse level solver not migrated to Xpetra, yet.");
 
@@ -1451,6 +1727,6 @@ void vCycle(const int l, ///< ID of current level
   }
 
   return;
-}
+} // vCycle
 
 #endif // MUELU_SETUPREGIONHIERARCHY_DEF_HPP
