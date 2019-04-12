@@ -103,7 +103,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const
+  void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& /* fineLevel */, Level& /* coarseLevel */) const
   { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
