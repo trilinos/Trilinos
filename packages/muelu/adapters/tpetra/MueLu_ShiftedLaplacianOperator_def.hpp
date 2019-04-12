@@ -114,7 +114,7 @@ getRangeMap () const
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                                                                               Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+                                                                               Teuchos::ETransp /* mode */, Scalar /* alpha */, Scalar /* beta */) const {
 
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>        TMV;
   typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  XTMV;

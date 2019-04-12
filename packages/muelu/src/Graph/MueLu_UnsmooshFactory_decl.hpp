@@ -121,7 +121,7 @@ namespace MueLu {
     //@}
 
     void Build (Level &fineLevel, Level &coarseLevel) const; // Build
-    void BuildP(Level &fineLevel, Level &coarseLevel) const {}; // TAW no real need for an extra BuildP routine. Just use Build
+    void BuildP(Level &/* fineLevel */, Level &/* coarseLevel */) const {}; // TAW no real need for an extra BuildP routine. Just use Build
 
   private:
 

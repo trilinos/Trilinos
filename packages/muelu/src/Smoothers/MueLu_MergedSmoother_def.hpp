@@ -123,7 +123,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
+  void MergedSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& /* out */, const VerbLevel /* verbLevel */) const {
     throw Exceptions::NotImplemented("MueLu::MergedSmoother<>::Print() is not implemented");
   }
 

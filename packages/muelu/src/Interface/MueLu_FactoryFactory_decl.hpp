@@ -706,7 +706,7 @@ namespace MueLu {
     }
 #endif
 
-    RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+    RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
       if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new DirectSolver()), Teuchos::null));
 
@@ -807,7 +807,7 @@ namespace MueLu {
     }
 #endif
 
-    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& /* paramList */, const FactoryMap& /* factoryMapIn */, const FactoryManagerMap& /* factoryManagersIn */) const {
       //if (paramList.begin() == paramList.end())
         return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
 

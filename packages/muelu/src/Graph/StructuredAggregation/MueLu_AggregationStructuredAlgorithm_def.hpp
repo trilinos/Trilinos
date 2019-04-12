@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
+  BuildAggregates(const Teuchos::ParameterList& /* params */, const GraphBase& graph,
                   Aggregates& aggregates, std::vector<unsigned>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
@@ -270,7 +270,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
-                           const LO dofsPerNode, const int numInterpolationPoints,
+                           const LO dofsPerNode, const int /* numInterpolationPoints */,
                            ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                            Array<LO>& colIndex) const {
 
@@ -325,7 +325,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+  ComputeGraphDataLinear(const GraphBase& /* graph */, RCP<IndexManager>& geoData,
                          const LO dofsPerNode, const int numInterpolationPoints,
                          ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
                          Array<LO>& colIndex) const {

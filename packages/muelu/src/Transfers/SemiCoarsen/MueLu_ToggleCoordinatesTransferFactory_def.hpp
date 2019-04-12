@@ -64,7 +64,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ToggleCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void ToggleCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& /* fineLevel */, Level& coarseLevel) const {
     const ParameterList& pL = GetParameterList();
     TEUCHOS_TEST_FOR_EXCEPTION(!pL.isParameter("Chosen P"), Exceptions::RuntimeError, "MueLu::ToggleCoordinatesTransferFactory::DeclareInput: You have to set the 'Chosen P' parameter to a factory name of type TogglePFactory. The ToggleCoordinatesTransferFactory must be used together with a TogglePFactory!");
     Input(coarseLevel,"Chosen P");
@@ -76,7 +76,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ToggleCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
+  void ToggleCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & /* fineLevel */, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Coordinate transfer toggle", coarseLevel);
 
     typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> xdMV;
