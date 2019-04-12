@@ -4053,7 +4053,7 @@ namespace Tpetra {
                      const bool tolerant=false,
                      const bool debug=false)
       {
-        readDenseFile(filename, comm, map, tolerant, debug);
+        return readDenseFile(filename, comm, map, tolerant, debug);
       }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -4230,7 +4230,7 @@ namespace Tpetra {
                  const bool tolerant=false,
                  const bool debug=false)
       {
-        readVector(in, comm,  map, tolerant, debug);
+        return readVector(in, comm,  map, tolerant, debug);
       }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -5354,9 +5354,9 @@ namespace Tpetra {
                const bool tolerant=false,
                const bool debug=false)
       {
-        readMap(in, comm, tolerant, debug);
+        return readMap(in, comm, tolerant, debug);
       }
-#endif
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       /// \brief Read Map (as a MultiVector) from the given input
       ///   stream, with optional debugging output stream.
