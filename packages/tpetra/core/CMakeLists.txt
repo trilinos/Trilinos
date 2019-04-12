@@ -111,34 +111,6 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
 
 
 # ==================================================================
-# Verify that a valid GORDS configuration is set.
-# ==================================================================
-
-# Verify that we have only one global ordinal set.
-SET(lenTpetraCore_ETI_GORDS 0 INTERNAL)
-LIST(LENGTH TpetraCore_ETI_GORDS lenTpetraCore_ETI_GORDS)
-
-IF(Tpetra_ENABLE_DEPRECATED_CODE)
-    IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-        MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type to be set, but none were specified. "
-                            "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
-    ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
-        MESSAGE(WARNING "Tpetra requires only one global ordinal to be set, but more than one are set: "
-                        "{${TpetraCore_ETI_GORDS}}."
-                        "Building with more than one global ordinal type in Tpetra is deprecated.")
-    ENDIF()
-ELSE()
-    IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-        MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type to be set, but none were specified."
-                            " To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
-    ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
-        MESSAGE(FATAL_ERROR "Tpetra requires only one global ordinal to be set, but more than one are set: "
-                            "{${TpetraCore_ETI_GORDS}}.")
-    ENDIF()
-ENDIF()
-
-
-# ==================================================================
 # Other Tpetra options
 # ==================================================================
 
