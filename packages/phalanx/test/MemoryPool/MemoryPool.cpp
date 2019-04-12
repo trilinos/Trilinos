@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -41,70 +41,26 @@
 // ************************************************************************
 // @HEADER
 
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_FieldTag.hpp"
+#include "Phalanx_MemoryPool.hpp"
 
-#ifndef PHX_EVALUATION_CONTAINER_BASE_HPP
-#define PHX_EVALUATION_CONTAINER_BASE_HPP
+#include "Sacado.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 
-#include <cstddef>
-#include <string>
-#include <map>
-#include "Phalanx_DAG_Manager.hpp"
+namespace phalanx_test {
 
-namespace PHX {
+  TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, MemoryPool)
+  {
+    PHX::MemoryPool pool1;
 
-  template<typename Traits> class FieldManager;
-  class MemoryPool;
+    auto pool2 = pool1.clone();
+  }
 
-  template<typename Traits>
-  class EvaluationContainerBase {
-
-  public:
-
-    EvaluationContainerBase();
-
-    virtual ~EvaluationContainerBase();
-
-    virtual void requireField(const PHX::FieldTag& v);
-
-    virtual void aliasField(const PHX::FieldTag& aliasedField,
-                            const PHX::FieldTag& targetField) = 0;
-    
-    virtual void 
-    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
-
-    virtual void postRegistrationSetup(typename Traits::SetupData d,
-				       PHX::FieldManager<Traits>& vm,
-                                       const bool& buildDeviceDAG,
-                                       const bool& minimizeDAGMemoryUse,
-                                       const PHX::MemoryPool* const memoryPool) = 0;
-
-    virtual void evaluateFields(typename Traits::EvalData d) = 0;
-
-    virtual void preEvaluate(typename Traits::PreEvalData d) = 0;
-
-    virtual void postEvaluate(typename Traits::PostEvalData d) = 0;
-
-    virtual void writeGraphvizFile(const std::string filename,
-				   bool writeEvaluatedFields,
-				   bool writeDependentFields,
-				   bool debugRegisteredEvaluators) const;
-
-    virtual const std::string evaluationType() const = 0;
-
-    virtual void print(std::ostream& os) const = 0;
-    
-  protected:
-    
-    PHX::DagManager<Traits> dag_manager_;
-
-  };
-
-  template<typename Traits>
-  std::ostream& operator<<(std::ostream& os, 
-			   const PHX::EvaluationContainerBase<Traits>& sc);
-  
 }
-
-#include "Phalanx_EvaluationContainer_Base_Def.hpp"
-
-#endif 
