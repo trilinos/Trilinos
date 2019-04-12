@@ -330,9 +330,7 @@ add_test_results add_into_test(
     AT ? A->getDomainMap () : A->getRowMap ();
   RCP<Matrix_t> computedC = rcp (new Matrix_t (rowmap, 1));
   SC one = Teuchos::ScalarTraits<SC>::one();
-  printf("add op\n");
   Tpetra::MatrixMatrix::Add (*A, AT, one, *B, one);
-  printf("add op complete\n");
   B->fillComplete ();
   toReturn.computedNorm = B->getFrobeniusNorm ();
   toReturn.epsilon = fabs (toReturn.correctNorm - toReturn.computedNorm);
@@ -1078,21 +1076,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       newOut << "\tEpsilon: " << results.epsilon << endl;
 
       B = Reader<Matrix_t >::readSparseFile(B_file, comm, true, false, false);
-      //declare D with enough entries to receive A + B
+      //declare E with enough entries to receive A + B
       size_t n = 0;
-      for (size_t i = 0; i < B->getGlobalNumRows(); i++) {
-	if (n < B->getNumEntriesInGlobalRow(i))
-	  n = B->getNumEntriesInGlobalRow(i);
+      for (size_t i = 0; i < B->getNodeNumRows(); i++) {
+	if (n < B->getNumEntriesInLocalRow(i))
+	  n = B->getNumEntriesInLocalRow(i);
       }
-      n += A->getGlobalMaxNumRowEntries();
+      n += A->getNodeMaxNumRowEntries();
 
-      newOut << "construct row map" << endl;
+      newOut << "Entries per row: " << n << endl;
       RCP<const map_type> rm = B->getRowMap();
-      newOut << "construct new Sparse E" << endl;
       RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
-      newOut << "get one" << endl;
       auto one = Teuchos::ScalarTraits<SC>::one();
-      newOut << "add B to new sparse matrix" << endl;
       Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 
       if (! BT) {

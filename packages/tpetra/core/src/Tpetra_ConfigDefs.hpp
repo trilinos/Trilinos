@@ -128,13 +128,11 @@ namespace Tpetra {
 
   /*! Allocation profile for matrix/graph entries */
   enum ProfileType {
-    StaticProfile,
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    DynamicProfile TPETRA_DEPRECATED /*!< Multiple, dynamic allocations (flexibile, but less efficient) */
-#endif
+    StaticProfile
   };
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED const ProfileType DynamicProfile = ProfileType(StaticProfile+1);
 #define TPETRA_DEFAULT_PROFILE_TYPE DynamicProfile
 #else
 #define TPETRA_DEFAULT_PROFILE_TYPE StaticProfile
