@@ -40,71 +40,73 @@
 //
 // ************************************************************************
 // @HEADER
+#ifndef PHX_MEMORY_POOL_HPP
+#define PHX_MEMORY_POOL_HPP
 
-
-#ifndef PHX_EVALUATION_CONTAINER_BASE_HPP
-#define PHX_EVALUATION_CONTAINER_BASE_HPP
-
-#include <cstddef>
-#include <string>
-#include <map>
-#include "Phalanx_DAG_Manager.hpp"
+#include "Phalanx_config.hpp"
+#include <forward_list>
+#include <memory>
 
 namespace PHX {
 
-  template<typename Traits> class FieldManager;
-  class MemoryPool;
+  class MemoryPool {
 
-  template<typename Traits>
-  class EvaluationContainerBase {
+    struct Tracker {
+      bool is_used_;
+      Kokkos::Impl::SharedAllocationTracker tracker_;
+    };
+
+    std::forward_list<PHX::MemoryPool::Tracker> trackers_;
+
+    /// Tracks cloned memory pools so that all clones can get access to newly allocated fields from any individual memory pool.
+    std::shared_ptr<std::forward_list<PHX::MemoryPool*>> shared_memory_pools_;
+
+    void findMemoryAllocation() {}
 
   public:
+    MemoryPool()
+    {
+      shared_memory_pools_ = std::make_shared<std::forward_list<PHX::MemoryPool*>>();
+      shared_memory_pools_->push_front(this);
+    }
 
-    EvaluationContainerBase();
+    ~MemoryPool()
+    {
+      // remove self from list of memory pools
+      shared_memory_pools_->remove(this);
+    }
 
-    virtual ~EvaluationContainerBase();
+    /// Allocate a new memory pool re-using trackers from shared memory pools.
+    MemoryPool(const MemoryPool& mp)
+    {
+      shared_memory_pools_ = mp.shared_memory_pools_;
+      trackers_ = mp.trackers_;
+      shared_memory_pools_->push_front(this);
+    }
 
-    virtual void requireField(const PHX::FieldTag& v);
+    /** \brief Clones MemoryPool to reuse tracker allocations with a separate FieldManager. */
+    std::shared_ptr<PHX::MemoryPool> clone() const
+    {return std::make_shared<PHX::MemoryPool>(*this);}
 
-    virtual void aliasField(const PHX::FieldTag& aliasedField,
-                            const PHX::FieldTag& targetField) = 0;
-    
-    virtual void 
-    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
+    /// Assigns memory to a view, allocates new memory if needed.
+    template<class View>
+    void bindViewMemory(const PHX::FieldTag& tag, View& view) {
+      const size_t bytes = view.span();
 
-    virtual void postRegistrationSetup(typename Traits::SetupData d,
-				       PHX::FieldManager<Traits>& vm,
-                                       const bool& buildDeviceDAG,
-                                       const bool& minimizeDAGMemoryUse,
-                                       const PHX::MemoryPool* const memoryPool) = 0;
+      // Find an unused memory allocation.
 
-    virtual void evaluateFields(typename Traits::EvalData d) = 0;
 
-    virtual void preEvaluate(typename Traits::PreEvalData d) = 0;
+      // loop over other pools and register as free memory
 
-    virtual void postEvaluate(typename Traits::PostEvalData d) = 0;
+    }
 
-    virtual void writeGraphvizFile(const std::string filename,
-				   bool writeEvaluatedFields,
-				   bool writeDependentFields,
-				   bool debugRegisteredEvaluators) const;
+    /// Inserts tracker
+    void insertTracker(Kokkos::Impl::SharedAllocationTracker& t) {
 
-    virtual const std::string evaluationType() const = 0;
-
-    virtual void print(std::ostream& os) const = 0;
-    
-  protected:
-    
-    PHX::DagManager<Traits> dag_manager_;
+    }
 
   };
 
-  template<typename Traits>
-  std::ostream& operator<<(std::ostream& os, 
-			   const PHX::EvaluationContainerBase<Traits>& sc);
-  
 }
 
-#include "Phalanx_EvaluationContainer_Base_Def.hpp"
-
-#endif 
+#endif
