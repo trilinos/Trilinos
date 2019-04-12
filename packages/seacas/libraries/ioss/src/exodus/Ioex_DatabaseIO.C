@@ -533,18 +533,18 @@ namespace Ioex {
 
       int i = 0;
       Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information().c_str(),
-                               max_line_length);
+                               max_line_length + 1);
 
-      Ioss::Utils::copy_string(info[i++], Ioex::Version(), max_line_length);
+      Ioss::Utils::copy_string(info[i++], Ioex::Version(), max_line_length + 1);
 
       // Copy input file lines into 'info' array...
       for (size_t j = 0; j < input_lines.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], input_lines[j].c_str(), max_line_length);
+        Ioss::Utils::copy_string(info[i], input_lines[j].c_str(), max_line_length + 1);
       }
 
       // Copy "information_records" property data ...
       for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], informationRecords[j].c_str(), max_line_length);
+        Ioss::Utils::copy_string(info[i], informationRecords[j].c_str(), max_line_length + 1);
       }
 
       int ierr = ex_put_info(get_file_pointer(), total_lines, info);
