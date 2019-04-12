@@ -227,6 +227,20 @@ std::vector<std::vector<Scalar> > generate_fem1d_element_values() {
   return mat;
 }
 
+template<class Scalar, class Node>
+Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > generate_fem1d_element_values_kokkos() {
+
+  Kokkos::View<Scalar*[2], Kokkos::LayoutLeft, typename Node::device_type > mat;
+
+  Kokkos::resize(mat, 2);
+  //plz don't abuse UVM
+  mat(0,0) =  1;
+  mat(0,1) = -1;
+  mat(1,0) = -1;
+  mat(1,1) =  1;
+
+  return mat;
+}
 
 
 //
@@ -292,6 +306,77 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
+////
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scalar, Node )
+{
+  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
+  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+
+  // get a comm
+  RCP<const Comm<int> > comm = getDefaultComm();
+  
+  // Generate a mesh
+  size_t numLocal = 10;
+  GraphPack<LO,GO,Node> pack;
+  generate_fem1d_graph(numLocal,comm,pack);
+  
+  // Make the graph    
+  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
+  // not being handled correctly. 
+  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,4));
+
+  graph->beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        //        printf("Inserting (%d,%d)\n",gid_j,gid_k);
+        graph->insertGlobalIndices(gid_j,1,&gid_k);
+      }
+    }
+  }
+  graph->endFill();
+
+
+  // Generate the "local stiffness matrix"
+  std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
+  auto kokkosValues = generate_fem1d_element_values_kokkos<Scalar, Node>();
+
+  // Make the matrix two ways
+  // change to kokkos
+  FEMAT mat1(graph); // Here we use graph as a FECrsGraph
+  CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
+  mat1.beginFill();
+  auto k_e2n = pack.k_element2node;
+
+  Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::execution_space>(0,numLocal), 
+		       KOKKOS_LAMBDA(const size_t i) {
+    for(size_t j=0; j<k_e2n.extent(1); j++) {
+      GO gid_j = k_e2n(i, j);
+      for(size_t k=0; k<k_e2n.extent(1); k++) {
+        GO gid_k = k_e2n(i, k);
+        mat1.sumIntoGlobalValues(gid_j,1,&kokkosValues(j,k),&gid_k);
+      }
+    }
+  });
+  mat1.endFill();
+
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        mat2.sumIntoGlobalValues(gid_j,1,&localValues[j][k],&gid_k);
+      }
+    }
+  }
+  mat2.fillComplete();
+
+  success = compare<Scalar,LO,GO,Node>::compare_final_matrix_structure(out,mat1,mat2);
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
+}
 
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, Scalar, Node )
@@ -362,7 +447,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, S
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D_Kokkos, LO, GO, SCALAR, NODE ) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
