@@ -89,7 +89,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    IsolatedNodeAggregationAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    IsolatedNodeAggregationAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~IsolatedNodeAggregationAlgorithm() { }

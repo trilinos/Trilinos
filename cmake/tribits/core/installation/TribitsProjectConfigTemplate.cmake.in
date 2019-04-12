@@ -92,24 +92,6 @@ SET(${PROJECT_NAME}_AR ${CMAKE_AR})
 ## The project version number
 SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
 
-## The project include file directories.
-#SET(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}")
-
-## The project library directories.
-#SET(${PROJECT_NAME}_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
-
-## The project libraries.
-#SET(${PROJECT_NAME}_LIBRARIES "${${PROJECT_NAME}_CONFIG_LIBRARIES}")
-
-## The project tpl include paths
-#SET(${PROJECT_NAME}_TPL_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS}")
-
-## The project tpl library paths
-#SET(${PROJECT_NAME}_TPL_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS}")
-
-## The project tpl libraries
-#SET(${PROJECT_NAME}_TPL_LIBRARIES "${${PROJECT_NAME}_CONFIG_TPL_LIBRARIES}")
-
 # For best practices in handling of components, see
 # <http://www.cmake.org/cmake/help/v3.2/manual/cmake-developer.7.html#find-modules>.
 #
@@ -171,6 +153,18 @@ FOREACH(dir ${PDOLLAR}{${PROJECT_NAME}_LIBRARY_DIRS})
 ENDFOREACH()
 LIST(REMOVE_DUPLICATES short_dirs)
 SET(${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{short_dirs})
+
+# Remove duplicates in ${PROJECT_NAME}_LIBRARIES
+LIST(REVERSE ${PROJECT_NAME}_LIBRARIES)
+LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+LIST(REVERSE ${PROJECT_NAME}_LIBRARIES)
+
+# Remove duplicates in ${PROJECT_NAME}_TPL_INCLUDE_DIRS
+LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_INCLUDE_DIRS)
+
+# NOTE: It is *NOT* safe to try to remove duplicate in
+# ${PROJECT_NAME}_TPL_LIBRARIES because these can be specified as -L, -l, etc.
+# Actaully, we should think about that.
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables

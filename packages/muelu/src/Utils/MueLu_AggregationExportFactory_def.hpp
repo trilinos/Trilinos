@@ -367,7 +367,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacksPlus_(std::vector<int>& /* vertices */, std::vector<int>& /* geomSizes */) const
   {
     //TODO
   }

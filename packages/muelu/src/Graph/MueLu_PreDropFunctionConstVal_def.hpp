@@ -59,7 +59,7 @@ namespace MueLu {
     : threshold_(threshold) { }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Drop(size_t lrow, GlobalOrdinal grow, size_t k, LocalOrdinal lcid, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & indices, const Teuchos::ArrayView<const Scalar> & vals) {
+  bool PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Drop(size_t /* lrow */, GlobalOrdinal grow, size_t k, LocalOrdinal /* lcid */, GlobalOrdinal gcid, const Teuchos::ArrayView<const LocalOrdinal> & /* indices */, const Teuchos::ArrayView<const Scalar> & vals) {
     if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[k]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || grow == gcid ) {
       return false; // keep values
     }

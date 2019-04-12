@@ -293,6 +293,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
   A = Pr->BuildMatrix();
 
+  // Extract the diagonal of A (for RAPShiftFactory testing)
+  RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
+  A->getLocalDiagCopy(*Mdiag);
+  
+
   if (matrixType == "Elasticity2D" ||
       matrixType == "Elasticity3D") {
     nullspace = Pr->BuildNullspace();
@@ -333,7 +338,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     userParamList.set<int>("int numDimensions", numDimensions);
     userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
     userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+    userParamList.set<double>("double cfl",1.0);
+    userParamList.set<double>("double deltaT",1.0);
+    userParamList.set("Mdiag",Mdiag);
+
+
     H = MueLu::CreateXpetraPreconditioner(A, paramList, paramList);
+
 
     comm->barrier();
     tm = Teuchos::null;

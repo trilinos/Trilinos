@@ -92,7 +92,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationPhase1Algorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationPhase1Algorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationPhase1Algorithm() { }

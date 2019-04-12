@@ -75,13 +75,13 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &/* fineLevel */, Level &coarseLevel) const {
     Input(coarseLevel, "A");
     Input(coarseLevel, "Importer");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &/* fineLevel */, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
     
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");

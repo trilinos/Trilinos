@@ -61,11 +61,26 @@ namespace MatrixMatrix {
     template<class CrsMatrixType>
     size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B);
 
-    template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,
-             class OutRowptrType, class OutColindType, class OutValsType>
-    void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InColindArrayType &Incolind, const InValsArrayType & Invals,
-                                       size_t m, double thread_chunk,
-                                       OutRowptrType & Outrowptr, OutColindType &Outcolind, OutValsType & Outvals);
+    // 2019 Apr 10 JJE:
+    // copies data from thread local chunks into a unified CSR structure
+    // 'const' on the inCol and inVals array is a lie.  The routine will deallocate
+    // the thread local storage. Maybe they shouldn't be const. Or mark, non-const
+    // and have a helper function for the actual copies that takes these as const
+    // . The point of const is that we want the loops to optimize assuming the
+    // RHS is unchanging
+    template<class InColindArrayType,
+             class InValsArrayType,
+             class OutRowptrType,
+             class OutColindType,
+             class OutValsType>
+    void copy_out_from_thread_memory(const OutColindType& thread_total_nnz,
+                                     const InColindArrayType& Incolind,
+                                     const InValsArrayType& Invals,
+                                     const size_t m,
+                                     const double thread_chunk,
+                                     OutRowptrType& Outrowptr,
+                                     OutColindType& Outcolind,
+                                     OutValsType& Outvals);
 
     /***************************** Matrix-Matrix OpenMP Only Kernels *****************************/
 #ifdef HAVE_TPETRA_INST_OPENMP
