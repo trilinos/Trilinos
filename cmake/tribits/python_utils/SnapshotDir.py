@@ -491,7 +491,7 @@ def cleanIgnoredFilesFromGitDir(dirPath, dirName):
 
 
 def getCommitSha1(gitDir):
-  return getCmndOutput("git log -1 --pretty=format:'%h'", workingDir=gitDir).strip()
+  return getCmndOutput("git log -1 --pretty=format:'%h' -- .", workingDir=gitDir).strip()
 
 
 def getGitRepoUrl(gitDir):

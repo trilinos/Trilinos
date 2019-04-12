@@ -486,14 +486,6 @@ initialize ()
                                        ignoreMapsForTriangularStructure);
   using LO = local_ordinal_type;
   const LO lclNumRows = lclRowMap.getNodeNumElements ();
-  //const LO lclNumCols = lclColMap.getNodeNumElements ();
-  // NOTE (mfh 30 Apr 2018) Original test for implicit unit diagonal was
-  //
-  // (A_crs_->getNodeNumDiags () < A_crs_->getNodeNumRows ()) ? "U" : "N";
-  //
-  // I don't agree with this test -- it's not an implicitly stored
-  // unit diagonal if there are SOME entries -- but I'm leaving it for
-  // backwards compatibility.
   this->diag_ = (result.diagCount < lclNumRows) ? "U" : "N";
   this->uplo_ = result.couldBeLowerTriangular ? "L" :
     (result.couldBeUpperTriangular ? "U" : "N");
@@ -652,9 +644,6 @@ localTriangularSolve (const MV& Y,
   using Teuchos::CONJ_TRANS;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
-  typedef Kokkos::HostSpace host_memory_space;
-  using device_type = typename MV::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   const char tfecfFuncName[] = "localTriangularSolve: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -693,24 +682,13 @@ localTriangularSolve (const MV& Y,
   // https://github.com/kokkos/kokkos-kernels/issues/48.  This
   // means that we need to sync to host, then sync back to device
   // when done.
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  X.template sync<host_memory_space> ();
-  const_cast<MV&> (Y).template sync<host_memory_space> ();
-  X.template modify<host_memory_space> (); // we will write to X
-#else
   X.sync_host ();
   const_cast<MV&> (Y).sync_host ();
   X.modify_host (); // we will write to X
-#endif
 
   if (X.isConstantStride () && Y.isConstantStride ()) {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto X_lcl = X.template getLocalView<host_memory_space> ();
-    auto Y_lcl = Y.template getLocalView<host_memory_space> ();
-#else
     auto X_lcl = X.getLocalViewHost ();
     auto Y_lcl = Y.getLocalViewHost ();
-#endif
     KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                         A_lcl, Y_lcl, X_lcl);
   }
@@ -720,20 +698,15 @@ localTriangularSolve (const MV& Y,
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVector (j);
       auto Y_j = X.getVector (j);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      auto X_lcl = X_j->template getLocalView<host_memory_space> ();
-      auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
-#else
       auto X_lcl = X_j->getLocalViewHost ();
       auto Y_lcl = Y_j->getLocalViewHost ();
-#endif
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                           diag.c_str (), A_lcl, Y_lcl, X_lcl);
     }
   }
 
-  X.template sync<dev_memory_space> ();
-  const_cast<MV&> (Y).template sync<dev_memory_space> ();
+  X.sync_device ();
+  const_cast<MV&> (Y).sync_device ();
 }
 
 template<class MatrixType>

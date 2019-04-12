@@ -153,7 +153,7 @@ namespace Xpetra {
            std::vector<size_t>& stridingInfo,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalOrdinal stridedBlockId = -1, // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
-           GlobalOrdinal offset = 0,
+           GlobalOrdinal /* offset */ = 0,
            const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node))
     {
       return rcp (new StridedMap (lib, numGlobalElements, elementList,

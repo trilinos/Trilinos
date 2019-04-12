@@ -106,7 +106,12 @@ module load sems-git/2.10.1
 module load sems-cmake/3.12.2
 module load sems-ninja_fortran/1.8.2
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+  # We just need to be super conservative by default when using a GPU.  If
+  # users want to use more MPI processes, then can override this with
+  # ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE.
+elif [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
   # NOTE: With hyper-threading enabled, you can run as many threads as there
@@ -144,21 +149,13 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module load atdm-env
+  module load atdm-mkl/18.0.5
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-#  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
-#  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
-#  export ATDM_CONFIG_BLAS_LIBS="-mkl"
-  export LAPACK_ROOT=/usr/lib64/atlas
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-  export ATDM_CONFIG_BLAS_LIBS="-L${LAPACK_ROOT}/lib;-lblas"
-  # NOTE: Above, /usr/lib64/atlas/ does not exist on every SEMS RHEL7 machine
-  # (e.g. it does not exist on the machine 'ascicgpu14' and 'ascicgpu15') and
-  # therefore -L//usr/lib64/atlas will get ignored by the compiler on those
-  # machines.  Therefore, -lblas and -llapack will need to exist in the
-  # default system path or some other path given in LIBRARY_PATH and that BLAS
-  # and LAPACK must work for intel-17.0.1.
+  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+  export ATDM_CONFIG_BLAS_LIBS="-mkl"
   export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
   if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
     export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}

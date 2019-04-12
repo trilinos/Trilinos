@@ -387,7 +387,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
     }
 
-    StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal indexBase, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
+    StridedMap(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, GlobalOrdinal /* indexBase */, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset), indexBase_(map->getIndexBase())
     {
       // TAW: 11/24/15

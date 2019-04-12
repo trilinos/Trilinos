@@ -1856,7 +1856,7 @@ YY_DECL
       YY_RULE_SETUP
       {
         BEGIN(GET_FILENAME);
-        file_must_exist = !true;
+        file_must_exist = false;
       }
       YY_BREAK
     case 49:
@@ -1866,20 +1866,20 @@ YY_DECL
         BEGIN(INITIAL);
         {
           symrec *s;
-          int     quoted = false;
+          int     quoted = 0;
           char *  pt     = strchr(yytext, ')');
           *pt            = '\0';
           /* Check to see if surrounded by double quote */
           if ((pt = strchr(yytext, '"')) != nullptr) {
             yytext++;
-            quoted = true;
+            quoted = 1;
           }
           if ((pt = strrchr(yytext, '"')) != nullptr) {
             *pt    = '\0';
-            quoted = true;
+            quoted = 1;
           }
 
-          if (quoted == false) {
+          if (quoted == 0) {
             /* See if this is an aprepro variable referring to a name */
             s = aprepro.getsym(yytext);
             if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
@@ -3072,9 +3072,9 @@ void yyFlexLexer::LexerError(yyconst char msg[])
   std::cerr << msg << std::endl;
   exit(YY_EXIT_FAILURE);
 }
-  /* %endif */
+/* %endif */
 
-  /* Redefine yyless() so it works in section 3 code. */
+/* Redefine yyless() so it works in section 3 code. */
 
 #undef yyless
 #define yyless(n)                                                                                  \
@@ -3089,31 +3089,31 @@ void yyFlexLexer::LexerError(yyconst char msg[])
     yyleng         = yyless_macro_arg;                                                             \
   } while (0)
 
-  /* Accessor  methods (get/set functions) to struct members. */
+/* Accessor  methods (get/set functions) to struct members. */
 
-  /* %if-c-only */
-  /* %if-reentrant */
-  /* %endif */
-  /* %if-reentrant */
-  /* %endif */
-  /* %endif */
+/* %if-c-only */
+/* %if-reentrant */
+/* %endif */
+/* %if-reentrant */
+/* %endif */
+/* %endif */
 
-  /* %if-reentrant */
-  /* %if-bison-bridge */
-  /* %endif */
-  /* %endif if-c-only */
+/* %if-reentrant */
+/* %if-bison-bridge */
+/* %endif */
+/* %endif if-c-only */
 
-  /* %if-c-only */
-  /* %endif */
+/* %if-c-only */
+/* %endif */
 
-  /* %if-c-only SNIP! this currently causes conflicts with the c++ scanner */
-  /* %if-reentrant */
-  /* %endif */
-  /* %endif */
+/* %if-c-only SNIP! this currently causes conflicts with the c++ scanner */
+/* %if-reentrant */
+/* %endif */
+/* %endif */
 
-  /*
-   * Internal utility routines.
-   */
+/*
+ * Internal utility routines.
+ */
 
 #ifndef yytext_ptr
 static void yy_flex_strncpy(char *s1, yyconst char *s2, int n)
@@ -3548,9 +3548,9 @@ namespace SEAMS {
   }
 } // namespace SEAMS
 
-  /* This implementation of ExampleFlexLexer::yylex() is required to fill the
-   * vtable of the class ExampleFlexLexer. We define the scanner's main yylex
-   * function via YY_DECL to reside in the Scanner class instead. */
+/* This implementation of ExampleFlexLexer::yylex() is required to fill the
+ * vtable of the class ExampleFlexLexer. We define the scanner's main yylex
+ * function via YY_DECL to reside in the Scanner class instead. */
 
 #ifdef yylex
 #undef yylex

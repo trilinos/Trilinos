@@ -2092,9 +2092,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   // ML; for the non-threaded case, ML found it faster to spend less
   // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
-  lno_view_t Crowptr("Crowptr",m+1);
-  lno_nnz_view_t Ccolind("Ccolind",CSR_alloc);
-  scalar_view_t Cvals("Cvals",CSR_alloc);
+  lno_view_t Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+  lno_nnz_view_t Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+  scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
 
   // mfh 27 Sep 2016: The c_status array is an implementation detail
   // of the local sparse matrix-matrix multiply routine.
@@ -2732,9 +2732,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   // ML; for the non-threaded case, ML found it faster to spend less
   // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
-  lno_view_t Crowptr("Crowptr",m+1);
-  lno_nnz_view_t Ccolind("Ccolind",CSR_alloc);
-  scalar_view_t Cvals("Cvals",CSR_alloc);
+  lno_view_t Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+  lno_nnz_view_t Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+  scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
   size_t CSR_ip = 0, OLD_ip = 0;
 
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
@@ -3385,6 +3385,7 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     KCRS Iks;
     if(Ik!=0) Iks = *Ik;
     size_t merge_numrows =  Ak.numCols();
+    // The last entry of this at least, need to be initialized
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
@@ -3409,8 +3410,8 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
 
     // Allocate nnz
     size_t merge_nnz = ::Tpetra::Details::getEntryOnHost(Mrowptr,merge_numrows);
-    lno_nnz_view_t Mcolind("Mcolind",merge_nnz);
-    scalar_view_t Mvalues("Mvals",merge_nnz);
+    lno_nnz_view_t Mcolind(Kokkos::ViewAllocateWithoutInitializing("Mcolind"),merge_nnz);
+    scalar_view_t Mvalues(Kokkos::ViewAllocateWithoutInitializing("Mvals"),merge_nnz);
 
     // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;

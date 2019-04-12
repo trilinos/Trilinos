@@ -108,10 +108,10 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
-                         Aggregates_kokkos& aggregates,
-                         std::vector<unsigned>& aggStat,
-                         LO& numNonAggregatedNodes) const {};
+    void BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph_kokkos& /* graph */,
+                         Aggregates_kokkos& /* aggregates */,
+                         std::vector<unsigned>& /* aggStat */,
+                         LO& /* numNonAggregatedNodes */) const {};
 
     void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,
@@ -121,9 +121,7 @@ namespace MueLu {
     /*! @brief Local aggregation. */
 
     void BuildGraph(const LWGraph_kokkos& graph, RCP<IndexManager_kokkos>& geoData,
-                    const LO dofsPerNode, RCP<CrsGraph>& myGraph,
-                    RCP<const Map>& coarseCoordinatesFineMap,
-                    RCP<const Map>& coarseCoordinatesMap) const;
+                    const LO dofsPerNode, RCP<CrsGraph>& myGraph) const;
     //@}
 
     std::string description() const { return "Aggretation: structured algorithm"; }

@@ -247,7 +247,7 @@ void all_reduce( ParallelMachine , const ReduceOp & );
 namespace stk {
 namespace {
 // Blank namespace so that this class produces local symbols,
-// avoiding complaints from a linker of multiple-define symbols.
+// avoiding complaints from a linker of multiply-defined symbols.
 
 struct ReduceEnd {
   struct WorkType {};

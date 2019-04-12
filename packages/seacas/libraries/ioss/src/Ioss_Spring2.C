@@ -54,8 +54,8 @@ namespace {
   struct Constants
   {
     static const int nnode     = 2;
-    static const int nedge     = 2;
-    static const int nedgenode = 1;
+    static const int nedge     = 0;
+    static const int nedgenode = 0;
     static const int nface     = 0;
     static const int nfacenode = 0;
     static const int nfaceedge = 0;
@@ -97,10 +97,9 @@ int Ioss::Spring2::number_edges_face(int face) const
   return Constants::nfaceedge;
 }
 
-Ioss::IntVector Ioss::Spring2::edge_connectivity(int edge_number) const
+Ioss::IntVector Ioss::Spring2::edge_connectivity(int /* edge_number */) const
 {
-  Ioss::IntVector connectivity(Constants::nedgenode);
-  connectivity[0] = edge_number - 1;
+  Ioss::IntVector connectivity;
   return connectivity;
 }
 
@@ -126,5 +125,5 @@ Ioss::ElementTopology *Ioss::Spring2::face_type(int /* face_number */) const
 
 Ioss::ElementTopology *Ioss::Spring2::edge_type(int /* edge_number */) const
 {
-  return Ioss::ElementTopology::factory("node");
+  return (Ioss::ElementTopology *)nullptr;
 }

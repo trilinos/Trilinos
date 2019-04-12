@@ -49,6 +49,7 @@ namespace {
 namespace Ioss {
   std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc)
   {
+#if 0
     std::array<std::string, 7> tf{{"-k", "-j", "-i", " ", "i", "j", "k"}};
 
     // 0 -3 -k
@@ -65,6 +66,7 @@ namespace Ioss {
     transform += " k..";
     transform += tf[zgc.m_transform[2] + 3];
     transform += "] ";
+#endif
 
     os << "\t\t" << zgc.m_donorName << "[P" << zgc.m_donorProcessor << "]:\tDZ " << zgc.m_donorZone
        << "\tName '" << zgc.m_connectionName << "' shares " << zgc.get_shared_node_count()

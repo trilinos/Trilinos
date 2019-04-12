@@ -252,7 +252,7 @@ namespace Tpetra {
     resumeFill (params);
     checkInternalState ();
   }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE  
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -379,7 +379,7 @@ namespace Tpetra {
     checkInternalState ();
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
-  
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
@@ -880,6 +880,22 @@ namespace Tpetra {
     return getCrsGraphRef ().getNodeNumCols ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalNumDiags () const {
+    return this->getGlobalNumDiagsImpl ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getNodeNumDiags () const {
+    return this->getNodeNumDiagsImpl ();
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -890,26 +906,12 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalNumDiags () const {
-    return this->getGlobalNumDiagsImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumDiagsImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
     using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).getNodeNumDiagsImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getNodeNumDiags () const {
-    return this->getNodeNumDiagsImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1014,6 +1016,22 @@ namespace Tpetra {
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isLowerTriangular () const {
+    return this->isLowerTriangularImpl ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool TPETRA_DEPRECATED
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isUpperTriangular () const {
+    return this->isUpperTriangularImpl ();
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1026,24 +1044,10 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isLowerTriangular () const {
-    return this->isLowerTriangularImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   isUpperTriangularImpl () const {
     const crs_graph_type& G = this->getCrsGraphRef ();
     using HDM = ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (G).isUpperTriangularImpl ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  isUpperTriangular () const {
-    return this->isUpperTriangularImpl ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2087,9 +2091,8 @@ namespace Tpetra {
   {
     typedef impl_scalar_type IST;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
-
 #ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
 #endif // HAVE_TPETRA_DEBUG
 
@@ -2105,8 +2108,7 @@ namespace Tpetra {
       rowInfo = graph.getRowInfo (rowInfo.localRow);
     }
 
-    if (this->getProfileType() == StaticProfile)
-    {
+    if (this->getProfileType () == StaticProfile) {
       Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
       auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
                    valsView[offset] += vals[k]; };
@@ -2115,8 +2117,7 @@ namespace Tpetra {
         graph.insertGlobalIndicesImpl(rowInfo, gblColInds, numInputEnt, cb);
       newNumEnt = curNumEnt + numInserted;
     }
-    else
-    {
+    else {
       // NOTE (DYNAMICPROFILE_REMOVAL) remove this block
       newNumEnt = curNumEnt + numInputEnt;
       if (newNumEnt > rowInfo.allocSize) {
@@ -4253,11 +4254,9 @@ namespace Tpetra {
   getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
-    typedef LocalOrdinal LO;
-    typedef impl_scalar_type IST;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
-    typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
+    using LO = LocalOrdinal;
+    using host_execution_space = Kokkos::DefaultHostExecutionSpace;
+    using IST = impl_scalar_type;
 
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getLocalDiagCopy: ";
@@ -4273,33 +4272,35 @@ namespace Tpetra {
     // See #1510.  In case diag has already been marked modified on
     // device, we need to clear that flag, since the code below works
     // on host.
-    auto diag_dv = diag.getDualView ();
-    diag_dv.clear_sync_state();
+    diag.clear_sync_state ();
 
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    diag.modify_host();
-    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
+    diag.modify_host ();
+    auto lclVecHost = diag.getLocalViewHost ();
     // 1-D subview of the first (and only) column of lclVecHost.
     auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
-    Kokkos::View<const size_t*, Kokkos::HostSpace,
-                 Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      h_offsets (offsets.getRawPtr (), offsets.size ());
+    using host_offsets_view_type =
+      Kokkos::View<const size_t*, Kokkos::HostSpace,
+        Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+    host_offsets_view_type h_offsets (offsets.getRawPtr (), offsets.size ());
     // Find the diagonal entries and put them in lclVecHost1d.
+    using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
-    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
     const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
-
-    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
-      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
-      if (h_offsets[lclRow] != INV) {
-        auto curRow = lclMatrix_.rowConst (lclRow);
-        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
-      }
-    });
-    diag.template sync<execution_space> (); // sync changes back to device
+    Kokkos::parallel_for
+      ("Tpetra::CrsMatrix::getLocalDiagCopy",
+       range_type (0, myNumRows),
+       [&] (const LO& lclRow) {
+        lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
+        if (h_offsets[lclRow] != INV) {
+          auto curRow = lclMatrix_.rowConst (lclRow);
+          lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
+        }
+      });
+    diag.sync_device ();
   }
 
 
@@ -4316,7 +4317,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
     using LO = local_ordinal_type;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
+    using vec_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "leftScale: ";
 
     ProfilingRegion region ("Tpetra::CrsMatrix::leftScale");

@@ -121,7 +121,7 @@ namespace FROSch {
         
         LO iD;
         SC valueTmp;
-        LOVec indices;
+        GOVec indices;
         SCVec values;
 
         for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
@@ -130,14 +130,14 @@ namespace FROSch {
             for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
                 valueTmp=AssembledBasis_->getData(j)[i];
                 if (fabs(valueTmp)>treshold) {
-                    indices.push_back(j);
+                    indices.push_back( AssembledBasisMap_->getGlobalElement(j) );
                     values.push_back(valueTmp);
                 }
             }
             iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(i));
             
             if (iD!=-1) {
-                GlobalBasisMatrix_->insertLocalValues(iD,indices(),values());
+                GlobalBasisMatrix_->insertGlobalValues( repeatedMap->getGlobalElement(i) ,indices(),values());
             }
         }
         GlobalBasisMatrix_->fillComplete(AssembledBasisMap_,rowMap);

@@ -54,6 +54,7 @@ namespace Ioex {
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
                               MPI_Comm                     communicator,
                               const Ioss::PropertyManager &properties) const override;
+    void              show_config() const override;
   };
 } // namespace Ioex
 #endif // IOSS_Ioex_IOFactory_h

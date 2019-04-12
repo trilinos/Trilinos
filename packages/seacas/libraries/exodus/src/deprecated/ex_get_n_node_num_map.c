@@ -54,7 +54,7 @@
 #include <stdint.h>   // for int64_t
 
 /*!
- *  \deprecated Use ex_get_partial_num_map()(exoid, EX_NODE_MAP, start_ent, num_ents, node_map)
+ *  \deprecated Use ex_get_partial_id_map()(exoid, EX_NODE_MAP, start_ent, num_ents, node_map)
  * instead
  */
 

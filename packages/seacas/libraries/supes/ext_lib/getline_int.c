@@ -1034,17 +1034,17 @@ static void gl_killword(int direction)
   int i;
 
   if (direction > 0) { /* forward */
-    while (!isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && !isspace(gl_buf[pos]))
       pos++;
-    while (isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && isspace(gl_buf[pos]))
       pos++;
   }
   else { /* backword */
     if (pos > 0)
       pos--;
-    while (isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && isspace(gl_buf[pos]))
       pos--;
-    while (!isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && !isspace(gl_buf[pos]))
       pos--;
     if (pos < gl_cnt && isspace(gl_buf[pos])) /* move onto word */
       pos++;
@@ -1070,17 +1070,17 @@ static void gl_word(int direction)
   int pos = gl_pos;
 
   if (direction > 0) { /* forward */
-    while (!isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && !isspace(gl_buf[pos]))
       pos++;
-    while (isspace(gl_buf[pos]) && pos < gl_cnt)
+    while (pos < gl_cnt && isspace(gl_buf[pos]))
       pos++;
   }
   else { /* backword */
     if (pos > 0)
       pos--;
-    while (isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && isspace(gl_buf[pos]))
       pos--;
-    while (!isspace(gl_buf[pos]) && pos > 0)
+    while (pos > 0 && !isspace(gl_buf[pos]))
       pos--;
     if (pos < gl_cnt && isspace(gl_buf[pos])) /* move onto word */
       pos++;

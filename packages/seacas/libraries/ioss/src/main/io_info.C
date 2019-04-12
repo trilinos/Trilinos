@@ -609,11 +609,13 @@ namespace {
 
   void info_commsets(Ioss::Region &region, bool summary)
   {
+#if 0
     // NOTE: This doesn't really do anything...
     const Ioss::CommSetContainer &css = region.get_commsets();
     for (auto cs : css) {
       std::string type = cs->get_property("entity_type").get_string();
     }
+#endif
     OUTPUT << '\n';
   }
 

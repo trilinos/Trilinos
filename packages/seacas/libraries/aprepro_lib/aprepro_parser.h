@@ -1,4 +1,4 @@
-// A Bison parser, made by GNU Bison 3.3.1.
+// A Bison parser, made by GNU Bison 3.3.2.
 
 // Skeleton interface for Bison LALR(1) parsers in C++
 
@@ -140,31 +140,39 @@
 #endif
 
 /* Debug traces.  */
-#ifndef YYDEBUG
-#define YYDEBUG 1
+#ifndef SEAMSDEBUG
+#if defined YYDEBUG
+#if YYDEBUG
+#define SEAMSDEBUG 1
+#else
+#define SEAMSDEBUG 0
 #endif
+#else /* ! defined YYDEBUG */
+#define SEAMSDEBUG 1
+#endif /* ! defined YYDEBUG */
+#endif /* ! defined SEAMSDEBUG */
 
 namespace SEAMS {
-#line 157 "aprepro_parser.h" // lalr1.cc:417
+#line 165 "aprepro_parser.h" // lalr1.cc:417
 
   /// A Bison parser.
   class Parser
   {
   public:
-#ifndef YYSTYPE
+#ifndef SEAMSSTYPE
     /// Symbol semantic values.
     union semantic_type {
-#line 90 "aprepro.yy" // lalr1.cc:417
+#line 89 "aprepro.yy" // lalr1.cc:417
 
       double         val;    /* For returning numbers.		*/
       struct symrec *tptr;   /* For returning symbol-table pointers	*/
       char *         string; /* For returning quoted strings		*/
       struct array * arrval; /* For returning arrays                 */
 
-#line 176 "aprepro_parser.h" // lalr1.cc:417
+#line 184 "aprepro_parser.h" // lalr1.cc:417
     };
 #else
-    typedef YYSTYPE semantic_type;
+    typedef SEAMSSTYPE semantic_type;
 #endif
 
     /// Syntax errors thrown from user actions.
@@ -348,7 +356,7 @@ namespace SEAMS {
     /// \returns  0 iff parsing succeeded.
     virtual int parse();
 
-#if YYDEBUG
+#if SEAMSDEBUG
     /// The current debugging stream.
     std::ostream &debug_stream() const YY_ATTRIBUTE_PURE;
     /// Set the current debugging stream.
@@ -439,7 +447,7 @@ namespace SEAMS {
 
     /// For a symbol, its name in clear.
     static const char *const yytname_[];
-#if YYDEBUG
+#if SEAMSDEBUG
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
     static const unsigned short yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
@@ -623,7 +631,7 @@ namespace SEAMS {
     /// Constants.
     enum {
       yyeof_     = 0,
-      yylast_    = 1237, ///< Last index in yytable_.
+      yylast_    = 1299, ///< Last index in yytable_.
       yynnts_    = 7,    ///< Number of nonterminal symbols.
       yyfinal_   = 2,    ///< Termination state number.
       yyterror_  = 1,
@@ -636,6 +644,6 @@ namespace SEAMS {
   };
 
 } // namespace SEAMS
-#line 720 "aprepro_parser.h" // lalr1.cc:417
+#line 728 "aprepro_parser.h" // lalr1.cc:417
 
 #endif // !YY_SEAMS_APREPRO_PARSER_H_INCLUDED

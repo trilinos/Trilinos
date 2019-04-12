@@ -100,6 +100,8 @@ struct topology
     , BEAM_3
     , SHELL_LINE_2
     , SHELL_LINE_3
+    , SPRING_2
+    , SPRING_3
     , TRI_3_2D, TRIANGLE_3_2D = TRI_3_2D
     , TRI_4_2D, TRIANGLE_4_2D = TRI_4_2D
     , TRI_6_2D, TRIANGLE_6_2D = TRI_6_2D

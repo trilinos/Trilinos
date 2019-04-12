@@ -182,7 +182,6 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   fileids_.resize(processorCount_);
   filenames_.resize(processorCount_);
 
-  std::string curdir        = si.cwd();
   std::string file_prefix   = si.basename();
   std::string exodus_suffix = si.exodus_suffix();
 

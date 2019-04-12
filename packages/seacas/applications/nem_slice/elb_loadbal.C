@@ -1066,8 +1066,6 @@ namespace {
     size_t           count;
     size_t           num_found = 0;
 
-    int nhold2, nsides2;
-
     std::vector<int> list_ptr;
     int              end;
 
@@ -1314,17 +1312,18 @@ namespace {
                      * diagonals due to triangular shells
                      */
 
-                    nsides2 = get_elem_info(NSIDES, etype2);
+                    int nsides2 = get_elem_info(NSIDES, etype2);
 
                     count = 0;
                     for (int cnt = 0; cnt < nsides2; cnt++) {
 
                       ss_to_node_list(etype2, mesh->connect[el2], (cnt + 1), side_nodes2);
 
-                      nhold2 = find_inter(graph->sur_elem[side_nodes2[0]].data(),
-                                          graph->sur_elem[side_nodes2[1]].data(),
-                                          graph->sur_elem[side_nodes2[0]].size(),
-                                          graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
+                      int nhold2 =
+                          find_inter(graph->sur_elem[side_nodes2[0]].data(),
+                                     graph->sur_elem[side_nodes2[1]].data(),
+                                     graph->sur_elem[side_nodes2[0]].size(),
+                                     graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
 
                       for (int i = 0; i < nhold2; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];

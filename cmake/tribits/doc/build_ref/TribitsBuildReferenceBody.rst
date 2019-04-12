@@ -921,6 +921,32 @@ than 3.7.0 will not work since features were added to CMake 3.7.0+ that allow
 for the generation of these makefiles.
 
 
+Limiting parallel compile and link jobs for Ninja builds
+--------------------------------------------------------
+
+When the CMake generator Ninja is used (i.e. ``-GNinja``), one can limit the
+number of parallel jobs that are used for compiling object files by setting::
+
+  -D <Project>_PARALLEL_COMPILE_JOBS_LIMIT=<N>
+
+and/or limit the number of parallel jobs that are used for linking libraries
+and executables by setting::
+
+  -D <Project>_PARALLEL_LINK_JOBS_LIMIT=<M>
+
+where ``<N>`` and ``<M>`` are integers like ``20`` and ``4``.  If these are
+not set, then the number of parallel jobs will be determined by the ``-j<P>``
+argument passed to ``ninja -j<P>`` or by ninja automatically according to
+machine load when running ``ninja``.
+
+Limiting the number of link jobs can be useful, for example, for certain
+builds of large projects where linking many jobs in parallel can consume all
+of the RAM on a given system and crash the build.
+
+NOTE: These options are ignored when using Makefiles or other CMake
+generators.  They only work for the Ninja generator.
+
+
 Enabling support for C++11
 --------------------------
 

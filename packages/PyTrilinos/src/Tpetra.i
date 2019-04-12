@@ -1133,7 +1133,6 @@ public:
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
   Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
-  // dual_view_type getDualView() const;
   template<class TargetDeviceType>
   void sync();
   template<class TargetDeviceType>

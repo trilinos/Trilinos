@@ -100,9 +100,9 @@ namespace MueLu {
     */
     void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                          Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                                         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                                         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
+                                         Teuchos::ETransp /* mode */ = Teuchos::NO_TRANS,
+                                         Scalar /* alpha */ = Teuchos::ScalarTraits<Scalar>::one(),
+                                         Scalar /* beta */  = Teuchos::ScalarTraits<Scalar>::one()) const{
       try {
 #ifdef HAVE_MUELU_DEBUG
         typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;

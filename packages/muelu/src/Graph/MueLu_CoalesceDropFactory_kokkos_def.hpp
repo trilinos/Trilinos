@@ -152,7 +152,7 @@ namespace MueLu {
 
       // Return true if we drop, false if not
       KOKKOS_INLINE_FUNCTION
-      bool operator()(LO row, LO col, SC val) const {
+      bool operator()(LO row, LO col, SC /* val */) const {
         // We avoid square root by using squared values
 
         // We ignore incoming value of val as we operate on an auxiliary
@@ -188,7 +188,7 @@ namespace MueLu {
                     typename rows_type::non_const_type rows_,
                     typename cols_type::non_const_type colsAux_,
                     typename vals_type::non_const_type valsAux_,
-                    bool reuseGraph_, bool lumping_, SC threshold_) :
+                    bool reuseGraph_, bool lumping_, SC /* threshold_ */) :
           A(A_),
           bndNodes(bndNodes_),
           dropFunctor(dropFunctor_),
@@ -551,7 +551,6 @@ namespace MueLu {
       auto rowsA = kokkosMatrix.graph.row_map;
 
       typedef Kokkos::ArithTraits<SC>     ATS;
-      typedef typename ATS::magnitudeType magnitudeType;
 
       bool reuseGraph = pL.get<bool>("filtered matrix: reuse graph");
       bool lumping    = pL.get<bool>("filtered matrix: use lumping");
@@ -822,7 +821,6 @@ namespace MueLu {
       auto kokkosMatrix = A->getLocalMatrix(); // access underlying kokkos data
 
       //
-      typedef typename Matrix::local_matrix_type          local_matrix_type;
       typedef typename LWGraph_kokkos::local_graph_type   kokkos_graph_type;
       typedef typename kokkos_graph_type::row_map_type    row_map_type;
       //typedef typename row_map_type::HostMirror           row_map_type_h;

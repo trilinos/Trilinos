@@ -116,7 +116,7 @@ namespace MueLu {
     //! Returns overlapping import map (nodes).
     const RCP<const Map>                 GetImportMap() const    { return importMap_; }
 
-    void SetBoundaryNodeMap(RCP<const Map> const &map)           { throw Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."); }
+    void SetBoundaryNodeMap(RCP<const Map> const &/* map */)           { throw Exceptions::NotImplemented("LWGraph: Boundary node map not implemented."); }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
     Teuchos::ArrayView<const LO> getNeighborVertices(LO i) const { return columns_.view(rows_[i], rows_[i+1]-rows_[i]); }
