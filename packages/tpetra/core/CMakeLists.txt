@@ -114,53 +114,10 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
 # Verify that a valid GORDS configuration is set.
 # ==================================================================
 
-#
-# BEGIN SCAFFOLDING - WCMCLEN
-#
-
-# Print out the state of the Tpetra options
-LIST(LENGTH TpetraCore_ETI_GORDS   lenTpetraCore_ETI_GORDS)
-
-#
-# BEGIN SCAFFOLDING PRINTOUTS (REMOVE THIS BEFORE TAKING OUT THE WIP FLAG)
-#
-LIST(LENGTH TpetraCore_ETI_SCALARS lenTpetraCore_ETI_SCALARS)
-LIST(LENGTH TpetraCore_ETI_LORDS   lenTpetraCore_ETI_LORDS)
-LIST(LENGTH TpetraCore_ETI_NODES   lenTpetraCore_ETI_NODES)
-MESSAGE(STATUS "=================================================================================")
-MESSAGE(STATUS "= TPETRA_CONFIGURATION")
-MESSAGE(STATUS "=")
-MESSAGE(STATUS "= > TpetraCore_ETI_SCALARS: [${lenTpetraCore_ETI_SCALARS}] ${TpetraCore_ETI_SCALARS}")
-MESSAGE(STATUS "= > TpetraCore_ETI_LORDS  : [${lenTpetraCore_ETI_LORDS}] ${TpetraCore_ETI_LORDS}")
-MESSAGE(STATUS "= > TpetraCore_ETI_GORDS  : [${lenTpetraCore_ETI_GORDS}] ${TpetraCore_ETI_GORDS}")
-MESSAGE(STATUS "= > TpetraCore_ETI_NODES  : [${lenTpetraCore_ETI_NODES}] ${TpetraCore_ETI_NODES}")
-MESSAGE(STATUS "=")
-MESSAGE(STATUS "= > Tpetra_ENABLE_DEPRECATED_CODE   : ${Tpetra_ENABLE_DEPRECATED_CODE}")
-MESSAGE(STATUS "= > Tpetra_HIDE_DEPRECATED_CODE     : ${Tpetra_HIDE_DEPRECATED_CODE}")
-MESSAGE(STATUS "= > Tpetra_SHOW_DEPRECATED_WARNINGS : ${Tpetra_SHOW_DEPRECATED_WARNINGS}")
-MESSAGE(STATUS "=")
-IF(Tpetra_ENABLE_DEPRECATED_CODE)
-    MESSAGE(STATUS "= > Tpetra_ENABLE_DEPRECATED_CODE IS ENABLED")
-ELSE()
-    MESSAGE(STATUS "= > Tpetra_ENABLE_DEPRECATED_CODE IS DISABLED")
-ENDIF()
-IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-    MESSAGE(STATUS "= > TpetraCore_ETI_GORDS == 0")
-ELSEIF(lenTpetraCore_ETI_GORDS EQUAL 1)
-    MESSAGE(STATUS "= > TpetraCore_ETI_GORDS == 1")
-ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
-    MESSAGE(STATUS "= > TpetraCore_ETI_GORDS > 1")
-ELSE()
-    MESSAGE(STATUS "= > TpetraCore_ETI_GORDS has ${lenTpetraCore_ETI_GORDS} values.")
-    MESSAGE(FATAL_ERROR "= > TpetraCore_ETI_GORDS has an unfortunate length. There should be only 1.")
-ENDIF()
-MESSAGE(STATUS "=")
-MESSAGE(STATUS "=================================================================================")
-#
-# END SCAFFOLDING PRINTOUTS (REMOVE THIS BEFORE TAKING OUT THE WIP FLAG)
-#
-
 # Verify that we have only one global ordinal set.
+SET(lenTpetraCore_ETI_GORDS 0 INTERNAL)
+LIST(LENGTH TpetraCore_ETI_GORDS lenTpetraCore_ETI_GORDS)
+
 IF(Tpetra_ENABLE_DEPRECATED_CODE)
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
         MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type to be set, but none were specified. "
@@ -179,9 +136,6 @@ ELSE()
                             "{${TpetraCore_ETI_GORDS}}.")
     ENDIF()
 ENDIF()
-#
-# END SCAFFOLDING - WCMCLEN
-#
 
 
 # ==================================================================
