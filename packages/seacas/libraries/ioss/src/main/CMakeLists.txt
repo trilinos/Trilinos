@@ -78,6 +78,7 @@ if (TPL_ENABLE_MPI)
   endif()
 endif()
 
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
@@ -133,7 +134,7 @@ ELSE()
   )
 ENDIF()
 ENDIF()
-
+ENDIF()
 
 install_executable(cth_pressure_map)
 IF (TPL_ENABLE_CGNS)
@@ -226,6 +227,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns
      NOEXEPREFIX NOEXESUFFIX
@@ -283,6 +285,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
   COMM serial
   )
 ENDIF()
+ENDIF()
 
 if ( CGNS_CGNSDIFF_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_with_flush
@@ -293,6 +296,15 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_with_flush
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc2.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_self_looping
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-grid.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-grid.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
   )

@@ -131,13 +131,13 @@ namespace {
           }
         }
 
-        // Zone Grid Connectivity intra_block instances must be symmetric...
+        // Zone Grid Connectivity from_decomp instances must be symmetric...
         // The GUID encodes the id and the processor,
         std::map<std::pair<size_t, size_t>, int> is_symm;
         for (auto &zone : zones) {
           if (zone->is_active()) {
             for (const auto &zgc : zone->m_zoneConnectivity) {
-              if (zgc.is_active() && zgc.is_intra_block()) {
+              if (zgc.is_active() && zgc.is_from_decomp()) {
                 is_symm[std::make_pair(std::min(zgc.m_ownerGUID, zgc.m_donorGUID),
                                        std::max(zgc.m_ownerGUID, zgc.m_donorGUID))]++;
               }

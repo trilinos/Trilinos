@@ -138,8 +138,8 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       broadcast_string.resize(string_length + 1);
       if (rank == 0) {
-        std::strncpy(TOPTR(broadcast_string), result_string,
-                     static_cast<size_t>(string_length) + 1);
+        Ioss::Utils::copy_string(TOPTR(broadcast_string), result_string,
+                                 static_cast<size_t>(string_length) + 1);
       }
       MPI_Bcast(TOPTR(broadcast_string), string_length + 1, MPI_CHAR, 0, communicator_);
       value = std::string(TOPTR(broadcast_string));

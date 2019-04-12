@@ -215,6 +215,16 @@ static void gl_beep(void);               /* try to play a system beep sound */
 
 static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab);
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 /************************ nonportable part *********************************/
 
 #ifdef MSDOS
@@ -604,13 +614,13 @@ char *getline_int(char *prompt)
             }
             break;
           case 'k': /* up */
-            strncpy(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
             break;
           case 'j': /* down */
-            strncpy(gl_buf, hist_next(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_next(), GL_BUF_SIZE - 1);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -776,7 +786,7 @@ char *getline_int(char *prompt)
         gl_redraw(); /* ^L */
         break;
       case '\016': /* ^N */
-        strncpy(gl_buf, hist_next(), GL_BUF_SIZE - 1);
+        copy_string(gl_buf, hist_next(), GL_BUF_SIZE - 1);
         if (gl_in_hook)
           gl_in_hook(gl_buf);
         gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -785,7 +795,7 @@ char *getline_int(char *prompt)
         gl_overwrite = !gl_overwrite; /* ^O */
         break;
       case '\020': /* ^P */
-        strncpy(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
+        copy_string(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
         if (gl_in_hook)
           gl_in_hook(gl_buf);
         gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -810,13 +820,13 @@ char *getline_int(char *prompt)
         if (c == '[') {
           switch (c = gl_getc()) {
           case 'A': /* up */
-            strncpy(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
             break;
           case 'B': /* down */
-            strncpy(gl_buf, hist_next(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_next(), GL_BUF_SIZE - 1);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -1018,7 +1028,7 @@ static void gl_kill(int pos)
 /* delete from pos to the end of line */
 {
   if (pos < gl_cnt) {
-    strncpy(gl_killbuf, gl_buf + pos, GL_BUF_SIZE - 1);
+    copy_string(gl_killbuf, gl_buf + pos, GL_BUF_SIZE - 1);
     gl_buf[pos] = '\0';
     gl_fixup(gl_prompt, pos, pos);
   }
@@ -1128,7 +1138,7 @@ static void gl_fixup(const char *prompt, int change, int cursor)
     gl_pos = gl_cnt = gl_shift = off_right = off_left = 0;
     gl_putc('\r');
     gl_puts(prompt);
-    strncpy(last_prompt, prompt, 80 - 1);
+    copy_string(last_prompt, prompt, 80 - 1);
     change   = 0;
     gl_width = gl_termw - gl_strlen(prompt);
   }
@@ -1136,7 +1146,7 @@ static void gl_fixup(const char *prompt, int change, int cursor)
     l1     = gl_strlen(last_prompt);
     l2     = gl_strlen(prompt);
     gl_cnt = gl_cnt + l1 - l2;
-    strncpy(last_prompt, prompt, 80 - 1);
+    copy_string(last_prompt, prompt, 80 - 1);
     gl_putc('\r');
     gl_puts(prompt);
     gl_pos   = gl_shift;
@@ -1336,7 +1346,7 @@ static char *hist_save(char *p)
 
   if (nl) {
     if ((s = (char *)malloc(len)) != 0) {
-      strncpy(s, p, len - 1);
+      copy_string(s, p, len - 1);
       s[len - 1] = 0;
     }
   }
@@ -1450,7 +1460,7 @@ static void search_addchar(int c)
       gl_buf[0] = 0;
       hist_pos  = hist_last;
     }
-    strncpy(gl_buf, hist_buf[hist_pos], GL_BUF_SIZE - 1);
+    copy_string(gl_buf, hist_buf[hist_pos], GL_BUF_SIZE - 1);
   }
   if ((loc = strstr(gl_buf, search_string)) != 0) {
     gl_fixup(search_prompt, 0, loc - gl_buf);
@@ -1500,7 +1510,7 @@ static void search_back(int new_search)
         found = 1;
       }
       else if ((loc = strstr(p, search_string)) != 0) {
-        strncpy(gl_buf, p, GL_BUF_SIZE - 1);
+        copy_string(gl_buf, p, GL_BUF_SIZE - 1);
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
           search_last = hist_pos;
@@ -1535,7 +1545,7 @@ static void search_forw(int new_search)
         found = 1;
       }
       else if ((loc = strstr(p, search_string)) != 0) {
-        strncpy(gl_buf, p, GL_BUF_SIZE - 1);
+        copy_string(gl_buf, p, GL_BUF_SIZE - 1);
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
           search_last = hist_pos;
@@ -1836,7 +1846,7 @@ void gl_set_home_dir(const char *homedir)
 
     wdir[0] = '\0';
     if (GetWindowsDirectory(wdir, sizeof(wdir) - 1) < 1)
-      (void)strncpy(wdir, ".", sizeof(wdir));
+      (void)copy_string(wdir, ".", sizeof(wdir));
     else if (wdir[1] == ':') {
       wdir[2] = '\\';
       wdir[3] = '\0';

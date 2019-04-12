@@ -78,6 +78,16 @@
 #endif
 #include <stdio.h> /* sprintf */
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 #define MAXCHAR 80
 #define WORDLEN 8 /* Note that we *FORCE* the Fortran string */
                   /* length be 8 for the strings hard and soft. */
@@ -104,8 +114,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "SGI-%.4s", SysInfo.machine);
   sprintf(softname, "%.8s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* Silicon Graphics */
 /********************************************************************/
@@ -124,8 +134,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "IBM %.4s", SysInfo.machine);
   sprintf(softname, "%03s %.4s", SysInfo.sysname, SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* IBM */
 /********************************************************************/
@@ -144,8 +154,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "HP  %.4s", SysInfo.machine);
   sprintf(softname, "HP-UX%.3s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* HPUX */
 /********************************************************************/
@@ -164,8 +174,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "i860 GP ");
   sprintf(softname, "OSF %.2s.%.1s", SysInfo.version, SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -181,8 +191,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "i860 GP ");
   sprintf(softname, "SUNMOS  ");
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -198,8 +208,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "P6      ");
   sprintf(softname, "Solari  ");
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 #endif
 /********************************************************************/
 #if defined(cougar)
@@ -214,8 +224,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "PentPro ");
   sprintf(softname, "COUGAR  ");
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -234,8 +244,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "%.4s%.4s", SysInfo.sysname, SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -255,8 +265,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "SunOS%.3s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #else
 
@@ -269,9 +279,9 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   *knsu = 1; /* Ditto */
 
 #if defined(sparc)
-  strncpy(hard, "Sun4", strlen("Sun4"));
+  copy_string(hard, "Sun4", strlen("Sun4"));
 #else  /* Then assume it's a SUN 3 */
-  strncpy(hard, "Sun3", strlen("Sun3"));
+  copy_string(hard, "Sun3", strlen("Sun3"));
 #endif /* sparc */
 
   if ((darg = (char *)fgets(
@@ -328,8 +338,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   else {
     sprintf(softname, "Unknown OS");
   }
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 /* cygwin native */
 /********************************************************************/
@@ -347,8 +357,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "CW%.6s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif
 /********************************************************************/
@@ -366,8 +376,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "OSX%.5s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* Darwin (Power Macintosh)*/
 
@@ -386,8 +396,8 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   sprintf(hardname, "%.8s", SysInfo.machine);
   sprintf(softname, "Lx%.6s", SysInfo.release);
 
-  strncpy(hard, hardname, WORDLEN);
-  strncpy(soft, softname, WORDLEN);
+  copy_string(hard, hardname, WORDLEN);
+  copy_string(soft, softname, WORDLEN);
 
 #endif /* Linux, Interix */
   /********************************************************************/

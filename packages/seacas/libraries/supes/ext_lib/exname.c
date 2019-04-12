@@ -74,6 +74,16 @@
 #define INSYMBOL "FOR0"
 #define EXSYMBOL "EXT"
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 #if defined(ADDC_)
 void exname_(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 #else
@@ -107,7 +117,7 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
       /* We need this to give us the length of the ENVIRONMENT
        * variable while calling strlen() only once.
        */
-      strncpy(name, darg, DargLen);
+      copy_string(name, darg, DargLen);
       *ln = DargLen;
     }
     else if (!ExtSymbol) {

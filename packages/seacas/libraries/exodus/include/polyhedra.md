@@ -19,27 +19,27 @@ consisting of 3 elements is shown below.
 The three elements have the following geometry:
 
 * Element 1: 5 faces.
-	* Face 1: triangle with nodes 5, 6, 8
-	* Face 2: triangle with nodes 2, 1, 4
-	* Face 3: quadrilateral with nodes 6, 2, 4, 8
-	* Face 4: quadrilateral with nodes 8, 4, 1, 5
-	* Face 5: quadrilateral with nodes 1, 2, 6, 5
+  * Face 1: triangle with nodes 5, 6, 8
+  * Face 2: triangle with nodes 2, 1, 4
+  * Face 3: quadrilateral with nodes 6, 2, 4, 8
+  * Face 4: quadrilateral with nodes 8, 4, 1, 5
+  * Face 5: quadrilateral with nodes 1, 2, 6, 5
 
 * Element 2: 5 faces.
-	* Face 6: triangle with nodes 5, 8, 7
-	* Face 7: triangle with nodes 1, 3, 4
-	* Face 8: quadrilateral with nodes 7, 8, 4, 3
-	* Face 9: quadrilateral with nodes 7, 3, 1, 5
-	* Face 4: quadrilateral with nodes 8, 4, 1, 5 (shared with element 1)
+  * Face 6: triangle with nodes 5, 8, 7
+  * Face 7: triangle with nodes 1, 3, 4
+  * Face 8: quadrilateral with nodes 7, 8, 4, 3
+  * Face 9: quadrilateral with nodes 7, 3, 1, 5
+  * Face 4: quadrilateral with nodes 8, 4, 1, 5 (shared with element 1)
 
 * Element 3: 7 faces.
-	* Face  8: quadrilateral with nodes 7, 8, 4, 3 (shared with element 2)
-	* Face 10: pentagonal with nodes 8, 4, 14, 10, 12
-	* Face 11: pentagonal with nodes 7, 11, 9, 13, 3
-	* Face 12: quadrilateral with nodes 7, 8, 12, 11
-	* Face 13: quadrilateral with nodes 11, 12, 10, 9
-	* Face 14: quadrilateral with nodes 9, 10, 14, 13
-	* Face 15: quadrilateral with nodes 12, 14, 4, 3
+  * Face  8: quadrilateral with nodes 7, 8, 4, 3 (shared with element 2)
+  * Face 10: pentagonal with nodes 8, 4, 14, 10, 12
+  * Face 11: pentagonal with nodes 7, 11, 9, 13, 3
+  * Face 12: quadrilateral with nodes 7, 8, 12, 11
+  * Face 13: quadrilateral with nodes 11, 12, 10, 9
+  * Face 14: quadrilateral with nodes 9, 10, 14, 13
+  * Face 15: quadrilateral with nodes 12, 14, 4, 3
 
 The Exodus model is created via the following calls:
 
@@ -79,9 +79,9 @@ The Exodus model is created via the following calls:
    block_id = 10;
 
    ex_put_block (exoid, EX_FACE_BLOCK, block_id, "nsided",
-		 num_face_in_block[0],
-		 num_total_nodes_per_blk[0],
-		 0, 0, 0);
+                 num_face_in_block[0],
+                 num_total_nodes_per_blk[0],
+                 0, 0, 0);
    ex_put_name(exoid, EX_FACE_BLOCK, block_id, block_name);
   ~~~~
 
@@ -155,11 +155,11 @@ The Exodus model is created via the following calls:
    block_id = 10;
 
    ex_put_block (exoid, EX_ELEM_BLOCK, block_id, "nfaced",
-		 num_elem_in_block,
-		 0, /* nodes */
-		 0, /* edges  */
-		 num_total_faces_per_blk,
-		 0); /* attribute count */
+                 num_elem_in_block,
+                 0, /* nodes */
+                 0, /* edges  */
+                 num_total_faces_per_blk,
+                 0); /* attribute count */
    ex_put_name(exoid, EX_ELEM_BLOCK, block_id, block_name);
   ~~~~
 

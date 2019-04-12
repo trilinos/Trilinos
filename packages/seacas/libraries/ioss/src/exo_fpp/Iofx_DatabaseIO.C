@@ -1048,7 +1048,7 @@ namespace Iofx {
           std::memset(X_type, 0, MAX_STR_LENGTH + 1);
         }
         else {
-          strncpy(X_type, block.topology, MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(X_type, block.topology, MAX_STR_LENGTH + 1);
         }
       }
     }
@@ -4941,12 +4941,11 @@ void DatabaseIO::write_meta_data()
   // Title...
   if (region->property_exists("title")) {
     std::string title_str = region->get_property("title").get_string();
-    std::strncpy(the_title, title_str.c_str(), max_line_length);
+    Ioss::Utils::copy_string(the_title, title_str.c_str(), max_line_length);
   }
   else {
-    std::strncpy(the_title, "IOSS Default Output Title", max_line_length);
+    Ioss::Utils::copy_string(the_title, "IOSS Default Output Title", max_line_length);
   }
-  the_title[max_line_length] = '\0';
 
   Ioex::get_id(node_blocks[0], EX_NODE_BLOCK, &ids_);
 
