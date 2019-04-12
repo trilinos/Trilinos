@@ -297,6 +297,15 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_with_flush
   COMM mpi serial
   )
 
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_self_looping
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-grid.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-grid.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_zgc
    TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/5blocks-struc.cgns 5blocks.cgns
      NUM_MPI_PROCS 1-4

@@ -506,7 +506,7 @@ namespace {
     for (const auto &sb : structured_blocks) {
       my_count += std::count_if(
           sb->m_zoneConnectivity.begin(), sb->m_zoneConnectivity.end(),
-          [](const Ioss::ZoneConnectivity &z) { return !z.is_intra_block() && z.is_active(); });
+          [](const Ioss::ZoneConnectivity &z) { return !z.is_from_decomp() && z.is_active(); });
     }
 
     std::vector<int> rcv_data_cnt;
@@ -532,8 +532,9 @@ namespace {
     auto pack_lambda = [&off_data, &off_name, &off_cnt, &snd_zgc_data,
                         &snd_zgc_name](const std::vector<Ioss::ZoneConnectivity> &zgc) {
       for (const auto &z : zgc) {
-        if (!z.is_intra_block() && z.is_active()) {
-          strncpy(&snd_zgc_name[off_name], z.m_connectionName.c_str(), BYTE_PER_NAME);
+        if (!z.is_from_decomp() && z.is_active()) {
+          Ioss::Utils::copy_string(&snd_zgc_name[off_name], z.m_connectionName.c_str(),
+                                   BYTE_PER_NAME);
           off_cnt++;
           off_name += BYTE_PER_NAME;
 
@@ -631,7 +632,7 @@ namespace {
       zgc.erase(std::remove_if(zgc.begin(), zgc.end(),
                                [](Ioss::ZoneConnectivity &z) {
                                  return (z.m_ownerZone == -1 && z.m_donorZone == -1) ||
-                                        z.is_intra_block() || !z.is_active();
+                                        z.is_from_decomp() || !z.is_active();
                                }),
                 zgc.end());
 
@@ -947,7 +948,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         std::string donor_name   = zgc.m_donorName;
         std::string connect_name = zgc.m_connectionName;
         if (is_parallel && !is_parallel_io) {
-          if (zgc.is_intra_block()) {
+          if (zgc.is_from_decomp()) {
             connect_name = std::to_string(zgc.m_ownerGUID) + "--" + std::to_string(zgc.m_donorGUID);
           }
           else {
@@ -1301,7 +1302,7 @@ size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor, bool
   // location.
   for (auto &owner_block : blocks) {
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
-      if (!zgc.is_intra_block() &&
+      if (!zgc.is_from_decomp() &&
           zgc.is_active()) { // Not due to processor decomposition and has faces.
         // NOTE: In parallel, the owner block should exist, but may not have
         // any cells on this processor.  We can access its global i,j,k, but
