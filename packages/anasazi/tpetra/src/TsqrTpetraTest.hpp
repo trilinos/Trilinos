@@ -156,8 +156,7 @@ namespace TSQR {
                  const node_ptr& node)
         {
           using Tpetra::createUniformContigMapWithNode;
-          return createUniformContigMapWithNode< LO, GO, Node > (nrowsGlobal,
-                                                                 comm, node);
+          return createUniformContigMapWithNode< LO, GO, Node > (nrowsGlobal, comm);
         }
 
         /// \brief Make a Tpetra test multivector for filling in.

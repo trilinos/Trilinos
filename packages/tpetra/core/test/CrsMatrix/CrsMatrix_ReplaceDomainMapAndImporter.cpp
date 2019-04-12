@@ -79,10 +79,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
-  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;

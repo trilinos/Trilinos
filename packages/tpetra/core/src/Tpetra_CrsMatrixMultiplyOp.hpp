@@ -235,7 +235,6 @@ namespace Tpetra {
       using Teuchos::rcpFromRef;
       using Teuchos::rcp_const_cast;
       typedef Scalar OS;
-      typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
       typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
       typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
       typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> OSMV;
@@ -474,7 +473,6 @@ namespace Tpetra {
       using Teuchos::rcpFromRef;
       using Teuchos::rcp_const_cast;
       typedef Scalar OS;
-      typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
       typedef Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
       typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
       typedef MultiVector<OS, LocalOrdinal, GlobalOrdinal, Node> OSMV;
@@ -1007,7 +1005,6 @@ namespace Tpetra {
       using Teuchos::RCP;
       using Teuchos::rcp;
       typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-      typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
       const size_t numVecs = X_domainMap.getNumVectors ();
       RCP<const import_type> importer = matrix_->getGraph ()->getImporter ();
@@ -1072,7 +1069,6 @@ namespace Tpetra {
       using Teuchos::RCP;
       using Teuchos::rcp;
       typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-      typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
       const size_t numVecs = Y_rangeMap.getNumVectors ();
       RCP<const export_type> exporter = matrix_->getGraph ()->getExporter ();
