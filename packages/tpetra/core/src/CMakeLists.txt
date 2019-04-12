@@ -273,9 +273,13 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 #
 
 # Print out the state of the Tpetra options
+LIST(LENGTH TpetraCore_ETI_GORDS   lenTpetraCore_ETI_GORDS)
+
+#
+# BEGIN SCAFFOLDING PRINTOUTS (REMOVE THIS BEFORE TAKING OUT THE WIP FLAG)
+#
 LIST(LENGTH TpetraCore_ETI_SCALARS lenTpetraCore_ETI_SCALARS)
 LIST(LENGTH TpetraCore_ETI_LORDS   lenTpetraCore_ETI_LORDS)
-LIST(LENGTH TpetraCore_ETI_GORDS   lenTpetraCore_ETI_GORDS)
 LIST(LENGTH TpetraCore_ETI_NODES   lenTpetraCore_ETI_NODES)
 MESSAGE(STATUS "=================================================================================")
 MESSAGE(STATUS "= TPETRA_CONFIGURATION")
@@ -306,10 +310,12 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "=")
 MESSAGE(STATUS "=================================================================================")
+#
+# END SCAFFOLDING PRINTOUTS (REMOVE THIS BEFORE TAKING OUT THE WIP FLAG)
+#
 
-# Verify that there's only one global ordinal type specified.
+# Verify that we have only one global ordinal set.
 IF(Tpetra_ENABLE_DEPRECATED_CODE)
-
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
         MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type to be set, but none were specified. "
                             "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
@@ -318,9 +324,7 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
                         "{${TpetraCore_ETI_GORDS}}."
                         "Building with more than one global ordinal type in Tpetra is deprecated.")
     ENDIF()
-
 ELSE()
-
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
         MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type to be set, but none were specified."
                             " To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
@@ -328,7 +332,6 @@ ELSE()
         MESSAGE(FATAL_ERROR "Tpetra requires only one global ordinal to be set, but more than one are set: "
                             "{${TpetraCore_ETI_GORDS}}.")
     ENDIF()
-
 ENDIF()
 #
 # END SCAFFOLDING - WCMCLEN
