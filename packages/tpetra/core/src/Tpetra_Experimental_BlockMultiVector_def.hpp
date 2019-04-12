@@ -275,7 +275,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
 
   if (meshMap.isContiguous ()) {
     return map_type (gblNumPointMapInds, lclNumPointMapInds, indexBase,
-                     meshMap.getComm (), meshMap.getNode ());
+                     meshMap.getComm ());
   }
   else {
     // "Hilbert's Hotel" trick: multiply each process' GIDs by
@@ -295,7 +295,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
       }
     }
     return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
-                     meshMap.getComm (), meshMap.getNode ());
+                     meshMap.getComm ());
   }
 }
 

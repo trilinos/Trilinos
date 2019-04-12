@@ -336,15 +336,20 @@ namespace Tpetra {
      *
      * \param comm [in] Communicator over which to distribute the
      *   indices.
-     *
-     * \param node [in/out] (OPTIONAL; default usually suffices)
-     *   Kokkos Node instance.
      */
     Map (global_size_t numGlobalElements,
          GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node));
+         LocalGlobal lg=GloballyDistributed);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    Map (global_size_t numGlobalElements,
+         GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+         LocalGlobal lg,
+         const Teuchos::RCP<Node> &node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /** \brief Constructor with contiguous, possibly nonuniform
      *    distribution.
@@ -380,15 +385,20 @@ namespace Tpetra {
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
-     *
-     * \param node [in/out] (OPTIONAL; default usually suffices)
-     *   Kokkos Node instance.
      */
     Map (global_size_t numGlobalElements,
          size_t numLocalElements,
          GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED 
+    Map (global_size_t numGlobalElements,
+         size_t numLocalElements,
+         GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node));
+         const Teuchos::RCP<Node> &node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /** \brief Constructor with arbitrary (possibly noncontiguous
      *   and/or nonuniform and/or overlapping) distribution, taking
@@ -522,15 +532,20 @@ namespace Tpetra {
      * \param comm [in] Communicator over which to distribute the
      *   indices.  This constructor must be called as a collective
      *   over this communicator.
-     *
-     * \param node [in/out] (OPTIONAL; default usually suffices)
-     *   Kokkos Node instance.
      */
     Map (const global_size_t numGlobalElements,
          const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
          const GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    Map (const global_size_t numGlobalElements,
+         const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
+         const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
+         const Teuchos::RCP<Node>& node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Default constructor (that does nothing).
     ///
