@@ -317,9 +317,9 @@ namespace {
         for (const auto &field_name : fields) {
           const Ioss::Field &field = block->get_fieldref(field_name);
           std::string        type  = field.raw_storage()->name();
-          strncpy(&fld_names[offset], field_name.c_str(), CGNS_MAX_NAME_LENGTH);
+          Ioss::Utils::copy_string(&fld_names[offset], field_name.c_str(), CGNS_MAX_NAME_LENGTH);
           offset += CGNS_MAX_NAME_LENGTH + 1;
-          strncpy(&fld_names[offset], type.c_str(), CGNS_MAX_NAME_LENGTH);
+          Ioss::Utils::copy_string(&fld_names[offset], type.c_str(), CGNS_MAX_NAME_LENGTH);
           offset += CGNS_MAX_NAME_LENGTH + 1;
         }
       }
@@ -1519,14 +1519,14 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
         CGCHECKNP(cg_famname_read(fam_name));
       }
       else {
-        strncpy(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
+        Ioss::Utils::copy_string(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
       }
 
       CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
 
-      strncpy(&bc_names[off_name], boco_name, CGNS_MAX_NAME_LENGTH + 1);
+      Ioss::Utils::copy_string(&bc_names[off_name], boco_name, CGNS_MAX_NAME_LENGTH + 1);
       off_name += (CGNS_MAX_NAME_LENGTH + 1);
-      strncpy(&bc_names[off_name], fam_name, CGNS_MAX_NAME_LENGTH + 1);
+      Ioss::Utils::copy_string(&bc_names[off_name], fam_name, CGNS_MAX_NAME_LENGTH + 1);
       off_name += (CGNS_MAX_NAME_LENGTH + 1);
 
       bc_data[off_data++] = bocotype;
@@ -1621,7 +1621,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
       CGCHECKNP(cg_famname_read(fam_name));
     }
     else {
-      strncpy(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
+      Ioss::Utils::copy_string(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
     }
 
     CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
@@ -1697,7 +1697,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
     for (size_t state = 0; state < timesteps.size(); state++) {
       // This name is the "postfix" or common portion of all FlowSolution names...
       std::string name = base_type + std::to_string(state + 1);
-      std::strncpy(&names[state * 32], name.c_str(), 32);
+      Ioss::Utils::copy_string(&names[state * 32], name.c_str(), 32);
       for (size_t i = name.size(); i < 32; i++) {
         names[state * 32 + i] = ' ';
       }
@@ -1783,7 +1783,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
         CG_DataType_t data_type;
         char          field_name[CGNS_MAX_NAME_LENGTH + 1];
         CGCHECK(cg_field_info(cgns_file_ptr, b, z, sol, field, &data_type, field_name));
-        std::strncpy(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH);
+        Ioss::Utils::copy_string(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH);
       }
 
       // Convert raw field names into composite fields (a_x, a_y, a_z ==> 3D vector 'a')

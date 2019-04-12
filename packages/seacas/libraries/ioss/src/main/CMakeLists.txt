@@ -78,6 +78,7 @@ if (TPL_ENABLE_MPI)
   endif()
 endif()
 
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
@@ -133,7 +134,7 @@ ELSE()
   )
 ENDIF()
 ENDIF()
-
+ENDIF()
 
 install_executable(cth_pressure_map)
 IF (TPL_ENABLE_CGNS)
@@ -226,6 +227,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns
      NOEXEPREFIX NOEXESUFFIX
@@ -282,6 +284,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
   COMM serial
   )
+ENDIF()
 ENDIF()
 
 if ( CGNS_CGNSDIFF_BINARY )

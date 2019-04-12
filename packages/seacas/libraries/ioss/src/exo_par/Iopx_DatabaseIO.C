@@ -4255,10 +4255,10 @@ void DatabaseIO::write_meta_data()
   // Title...
   if (region->property_exists("title")) {
     std::string title_str = region->get_property("title").get_string();
-    std::strncpy(the_title, title_str.c_str(), max_line_length);
+    Ioss::Utils::copy_string(the_title, title_str.c_str(), max_line_length);
   }
   else {
-    std::strncpy(the_title, "IOSS Output Default Title", max_line_length);
+    Ioss::Utils::copy_string(the_title, "IOSS Output Default Title", max_line_length);
   }
   the_title[max_line_length] = '\0';
 

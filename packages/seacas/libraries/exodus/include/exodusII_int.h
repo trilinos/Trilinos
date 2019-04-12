@@ -873,6 +873,8 @@ int ne_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
                ex_entity_id ne_var_id    /* NetCDF variable ID */
 );
 
+char *ex_copy_string(char *dest, char const *source, size_t elements);
+
 /**
  * For output databases, the maximum length of any entity, variable,
  * property, attribute, or coordinate name to be written (not

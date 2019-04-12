@@ -57,9 +57,18 @@ C
 */
 
 #define STRLEN 8
-#include <stdio.h>  // for sprintf
-#include <string.h> // for strncpy
-#include <time.h>   // for tm, localtime, time, time_t
+#include <stdio.h> // for sprintf
+#include <time.h>  // for tm, localtime, time, time_t
+
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
 
 #if defined(ADDC_)
 void exdate_(char *string, long int len)
@@ -77,5 +86,5 @@ void exdate(char *string, long int len)
   t->tm_year += 1900;
 
   sprintf(Temp, "%04d%02d%02d", t->tm_year, t->tm_mon + 1, t->tm_mday);
-  strncpy(string, Temp, STRLEN);
+  copy_string(string, Temp, STRLEN);
 }
