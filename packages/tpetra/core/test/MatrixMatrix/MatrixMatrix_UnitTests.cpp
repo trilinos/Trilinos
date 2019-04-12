@@ -330,7 +330,9 @@ add_test_results add_into_test(
     AT ? A->getDomainMap () : A->getRowMap ();
   RCP<Matrix_t> computedC = rcp (new Matrix_t (rowmap, 1));
   SC one = Teuchos::ScalarTraits<SC>::one();
+  printf("add op\n");
   Tpetra::MatrixMatrix::Add (*A, AT, one, *B, one);
+  printf("add op complete\n");
   B->fillComplete ();
   toReturn.computedNorm = B->getFrobeniusNorm ();
   toReturn.epsilon = fabs (toReturn.correctNorm - toReturn.computedNorm);
@@ -809,7 +811,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
 
-
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
        ++it) {
@@ -1019,20 +1020,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
 
-      B = Reader<Matrix_t >::readSparseFile(B_file, comm, false);
+      B = Reader<Matrix_t >::readSparseFile(B_file, comm, true, false, false);
+      //declare D with enough entries to receive A + B
+      size_t n = 0;
+      for (size_t i = 0; i < B->getGlobalNumRows(); i++) {
+	if (n < B->getNumEntriesInGlobalRow(i))
+	  n = B->getNumEntriesInGlobalRow(i);
+      }
+      n += A->getGlobalMaxNumRowEntries();
+
+      newOut << "construct row map" << endl;
+      RCP<const map_type> rm = B->getRowMap();
+      newOut << "construct new Sparse E" << endl;
+      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
+      newOut << "get one" << endl;
+      auto one = Teuchos::ScalarTraits<SC>::one();
+      newOut << "add B to new sparse matrix" << endl;
+      Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 
       if (! BT) {
         if (verbose)
           newOut << "Running 2-argument add test for "
                  << currentSystem.name() << endl;
 
-        results = add_into_test(A,B,AT,C,comm);
+        results = add_into_test(A,E,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
         newOut << "Add Into Test Results: " << endl;
         newOut << "\tCorrect Norm: " << results.correctNorm << endl;
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
+      newOut << "Add tests complete" << endl;
     }
     else if (op == "RAP") {
       // if (verbose)
