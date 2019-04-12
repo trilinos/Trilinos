@@ -294,21 +294,31 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetupForType(typename Traits::SetupData d, const bool& buildDeviceDAG)
+postRegistrationSetupForType(typename Traits::SetupData d,
+                             const bool& buildDeviceDAG,
+                             const bool& minimizeDAGMemoryUse,
+                             const PHX::MemoryPool* const memoryPool)
 {
   m_eval_containers.template getAsObject<EvalT>()->
-    postRegistrationSetup(d, *this, buildDeviceDAG);
+    postRegistrationSetup(d, *this, buildDeviceDAG,
+                          minimizeDAGMemoryUse,
+                          memoryPool);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetup(typename Traits::SetupData d, const bool& buildDeviceDAG)
+postRegistrationSetup(typename Traits::SetupData d,
+                      const bool& buildDeviceDAG,
+                      const bool& minimizeDAGMemoryUse,
+                      const PHX::MemoryPool* const memoryPool)
 {
   typename SCTM::iterator it = m_eval_containers.begin();
   for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
-    it->postRegistrationSetup(d, *this, buildDeviceDAG);
+    it->postRegistrationSetup(d, *this, buildDeviceDAG,
+                              minimizeDAGMemoryUse,
+                              memoryPool);
 }
 
 // **************************************************************
