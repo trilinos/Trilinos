@@ -19,10 +19,17 @@ public:
   // Constructors
   vtxLabel(int y) { label = y; }
   vtxLabel() { label = 0; }
+
   // vtxLabel assignment
   vtxLabel& operator=(const vtxLabel& other)  { 
     label = other.label; return *this;
   }
+
+  // Added to satisfy Kokkos compilation (kokkos_atomic_fetch)
+  vtxLabel& operator=(volatile const vtxLabel& other)  { 
+    label = other.label; return *this;
+  }
+
   // int assignment
   vtxLabel& operator=(const int& other) { 
     label = other; return *this;
@@ -157,10 +164,12 @@ namespace Kokkos {
 // Teuchos::SerializationTraits are needed to copy vtxLabels into MPI buffers
 // Because sizeof(vtxLabel) works for struct vtxLabel, we'll use a 
 // provided serialization of vtxLabel into char*.
+namespace Teuchos {
 template<typename Ordinal>
-struct Teuchos::SerializationTraits<Ordinal, vtxLabel> :
-       public Teuchos::DirectSerializationTraits<Ordinal, vtxLabel>
+struct SerializationTraits<Ordinal, vtxLabel> :
+       public DirectSerializationTraits<Ordinal, vtxLabel>
 {};
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // Class to test 
@@ -254,7 +263,7 @@ public:
     printFEMV(femv, "AfterFill");
 
     // Now update copied vertices from their owners
-    femv->doSourceToTarget(Tpetra::REPLACE);
+    femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
 
     // For the ice-sheet problem, 
     // would a Tpetra::ADD work here (consistently update the non-owned vertex's

@@ -24,6 +24,9 @@ public:
   vtxLabel& operator=(const vtxLabel& other)  { 
     label = other.label; return *this;
   }
+  vtxLabel& operator=(volatile const vtxLabel& other)  { 
+    label = other.label; return *this;
+  }
   // int assignment
   vtxLabel& operator=(const int& other) { 
     label = other; return *this;
@@ -119,7 +122,7 @@ namespace Kokkos {
 namespace Teuchos {
 template<typename Ordinal>
 struct SerializationTraits<Ordinal, allGood::vtxLabel> :
-       public Teuchos::DirectSerializationTraits<Ordinal, allGood::vtxLabel>
+       public DirectSerializationTraits<Ordinal, allGood::vtxLabel>
 {};
 }  // end namespace Teuchos
 
@@ -187,32 +190,32 @@ public:
     }
     femv->endFill();
 
-    printFEMV(*femv, "AfterFill");
+    printFEMV("AfterFill");
 
-    femv->doSourceToTarget(Tpetra::REPLACE);
+    femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
 
-    printFEMV(*femv, "AfterReplace");
+    printFEMV("AfterReplace");
   }
 
-  void printFEMV(femv_t &femv, const char *msg) 
+  void printFEMV(const char *msg) 
   {
     for (int v = 0; v < nVec; v++) {
       std::cout << me << " OWNED " << msg << " FEMV[" << v << "] Owned: ";
-      auto value = femv.getData(v);
+      auto value = femv->getData(v);
       for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
       std::cout << std::endl;
     }
-    femv.switchActiveMultiVector();  // Needed to print copies
+    femv->switchActiveMultiVector();  // Needed to print copies
     for (int v = 0; v < nVec; v++) {
       std::cout << me << " WITHCOPIES " << msg << " FEMV[" << v << "] Owned: ";
-      auto value = femv.getData(v);
+      auto value = femv->getData(v);
       for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
       std::cout << " Copies: ";
       for (lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++) 
         std::cout << value[i] << " ";
       std::cout << std::endl;
     }
-    femv.switchActiveMultiVector();  // Restore state
+    femv->switchActiveMultiVector();  // Restore state
 
     std::cout << me << " counter = " << counter << std::endl;
   }
