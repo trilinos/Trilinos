@@ -405,12 +405,9 @@ namespace Xpetra {
 
           typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-          //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-          Teuchos::ParameterList pl = Teuchos::ParameterList();
-          RCP<Node> node = rcp(new Node(pl));
           bool callFillComplete = true;
 
-          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, callFillComplete);
 
           if (tA.is_null())
             throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
@@ -611,7 +608,7 @@ namespace Xpetra {
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
         RCP<const map_type>   temp = toTpetra(map);
-        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),temp);
         RCP<MultiVector>      rmv  = Xpetra::toXpetra(TMV);
         return rmv;
 #else
@@ -632,9 +629,7 @@ namespace Xpetra {
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-        RCP<Node> node = rcp(new Node());
-
-        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm);
         if (tMap.is_null())
           throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 
@@ -989,12 +984,9 @@ namespace Xpetra {
 
           typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
-          //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-          Teuchos::ParameterList pl = Teuchos::ParameterList();
-          RCP<Node> node = rcp(new Node(pl));
           bool callFillComplete = true;
 
-          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
+          RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, callFillComplete);
 
           if (tA.is_null())
             throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from readSparseFile() is null.");
@@ -1212,7 +1204,7 @@ namespace Xpetra {
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>            multivector_type;
 
         RCP<const map_type>   temp = toTpetra(map);
-        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),map->getNode(),temp);
+        RCP<multivector_type> TMV  = reader_type::readDenseFile(fileName,map->getComm(),temp);
         RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >      rmv  = Xpetra::toXpetra(TMV);
         return rmv;
 # endif
@@ -1252,9 +1244,7 @@ namespace Xpetra {
         typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type>                          reader_type;
 
-        RCP<Node> node = rcp(new Node());
-
-        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm, node);
+        RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > tMap = reader_type::readMapFile(fileName, comm);
         if (tMap.is_null())
           throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 
