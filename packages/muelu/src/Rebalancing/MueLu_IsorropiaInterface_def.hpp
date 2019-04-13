@@ -134,7 +134,7 @@ namespace MueLu {
     
 
     // 3) create graph of amalgamated matrix
-    RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
+    RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, A->getNodeMaxNumRowEntries()*blockdim, Xpetra::StaticProfile);
 
     // 4) do amalgamation. generate graph of amalgamated matrix
     for(LO row=0; row<Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); row++) {

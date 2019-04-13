@@ -1613,7 +1613,6 @@ namespace Tpetra {
                            const Teuchos::RCP<Teuchos::FancyOStream>& outStream,
                            const Teuchos::EVerbosityLevel verbLevel)
     {
-      using Tpetra::createContigMapWithNode;
       using Teuchos::FancyOStream;
       using Teuchos::getFancyOStream;
       using Teuchos::oblackholestream;

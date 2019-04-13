@@ -181,7 +181,7 @@ The side numbering for a tetrahedral element type is shown below.
  Element Type |Side \#|Node Order  |
 --------------|:-----:|:----------:|
 TETRA         | 1     | 1, 2, 4    |
-|	      | 2     | 2, 3, 4    |
+|             | 2     | 2, 3, 4    |
 |             | 3     | 1, 4, 3    |
 |             | 4     | 1, 3, 2    |
 

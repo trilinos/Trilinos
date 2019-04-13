@@ -77,7 +77,9 @@ namespace Tpetra {
                      Teuchos::ArrayRCP<int> &rowind,
                      Teuchos::ArrayRCP<double> &val);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    TPETRA_DEPRECATED
     void
     generateMatrix (const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
@@ -85,22 +87,24 @@ namespace Tpetra {
                     Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    TPETRA_DEPRECATED
     void
     generateMatrix (const Teuchos::RCP<Teuchos::ParameterList>& plist,
                     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                    Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
-    {
-      generateMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (plist, comm, Teuchos::null, A);
-    }
+                    Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
+    TPETRA_DEPRECATED
     readHBMatrix (const std::string &filename,
                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                   const Teuchos::RCP<Node> &node,
                   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
                   Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null,
                   const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
@@ -108,10 +112,7 @@ namespace Tpetra {
                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A,
                   Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null,
-                  const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null)
-    {
-      readHBMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (filename, comm, Teuchos::null, A, rowMap, params);
-    }
+                  const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   } // end of Tpetra::Utils namespace
 } // end of Tpetra namespace

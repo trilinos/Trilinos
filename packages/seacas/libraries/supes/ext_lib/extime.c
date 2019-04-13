@@ -61,6 +61,16 @@ C
 #include <string.h>
 #include <time.h>
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 #if defined(ADDC_)
 void extime_(char *string, long int len)
 #else
@@ -76,5 +86,5 @@ void extime(char *string, long int len)
   t   = localtime(&tim);
 
   sprintf(Temp, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec);
-  strncpy(string, Temp, STRLEN);
+  copy_string(string, Temp, STRLEN);
 }

@@ -52,6 +52,7 @@ fi
 
 echo "Using waterman compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
+export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
@@ -121,15 +122,48 @@ else
     return
 fi
 
+# CMake and ninja
+module swap cmake/3.6.2 cmake/3.12.3
+module load ninja/1.7.2
+
+# HWLOC
+
 export ATDM_CONFIG_USE_HWLOC=OFF
 
-export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+# Let's see if the TPLs loaded by devpack/20180517/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88 work for SPARC?
 
-# Use manually installed cmake and ninja to try to avoid module loading
-# problems (see TRIL-208).  NOTE: These were build for Power8 on 'white' and
-# 'ride' but they also seem to work just fine on Power9 'waterman' as well :-)
-export PATH=/ascldap/users/rabartl/install/white-ride/cmake-3.11.2/bin:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
+export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;${BINUTILS_ROOT}/lib/libiberty.a"
+
+#CGNS_ROOT=/home/projects/sparc/tpls/waterman/cgns-develop/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#HDF5_ROOT=/home/projects/sparc/tpls/waterman/hdf5-1.8.20/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#METIS_ROOT=/home/projects/sparc/tpls/waterman/parmetis-4.0.3/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#NETCDF_ROOT=/home/projects/sparc/tpls/waterman/netcdf-4.6.1/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#PARMETIS_ROOT=/home/projects/sparc/tpls/waterman/parmetis-4.0.3/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#PNETCDF_ROOT=/home/projects/sparc/tpls/waterman/pnetcdf-1.10.0/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#SGM_ROOT=/home/projects/sparc/tpls/waterman/sgm-develop/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+#SUPERLUDIST_ROOT=/home/projects/sparc/tpls/waterman/superlu_dist-4.2/waterman-gpu_gcc-7.2.0_cuda-9.2.88_openmpi-2.1.2
+
+# HDF5 and Netcdf
+
+# NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
+# module loads!
+
+# However, set the direct libs for HDF5 and NetCDF in case we use that option
+# for building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
+
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+
+export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+
+#export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+#export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+
+# SuperLUDist
+
+if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+  export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib/libsuperlu_dist.a;${METIS_ROOT}/lib/libmetis.a"
+fi
 
 # Set MPI wrappers
 export MPICC=`which mpicc`

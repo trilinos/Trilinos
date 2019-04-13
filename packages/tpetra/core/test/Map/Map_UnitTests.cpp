@@ -426,7 +426,7 @@ namespace {
     RCP<N2> n2 (new N2);
 
     // create a contiguous uniform distributed map with numLocal entries per node
-    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm, n1);
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm);
     RCP<const Map2> map2 = map1->clone (n2);
     RCP<const Map1> map1b = map2->clone (n1);
     TEST_ASSERT( map1->isCompatible (*map1b) );

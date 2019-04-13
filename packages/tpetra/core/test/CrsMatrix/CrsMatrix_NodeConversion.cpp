@@ -74,10 +74,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
-  using Tpetra::createNonContigMapWithNode;
   using Tpetra::createUniformContigMapWithNode;
-  using Tpetra::createContigMapWithNode;
-  using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
@@ -121,13 +118,12 @@ namespace {
 
     // These variables exist only to help clone's type deduction.
     // It's OK for them to be null.
-    RCP<N1> n1;
     RCP<N2> n2;
 
     // Create a uniform contiguous distributed Map with numLocal
     // indices on each MPI process.
     RCP<const Map1> map1 =
-      createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm, n1);
+      createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm);
     RCP<Mat1> A1 = createCrsMatrix<SCALAR> (map1, 3);
 
     // empty source, not filled

@@ -8,8 +8,10 @@ if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
   export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
 fi
 
-if [ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "white" ] ; then
-  EXCLUDE_NODES_FROM_BSUB="-R hname!=white26&&hname!=white27"
+if [ "${EXCLUDE_NODES_FROM_BSUB}" == "" ] ; then
+  if [ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "white" ] ; then
+    EXCLUDE_NODES_FROM_BSUB="-R hname!=white26&&hname!=white27"
+  fi
 fi
 
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME

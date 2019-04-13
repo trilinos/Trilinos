@@ -76,6 +76,7 @@ namespace FROSch {
         typedef unsigned UN;
         
         typedef Teuchos::Array<LO> LOVec;
+        typedef Teuchos::Array<GO> GOVec;        
         typedef Teuchos::ArrayRCP<LO> LOVecPtr;
         typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
         
