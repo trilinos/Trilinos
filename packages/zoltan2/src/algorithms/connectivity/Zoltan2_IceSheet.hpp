@@ -173,8 +173,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   graph* g = new graph({nVtx, nEdge, out_edges,out_offsets, 0,0.0});
 
   iceProp::iceSheetPropagation prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding_flags, nVtx, nGhosts);
+  
+  int* removed = prop.propagate();
+  
+  delete local_boundary_counts;
+  delete g;
 
-  return prop.propagate();
+  return removed;
 }
 
 }//end namespace Zoltan2
