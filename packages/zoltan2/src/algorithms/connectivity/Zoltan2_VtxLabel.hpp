@@ -2,7 +2,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_FEMultiVector.hpp"
-#include "graph.h"
+#include "Zoltan2_IceSheetGraph.h"
 
 #include <string>
 #include <sstream>
@@ -32,17 +32,17 @@ namespace iceProp{
           int bcc_name;
 	  bool is_art;
 	  // Constructors
-	  vtxLabel(int idx, int first = -1, int first_sender = -1, int second = -1, int second_sender = -1,bool art = false, int bcc_name_ = -1) { 
-	    id = idx;
+	  vtxLabel(int idx_, int first_ = -1, int first_sender_ = -1, int second_ = -1, int second_sender_ = -1,bool art_ = false, int bcc_name_ = -1) { 
+	    id = idx_;
             //gid = idx;
 	    if(id == -1){
 		std::cout<<"A label's ID is -1\n";
 	    }
-	    first_label = first;
-	    this->first_sender = first_sender;
-	    second_label = second;
-	    this->second_sender = second_sender; 
-	    is_art = art;
+	    first_label = first_;
+	    first_sender = first_sender_;
+	    second_label = second_;
+	    second_sender = second_sender_; 
+	    is_art = art_;
             bcc_name = bcc_name_;
 	  }
 	  vtxLabel() {
@@ -281,36 +281,36 @@ public:
     //label1 += label2;
 
     //femv->replaceGlobalValue(0,0,label1);
-    //printFEMV(*femv, "BeforeFill");   
+    //printFEMV("BeforeFill");   
  
     femv->endFill(); 
-    //printFEMV(*femv, "AfterFill");
+    //printFEMV("AfterFill");
   }
-  void printFEMV(femv_t &femv, const char *msg){
+  void printFEMV(const char *msg){
     for (int v = 0; v < 1; v++){
       std::cout << me << " OWNED " << msg << " FEMV[" << v << "] Owned: ";
-      auto value = femv.getData(v);
+      auto value = femv->getData(v);
       for(lno_t i = 0; i < nLocalOwned; i++) std::cout<<value[i]<<" ";
       std::cout<<std::endl;
     }
-    femv.switchActiveMultiVector();
+    femv->switchActiveMultiVector();
     for(int v = 0; v < 1; v++){
       std::cout << me << " WITHCOPIES " <<msg<<" FEMV[" <<v<< "] Owned: ";
-      auto value = femv.getData(v);
+      auto value = femv->getData(v);
       for(lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] <<" ";
       std::cout<<" Copies: ";
       for(lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++)
         std::cout << value[i] <<" ";
       std::cout << std::endl;
     }
-    femv.switchActiveMultiVector();
+    femv->switchActiveMultiVector();
 
   }
   //propagation functions
   //returns an array of vertices to remove
   int* propagate(void){ 
     //run bfs_prop
-    bfs_prop(femv);
+    bfs_prop();
     //check for potentially false articulation points
     while(true){
       femv->switchActiveMultiVector(); 
@@ -343,7 +343,7 @@ public:
       }
       //std::cout<<me<<": Running BFS-prop again\n";
       //re-run bfs_prop until incomplete propagation is fixed
-      bfs_prop(femv);     
+      bfs_prop();     
     }
     //check for nodes that are less than full.
     //return flags for each node, -2 for keep, -1 for remove, <vtxID> for singly grounded nodes.
@@ -360,7 +360,7 @@ public:
   }
 
   //performs one bfs_prop iteration (does not check for incomplete propagation)
-  void bfs_prop(Teuchos::RCP<femv_t> femv){
+  void bfs_prop(){
     //do
     //  femv->beginFill()
     //  //call giveLabels in a while loop
@@ -410,7 +410,7 @@ public:
       //std::cout<<me<<": reg queue front = "<<iceProp::reg.front()<<"\n";
       //std::cout<<me<<": reg queue size = "<<iceProp::reg.size()<<"\n";
       int local_done = iceProp::reg.empty() && iceProp::art.empty();
-      //printFEMV(*femv,"Propagation Step");
+      //printFEMV("Propagation Step");
       //this call makes sure that if any inter-processor communication changed labels
       //we catch the changes and keep propagating them.
       Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MIN,1, &local_done,&done);
@@ -608,13 +608,13 @@ public:
             if(femvData[outs[i]].getGroundingStatus() == NONE){
               //std::cout<<me<<": Grounding "<<mapWithCopies->getGlobalElement(art_queue.front())<<" and neighbor "<<mapWithCopies->getGlobalElement(outs[i])<<"\n";
               iceProp::vtxLabel neighbor = femvData[outs[i]];
-              iceProp::vtxLabel art = femvData[art_pt];
+              iceProp::vtxLabel artvtx = femvData[art_pt];
               int neighbor_gid = mapWithCopies->getGlobalElement(neighbor.id);
               neighbor.first_label = neighbor_gid;
               neighbor.first_sender = neighbor_gid;
               neighbor.bcc_name = bcc_count*np+me;
-              art.bcc_name = bcc_count*np+me;
-              femv->replaceLocalValue(art_pt,0,art);
+              artvtx.bcc_name = bcc_count*np+me;
+              femv->replaceLocalValue(art_pt,0,artvtx);
               femv->replaceLocalValue(outs[i],0, neighbor);
               iceProp::reg.push(art_pt);
               iceProp::reg.push(outs[i]);
@@ -629,7 +629,7 @@ public:
       //call this->propagate, which, per-processor, finds one bcc at a time.
       //std::cout<<me<<": Calling propagate\n";
       int* t = propagate();
-      //printFEMV(*femv, "AfterPropagation");
+      //printFEMV("AfterPropagation");
       bcc_count++;
       delete [] t;
       //std::cout<<me<<": Checking for articulation points\n";
@@ -692,7 +692,6 @@ public:
   int vtxLabelUnitTest();
 
 private:
-  graph* g;	    //csr representation of vertices on this processor
   int me; 	    //my processor rank
   int np;	    //number of processors
   int nLocalOwned;  //number of vertices owned by this processor
@@ -700,10 +699,11 @@ private:
   int nVec;	    //number of vectors in multivector
   
   const Teuchos::RCP<const Teuchos::Comm<int> > comm; //MPI communicator
+  graph* g;	    //csr representation of vertices on this processor
 
+  Teuchos::RCP<const map_t> mapOwned;       //Tpetra::Map including only owned
   Teuchos::RCP<const map_t> mapWithCopies;  //Tpetra::Map including owned
                                             //vertices and copies
-  Teuchos::RCP<const map_t> mapOwned;       //Tpetra::Map including only owned
 
   Teuchos::RCP<femv_t> femv;
   
