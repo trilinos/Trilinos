@@ -21,8 +21,8 @@ namespace Zoltan2{
       typedef typename Adapter::part_t part_t;
       typedef typename Adapter::user_t user_t;
       typedef typename Adapter::userCoord_t userCoord_t;
-      typedef Tpetra::Map<> map_t;
-      typedef map_t::global_ordinal_type mgno_t;
+      typedef Tpetra::Map<lno_t, gno_t> map_t;
+      //typedef map_t::global_ordinal_type mgno_t;
       
       //Arguments: problemComm is the communicator we will use for the propagation
       //           adapter is the graph adapter that represents the ice mesh's bottom layer
@@ -32,7 +32,7 @@ namespace Zoltan2{
       //           num_boundary_edges is the number of boundary edges there are
       IceProp(const RCP<const Comm<int> > &problemComm__,
 	      const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__, 
-	      int* basalFriction, int* boundary_edges__, int num_boundary_edges__):
+	      int* basalFriction, gno_t* boundary_edges__, int num_boundary_edges__):
          adapter(adapter__), grounding_flags(basalFriction), boundary_edges(boundary_edges__),
          num_boundary_edges(num_boundary_edges__), problemComm(problemComm__)
       {
@@ -58,7 +58,7 @@ namespace Zoltan2{
       void buildModel(modelFlag_t &flags);
 
       int* grounding_flags;
-      int*  boundary_edges;
+      gno_t*  boundary_edges;
       int   num_boundary_edges;
       const RCP<const Comm<int> > problemComm;
       RCP<Environment> env;
@@ -102,12 +102,12 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
   //edge weights are not used either.
 
-  int* out_edges = NULL;
+  gno_t* out_edges = NULL;
   unsigned* out_offsets = NULL;
-  unsigned long* global_ids = NULL;
-  TPL_Traits<int, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
+  gno_t* global_ids = NULL;
+  TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&out_edges, adjs);
   TPL_Traits<unsigned, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
-  TPL_Traits<unsigned long, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
+  TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
   
   //int me = problemComm->getRank();
 
@@ -125,7 +125,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   
   //create the Tpetra map for the global indices
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  RCP<const Tpetra::Map<> > map = rcp(new Tpetra::Map<>(dummy, vtxIDs, 0, problemComm)); 
+  RCP<const map_t > map = rcp(new map_t(dummy, vtxIDs, 0, problemComm)); 
   
   //sentinel value to detect unsuccessful searches
   lno_t fail = Teuchos::OrdinalTraits<lno_t>::invalid();
@@ -151,7 +151,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       ghostCount++;
     }
   }
-  RCP<const Tpetra::Map<> > mapWithCopies = rcp(new Tpetra::Map<>(dummy, gids, 0, problemComm));
+  RCP<const map_t > mapWithCopies = rcp(new map_t(dummy, gids, 0, problemComm));
   
   int* local_boundary_counts = new int[nVtx];
   for(size_t i = 0; i < nVtx; i++){
@@ -164,11 +164,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   }
   
   //convert adjacency array to use local identifiers instead of global.
+  
+  Teuchos::Array<int> out_edges_lid(nEdge);
   for(size_t i = 0; i < nEdge; i++){
-    out_edges[i] = mapWithCopies->getLocalElement(out_edges[i]);
+    out_edges_lid[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
 
-  graph* g = new graph({nVtx, nEdge, out_edges,out_offsets, 0,0.0});
+  graph* g = new graph({nVtx, nEdge, &out_edges_lid[0],out_offsets, 0,0.0});
 
   iceProp::iceSheetPropagation prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding_flags, nVtx, nGhosts);
   
