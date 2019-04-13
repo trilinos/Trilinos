@@ -14,10 +14,9 @@
 #include<iostream>
 #include<fstream>
 
-// #include "vtxlabel.hpp"
-// #include "graph.h"
-#include "util.h"
-
+//#include "vtxlabel.hpp"
+//#include "graph.h"
+#include "Zoltan2_IceUtil.h"
 
 int main(int argc, char** argv)
 {

@@ -76,18 +76,7 @@ namespace iceProp{
             bcc_name = other.bcc_name;
 	  }
 	  // vtxLabel assignment
-	  vtxLabel& operator=(volatile const vtxLabel& other)  { 
-	    id = other.id;
-            //gid = other.gid;
-	    first_label = other.first_label;
-	    first_sender = other.first_sender;
-	    second_label = other.second_label;
-	    second_sender = other.second_sender;
-	    is_art = other.is_art;
-            bcc_name = other.bcc_name;
-	    return *this;
-	  }
-          vtxLabel& operator=(const vtxLabel& other){
+          volatile vtxLabel operator=(const vtxLabel& other) volatile{
 	    id = other.id;
             //gid = other.gid;
 	    first_label = other.first_label;
@@ -98,6 +87,18 @@ namespace iceProp{
             bcc_name = other.bcc_name;
 	    return *this; 
 	  }
+
+          vtxLabel& operator=(const vtxLabel& other) {
+	    id = other.id;
+            //gid = other.gid;
+	    first_label = other.first_label;
+	    first_sender = other.first_sender;
+	    second_label = other.second_label;
+	    second_sender = other.second_sender;
+	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
+	    return *this; 
+	  } 
 
 	  // int assignment
 	  vtxLabel& operator=(const int& other) { 

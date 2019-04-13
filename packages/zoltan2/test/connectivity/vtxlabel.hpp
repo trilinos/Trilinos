@@ -54,6 +54,27 @@ namespace iceProp{
 	    is_art = false; 
             bcc_name = -1;
 	  }
+	  vtxLabel(volatile const vtxLabel& other)  { 
+	    id = other.id;
+            //gid = other.gid;
+	    first_label = other.first_label;
+	    first_sender = other.first_sender;
+	    second_label = other.second_label;
+	    second_sender = other.second_sender;
+	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
+	  }
+	  vtxLabel& operator=(volatile const vtxLabel& other)  { 
+	    id = other.id;
+            //gid = other.gid;
+	    first_label = other.first_label;
+	    first_sender = other.first_sender;
+	    second_label = other.second_label;
+	    second_sender = other.second_sender;
+	    is_art = other.is_art;
+            bcc_name = other.bcc_name;
+	    return *this;
+	  }
 	  // vtxLabel assignment
 	  vtxLabel& operator=(const vtxLabel& other)  { 
 	    id = other.id;

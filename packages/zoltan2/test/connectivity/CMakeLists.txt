@@ -6,7 +6,7 @@
 
 TRIBITS_ADD_EXECUTABLE(
   iceSheet_int
-  SOURCES iceSheetIntegration.cpp
+  SOURCES ${HEADERS} iceSheetIntegration.cpp
   COMM serial mpi
 )
 #TRIBITS_ADD_TEST(
