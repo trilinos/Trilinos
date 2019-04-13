@@ -76,12 +76,11 @@ struct result_struct {
 
 
 template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node);
+Teuchos::XMLTestNode machine_configuration();
 
 template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node) {
-  Teuchos::XMLTestNode config = Teuchos::PerfTest_MachineConfig();
-  config.addString("KokkosNodeType",node->name());
+Teuchos::XMLTestNode machine_configuration() {
+  Teuchos::XMLTestNode<Node> config = Teuchos::PerfTest_MachineConfig();
   return config;
 }
 
@@ -388,9 +387,8 @@ run (int argc, char *argv[])
 
   // Print results.
   if (myRank == 0) {
-    Teuchos::XMLTestNode machine_config =
-      machine_configuration (map->getNode ());
-    Teuchos::XMLTestNode test =
+    Teuchos::XMLTestNode<Node> machine_config = machine_configuration<Node> ();
+    Teuchos::XMLTestNode<Node> test =
       test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
                   numthreads, A, results, niters, tolerance, tol_small,
                   tol_large);
