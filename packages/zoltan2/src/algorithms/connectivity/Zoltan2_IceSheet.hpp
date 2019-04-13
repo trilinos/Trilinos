@@ -54,14 +54,14 @@ namespace Zoltan2{
       //number of locally owned vertices.
       int* getDegenerateFeatureFlags();
     private:
+      const RCP<const base_adapter_t> adapter;
       void buildModel(modelFlag_t &flags);
 
       int* grounding_flags;
       int*  boundary_edges;
       int   num_boundary_edges;
       const RCP<const Comm<int> > problemComm;
-      const RCP<const Environment> env;
-      const RCP<const base_adapter_t> adapter;
+      RCP<Environment> env;
       RCP<const GraphModel<base_adapter_t> > model;
   };
   
@@ -86,10 +86,8 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   //Run the propagation, and return the flags.
   
   //get the number of local vertices and edges.
-  const size_t modelVerts = model->getLocalNumVertices();
-  const size_t modelEdges = model->getLocalNumEdges();
-  int num_verts = (int)modelVerts;
-  long num_edges = (long)modelEdges;
+  //const size_t modelVerts = model->getLocalNumVertices();
+  //const size_t modelEdges = model->getLocalNumEdges();
 
   //Get vertex GIDs, in a locally indexed array
   ArrayView<const gno_t> vtxIDs;
@@ -111,7 +109,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   TPL_Traits<unsigned, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
   TPL_Traits<unsigned long, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
   
-  int me = problemComm->getRank();
+  //int me = problemComm->getRank();
 
   /*std::cout<<me<<": Local vertices:\n";
   for(int i = 0; i < nVtx; i++){
@@ -134,7 +132,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
 
   int nGhosts = 0;
   //count how many ghosts are in the edge list, to create the mapWithCopies.
-  for(int i = 0; i < nEdge; i++){
+  for(size_t i = 0; i < nEdge; i++){
     if(map->getLocalElement(adjs[i]) == fail)
       nGhosts++;
   }
@@ -143,11 +141,11 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   
   //use the count of ghosts + owned to make mapWithCopies, need to create a Teuchos array first.
   Teuchos::Array<gno_t> gids(nVtx+nGhosts);
-  for(int i = 0; i < nVtx; i++){
+  for(size_t i = 0; i < nVtx; i++){
     gids[i] = vtxIDs[i];
   }
   int ghostCount = 0;
-  for(int i = 0; i < nEdge; i++){
+  for(size_t i = 0; i < nEdge; i++){
     if(map->getLocalElement(adjs[i]) == fail){
       gids[nVtx+ghostCount] = adjs[i];
       ghostCount++;
@@ -156,7 +154,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   RCP<const Tpetra::Map<> > mapWithCopies = rcp(new Tpetra::Map<>(dummy, gids, 0, problemComm));
   
   int* local_boundary_counts = new int[nVtx];
-  for(int i = 0; i < nVtx; i++){
+  for(size_t i = 0; i < nVtx; i++){
     local_boundary_counts[i] = 0;
   }
   for(int i = 0; i < num_boundary_edges*2; i++){
@@ -166,7 +164,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   }
   
   //convert adjacency array to use local identifiers instead of global.
-  for(int i = 0; i < nEdge; i++){
+  for(size_t i = 0; i < nEdge; i++){
     out_edges[i] = mapWithCopies->getLocalElement(out_edges[i]);
   }
 
