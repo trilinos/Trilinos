@@ -601,8 +601,9 @@ void StepperIMEX_RK<Scalar>::takeStep(
           Teuchos::rcp(new StepperIMEX_RKTimeDerivative<Scalar>(
             alpha, xTilde_.getConst()));
 
-        Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-         Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta));
+        Teuchos::RCP<ODEParameters<Scalar> > p =
+         Teuchos::rcp(new ODEParameters<Scalar>(timeDer, dt, alpha, beta,
+                                                solutionHistory));
         p->stageNumber_ = i;
 
         if (!Teuchos::is_null(stepperIMEX_RKObserver_))

@@ -75,7 +75,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
       appInArgs.set_x(x);         // x is from solver.
       RCP<Thyra::VectorBase<Scalar> > xDot =
         Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
-          appInArgs.get_x_dot()); // xDot is from the Stepper
+          appInArgs.get_x_dot()); // xDot is from the Stepper TimeDerivative
       timeDer_->compute(x, xDot);
       appInArgs.set_x_dot(xDot);
 

@@ -241,9 +241,10 @@ void StepperBDF2<Scalar>::takeStep(
     const Scalar alpha = getAlpha(dt, dtOld);
     const Scalar beta  = getBeta (dt);
 
-    Teuchos::RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     SOLVE_FOR_X));
+    Teuchos::RCP<ODEParameters<Scalar> > p =
+      Teuchos::rcp(new ODEParameters<Scalar>(timeDer, dt, alpha, beta,
+                                             solutionHistory,
+                                             SOLVE_FOR_X));
 
     const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(x, xDot, time, p);

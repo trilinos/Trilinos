@@ -14,6 +14,23 @@ namespace Tempus {
 
 
 template<class Scalar>
+void Stepper<Scalar>::setAuxModel(
+      const Teuchos::RCP<const AuxModel<Scalar> >& auxModel)
+{ auxModel_ = auxModel; }
+
+
+template<class Scalar>
+void Stepper<Scalar>::setNonConstAuxModel(
+      const Teuchos::RCP<AuxModel<Scalar> >& auxModel)
+{ auxModel_ = auxModel; }
+
+
+template<class Scalar>
+Teuchos::RCP<const AuxModel<Scalar> > Stepper<Scalar>::getAuxModel()
+{ return auxModel_; }
+
+
+template<class Scalar>
 void Stepper<Scalar>::getValidParametersBasic(
   Teuchos::RCP<Teuchos::ParameterList> pl) const
 {

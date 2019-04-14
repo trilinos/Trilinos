@@ -166,9 +166,10 @@ void StepperImplicit<Scalar>::setInitialConditions(
       RCP<TimeDerivative<Scalar> > timeDer = Teuchos::null;
       const Scalar alpha = Scalar(1.0);    // d(xDot)/d(xDot)
       const Scalar beta  = Scalar(0.0);    // d(x   )/d(xDot)
-      RCP<ImplicitODEParameters<Scalar> > p =
-        Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                       SOLVE_FOR_XDOT_CONST_X));
+      RCP<ODEParameters<Scalar> > p =
+        Teuchos::rcp(new ODEParameters<Scalar>(timeDer, dt, alpha, beta,
+                                               solutionHistory,
+                                               SOLVE_FOR_XDOT_CONST_X));
 
       auto xDot = this->getStepperXDot(initialState);
       const Thyra::SolveStatus<Scalar> sStatus =
@@ -206,9 +207,10 @@ void StepperImplicit<Scalar>::setInitialConditions(
     RCP<TimeDerivative<Scalar> > timeDer = Teuchos::null;
     const Scalar alpha = Scalar(0.0);
     const Scalar beta  = Scalar(0.0);
-    RCP<ImplicitODEParameters<Scalar> > p =
-      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
-                                                     EVALUATE_RESIDUAL));
+    RCP<ODEParameters<Scalar> > p =
+      Teuchos::rcp(new ODEParameters<Scalar>(timeDer, dt, alpha, beta,
+                                             solutionHistory,
+                                             EVALUATE_RESIDUAL));
 
     this->evaluateImplicitODE(f, x, xDot, time, p);
 
@@ -351,7 +353,7 @@ StepperImplicit<Scalar>::solveImplicitODE(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
   const Scalar time,
-  const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p )
+  const Teuchos::RCP<ODEParameters<Scalar> > & p )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
@@ -398,7 +400,7 @@ StepperImplicit<Scalar>::evaluateImplicitODE(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
   const Scalar time,
-  const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p )
+  const Teuchos::RCP<ODEParameters<Scalar> > & p )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();

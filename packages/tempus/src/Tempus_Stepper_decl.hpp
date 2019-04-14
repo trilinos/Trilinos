@@ -20,6 +20,7 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperObserver.hpp"
+#include "Tempus_AuxModel.hpp"
 
 
 namespace Tempus {
@@ -78,6 +79,12 @@ public:
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
+
+    virtual void setAuxModel(
+      const Teuchos::RCP<const AuxModel<Scalar> >& auxModel);
+    virtual void setNonConstAuxModel(
+      const Teuchos::RCP<AuxModel<Scalar> >& auxModel);
+    virtual Teuchos::RCP<const AuxModel<Scalar> > getAuxModel();
 
     /// Set solver via ParameterList solver name.
     virtual void setSolver(std::string solverName) = 0;
@@ -179,6 +186,11 @@ public:
 
     Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters() const;
   //@}
+
+
+protected:
+
+  Teuchos::RCP<const AuxModel<Scalar> > auxModel_;
 
 };
 } // namespace Tempus
