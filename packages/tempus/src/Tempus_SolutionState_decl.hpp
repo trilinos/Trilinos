@@ -51,6 +51,15 @@ namespace Tempus {
  *  (\f$\dot{x}\f$, or \f$\ddot{x}\f$) for evaluation of the ODE/DAE
  *  (\f$f(x, \dot{x}, \ddot{x},t)\f$), but each individual Stepper will
  *  manage that.
+ *
+ *  The difference between the PhysicsState, \f$p\f$, and an auxiliary
+ *  variable, \f$y\f$ is that the PhysicState is physics data that does
+ *  not require time integration.  It is just data at each time step that
+ *  is needed to evaluate \f$\bar{f}(x,t,p)\f$ or \f$f(x,xDot,t,p)\f$.
+ *  An auxiliary variable, \f$y\f$, however does need time integration,
+ *  but has been separated from the solution variable, \f$x\f$, because
+ *  it is a simple update or has a different time-integration to reduce
+ *  computational costs.
  */
 template<class Scalar>
 class SolutionState :
@@ -71,14 +80,20 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot    = Teuchos::null,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xddot   = Teuchos::null,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
-    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& y       = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& ydot    = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& yddot   = Teuchos::null);
 
   SolutionState(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot = Teuchos::null,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xddot= Teuchos::null,
     const Teuchos::RCP<const StepperState<Scalar> >& stepperSt = Teuchos::null,
-    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null);
+    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& y    = Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& ydot = Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& yddot= Teuchos::null);
 
   SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
@@ -86,7 +101,10 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState,
-    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& y       = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& ydot    = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& yddot   = Teuchos::null);
 
   SolutionState(
     const Teuchos::RCP<const SolutionStateMetaData<Scalar> > ssmd,
@@ -94,12 +112,18 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
     const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
-    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState = Teuchos::null);
+    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState=Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& y    = Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& ydot = Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& yddot= Teuchos::null);
 
   SolutionState(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
-    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& y       = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& ydot    = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& yddot   = Teuchos::null);
 
   /// This is a shallow copy constructor, use clone for a deep copy constructor
   SolutionState(const SolutionState<Scalar>& ss);
@@ -200,6 +224,23 @@ public:
       { return physicsState_; }
   //@}
 
+  /// \name Get auxiliary variables
+  //@{
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getY()
+      { TEUCHOS_ASSERT(y_nc_ != Teuchos::null);
+        return y_nc_; }
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getY() const
+      { return y_; }
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getYDot()
+      { return ydot_nc_; }
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getYDot() const
+      { return ydot_; }
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getYDotDot()
+      { return ydotdot_nc_; }
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getYDotDot() const
+      { return ydotdot_; }
+  //@}
+
   /// \name Set State Data
   //@{
     virtual void setX(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
@@ -217,6 +258,22 @@ public:
 
     virtual void setPhysicsState(const Teuchos::RCP<PhysicsState<Scalar> >& ps)
       { physicsState_nc_ = ps; physicsState_ = physicsState_nc_; }
+  //@}
+
+  /// \name Set auxiliary variables
+  //@{
+    virtual void setY(Teuchos::RCP<Thyra::VectorBase<Scalar> > y)
+      { y_nc_ = y; y_ = y; }
+    virtual void setY(Teuchos::RCP<const Thyra::VectorBase<Scalar> > y)
+      { y_nc_ = Teuchos::null; y_ = y; }
+    virtual void setYDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > ydot)
+      { ydot_nc_ = ydot; ydot_ = ydot; }
+    virtual void setYDot(Teuchos::RCP<const Thyra::VectorBase<Scalar> > ydot)
+      { ydot_nc_ = Teuchos::null; ydot_ = ydot; }
+    virtual void setYDotDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > ydotdot)
+      { ydotdot_nc_ = ydotdot; ydotdot_ = ydotdot; }
+    virtual void setYDotDot(Teuchos::RCP<const Thyra::VectorBase<Scalar> > ydotdot)
+      { ydotdot_nc_ = Teuchos::null; ydotdot_ = ydotdot; }
   //@}
 
 
@@ -286,6 +343,18 @@ private:
   /// PhysicsState for this SolutionState
   Teuchos::RCP<const Tempus::PhysicsState<Scalar> > physicsState_;
   Teuchos::RCP<Tempus::PhysicsState<Scalar> > physicsState_nc_;
+
+  /// Auxiliary variables
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > y_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > y_nc_;
+
+  /// Time derivative of the auxiliary variables
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > ydot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > ydot_nc_;
+
+  /// Second time derivative of the auxiliary variables
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > ydotdot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > ydotdot_nc_;
 
 };
 } // namespace Tempus

@@ -143,7 +143,7 @@ private:
 
 private:
   int dim_;         ///< Number of state unknowns (2)
-  int Np_;          ///< Number of parameter vectors (1)
+  int Np_;          ///< Number of parameter vectors (3)
   int np_;          ///< Number of parameters in this vector (2)
   int Ng_;          ///< Number of observation functions (1)
   int ng_;          ///< Number of elements in this observation function (1)
