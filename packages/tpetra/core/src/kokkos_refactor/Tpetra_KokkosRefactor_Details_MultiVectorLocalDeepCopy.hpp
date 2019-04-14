@@ -50,6 +50,47 @@
 namespace Tpetra {
 namespace Details {
 
+namespace { // (anonymous)
+
+template<class DstViewType, class SrcViewType>
+void
+copyConvertResolvingPossibleAliasing (const DstViewType& dst,
+                                      const SrcViewType& src)
+{
+  // NOTE: It's important to do the addition _inside_ the
+  // reinterpret-cast.  If you reinterpret_cast the separate results,
+  // you may get the wrong answer (e.g., because ptrdiff_t is signed,
+  // and pointers may have arbitrary 64-bit virtual addresses).  I'm
+  // speaking from experience here.
+  const ptrdiff_t dst_beg = reinterpret_cast<ptrdiff_t> (dst.data ());
+  const ptrdiff_t dst_end =
+    reinterpret_cast<ptrdiff_t> (dst.data () + dst.span ());
+  const ptrdiff_t src_beg = reinterpret_cast<ptrdiff_t> (src.data ());
+  const ptrdiff_t src_end =
+    reinterpret_cast<ptrdiff_t> (src.data () + src.span ());
+
+  if (src_beg == dst_beg && src_end == dst_end) {
+    // Do nothing; there's no need to copy
+  }
+  else if (dst_end <= src_beg || src_end <= dst_beg) { // no aliasing
+    ::Tpetra::Details::copyConvert (dst, src);
+  }
+  else {
+    // dst and src alias each other, so we can't call
+    // Kokkos::deep_copy(dst,src) directly (Kokkos detects this and
+    // throws, at least in debug mode).  Instead, we make temporary
+    // host storage (create_mirror always makes a new allocation,
+    // unlike create_mirror_view).  Use host because it's cheaper to
+    // allocate.  Hopefully users aren't doing aliased copies in a
+    // tight loop.
+    auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+    Kokkos::deep_copy (src_copy, src);
+    ::Tpetra::Details::copyConvert (dst, src_copy);
+  }
+}
+
+} // namespace (anonymous)
+
 /// \brief Implementation of Tpetra::MultiVector deep copy of local data.
 ///
 /// This implements <tt>Tpetra::MultiVector</tt> deep copy, as in
@@ -100,7 +141,7 @@ localDeepCopy (const DstViewType& dst,
   using size_type = typename DstViewType::size_type;
 
   if (dstConstStride && srcConstStride) {
-    ::Tpetra::Details::copyConvert (dst, src);
+    copyConvertResolvingPossibleAliasing (dst, src);
   }
   else {
     const size_type numCols = dstConstStride ?
@@ -114,7 +155,7 @@ localDeepCopy (const DstViewType& dst,
         static_cast<size_type> (srcWhichVecs[j]);
       const auto src_j = subview (src, ALL (), src_col);
 
-      ::Tpetra::Details::copyConvert (dst_j, src_j);
+      copyConvertResolvingPossibleAliasing (dst_j, src_j);
     }
   }
 }
@@ -128,7 +169,7 @@ void
 localDeepCopyConstStride (const DstViewType& dst,
                           const SrcViewType& src)
 {
-  return ::Tpetra::Details::copyConvert (dst, src);
+  return copyConvertResolvingPossibleAliasing (dst, src);
 }
 
 } // Details namespace

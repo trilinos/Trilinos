@@ -258,7 +258,33 @@ namespace { // (anonymous)
     run (const OutputViewType& dst,
          const InputViewType& src)
     {
-      Kokkos::deep_copy (dst, src);
+      // NOTE: It's important to do the addition _inside_ the
+      // reinterpret-cast.  If you reinterpret_cast the separate
+      // results, you may get the wrong answer (e.g., because
+      // ptrdiff_t is signed, and pointers may have arbitrary 64-bit
+      // virtual addresses).  I'm speaking from experience here.
+      const ptrdiff_t dst_beg =reinterpret_cast<ptrdiff_t> (dst.data ());
+      const ptrdiff_t dst_end =
+        reinterpret_cast<ptrdiff_t> (dst.data () + dst.span ());
+      const ptrdiff_t src_beg = reinterpret_cast<ptrdiff_t> (src.data ());
+      const ptrdiff_t src_end =
+        reinterpret_cast<ptrdiff_t> (src.data () + src.span ());
+
+      if (dst_end > src_beg && src_end > dst_beg) {
+        // dst and src alias each other, so we can't call
+        // Kokkos::deep_copy(dst,src) directly (Kokkos detects this
+        // and throws, at least in debug mode).  Instead, we make
+        // temporary host storage (create_mirror always makes a new
+        // allocation, unlike create_mirror_view).  Use host because
+        // it's cheaper to allocate.  Hopefully users aren't doing
+        // aliased copies in a tight loop.
+        auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+        Kokkos::deep_copy (src_copy, src);
+        Kokkos::deep_copy (dst, src_copy);
+      }
+      else { // no aliasing
+        Kokkos::deep_copy (dst, src);
+      }
     }
   };
 
