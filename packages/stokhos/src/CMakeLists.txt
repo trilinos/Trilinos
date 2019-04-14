@@ -815,6 +815,11 @@ IF (Stokhos_ENABLE_Sacado)
           "${STOKHOS_TPETRAEXT_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+
+        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_Cuda.cpp)
+        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_OpenMP.cpp)
+        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_Serial.cpp)
+        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_Threads.cpp)
       ENDIF()
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
@@ -825,6 +830,7 @@ IF (Stokhos_ENABLE_Sacado)
         LIST(REMOVE_ITEM TPETRA_ETI_CLASSES CrsMatrix)
         SET(EXTRA_TPETRA_ETI_CLASSES
           CrsMatrix
+          Details::normImpl
           )
         PROCESS_PCE_ETI(
           "${TPETRA_ETI_CLASSES}"
