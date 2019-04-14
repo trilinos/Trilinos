@@ -78,7 +78,7 @@ size_t Ac_estimate_nnz(CrsMatrixType & A, CrsMatrixType &P){
     Pcols = (P.getNodeNumCols() > 0) ? P.getNodeNumCols() : 100;
   return (size_t)(Pcols*nnzPerRowA + 5*nnzPerRowA + 300);
 }
-  
+
 #if defined (HAVE_TPETRA_INST_OPENMP)
 /*********************************************************************************************************/
 template<class Scalar,
@@ -119,7 +119,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
   // Unmanaged versions of the above
-  typedef UnmanagedView<lno_view_t> u_lno_view_t;
+  //typedef UnmanagedView<lno_view_t> u_lno_view_t; // unused
   typedef UnmanagedView<lno_nnz_view_t> u_lno_nnz_view_t;
   typedef UnmanagedView<scalar_view_t> u_scalar_view_t;
 
@@ -486,7 +486,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
   // Unmanaged versions of the above
-  typedef UnmanagedView<lno_view_t> u_lno_view_t;
+  //typedef UnmanagedView<lno_view_t> u_lno_view_t; // unused
   typedef UnmanagedView<lno_nnz_view_t> u_lno_nnz_view_t;
   typedef UnmanagedView<scalar_view_t> u_scalar_view_t;
 
@@ -1100,7 +1100,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
         if(!params.is_null()) {
           if(params->isParameter("openmp: ltg thread max"))
-            thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));    
+            thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
         }
 
         double thread_chunk = (double)(m) / thread_max;
@@ -1329,7 +1329,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
         const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
         const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
-        const KCRS & Cmat = Ac.getLocalMatrix();        
+        const KCRS & Cmat = Ac.getLocalMatrix();
 
         c_lno_view_t Rrowptr = Rmat.graph.row_map, Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map, Crowptr = Cmat.graph.row_map, Irowptr;
         const lno_nnz_view_t Rcolind = Rmat.graph.entries, Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -1350,7 +1350,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
         if(!params.is_null()) {
           if(params->isParameter("openmp: ltg thread max"))
-            thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));    
+            thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));
         }
 
         double thread_chunk = (double)(m) / thread_max;
@@ -1377,7 +1377,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
               // Reset values in the row of C
               Cvals(k) = SC_ZERO;
             }
-            
+
             // mfh 27 Sep 2016: For each entry of R in the current row of R
             for (size_t kk = Rrowptr(i); kk < Rrowptr(i+1); kk++) {
               LO k  = Rcolind(kk); // local column index of current entry of R
@@ -1427,12 +1427,12 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
                     TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
                                                std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
                                                "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-                    
+
                     Cvals(c_status[Cij]) += Rik*Akl*Plj;
                   }
                 }
               }
-            }           
+            }
           }
         });
         // NOTE: No copy out or "set" of data is needed here, since we're working directly with Kokkos::Views
