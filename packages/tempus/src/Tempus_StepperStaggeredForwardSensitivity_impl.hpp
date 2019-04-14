@@ -84,15 +84,6 @@ setModel(
 
 template<class Scalar>
 void StepperStaggeredForwardSensitivity<Scalar>::
-setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  this->setModel(appModel);
-}
-
-
-template<class Scalar>
-void StepperStaggeredForwardSensitivity<Scalar>::
 setSolver(std::string solverName)
 {
   stateStepper_->setSolver(solverName);

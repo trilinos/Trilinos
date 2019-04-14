@@ -22,11 +22,8 @@ class ODEParameters
 {
   public:
     /// Constructor
-    ODEParameters()
-      : timeDer_(Teuchos::null), timeStepSize_(Scalar(0.0)), stageNumber_(0),
-        alpha_(Scalar(0.0)), beta_(Scalar(0.0)),
-        solutionHistory_(Teuchos::null), evaluationType_(SOLVE_FOR_X)
-    {}
+    ODEParameters() {}
+
     /// Constructor
     ODEParameters(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
                   Scalar timeStepSize, Scalar alpha, Scalar beta,
@@ -37,13 +34,13 @@ class ODEParameters
         evaluationType_(evaluationType)
     {}
 
-    Teuchos::RCP<TimeDerivative<Scalar> > timeDer_;
-    Scalar                                timeStepSize_;
-    int                                   stageNumber_;
-    Scalar                                alpha_;  // Only valid for Implicit
-    Scalar                                beta_;   // Only valid for Implicit
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory_;
-    EVALUATION_TYPE                       evaluationType_;
+    Teuchos::RCP<TimeDerivative<Scalar> >  timeDer_;
+    Scalar          timeStepSize_ = Scalar(0.0);
+    int             stageNumber_  = 0;
+    Scalar          alpha_ = Scalar(0.0);  // Only valid for Implicit
+    Scalar          beta_  = Scalar(0.0);  // Only valid for Implicit
+    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
+    EVALUATION_TYPE evaluationType_ = SOLVE_FOR_X;
 };
 
 } // namespace Tempus

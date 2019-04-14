@@ -76,14 +76,10 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel) = 0;
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() = 0;
 
     virtual void setAuxModel(
       const Teuchos::RCP<const AuxModel<Scalar> >& auxModel);
-    virtual void setNonConstAuxModel(
-      const Teuchos::RCP<AuxModel<Scalar> >& auxModel);
     virtual Teuchos::RCP<const AuxModel<Scalar> > getAuxModel();
 
     /// Set solver via ParameterList solver name.

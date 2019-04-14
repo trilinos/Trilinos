@@ -20,12 +20,6 @@ void Stepper<Scalar>::setAuxModel(
 
 
 template<class Scalar>
-void Stepper<Scalar>::setNonConstAuxModel(
-      const Teuchos::RCP<AuxModel<Scalar> >& auxModel)
-{ auxModel_ = auxModel; }
-
-
-template<class Scalar>
 Teuchos::RCP<const AuxModel<Scalar> > Stepper<Scalar>::getAuxModel()
 { return auxModel_; }
 

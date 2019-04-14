@@ -73,19 +73,6 @@ void StepperOperatorSplit<Scalar>::setModel(
 }
 
 template<class Scalar>
-void StepperOperatorSplit<Scalar>::setNonConstModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel)
-{
-  if (appModel != Teuchos::null) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::setModel()");
-    *out << "Warning -- No ModelEvaluator to set for StepperOperatorSplit, "
-         << "because it is a Stepper of Steppers.\n" << std::endl;
-  }
-  return;
-}
-
-template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperOperatorSplit<Scalar>::getModel()
 {
