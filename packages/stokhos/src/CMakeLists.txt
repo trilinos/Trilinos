@@ -825,6 +825,7 @@ IF (Stokhos_ENABLE_Sacado)
         LIST(REMOVE_ITEM TPETRA_ETI_CLASSES CrsMatrix)
         SET(EXTRA_TPETRA_ETI_CLASSES
           CrsMatrix
+          Details::normImpl
           )
         PROCESS_PCE_ETI(
           "${TPETRA_ETI_CLASSES}"
