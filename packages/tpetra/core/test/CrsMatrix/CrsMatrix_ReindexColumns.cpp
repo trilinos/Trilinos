@@ -162,8 +162,12 @@ namespace {
       RCP<ParameterList> clonePlist = parameterList ("Tpetra::CrsMatrix::clone");
       clonePlist->set ("Debug", cloneDebug);
       try {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 	RCP<Node> node; // can be null; only need it for type deduction
         graph2 = graph.clone (node, clonePlist);
+#else // !TPETRA_ENABLE_DEPRECATED_CODE
+        graph.clone (graph2, clonePlist);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       } catch (std::exception& e) {
         std::ostringstream err2;
         err2 << "Proc " << myRank << ": CrsMatrix::clone threw an exception: "

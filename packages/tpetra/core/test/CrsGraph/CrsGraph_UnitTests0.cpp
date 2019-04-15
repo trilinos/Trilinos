@@ -1141,7 +1141,9 @@ namespace {
     RCP<const Map1> map1 = rcp (new Map1 (numGlobal,0,comm));
     out << "Creating CrsGraph" << endl;
     RCP<Graph1>       A1 = createCrsGraph(map1,3);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     RCP<N2> n2; // this can be null; we keep it to help type deduction
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     // empty source, not filled
 
@@ -1152,7 +1154,11 @@ namespace {
       // default: plClone->set("fillComplete clone",true);
       RCP<Graph2> A2;
       try {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         A2 = A1->template clone<N2> (n2, plClone);
+#else // !TPETRA_ENABLE_DEPRECATED_CODE
+        A1->template clone<N2> (A2, plClone);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       } catch (std::exception& e) {
         std::ostringstream err;
         err << "Process " << myRank << ": clone raised exception: "
@@ -1197,7 +1203,11 @@ namespace {
       plClone->set("fillComplete clone",false);
       plClone->set("Static profile clone",false);
       // default: plClone->set("Locally indexed clone",false);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
+#else // !TPETRA_ENABLE_DEPRECATED_CODE
+      RCP<Graph2> A2;  A1->template clone<N2>(A2,plClone);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       TEST_EQUALITY_CONST( A2->hasColMap(), false );
       TEST_EQUALITY_CONST( A2->isFillComplete(), false );
       TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
@@ -1219,7 +1229,11 @@ namespace {
       plClone->set("Static profile clone", false);
       RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
       plCloneFill->set("Optimize Storage",false);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
+#else // !TPETRA_ENABLE_DEPRECATED_CODE
+      RCP<Graph2> A2;  A1->template clone<N2>(A2,plClone);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
       out << "Finished clone; testing result" << endl;
       TEST_EQUALITY_CONST( A2->isFillComplete(), true );

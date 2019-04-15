@@ -70,7 +70,7 @@ namespace Tpetra {
       typedef typename InMapType::node_type in_node_type;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-      static OutMapType
+      static TPETRA_DEPRECATED OutMapType
       clone (const InMapType& mapIn, const Teuchos::RCP<out_node_type>& node2);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
       static void 
@@ -1545,6 +1545,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class OutMapType, class InMapType>
+    TPETRA_DEPRECATED
     OutMapType
     MapCloner<OutMapType, InMapType>::
     clone (const InMapType& mapIn,

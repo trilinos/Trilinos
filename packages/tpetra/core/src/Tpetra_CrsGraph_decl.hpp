@@ -82,9 +82,15 @@ namespace Tpetra {
     template<class OutputCrsGraphType, class InputCrsGraphType>
     class CrsGraphCopier {
     public:
-      static Teuchos::RCP<OutputCrsGraphType>
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      static TPETRA_DEPRECATED Teuchos::RCP<OutputCrsGraphType>
       clone (const InputCrsGraphType& graphIn,
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
+             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif
+      static void
+      clone (Teuchos::RCP<OutputCrsGraphType> &graphOut,
+             const InputCrsGraphType& graphIn,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };  // class CrsGraphCopier
 
@@ -622,8 +628,8 @@ namespace Tpetra {
     /// This method creates a new CrsGraph on a specified Kokkos Node
     /// type, with all of the entries of this CrsGraph object.
     ///
-    /// \param node2 [in] Kokkos Node instance for constructing the
-    ///   clone CrsGraph and its constituent objects.
+    /// \param rcpGraphOut [out] RCP to the constructed 
+    ///   clone CrsGraph
     ///
     /// \param params [in/out] Optional list of parameters. If not
     ///   null, any missing parameters will be filled in with their
@@ -644,7 +650,9 @@ namespace Tpetra {
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
+    TPETRA_DEPRECATED
     Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >
     clone (const Teuchos::RCP<Node2>& node2,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
@@ -653,6 +661,18 @@ namespace Tpetra {
       typedef CrsGraph<local_ordinal_type, global_ordinal_type, node_type> input_crs_graph_type;
       typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
+    }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    template<class Node2>
+    void
+    clone (Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> > &graphOut,
+           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
+    {
+      typedef CrsGraph<local_ordinal_type, global_ordinal_type, Node2> output_crs_graph_type;
+      typedef CrsGraph<local_ordinal_type, global_ordinal_type, node_type> input_crs_graph_type;
+      typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
+      copier_type::clone (graphOut, *this, params);
     }
 
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
@@ -2809,9 +2829,20 @@ namespace Tpetra {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, InputNodeType> input_crs_graph_type;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, OutputNodeType> output_crs_graph_type;
 
-      static Teuchos::RCP<output_crs_graph_type>
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      static TPETRA_DEPRECATED Teuchos::RCP<output_crs_graph_type>
       clone (const input_crs_graph_type& graphIn,
              const Teuchos::RCP<OutputNodeType> &nodeOut,
+             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+      {
+        Teuchos::RCP<output_crs_graph_type> graphOut; // Make an empty graph
+        CrsGraphCopier<output_crs_graph_type, input_crs_graph_type>::clone(graphOut, graphIn);
+        return graphOut;
+      }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+      static void
+      clone (Teuchos::RCP<output_crs_graph_type>& clonedGraph,
+             const input_crs_graph_type& graphIn,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
       {
         using Teuchos::arcp;
@@ -2871,7 +2902,6 @@ namespace Tpetra {
 
         // Invoke the output graph's constructor, using the input graph's
         // upper bounds on the number of entries in each local row.
-        RCP<output_crs_graph_type> clonedGraph; // returned by this function
         {
           ArrayRCP<const size_t> numEntriesPerRow;
           size_t numEntriesForAll = 0;
@@ -3192,7 +3222,6 @@ namespace Tpetra {
           os << "Process " << myRank << ": Done with CrsGraph::clone" << endl;
           cerr << os.str ();
         }
-        return clonedGraph;
       }
     };  // class CrsGraphCopier
 
