@@ -15,6 +15,7 @@ SET(SOURCES
   add_to_log.c
   getline.c
   adler.c
+  copy_string.c
   )
 
 TRIBITS_ADD_LIBRARY(

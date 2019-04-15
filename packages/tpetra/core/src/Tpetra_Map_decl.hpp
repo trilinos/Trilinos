@@ -249,24 +249,26 @@ namespace Tpetra {
     //@{
 
     //! The type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
+    using local_ordinal_type = LocalOrdinal;
+
     //! The type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! The type of the Kokkos Node.
-    typedef Node node_type;
+    using global_ordinal_type = GlobalOrdinal;
 
-    //! The Kokkos execution space.
-    typedef typename Node::execution_space execution_space;
-    //! The Kokkos memory space.
-    typedef typename Node::memory_space memory_space;
-
-    /// \brief The Kokkos device type over which to allocate Views and
-    ///   perform work.
+    /// \brief This class' Kokkos::Device specialization.
     ///
     /// A Kokkos::Device is an (execution_space, memory_space) pair.
     /// It defines where the Map's data live, and where Map might
     /// choose to execute parallel kernels.
-    typedef typename Node::device_type device_type;
+    using device_type = typename Node::device_type;
+
+    //! The Kokkos execution space.
+    using execution_space = typename device_type::execution_space;
+
+    //! The Kokkos memory space.
+    using memory_space = typename device_type::memory_space;
+
+    //! Legacy typedef that will go away at some point.
+    using node_type = Node;
 
     /// \brief Type of the "local" Map.
     ///
@@ -281,8 +283,10 @@ namespace Tpetra {
     /// communication, and can only access information that would
     /// never need MPI communication, no matter what kind of Map this
     /// is.
-    typedef ::Tpetra::Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
-      local_map_type;
+    using local_map_type =
+      ::Tpetra::Details::LocalMap<local_ordinal_type,
+                                  global_ordinal_type,
+                                  device_type>;
 
     //@}
     //! @name Constructors and destructor
@@ -337,17 +341,17 @@ namespace Tpetra {
      * \param comm [in] Communicator over which to distribute the
      *   indices.
      */
-    Map (global_size_t numGlobalElements,
-         GlobalOrdinal indexBase,
+    Map (const global_size_t numGlobalElements,
+         const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         LocalGlobal lg=GloballyDistributed);
+         const LocalGlobal lg=GloballyDistributed);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
-    Map (global_size_t numGlobalElements,
-         GlobalOrdinal indexBase,
+    Map (const global_size_t numGlobalElements,
+         const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         LocalGlobal lg,
+         const LocalGlobal lg,
          const Teuchos::RCP<Node> &node);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -386,16 +390,16 @@ namespace Tpetra {
      * \param comm [in] Communicator over which to distribute the
      *   elements.
      */
-    Map (global_size_t numGlobalElements,
-         size_t numLocalElements,
-         GlobalOrdinal indexBase,
+    Map (const global_size_t numGlobalElements,
+         const size_t numLocalElements,
+         const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED 
-    Map (global_size_t numGlobalElements,
-         size_t numLocalElements,
-         GlobalOrdinal indexBase,
+    Map (const global_size_t numGlobalElements,
+         const size_t numLocalElements,
+         const global_ordinal_type indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const Teuchos::RCP<Node> &node);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -562,8 +566,30 @@ namespace Tpetra {
     /// usual Map construction paths.
     Map ();
 
-    //! Destructor.
-    ~Map ();
+    //! Copy constructor (shallow copy).
+    Map (const Map<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move constructor (shallow move).
+    Map (Map<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    //! Copy assigment (shallow copy).
+    Map&
+    operator= (const Map<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move assigment (shallow move).
+    Map&
+    operator= (Map<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~Map ();
 
     //@}
     //! @name Attributes
@@ -1625,4 +1651,3 @@ bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
 
 
 #endif // TPETRA_MAP_DECL_HPP
-

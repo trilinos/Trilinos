@@ -42,7 +42,16 @@
 #include <string.h>
 #include <unistd.h>
 
-static int my_getline(char *s, int len);
+static int   my_getline(char *s, int len);
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
 
 #if defined(ADDC_)
 void exread_(char *prompt, char *input, FTNINT *iostat, long int PromptLength, long int InputLength)
@@ -91,7 +100,7 @@ C
     while (dlen-- > 0) /* Blank out the entire string. */
       *ds++ = ' ';
 
-    strncpy(internal_prompt, prompt, PromptLength);
+    copy_string(internal_prompt, prompt, PromptLength);
     internal_prompt[PromptLength - 1] = ' ';
     internal_prompt[PromptLength]     = '\0';
 

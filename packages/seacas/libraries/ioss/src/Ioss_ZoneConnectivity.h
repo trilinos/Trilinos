@@ -65,7 +65,6 @@ namespace Ioss {
           m_donorOffset(std::move(donor_offset)), m_ownerZone(owner_zone), m_donorZone(donor_zone)
     {
       assert(is_valid());
-      m_intraBlock      = m_ownerZone == m_donorZone;
       m_ownsSharedNodes = m_ownerZone < m_donorZone || m_donorZone == -1;
       m_isActive        = has_faces();
     }
@@ -73,22 +72,14 @@ namespace Ioss {
     ZoneConnectivity(const std::string name, int owner_zone, const std::string donor_name,
                      int donor_zone, const Ioss::IJK_t p_transform, const Ioss::IJK_t range_beg,
                      const Ioss::IJK_t range_end, const Ioss::IJK_t donor_beg,
-                     const Ioss::IJK_t donor_end, bool owns_nodes, bool intra_block = false)
+                     const Ioss::IJK_t donor_end, bool owns_nodes, bool from_decomp)
         : m_connectionName(std::move(name)), m_donorName(std::move(donor_name)),
           m_transform(std::move(p_transform)), m_ownerRangeBeg(std::move(range_beg)),
           m_ownerRangeEnd(std::move(range_end)), m_donorRangeBeg(std::move(donor_beg)),
           m_donorRangeEnd(std::move(donor_end)), m_ownerZone(owner_zone), m_donorZone(donor_zone),
-          m_ownsSharedNodes(owns_nodes), m_intraBlock(intra_block)
+          m_ownsSharedNodes(owns_nodes), m_fromDecomp(from_decomp)
     {
-      // NOTE: Originally thought that could deprecate this constructor and calculate the
-      // intra_block status via the `owner_zone` and `donor_zone`, but in parallel, we get the
-      // "non-adam" owner and donor zone, so even though it is intra_block (with same adam_zone), we
-      // can't determine that in the constructor.  We can get rid of the `owns_nodes` argument, but
-      // then the constructors are ambiguous since both end with a boolean and can't tell which is
-      // which.
-      //
-      // Currently, only the decomposition process creates intra_block ZGC, so that function is
-      // calling this constructor correctly...
+      // This constructor typically called from decomposition process.
       assert(is_valid());
       m_isActive = has_faces();
     }
@@ -117,7 +108,7 @@ namespace Ioss {
     std::vector<int>     get_range(int ordinal) const;
     friend std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
 
-    bool is_intra_block() const { return m_ownerZone == m_donorZone || m_intraBlock; }
+    bool is_from_decomp() const { return m_fromDecomp; }
     bool is_active() const { return m_isActive && has_faces(); }
 
     std::string m_connectionName; // Name of the connection; either generated or from file
@@ -152,7 +143,7 @@ namespace Ioss {
     bool m_ownsSharedNodes{false}; // Deprecate soon
 
     // True if this zc is created due to processor decompositions in a parallel run
-    bool m_intraBlock{false}; // Deprecate use soon...
+    bool m_fromDecomp{false};
 
     bool m_isActive{true}; // True if non-zero range. That is, it has at least one face
   };

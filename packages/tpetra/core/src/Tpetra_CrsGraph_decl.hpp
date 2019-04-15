@@ -594,7 +594,27 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    //! Destructor.
+    //! Copy constructor (default).
+    CrsGraph (const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Assignment operator (default).
+    CrsGraph& operator= (const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move constructor (default).
+    CrsGraph (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    //! Move assignment (default).
+    CrsGraph& operator= (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
     virtual ~CrsGraph () = default;
 
     /// \brief Create a cloned CrsGraph for a different Node type.

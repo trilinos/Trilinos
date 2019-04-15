@@ -32,6 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include "copy_string.h"
 #include "exodusII.h"       // for ex_close, etc
 #include "nem_spread.h"     // for NemSpread, second, etc
 #include "pe_common.h"      // for PEX_MAX
@@ -474,17 +475,21 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   strftime(qa_date, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time));
   strftime(qa_time, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time));
 
-  strncpy(qa_name, UTIL_NAME, MAX_STR_LENGTH);
-  strncpy(qa_vers, VER_STR, MAX_STR_LENGTH);
+  copy_string(qa_name, UTIL_NAME, MAX_STR_LENGTH);
+  copy_string(qa_vers, VER_STR, MAX_STR_LENGTH);
 
   if (qa_date[strlen(qa_date) - 1] == '\n') {
     qa_date[strlen(qa_date) - 1] = '\0';
   }
   if (globals.Num_QA_Recs > 0) {
-    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name);
-    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers);
-    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date);
-    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time,
+                MAX_STR_LENGTH + 1);
 
     /* Output QA records to screen */
     if (Debug_Flag >= 4) {
@@ -549,8 +554,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   cTitle[0] = '\0';
 
   if (proc_for == 0) {
-    strncpy(cTitle, GeomTitle, MAX_LINE_LENGTH);
-    cTitle[MAX_LINE_LENGTH] = '\0';
+    copy_string(cTitle, GeomTitle, MAX_LINE_LENGTH);
   }
   else {
     sprintf(cTitle, "Parallel Mesh File for Processor %d", proc_for);
@@ -742,8 +746,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       if (ilocal < globals.Proc_Num_Elem_Blk[iproc]) {
 
         /* Generate the ExodusII element name */
-        strncpy(EB_Types[i1], Elem_Blk_Types[i1], MAX_STR_LENGTH);
-        EB_Types[i1][MAX_STR_LENGTH] = '\0';
+        copy_string(EB_Types[i1], Elem_Blk_Types[i1], MAX_STR_LENGTH);
 
         EB_Cnts[i1]  = globals.Proc_Num_Elem_In_Blk[iproc][ilocal];
         EB_NperE[i1] = globals.Proc_Nodes_Per_Elem[iproc][ilocal];

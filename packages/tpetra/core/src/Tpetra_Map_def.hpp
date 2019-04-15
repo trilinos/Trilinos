@@ -89,10 +89,10 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   TPETRA_DEPRECATED
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements,
-       GlobalOrdinal indexBase,
+  Map (const global_size_t numGlobalElements,
+       const global_ordinal_type indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       LocalGlobal lOrG,
+       const LocalGlobal lOrG,
        const Teuchos::RCP<Node> &/* node */) :
     Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements, indexBase,
                                               comm, lOrG)
@@ -101,10 +101,10 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements,
-       GlobalOrdinal indexBase,
+  Map (const global_size_t numGlobalElements,
+       const global_ordinal_type indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       LocalGlobal lOrG) :
+       const LocalGlobal lOrG) :
     comm_ (comm),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -116,8 +116,8 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_MAX;
     using Teuchos::typeName;
-    typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
+    using GO = global_ordinal_type;
+    using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     Tpetra::Details::initializeKokkos ();
@@ -255,9 +255,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   TPETRA_DEPRECATED
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements,
-       size_t numLocalElements,
-       GlobalOrdinal indexBase,
+  Map (const global_size_t numGlobalElements,
+       const size_t numLocalElements,
+       const global_ordinal_type indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &/* node */) :
     Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements,
@@ -268,9 +268,9 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements,
-       size_t numLocalElements,
-       GlobalOrdinal indexBase,
+  Map (const global_size_t numGlobalElements,
+       const size_t numLocalElements,
+       const global_ordinal_type indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm) :
     comm_ (comm),
     uniform_ (false),
@@ -284,8 +284,8 @@ namespace Tpetra {
     using Teuchos::REDUCE_MAX;
     using Teuchos::REDUCE_SUM;
     using Teuchos::scan;
-    typedef GlobalOrdinal GO;
-    typedef global_size_t GST;
+    using GO = global_ordinal_type;
+    using GST = global_size_t;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     Tpetra::Details::initializeKokkos ();

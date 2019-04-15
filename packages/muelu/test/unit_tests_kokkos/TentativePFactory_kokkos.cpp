@@ -66,6 +66,10 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<TentativePFactory_kokkos> tentPFact = rcp(new TentativePFactory_kokkos);
@@ -160,6 +164,11 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
+
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -252,6 +261,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -349,6 +363,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;

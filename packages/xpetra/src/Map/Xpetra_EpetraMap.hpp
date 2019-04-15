@@ -273,9 +273,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-        "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-      TEUCHOS_UNREACHABLE_RETURN(local_map_type());
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
     }
 #else
 #ifdef __GNUC__
@@ -741,89 +739,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      if (isInitializedLocalMap_)
-        return localMap_;
-
-      typedef GlobalOrdinal GO;
-      typedef LocalOrdinal  LO;
-
-      typedef typename Node::device_type DeviceType;
-
-      typedef Tpetra::Details::FixedHashTable<GO, LO, DeviceType>   glMapType;
-      typedef ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType> lgMapType;
-
-      GO   indexBase  = getIndexBase();
-      GO   myMinGID   = getMinGlobalIndex();
-      GO   myMaxGID   = getMaxGlobalIndex();
-      bool contiguous = isContiguous();
-
-      size_t numLocalElements = map_->NumMyElements();
-
-      GO firstContiguousGID, lastContiguousGID;
-      glMapType glMap;
-      lgMapType lgMap;
-      if (numLocalElements) {
-        if (contiguous) {
-          // Don't need to initialize glMap and lgMap
-          firstContiguousGID = myMinGID;
-          lastContiguousGID  = myMaxGID+1;
-
-        } else {
-
-          auto GIDs = getNodeElementList();
-
-          lgMap = lgMapType("lgMap", numLocalElements);
-
-          firstContiguousGID = GIDs[0];
-          lastContiguousGID  = firstContiguousGID+1;
-
-          size_t i = 1;
-          lgMap(0) = firstContiguousGID;
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            if (lastContiguousGID != curGID)
-              break;
-
-            // Add the entry to the LID->GID table only after we know that
-            // the current GID is in the initial contiguous sequence, so
-            // that we don't repeat adding it in the first iteration of
-            // the loop below over the remaining noncontiguous GIDs.
-            lgMap(curLid) = curGID;
-            ++lastContiguousGID;
-          }
-          --lastContiguousGID;
-
-          ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType>
-            nonContigGIDs ("nonContigGIDs", numLocalElements-i);
-          // FIXME_KOKKOS: relies on UVM
-          for (size_t idx = 0; idx < numLocalElements - i; idx++)
-            nonContigGIDs(idx) = GIDs[i+idx];
-
-          glMap = glMapType (nonContigGIDs,
-                             firstContiguousGID,
-                             lastContiguousGID,
-                             static_cast<LO> (i));
-
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            lgMap(curLid) = curGID;
-          }
-        }
-
-      } else {
-        // No elements
-        firstContiguousGID = indexBase+1;
-        lastContiguousGID  = indexBase;
-      }
-      localMap_ = local_map_type(glMap, lgMap, indexBase, myMinGID, myMaxGID, firstContiguousGID, lastContiguousGID, numLocalElements, contiguous);
-
-      isInitializedLocalMap_ = true;
-
-      return localMap_;
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
     }
 
   private:
@@ -1289,89 +1205,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      if (isInitializedLocalMap_)
-        return localMap_;
-
-      typedef GlobalOrdinal GO;
-      typedef LocalOrdinal  LO;
-
-      typedef typename Node::device_type DeviceType;
-
-      typedef Tpetra::Details::FixedHashTable<GO, LO, DeviceType>   glMapType;
-      typedef ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType> lgMapType;
-
-      GO   indexBase  = getIndexBase();
-      GO   myMinGID   = getMinGlobalIndex();
-      GO   myMaxGID   = getMaxGlobalIndex();
-      bool contiguous = isContiguous();
-
-      size_t numLocalElements = map_->NumMyElements();
-
-      GO firstContiguousGID, lastContiguousGID;
-      glMapType glMap;
-      lgMapType lgMap;
-      if (numLocalElements) {
-        if (contiguous) {
-          // Don't need to initialize glMap and lgMap
-          firstContiguousGID = myMinGID;
-          lastContiguousGID  = myMaxGID+1;
-
-        } else {
-
-          auto GIDs = getNodeElementList();
-
-          lgMap = lgMapType("lgMap", numLocalElements);
-
-          firstContiguousGID = GIDs[0];
-          lastContiguousGID  = firstContiguousGID+1;
-
-          size_t i = 1;
-          lgMap(0) = firstContiguousGID;
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            if (lastContiguousGID != curGID)
-              break;
-
-            // Add the entry to the LID->GID table only after we know that
-            // the current GID is in the initial contiguous sequence, so
-            // that we don't repeat adding it in the first iteration of
-            // the loop below over the remaining noncontiguous GIDs.
-            lgMap(curLid) = curGID;
-            ++lastContiguousGID;
-          }
-          --lastContiguousGID;
-
-          ::Kokkos::View<GO*, ::Kokkos::LayoutLeft, DeviceType>
-            nonContigGIDs ("nonContigGIDs", numLocalElements-i);
-          // FIXME_KOKKOS: relies on UVM
-          for (size_t idx = 0; idx < numLocalElements - i; idx++)
-            nonContigGIDs(idx) = GIDs[i+idx];
-
-          glMap = glMapType (nonContigGIDs,
-                             firstContiguousGID,
-                             lastContiguousGID,
-                             static_cast<LO> (i));
-
-          for ( ; i < numLocalElements; ++i) {
-            const GO curGID = GIDs[i];
-            const LO curLid = Teuchos::as<LO> (i);
-
-            lgMap(curLid) = curGID;
-          }
-        }
-
-      } else {
-        // No elements
-        firstContiguousGID = indexBase+1;
-        lastContiguousGID  = indexBase;
-      }
-      localMap_ = local_map_type(glMap, lgMap, indexBase, myMinGID, myMaxGID, firstContiguousGID, lastContiguousGID, numLocalElements, contiguous);
-
-      isInitializedLocalMap_ = true;
-
-      return localMap_;
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
     }
 
   private:

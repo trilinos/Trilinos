@@ -962,12 +962,9 @@ namespace SEAMS {
       }
     }
 
-    auto tmpstr = new char[len + 1];
-    std::strncpy(tmpstr, start, len);
-    tmpstr[len] = '\0';
-    char *tmp;
-    new_string(tmpstr, &tmp);
-    delete[] tmpstr;
+    std::string tmpstr(start, 0, len);
+    char *      tmp;
+    new_string(tmpstr.c_str(), &tmp);
     return tmp;
   }
 

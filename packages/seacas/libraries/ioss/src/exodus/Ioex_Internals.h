@@ -37,7 +37,6 @@
 
 #include "Ioss_ParallelUtils.h" // for ParallelUtils
 #include <cstdint>              // for int64_t
-#include <cstring>              // for strcpy, strncpy
 #include <exodusII.h>           // for MAX_LINE_LENGTH, etc
 #include <string>               // for string
 #include <vector>               // for vector
@@ -134,14 +133,14 @@ namespace Ioex {
 
   struct EdgeBlock
   {
-    EdgeBlock() { std::strcpy(elType, ""); }
+    EdgeBlock() { Ioss::Utils::copy_string(elType, "", MAX_STR_LENGTH + 1); }
 
     EdgeBlock(const EdgeBlock &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
           nodesPerEntity(other.nodesPerEntity), attributeCount(other.attributeCount),
           procOffset(other.procOffset)
     {
-      std::strcpy(elType, other.elType);
+      Ioss::Utils::copy_string(elType, other.elType, MAX_STR_LENGTH + 1);
     }
 
     explicit EdgeBlock(const Ioss::EdgeBlock &other);
@@ -170,7 +169,7 @@ namespace Ioex {
         : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0),
           procOffset(0)
     {
-      std::strcpy(elType, "");
+      Ioss::Utils::copy_string(elType, "", MAX_STR_LENGTH + 1);
     }
 
     FaceBlock(const FaceBlock &other)
@@ -178,7 +177,7 @@ namespace Ioex {
           nodesPerEntity(other.nodesPerEntity), edgesPerEntity(other.edgesPerEntity),
           attributeCount(other.attributeCount), procOffset(other.procOffset)
     {
-      std::strcpy(elType, other.elType);
+      Ioss::Utils::copy_string(elType, other.elType, MAX_STR_LENGTH + 1);
     }
 
     explicit FaceBlock(const Ioss::FaceBlock &other);
@@ -208,7 +207,7 @@ namespace Ioex {
         : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
           attributeCount(0), offset_(-1), procOffset(0)
     {
-      std::strcpy(elType, "");
+      Ioss::Utils::copy_string(elType, "", MAX_STR_LENGTH + 1);
     }
 
     ElemBlock(const ElemBlock &other)
@@ -217,7 +216,7 @@ namespace Ioex {
           facesPerEntity(other.facesPerEntity), attributeCount(other.attributeCount),
           offset_(other.offset_), procOffset(other.procOffset)
     {
-      std::strcpy(elType, other.elType);
+      Ioss::Utils::copy_string(elType, other.elType, MAX_STR_LENGTH + 1);
     }
 
     explicit ElemBlock(const Ioss::ElementBlock &other);
@@ -385,8 +384,7 @@ namespace Ioex {
 
     Mesh(int dim, char *the_title, bool file_pp) : dimensionality(dim), file_per_processor(file_pp)
     {
-      std::strncpy(title, the_title, MAX_LINE_LENGTH + 1);
-      title[MAX_LINE_LENGTH] = '\0';
+      Ioss::Utils::copy_string(title, the_title, MAX_LINE_LENGTH + 1);
     }
 
     void populate(Ioss::Region *region);
