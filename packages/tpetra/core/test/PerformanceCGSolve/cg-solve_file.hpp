@@ -74,17 +74,6 @@ struct result_struct {
     final_residual(res),niters(niter) {};
 };
 
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration();
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration() {
-  Teuchos::XMLTestNode<Node> config = Teuchos::PerfTest_MachineConfig();
-  return config;
-}
-
-
 template<class CrsMatrix>
 Teuchos::XMLTestNode test_entry(
     const std::string& filename_matrix,
@@ -387,8 +376,8 @@ run (int argc, char *argv[])
 
   // Print results.
   if (myRank == 0) {
-    Teuchos::XMLTestNode<Node> machine_config = machine_configuration<Node> ();
-    Teuchos::XMLTestNode<Node> test =
+    Teuchos::XMLTestNode machine_config = Teuchos::PerfTest_MachineConfig();
+    Teuchos::XMLTestNode test =
       test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
                   numthreads, A, results, niters, tolerance, tol_small,
                   tol_large);
