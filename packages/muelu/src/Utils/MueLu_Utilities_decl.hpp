@@ -952,7 +952,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   TpetraFECrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra) {
-    typedef typename FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_matrix_type tpetra_crs_matrix_type;
+    typedef typename Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_matrix_type tpetra_crs_matrix_type;
     typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XTCrsMatrix;
     typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
     typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
