@@ -180,6 +180,7 @@ namespace Xpetra {
     {
       return Build(lib, numGlobalElements, elementList, indexBase, stridingInfo,
                    comm, stridedBlockId, offset);
+    }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
     static RCP<StridedMap>
     Build (UnderlyingLib lib,
