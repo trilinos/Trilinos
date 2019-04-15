@@ -109,6 +109,8 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
   TPL_Traits<unsigned, const offset_t>::ASSIGN_ARRAY(&out_offsets, offsets);
   TPL_Traits<gno_t, const gno_t>::ASSIGN_ARRAY(&global_ids, vtxIDs);
   
+  
+  
   //int me = problemComm->getRank();
 
   /*std::cout<<me<<": Local vertices:\n";
@@ -137,6 +139,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
       nGhosts++;
   }
   
+  //build nVtx + nGhosts size array of grounding flags
+  int* grounding = new int[nVtx+nGhosts];
+  for(int i = 0; i < nVtx+nGhosts; i++){
+    if(i < nVtx) grounding[i] = grounding_flags[i];
+    else grounding[i] = 0;
+  }
+
   //std::cout<<me<<": number of ghosts = "<<nGhosts<<"\n";
   
   //use the count of ghosts + owned to make mapWithCopies, need to create a Teuchos array first.
@@ -172,12 +181,13 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
 
   graph* g = new graph({nVtx, nEdge, &out_edges_lid[0],out_offsets, 0,0.0});
 
-  iceProp::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding_flags, nVtx, nGhosts);
+  iceProp::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding, nVtx, nGhosts);
   
   int* removed = prop.propagate();
   
   delete local_boundary_counts;
   delete g;
+  delete grounding;
 
   return removed;
 }
