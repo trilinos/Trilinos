@@ -73,12 +73,6 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source)
-    : base_type (source)
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Vector (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
           const Teuchos::DataAccess copyOrView)
     : base_type (source, copyOrView)
@@ -119,11 +113,6 @@ namespace Tpetra {
   Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           const size_t j)
     : base_type (X, j)
-  {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  ~Vector ()
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
