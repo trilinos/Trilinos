@@ -164,6 +164,8 @@ namespace Ioss {
 #endif
     }
 
+    static char *copy_string(char *dest, char const *source, size_t elements);
+
     template <typename T> static void clear(std::vector<T> &vec)
     {
       vec.clear();

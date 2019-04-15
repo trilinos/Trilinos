@@ -276,7 +276,7 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
   for (i = 0; i < num_entity; i++) {
     if (names != NULL && *names != NULL && *names[i] != '\0') {
       found_name = 1;
-      strncpy(&int_names[idx], names[i], name_length - 1);
+      ex_copy_string(&int_names[idx], names[i], name_length - 1);
       int_names[idx + name_length - 1] = '\0';
       length                           = strlen(names[i]) + 1;
       if (length > name_length) {
@@ -2016,4 +2016,15 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_para
   return (EX_FATAL);
 }
 return EX_NOERR;
+}
+
+/* Safer than strncpy -- guarantees null termination */
+char *ex_copy_string(char *dest, char const *source, size_t elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
 }

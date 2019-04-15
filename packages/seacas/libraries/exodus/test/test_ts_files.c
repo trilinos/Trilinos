@@ -33,6 +33,7 @@
  */
 
 #include <exodusII.h>
+#include <exodusII_int.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -323,13 +324,13 @@ void *init_file(void *varg)
   block_names[5] = "block_6";
   block_names[6] = "block_7";
 
-  strncpy(blocks[0].topology, "quad", 32);
-  strncpy(blocks[1].topology, "quad", 32);
-  strncpy(blocks[2].topology, "hex", 32);
-  strncpy(blocks[3].topology, "tetra", 32);
-  strncpy(blocks[4].topology, "wedge", 32);
-  strncpy(blocks[5].topology, "tetra", 32);
-  strncpy(blocks[6].topology, "tri", 32);
+  ex_copy_string(blocks[0].topology, "quad", 32);
+  ex_copy_string(blocks[1].topology, "quad", 32);
+  ex_copy_string(blocks[2].topology, "hex", 32);
+  ex_copy_string(blocks[3].topology, "tetra", 32);
+  ex_copy_string(blocks[4].topology, "wedge", 32);
+  ex_copy_string(blocks[5].topology, "tetra", 32);
+  ex_copy_string(blocks[6].topology, "tri", 32);
 
   blocks[0].num_entry = 1;
   blocks[1].num_entry = 1;

@@ -100,10 +100,9 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domain() const
 {
   if (domainSpace_.is_null()) {
     domainSpace_ = tpetraVectorSpace<Scalar>(
-      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
         1,
-        tpetraVector_.getConstObj()->getMap()->getComm(),
-        tpetraVector_.getConstObj()->getMap()->getNode()
+        tpetraVector_.getConstObj()->getMap()->getComm()
         )
       );
   }

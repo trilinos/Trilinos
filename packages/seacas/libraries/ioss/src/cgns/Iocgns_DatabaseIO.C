@@ -486,7 +486,7 @@ namespace Iocgns {
     if (m_cgnsFilePtr < 0) {
       if ((is_input() && properties.exists("MEMORY_READ")) ||
           (!is_input() && properties.exists("MEMORY_WRITE"))) {
-        strcpy(hdf5_access, "PARALLEL");
+        Ioss::Utils::copy_string(hdf5_access, "PARALLEL", 64);
       }
 
       CGCHECKM(cg_set_file_type(CG_FILE_HDF5));
@@ -518,7 +518,7 @@ namespace Iocgns {
       check_valid_file_open(ierr);
       if ((is_input() && properties.exists("MEMORY_READ")) ||
           (!is_input() && properties.exists("MEMORY_WRITE"))) {
-        strcpy(hdf5_access, "NATIVE");
+        Ioss::Utils::copy_string(hdf5_access, "NATIVE", 64);
       }
 
       if (properties.exists("INTEGER_SIZE_API")) {
@@ -687,7 +687,7 @@ namespace Iocgns {
 
       zone_data[id++] = proc;
       pack(id, zone_data, &size[3], 3); // Packing 3,4,5
-      strncpy(&zone_names[in], zone_name.c_str(), CGNS_MAX_NAME_LENGTH);
+      Ioss::Utils::copy_string(&zone_names[in], zone_name.c_str(), CGNS_MAX_NAME_LENGTH);
       in += CGNS_MAX_NAME_LENGTH + 1;
       zone_id_map[zone_name] = zone;
 
@@ -823,7 +823,7 @@ namespace Iocgns {
           int         idx   = off + b * proc_count;
           const auto &block = resolved_blocks[idx];
           if (off == 0) {
-            strncpy(&all_names[in], block.name.c_str(), CGNS_MAX_NAME_LENGTH);
+            Ioss::Utils::copy_string(&all_names[in], block.name.c_str(), CGNS_MAX_NAME_LENGTH);
             in += CGNS_MAX_NAME_LENGTH + 1;
           }
           all_data[id++] = block.proc;
@@ -902,7 +902,7 @@ namespace Iocgns {
       for (size_t ibc = 0; ibc < num_bc; ibc++) {
         std::string name = block->m_boundaryConditions[ibc].m_famName + "/" +
                            block->m_boundaryConditions[ibc].m_bcName;
-        strncpy(&bc_names[in_bc], name.c_str(), CGNS_MAX_NAME_LENGTH);
+        Ioss::Utils::copy_string(&bc_names[in_bc], name.c_str(), CGNS_MAX_NAME_LENGTH);
         in_bc += CGNS_MAX_NAME_LENGTH + 1;
       }
       std::vector<char> all_bc_names;
@@ -922,7 +922,7 @@ namespace Iocgns {
         bc_names.resize(tot_names * (CGNS_MAX_NAME_LENGTH + 1));
         in_bc = 0;
         for (const auto &name : bc) {
-          strncpy(&bc_names[in_bc], name.c_str(), CGNS_MAX_NAME_LENGTH);
+          Ioss::Utils::copy_string(&bc_names[in_bc], name.c_str(), CGNS_MAX_NAME_LENGTH);
           in_bc += CGNS_MAX_NAME_LENGTH + 1;
         }
       }

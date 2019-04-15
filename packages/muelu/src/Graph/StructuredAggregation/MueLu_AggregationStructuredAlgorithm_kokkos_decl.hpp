@@ -108,10 +108,10 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
-                         Aggregates_kokkos& aggregates,
-                         std::vector<unsigned>& aggStat,
-                         LO& numNonAggregatedNodes) const {};
+    void BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph_kokkos& /* graph */,
+                         Aggregates_kokkos& /* aggregates */,
+                         std::vector<unsigned>& /* aggStat */,
+                         LO& /* numNonAggregatedNodes */) const {};
 
     void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,

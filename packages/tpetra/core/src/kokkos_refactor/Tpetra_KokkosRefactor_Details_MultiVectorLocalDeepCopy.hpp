@@ -45,233 +45,132 @@
 #define TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_LOCAL_DEEP_COPY_HPP
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "Tpetra_Details_copyConvert.hpp"
 
 namespace Tpetra {
 namespace Details {
 
-  // Functor for deep-copying between two 2-D Kokkos Views.
-  // This implements Tpetra::MultiVector deep copy, as in
-  //   - Tpetra::deep_copy
-  //   - Tpetra::MultiVector::assign
-  //   - Tpetra::MultiVector::createCopy
-  //   - The two-argument MultiVector copy constructor with
-  //     Teuchos::Copy as the second argument
-  //
-  // DstViewType and SrcViewType must be 2-D Kokkos Views.
-  // DstWhichVecsType and SrcWhichVecsType must be 1-D Kokkos Views
-  // whose value type is an integer.  They correspond to the "which
-  // vectors?" arrays for the destination and source Views,
-  // respectively.
-  //
-  // If DstConstStride is true, dstWhichVecs is ignored.  If
-  // SrcConstStride is true, srcWhichVecs is ignored.  These bool
-  // template parameters take advantage of compilers' ability to
-  // disable code inside an "if (false) { ... }" scope.
-  template<class DstViewType,
-           class SrcViewType,
-           class DstWhichVecsType,
-           class SrcWhichVecsType,
-           const bool DstConstStride,
-           const bool SrcConstStride>
-  struct LocalDeepCopyFunctor {
-    typedef typename DstViewType::execution_space execution_space;
-    typedef typename DstViewType::size_type index_type;
+namespace { // (anonymous)
 
-    DstViewType dst_;
-    SrcViewType src_;
-    DstWhichVecsType dstWhichVecs_;
-    SrcWhichVecsType srcWhichVecs_;
-    const index_type numVecs_;
+template<class DstViewType, class SrcViewType>
+void
+copyConvertResolvingPossibleAliasing (const DstViewType& dst,
+                                      const SrcViewType& src)
+{
+  // NOTE: It's important to do the addition _inside_ the
+  // reinterpret-cast.  If you reinterpret_cast the separate results,
+  // you may get the wrong answer (e.g., because ptrdiff_t is signed,
+  // and pointers may have arbitrary 64-bit virtual addresses).  I'm
+  // speaking from experience here.
+  const ptrdiff_t dst_beg = reinterpret_cast<ptrdiff_t> (dst.data ());
+  const ptrdiff_t dst_end =
+    reinterpret_cast<ptrdiff_t> (dst.data () + dst.span ());
+  const ptrdiff_t src_beg = reinterpret_cast<ptrdiff_t> (src.data ());
+  const ptrdiff_t src_end =
+    reinterpret_cast<ptrdiff_t> (src.data () + src.span ());
 
-    // You may always call the 4-argument constructor.
-    // dstWhichVecs is ignored if DstConstStride is true.
-    // srcWhichVecs is ignored if SrcConstStride is true.
-    LocalDeepCopyFunctor (const DstViewType& dst,
-                          const SrcViewType& src,
-                          const DstWhichVecsType& dstWhichVecs,
-                          const SrcWhichVecsType& srcWhichVecs) :
-      dst_ (dst),
-      src_ (src),
-      dstWhichVecs_ (dstWhichVecs),
-      srcWhichVecs_ (srcWhichVecs),
-      numVecs_ (DstConstStride ? dst.extent (1) : dstWhichVecs.extent (0))
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! DstConstStride && ! SrcConstStride &&
-        dstWhichVecs.extent (0) != srcWhichVecs.extent (0),
-        std::invalid_argument, "LocalDeepCopyFunctor (4-arg constructor): "
-        "Neither src nor dst have constant stride, but "
-        "dstWhichVecs.extent(0) = " << dstWhichVecs.extent (0)
-        << " != srcWhichVecs.extent(0) = " << srcWhichVecs.extent (0)
-        << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        DstConstStride && ! SrcConstStride &&
-        srcWhichVecs.extent (0) != dst.extent (1),
-        std::invalid_argument, "LocalDeepCopyFunctor (4-arg constructor): "
-        "src does not have constant stride, but srcWhichVecs.extent(0) = "
-        << srcWhichVecs.extent (0) << " != dst.extent(1) = "
-        << dst.extent (1) << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! DstConstStride && SrcConstStride &&
-        dstWhichVecs.extent (0) != src.extent (1),
-        std::invalid_argument, "LocalDeepCopyFunctor (4-arg constructor): "
-        "dst does not have constant stride, but dstWhichVecs.extent(0) = "
-        << dstWhichVecs.extent (0) << " != src.extent(1) = "
-        << src.extent (1) << ".");
-    }
-
-    // You may only call the 2-argument constructor if DstConstStride
-    // and SrcConstStride are both true.
-    LocalDeepCopyFunctor (const DstViewType& dst, const SrcViewType& src) :
-      dst_ (dst),
-      src_ (src),
-      numVecs_ (dst.extent (1))
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! DstConstStride || ! SrcConstStride, std::logic_error,
-        "Tpetra::LocalDeepCopyFunctor: You may not use the constant-stride "
-        "constructor if either of the Boolean template parameters is false.");
-    }
-
-    void KOKKOS_INLINE_FUNCTION operator () (const index_type i) const {
-      if (DstConstStride) {
-        if (SrcConstStride) {
-          for (index_type j = 0; j < numVecs_; ++j) {
-            dst_(i,j) = src_(i,j);
-          }
-        } else {
-          for (index_type j = 0; j < numVecs_; ++j) {
-            dst_(i,j) = src_(i,srcWhichVecs_(j));
-          }
-        }
-      } else {
-        if (SrcConstStride) {
-          for (index_type j = 0; j < numVecs_; ++j) {
-            dst_(i,dstWhichVecs_(j)) = src_(i,j);
-          }
-        } else {
-          for (index_type j = 0; j < numVecs_; ++j) {
-            dst_(i,dstWhichVecs_(j)) = src_(i,srcWhichVecs_(j));
-          }
-        }
-      }
-    }
-  };
-
-  template<class DstViewType,
-           class SrcViewType = DstViewType,
-           class DstWhichVecsType = Kokkos::View<const typename DstViewType::size_type*, typename DstViewType::execution_space>,
-           class SrcWhichVecsType = Kokkos::View<const typename SrcViewType::size_type*, typename SrcViewType::execution_space> >
-  struct LocalDeepCopy {
-    typedef typename DstViewType::size_type index_type;
-
-    static void
-    run (const DstViewType& dst, const SrcViewType& src,
-         const bool dstConstStride, const bool srcConstStride)
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! dstConstStride || ! srcConstStride, std::invalid_argument,
-        "LocalDeepCopy::run: You may only call the 4-argument version of this "
-        "function if dstConstStride and srcConstStride are both true.");
-
-      // FIXME (mfh 22 Jul 2014, 10 Dec 2014) Currently, it doesn't
-      // work to do a 2-D copy, even if both MultiVectors have
-      // constant stride.  This is because Kokkos can't currently tell
-      // the difference between padding (which permits a single
-      // deep_copy for the whole 2-D View) and stride > numRows (which
-      // does NOT permit a single deep_copy for the whole 2-D View).
-      // Carter is working on this, but for now, the temporary fix is
-      // to copy one column at a time.
-      //
-      // FIXME (mfh 10 Dec 2014) Call Kokkos::deep_copy if appropriate
-      // for dst and src.  See note above.
-      typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
-        DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
-      functor_type f (dst, src);
-      typedef typename DstViewType::execution_space execution_space;
-      typedef decltype (dst.extent (0)) size_type;
-      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
-
-      Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride)",range_type (0, dst.extent (0)), f);
-    }
-
-    static void
-    run (const DstViewType& dst, const SrcViewType& src,
-         const bool dstConstStride, const bool srcConstStride,
-         const DstWhichVecsType& dstWhichVecs,
-         const SrcWhichVecsType& srcWhichVecs)
-    {
-      // FIXME (mfh 22 Jul 2014, 10 Dec 2014) Currently, it doesn't
-      // work to do a 2-D copy, even if both MultiVectors have
-      // constant stride.  This is because Kokkos can't currently tell
-      // the difference between padding (which permits a single
-      // deep_copy for the whole 2-D View) and stride > numRows (which
-      // does NOT permit a single deep_copy for the whole 2-D View).
-      // Carter is working on this, but for now, the temporary fix is
-      // to copy one column at a time.
-
-      typedef typename DstViewType::execution_space execution_space;
-      typedef decltype (dst.extent (0)) size_type;
-      typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
-
-      if (dstConstStride) {
-        if (srcConstStride) {
-          // FIXME (mfh 10 Dec 2014) Do a Kokkos::deep_copy if
-          // appropriate for dst and src.  See note above.
-          typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
-            DstWhichVecsType, SrcWhichVecsType, true, true> functor_type;
-          functor_type f (dst, src);
-          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,0)",range_type (0, dst.extent (0)), f);
-        }
-        else { // ! srcConstStride
-          typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
-            DstWhichVecsType, SrcWhichVecsType, true, false> functor_type;
-          functor_type f (dst, src, srcWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,1)",range_type (0, dst.extent (0)), f);
-        }
-      }
-      else { // ! dstConstStride
-        if (srcConstStride) {
-          typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
-            DstWhichVecsType, SrcWhichVecsType, false, true> functor_type;
-          functor_type f (dst, src, dstWhichVecs, dstWhichVecs);
-          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,2)",range_type (0, dst.extent (0)), f);
-        }
-        else { // ! srcConstStride
-          typedef LocalDeepCopyFunctor<DstViewType, SrcViewType,
-            DstWhichVecsType, SrcWhichVecsType, false, false> functor_type;
-          functor_type f (dst, src, dstWhichVecs, srcWhichVecs);
-          Kokkos::parallel_for ("Tpetra::Details::LocalDeepCopy(x,y,stride,whichVecs,3)",range_type (0, dst.extent (0)), f);
-        }
-      }
-    }
-  };
-
-
-  template<class DstViewType,
-           class SrcViewType,
-           class DstWhichVecsType,
-           class SrcWhichVecsType>
-  void
-  localDeepCopy (const DstViewType& dst, const SrcViewType& src,
-                 const bool dstConstStride, const bool srcConstStride,
-                 const DstWhichVecsType& dstWhichVecs,
-                 const SrcWhichVecsType& srcWhichVecs)
-  {
-    typedef LocalDeepCopy<DstViewType, SrcViewType,
-      DstWhichVecsType, SrcWhichVecsType> impl_type;
-    impl_type::run (dst, src, dstConstStride, srcConstStride,
-                    dstWhichVecs, srcWhichVecs);
+  if (src_beg == dst_beg && src_end == dst_end) {
+    // Do nothing; there's no need to copy
   }
-
-  template<class DstViewType, class SrcViewType>
-  void
-  localDeepCopyConstStride (const DstViewType& dst, const SrcViewType& src)
-  {
-    typedef LocalDeepCopy<DstViewType, SrcViewType> impl_type;
-    impl_type::run (dst, src, true, true);
+  else if (dst_end <= src_beg || src_end <= dst_beg) { // no aliasing
+    ::Tpetra::Details::copyConvert (dst, src);
   }
+  else {
+    // dst and src alias each other, so we can't call
+    // Kokkos::deep_copy(dst,src) directly (Kokkos detects this and
+    // throws, at least in debug mode).  Instead, we make temporary
+    // host storage (create_mirror always makes a new allocation,
+    // unlike create_mirror_view).  Use host because it's cheaper to
+    // allocate.  Hopefully users aren't doing aliased copies in a
+    // tight loop.
+    auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+    Kokkos::deep_copy (src_copy, src);
+    ::Tpetra::Details::copyConvert (dst, src_copy);
+  }
+}
+
+} // namespace (anonymous)
+
+/// \brief Implementation of Tpetra::MultiVector deep copy of local data.
+///
+/// This implements <tt>Tpetra::MultiVector</tt> deep copy, as in
+/// <ul>
+/// <li> <tt>Tpetra::deep_copy</tt> </li>
+/// <li> <tt>Tpetra::MultiVector::assign</tt> </li>
+/// <li> <tt>Tpetra::MultiVector::createCopy</tt> </li>
+/// <li> <tt>The two-argument MultiVector copy constructor with
+///          <tt>Teuchos::Copy</tt> as the second argument </li>
+/// </ul>
+///
+/// \param dst [in/out] Rank-2 <tt>Kokkos::View</tt>; destination of
+///   the copy
+///
+/// \param src [in] Rank-2 <tt>Kokkos::View</tt>; source of the copy
+///
+/// \param dstConstStride [in] Whether <tt>dst</tt> is "constant
+///   stride."  If so, then the <tt>j</tt>-th column of <tt>dst</tt>
+///   has index <tt>j</tt>.  If not, then it has index
+///   <tt>dstWhichVecs[j]</tt>.
+///
+/// \param srcConstStride [in] Whether <tt>src</tt> is "constant
+///   stride."  If so, then the <tt>j</tt>-th column of <tt>src</tt>
+///   has index <tt>j</tt>.  If not, then it has index
+///   <tt>srcWhichVecs[j]</tt>.
+///
+/// \param dstWhichVecs [in] Host-readable Rank-1 array of some kind,
+///   corresponding to <tt>dst.whichVectors_</tt>.  Need only be
+///   readable (from host) if <tt>dstConstStride</tt> is true.
+///
+/// \param srcWhichVecs [in] Host-readable Rank-1 array of some kind,
+///   corresponding to <tt>src.whichVectors_</tt>.  Need only be
+///   readable (from host) if <tt>srcConstStride</tt> is true.
+template<class DstViewType,
+         class SrcViewType,
+         class DstWhichVecsType,
+         class SrcWhichVecsType>
+void
+localDeepCopy (const DstViewType& dst,
+               const SrcViewType& src,
+               const bool dstConstStride,
+               const bool srcConstStride,
+               const DstWhichVecsType& dstWhichVecs,
+               const SrcWhichVecsType& srcWhichVecs)
+{
+  using Kokkos::ALL;
+  using Kokkos::subview;
+  using size_type = typename DstViewType::size_type;
+
+  if (dstConstStride && srcConstStride) {
+    copyConvertResolvingPossibleAliasing (dst, src);
+  }
+  else {
+    const size_type numCols = dstConstStride ?
+      static_cast<size_type> (srcWhichVecs.size ()) :
+      static_cast<size_type> (dstWhichVecs.size ());
+    for (size_type j = 0; j < numCols; ++j) {
+      const size_type dst_col = dstConstStride ? j :
+        static_cast<size_type> (dstWhichVecs[j]);
+      const auto dst_j = subview (dst, ALL (), dst_col);
+      const size_type src_col = srcConstStride ? j :
+        static_cast<size_type> (srcWhichVecs[j]);
+      const auto src_j = subview (src, ALL (), src_col);
+
+      copyConvertResolvingPossibleAliasing (dst_j, src_j);
+    }
+  }
+}
+
+/// \brief Implementation of Tpetra::MultiVector deep copy of local
+///   data, for when both the source and destination MultiVector
+///   objects have constant stride (isConstantStride() is true).
+template<class DstViewType,
+         class SrcViewType>
+void
+localDeepCopyConstStride (const DstViewType& dst,
+                          const SrcViewType& src)
+{
+  return copyConvertResolvingPossibleAliasing (dst, src);
+}
 
 } // Details namespace
 } // Tpetra namespace

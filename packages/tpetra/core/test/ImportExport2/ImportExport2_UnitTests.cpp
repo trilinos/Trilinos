@@ -2026,7 +2026,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   RCP<const MapType> MapSource, MapTarget;
 
   const bool debug = ::Tpetra::Details::Behavior::debug ();
-  const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+  verbose = ::Tpetra::Details::Behavior::verbose ();
   std::unique_ptr<std::string> prefix;
   if (verbose) {
     std::ostringstream os;

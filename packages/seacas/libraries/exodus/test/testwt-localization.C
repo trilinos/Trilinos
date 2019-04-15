@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "exodusII.h"
+#include "exodusII_int.h"
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
@@ -190,9 +191,9 @@ int main(int argc, char **argv)
   blocks[2].num_entry           = 1;
   blocks[2].num_nodes_per_entry = 16;
 
-  strncpy(blocks[0].topology, "hex", 32);
-  strncpy(blocks[1].topology, "wedge", 32);
-  strncpy(blocks[2].topology, "hex", 32);
+  ex_copy_string(blocks[0].topology, "hex", 32);
+  ex_copy_string(blocks[1].topology, "wedge", 32);
+  ex_copy_string(blocks[2].topology, "hex", 32);
 
   const char *block_names[3];
   block_names[0] = "block_10";

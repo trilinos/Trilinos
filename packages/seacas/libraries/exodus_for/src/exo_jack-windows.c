@@ -700,6 +700,7 @@ void F2C(EXPCLB)(int *idexo, void_int *elem_blk_id, char *elem_type, void_int *n
   }
   /* allocate memory to stage the element type name into */
   if (!(sptr = malloc(num_elem_blk * (slen + 1) * sizeof(char)))) {
+    free(aptr);
     *ierr = EX_MEMFAIL;
     return;
   }

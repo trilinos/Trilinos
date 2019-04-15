@@ -594,7 +594,27 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    //! Destructor.
+    //! Copy constructor (default).
+    CrsGraph (const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Assignment operator (default).
+    CrsGraph& operator= (const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move constructor (default).
+    CrsGraph (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    //! Move assignment (default).
+    CrsGraph& operator= (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
     virtual ~CrsGraph () = default;
 
     /// \brief Create a cloned CrsGraph for a different Node type.
@@ -1250,14 +1270,27 @@ namespace Tpetra {
     //! \name Implementation of DistObject
     //@{
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    using buffer_device_type = typename dist_object_type::buffer_device_type;
+    //! Type of each entry of the DistObject communication buffer.
+    using packet_type = global_ordinal_type;
+
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
+    virtual bool
+    useNewInterface () override;
+
     virtual void
-    copyAndPermute (const SrcDistObject& source,
-                    const size_t numSameIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteToLIDs,
-                    const Teuchos::ArrayView<const local_ordinal_type>& permuteFromLIDs) override;
+    copyAndPermuteNew (const SrcDistObject& source,
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& permuteFromLIDs) override;
 
     void
     applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
@@ -1269,16 +1302,33 @@ namespace Tpetra {
                        const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs);
 
     Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
-    computeCrsPadding (const Teuchos::ArrayView<const local_ordinal_type> &importLIDs,
-                       const Teuchos::ArrayView<size_t> &numPacketsPerLID);
+    computeCrsPaddingNew (const RowGraph<local_ordinal_type, global_ordinal_type, node_type>& source,
+                          const size_t numSameIDs,
+                          const Kokkos::DualView<const local_ordinal_type*,
+                            buffer_device_type>& permuteToLIDs,
+                          const Kokkos::DualView<const local_ordinal_type*,
+                            buffer_device_type>& permuteFromLIDs);
+
+    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
+    computeCrsPadding (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
+                       const Teuchos::ArrayView<size_t>& numPacketsPerLID);
+
+    Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>
+    computeCrsPaddingNew (const Kokkos::DualView<const local_ordinal_type*,
+                            buffer_device_type>& importLIDs,
+                          Kokkos::DualView<size_t*,
+                            buffer_device_type> numPacketsPerLID) const;
 
     virtual void
-    packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
-                    Teuchos::Array<global_ordinal_type>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor) override;
+    packAndPrepareNew (const SrcDistObject& source,
+                       const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& exportLIDs,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type>& exports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
+                       size_t& constantNumPackets,
+                       Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
@@ -1294,14 +1344,26 @@ namespace Tpetra {
                     size_t& constantNumPackets,
                     Distributor& distor) const;
 
-    virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const local_ordinal_type>& importLIDs,
-                      const Teuchos::ArrayView<const global_ordinal_type>& imports,
-                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor& distor,
-                      CombineMode CM) override;
+    void
+    packFillActiveNew (const Kokkos::DualView<const local_ordinal_type*,
+                         buffer_device_type>& exportLIDs,
+                       Kokkos::DualView<packet_type*,
+                         buffer_device_type>& exports,
+                       Kokkos::DualView<size_t*,
+                         buffer_device_type> numPacketsPerLID,
+                       size_t& constantNumPackets,
+                       Distributor& distor) const;
 
+    virtual void
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
+                           buffer_device_type>& importLIDs,
+                         Kokkos::DualView<packet_type*,
+                           buffer_device_type> imports,
+                         Kokkos::DualView<size_t*,
+                           buffer_device_type> numPacketsPerLID,
+                         const size_t constantNumPackets,
+                         Distributor& distor,
+                         const CombineMode combineMode) override;
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{

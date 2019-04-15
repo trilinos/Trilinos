@@ -67,6 +67,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
+
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
@@ -74,8 +79,6 @@ namespace MueLuTests {
     typedef TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
     out << "version: " << MueLu::Version() << std::endl;
-
-    if(TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {return;}
 
     Level currentLevel;
     test_factory::createSingleLevelHierarchy(currentLevel);
@@ -151,6 +154,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
+
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
@@ -158,8 +166,6 @@ namespace MueLuTests {
     typedef TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
     out << "version: " << MueLu::Version() << std::endl;
-
-    if(TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {return;}
 
     Level currentLevel;
     test_factory::createSingleLevelHierarchy(currentLevel);
@@ -238,6 +244,11 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;

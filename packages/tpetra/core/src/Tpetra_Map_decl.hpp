@@ -249,24 +249,26 @@ namespace Tpetra {
     //@{
 
     //! The type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
+    using local_ordinal_type = LocalOrdinal;
+
     //! The type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! The type of the Kokkos Node.
-    typedef Node node_type;
+    using global_ordinal_type = GlobalOrdinal;
 
-    //! The Kokkos execution space.
-    typedef typename Node::execution_space execution_space;
-    //! The Kokkos memory space.
-    typedef typename Node::memory_space memory_space;
-
-    /// \brief The Kokkos device type over which to allocate Views and
-    ///   perform work.
+    /// \brief This class' Kokkos::Device specialization.
     ///
     /// A Kokkos::Device is an (execution_space, memory_space) pair.
     /// It defines where the Map's data live, and where Map might
     /// choose to execute parallel kernels.
-    typedef typename Node::device_type device_type;
+    using device_type = typename Node::device_type;
+
+    //! The Kokkos execution space.
+    using execution_space = typename device_type::execution_space;
+
+    //! The Kokkos memory space.
+    using memory_space = typename device_type::memory_space;
+
+    //! Legacy typedef that will go away at some point.
+    using node_type = Node;
 
     /// \brief Type of the "local" Map.
     ///
@@ -281,8 +283,10 @@ namespace Tpetra {
     /// communication, and can only access information that would
     /// never need MPI communication, no matter what kind of Map this
     /// is.
-    typedef ::Tpetra::Details::LocalMap<LocalOrdinal, GlobalOrdinal, device_type>
-      local_map_type;
+    using local_map_type =
+      ::Tpetra::Details::LocalMap<local_ordinal_type,
+                                  global_ordinal_type,
+                                  device_type>;
 
     //@}
     //! @name Constructors and destructor
@@ -340,11 +344,11 @@ namespace Tpetra {
      * \param node [in/out] (OPTIONAL; default usually suffices)
      *   Kokkos Node instance.
      */
-    Map (global_size_t numGlobalElements,
-         GlobalOrdinal indexBase,
-         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node));
+    Map (const global_size_t numGlobalElements,
+         const global_ordinal_type indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+         const LocalGlobal lg=GloballyDistributed,
+         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
 
     /** \brief Constructor with contiguous, possibly nonuniform
      *    distribution.
@@ -384,11 +388,11 @@ namespace Tpetra {
      * \param node [in/out] (OPTIONAL; default usually suffices)
      *   Kokkos Node instance.
      */
-    Map (global_size_t numGlobalElements,
-         size_t numLocalElements,
-         GlobalOrdinal indexBase,
-         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-         const Teuchos::RCP<Node> &node = Teuchos::rcp (new Node));
+    Map (const global_size_t numGlobalElements,
+         const size_t numLocalElements,
+         const global_ordinal_type indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
 
     /** \brief Constructor with arbitrary (possibly noncontiguous
      *   and/or nonuniform and/or overlapping) distribution, taking
@@ -547,8 +551,30 @@ namespace Tpetra {
     /// usual Map construction paths.
     Map ();
 
-    //! Destructor.
-    ~Map ();
+    //! Copy constructor (shallow copy).
+    Map (const Map<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move constructor (shallow move).
+    Map (Map<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    //! Copy assigment (shallow copy).
+    Map&
+    operator= (const Map<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move assigment (shallow move).
+    Map&
+    operator= (Map<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~Map ();
 
     //@}
     //! @name Attributes
@@ -1336,15 +1362,21 @@ namespace Tpetra {
   ///
   /// \param comm [in] The Map's communicator.
   ///
-  /// \param node [in] The Kokkos Node instance.  If not provided, we
-  ///   will construct an instance for you.
   ///
   /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode (const size_t numElements,
+                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createLocalMapWithNode (const size_t numElements,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                          const Teuchos::RCP<Node>& node = Teuchos::null);
+                          const Teuchos::RCP<Node>& node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Non-member constructor for a uniformly distributed,
   ///   contiguous Map with the default Kokkos Node.
@@ -1367,8 +1399,16 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode (const global_size_t numElements,
+                                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createUniformContigMapWithNode (const global_size_t numElements,
                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                  const Teuchos::RCP<Node>& node = Teuchos::null);
+                                  const Teuchos::RCP<Node>& node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Non-member constructor for a (potentially) non-uniformly
   ///   distributed, contiguous Map using the default Kokkos::Device.
@@ -1394,8 +1434,17 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createContigMapWithNode (const global_size_t numElements,
                            const size_t localNumElements,
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createContigMapWithNode (const global_size_t numElements,
+                           const size_t localNumElements,
                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<Node>& node = Teuchos::null);
+                           const Teuchos::RCP<Node>& node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Nonmember constructor for a non-contiguous Map using the
   ///   default Kokkos::Device type.
@@ -1418,8 +1467,15 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
                               const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                              const Teuchos::RCP<Node>& node = Teuchos::null);
+                              const Teuchos::RCP<Node>& node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Nonmember constructor for a contiguous Map with
   ///   user-defined weights and a user-specified, possibly nondefault
@@ -1428,12 +1484,15 @@ namespace Tpetra {
   /// The Map is configured to use zero-based indexing.
   ///
   /// \relatesalso Map
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   createWeightedContigMapWithNode (const int thisNodeWeight,
                                    const global_size_t numElements,
                                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                                    const Teuchos::RCP<Node>& node = Teuchos::null);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Creates a one-to-one version of the given Map where each
   ///   GID lives on only one process.
@@ -1577,4 +1636,3 @@ bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
 
 
 #endif // TPETRA_MAP_DECL_HPP
-

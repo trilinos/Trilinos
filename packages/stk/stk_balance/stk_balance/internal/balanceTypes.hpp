@@ -33,10 +33,17 @@
 #ifndef BALANCETYPES_HPP_
 #define BALANCETYPES_HPP_
 
+//Since stk_balance depends on Zoltan2, Tpetra is available.
+#include <TpetraCore_config.h>
+
 typedef int BalanceLocalNumber;
 
-//Zoltan2 insists that long long is supported at compile time so
-//it is safe for us to use it here.
+#if defined(HAVE_TPETRA_INST_INT_LONG_LONG)
 typedef long long BalanceGlobalNumber;
+#elif defined(HAVE_TPETRA_INST_INT_LONG)
+typedef long BalanceGlobalNumber;
+#else
+#error "stk_balance requires that Tpetra instantiate either long or long-long."
+#endif
 
 #endif /* BALANCETYPES_HPP_ */
