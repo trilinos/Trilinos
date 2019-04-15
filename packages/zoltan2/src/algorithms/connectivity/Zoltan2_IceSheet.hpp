@@ -172,7 +172,7 @@ int* IceProp<Adapter>::getDegenerateFeatureFlags() {
 
   graph* g = new graph({nVtx, nEdge, &out_edges_lid[0],out_offsets, 0,0.0});
 
-  iceProp::iceSheetPropagation prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding_flags, nVtx, nGhosts);
+  iceProp::iceSheetPropagation<map_t> prop(problemComm, map, mapWithCopies, g, local_boundary_counts, grounding_flags, nVtx, nGhosts);
   
   int* removed = prop.propagate();
   

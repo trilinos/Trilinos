@@ -235,12 +235,13 @@ struct SerializationTraits<Ordinal, iceProp::vtxLabel> :
 }//end namespace Teuchos
 
 namespace iceProp{
+template<typename MAP>
 class iceSheetPropagation {
 public:
   //typedefs for the FEMultiVector
-  typedef Tpetra::Map<> map_t;
-  typedef map_t::local_ordinal_type lno_t;
-  typedef map_t::global_ordinal_type gno_t;
+  //typedef Tpetra::Map<> map_t;
+  typedef typename MAP::local_ordinal_type lno_t;
+  typedef typename MAP::global_ordinal_type gno_t;
   typedef vtxLabel scalar_t;
   typedef Tpetra::FEMultiVector<scalar_t,lno_t, gno_t> femv_t;	
   
@@ -248,7 +249,7 @@ public:
  	
   //Constructor assigns vertices to processors and builds maps with and
   //without copies ICE SHEET VERSION
-  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const map_t> mapOwned_, Teuchos::RCP<const map_t> mapWithCopies_, graph* g_,int* boundary_flags, int* grounding_flags,int localOwned,int localCopy):
+  iceSheetPropagation(const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, Teuchos::RCP<const MAP> mapOwned_, Teuchos::RCP<const MAP> mapWithCopies_, graph* g_,int* boundary_flags, int* grounding_flags,int localOwned,int localCopy):
     me(comm_->getRank()), np(comm_->getSize()),
     nLocalOwned(localOwned), nLocalCopy(localCopy),
     nVec(1), comm(comm_),g(g_),mapOwned(mapOwned_),
@@ -702,8 +703,8 @@ private:
   const Teuchos::RCP<const Teuchos::Comm<int> > comm; //MPI communicator
   graph* g;	    //csr representation of vertices on this processor
 
-  Teuchos::RCP<const map_t> mapOwned;       //Tpetra::Map including only owned
-  Teuchos::RCP<const map_t> mapWithCopies;  //Tpetra::Map including owned
+  Teuchos::RCP<const MAP> mapOwned;       //Tpetra::Map including only owned
+  Teuchos::RCP<const MAP> mapWithCopies;  //Tpetra::Map including owned
                                             //vertices and copies
 
   Teuchos::RCP<femv_t> femv;
@@ -740,7 +741,8 @@ private:
 //  for exercising the articulation point logic are the cases where
 //  suspected articulation points are on the right hand side of the +=.
 //
-int  iceProp::iceSheetPropagation::vtxLabelUnitTest()
+template<typename MAP>
+int  iceProp::iceSheetPropagation<MAP>::vtxLabelUnitTest()
 {
   int ierr = 0;
   iceProp::vtxLabel a(0);
