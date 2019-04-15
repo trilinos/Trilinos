@@ -71,7 +71,6 @@ namespace {
     using Kokkos::WithoutInitializing;
     using BMV = Tpetra::BlockMultiVector<Scalar, LO, GO, Node>;
     using device_type = typename BMV::device_type;
-    using execution_space = typename device_type::execution_space;
     using IST = typename BMV::impl_scalar_type;
     using host_device_type = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
     using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
