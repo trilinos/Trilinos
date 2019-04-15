@@ -422,13 +422,23 @@ namespace {
     const size_t        numLocal  = 10;
     const GST numGlobal = numImages*numLocal;
 
+    // create a contiguous uniform distributed map with numLocal entries per node
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
     RCP<N1> n1 (new N1);
     RCP<N2> n2 (new N2);
-
-    // create a contiguous uniform distributed map with numLocal entries per node
-    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm);
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm, n1);
     RCP<const Map2> map2 = map1->clone (n2);
     RCP<const Map1> map1b = map2->clone (n1);
+
+#else // !TPETRA_ENABLE_DEPRECATED_CODE
+
+    RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm);
+    RCP<const Map2> map2; map1->clone (map2);
+    RCP<const Map1> map1b; map2->clone (map1b);
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
     TEST_ASSERT( map1->isCompatible (*map1b) );
     TEST_ASSERT( map1->isSameAs (*map1b) );
   }

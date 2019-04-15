@@ -865,7 +865,8 @@ namespace Tpetra {
         ": You requested that the returned clone have local indices, but the "
         "the source matrix does not have a column Map yet.");
 
-      RCP<const Map2> clonedRowMap = this->getRowMap ()->template clone<Node2> (node2);
+      RCP<const Map2> clonedRowMap; 
+      this->getRowMap ()->template clone<Node2> (clonedRowMap);
 
       // Get an upper bound on the number of entries per row.
       RCP<CrsMatrix2> clonedMatrix;
@@ -901,8 +902,8 @@ namespace Tpetra {
       RCP<ParameterList> matParams =
         params.is_null () ? null : sublist (params,"CrsMatrix");
       if (useLocalIndices) {
-        RCP<const Map2> clonedColMap =
-          this->getColMap ()->template clone<Node2> (node2);
+        RCP<const Map2> clonedColMap;
+        this->getColMap ()->template clone<Node2> (clonedColMap);
         if (numEntriesPerRow.is_null ()) {
           clonedMatrix = rcp (new CrsMatrix2 (clonedRowMap, clonedColMap,
                                               numEntriesForAll, pftype,
@@ -1009,14 +1010,14 @@ namespace Tpetra {
         try {
           if (! this->getRangeMap ().is_null () &&
               this->getRangeMap () != clonedRowMap) {
-            clonedRangeMap  = this->getRangeMap ()->template clone<Node2> (node2);
+            this->getRangeMap ()->template clone<Node2> (clonedRangeMap);
           }
           else {
             clonedRangeMap = clonedRowMap;
           }
           if (! this->getDomainMap ().is_null () &&
               this->getDomainMap () != clonedRowMap) {
-            clonedDomainMap = this->getDomainMap ()->template clone<Node2> (node2);
+            this->getDomainMap ()->template clone<Node2> (clonedDomainMap);
           }
           else {
             clonedDomainMap = clonedRowMap;

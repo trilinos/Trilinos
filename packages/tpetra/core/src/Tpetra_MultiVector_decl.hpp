@@ -2521,8 +2521,11 @@ namespace Tpetra {
 
       // Clone X's Map to have the new Node type.
       RCP<const src_map_type> map1 = X.getMap ();
-      RCP<const dst_map_type> map2 = map1.is_null () ?
-        Teuchos::null : map1->template clone<dst_node_type> (node2);
+      RCP<const dst_map_type> map2; 
+      if (map1.is_null ())
+        map2 = Teuchos::null;
+      else
+        map1->template clone<dst_node_type> (map2);
 
       const size_t lclNumRows = X.getLocalLength ();
       const size_t numCols = X.getNumVectors ();

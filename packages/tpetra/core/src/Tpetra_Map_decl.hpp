@@ -69,9 +69,12 @@ namespace Tpetra {
       typedef typename OutMapType::node_type out_node_type;
       typedef typename InMapType::node_type in_node_type;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       static OutMapType
-      clone (const InMapType& mapIn,
-             const Teuchos::RCP<out_node_type>& node2);
+      clone (const InMapType& mapIn, const Teuchos::RCP<out_node_type>& node2);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+      static void 
+      clone (OutMapType& mapOut, const InMapType &mapIn);
     };
 
   } // namespace Details
@@ -1023,9 +1026,15 @@ namespace Tpetra {
     //@{
 
     //! Create a shallow copy of this Map, with a different Node type.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class NodeOut>
+    TPETRA_DEPRECATED
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
     clone (const Teuchos::RCP<NodeOut>& nodeOut) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    template <class NodeOut>
+    void 
+    clone (Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,NodeOut> > &mapOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -1534,11 +1543,23 @@ namespace Tpetra {
 namespace Tpetra {
   namespace Details {
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class OutMapType, class InMapType>
     OutMapType
     MapCloner<OutMapType, InMapType>::
     clone (const InMapType& mapIn,
            const Teuchos::RCP<out_node_type>& /* nodeOut */)
+    {
+      OutMapType mapOut; // Make an empty Map.
+      MapCloner<OutMapType, InMapType>::clone(mapOut, mapIn);
+      return mapOut;
+    }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    template<class OutMapType, class InMapType>
+    void
+    MapCloner<OutMapType, InMapType>::
+    clone (OutMapType &mapOut, const InMapType &mapIn)
     {
       static_assert (std::is_same<typename OutMapType::local_ordinal_type,
                                   typename InMapType::local_ordinal_type>::value,
@@ -1554,8 +1575,6 @@ namespace Tpetra {
                                   typename OutMapType::node_type> out_dir_type;
       typedef typename OutMapType::global_to_local_table_type out_table_type;
       typedef typename OutMapType::device_type out_device_type;
-
-      OutMapType mapOut; // Make an empty Map.
 
       // Fill the new Map with (possibly) shallow copies of all of the
       // original Map's data.  This is safe because Map is immutable,
@@ -1615,13 +1634,14 @@ namespace Tpetra {
       // uninitialized.
       mapOut.directory_ = Teuchos::rcp (new out_dir_type ());
 
-      return mapOut;
     }
   } // namespace Details
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
+  TPETRA_DEPRECATED
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   clone (const Teuchos::RCP<NodeOut>& nodeOut) const
@@ -1631,6 +1651,22 @@ namespace Tpetra {
     typedef Details::MapCloner<out_map_type, in_map_type> cloner_type;
     // Copy constructor does a shallow copy.
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
+  }
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class NodeOut>
+  void
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  clone (Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > &rcpOut) const
+  {
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> in_map_type;
+    typedef Map<LocalOrdinal, GlobalOrdinal, NodeOut> out_map_type;
+    typedef Details::MapCloner<out_map_type, in_map_type> cloner_type;
+    // Copy constructor does a shallow copy.
+    out_map_type mapOut;  // empty map
+    cloner_type::clone (mapOut, *this);
+    rcpOut = Teuchos::rcp (new out_map_type (mapOut));
   }
 
 } // namespace Tpetra

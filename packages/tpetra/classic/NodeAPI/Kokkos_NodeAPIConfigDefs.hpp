@@ -44,4 +44,10 @@
 
 // We retain this header file only for backwards compatibility.
 
+#if !defined(TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS)
+#ifdef __GNUC__
+#  warning "Header file Kokkos_NodeAPIConfigDefs.hpp is deprecated in April 2019 and will be removed in May 2019."
+#endif
+#endif
+
 #endif // KOKKOS_NODEAPICONFIGDEFS_HPP

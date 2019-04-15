@@ -377,7 +377,7 @@ namespace Tpetra {
         // don't leak memory if they don't.
         RCP<const output_map_type> outDirMap;
         try {
-          outDirMap = directoryMap_->template clone<Node2> (cloneMap.getNode ());
+          directoryMap_->template clone<Node2> (outDirMap);
         }
         catch (...) {
           outDirMap = Teuchos::null; // deallocate

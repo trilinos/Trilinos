@@ -169,7 +169,7 @@ namespace Amesos2 {
         // makes a shallow copy of some of Map's data, because Map is
         // immutable and those data are reference-counted (e.g.,
         // ArrayRCP or RCP).
-        distMap = distribution_map->template clone<Node> (distribution_map->getNode ());
+        distribution_map->template clone<Node> (distMap);
 
         // (Re)create the Export object.
         exporter_ = rcp (new export_type (this->getMap (), distMap));
@@ -347,7 +347,7 @@ namespace Amesos2 {
         // Map's clone() method suffices, even though it only makes a
         // shallow copy of some of Map's data, because Map is immutable
         // and those data are reference-counted (e.g., ArrayRCP or RCP).
-        srcMap = source_map->template clone<Node> (source_map->getNode ());
+        source_map->template clone<Node> (srcMap);
         importer_ = rcp (new import_type (srcMap, this->getMap ()));
       }
       else {

@@ -2866,8 +2866,8 @@ namespace Tpetra {
           cerr << os.str ();
         }
 
-        RCP<const output_map_type> clonedRowMap =
-          graphIn.getRowMap ()->template clone<OutputNodeType> (nodeOut);
+        RCP<const output_map_type> clonedRowMap;
+        graphIn.getRowMap ()->template clone<OutputNodeType> (clonedRowMap);
 
         // Invoke the output graph's constructor, using the input graph's
         // upper bounds on the number of entries in each local row.
@@ -2906,8 +2906,8 @@ namespace Tpetra {
             graphparams = sublist (params, "CrsGraph");
           }
           if (useLocalIndices) {
-            RCP<const output_map_type> clonedColMap =
-              graphIn.getColMap ()->template clone<OutputNodeType> (nodeOut);
+            RCP<const output_map_type> clonedColMap;
+            graphIn.getColMap ()->template clone<OutputNodeType> (clonedColMap);
             if (boundSameForAllLocalRows) {
               clonedGraph = rcp (new output_crs_graph_type (clonedRowMap, clonedColMap,
                                                             numEntriesForAll, pftype,
@@ -3149,16 +3149,14 @@ namespace Tpetra {
             RCP<const output_map_type> clonedDomainMap;
             if (! graphIn.getRangeMap ().is_null () &&
                 graphIn.getRangeMap () != graphIn.getRowMap ()) {
-              clonedRangeMap =
-                graphIn.getRangeMap ()->template clone<OutputNodeType> (nodeOut);
+              graphIn.getRangeMap ()->template clone<OutputNodeType> (clonedRangeMap);
             }
             else {
               clonedRangeMap = clonedRowMap;
             }
             if (! graphIn.getDomainMap ().is_null ()
                 && graphIn.getDomainMap () != graphIn.getRowMap ()) {
-              clonedDomainMap =
-                graphIn.getDomainMap ()->template clone<OutputNodeType> (nodeOut);
+              graphIn.getDomainMap ()->template clone<OutputNodeType> (clonedDomainMap);
             }
             else {
               clonedDomainMap = clonedRowMap;

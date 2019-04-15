@@ -255,7 +255,7 @@ namespace Xpetra {
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId, GlobalOrdinal offset,
                const Teuchos::RCP< Node > & /* node */)
       : StridedMap(xlib, numGlobalElements, numLocalElements, indexBase, 
-                   stridingInfo, comm, stridedBlockID, offset)
+                   stridingInfo, comm, stridedBlockId, offset)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
     StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo,
@@ -349,7 +349,7 @@ namespace Xpetra {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
     StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase,
-               std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1,
+               std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId,
                const Teuchos::RCP< Node > & /* node */)
       : StridedMap(xlib, numGlobalElements, elementList, indexBase,
                    stridingInfo, comm, stridedBlockId)
