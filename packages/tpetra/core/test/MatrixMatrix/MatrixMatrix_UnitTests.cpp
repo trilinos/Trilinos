@@ -168,13 +168,8 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
 
 template<class Matrix_t>
 RCP<Matrix_t>
-copyMatrix(RCP<Matrix_t> &A) {
-  typedef typename Matrix_t::local_matrix_type::values_type values_type;
-  values_type vals = A->getLocalValuesView();
-  values_type newvals; 
-  Kokkos::resize(newvals,vals.extent(0));
-  Kokkos::deep_copy(newvals,vals);
-  return rcp(new Matrix_t(A->getCrsGraph(),newvals));
+copyMatrix(const RCP<Matrix_t> &A) {
+  return rcp(new Matrix_t(A,Teuchos::Copy));
 }
 
 typedef struct add_test_results_struct{
