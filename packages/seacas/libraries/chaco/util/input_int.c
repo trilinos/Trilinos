@@ -52,7 +52,7 @@ int input_int(void)
 
   i    = 0;
   done = FALSE;
-  while (!done) {
+  while (!done && i < LINE_LENGTH) {
     int c = getchar();
     if (c >= 0 && c <= 127) {
       line[i] = (char)c;

@@ -221,7 +221,7 @@ namespace Thyra {
     /** \brief . */
     void initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
                         PreconditionerBase<Scalar>* prec,
-                        const ESupportSolveUse supportSolveUse
+                        const ESupportSolveUse /* supportSolveUse */
                        ) const {
       using Teuchos::rcp_dynamic_cast;
 

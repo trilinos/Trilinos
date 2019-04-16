@@ -165,14 +165,10 @@ void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
   if (stepperType == "") {
     this->setTableau();
   } else {
-    ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
+    Teuchos::RCP<const RKButcherTableau<Scalar> > ERK_ButcherTableau =
+      createRKBT<Scalar>(stepperType, this->stepperPL_);
+    this->setTableau(ERK_ButcherTableau);
   }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
-    std::logic_error,
-       "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
-    << "  Stepper Type = " << stepperType << "\n");
-  description_ = ERK_ButcherTableau_->description();
 }
 
 template<class Scalar>
@@ -190,15 +186,23 @@ void StepperExplicitRK<Scalar>::setTableau(
   std::string stepperType =
     this->stepperPL_->template get<std::string>("Stepper Type",
                                                 "RK Explicit 4 Stage");
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
+  Teuchos::RCP<const RKButcherTableau<Scalar> > ERK_ButcherTableau =
+    createRKBT<Scalar>(stepperType, this->stepperPL_);
+  this->setTableau(ERK_ButcherTableau);
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setTableau(
+  Teuchos::RCP<const RKButcherTableau<Scalar> > ERK_ButcherTableau)
+{
+  ERK_ButcherTableau_ = ERK_ButcherTableau;
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
-       "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
-    << "  Stepper Type = " << stepperType << "\n");
-  description_ = ERK_ButcherTableau_->description();
-}
+       "Error - StepperExplicitRK received an implicit Butcher Tableau!\n" <<
+       "        Tableau = " << ERK_ButcherTableau_->description() << "\n");
 
+}
 
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setObserver(
@@ -410,7 +414,7 @@ getDefaultStepperState()
 template<class Scalar>
 std::string StepperExplicitRK<Scalar>::description() const
 {
-  return(description_);
+  return(ERK_ButcherTableau_->description());
 }
 
 

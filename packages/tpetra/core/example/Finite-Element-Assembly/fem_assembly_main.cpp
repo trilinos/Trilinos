@@ -63,8 +63,6 @@
 
 using namespace TpetraExamples;
 
-using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
-
 
 int main (int argc, char *argv[]) 
 {
@@ -75,7 +73,7 @@ int main (int argc, char *argv[])
   
   // MPI boilerplate
   Tpetra::initialize(&argc, &argv);
-  comm_ptr_t comm = Tpetra::getDefaultComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);

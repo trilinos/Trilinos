@@ -156,6 +156,10 @@ double vals_fset_var1fs1[2][2] = {{1., 3.}, {9., 27.}};
 #define EXCHECK(funcall, errmsg)                                                                   \
   if ((funcall) < 0) {                                                                             \
     fprintf(stderr, errmsg);                                                                       \
+    free(varParams.edge_var_tab);                                                                  \
+    free(varParams.face_var_tab);                                                                  \
+    free(varParams.elem_var_tab);                                                                  \
+    free(varParams.fset_var_tab);                                                                  \
     return 1;                                                                                      \
   }
 
@@ -208,6 +212,12 @@ int cCreateEdgeFace(int argc, char *argv[])
   ex_var_params varParams;
 
   ex_opts(EX_VERBOSE | EX_ABORT);
+
+  exoid = ex_create(EX_TEST_FILENAME, EX_CLOBBER, &appWordSize, &diskWordSize);
+  if (exoid <= 0) {
+    fprintf(stderr, "Unable to open \"%s\" for writing.\n", EX_TEST_FILENAME);
+    return 1;
+  }
 
   edgeBlocks[0].type                = EX_EDGE_BLOCK;
   edgeBlocks[0].id                  = 100;
@@ -283,12 +293,6 @@ int cCreateEdgeFace(int argc, char *argv[])
   varParams.fset_var_tab[0] = 1;
   varParams.num_sset        = 0;
   varParams.num_elset       = 0;
-
-  exoid = ex_create(EX_TEST_FILENAME, EX_CLOBBER, &appWordSize, &diskWordSize);
-  if (exoid <= 0) {
-    fprintf(stderr, "Unable to open \"%s\" for writing.\n", EX_TEST_FILENAME);
-    return 1;
-  }
 
   EXCHECK(ex_put_init_ext(exoid, &modelParams), "Unable to initialize database.\n");
 

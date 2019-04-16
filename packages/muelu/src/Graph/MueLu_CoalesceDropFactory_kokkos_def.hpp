@@ -152,7 +152,7 @@ namespace MueLu {
 
       // Return true if we drop, false if not
       KOKKOS_INLINE_FUNCTION
-      bool operator()(LO row, LO col, SC val) const {
+      bool operator()(LO row, LO col, SC /* val */) const {
         // We avoid square root by using squared values
 
         // We ignore incoming value of val as we operate on an auxiliary
@@ -188,7 +188,7 @@ namespace MueLu {
                     typename rows_type::non_const_type rows_,
                     typename cols_type::non_const_type colsAux_,
                     typename vals_type::non_const_type valsAux_,
-                    bool reuseGraph_, bool lumping_, SC threshold_) :
+                    bool reuseGraph_, bool lumping_, SC /* threshold_ */) :
           A(A_),
           bndNodes(bndNodes_),
           dropFunctor(dropFunctor_),

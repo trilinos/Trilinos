@@ -317,9 +317,9 @@ namespace {
         for (const auto &field_name : fields) {
           const Ioss::Field &field = block->get_fieldref(field_name);
           std::string        type  = field.raw_storage()->name();
-          strncpy(&fld_names[offset], field_name.c_str(), CGNS_MAX_NAME_LENGTH);
+          Ioss::Utils::copy_string(&fld_names[offset], field_name.c_str(), CGNS_MAX_NAME_LENGTH);
           offset += CGNS_MAX_NAME_LENGTH + 1;
-          strncpy(&fld_names[offset], type.c_str(), CGNS_MAX_NAME_LENGTH);
+          Ioss::Utils::copy_string(&fld_names[offset], type.c_str(), CGNS_MAX_NAME_LENGTH);
           offset += CGNS_MAX_NAME_LENGTH + 1;
         }
       }
@@ -506,7 +506,7 @@ namespace {
     for (const auto &sb : structured_blocks) {
       my_count += std::count_if(
           sb->m_zoneConnectivity.begin(), sb->m_zoneConnectivity.end(),
-          [](const Ioss::ZoneConnectivity &z) { return !z.is_intra_block() && z.is_active(); });
+          [](const Ioss::ZoneConnectivity &z) { return !z.is_from_decomp() && z.is_active(); });
     }
 
     std::vector<int> rcv_data_cnt;
@@ -532,8 +532,9 @@ namespace {
     auto pack_lambda = [&off_data, &off_name, &off_cnt, &snd_zgc_data,
                         &snd_zgc_name](const std::vector<Ioss::ZoneConnectivity> &zgc) {
       for (const auto &z : zgc) {
-        if (!z.is_intra_block() && z.is_active()) {
-          strncpy(&snd_zgc_name[off_name], z.m_connectionName.c_str(), BYTE_PER_NAME);
+        if (!z.is_from_decomp() && z.is_active()) {
+          Ioss::Utils::copy_string(&snd_zgc_name[off_name], z.m_connectionName.c_str(),
+                                   BYTE_PER_NAME);
           off_cnt++;
           off_name += BYTE_PER_NAME;
 
@@ -631,7 +632,7 @@ namespace {
       zgc.erase(std::remove_if(zgc.begin(), zgc.end(),
                                [](Ioss::ZoneConnectivity &z) {
                                  return (z.m_ownerZone == -1 && z.m_donorZone == -1) ||
-                                        z.is_intra_block() || !z.is_active();
+                                        z.is_from_decomp() || !z.is_active();
                                }),
                 zgc.end());
 
@@ -947,7 +948,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         std::string donor_name   = zgc.m_donorName;
         std::string connect_name = zgc.m_connectionName;
         if (is_parallel && !is_parallel_io) {
-          if (zgc.is_intra_block()) {
+          if (zgc.is_from_decomp()) {
             connect_name = std::to_string(zgc.m_ownerGUID) + "--" + std::to_string(zgc.m_donorGUID);
           }
           else {
@@ -1301,7 +1302,7 @@ size_t Iocgns::Utils::resolve_nodes(Ioss::Region &region, int my_processor, bool
   // location.
   for (auto &owner_block : blocks) {
     for (const auto &zgc : owner_block->m_zoneConnectivity) {
-      if (!zgc.is_intra_block() &&
+      if (!zgc.is_from_decomp() &&
           zgc.is_active()) { // Not due to processor decomposition and has faces.
         // NOTE: In parallel, the owner block should exist, but may not have
         // any cells on this processor.  We can access its global i,j,k, but
@@ -1518,14 +1519,14 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
         CGCHECKNP(cg_famname_read(fam_name));
       }
       else {
-        strncpy(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
+        Ioss::Utils::copy_string(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
       }
 
       CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
 
-      strncpy(&bc_names[off_name], boco_name, CGNS_MAX_NAME_LENGTH + 1);
+      Ioss::Utils::copy_string(&bc_names[off_name], boco_name, CGNS_MAX_NAME_LENGTH + 1);
       off_name += (CGNS_MAX_NAME_LENGTH + 1);
-      strncpy(&bc_names[off_name], fam_name, CGNS_MAX_NAME_LENGTH + 1);
+      Ioss::Utils::copy_string(&bc_names[off_name], fam_name, CGNS_MAX_NAME_LENGTH + 1);
       off_name += (CGNS_MAX_NAME_LENGTH + 1);
 
       bc_data[off_data++] = bocotype;
@@ -1620,7 +1621,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
       CGCHECKNP(cg_famname_read(fam_name));
     }
     else {
-      strncpy(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
+      Ioss::Utils::copy_string(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
     }
 
     CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
@@ -1696,7 +1697,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
     for (size_t state = 0; state < timesteps.size(); state++) {
       // This name is the "postfix" or common portion of all FlowSolution names...
       std::string name = base_type + std::to_string(state + 1);
-      std::strncpy(&names[state * 32], name.c_str(), 32);
+      Ioss::Utils::copy_string(&names[state * 32], name.c_str(), 32);
       for (size_t i = name.size(); i < 32; i++) {
         names[state * 32 + i] = ' ';
       }
@@ -1782,7 +1783,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
         CG_DataType_t data_type;
         char          field_name[CGNS_MAX_NAME_LENGTH + 1];
         CGCHECK(cg_field_info(cgns_file_ptr, b, z, sol, field, &data_type, field_name));
-        std::strncpy(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH);
+        Ioss::Utils::copy_string(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH);
       }
 
       // Convert raw field names into composite fields (a_x, a_y, a_z ==> 3D vector 'a')

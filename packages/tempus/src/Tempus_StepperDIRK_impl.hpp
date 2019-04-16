@@ -89,14 +89,10 @@ void StepperDIRK<Scalar>::setTableau(std::string stepperType)
   if (stepperType == "") {
     this->setTableau();
   } else {
-    DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
+    Teuchos::RCP<const RKButcherTableau<Scalar> > DIRK_ButcherTableau =
+      createRKBT<Scalar>(stepperType, this->stepperPL_);
+    this->setTableau(DIRK_ButcherTableau);
   }
-
-  TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
-    std::logic_error,
-       "Error - StepperDIRK did not receive a DIRK Butcher Tableau!\n"
-    << "  Stepper Type = " << stepperType <<  "\n");
-  description_ = DIRK_ButcherTableau_->description();
 }
 
 
@@ -114,13 +110,22 @@ void StepperDIRK<Scalar>::setTableau(Teuchos::RCP<Teuchos::ParameterList> pList)
   std::string stepperType =
     this->stepperPL_->template get<std::string>("Stepper Type",
                                                 "SDIRK 2 Stage 2nd order");
-  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
+  Teuchos::RCP<const RKButcherTableau<Scalar> > DIRK_ButcherTableau =
+    createRKBT<Scalar>(stepperType, this->stepperPL_);
+  this->setTableau(DIRK_ButcherTableau);
+}
 
-  TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setTableau(
+  Teuchos::RCP<const RKButcherTableau<Scalar> > DIRK_ButcherTableau)
+{
+  DIRK_ButcherTableau_ = DIRK_ButcherTableau;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(DIRK_ButcherTableau_->isDIRK() != true,
     std::logic_error,
-       "Error - StepperDIRK did not receive a DIRK Butcher Tableau!\n"
-    << "  Stepper Type = " << stepperType <<  "\n");
-  description_ = DIRK_ButcherTableau_->description();
+       "Error - StepperDIRK do not received a DIRK Butcher Tableau!\n" <<
+       "        Tableau = " << DIRK_ButcherTableau_->description() << "\n");
 }
 
 
@@ -373,7 +378,7 @@ getDefaultStepperState()
 template<class Scalar>
 std::string StepperDIRK<Scalar>::description() const
 {
-  return(description_);
+  return(DIRK_ButcherTableau_->description());
 }
 
 

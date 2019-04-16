@@ -712,6 +712,8 @@ namespace {
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    int lclSuccess = 1;
+    int gblSuccess = 0;
 
     out << "Test: MultiVector, Multiply" << endl;
     Teuchos::OSTab tab0 (out);
@@ -752,6 +754,13 @@ namespace {
       mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,S1,mv2x3l,mv3x2l,S0);
       tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0);
     }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                         outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // random input/output
     {
@@ -777,25 +786,51 @@ namespace {
         tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                           outArg (gblSuccess));
+      TEST_ASSERT( gblSuccess == 1 );
+
       {
         tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
         sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
         tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                           outArg (gblSuccess));
+      TEST_ASSERT( gblSuccess == 1 );
+
       {
         tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
+        Kokkos::fence ();
         sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
         tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                           outArg (gblSuccess));
+      TEST_ASSERT( gblSuccess == 1 );
+
       {
         tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
+        Kokkos::fence ();
         sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
         tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
       }
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                           outArg (gblSuccess));
+      TEST_ASSERT( gblSuccess == 1 );
     }
+
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
       MV mv3nx2(map3n,2),
@@ -821,6 +856,13 @@ namespace {
       mv3x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx3,S0);
       tmpView = mv3x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
     }
+
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                         outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
       MV mv3nx2(map3n,2),
@@ -842,9 +884,10 @@ namespace {
     }
 
     // Make sure that the test passed on all processes, not just Proc 0.
-    int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    lclSuccess = success ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                         outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
   }
 

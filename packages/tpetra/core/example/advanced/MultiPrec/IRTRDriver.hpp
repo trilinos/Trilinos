@@ -130,8 +130,7 @@ class IRTR_Driver {
     else {
       fillParams->set("Preserve Local Graph",true);
     }
-    RCP<Node> node = rcp (new Node ());
-    Tpetra::Utils::readHBMatrix (matrixFile, comm, node, A, rowMap, fillParams);
+    Tpetra::Utils::readHBMatrix (matrixFile, comm, A, rowMap, fillParams);
     rowMap = A->getRowMap ();
 
     testPassed = true;

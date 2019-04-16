@@ -126,6 +126,9 @@ public:
     virtual void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
+    virtual void setTableau(
+      Teuchos::RCP<const RKButcherTableau<Scalar> > ERK_ButcherTableau);
+
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
@@ -175,8 +178,6 @@ public:
   //@}
 
 protected:
-
-  std::string                                            description_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          ERK_ButcherTableau_;
 

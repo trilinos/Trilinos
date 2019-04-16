@@ -281,13 +281,13 @@ namespace Xpetra {
     virtual GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return fullmap_->getGlobalElement(localIndex); };
 
     //! Return the process ranks and corresponding local indices for the given global indices.
-    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const {
+    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */, const Teuchos::ArrayView< LocalOrdinal > &/* LIDList */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::getRemoteIndexList: routine not implemented.");
       TEUCHOS_UNREACHABLE_RETURN(IDNotPresent);
     };
 
     //! Return the process ranks for the given global indices.
-    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const {
+    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &/* GIDList */, const Teuchos::ArrayView< int > &/* nodeIDList */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::getRemoteIndexList: routine not implemented.");
       TEUCHOS_UNREACHABLE_RETURN(IDNotPresent);
     };
@@ -415,7 +415,7 @@ namespace Xpetra {
 
 
     //! Replace this Map's communicator with a subset communicator.
-    virtual RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
+    virtual RCP< const Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMap::replaceCommWithSubset: routine not implemented.");
     }
 

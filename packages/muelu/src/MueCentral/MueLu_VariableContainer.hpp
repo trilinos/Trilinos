@@ -91,7 +91,7 @@ namespace MueLu {
 
     template<typename T>
     struct Getter {
-      static T& get(DataBase* data_, DataBase*& datah_) {
+      static T& get(DataBase* data_, DataBase*& /* datah_ */) {
         if ((data_ == NULL) || (data_->type() != typeid(T))) // NVR added guard to avoid determining typeName unless we will use it
         {
           const std::string typeName = Teuchos::TypeNameTraits<T>::name(); // calls Teuchos::demangleName(), which can be expensive

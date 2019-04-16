@@ -87,7 +87,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    AggregationStructuredAlgorithm(const RCP<const FactoryBase>& graphFact = Teuchos::null) { }
+    AggregationStructuredAlgorithm(const RCP<const FactoryBase>& /* graphFact */ = Teuchos::null) { }
 
     //! Destructor.
     virtual ~AggregationStructuredAlgorithm() { }

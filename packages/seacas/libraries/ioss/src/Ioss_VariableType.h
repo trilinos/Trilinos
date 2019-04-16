@@ -34,7 +34,8 @@
 #define IOSS_Ioss_VariableType_h
 
 #include <Ioss_CodeTypes.h>
-#include <cstring>    // for strncmp, strncpy
+#include <Ioss_Utils.h>
+#include <cstring>    // for strncmp
 #include <functional> // for less
 #include <map>        // for map, map<>::value_compare
 #include <string>     // for string, operator<
@@ -69,13 +70,11 @@ namespace Ioss {
   {
     explicit Suffix(const char new_data[MAX_SUFFIX])
     {
-      std::strncpy(m_data, new_data, MAX_SUFFIX);
-      m_data[MAX_SUFFIX] = '\0';
+      Ioss::Utils::copy_string(m_data, new_data, MAX_SUFFIX);
     }
     explicit Suffix(const std::string &new_data)
     {
-      std::strncpy(m_data, new_data.c_str(), MAX_SUFFIX);
-      m_data[MAX_SUFFIX] = '\0';
+      Ioss::Utils::copy_string(m_data, new_data.c_str(), MAX_SUFFIX);
     }
     bool operator==(const std::string &str) const
     {

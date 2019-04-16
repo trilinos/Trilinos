@@ -1663,9 +1663,9 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVector& RHS, MultiVector& X,
-                                                                  Teuchos::ETransp mode,
-                                                                  Scalar alpha,
-                                                                  Scalar beta) const {
+                                                                  Teuchos::ETransp /* mode */,
+                                                                  Scalar /* alpha */,
+                                                                  Scalar /* beta */) const {
 
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve"));
 
@@ -1775,7 +1775,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel /* verbLevel */) const {
 
     std::ostringstream oss;
 

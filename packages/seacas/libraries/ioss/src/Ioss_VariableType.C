@@ -221,19 +221,19 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
     // Create a format for our use...
     char format[5];
     if (size < 10) {
-      std::strcpy(format, "%01d");
+      Ioss::Utils::copy_string(format, "%01d", 5);
     }
     else if (size < 100) {
-      std::strcpy(format, "%02d");
+      Ioss::Utils::copy_string(format, "%02d", 5);
     }
     else if (size < 1000) {
-      std::strcpy(format, "%03d");
+      Ioss::Utils::copy_string(format, "%03d", 5);
     }
     else if (size < 10000) {
-      std::strcpy(format, "%04d");
+      Ioss::Utils::copy_string(format, "%04d", 5);
     }
     else {
-      std::strcpy(format, "%05d");
+      Ioss::Utils::copy_string(format, "%05d", 5);
     }
 
     for (size_t i = 0; i < size; i++) {
@@ -314,7 +314,7 @@ bool Ioss::VariableType::build_variable_type(const std::string &raw_type)
   // valid integer.
   size_t len      = type.length() + 1;
   auto   typecopy = new char[len];
-  std::strcpy(typecopy, typestr);
+  Ioss::Utils::copy_string(typecopy, typestr, len);
 
   char *base = std::strtok(typecopy, "[]");
   assert(base != nullptr);
@@ -346,19 +346,19 @@ std::string Ioss::VariableType::numeric_label(int which, int ncomp, const std::s
   // Create a format for our use...
   char format[5];
   if (ncomp < 10) {
-    std::strcpy(format, "%01d");
+    Ioss::Utils::copy_string(format, "%01d", 5);
   }
   else if (ncomp < 100) {
-    std::strcpy(format, "%02d");
+    Ioss::Utils::copy_string(format, "%02d", 5);
   }
   else if (ncomp < 1000) {
-    std::strcpy(format, "%03d");
+    Ioss::Utils::copy_string(format, "%03d", 5);
   }
   else if (ncomp < 10000) {
-    std::strcpy(format, "%04d");
+    Ioss::Utils::copy_string(format, "%04d", 5);
   }
   else if (ncomp < 100000) {
-    std::strcpy(format, "%05d");
+    Ioss::Utils::copy_string(format, "%05d", 5);
   }
   else {
     std::ostringstream errmsg;
