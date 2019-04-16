@@ -619,6 +619,8 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
 
     # GO = int is enabled by default, but only because of Bug 6358.
     GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is enabled by default.")
+
 
     IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
       IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
@@ -632,6 +634,7 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
         # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
         # that only one of them is defined by default at a time.
         GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is disabled because Tpetra_INST_INT_LONG was enabled by user option.")
       ENDIF ()
     ENDIF ()
 
@@ -642,8 +645,10 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
     # guarantees long to be at least 32 bits.
     IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
       GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+      MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled.")
     ELSE ()
       GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+      MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is enabled.")
     ENDIF ()
 
 ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
@@ -666,8 +671,11 @@ ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
          OR  (    DEFINED Tpetra_INST_INT_UNSIGNED      AND Tpetra_INST_INT_UNSIGNED)
          OR  (    DEFINED Tpetra_INST_INT_UNSIGNED_LONG AND Tpetra_INST_INT_UNSIGNED_LONG))
          AND (NOT DEFINED Tpetra_INST_INT_LONG_LONG) )
-        MESSAGE(STATUS "Tpetra: Disable Tpetra_INST_INT_LONG_LONG default value because another Global Ordinal type is user-specified.")
+
         GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+        MESSAGE(STATUS "Tpetra: Disable Tpetra_INST_INT_LONG_LONG default value because "
+                       "another Global Ordinal type is user-specified.")
+
     ENDIF()
 ENDIF(Tpetra_ENABLE_DEPRECATED_CODE)
 
@@ -739,7 +747,6 @@ ELSE()
   # above options are ON.  However, we still print a STATUS message,
   # to help with debugging in case users do this by accident.
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
-  MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
 
 #
@@ -1185,8 +1192,17 @@ LIST(LENGTH ${PACKAGE_NAME}_ETI_GORDS lenTpetraCore_ETI_GORDS)
 
 IF(Tpetra_ENABLE_DEPRECATED_CODE)
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-        MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type, but none were specified. "
-                            "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
+        MESSAGE(STATUS "Tpetra: ERROR Tpetra requires a GlobalOrdinal type, but none were specified.")
+        MESSAGE(STATUS "This can happens when the default is overridden by user options without enabling")
+        MESSAGE(STATUS "another GlobalOrdinal type in its place. Please check your configuration to ensure")
+        MESSAGE(STATUS "that the default is not being specifically disabled without enabling one of the others:")
+        MESSAGE(STATUS "   Tpetra_INST_INT_INT")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG_LONG (Default, but was overridden)")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED_LONG")
+        MESSAGE(FATAL_ERROR "Tpetra: Tpetra requires a global ordinal type, but none were specified."
+                            " See above message for options.")
     ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
         MESSAGE(WARNING "Tpetra requires only one global ordinal, but more than one are set: {${${PACKAGE_NAME}_ETI_GORDS}}. "
                         "Building with more than one global ordinal type in Tpetra is deprecated.")
@@ -1197,8 +1213,17 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
     ENDIF()
 ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
-        MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type, but none were specified. "
-                            "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
+        MESSAGE(STATUS "Tpetra: ERROR Tpetra requires a GlobalOrdinal type, but none were specified.")
+        MESSAGE(STATUS "This can happens when the default is overridden by user options without enabling")
+        MESSAGE(STATUS "another GlobalOrdinal type in its place. Please check your configuration to ensure")
+        MESSAGE(STATUS "that the default is not being specifically disabled without enabling one of the others:")
+        MESSAGE(STATUS "   Tpetra_INST_INT_INT")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG")
+        MESSAGE(STATUS "   Tpetra_INST_INT_LONG_LONG (Default, but was overridden)")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED")
+        MESSAGE(STATUS "   Tpetra_INST_INT_UNSIGNED_LONG")
+        MESSAGE(FATAL_ERROR "Tpetra: Tpetra requires a global ordinal type, but none were specified."
+                            " See above message for options.")
     ELSEIF(lenTpetraCore_ETI_GORDS GREATER 1)
         MESSAGE(FATAL_ERROR "Tpetra requires only one global ordinal, but more than one are set: {${${PACKAGE_NAME}_ETI_GORDS}}.")
     ELSEIF(lenTpetraCore_ETI_GORDS EQUAL 1)
