@@ -156,6 +156,11 @@ private:
 
   std::map<int,Ptr<Vector<Real>>> inverseAdjointStorage_;
 
+  bool recordResidualReductions_;
+  std::map<int,std::vector<double>> preSmoothResidualReduction_;
+  std::map<int,std::vector<double>> postSmoothResidualReduction_;
+  std::vector<double> coarseResidualReduction_;
+
   /** Get the state vector required by the serial constraint object
     *
     * \param[in] src Vector to build the state vector from
@@ -228,6 +233,7 @@ public:
     , omega_(2.0/3.0)
     , omegaCoarse_(1.0)
     , globalScale_(0.99e0)
+    , recordResidualReductions_(false)
   { }
 
   /**
@@ -250,6 +256,7 @@ public:
     , numSweeps_(1)
     , omega_(2.0/3.0)
     , globalScale_(0.99e0)
+    , recordResidualReductions_(false)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
   }
@@ -283,6 +290,28 @@ public:
    */
   void setGlobalScale(Real o)
   { globalScale_ = o; }
+
+  /**
+   *  For analysis purposes, record all the residual reductions.
+   */
+  void setRecordResidualReductions(bool record)
+  { recordResidualReductions_ = record; } 
+
+  const std::map<int,std::vector<double>> & getPreSmoothResidualReductions() const
+  { return preSmoothResidualReduction_; }
+
+  const std::map<int,std::vector<double>> & getPostSmoothResidualReduction() const
+  { return postSmoothResidualReduction_; }
+
+  const std::vector<double> & getCoarseResidualReduction() const
+  { return coarseResidualReduction_; }
+
+  void clearResidualReduction() 
+  { 
+    preSmoothResidualReduction_.clear();
+    postSmoothResidualReduction_.clear();
+    coarseResidualReduction_.clear();
+  }
 
   /**
    * Turn on multigrid preconditioning in time with a specified number of levels.
@@ -1359,6 +1388,10 @@ public:
 
        double relax = omegaCoarse_;
 
+       double res_norm = -1.0;
+       if(recordResidualReductions_) 
+         res_norm = residual->norm();
+
        for(int i=0;i<numCoarseSweeps_;i++) {
          // compute the residual
          applyAugmentedKKT(*residual,x,u,z,tol,level);
@@ -1367,6 +1400,15 @@ public:
 
          applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
          x.axpy(relax,*dx);
+       }
+
+       if(recordResidualReductions_) {
+         // compute the residual
+         applyAugmentedKKT(*residual,x,u,z,tol,level);
+         residual->scale(-1.0);
+         residual->axpy(1.0,b);
+
+         coarseResidualReduction_.push_back(residual->norm()/res_norm);
        }
 
        timer->stop("applyMGAugmentedKKT"+levelStr);
@@ -1391,6 +1433,12 @@ public:
        residual->scale(-1.0);
        residual->axpy(1.0,b);
      }
+
+     // record residual reductions
+     if(recordResidualReductions_) {
+       preSmoothResidualReduction_[level].push_back(residual->norm()/b.norm());
+     }
+
      timer->stop("applyMGAugmentedKKT-preSmooth");
 
      // solve the coarse system
@@ -1444,15 +1492,31 @@ public:
 
      // apply one smoother sweep
      timer->start("applyMGAugmentedKKT-postSmooth");
-     for(int i=0;i<numSweeps_;i++) {
-       // compute the residual
-       applyAugmentedKKT(*residual,x,u,z,tol,level);
-       residual->scale(-1.0);
-       residual->axpy(1.0,b);
+     {
+       double res_norm = -1.0;
+       for(int i=0;i<numSweeps_;i++) {
+         // compute the residual
+         applyAugmentedKKT(*residual,x,u,z,tol,level);
+         residual->scale(-1.0);
+         residual->axpy(1.0,b);
 
-       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
-       x.axpy(omega_,*dx);
+         if(i==0 and recordResidualReductions_) 
+           res_norm = residual->norm();
+
+         applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
+         x.axpy(omega_,*dx);
+       }
+
+       if(recordResidualReductions_) {
+         // compute the residual
+         applyAugmentedKKT(*residual,x,u,z,tol,level);
+         residual->scale(-1.0);
+         residual->axpy(1.0,b);
+
+         postSmoothResidualReduction_[level].push_back(residual->norm()/res_norm);
+       }
      }
+
      timer->stop("applyMGAugmentedKKT-postSmooth");
 
      timer->stop("applyMGAugmentedKKT"+levelStr);

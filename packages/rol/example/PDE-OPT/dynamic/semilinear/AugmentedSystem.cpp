@@ -54,6 +54,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -287,7 +288,7 @@ int main(int argc, char *argv[])
     pint_con->setCoarseSweeps(coarseSweeps);
     pint_con->setCoarseRelaxation(coarseOmega);
     pint_con->setGlobalScale(globalScale);
-    // pint_con->buildLevels(*state);
+    pint_con->setRecordResidualReductions(true);
 
     /*************************************************************************/
     /***************** Run KKT Solver ***************************************/
@@ -626,7 +627,45 @@ solveKKTSystem(const std::string & prefix,
   if(myRank==0) {
      (*outStream) << prefix << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
      (*outStream) << "||x||=" << norm_mysoln << "  ||b||=" << norm_myb << "  ||Ax-b||=" << norm_myAxmb << std::endl;
+
+     const std::map<int,std::vector<double>> & preSmooth = pint_con->getPreSmoothResidualReductions();
+     const std::map<int,std::vector<double>> & postSmooth = pint_con->getPostSmoothResidualReduction();
+     const std::vector<double> & coarseSmooth = pint_con->getCoarseResidualReduction();
+
+     if(not useWathenPrec) {
+       // loop over presmoother residual reductions
+       *outStream << "Presmooth Reductions: " << std::endl;
+       for(auto iter_l : preSmooth) {
+         double average = std::accumulate( iter_l.second.begin(), iter_l.second.end(), 0.0)/coarseSmooth.size(); 
+         double min = *std::min_element(iter_l.second.begin(),iter_l.second.end());
+         double max = *std::max_element(iter_l.second.begin(),iter_l.second.end());
+         *outStream << "  level ";
+         *outStream << "min,avg,max = " << min << ", " << average << ", " << max << std::endl;
+       }
+
+       // loop over postsmoother residual reductions
+       *outStream << "Postsmooth Reductions: " << std::endl;
+       for(auto iter_l : postSmooth) {
+         double average = std::accumulate( iter_l.second.begin(), iter_l.second.end(), 0.0)/coarseSmooth.size(); 
+         double min = *std::min_element(iter_l.second.begin(),iter_l.second.end());
+         double max = *std::max_element(iter_l.second.begin(),iter_l.second.end());
+         *outStream << "  level ";
+         *outStream << "min,avg,max = " << min << ", " << average << ", " << max << std::endl;
+       }
+
+       // loop over coarse residual reductions
+       {
+         *outStream << "Coarse Reductions: ";
+         double average = std::accumulate( coarseSmooth.begin(), coarseSmooth.end(), 0.0)/coarseSmooth.size(); 
+         double min = *std::min_element(coarseSmooth.begin(),coarseSmooth.end());
+         double max = *std::max_element(coarseSmooth.begin(),coarseSmooth.end());
+         *outStream << "min,avg,max = " << min << ", " << average << ", " << max << std::endl;
+         *outStream << std::endl;
+       }
+     }
   }
+
+  pint_con->clearResidualReduction();
 
   return kkt_x_out;
 }
