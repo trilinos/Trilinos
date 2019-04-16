@@ -602,16 +602,23 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # catch potential errors when GlobalOrdinal is unsigned and smaller
 # than global_size_t (e.g., using the wrong
 # Teuchos::OrdinalTraits<>::invalid().
+
+# Enable Tpetra Global Ordinals LONG LONG default:
+GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is enabled by default.")
+
+# GO = unsigned is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED is disabled by default.")
+
+# GO = unsigned long is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED_LONG is disabled by default.")
+
 IF(Tpetra_ENABLE_DEPRECATED_CODE)
 
     # GO = int is enabled by default, but only because of Bug 6358.
     GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
-
-    # GO = long long is enabled by default.  However, if the user enabled
-    # GO = long EXPLICITLY, we disable GO = long long by default, because
-    # we don't want to enable multiple "long" GO types by default.
-
-GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
 
     IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
       IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
@@ -641,51 +648,18 @@ GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
 
 ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
 
-    # Enable Tpetra Global Ordinals LONG LONG default:
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
-    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is enabled by default.")
-
-    IF(DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-        IF(NOT Teuchos_ENABLE_LONG_LONG_INT)
-            MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is disabled because Teuchos_ENABLE_LONG_LONG_INT is OFF.")
-            MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
-        ENDIF(NOT Teuchos_ENABLE_LONG_LONG_INT)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-    ELSE(DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
-    ENDIF(DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-
-    IF(DEFINED Tpetra_INST_INT_LONG)
-        IF(Tpetra_INST_INT_LONG)
-            GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-        ENDIF(Tpetra_INST_INT_LONG)
-    ENDIF(DEFINED Tpetra_INST_INT_LONG)
-
-    IF(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-    ELSE(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
-    ENDIF(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-
-    # Enable Tpetra Global Ordinals INT default:
+    # GO = int is disabled by default.
     GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is disabled by default.")
 
     # Enable Tpetra Global Ordinals LONG default:
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled by default.")
 
-ENDIF()
+    #
+    # Discover what parameters were enabled by the user so we can differentiate what is ON via USER vs. DEFAULTS later.
+    #
 
-# GO = unsigned is NOT enabled by default.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
-
-# GO = unsigned long is NOT enabled by default.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
-
-
-#
-# Discover what parameters were enabled by the user so we can differentiate what is ON via USER vs. DEFAULTS later.
-#
-IF(NOT Tpetra_ENABLE_DEPRECATED_CODE)
     # IF anything other than long long is defined and enabled, and long long isn't defined then we disable long long
     IF( (    (    DEFINED Tpetra_INST_INT_INT           AND Tpetra_INST_INT_INT)
          OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_UNSIGNED_LONG)
@@ -695,7 +669,7 @@ IF(NOT Tpetra_ENABLE_DEPRECATED_CODE)
         MESSAGE(STATUS "Tpetra: Disable Tpetra_INST_INT_LONG_LONG default value because another Global Ordinal type is user-specified.")
         GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
     ENDIF()
-ENDIF(NOT Tpetra_ENABLE_DEPRECATED_CODE)
+ENDIF(Tpetra_ENABLE_DEPRECATED_CODE)
 
 
 #
