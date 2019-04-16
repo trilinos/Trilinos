@@ -648,11 +648,6 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
       GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
     ENDIF ()
 
-    # GO = unsigned is NOT enabled by default.
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
-    # GO = unsigned long is NOT enabled by default.
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
-
 ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
 
     # Enable Tpetra Global Ordinals LONG LONG default:
@@ -686,13 +681,13 @@ ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
     # Enable Tpetra Global Ordinals LONG default:
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
 
-    # Enable Tpetra Global Ordinals UNSIGNED default:
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
-
-    # Enable Tpetra Global Ordinals UNSIGNED LONG default:
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
-
 ENDIF()
+
+# GO = unsigned is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+
+# GO = unsigned long is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
 
 
 #
