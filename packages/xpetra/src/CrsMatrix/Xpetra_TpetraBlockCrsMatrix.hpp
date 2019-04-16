@@ -424,7 +424,7 @@ namespace Xpetra {
     // @}
 
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
       return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
     }
 
@@ -784,7 +784,7 @@ namespace Xpetra {
     // @}
 
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
 
     //! @name Xpetra specific
     //@{
@@ -1133,7 +1133,7 @@ namespace Xpetra {
     // @}
 
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
 
     //! @name Xpetra specific
     //@{
