@@ -603,50 +603,78 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # than global_size_t (e.g., using the wrong
 # Teuchos::OrdinalTraits<>::invalid().
 
-# GO = int is enabled by default, but only because of Bug 6358.
-GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
-
-# GO = long long is enabled by default.  However, if the user enabled
-# GO = long EXPLICITLY, we disable GO = long long by default, because
-# we don't want to enable multiple "long" GO types by default.
-
+# Enable Tpetra Global Ordinals LONG LONG default:
 GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
-
-IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
-  IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
-    # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
-    # off GO = long long by default.  We have to go through the
-    # two-level IF statement because the Tpetra_INST_INT_LONG option
-    # doesn't exist yet; we have not yet encountered the
-    # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
-    # and gives it a default value.  (Note the circular dependency
-    # between the default value of Tpetra_INST_INT_LONG and
-    # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
-    # that only one of them is defined by default at a time.
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-  ENDIF ()
-ENDIF ()
-
-# If GO = long long is OFF by default, turn ON GO = long by default.
-# If GO = long long is ON by default, turn OFF GO = long by default.
-# The point is to have EXACTLY one potentially 64-bit GO type enabled
-# by default.  I say "potentially" because the C++ standard only
-# guarantees long to be at least 32 bits.
-IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-ELSE ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
-ENDIF ()
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG_LONG is enabled by default.")
 
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED is disabled by default.")
+
 # GO = unsigned long is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
+MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_UNSIGNED_LONG is disabled by default.")
+
+IF(Tpetra_ENABLE_DEPRECATED_CODE)
+
+    # GO = int is enabled by default, but only because of Bug 6358.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
+
+    IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
+      IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
+        # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
+        # off GO = long long by default.  We have to go through the
+        # two-level IF statement because the Tpetra_INST_INT_LONG option
+        # doesn't exist yet; we have not yet encountered the
+        # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
+        # and gives it a default value.  (Note the circular dependency
+        # between the default value of Tpetra_INST_INT_LONG and
+        # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
+        # that only one of them is defined by default at a time.
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+      ENDIF ()
+    ENDIF ()
+
+    # If GO = long long is OFF by default, turn ON GO = long by default.
+    # If GO = long long is ON by default, turn OFF GO = long by default.
+    # The point is to have EXACTLY one potentially 64-bit GO type enabled
+    # by default.  I say "potentially" because the C++ standard only
+    # guarantees long to be at least 32 bits.
+    IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+    ELSE ()
+      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+    ENDIF ()
+
+ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
+
+    # GO = int is disabled by default.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_INT is disabled by default.")
+
+    # Enable Tpetra Global Ordinals LONG default:
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+    MESSAGE(STATUS "Tpetra: Tpetra_INST_INT_LONG is disabled by default.")
+
+    #
+    # Discover what parameters were enabled by the user so we can differentiate what is ON via USER vs. DEFAULTS later.
+    #
+
+    # IF anything other than long long is defined and enabled, and long long isn't defined then we disable long long
+    IF( (    (    DEFINED Tpetra_INST_INT_INT           AND Tpetra_INST_INT_INT)
+         OR  (    DEFINED Tpetra_INST_INT_LONG          AND Tpetra_INST_INT_UNSIGNED_LONG)
+         OR  (    DEFINED Tpetra_INST_INT_UNSIGNED      AND Tpetra_INST_INT_UNSIGNED)
+         OR  (    DEFINED Tpetra_INST_INT_UNSIGNED_LONG AND Tpetra_INST_INT_UNSIGNED_LONG))
+         AND (NOT DEFINED Tpetra_INST_INT_LONG_LONG) )
+        MESSAGE(STATUS "Tpetra: Disable Tpetra_INST_INT_LONG_LONG default value because another Global Ordinal type is user-specified.")
+        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
+    ENDIF()
+ENDIF(Tpetra_ENABLE_DEPRECATED_CODE)
+
 
 #
 # Define options for enabling various GlobalOrdinal types
 #
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_INT
   HAVE_TPETRA_INST_INT_INT
@@ -659,19 +687,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG_LONG
   HAVE_TPETRA_INST_INT_LONG_LONG
   "Enable GlobalOrdinal = long long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
   )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG
   HAVE_TPETRA_INST_INT_LONG
   "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
-TRIBITS_ADD_OPTION_AND_DEFINE(
+  TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED_LONG
   HAVE_TPETRA_INST_INT_UNSIGNED_LONG
   "Enable GlobalOrdinal = unsigned long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT} by default.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him."
@@ -1165,7 +1195,7 @@ IF(Tpetra_ENABLE_DEPRECATED_CODE)
     ELSE()
         MESSAGE(FATAL_ERROR "Tpetra: global ordinal setting has a problem setting: {${${PACKAGE_NAME}_ETI_GORDS}}.")
     ENDIF()
-ELSE()
+ELSE(Tpetra_ENABLE_DEPRECATED_CODE)
     IF(lenTpetraCore_ETI_GORDS EQUAL 0)
         MESSAGE(FATAL_ERROR "Tpetra requires a global ordinal type, but none were specified. "
                             "To use long long, please set Tpetra_INST_INT_LONG_LONG=ON")
