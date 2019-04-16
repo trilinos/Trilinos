@@ -73,9 +73,22 @@
   typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## LO ## _ ## GO ## _ ## N; \
   INSTANTIATE_MP_VECTOR_S_D(INSTMACRO, DFN_CPU_ ## LO ## _ ## GO ## _ ## N, LO, GO, N)
 
+#if @IS_DEVICE_NODE@
+
+// Add instantiation on HostMirror for device nodes.
+#define INSTANTIATE_MP_VECTOR_S_SD(INSTMACRO, N) \
+  typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## N; \
+  typedef Kokkos::View<double*, N::device_type>::HostMirror::device_type host_device_type_##N; \
+  INSTANTIATE_MP_VECTOR_S_D_SD(INSTMACRO, DFN_CPU_ ## N, N) \
+  INSTANTIATE_MP_VECTOR_S_D_SD(INSTMACRO, DFN_CPU_ ## N, host_device_type_##N)
+
+#else
+
 #define INSTANTIATE_MP_VECTOR_S_SD(INSTMACRO, N) \
   typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## N; \
   INSTANTIATE_MP_VECTOR_S_D_SD(INSTMACRO, DFN_CPU_ ## N, N)
+
+#endif
 
 #define INSTANTIATE_TPETRA_MP_VECTOR_WRAPPER_NODES(INSTMACRO)           \
   INSTANTIATE_MP_VECTOR_S(INSTMACRO, int, int, Kokkos_Compat_Kokkos@DEVICE@WrapperNode)

@@ -25,6 +25,10 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES SRC_DIR BASE_NAME APPEN
     string(TOLOWER "${DEVICE}" LOWER_DEVICE)
     string(CONCAT INST_VAR "Tpetra_INST_" "${UPPER_DEVICE}")
 
+    # Check if we are a device node and set a variable suitable for the
+    # preprocessor accordingly
+    string(COMPARE EQUAL "${DEVICE}" "Cuda" IS_DEVICE_NODE)
+
     # Create libraries for each enabled device instantation
     if(${${INST_VAR}})
 
@@ -103,6 +107,10 @@ FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_
     string(TOUPPER "${DEVICE}" UPPER_DEVICE)
     string(TOLOWER "${DEVICE}" LOWER_DEVICE)
     string(CONCAT INST_VAR "Tpetra_INST_" "${UPPER_DEVICE}")
+
+    # Check if we are a device node and set a variable suitable for the
+    # preprocessor accordingly
+    string(COMPARE EQUAL "${DEVICE}" "Cuda" IS_DEVICE_NODE)
 
     # Create libraries for each enabled device instantation
     if(${${INST_VAR}})
