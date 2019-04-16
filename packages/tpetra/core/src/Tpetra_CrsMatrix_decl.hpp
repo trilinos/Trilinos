@@ -5106,6 +5106,35 @@ namespace Tpetra {
     sourceMatrix->exportAndFillComplete (destMatrix, rowExporter, domainExporter, domainMap, rangeMap, params);
     return destMatrix;
   }
+
+  template<class CrsMatrixType, class rows_type>
+  void applyOnesAndZerosToMatrixRows(CrsMatrixType & A,const rows_type & rowIndices) {
+    using Scalar        = typename CrsMatrixType::scalar_type;
+    using LocalOrdinal  = typename CrsMatrixType::local_ordinal_type;
+    using GlobalOrdinal = typename CrsMatrixType::global_ordinal_type;
+    using exec_space    = typename CrsMatrixType::execution_space;
+    using range_type    = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
+    
+    auto rmap = A.getRowMap()->getLocalMap();
+    auto cmap = A.getColMap()->getLocalMap();
+    Scalar one  =Teuchos::ScalarTraits<Scalar>::one();
+    Scalar zero =Teuchos::ScalarTraits<Scalar>::zero();    
+
+    auto rowptr = A.getLocalMatrix().graph.row_map;
+    auto colind = A.getLocalMatrix().graph.entries;
+    auto values = A.getLocalMatrix().values;
+    A.resumeFill();
+
+    Kokkos::parallel_for (range_type (0, rowIndices.extent(0)), KOKKOS_LAMBDA(const LocalOrdinal i) {
+        GlobalOrdinal row_gid = rmap.getGlobalElement(rowIndices(i));
+        for(size_t j=rowptr(i); j < rowptr(i+1); j++) 
+          if (cmap.getGlobalElement(colind(j)) == row_gid)
+            values(j) = one;
+          else
+            values(j)=zero;
+      });
+    A.fillComplete(A.getDomainMap(),A.getRangeMap());
+  }
 } // namespace Tpetra
 
 /**
