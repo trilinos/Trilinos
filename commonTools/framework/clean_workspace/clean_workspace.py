@@ -62,8 +62,8 @@ class Cleaner(object):
              Load the module to enable ninja
              Run "make -C %s clean"
         """
-        module('load', 'atdm-env')
-        module('load', 'atdm-ninja_fortran/1.7.2')
+        module('load', 'sems-env')
+        module('load', 'sems-ninja_fortran/1.8.2')
         os.chdir(self.args.dir)
         subprocess.check_call(['make', 'clean'])
 
