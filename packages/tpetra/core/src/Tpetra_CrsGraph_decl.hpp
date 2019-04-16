@@ -645,7 +645,7 @@ namespace Tpetra {
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
     template<class Node2>
-    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >
+    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
@@ -2809,7 +2809,7 @@ namespace Tpetra {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, InputNodeType> input_crs_graph_type;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, OutputNodeType> output_crs_graph_type;
 
-      static Teuchos::RCP<output_crs_graph_type>
+      static Teuchos::RCP<output_crs_graph_type> TPETRA_DEPRECATED
       clone (const input_crs_graph_type& graphIn,
              const Teuchos::RCP<OutputNodeType> &nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)

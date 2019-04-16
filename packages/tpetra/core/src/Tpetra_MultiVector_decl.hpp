@@ -844,7 +844,7 @@ namespace Tpetra {
     ///   rather than this method.  This method will go away at some
     ///   point.
     template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2) const;
 
     //! Swap contents of \c mv with contents of \c *this.
@@ -2508,7 +2508,7 @@ namespace Tpetra {
 
     template<class DstMultiVectorType,
              class SrcMultiVectorType>
-    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>
+    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>  TPETRA_DEPRECATED
     MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::
     clone (const src_mv_type& X,
            const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
