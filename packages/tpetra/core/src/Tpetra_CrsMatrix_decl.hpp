@@ -802,6 +802,11 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+    /// \brief Copy constructor, with option to do deep or shallow copy.
+    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+               const Teuchos::DataAccess copyOrView);
+
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
