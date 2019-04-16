@@ -237,7 +237,7 @@ namespace Xpetra {
     }
 
     template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
       return toXpetraNonConst(map_->clone(node2));
     }
 

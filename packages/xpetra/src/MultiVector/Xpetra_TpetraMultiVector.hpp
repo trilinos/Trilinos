@@ -321,7 +321,7 @@ namespace Xpetra {
     }
 
     template<class Node2>
-    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
       XPETRA_MONITOR("TpetraMultiVector::clone");
       return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
         //toXpetra(vec_->clone(node2));
