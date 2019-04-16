@@ -40,31 +40,16 @@
 // @HEADER
 
 #include "TpetraCore_config.h"
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_CUDA)
+#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// mfh 13 Apr 2019: I can't just use Stokhos' system for Tpetra ETI,
-// because that only works for Tpetra ETI macros that take four
-// arguments (SCALAR, LO, GO, NODE).  The macro for ETI of
-// Tpetra::Details::normImpl only takes two arguments: (SCALAR, NODE).
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE_@DEVICE@.hpp"
 
-#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Tpetra_Details_normImpl_decl.hpp"
-#include "Tpetra_Details_normImpl_def.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
+#include "Tpetra_@CLASS_FILE_NAME@.hpp"
+#include "Tpetra_@CLASS_FILE_NAME@_def.hpp"
 
-#define TPETRA_DETAILS_NORMIMPL_INSTANT_N( NODE ) \
-  using scalar_type_##NODE = Sacado::MP::Vector<Stokhos::StaticFixedStorage<int, double, 16, NODE::execution_space> >; \
-  TPETRA_DETAILS_NORMIMPL_INSTANT( scalar_type_##NODE, NODE ) \
-  using host_device_type_##NODE = Kokkos::View<double*, NODE::device_type>::HostMirror::device_type; \
-  TPETRA_DETAILS_NORMIMPL_INSTANT( scalar_type_##NODE, host_device_type_##NODE )
+#define TPETRA_LOCAL_INST_N(N)               \
+  INSTANTIATE_TPETRA_UQ_PCE_N_SD(TPETRA_@UPPER_CASE_CLASS@_INSTANT, N)
 
-namespace Tpetra {
+INSTANTIATE_TPETRA_UQ_PCE(TPETRA_LOCAL_INST_N)
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
-
-  TPETRA_DETAILS_NORMIMPL_INSTANT_N( Kokkos_Compat_KokkosCudaWrapperNode )
-
-} // namespace Tpetra
-
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_TPETRA_INST_CUDA
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

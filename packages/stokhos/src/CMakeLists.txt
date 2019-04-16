@@ -791,6 +791,9 @@ IF (Stokhos_ENABLE_Sacado)
         MatrixMatrix
         TripleMatrixMultiply
         )
+      SET(TPETRA_SD_ETI_CLASSES
+        Details::normImpl
+        )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
@@ -800,6 +803,15 @@ IF (Stokhos_ENABLE_Sacado)
           "${TPETRA_ETI_CLASSES}"
           "sacado/kokkos/vector/tpetra"
           "Tpetra"
+          TRUE
+          "${STOKHOS_DEPLIBS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+       PROCESS_ENSEMBLE_ETI(
+          "${Stokhos_ETI_Ensemble_Sizes}"
+          "${TPETRA_SD_ETI_CLASSES}"
+          "sacado/kokkos/vector/tpetra"
+          "Tpetra_SD"
           TRUE
           "${STOKHOS_DEPLIBS}"
           DEPLIBS_OUT)
@@ -815,11 +827,6 @@ IF (Stokhos_ENABLE_Sacado)
           "${STOKHOS_TPETRAEXT_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
-
-        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_Cuda.cpp)
-        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_OpenMP.cpp)
-        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_Serial.cpp)
-        LIST(APPEND TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/Tpetra_Details_normImpl_MP_Vector_Threads.cpp)
       ENDIF()
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
@@ -830,13 +837,21 @@ IF (Stokhos_ENABLE_Sacado)
         LIST(REMOVE_ITEM TPETRA_ETI_CLASSES CrsMatrix)
         SET(EXTRA_TPETRA_ETI_CLASSES
           CrsMatrix
-          Details::normImpl
           )
         PROCESS_PCE_ETI(
           "${TPETRA_ETI_CLASSES}"
           "${EXTRA_TPETRA_ETI_CLASSES}"
           "sacado/kokkos/pce/tpetra"
           "Tpetra"
+          TRUE
+          "${STOKHOS_DEPLIBS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        PROCESS_PCE_ETI(
+          "${TPETRA_SD_ETI_CLASSES}"
+          ""
+          "sacado/kokkos/pce/tpetra"
+          "Tpetra_SD"
           TRUE
           "${STOKHOS_DEPLIBS}"
           DEPLIBS_OUT)
