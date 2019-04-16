@@ -110,8 +110,8 @@ class TestForceCleanSpace(unittest.TestCase):
              mock.patch('os.chdir') as m_chdir, \
              mock.patch('clean_workspace.subprocess.check_call') as check_call:
             cleanerInst.force_clean_space()
-        mod.assert_has_calls([mock.call('load', 'atdm-env'),
-                              mock.call('load', 'atdm-ninja_fortran/1.7.2')])
+        mod.assert_has_calls([mock.call('load', 'sems-env'),
+                              mock.call('load', 'sems-ninja_fortran/1.8.2')])
         m_chdir.assert_called_once_with(test_args.dir)
         check_call.assert_called_once_with(['make', 'clean'])
 
