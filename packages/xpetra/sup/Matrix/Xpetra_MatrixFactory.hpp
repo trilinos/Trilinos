@@ -153,11 +153,12 @@ namespace Xpetra {
         newOp->SetFixedBlockSize(A->GetFixedBlockSize());
         return newOp;
       }
+      return Teuchos::null;
 #else
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::EpetraCrsMatrix or Xpetra::TpetraCrsMatrix failed");
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); // make compiler happy
 #endif
 
-      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); // make compiler happy
     } //BuildCopy
   };
 
