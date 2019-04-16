@@ -652,7 +652,8 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying a previously constructed graph and entries array
+    /// \brief Constructor specifying a previously constructed graph
+    ///   and entries array
     ///
     /// Calling this constructor fixes the graph structure of the
     /// sparse matrix.  We say in this case that the matrix has a
@@ -1048,12 +1049,58 @@ namespace Tpetra {
       return clonedMatrix;
     }
 
-    //! Destructor.
-    virtual ~CrsMatrix ();
+    /// \brief Copy constructor (forbidden).
+    ///
+    /// \note There's no obvious reason why copy construction should
+    ///   ever have been forbidden, but it was historically, so I'm
+    ///   continuing the tradition for now.  Tpetra developers should
+    ///   feel free to change this, as long as they change the other
+    ///   three (move constructor, copy assignment, and move
+    ///   assignment) consistently.
+    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
 
+    /// \brief Move constructor (forbidden).
+    ///
+    /// \note This is deleted for consistency with copy construction,
+    ///   which is also deleted.  Tpetra developers should feel free
+    ///   to change this, as long as they change the other three (copy
+    ///   constructor, copy assignment, and move assignment)
+    ///   consistently.
+    CrsMatrix (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Copy assignment (forbidden).
+    ///
+    /// \note There's no obvious reason why copy assignment should
+    ///   ever have been forbidden, but it was historically, so I'm
+    ///   continuing the tradition for now.  Tpetra developers should
+    ///   feel free to change this, as long as they change the other
+    ///   three (copy constructor, move constructor, and move
+    ///   assignment) consistently.
+    CrsMatrix&
+    operator= (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    /// \brief Move assignment (forbidden).
+    ///
+    /// \note This is deleted for consistency with copy assignment,
+    ///   which is also deleted.  Tpetra developers should feel free
+    ///   to change this, as long as they change the other three (copy
+    ///   constructor, move constructor, and copy assignment)
+    ///   consistently.
+    CrsMatrix&
+    operator= (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=delete</tt> (or
+    ///   <tt>=default</tt>) declarations for copy construction, move
+    ///   construction, copy assignment, and move assignment.
+    virtual ~CrsMatrix () = default;
 
   public:
-
     //@}
     //! @name Methods for inserting, modifying, or removing entries
     //@{
@@ -2714,7 +2761,8 @@ namespace Tpetra {
     ///
     /// The following is always true:
     /// \code
-    /// (! locallyIndexed() && ! globallyIndexed()) || (locallyIndexed() || globallyIndexed());
+    /// (! locallyIndexed() && ! globallyIndexed()) ||
+    ///   (locallyIndexed() || globallyIndexed());
     /// \endcode
     /// That is, a matrix may be neither locally nor globally indexed,
     /// but it can never be both.  Furthermore a matrix that is not
@@ -4351,14 +4399,6 @@ namespace Tpetra {
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
-    // We forbid copy construction by declaring this method private
-    // and not implementing it.
-    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
-
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
-    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
 
     /// \brief Common implementation detail of insertGlobalValues and
     ///   insertGlobalValuesFiltered.

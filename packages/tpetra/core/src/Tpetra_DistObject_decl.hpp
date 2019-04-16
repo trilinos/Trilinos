@@ -376,13 +376,32 @@ namespace Tpetra {
     //! @name Constructors and destructor
     //@{
 
-    //! Constructor.
+    /// \brief Constructor
+    ///
+    /// \param map [in] Map over which the object is distributed.
     explicit DistObject (const Teuchos::RCP<const map_type>& map);
 
-    //! Copy constructor.
-    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs) = default;
+    //! Copy constructor (default).
+    DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>&) = default;
 
-    //! Destructor (virtual for memory safety of derived classes).
+    //! Assignment operator (default).
+    DistObject& operator= (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+    //! Move constructor (default).
+    DistObject (DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+    //! Move assignment (default).
+    DistObject& operator= (DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
     virtual ~DistObject () = default;
 
     //@}
@@ -467,7 +486,7 @@ namespace Tpetra {
     //
     /// This cannot be used if #2 is not true, OR there are permutes.
     /// The "source" maps still need to match
-    ///  
+    ///
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
     ///   Its <i>target</i> Map must be the same as the input DistObject's Map,

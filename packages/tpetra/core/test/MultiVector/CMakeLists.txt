@@ -153,10 +153,23 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# mfh 14 Apr 2019: Weirdly, this unit test was set to build the wrong
+# file.  When I fixed that, it turns out that the unit test didn't
+# build correctly.  We will fix that later.
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  Vector_offsetViewCtor
+#  SOURCES
+#    Vector_offsetViewCtor
+#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+#  COMM serial mpi
+#  STANDARD_PASS_OUTPUT
+#  )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Vector_offsetViewCtor
+  aliased_deep_copy
   SOURCES
-    MultiVector_UnitTests
+    aliased_deep_copy
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
