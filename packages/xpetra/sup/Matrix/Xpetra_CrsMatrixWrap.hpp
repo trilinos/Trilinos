@@ -632,7 +632,7 @@ public:
   RCP<CrsMatrix> getCrsMatrix() const {  return matrixData_; }
 
   //@}
-
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
   template<class Node2>
   RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
 #ifdef HAVE_XPETRA_TPETRA
@@ -647,6 +647,7 @@ public:
     return Teuchos::null;
 #endif
   }
+#endif
 
 private:
 
