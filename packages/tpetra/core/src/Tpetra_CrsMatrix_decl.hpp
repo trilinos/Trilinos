@@ -804,6 +804,8 @@ namespace Tpetra {
 
 
     /// \brief Copy constructor, with option to do deep or shallow copy.
+    // This function in 'Copy' mode is only guaranteed to work correctly for matrices
+    // which are fillComplete.
     CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                const Teuchos::DataAccess copyOrView);
 
