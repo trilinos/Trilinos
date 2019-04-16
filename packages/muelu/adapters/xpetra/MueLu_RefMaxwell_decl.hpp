@@ -213,7 +213,7 @@ namespace MueLu {
                const Teuchos::RCP<MultiVector>  & Nullspace,
                const Teuchos::RCP<RealValuedMultiVector>  & Coords,
                Teuchos::ParameterList& List,
-               bool ComputePrec = true)
+               bool ComputePrec)
     {
       initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
 

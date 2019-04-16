@@ -744,7 +744,6 @@ namespace Xpetra {
 
   private:
     mutable local_map_type localMap_;
-    mutable bool isInitializedLocalMap_ = false; // It's OK to use C++11 when Tpetra is enabled
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -1210,7 +1209,6 @@ namespace Xpetra {
 
   private:
     mutable local_map_type localMap_;
-    mutable bool isInitializedLocalMap_ = false; // It's OK to use C++11 when Tpetra is enabled
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
