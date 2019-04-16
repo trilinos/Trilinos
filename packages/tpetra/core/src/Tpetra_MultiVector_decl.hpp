@@ -537,8 +537,6 @@ namespace Tpetra {
     /// copyOrView = Teuchos::Copy will make the resulting MultiVector
     /// a deep copy of the input MultiVector.
     ///
-    /// \warning The case where copyOrView = Teuchos::Copy constructor
-    ///   has been DEPRECATED and may be removed soon.
     MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                  const Teuchos::DataAccess copyOrView);
 
