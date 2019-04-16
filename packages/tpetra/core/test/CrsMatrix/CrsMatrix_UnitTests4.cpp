@@ -621,6 +621,58 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     B.fillComplete (map, map);
   }
 
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, OnesAndZeros, LO, GO, Scalar, Node )
+  {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+    const size_t numLocal = 10;
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    MV mv1(map,1), mv2(map,1);
+    mv1.putScalar(one);
+
+    // create the 2*identity matrix, via three arrays constructor
+    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<LO>     colind(numLocal); // one unknown per row
+    ArrayRCP<Scalar> values(numLocal); // one unknown per row
+
+    for(size_t i=0; i<numLocal; i++){
+      rowptr[i] = i;
+      colind[i] = Teuchos::as<LO>(i);
+      values[i] = 2*ScalarTraits<Scalar>::one();
+    }
+    rowptr[numLocal]=numLocal;
+
+    CrsMatrix<Scalar,LO,GO,Node> eye(map,map,0);
+    TEST_NOTHROW( eye.setAllValues(rowptr,colind,values) );
+    TEST_NOTHROW( eye.expertStaticFillComplete(map,map) );
+
+    typename MAT::local_graph_type::row_map_type::non_const_type rowIndices;
+    Kokkos::resize(rowIndices,numLocal);
+    for(size_t i=0; i<numLocal; i++)
+      rowIndices(i) = i;
+
+    Tpetra::applyOnesAndZerosToMatrixRows(eye,rowIndices);
+
+    eye.apply(mv1,mv2);
+    mv2.update(-one,mv1,one);
+    Teuchos::Array<MT> norms(1), zeros(1,Teuchos::ScalarTraits<MT>::zero());
+    mv2.norm1(norms());
+    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) {
+      TEST_COMPARE_ARRAYS(norms,zeros);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,Teuchos::ScalarTraits<MT>::zero());
+    }
+
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -631,7 +683,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,          LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ThreeArraysESFC,   LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SetAllValues,      LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GraphOwnedByFirstMatrixSharedBySecond, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, OnesAndZeros,      LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
