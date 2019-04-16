@@ -4793,10 +4793,9 @@ namespace {
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+#define UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonMemberConstructors, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Cloner            , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstLDA       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstAA        , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyConst         , LO, GO, SCALAR, NODE ) \
@@ -4830,6 +4829,15 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Cloner            , LO, GO, SCALAR, NODE ) \
+    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
+#else
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
+#endif
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;

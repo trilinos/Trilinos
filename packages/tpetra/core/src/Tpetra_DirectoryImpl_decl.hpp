@@ -176,7 +176,7 @@ namespace Tpetra {
       virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
 
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef ReplicatedDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
@@ -234,7 +234,7 @@ namespace Tpetra {
       }
 
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef ContiguousUniformDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
@@ -282,7 +282,7 @@ namespace Tpetra {
       }
 
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>*       TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         typedef DistributedContiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
@@ -364,7 +364,7 @@ namespace Tpetra {
       virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
 
       template <class Node2>
-      Directory<LocalOrdinal,GlobalOrdinal,Node2>*
+      Directory<LocalOrdinal,GlobalOrdinal,Node2>* TPETRA_DEPRECATED
       clone (const ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
       {
         using Teuchos::RCP;
