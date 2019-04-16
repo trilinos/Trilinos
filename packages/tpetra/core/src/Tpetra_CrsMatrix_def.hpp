@@ -758,13 +758,17 @@ namespace Tpetra {
     :CrsMatrix(source.getCrsGraph(),source.getLocalValuesView())
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const CrsMatrix>&, const Teuchos::DataAccess): ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!source.isFillComplete(),std::invalid_argument,"Source graph must be fillComplete().");
+
     if (copyOrView == Teuchos::Copy) {
       typename local_matrix_type::values_type vals = source.getLocalValuesView();
       typename local_matrix_type::values_type newvals; 
       Kokkos::resize(newvals,vals.extent(0));
       Kokkos::deep_copy(newvals,vals);
       k_values1D_ = newvals;   
-      this->fillComplete(source.getDomainMap(),source.getRangeMap());
+      if (source.isFillComplete ()) {
+        this->fillComplete(source.getDomainMap(),source.getRangeMap());
+      }
     }
     else if (copyOrView == Teuchos::View) {
       return;
