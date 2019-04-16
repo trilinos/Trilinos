@@ -169,7 +169,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
 template<class Matrix_t>
 RCP<Matrix_t>
 copyMatrix(RCP<Matrix_t> &A) {
- return rcp(new Matrix_t(A,Teuchos::Copy));
+ return rcp(new Matrix_t(*A,Teuchos::Copy));
 }
 
 typedef struct add_test_results_struct{

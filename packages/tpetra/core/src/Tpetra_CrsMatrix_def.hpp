@@ -764,6 +764,7 @@ namespace Tpetra {
       Kokkos::resize(newvals,vals.extent(0));
       Kokkos::deep_copy(newvals,vals);
       k_values1D_ = newvals;   
+      this->fillComplete(source.getDomainMap(),source.getRangeMap());
     }
     else if (copyOrView == Teuchos::View) {
       return;
