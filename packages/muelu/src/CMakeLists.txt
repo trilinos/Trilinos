@@ -202,7 +202,8 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES "")
+SET(MUELU_ETI_CPP_SOURCES_SLGN "")
+SET(MUELU_ETI_CPP_SOURCES_LGN "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
@@ -230,7 +231,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_SC_LO_GO_NO_SRC
     0)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "Utils/ExplicitInstantiation"
@@ -238,7 +239,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME"
     MueLu_ETI_LO_GO_NO_SRC
     1)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ELSE() # do not split cpp files
@@ -294,7 +295,8 @@ ENDFUNCTION(MUELU_PROCESS_ETI_TEMPLATE)
 ## MUELU_ETI_CPP_SOURCES collects all filenames of the MueLu ETI *.cpp files
 ## These are later added to the gloabl list of source files (SOURCES)
 ##
-SET(MUELU_ETI_CPP_SOURCES "")
+SET(MUELU_ETI_CPP_SOURCES_SLGN "")
+SET(MUELU_ETI_CPP_SOURCES_LGN "")
 
 ##
 ## only build ETI *.cpp files if ETI is enabled.
@@ -321,14 +323,14 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_SC_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_SLGN ${MueLu_ETI_SC_LO_GO_NO_SRC})
   
   MUELU_PROCESS_ETI_TEMPLATE(
     "${MUELU_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/MueLu_ETI_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_LO_GO_NO_SRC)
-  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
+  LIST(APPEND MUELU_ETI_CPP_SOURCES_LGN ${MueLu_ETI_LO_GO_NO_SRC})
 ENDIF()
 
 ENDIF() # split ETI files
@@ -349,8 +351,9 @@ LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
 
 ###############################################
-SET(SOURCES ${MUELU_ETI_CPP_SOURCES})
+SET(SOURCES ${MUELU_ETI_CPP_SOURCES_SLGN})
 APPEND_GLOB(SOURCES */*.cpp)
+SET(SOURCES_LGN ${MUELU_ETI_CPP_SOURCES_LGN})
 
 #APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
 
@@ -437,6 +440,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
 LIST(REMOVE_ITEM SOURCES ${SOURCES_INTERFACE})
+LIST(REMOVE_ITEM SOURCES_LGN ${SOURCES_INTERFACE})
 
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
@@ -459,6 +463,12 @@ TRIBITS_ADD_LIBRARY(
   muelu
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  )
+
+TRIBITS_ADD_LIBRARY(
+  muelu_lgn
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES_LGN}
   )
 
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
