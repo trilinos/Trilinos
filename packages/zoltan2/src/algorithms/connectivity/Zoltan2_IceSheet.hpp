@@ -68,7 +68,7 @@ namespace Zoltan2{
 template <typename Adapter>
 void IceProp<Adapter>::buildModel(modelFlag_t &flags){
   flags.set(REMOVE_SELF_EDGES);
-  flags.set(GENERATE_CONSECUTIVE_IDS);
+  //flags.set(GENERATE_CONSECUTIVE_IDS);
   
   this->env->debug(DETAILED_STATUS, "	building graph model");
   this->model = rcp(new GraphModel<base_adapter_t>(this->adapter, this->env,
