@@ -644,6 +644,7 @@ namespace Tpetra {
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
     Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
@@ -654,6 +655,7 @@ namespace Tpetra {
       typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
+#endif
 
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///

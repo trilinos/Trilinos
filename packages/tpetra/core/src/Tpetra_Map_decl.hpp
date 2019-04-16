@@ -1008,9 +1008,11 @@ namespace Tpetra {
     //@{
 
     //! Create a shallow copy of this Map, with a different Node type.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class NodeOut>
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > TPETRA_DEPRECATED
     clone (const Teuchos::RCP<NodeOut>& nodeOut) const;
+#endif
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -1605,6 +1607,7 @@ namespace Tpetra {
   } // namespace Details
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > TPETRA_DEPRECATED
@@ -1617,6 +1620,7 @@ namespace Tpetra {
     // Copy constructor does a shallow copy.
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
+#endif
 
 } // namespace Tpetra
 

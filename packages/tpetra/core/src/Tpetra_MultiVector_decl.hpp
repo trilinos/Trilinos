@@ -841,9 +841,11 @@ namespace Tpetra {
     /// \warning We prefer that you use Tpetra::deep_copy (see below)
     ///   rather than this method.  This method will go away at some
     ///   point.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2) const;
+#endif
 
     //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
