@@ -94,7 +94,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg,
-               const Teuchos::RCP< Node > &node) 
+               const Teuchos::RCP< Node > &/*node*/) 
       : EpetraMapT(numGlobalElements, indexBase, comm, lg)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
