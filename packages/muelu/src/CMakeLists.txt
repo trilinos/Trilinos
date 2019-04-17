@@ -460,19 +460,18 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  )
-
-TRIBITS_ADD_LIBRARY(
   muelu_lgn
   HEADERS ${HEADERS}
   SOURCES ${SOURCES_LGN}
   )
 
-target_link_libraries(muelu muelu_lgn)
-target_link_libraries(muelu_lgn muelu)
+TRIBITS_ADD_LIBRARY(
+  muelu
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  DEPLIBS muelu_lgn
+  )
+
 
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
