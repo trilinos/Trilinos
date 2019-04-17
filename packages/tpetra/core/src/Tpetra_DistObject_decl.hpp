@@ -305,9 +305,9 @@ namespace Tpetra {
   /// <i>must</i> implement at least the following methods:
   /// <ul>
   /// <li> checkSizes() </li>
-  /// <li> copyAndPermuteNew() </li>
-  /// <li> packAndPrepareNew() </li>
-  /// <li> unpackAndCombineNew() </li>
+  /// <li> copyAndPermute() </li>
+  /// <li> packAndPrepare() </li>
+  /// <li> unpackAndCombine() </li>
   /// </ul>
   /// You <i>may</i> also implement constantNumberOfPackets(), if
   /// appropriate.
@@ -400,11 +400,13 @@ namespace Tpetra {
     /// Import, else use doExport() with a precomputed Export object.
     ///
     /// "Restricted Mode" does two things:
-    /// 1) Skips copyAndPermute
-    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
-    //
-    /// This cannot be used if #2 is not true, OR there are permutes.
-    /// The "source" maps still need to match
+    /// <ol>
+    /// <li> Skips copyAndPermute </li>
+    /// <li> Allows the "target" Map of the transfer to be a subset of
+    ///      the Map of <tt>*this</tt>, in a "locallyFitted" sense. </li>
+    /// </ol>
+    /// This cannot be used if (2) is not true, OR there are permutes.
+    /// The "source" maps still need to match.
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.
@@ -415,7 +417,8 @@ namespace Tpetra {
     void
     doImport (const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-              CombineMode CM, bool restrictedMode = false);
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     /// \brief Export data into this object using an Export object
     ///   ("forward mode").
@@ -430,11 +433,13 @@ namespace Tpetra {
     /// Export, else use doImport() with a precomputed Import object.
     ///
     /// "Restricted Mode" does two things:
-    /// 1) Skips copyAndPermute
-    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
-    //
-    /// This cannot be used if #2 is not true, OR there are permutes.
-    /// The "source" maps still need to match
+    /// <ol>
+    /// <li> Skips copyAndPermute </li>
+    /// <li> Allows the "target" Map of the transfer to be a subset of
+    ///      the Map of <tt>*this</tt>, in a "locallyFitted" sense. </li>
+    /// </ol>
+    /// This cannot be used if (2) is not true, OR there are permutes.
+    /// The "source" maps still need to match.
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
@@ -445,7 +450,8 @@ namespace Tpetra {
     void
     doExport (const SrcDistObject& source,
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-              CombineMode CM, bool restrictedMode = false);
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     /// \brief Import data into this object using an Export object
     ///   ("reverse mode").
@@ -460,11 +466,13 @@ namespace Tpetra {
     /// case.
     ///
     /// "Restricted Mode" does two things:
-    /// 1) Skips copyAndPermute
-    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
-    //
-    /// This cannot be used if #2 is not true, OR there are permutes.
-    /// The "source" maps still need to match
+    /// <ol>
+    /// <li> Skips copyAndPermute </li>
+    /// <li> Allows the "target" Map of the transfer to be a subset of
+    ///      the Map of <tt>*this</tt>, in a "locallyFitted" sense. </li>
+    /// </ol>
+    /// This cannot be used if (2) is not true, OR there are permutes.
+    /// The "source" maps still need to match.
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param exporter [in] Precomputed data redistribution plan.
@@ -476,7 +484,8 @@ namespace Tpetra {
     void
     doImport (const SrcDistObject& source,
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-              CombineMode CM, bool restrictedMode = false);
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     /// \brief Export data into this object using an Import object
     ///   ("reverse mode").
@@ -491,11 +500,13 @@ namespace Tpetra {
     /// case.
     ///
     /// "Restricted Mode" does two things:
-    /// 1) Skips copyAndPermute
-    /// 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
-    //
-    /// This cannot be used if #2 is not true, OR there are permutes.
-    /// The "source" maps still need to match
+    /// <ol>
+    /// <li> Skips copyAndPermute </li>
+    /// <li> Allows the "target" Map of the transfer to be a subset of
+    ///      the Map of <tt>*this</tt>, in a "locallyFitted" sense. </li>
+    /// </ol>
+    /// This cannot be used if (2) is not true, OR there are permutes.
+    /// The "source" maps still need to match.
     ///
     /// \param source [in] The "source" object for redistribution.
     /// \param importer [in] Precomputed data redistribution plan.
@@ -507,7 +518,8 @@ namespace Tpetra {
     void
     doExport (const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-              CombineMode CM, bool restrictedMode = false);
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     //@}
     //! @name Attribute accessor methods
@@ -776,6 +788,7 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Perform copies and permutations that are local to the
     ///   calling (MPI) process.
     ///
@@ -809,7 +822,43 @@ namespace Tpetra {
                          buffer_device_type>& permuteToLIDs,
                        const Kokkos::DualView<const local_ordinal_type*,
                          buffer_device_type>& permuteFromLIDs);
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Perform copies and permutations that are local to the
+    ///   calling (MPI) process.
+    ///
+    /// Subclasses <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, packs
+    /// the <i>source</i> object's data.
+    ///
+    /// \pre permuteToLIDs and permuteFromLIDs are sync'd to both host
+    ///   and device.  That is,
+    ///   <tt>permuteToLIDs.need_sync_host()</tt>,
+    ///   <tt>permuteToLIDs.need_sync_device()</tt>,
+    ///   <tt>permuteFromLIDs.need_sync_host()</tt>, and
+    ///   <tt>permuteFromLIDs.need_sync_device()</tt> are all false.
+    ///
+    /// \param source [in] On entry, the source object of the Export
+    ///   or Import operation.
+    /// \param numSameIDs [in] The number of elements that are the
+    ///   same on the source and target objects.  These elements live
+    ///   on the same process in both the source and target objects.
+    /// \param permuteToLIDs [in] List of the elements that are
+    ///   permuted.  They are listed by their local index (LID) in the
+    ///   destination object.
+    /// \param permuteFromLIDs [in] List of the elements that are
+    ///   permuted.  They are listed by their local index (LID) in the
+    ///   source object.
+    virtual void
+    copyAndPermute (const SrcDistObject& source,
+                    const size_t numSameIDs,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& permuteToLIDs,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& permuteFromLIDs);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Pack data and metadata for communication (sends).
     ///
     /// Subclasses <i>must</i> reimplement this function.  Its default
@@ -860,7 +909,60 @@ namespace Tpetra {
                          buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets,
                        Distributor& distor);
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Pack data and metadata for communication (sends).
+    ///
+    /// Subclasses <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, packs
+    /// the <i>source</i> object's data.
+    ///
+    /// \pre exportLIDs is sync'd to both host and device.  That is,
+    ///   <tt>exportLIDs.need_sync_host ()</tt> and
+    ///   <tt>exportLIDs.need_sync_device()</tt> are both false.
+    ///
+    /// \param source [in] Source object for the redistribution.
+    ///
+    /// \param exportLIDs [in] List of the entries (as local IDs in
+    ///   the source object) that Tpetra will send to other processes.
+    ///
+    /// \param exports [out] On exit, the packed data to send.
+    ///   Implementations must reallocate this as needed (prefer
+    ///   reusing the existing allocation if possible), and may modify
+    ///   and/or sync this wherever they like.
+    ///
+    /// \param numPacketsPerLID [out] On exit, the implementation of
+    ///   this method must do one of two things: either set
+    ///   <tt>numPacketsPerLID[i]</tt> to the number of packets to be
+    ///   packed for <tt>exportLIDs[i]</tt> and set
+    ///   <tt>constantNumPackets</tt> to zero, or set
+    ///   <tt>constantNumPackets</tt> to a nonzero value.  If the
+    ///   latter, the implementation must not modify the entries of
+    ///   <tt>numPacketsPerLID</tt>.  If the former, the
+    ///   implementation may sync <tt>numPacketsPerLID</tt> this
+    ///   wherever it likes, either to host or to device.  The
+    ///   allocation belongs to DistObject, not to subclasses; don't
+    ///   be tempted to change this to pass by reference.
+    ///
+    /// \param constantNumPackets [out] On exit, 0 if the number of
+    ///   packets per LID could differ, else (if nonzero) the number
+    ///   of packets per LID (which must be constant).
+    ///
+    /// \param distor [in] The Distributor object we are using.  Most
+    ///   implementations will not use this.
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& exportLIDs,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Perform any unpacking and combining after
     ///   communication.
     ///
@@ -913,31 +1015,66 @@ namespace Tpetra {
                          const size_t constantNumPackets,
                          Distributor& distor,
                          const CombineMode combineMode);
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Perform any unpacking and combining after
+    ///   communication.
+    ///
+    /// Subclasses <i>must</i> reimplement this function.  Its default
+    /// implementation does nothing.  Note that the <t>target</i>
+    /// object of the Export or Import, namely <tt>*this</tt>, unpacks
+    /// the received data into itself, possibly modifying its entries.
+    ///
+    /// \pre importLIDs is sync'd to both host and device.  That is,
+    ///   <tt>importLIDs.need_sync_host ()</tt> and
+    ///   <tt>importLIDs.need_sync_device()</tt> are both false.
+    ///
+    /// \param importLIDs [in] List of the entries (as LIDs in the
+    ///   destination object) we received from other processes.
+    ///
+    /// \param imports [in/out] On input: Buffer of received data to
+    ///   unpack.  DistObject promises nothing about where this is
+    ///   sync'd.  Implementations may sync this wherever they like,
+    ///   either to host or to device.  The allocation belongs to
+    ///   DistObject, not to subclasses; don't be tempted to change
+    ///   this to pass by reference.
+    ///
+    /// \param numPacketsPerLID [in/out] On input: If
+    ///   <tt>constantNumPackets</tt> is zero, then
+    ///   <tt>numPacketsPerLID[i]</tt> contains the number of packets
+    ///   imported for </tt>importLIDs[i]</tt>.  DistObject promises
+    ///   nothing about where this is sync'd.  Implementations may
+    ///   sync this wherever they like, either to host or to device.
+    ///   The allocation belongs to DistObject, not to subclasses;
+    ///   don't be tempted to change this to pass by reference.
+    ///
+    /// \param constantNumPackets [in] If nonzero, then the number of
+    ///   packets per LID is the same for all entries ("constant") and
+    ///   <tt>constantNumPackets</tt> is that number.  If zero, then
+    ///   <tt>numPacketsPerLID[i]</tt> is the number of packets to
+    ///   unpack for LID <tt>importLIDs[i]</tt>.
+    ///
+    /// \param distor [in] The Distributor object we are using.  Most
+    ///   implementations will not use this.
+    ///
+    /// \param combineMode [in] The CombineMode to use when combining
+    ///   the imported entries with existing entries.
+    virtual void
+    unpackAndCombine (const Kokkos::DualView<const local_ordinal_type*,
+                        buffer_device_type>& importLIDs,
+                      Kokkos::DualView<packet_type*,
+                        buffer_device_type> imports,
+                      Kokkos::DualView<size_t*,
+                        buffer_device_type> numPacketsPerLID,
+                      const size_t constantNumPackets,
+                      Distributor& distor,
+                      const CombineMode combineMode);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Whether the subclass implements the "new" or "old" interface.
     ///
     /// \warning This method is DEPRECATED.  Do not call it, and do
     ///   not implement it in your subclasses of DistObject.
-    ///
-    /// The "new" interface consists of the following methods:
-    /// <ul>
-    /// <li> copyAndPermuteNew </li>
-    /// <li> packAndPrepareNew </li>
-    /// <li> unpackAndCombineNew </li>
-    /// </ul>
-    /// The "old" interface has been deprecated (see GitHub issue
-    /// #4853) and will be removed soon.  It consists of the following
-    /// methods:
-    /// <ul>
-    /// <li> copyAndPermute </li>
-    /// <li> packAndPrepare </li>
-    /// <li> unpackAndCombine </li>
-    /// </ul>
-    /// The <tt>checkSizes</tt> method belongs to both interfaces.
-    ///
-    /// The old interface is deprecated.  New subclasses of DistObject
-    /// must always implement the new interface.
     virtual bool TPETRA_DEPRECATED useNewInterface () { return true; }
 
     /// \brief Perform copies and permutations that are local to this
@@ -1026,7 +1163,7 @@ namespace Tpetra {
     /// \return Whether we actually reallocated.
     ///
     /// We don't need a "reallocExportsIfNeeded" method, because
-    /// <tt>exports_</tt> always gets passed into packAndPrepareNew()
+    /// <tt>exports_</tt> always gets passed into packAndPrepare()
     /// by nonconst reference.  Thus, that method can resize the
     /// DualView without needing to call other DistObject methods.
     bool

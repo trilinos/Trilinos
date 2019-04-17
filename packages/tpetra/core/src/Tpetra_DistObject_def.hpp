@@ -273,7 +273,8 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doImport (const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-            CombineMode CM, bool restrictedMode)
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doImport (forward mode)";
@@ -314,7 +315,8 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doExport (const SrcDistObject& source,
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-            CombineMode CM, bool restrictedMode)
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doExport (forward mode)";
@@ -356,7 +358,8 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doImport (const SrcDistObject& source,
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-            CombineMode CM, bool restrictedMode)
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doImport (reverse mode)";
@@ -398,7 +401,8 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doExport (const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
-            CombineMode CM, bool restrictedMode)
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doExport (reverse mode)";
@@ -826,11 +830,11 @@ namespace Tpetra {
       // There is at least one GID to copy or permute.
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "2. copyAndPermuteNew" << endl;
+        os << *prefix << "2. copyAndPermute" << endl;
         std::cerr << os.str ();
       }
       ProfilingRegion region_cp
-        ("Tpetra::DistObject::doTransferNew::copyAndPermuteNew");
+        ("Tpetra::DistObject::doTransferNew::copyAndPermute");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in favor
       // of Kokkos profiling.
@@ -841,14 +845,19 @@ namespace Tpetra {
         // There is at least one GID to copy or permute.
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "2. copyAndPermuteNew" << endl;
+          os << *prefix << "2. copyAndPermute" << endl;
           std::cerr << os.str ();
         }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         this->copyAndPermuteNew (src, numSameIDs, permuteToLIDs,
                                  permuteFromLIDs);
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+        this->copyAndPermute (src, numSameIDs, permuteToLIDs,
+                              permuteFromLIDs);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "After copyAndPermuteNew:" << endl
+          os << *prefix << "After copyAndPermute:" << endl
              << *prefix << "  "
              << dualViewStatusToString (permuteToLIDs, "permuteToLIDs")
              << endl
@@ -895,14 +904,14 @@ namespace Tpetra {
 
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "4. packAndPrepareNew: before, "
+        os << *prefix << "4. packAndPrepare: before, "
            << dualViewStatusToString (this->exports_, "exports_")
            << endl;
         std::cerr << os.str ();
       }
       {
         ProfilingRegion region_pp
-          ("Tpetra::DistObject::doTransferNew::packAndPrepareNew");
+          ("Tpetra::DistObject::doTransferNew::packAndPrepare");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
         // favor of Kokkos profiling.
@@ -916,18 +925,24 @@ namespace Tpetra {
         // source will fill the numExportPacketsPerLID_ array.
 
         // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
-        // Alternately, make packAndPrepareNew take a "commOnHost"
+        // Alternately, make packAndPrepare take a "commOnHost"
         // argument to tell it where to leave the data?
         //
         // NOTE (mfh 04 Feb 2019) Subclasses of DistObject should have
         // the freedom to pack and unpack either on host or device.
         // We should prefer sync'ing only on demand.  Thus, we can
-        // answer the above question: packAndPrepareNew should not
+        // answer the above question: packAndPrepare should not
         // take a commOnHost argument, and doTransferNew should sync
         // where needed, if needed.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         this->packAndPrepareNew (src, exportLIDs, this->exports_,
                                  this->numExportPacketsPerLID_,
                                  constantNumPackets, distor);
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+        this->packAndPrepare (src, exportLIDs, this->exports_,
+                              this->numExportPacketsPerLID_,
+                              constantNumPackets, distor);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
         if (commOnHost) {
           if (this->exports_.need_sync_host ()) {
             this->exports_.sync_host ();
@@ -941,7 +956,7 @@ namespace Tpetra {
       }
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "5.1. After packAndPrepareNew, "
+        os << *prefix << "5.1. After packAndPrepare, "
            << dualViewStatusToString (this->exports_, "exports_")
            << endl;
         std::cerr << os.str ();
@@ -1233,11 +1248,11 @@ namespace Tpetra {
 
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "8. unpackAndCombineNew" << endl;
+          os << *prefix << "8. unpackAndCombine" << endl;
           std::cerr << os.str ();
         }
         ProfilingRegion region_uc
-          ("Tpetra::DistObject::doTransferNew::unpackAndCombineNew");
+          ("Tpetra::DistObject::doTransferNew::unpackAndCombine");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
         // favor of Kokkos profiling.
@@ -1251,9 +1266,15 @@ namespace Tpetra {
         // FIXME (mfh 26 Apr 2016) Check that all input DualViews
         // were most recently updated in the same memory space, and
         // sync them to the same place (based on commOnHost) if not.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         this->unpackAndCombineNew (remoteLIDs, this->imports_,
                                    this->numImportPacketsPerLID_,
                                    constantNumPackets, distor, CM);
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+        this->unpackAndCombine (remoteLIDs, this->imports_,
+                                this->numImportPacketsPerLID_,
+                                constantNumPackets, distor, CM);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1796,40 +1817,63 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermuteNew (const SrcDistObject&,
-                     const size_t,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>&,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>&)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject&,
+   const size_t,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>&,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>&)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepareNew (const SrcDistObject&,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>&,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>&,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type>,
-                     size_t&,
-                     Distributor&)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject&,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>&,
+   Kokkos::DualView<
+     packet_type*,
+     buffer_device_type>&,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type>,
+   size_t&,
+   Distributor&)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& /* importLIDs */,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type> /* imports */,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> /* numPacketsPerLID */,
-                       const size_t /* constantNumPackets */,
-                       Distributor& /* distor */,
-                       const CombineMode /* combineMode */)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type>& /* importLIDs */,
+   Kokkos::DualView<
+     packet_type*,
+     buffer_device_type> /* imports */,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type> /* numPacketsPerLID */,
+   const size_t /* constantNumPackets */,
+   Distributor& /* distor */,
+   const CombineMode /* combineMode */)
   {}
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE

@@ -749,34 +749,49 @@ protected:
   virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
 
   virtual void
-  copyAndPermuteNew (const SrcDistObject& sourceObj,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteFromLIDs);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& sourceObj,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteFromLIDs);
 
   virtual void
-  packAndPrepareNew (const SrcDistObject& sourceObj,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& /* distor */);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& sourceObj,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& exportLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type>& exports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   size_t& constantNumPackets,
+   Distributor& /* distor */);
 
   virtual void
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& importLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type> imports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       const size_t constantNumPackets,
-                       Distributor& /* distor */,
-                       const CombineMode combineMode);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   Distributor& /* distor */,
+   const CombineMode combineMode);
   //@}
 
 private:
