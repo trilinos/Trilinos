@@ -124,9 +124,10 @@ namespace MueLuTests {
     MueLuList.set("coarse: max size",numRows-1); // make it so we want two levels
     MueLuList.set("max levels",2);
 
+    Teuchos::ParameterList userParamList = MueLuList.sublist("user data");
+    userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
     Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
-        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-            A, MueLuList, coordinates, Teuchos::null);
+        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, MueLuList);
 
     // confirm that we did get a hierarchy with two levels -- a sanity check for this test
     TEST_EQUALITY(2, H->GetGlobalNumLevels());

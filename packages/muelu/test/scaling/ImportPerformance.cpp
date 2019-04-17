@@ -468,7 +468,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     // =========================================================================
     typedef Teuchos::ScalarTraits<SC> STS;
     SC one = STS::one();
-    typedef typename STS::magnitudeType real_type;
+    typedef typename STS::coordinateType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     // =========================================================================
@@ -684,7 +684,9 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
                 auto MueLuSU_D2 = TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup"));
 
                 A->SetMaxEigenvalueEstimate(-one);
-                H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
+                Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
+                userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+                H = MueLu::CreateXpetraPreconditioner(A, mueluList);
                 comm->barrier();
             }
 

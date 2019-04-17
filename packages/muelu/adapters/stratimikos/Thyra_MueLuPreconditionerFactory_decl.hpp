@@ -371,7 +371,15 @@ namespace Thyra {
         }
 #endif
         // build a new MueLu hierarchy
-        H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates, nullspace);
+        const std::string userName = "user data";
+        Teuchos::ParameterList& userParamList = paramList.sublist(userName);
+        if(Teuchos::nonnull(coordinates)) {
+          userParamList.set<RCP<XpMultVecDouble> >("Coordinates", coordinates);
+        }
+        if(Teuchos::nonnull(nullspace)) {
+          userParamList.set<RCP<XpMultVec> >("Nullspace", nullspace);
+        }
+        H = MueLu::CreateXpetraPreconditioner(A, paramList);
 
       } else {
         // reuse old MueLu hierarchy stored in MueLu Tpetra/Epetra operator and put in new matrix
