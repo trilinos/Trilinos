@@ -646,7 +646,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     for(size_t i=0; i<numLocal; i++){
       rowptr[i] = i;
       colind[i] = Teuchos::as<LO>(i);
-      values[i] = 2*ScalarTraits<Scalar>::one();
+      values[i] = one+one;
     }
     rowptr[numLocal]=numLocal;
 
