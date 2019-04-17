@@ -132,12 +132,10 @@ void ex_err(const char *module_name, const char *message, int err_num)
 
   /* save the error message for replays */
   if (message != NULL) {
-    ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH);
-    EX_ERRMSG[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH + 1);
   }
   if (module_name != NULL) {
-    ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH);
-    EX_PNAME[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH + 1);
   }
 
   if (err_num == EX_PRTLASTMSG) {
@@ -189,12 +187,10 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
 
   /* save the error message for replays */
   if (message != NULL) {
-    ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH);
-    EX_ERRMSG[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH + 1);
   }
   if (module_name != NULL) {
-    ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH);
-    EX_PNAME[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH + 1);
   }
 
   if (err_num == EX_PRTLASTMSG) {
@@ -274,10 +270,8 @@ void ex_set_err(const char *module_name, const char *message, int err_num)
 {
   EX_FUNC_ENTER_INT();
   /* save the error message for replays */
-  ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH);
-  ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH);
-  EX_ERRMSG[MAX_ERR_LENGTH - 1] = '\0';
-  EX_PNAME[MAX_ERR_LENGTH - 1]  = '\0';
+  ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH + 1);
+  ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH + 1);
   if (err_num != EX_LASTERR) {
     /* Use last set error number, but add new function and message */
     EX_ERR_NUM = err_num;

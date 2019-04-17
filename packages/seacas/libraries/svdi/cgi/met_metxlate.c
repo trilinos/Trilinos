@@ -1182,8 +1182,7 @@ static void xcqid(anything **params, anything **surf_list)
     vdiqdc(&qdc_index, &value);
     cgi_devid = get_devid_char(value);
     if (cgi_devid != NULL) {
-      copy_string(dev_descrip.dev_id, cgi_devid, 3);
-      dev_descrip.dev_id[3] = '\0';
+      copy_string(dev_descrip.dev_id, cgi_devid, 4);
     }
 
   } /* end if not set */

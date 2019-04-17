@@ -89,8 +89,8 @@ static char *copy_string(char *dest, char const *source, long int elements)
 }
 
 #define MAXCHAR 80
-#define WORDLEN 8 /* Note that we *FORCE* the Fortran string */
-                  /* length be 8 for the strings hard and soft. */
+#define WORDLEN 8 + 1 /* Note that we *FORCE* the Fortran string */
+                      /* length be 8 plus 1 for trailing null for the strings hard and soft. */
 #if defined(ADDC_)
 void exparm_(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FTNINT *idau,
              FTNINT hlen, FTNINT slen)

@@ -52,7 +52,7 @@
 #include <utility>
 #include <vector>
 
-#include "copy_string.h"
+#include "copy_string_cpp.h"
 #include "smart_assert.h"
 
 #include <exodusII.h>
@@ -1494,16 +1494,16 @@ namespace {
 
     char buffer[MAX_STR_LENGTH + 1];
 
-    copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH); // Code
-    copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH); // Version
+    copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
+    copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
     time_t date_time = time(nullptr);
     strftime(buffer, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time));
 
-    copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH);
+    copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH + 1);
 
     strftime(buffer, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time));
-    copy_string(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH);
+    copy_string(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH + 1);
 
     error = ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
     if (error < 0) {
@@ -1757,13 +1757,13 @@ namespace {
           blocks[p][b].attributeCount  = temp_block.num_attribute;
           blocks[p][b].offset_         = temp_block.num_entry;
           blocks[p][b].position_       = b;
-          copy_string(blocks[p][b].elType, temp_block.topology, MAX_STR_LENGTH);
+          copy_string(blocks[p][b].elType, temp_block.topology);
 
           glob_blocks[b].elementCount += temp_block.num_entry;
           glob_blocks[b].nodesPerElement = temp_block.num_nodes_per_entry;
           glob_blocks[b].attributeCount  = temp_block.num_attribute;
           glob_blocks[b].position_       = b;
-          copy_string(glob_blocks[b].elType, temp_block.topology, MAX_STR_LENGTH);
+          copy_string(glob_blocks[b].elType, temp_block.topology);
         }
 
         if (temp_block.num_attribute > 0 && glob_blocks[b].attributeNames.empty()) {
@@ -3165,7 +3165,7 @@ namespace {
     }
     info += os;
     const char *sinfo = info.c_str();
-    copy_string(info_record, sinfo, size);
+    copy_string(info_record, sinfo, size + 1);
 #else
     struct utsname sys_info
     {
@@ -3183,7 +3183,7 @@ namespace {
     info += ", Machine: ";
     info += sys_info.machine;
     const char *sinfo = info.c_str();
-    copy_string(info_record, sinfo, size);
+    copy_string(info_record, sinfo, size + 1);
 #endif
   }
 
