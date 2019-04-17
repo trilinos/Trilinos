@@ -377,8 +377,8 @@ namespace Ioex {
 
     // Check for maximum name length used on the input file.
     int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-    if (max_name_length > maximumNameLength) {
-      maximumNameLength = max_name_length;
+    if (max_name_length + 1 > maximumNameLength) {
+      maximumNameLength = max_name_length + 1;
     }
 
     ex_set_max_name_length(exodusFilePtr, maximumNameLength);
@@ -460,10 +460,10 @@ namespace Ioex {
       {
         int j = 0;
         for (size_t i = 0; i < num_qa_records; i++) {
-          Ioss::Utils::copy_string(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          Ioss::Utils::copy_string(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          Ioss::Utils::copy_string(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          Ioss::Utils::copy_string(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][0], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][1], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][2], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][3], qaRecords[j++], MAX_STR_LENGTH + 1);
         }
       }
 
@@ -480,10 +480,8 @@ namespace Ioex {
         version = get_region()->get_property("code_version").get_string();
       }
 
-      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][0], codename.c_str(),
-                               MAX_STR_LENGTH + 1);
-      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][1], version.c_str(),
-                               MAX_STR_LENGTH + 1);
+      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][0], codename, MAX_STR_LENGTH + 1);
+      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][1], version, MAX_STR_LENGTH + 1);
 
       int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
       if (ierr < 0) {
@@ -532,19 +530,18 @@ namespace Ioex {
           total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
       int i = 0;
-      Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information().c_str(),
-                               max_line_length + 1);
+      Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information(), max_line_length + 1);
 
       Ioss::Utils::copy_string(info[i++], Ioex::Version(), max_line_length + 1);
 
       // Copy input file lines into 'info' array...
       for (size_t j = 0; j < input_lines.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], input_lines[j].c_str(), max_line_length + 1);
+        Ioss::Utils::copy_string(info[i], input_lines[j], max_line_length + 1);
       }
 
       // Copy "information_records" property data ...
       for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-        Ioss::Utils::copy_string(info[i], informationRecords[j].c_str(), max_line_length + 1);
+        Ioss::Utils::copy_string(info[i], informationRecords[j], max_line_length + 1);
       }
 
       int ierr = ex_put_info(get_file_pointer(), total_lines, info);
@@ -1087,10 +1084,10 @@ namespace Ioex {
     // Title...
     if (get_region()->property_exists("title")) {
       std::string title_str = get_region()->get_property("title").get_string();
-      Ioss::Utils::copy_string(the_title, title_str.c_str(), max_line_length);
+      Ioss::Utils::copy_string(the_title, title_str);
     }
     else {
-      Ioss::Utils::copy_string(the_title, "IOSS Default Title", max_line_length);
+      Ioss::Utils::copy_string(the_title, "IOSS Default Title");
     }
 
     Ioex::Mesh mesh(spatialDimension, the_title, !usingParallelIO);
@@ -1553,16 +1550,16 @@ namespace Ioex {
       // have already created the output database and populated the set/block names. At this point,
       // it is too late to change the size of the names stored on the output database... (I think...
       // try changing DIM_STR_NAME value and see if works...)
-      if (name_length > (size_t)maximumNameLength) {
+      if (name_length >= (size_t)maximumNameLength) {
         if (myProcessor == 0) {
           IOSS_WARNING << "WARNING: There are variables names whose length (" << name_length
                        << ") exceeds the current "
                           "maximum name length ("
-                       << maximumNameLength << ") set for this database (" << get_filename()
-                       << ").\n"
+                       << maximumNameLength - 1 << ")\n         set for this database ("
+                       << get_filename() << ").\n"
                        << "         You should either reduce the length of the variable name, or "
-                          "set the 'MAXIMUM_NAME_LENGTH' property "
-                       << "to at least " << name_length
+                          "set the 'MAXIMUM_NAME_LENGTH' property\n"
+                       << "         to at least " << name_length
                        << ".\n         Contact gdsjaar@sandia.gov for more information.\n\n";
         }
       }

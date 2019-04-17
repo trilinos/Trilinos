@@ -32,7 +32,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "copy_string.h"
+#include "copy_string_cpp.h"
 #include "el_check_monot.h"    // for check_monot
 #include "el_elm.h"            // for HEXSHELL, NN_SIDE, etc
 #include "exodusII.h"          // for ex_inquire_int, etc
@@ -564,12 +564,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    copy_string(cTemp, strrchr(Output_File_Base_Name, '/') + 1, 511);
+    copy_string(cTemp, strrchr(Output_File_Base_Name, '/') + 1);
   }
   else {
 
     /* No separator; this is already just the basename... */
-    copy_string(cTemp, Output_File_Base_Name, 511);
+    copy_string(cTemp, Output_File_Base_Name);
   }
 
   if (strlen(PIO_Info.Exo_Extension) == 0) {

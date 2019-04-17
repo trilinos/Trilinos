@@ -33,7 +33,7 @@
  *
  */
 
-#include "copy_string.h"
+#include "copy_string_cpp.h"
 #include "exodusII.h" // for MAX_LINE_LENGTH, ex_close, etc
 #include "globals.h"
 #include "nem_spread.h"
@@ -106,7 +106,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   error         = ex_get_init_ext(exoid, &info);
   check_exodus_error(error, "ex_get_init");
 
-  copy_string(GeomTitle, info.title, MAX_LINE_LENGTH);
+  copy_string(GeomTitle, info.title);
   globals.Num_Dim      = info.num_dim;
   globals.Num_Node     = info.num_nodes;
   globals.Num_Elem     = info.num_elem;

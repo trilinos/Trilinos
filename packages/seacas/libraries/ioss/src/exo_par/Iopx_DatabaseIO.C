@@ -4255,12 +4255,11 @@ void DatabaseIO::write_meta_data()
   // Title...
   if (region->property_exists("title")) {
     std::string title_str = region->get_property("title").get_string();
-    Ioss::Utils::copy_string(the_title, title_str.c_str(), max_line_length);
+    Ioss::Utils::copy_string(the_title, title_str);
   }
   else {
-    Ioss::Utils::copy_string(the_title, "IOSS Output Default Title", max_line_length);
+    Ioss::Utils::copy_string(the_title, "IOSS Output Default Title");
   }
-  the_title[max_line_length] = '\0';
 
   // Edge Blocks --
   {

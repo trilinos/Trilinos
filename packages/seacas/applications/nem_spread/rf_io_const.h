@@ -96,15 +96,15 @@ template <typename T> struct Restart_Description
 
 /**Extern statements for parameters in rf_io.h */
 
-extern char ExoFile[]; /* Exodus II File containing problem definition.   */
-                       /* This name is the root name.                     */
-extern char
-    Output_File_Base_Name[]; /* Base name of output file. If it has a suffix, it will be stripped */
+extern char ExoFile[MAX_FNL];               /* Exodus II File containing problem definition.   */
+                                            /* This name is the root name.                     */
+extern char Output_File_Base_Name[MAX_FNL]; /* Base name of output file. If it has a suffix, it will
+                                               be stripped */
 
-extern char Exo_LB_File[];
+extern char Exo_LB_File[MAX_FNL];
 /* Exodus II file containing the mesh load-balance */
 /* information                                     */
-extern char Exo_Res_File[];
+extern char Exo_Res_File[MAX_FNL];
 /* Exodus II file containing the mesh result       */
 /* information                                     */
 extern int Debug_Flag; /* Flag to specify debug info is to be printed out.
