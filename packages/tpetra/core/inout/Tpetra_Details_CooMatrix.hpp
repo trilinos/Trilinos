@@ -994,12 +994,6 @@ protected:
     return ! (* (this->localError_));
   }
 
-  /// \brief Whether the subclass implements the "old" or "new"
-  ///   (Kokkos-friendly) interface (it implements the "new"
-  ///   interface).
-  virtual bool useNewInterface () { return true; }
-
-
   //! Kokkos::Device specialization for DistObject communication buffers.
   using buffer_device_type =
     typename ::Tpetra::DistObject<char, LO, GO, NT>::buffer_device_type;

@@ -5557,14 +5557,6 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  useNewInterface ()
-  {
-    return true;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteNew (const SrcDistObject& source,

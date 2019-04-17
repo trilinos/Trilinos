@@ -485,13 +485,6 @@ checkSizes (const Tpetra::SrcDistObject& src)
   return ! getMultiVectorFromSrcDistObject (src).is_null ();
 }
 
-template<class Scalar, class LO, class GO, class Node>
-bool BlockMultiVector<Scalar, LO, GO, Node>::
-useNewInterface ()
-{
-  return true;
-}
-
 template<class SC, class LO, class GO, class NT>
 std::pair<int, std::unique_ptr<std::string>>
 BlockMultiVector<SC, LO, GO, NT>::

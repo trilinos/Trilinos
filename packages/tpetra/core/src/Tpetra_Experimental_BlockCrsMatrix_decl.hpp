@@ -739,18 +739,14 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
-  //! Whether this class implements the old or new interface of DistObject.
-  virtual bool useNewInterface () {
-    return true;
-  }
-
   /// \typedef buffer_device_type
   /// \brief Kokkos::Device specialization for communication buffers.
   ///
   /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
   using buffer_device_type = typename DistObject<Scalar, LO, GO,
                                                  Node>::buffer_device_type;
+
+  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
 
   virtual void
   copyAndPermuteNew (const SrcDistObject& sourceObj,

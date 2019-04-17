@@ -2443,9 +2443,6 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    //! Whether this class implements the old or new interface of DistObject.
-    virtual bool useNewInterface () { return true; }
-
     virtual void
     copyAndPermuteNew (const SrcDistObject& sourceObj,
                        const size_t numSameIDs,

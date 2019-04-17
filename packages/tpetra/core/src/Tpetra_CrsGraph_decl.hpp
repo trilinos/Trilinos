@@ -1283,9 +1283,6 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
-    virtual bool
-    useNewInterface () override;
-
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,

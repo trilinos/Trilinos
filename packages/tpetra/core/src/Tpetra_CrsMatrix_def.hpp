@@ -752,7 +752,7 @@ namespace Tpetra {
   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>    
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsMatrix(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                                                                   const Teuchos::DataAccess copyOrView)
     :CrsMatrix(source.getCrsGraph(),source.getLocalValuesView())
@@ -762,10 +762,10 @@ namespace Tpetra {
 
     if (copyOrView == Teuchos::Copy) {
       typename local_matrix_type::values_type vals = source.getLocalValuesView();
-      typename local_matrix_type::values_type newvals; 
+      typename local_matrix_type::values_type newvals;
       Kokkos::resize(newvals,vals.extent(0));
       Kokkos::deep_copy(newvals,vals);
-      k_values1D_ = newvals;   
+      k_values1D_ = newvals;
       if (source.isFillComplete ()) {
         this->fillComplete(source.getDomainMap(),source.getRangeMap());
       }
@@ -781,7 +781,7 @@ namespace Tpetra {
                                             << Teuchos::View << ".");
     }
   }
-  
+
 
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -6621,14 +6621,6 @@ namespace Tpetra {
     const row_matrix_type* srcRowMat =
       dynamic_cast<const row_matrix_type*> (&source);
     return (srcRowMat != NULL);
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  useNewInterface ()
-  {
-    return true;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -3883,46 +3883,33 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
-    /// \brief Whether the subclass implements the "old" or "new"
-    ///   (Kokkos-friendly) interface.
-    ///
-    /// The "old" interface consists of copyAndPermute,
-    /// packAndPrepare, and unpackAndCombine.  The "new" interface
-    /// consists of copyAndPermuteNew, packAndPrepareNew, and
-    /// unpackAndCombineNew.  We prefer the new interface, because it
-    /// facilitates thread parallelization using Kokkos data
-    /// structures.
-    ///
-    /// At some point, we will remove the old interface, and rename
-    /// the "new" interface (by removing "New" from the methods'
-    /// names), so that it becomes the only interface.
-    virtual bool
-    useNewInterface () override;
-
   private:
-
     void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,
                         const LocalOrdinal permuteToLIDs[],
                         const LocalOrdinal permuteFromLIDs[],
                         const size_t numPermutes);
-
   protected:
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) override;
+                       const Kokkos::DualView<
+                         const local_ordinal_type*,
+                         buffer_device_type>& permuteToLIDs,
+                       const Kokkos::DualView<
+                         const local_ordinal_type*,
+                         buffer_device_type>& permuteFromLIDs) override;
 
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+                       const Kokkos::DualView<
+                         const local_ordinal_type*,
+                         buffer_device_type>& exportLIDs,
                        Kokkos::DualView<char*, buffer_device_type>& exports,
                        Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
                        size_t& constantNumPackets,
                        Distributor& distor) override;
-
   private:
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.

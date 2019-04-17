@@ -603,8 +603,6 @@ protected:
 
   virtual bool checkSizes (const Tpetra::SrcDistObject& source);
 
-  virtual bool useNewInterface ();
-
   virtual void
   copyAndPermuteNew (const SrcDistObject& source,
                      const size_t numSameIDs,
