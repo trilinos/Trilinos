@@ -264,9 +264,11 @@ public:
   /// \tparam Node2 The returned Vector's Node type.
   ///
   /// \param node2 [in] The returned Vector's Kokkos Node instance.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Node2>
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
   clone (const Teuchos::RCP<Node2>& node2);
+#endif
 
   //@}
   //! @name Post-construction modification routines

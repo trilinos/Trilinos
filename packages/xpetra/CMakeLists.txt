@@ -18,6 +18,22 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+# Deperecation stuff
+SET (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  ${PACKAGE_NAME_UC}_ENABLE_DEPRECATED_CODE
+  "Whether Xpetra enables deprecated code (that is, anything marked with the XPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  ${${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
+IF (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
+  MESSAGE(STATUS "Xpetra: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "Xpetra: Disabling deprecated code")
+ENDIF ()
+
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental

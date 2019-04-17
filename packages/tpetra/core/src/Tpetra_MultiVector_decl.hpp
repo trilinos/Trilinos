@@ -537,8 +537,6 @@ namespace Tpetra {
     /// copyOrView = Teuchos::Copy will make the resulting MultiVector
     /// a deep copy of the input MultiVector.
     ///
-    /// \warning The case where copyOrView = Teuchos::Copy constructor
-    ///   has been DEPRECATED and may be removed soon.
     MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                  const Teuchos::DataAccess copyOrView);
 
@@ -843,9 +841,11 @@ namespace Tpetra {
     /// \warning We prefer that you use Tpetra::deep_copy (see below)
     ///   rather than this method.  This method will go away at some
     ///   point.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2) const;
+#endif
 
     //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
@@ -2493,7 +2493,7 @@ namespace Tpetra {
 
     template<class DstMultiVectorType,
              class SrcMultiVectorType>
-    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>
+    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>  TPETRA_DEPRECATED
     MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::
     clone (const src_mv_type& X,
            const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
