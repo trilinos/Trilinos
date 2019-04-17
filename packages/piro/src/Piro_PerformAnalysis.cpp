@@ -264,7 +264,10 @@ Piro::PerformDakotaAnalysis(
 
 #ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 int
+#ifdef HAVE_PIRO_OPTIPACK
+// Spew deprecation warnings only if Piro user has requested OptiPack.
 OPTIPACK_DEPRECATED
+#endif
 Piro::PerformOptiPackAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& optipackParams,
