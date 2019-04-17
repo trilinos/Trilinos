@@ -48,6 +48,8 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 #ifdef HAVE_TPETRA_DEBUG

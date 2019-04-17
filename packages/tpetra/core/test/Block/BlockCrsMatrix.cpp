@@ -47,6 +47,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {

@@ -1325,10 +1325,7 @@ elementWiseMultiplyMultiVector (MultiVectorType& X,
                                       typename ScalingFactorsViewType::non_const_value_type
                                     >::value)
 {
-  using device_type = typename MultiVectorType::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   using index_type = typename MultiVectorType::local_ordinal_type;
-
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
   if (X.need_sync_device ()) {
@@ -1531,10 +1528,7 @@ elementWiseDivideMultiVector (MultiVectorType& X,
                                     typename ScalingFactorsViewType::non_const_value_type
                                   >::value)
 {
-  using device_type = typename MultiVectorType::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   using index_type = typename MultiVectorType::local_ordinal_type;
-
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
   if (X.need_sync_device ()) {
