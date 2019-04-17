@@ -435,8 +435,8 @@ namespace Xpetra {
     TpetraMap (global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) 
+               LocalGlobal lg,
+               const Teuchos::RCP< Node > & /*node*/)
      : TpetraMap(numGlobalElements, indexBase, comm, lg)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -636,7 +636,7 @@ namespace Xpetra {
     TpetraMap (global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed,
+               LocalGlobal lg,
                const Teuchos::RCP< Node > & /* node */) 
       : TpetraMap(numGlobalElements, indexBase, comm, lg)
     {}
