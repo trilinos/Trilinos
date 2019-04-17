@@ -581,7 +581,7 @@ namespace Tpetra {
       // the index base.  The index base should be separate from the
       // minimum GID.
       directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm,
-                                         GloballyDistributed, map.getNode ()));
+                                         GloballyDistributed));
       // The number of Directory elements that my process owns.
       const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
 
