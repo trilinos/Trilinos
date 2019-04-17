@@ -101,10 +101,12 @@ namespace MueLu {
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
 
-    //! Clone
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     template <class NewNode>
+    MUELU_DEPRECATED
     Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
     clone(const RCP<NewNode>& new_node) const;
+#endif
 
     //! @name MueLu specific
     //@{
