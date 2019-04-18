@@ -377,8 +377,8 @@ namespace Ioex {
 
     // Check for maximum name length used on the input file.
     int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-    if (max_name_length + 1 > maximumNameLength) {
-      maximumNameLength = max_name_length + 1;
+    if (max_name_length > maximumNameLength) {
+      maximumNameLength = max_name_length;
     }
 
     ex_set_max_name_length(exodusFilePtr, maximumNameLength);
@@ -1550,12 +1550,12 @@ namespace Ioex {
       // have already created the output database and populated the set/block names. At this point,
       // it is too late to change the size of the names stored on the output database... (I think...
       // try changing DIM_STR_NAME value and see if works...)
-      if (name_length >= (size_t)maximumNameLength) {
+      if (name_length > (size_t)maximumNameLength) {
         if (myProcessor == 0) {
           IOSS_WARNING << "WARNING: There are variables names whose length (" << name_length
                        << ") exceeds the current "
                           "maximum name length ("
-                       << maximumNameLength - 1 << ")\n         set for this database ("
+                       << maximumNameLength << ")\n         set for this database ("
                        << get_filename() << ").\n"
                        << "         You should either reduce the length of the variable name, or "
                           "set the 'MAXIMUM_NAME_LENGTH' property\n"
