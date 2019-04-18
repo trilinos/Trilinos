@@ -63,6 +63,7 @@
 #include "OptiPack_NonlinearCG.hpp"
 #include "GlobiPack_BrentsLineSearch.hpp"
 #endif
+#endif
 
 #ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
@@ -129,6 +130,7 @@ Piro::PerformAnalysis(
                     analysisParams.sublist("GlobiPack"), result);
 
   }
+#endif
 #endif
 #ifdef HAVE_PIRO_ROL
   else if (analysis == "ROL") {
