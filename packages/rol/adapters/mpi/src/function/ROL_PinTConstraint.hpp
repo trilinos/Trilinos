@@ -1317,6 +1317,69 @@ public:
    }
 
    /**
+    * Apply the specified relaxation given an initial condition (output value)
+    * x and the righthand side b. Returns, if requested, the residual reductions
+    * are maintened.
+    *
+    * \param [in,out] x                    Solution vector
+    * \param [in]     b                    RHS vector
+    * \param [in]     u                    State vector
+    * \param [in]     z                    Control vector
+    * \param [in]     tol                  ROL tolerance
+    * \param [in]     level                Multigrid level (level=0 is the fine level)
+    * \param [in]     assumeZeroInitial    Assume the zero initial, saves a mat-vec
+    * \param [in]     computeFinalResidual Compute the final residual before exiting
+    */ 
+   double applySmoother(Vector<Real> & x, 
+                        const Vector<Real> & b,
+                        const Vector<Real> & u, 
+                        const Vector<Real> & z,
+                        Real & tol,
+                        int level,
+                        bool assumeZeroInitial,
+                        bool computeFinalResidual) 
+   {
+     bool approxSmoother = true;
+
+     auto store = mgAugmentedKKTStorage_.find(level);
+     Ptr<Vector<Real>> dx       = store->second.dx;
+     Ptr<Vector<Real>> residual = store->second.residual;
+
+     double res_norm = 0.0;
+     if(assumeZeroInitial) {
+       residual->set(b);
+     }
+     else {
+       applyAugmentedKKT(*residual,x,u,z,tol,level);
+       residual->scale(-1.0);
+       residual->axpy(1.0,b);
+     }
+
+     if(recordResidualReductions_)
+       res_norm = residual->norm();
+
+     // apply one smoother sweep
+     for(int i=0;i<numSweeps_;i++) {
+
+       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
+       x.axpy(omega_,*dx);
+
+       // compute the residual
+       applyAugmentedKKT(*residual,x,u,z,tol,level);
+ 
+       if(i<numSweeps_-1 or computeFinalResidual or recordResidualReductions_) {
+         residual->scale(-1.0);
+         residual->axpy(1.0,b);
+       }
+     }
+
+     if(recordResidualReductions_)
+       return residual->norm()/res_norm;
+
+     return -1.0;
+   }
+
+   /**
     * \brief Apply a multigrid in time approximate inverse operator to the KKT matrix
     *
     * This uses a multigrid in time algorithm with a parallel domain decomposition block
@@ -1415,28 +1478,15 @@ public:
        return;
      }
 
-     bool approxSmoother = true;
-
      timer->start("applyMGAugmentedKKT-preSmooth");
 
-     residual->set(b);
-
-     // apply one smoother sweep
-     for(int i=0;i<numSweeps_;i++) {
-
-       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
-       x.axpy(omega_,*dx);
-
-       // compute the residual
-       applyAugmentedKKT(*residual,x,u,z,tol,level);
-
-       residual->scale(-1.0);
-       residual->axpy(1.0,b);
-     }
-
-     // record residual reductions
-     if(recordResidualReductions_) {
-       preSmoothResidualReduction_[level].push_back(residual->norm()/b.norm());
+     // pre-smooth
+     /////////////////////////////////////////////////////////////////////////////////
+     {
+       bool finalResidualRequired  = true;
+       bool assumeZeroInitialGuess = true;
+       double relativeResidual = applySmoother(x,b,u,z,tol,level,assumeZeroInitialGuess,finalResidualRequired);
+       preSmoothResidualReduction_[level].push_back(relativeResidual);
      }
 
      timer->stop("applyMGAugmentedKKT-preSmooth");
@@ -1492,29 +1542,14 @@ public:
 
      // apply one smoother sweep
      timer->start("applyMGAugmentedKKT-postSmooth");
+
+     // post-smooth
+     /////////////////////////////////////////////////////////////////////////////////
      {
-       double res_norm = -1.0;
-       for(int i=0;i<numSweeps_;i++) {
-         // compute the residual
-         applyAugmentedKKT(*residual,x,u,z,tol,level);
-         residual->scale(-1.0);
-         residual->axpy(1.0,b);
-
-         if(i==0 and recordResidualReductions_) 
-           res_norm = residual->norm();
-
-         applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
-         x.axpy(omega_,*dx);
-       }
-
-       if(recordResidualReductions_) {
-         // compute the residual
-         applyAugmentedKKT(*residual,x,u,z,tol,level);
-         residual->scale(-1.0);
-         residual->axpy(1.0,b);
-
-         postSmoothResidualReduction_[level].push_back(residual->norm()/res_norm);
-       }
+       bool finalResidualRequired = false;
+       bool assumeZeroInitialGuess     = false;
+       double relativeResidual = applySmoother(x,b,u,z,tol,level,assumeZeroInitialGuess,finalResidualRequired);
+       postSmoothResidualReduction_[level].push_back(relativeResidual);
      }
 
      timer->stop("applyMGAugmentedKKT-postSmooth");
