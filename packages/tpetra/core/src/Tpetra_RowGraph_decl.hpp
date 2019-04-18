@@ -90,8 +90,10 @@ namespace Tpetra {
     virtual Teuchos::RCP<const Teuchos::Comm<int> >
     getComm () const = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! The Kokkos Node instance with which this object was created.
-    virtual Teuchos::RCP<Node> getNode () const = 0;
+    virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode () const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! The Map that describes this graph's distribution of rows over processes.
     virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >

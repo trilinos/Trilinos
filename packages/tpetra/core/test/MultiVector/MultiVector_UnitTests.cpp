@@ -206,6 +206,7 @@ namespace {
     TEST_ASSERT( gblSuccess == 1 );
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Cloner, LO, GO, Scalar , Node )
   {
@@ -241,6 +242,7 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )

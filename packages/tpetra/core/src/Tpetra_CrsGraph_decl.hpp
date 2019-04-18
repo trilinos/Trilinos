@@ -920,8 +920,10 @@ namespace Tpetra {
     //! Returns the communicator.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Returns the underlying node.
-    Teuchos::RCP<node_type> getNode() const override;
+    TPETRA_DEPRECATED Teuchos::RCP<node_type> getNode() const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Returns the Map that describes the row distribution in this graph.
     Teuchos::RCP<const map_type> getRowMap () const override;

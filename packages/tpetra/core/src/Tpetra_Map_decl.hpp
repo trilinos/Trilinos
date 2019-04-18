@@ -983,8 +983,10 @@ namespace Tpetra {
     //! Get this Map's communicator, as a Teuchos::Comm.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
-    Teuchos::RCP<Node> getNode () const;
+    TPETRA_DEPRECATED Teuchos::RCP<Node> getNode () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
     //! Implementation of \c Teuchos::Describable

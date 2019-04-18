@@ -103,6 +103,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NodeConversion, N2 )
   {
+#ifdef KDDKDD_DO_NOT_COMMIT
     typedef Tpetra::Map<> Map1;
     typedef Tpetra::CrsMatrix<>::scalar_type SCALAR;
     typedef Map1::local_ordinal_type LO;
@@ -188,6 +189,7 @@ namespace {
       TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+numLocal-2 );
     }
 
+#endif  // KDDKDD_DO_NOT_COMMIT
   }
 
 //
