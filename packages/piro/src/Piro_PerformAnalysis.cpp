@@ -58,8 +58,8 @@
 #include "MoochoPack_MoochoThyraSolver.hpp"
 #endif
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 #ifdef HAVE_PIRO_OPTIPACK
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 #include "OptiPack_NonlinearCG.hpp"
 #include "GlobiPack_BrentsLineSearch.hpp"
 #endif
@@ -120,8 +120,8 @@ Piro::PerformAnalysis(
   }
 #endif
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 #ifdef HAVE_PIRO_OPTIPACK
+#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
   else if (analysis == "OptiPack") {
     *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
     status = Piro::PerformOptiPackAnalysis(piroModel,
