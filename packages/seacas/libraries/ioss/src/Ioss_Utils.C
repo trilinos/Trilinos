@@ -1514,14 +1514,13 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
 }
 
 // Safer than Ioss::Utils::copy_string -- guarantees null termination
-char *Ioss::Utils::copy_string(char *dest, char const *source, size_t elements)
+void Ioss::Utils::copy_string(char *dest, char const *source, size_t elements)
 {
   char *d;
   for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
     *d = *source;
   }
   *d = '\0';
-  return d;
 }
 
 namespace {

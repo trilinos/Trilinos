@@ -76,21 +76,41 @@ namespace Xpetra {
   public:
 
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-        LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0, LocalGlobal lg = Xpetra::GloballyDistributed,
-        const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node)) {
-
-      return rcp(new StridedMap(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg, node));
+        LocalOrdinal stridedBlockId, GlobalOrdinal offset, LocalGlobal lg,
+        const Teuchos::RCP<Node> & /* node */) 
+    {
+      return Build(lib, numGlobalElements, indexBase, stridingInfo, comm,
+                   stridedBlockId, offset, lg);
+    }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
+        std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+        LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0, LocalGlobal lg = Xpetra::GloballyDistributed)
+    {
+      return rcp(new StridedMap(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg));
     }
 
     //! Map constructor with a user-defined contiguous distribution.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-        LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0,
-        const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node)) {
-
-      return rcp(new StridedMap(lib, numGlobalElements, numLocalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, node));
+        LocalOrdinal stridedBlockId, GlobalOrdinal offset,
+        const Teuchos::RCP<Node> & /* node */)
+    {
+      return Build(lib, numGlobalElements, numLocalElements, indexBase,
+                   stridingInfo, comm, stridedBlockId, offset);
+    }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
+        std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+        LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0)
+    {
+      return rcp(new StridedMap(lib, numGlobalElements, numLocalElements, indexBase, stridingInfo, comm, stridedBlockId, offset));
     }
 
     static RCP<StridedMap> Build(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0) {
@@ -125,7 +145,7 @@ namespace Xpetra {
 
       const Teuchos::ArrayView<const GlobalOrdinal> subBlockDofGids_view(&subBlockDofGids[0],subBlockDofGids.size());
 
-      return rcp(new StridedMap(map->lib(), Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId, map->getNode()));
+      return rcp(new StridedMap(map->lib(), Teuchos::OrdinalTraits<global_size_t>::invalid(), subBlockDofGids_view, map->getIndexBase(), stridingInfo, map->getComm(), stridedBlockId));
     }
 
     //! Create copy of existing map (this just creates a copy of your map, it's not a clone in the sense of Tpetra)
@@ -139,12 +159,29 @@ namespace Xpetra {
         newElements[i] = oldElements[i];
 
       std::vector<size_t> strData = map.getStridingData();
-      return rcp(new StridedMap(map.lib(), map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId(), map.getNode()));
+      return rcp(new StridedMap(map.lib(), map.getGlobalNumElements(), newElements, map.getIndexBase(), strData, map.getComm(), map.getStridedBlockId()));
 
       //XPETRA_FACTORY_END;
     }
 
     //! Map constructor with a user-defined contiguous distribution. (for experts only. There is no special check whether the generated strided maps are valid)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    static RCP<StridedMap>
+    Build (UnderlyingLib lib,
+           global_size_t numGlobalElements,
+           const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+           GlobalOrdinal indexBase,
+           std::vector<size_t>& stridingInfo,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           LocalOrdinal stridedBlockId, // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
+           GlobalOrdinal offset,
+           const Teuchos::RCP<Node> & /* node */)
+    {
+      return Build(lib, numGlobalElements, elementList, indexBase, stridingInfo,
+                   comm, stridedBlockId, offset);
+    }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     static RCP<StridedMap>
     Build (UnderlyingLib lib,
            global_size_t numGlobalElements,
@@ -153,12 +190,11 @@ namespace Xpetra {
            std::vector<size_t>& stridingInfo,
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalOrdinal stridedBlockId = -1, // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
-           GlobalOrdinal /* offset */ = 0,
-           const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node))
+           GlobalOrdinal /* offset */ = 0)
     {
       return rcp (new StridedMap (lib, numGlobalElements, elementList,
                                   indexBase, stridingInfo, comm,
-                                  stridedBlockId, node));
+                                  stridedBlockId));
     }
   };
 }

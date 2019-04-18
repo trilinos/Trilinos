@@ -304,11 +304,12 @@ main (int argc, char *argv[])
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
+      RCP<operator_type> opA(A);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "MueLu") {
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU         
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
           // If we have Avatar, then let's use it
           if (inputList.isSublist("Avatar-MueLu")) {
@@ -332,9 +333,9 @@ main (int argc, char *argv[])
 	    if (inputList.isSublist("MueLu")) {
 	      ParameterList mueluParams = inputList.sublist("MueLu");
               mueluParams.sublist("user data").set("Coordinates",coords);
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA,mueluParams);
             } else {
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA);
             }
           }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU

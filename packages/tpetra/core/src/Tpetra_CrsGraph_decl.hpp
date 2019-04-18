@@ -644,8 +644,9 @@ namespace Tpetra {
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >
+    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
@@ -654,6 +655,7 @@ namespace Tpetra {
       typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
+#endif
 
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
@@ -1281,16 +1283,18 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
-    virtual bool
-    useNewInterface () override;
-
     virtual void
-    copyAndPermuteNew (const SrcDistObject& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& permuteFromLIDs) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& source,
+     const size_t numSameIDs,
+     const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& permuteToLIDs,
+     const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& permuteFromLIDs) override;
 
     void
     applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
@@ -1320,15 +1324,20 @@ namespace Tpetra {
                             buffer_device_type> numPacketsPerLID) const;
 
     virtual void
-    packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type>& exports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& source,
+     const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<packet_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<size_t*,
+       buffer_device_type> numPacketsPerLID,
+     size_t& constantNumPackets,
+     Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
@@ -1355,15 +1364,21 @@ namespace Tpetra {
                        Distributor& distor) const;
 
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                           buffer_device_type>& importLIDs,
-                         Kokkos::DualView<packet_type*,
-                           buffer_device_type> imports,
-                         Kokkos::DualView<size_t*,
-                           buffer_device_type> numPacketsPerLID,
-                         const size_t constantNumPackets,
-                         Distributor& distor,
-                         const CombineMode combineMode) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<packet_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<size_t*,
+       buffer_device_type> numPacketsPerLID,
+     const size_t constantNumPackets,
+     Distributor& distor,
+     const CombineMode combineMode) override;
+
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -2809,7 +2824,7 @@ namespace Tpetra {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, InputNodeType> input_crs_graph_type;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, OutputNodeType> output_crs_graph_type;
 
-      static Teuchos::RCP<output_crs_graph_type>
+      static Teuchos::RCP<output_crs_graph_type> TPETRA_DEPRECATED
       clone (const input_crs_graph_type& graphIn,
              const Teuchos::RCP<OutputNodeType> &nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)

@@ -91,7 +91,6 @@ namespace Piro {
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
 
-#ifndef OPTIPACK_HIDE_DEPRECATED_CODE
   //! \brief Performs analysis of a solved model using Optipack.
   //! \details Requires that the OptiPack package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
@@ -106,7 +105,6 @@ namespace Piro {
      Teuchos::ParameterList& globipackParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
-#endif
 
   //! \brief Performs analysis of a solved model using ROL.
   //! \details Requires that the ROL package is available.

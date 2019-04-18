@@ -45,8 +45,8 @@
 #include "Tpetra_Experimental_BlockMultiVector_fwd.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Experimental_BlockView.hpp"
-#include "Teuchos_OrdinalTraits.hpp"
+#include <memory>
+#include <utility>
 
 namespace Tpetra {
 namespace Experimental {
@@ -147,38 +147,39 @@ class BlockMultiVector :
     public Tpetra::DistObject<Scalar, LO, GO, Node>
 {
 private:
-  typedef Tpetra::DistObject<Scalar, LO, GO, Node> dist_object_type;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-
-protected:
-  typedef Scalar packet_type;
+  using dist_object_type = Tpetra::DistObject<Scalar, LO, GO, Node>;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using packet_type = typename dist_object_type::packet_type;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming.
   //@{
 
   //! The specialization of Tpetra::Map that this class uses.
-  typedef Tpetra::Map<LO, GO, Node> map_type;
+  using map_type = Tpetra::Map<LO, GO, Node>;
   //! The specialization of Tpetra::MultiVector that this class uses.
-  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+  using mv_type = Tpetra::MultiVector<Scalar, LO, GO, Node>;
 
-  //! The type of entries in the matrix.
-  typedef Scalar scalar_type;
-  /// \brief The implementation type of entries in the matrix.
+  //! The type of entries in the object.
+  using scalar_type = Scalar;
+  /// \brief The implementation type of entries in the object.
   ///
   /// Letting scalar_type and impl_scalar_type differ addresses
   /// Tpetra's work-around to deal with missing device macros and
   /// volatile overloads in types like std::complex<T>.
-  typedef typename mv_type::impl_scalar_type impl_scalar_type;
+  using impl_scalar_type = typename mv_type::impl_scalar_type;
   //! The type of local indices.
-  typedef LO local_ordinal_type;
+  using local_ordinal_type = LO;
   //! The type of global indices.
-  typedef GO global_ordinal_type;
+  using global_ordinal_type = GO;
   //! The Kokkos Device type.
-  typedef typename Node::device_type device_type;
+  using device_type = typename mv_type::device_type;
 
-  //! The Kokkos Node type.
-  typedef Node node_type;
+  //! The Kokkos Node type; a legacy thing that will go away at some point.
+  using node_type = Node;
+
+  //! Kokkos::Device specialization used for communication buffers.
+  using buffer_device_type = typename dist_object_type::buffer_device_type;
 
   /// \brief "Block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.
@@ -603,26 +604,50 @@ protected:
   virtual bool checkSizes (const Tpetra::SrcDistObject& source);
 
   virtual void
-  copyAndPermute (const Tpetra::SrcDistObject& source,
-                  const size_t numSameIDs,
-                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& source,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteFromLIDs);
 
   virtual void
-  packAndPrepare (const Tpetra::SrcDistObject& source,
-                  const Teuchos::ArrayView<const LO>& exportLIDs,
-                  Teuchos::Array<impl_scalar_type>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Tpetra::Distributor& distor);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& source,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& exportLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type>& exports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   size_t& constantNumPackets,
+   Distributor& distor);
 
   virtual void
-  unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-                    const Teuchos::ArrayView<const impl_scalar_type> &imports,
-                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    const size_t constantNumPackets,
-                    Tpetra::Distributor& distor,
-                    Tpetra::CombineMode CM);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   Distributor& distor,
+   const CombineMode combineMode);
+
   //@}
 
 protected:
@@ -643,10 +668,7 @@ protected:
 
   /// \brief True if and only if \c meshLocalIndex is a valid local
   ///   index in the mesh Map.
-  bool isValidLocalMeshIndex (const LO meshLocalIndex) const {
-    return meshLocalIndex != Teuchos::OrdinalTraits<LO>::invalid () &&
-      meshMap_.isNodeLocalElement (meshLocalIndex);
-  }
+  bool isValidLocalMeshIndex (const LO meshLocalIndex) const;
 
 private:
   /// \brief Mesh Map given to constructor.
@@ -693,6 +715,70 @@ private:
 
   static Teuchos::RCP<const BlockMultiVector<Scalar, LO, GO, Node> >
   getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src);
+
+  /// \brief Implementation of copyAndPermute.
+  ///
+  /// \tparam LO The type of local indices.
+  /// \tparam GO The type of global indices.
+  /// \tparam NT The Node type.
+  ///
+  /// \param tgt [in] "Target" object of an Export or Import operation
+  ///   on a BlockMultiVector.
+  /// \param src [in] "Source" object of an Export or Import operation
+  ///   on a BlockMultiVector.
+  /// \param numSameIDs [in] See DistObject::copyAndPermute.
+  /// \param permuteToLIDs [in] See DistObject::copyAndPermute.
+  /// \param permuteFromLIDs [in] See DistObject::copyAndPermute.
+  ///
+  /// \return (Error code, pointer to error message).  If no error,
+  ///   then error code is zero and error message pointer is null.
+  std::pair<int, std::unique_ptr<std::string>>
+  copyAndPermuteImpl
+    (const BlockMultiVector<Scalar, LO, GO, Node>& src,
+     const size_t numSameIDs,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type
+     >& permuteToLIDs,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type
+     >& permuteFromLIDs);
+
+  std::pair<int, std::unique_ptr<std::string>>
+  packAndPrepareImpl
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type
+     >& exportLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type
+     >& exports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type
+     > /* numPacketsPerLID */,
+     size_t& constantNumPackets,
+     Distributor& /* distor */ ) const;
+
+  std::pair<int, std::unique_ptr<std::string>>
+  unpackAndCombineImpl
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type
+     >& importLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type
+     > imports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type
+     > numPacketsPerLID,
+     const size_t constantNumPackets,
+     Distributor& distor,
+     const CombineMode combineMode);
 };
 
 } // namespace Experimental

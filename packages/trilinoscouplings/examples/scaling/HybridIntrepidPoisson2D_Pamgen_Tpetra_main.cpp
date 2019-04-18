@@ -311,6 +311,7 @@ main (int argc, char *argv[])
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
+      RCP<operator_type> opA(A);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
@@ -319,14 +320,14 @@ main (int argc, char *argv[])
 	  for(int i=0; i<numMueluRebuilds+1; i++) {
 	    if (inputList.isSublist("MueLu")) {
 	      ParameterList mueluParams = inputList.sublist("MueLu");
-          const std::string userName = "user data";
-          Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
-          userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-          userParamList.set< RCP<Tpetra::MultiVector<double,LO,GO,Node>> >("Coordinates", coordinates);
-          userParamList.set< std::string >("string aggregationRegionType", regionType);
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
+              const std::string userName = "user data";
+              Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
+              userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
+              userParamList.set< RCP<Tpetra::MultiVector<double,LO,GO,Node>> >("Coordinates", coordinates);
+              userParamList.set< std::string >("string aggregationRegionType", regionType);
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA, mueluParams);
 	    } else {
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA);
 	    }
 	  }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU

@@ -150,6 +150,7 @@ namespace {
   /// unit test for matrix-matrix multiplication (both for Epetra and Tpetra)
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MatrixMatrix, Multiply_Epetra, M, MA, Scalar, LO, GO, Node )
   {
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -159,7 +160,6 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     { // Epetra test
       // get a comm and node
       RCP<const Comm<int> > comm = getDefaultComm();
@@ -263,6 +263,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MatrixMatrix, Multiply_Epetra64, M, MA, Scalar, LO, GO, Node )
   {
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -272,7 +273,6 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     { // Epetra test
       // get a comm and node
       RCP<const Comm<int> > comm = getDefaultComm();

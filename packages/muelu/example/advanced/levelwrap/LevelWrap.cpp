@@ -136,8 +136,7 @@ namespace MueLuExamples {
     using Teuchos::rcp;
 
     Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
-        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
-            A, MueLuList, Teuchos::null, Teuchos::null);
+        MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, MueLuList);
 
     typedef Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     typedef Belos::OperatorT<MV>                                         OP;
