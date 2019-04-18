@@ -48,7 +48,7 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 
-/** \brief Evalautor to unit test the EvaluatorUnitTester for field checks for all ranks
+/** \brief Evaluator to unit test the EvaluatorUnitTester for field checks for all ranks
 
     This class is used to test the EvaluatorUnitTester object.
 */

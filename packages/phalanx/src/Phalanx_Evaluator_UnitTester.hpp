@@ -53,16 +53,16 @@
 
 namespace PHX {
 
-/** \brief Utility that allows for unit testing of single evalautor. */
+/** \brief Utility that allows for unit testing of single evaluator. */
 template<typename EvalType, typename Traits>
-class EvalautorUnitTester {
+class EvaluatorUnitTester {
 
   PHX::FieldManager<Traits> field_manager_;
 
 public:
 
   //! Register the evaluator that will be unit tested.
-  void setEvalautorToTest(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
+  void setEvaluatorToTest(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
   {
     field_manager_.template registerEvaluator<EvalType>(e);
 
@@ -77,9 +77,9 @@ public:
 
   /** \brief Register an extra evaluator that is not tested but is
   used to provide intermediate quantities for testing a separate
-  evalautor.
+  evaluator.
   */
-  void addAuxiliaryEvalautor(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
+  void addAuxiliaryEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits>>& e)
   { field_manager_.template registerEvaluator<EvalType>(e); }
 
   //! Set an unmanaged MDField that provides dependent field values for the evaluator to be tested against.

@@ -180,8 +180,8 @@ sortAndOrderEvaluators()
 
   // *************************
   // Insert contributed fields into the field_to_node_index_ if there
-  // is no evalautor already assigned. Here we support two cases - (1)
-  // there is an evalautor that "evalautes" the field and is already
+  // is no evaluator already assigned. Here we support two cases - (1)
+  // there is an evaluator that "evalautes" the field and is already
   // assigned but other evaluators declared as "contributor" for the
   // same field are present and (2) there no evaluators that
   // "evaluate" the field, only "contributors". In the second case, we
@@ -259,7 +259,7 @@ sortAndOrderEvaluators()
     }
   }
 
-  this->createEvalautorBindingFieldMap();
+  this->createEvaluatorBindingFieldMap();
 
   sorting_called_ = true;
 }
@@ -327,11 +327,11 @@ dfsVisit(PHX::DagNode<Traits>& node, int& time)
       }
     }
     
-    // For "contributed" fields, if an evalautor exists that also
-    // "evalautes" this field, then we assume that the evalautor that
+    // For "contributed" fields, if an evaluator exists that also
+    // "evalautes" this field, then we assume that the evaluator that
     // "evalautes" the field performs the initialization of the field
     // for the contributions. So the contributed fields must have a
-    // dependency on the evalauted field evalautor.
+    // dependency on the evalauted field evaluator.
     const auto& contrib_fields = node.get()->contributedFields(); 
     for (const auto& cfield : contrib_fields) {
       const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
@@ -704,11 +704,11 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
       }
     }
 
-    // For "contributed" fields, if an evalautor exists that also
-    // "evalautes" this field, then we assume that the evalautor that
+    // For "contributed" fields, if an evaluator exists that also
+    // "evalautes" this field, then we assume that the evaluator that
     // "evalautes" the field performs the initialization of the field
     // for the contributions. So the contributed fields must have a
-    // dependency on the evalauted field evalautor.
+    // dependency on the evalauted field evaluator.
     const auto& contrib_fields = node.get()->contributedFields(); 
     for (const auto& cfield : contrib_fields) {
       const auto& evaluated_field_search = field_to_node_index_.find(cfield->identifier());
@@ -890,7 +890,7 @@ printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
 
 //=======================================================================
 template<typename Traits>
-void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
+void PHX::DagManager<Traits>::createEvaluatorBindingFieldMap()
 {
   field_to_evaluators_binding_.clear();
   
