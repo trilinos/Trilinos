@@ -75,9 +75,9 @@ namespace Tpetra {
   // Forward declaration for CrsGraph::swap() test
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class crsGraph_Swap_Tester;
 
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     // Forward declaration of an implementation detail of CrsGraph::clone.
     template<class OutputCrsGraphType, class InputCrsGraphType>
     class CrsGraphCopier {
@@ -87,6 +87,7 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };  // class CrsGraphCopier
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     template<class LO, class GO, class NT>
     void
@@ -2825,8 +2826,8 @@ namespace Tpetra {
     return destGraph;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
-
     template<class LocalOrdinal,
              class GlobalOrdinal,
              class OutputNodeType,
@@ -3225,8 +3226,9 @@ namespace Tpetra {
         return clonedGraph;
       }
     };  // class CrsGraphCopier
-
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 } // namespace Tpetra
 
 #endif // TPETRA_CRSGRAPH_DECL_HPP

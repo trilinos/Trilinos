@@ -815,6 +815,7 @@ namespace Tpetra {
     template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Create a deep copy of this CrsMatrix, where the copy
     ///   may have a different Node type.
     ///
@@ -839,7 +840,6 @@ namespace Tpetra {
     ///   The domain Map and range Map passed to fillComplete() are
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
