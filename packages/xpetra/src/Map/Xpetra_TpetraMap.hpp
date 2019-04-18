@@ -454,7 +454,7 @@ namespace Xpetra {
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) 
+               const Teuchos::RCP< Node > & /*node */) 
       : TpetraMap(numGlobalElements, numLocalElements, indexBase, comm)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -472,7 +472,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
+               const Teuchos::RCP< Node > & /* node */)
       : TpetraMap(numGlobalElements, elementList, indexBase, comm)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
