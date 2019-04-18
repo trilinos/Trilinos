@@ -41,10 +41,10 @@
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // The right-hand-side corresponds to a randomly generated solution.
-// The initial guesses are all set to zero. 
+// The initial guesses are all set to zero.
 // The problem is solver for multiple scalar types, and timings are reported.
 //
-// NOTE: No preconditioner is used in this case. 
+// NOTE: No preconditioner is used in this case.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -75,17 +75,17 @@ using std::vector;
 using Teuchos::tuple;
 
 bool proc_verbose = false, reduce_tol = false, dumpdata = false;
-ParameterList mptestpl; 
+ParameterList mptestpl;
 int rnnzmax;
-int mptestdim, numrhs; 
-double *dvals; 
+int mptestdim, numrhs;
+double *dvals;
 int *colptr, *rowind;
 int mptestmypid = 0;
 int mptestnumimages = 1;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-template <class Scalar> 
+template <class Scalar>
 RCP<LinearProblem<Scalar,Tpetra::MultiVector<Scalar>,Tpetra::Operator<Scalar> > > buildProblem(const RCP<Map<> >& vmap)
 {
   typedef ScalarTraits<Scalar>            SCT;
@@ -93,6 +93,7 @@ RCP<LinearProblem<Scalar,Tpetra::MultiVector<Scalar>,Tpetra::Operator<Scalar> > 
   typedef Tpetra::MultiVector<Scalar>     MV;
   typedef OperatorTraits<Scalar,MV,OP>    OPT;
   typedef MultiVecTraits<Scalar,MV>       MVT;
+  using GO = typename MV::global_ordinal_type;
   RCP<CrsMatrix<Scalar> > A = rcp(new CrsMatrix<Scalar>(vmap,rnnzmax));
   if (mptestmypid == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
@@ -100,9 +101,9 @@ RCP<LinearProblem<Scalar,Tpetra::MultiVector<Scalar>,Tpetra::Operator<Scalar> > 
     const int *rptr = rowind;
     for (int c=0; c<mptestdim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValues(*rptr-1,tuple(c),tuple<Scalar>(*dptr));
+        A->insertGlobalValues(*rptr-1,tuple<GO>(c),tuple<Scalar>(*dptr));
         if (c != *rptr -1) {
-          A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*dptr));
+          A->insertGlobalValues(c,tuple<GO>(*rptr-1),tuple<Scalar>(*dptr));
         }
         ++rptr;
         ++dptr;
@@ -129,11 +130,11 @@ RCP<LinearProblem<Scalar,Tpetra::MultiVector<Scalar>,Tpetra::Operator<Scalar> > 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar>
-bool runTest(double ltol, double times[], int &numIters, const RCP<Map<> >& vmap) 
+bool runTest(double ltol, double times[], int &numIters, const RCP<Map<> >& vmap)
 {
   typedef ScalarTraits<Scalar>                  SCT;
   typedef typename SCT::magnitudeType           MT;
-  typedef Tpetra::Operator<Scalar> 		OP;
+  typedef Tpetra::Operator<Scalar>              OP;
   typedef Tpetra::MultiVector<Scalar>           MV;
   typedef OperatorTraits<Scalar,MV,OP>          OPT;
   typedef MultiVecTraits<Scalar,MV>             MVT;
@@ -148,12 +149,12 @@ bool runTest(double ltol, double times[], int &numIters, const RCP<Map<> >& vmap
   Time btimer("Build Timer"), ctimer("Construct Timer"), stimer("Solve Timer");
   ReturnType ret;
   if (mptestmypid==0) cout << "Building problem..." << endl;
-  { 
+  {
     TimeMonitor localtimer(btimer);
     problem = buildProblem<Scalar>(vmap);
   }
   RCP<SolverManager<Scalar,MV,OP> > solver;
-  if (mptestmypid==0) cout << "Constructing solver..." << endl; 
+  if (mptestmypid==0) cout << "Constructing solver..." << endl;
   {
     TimeMonitor localtimer(ctimer);
     solver = rcp(new BlockGmresSolMgr<Scalar,MV,OP>( problem, rcpFromRef(mptestpl) ));
@@ -206,7 +207,7 @@ bool runTest(double ltol, double times[], int &numIters, const RCP<Map<> >& vmap
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
@@ -214,7 +215,7 @@ int main(int argc, char *argv[])
 
   //
   // Get test parameters from command-line processor
-  //  
+  //
   bool verbose = false, debug = false;
   int frequency = -1;  // how often residuals are printed by solver
   int maxiters = -1;   // maximum number of iterations for solver to use
@@ -356,7 +357,7 @@ int main(int argc, char *argv[])
   bool allpass = fpass && dpass;
 
   if (!allpass) {
-    if (mptestmypid==0) cout << "\nEnd Result: TEST FAILED" << endl;	
+    if (mptestmypid==0) cout << "\nEnd Result: TEST FAILED" << endl;
     return -1;
   }
   //
