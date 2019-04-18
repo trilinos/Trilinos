@@ -145,7 +145,7 @@ namespace MueLuTests {
     myArrayLO[4] = 3;
     userParamList.set<Array<LO> >("Array<LO> myArray<LO>", myArrayLO);
 
-    RCP<Hierarchy> xH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(Op, *inParamList, *inParamList);
+    RCP<Hierarchy> xH = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(Op, *inParamList);
 
     // Extract variables on level 0 and check that they are unchanged.
     RCP<MueLu::Level> level0 = xH->GetLevel();

@@ -55,6 +55,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_Operator.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 
 #include "MueLu_TpetraOperator_decl.hpp"
@@ -71,13 +72,16 @@ TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
 
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
-  RCP<const Map> domainMap = A->getDomainMap();
+  RCP<const Map> domainMap;
+  if(!Hierarchy_.is_null()) domainMap = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A")->getDomainMap();
+  else domainMap = Operator_->getDomainMap();
+
+
   RCP<const BlockedMap> bDomainMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(domainMap);
   if(bDomainMap.is_null() == false) {
     return Xpetra::toTpetraNonZero(bDomainMap->getFullMap());
   }
-  return Xpetra::toTpetraNonZero(A->getDomainMap());
+  return Xpetra::toTpetraNonZero(domainMap);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -86,13 +90,16 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > TpetraOperator
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
 
-  RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
-  RCP<const Map> rangeMap = A->getRangeMap();
+
+  RCP<const Map> rangeMap;
+  if(!Hierarchy_.is_null()) rangeMap = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A")->getRangeMap();
+  else rangeMap = Operator_->getRangeMap();
+
   RCP<const BlockedMap> bRangeMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(rangeMap);
   if(bRangeMap.is_null() == false) {
     return Xpetra::toTpetraNonZero(bRangeMap->getFullMap());
   }
-  return Xpetra::toTpetraNonZero(A->getRangeMap());
+  return Xpetra::toTpetraNonZero(rangeMap);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -108,7 +115,10 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra:
     XTMV       tY(rcpFromRef(Y));
 
     tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-    Hierarchy_->Iterate(tX, tY, 1, true);
+    if(!Hierarchy_.is_null()) 
+      Hierarchy_->Iterate(tX, tY, 1, true);
+    else
+      Operator_->apply(tX, tY);
 
   } catch (std::exception& e) {
     std::cerr << "MueLu::TpetraOperator::apply : detected an exception" << std::endl
@@ -127,6 +137,26 @@ RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetHierarchy() const {
   return Hierarchy_;
 }
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetOperator() const {
+  return Operator_;
+}
+
+#ifdef HAVE_MUELU_DEPRECATED_CODE
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class NewNode>
+Teuchos::RCP< TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
+MUELU_DEPRECATED
+TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<NewNode>& new_node) const {
+  if(!Hierarchy_.is_null()) 
+    return Teuchos::rcp (new TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> (Hierarchy_->template clone<NewNode> (new_node))); 
+  else
+    return Teuchos::null;
+}
+#endif
+
 
 } // namespace
 #endif //ifdef HAVE_MUELU_TPETRA

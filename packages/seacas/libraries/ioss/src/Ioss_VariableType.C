@@ -221,19 +221,19 @@ const Ioss::VariableType *Ioss::VariableType::factory(const std::vector<Ioss::Su
     // Create a format for our use...
     char format[5];
     if (size < 10) {
-      Ioss::Utils::copy_string(format, "%01d", 5);
+      Ioss::Utils::copy_string(format, "%01d");
     }
     else if (size < 100) {
-      Ioss::Utils::copy_string(format, "%02d", 5);
+      Ioss::Utils::copy_string(format, "%02d");
     }
     else if (size < 1000) {
-      Ioss::Utils::copy_string(format, "%03d", 5);
+      Ioss::Utils::copy_string(format, "%03d");
     }
     else if (size < 10000) {
-      Ioss::Utils::copy_string(format, "%04d", 5);
+      Ioss::Utils::copy_string(format, "%04d");
     }
     else {
-      Ioss::Utils::copy_string(format, "%05d", 5);
+      Ioss::Utils::copy_string(format, "%05d");
     }
 
     for (size_t i = 0; i < size; i++) {
@@ -346,19 +346,19 @@ std::string Ioss::VariableType::numeric_label(int which, int ncomp, const std::s
   // Create a format for our use...
   char format[5];
   if (ncomp < 10) {
-    Ioss::Utils::copy_string(format, "%01d", 5);
+    Ioss::Utils::copy_string(format, "%01d");
   }
   else if (ncomp < 100) {
-    Ioss::Utils::copy_string(format, "%02d", 5);
+    Ioss::Utils::copy_string(format, "%02d");
   }
   else if (ncomp < 1000) {
-    Ioss::Utils::copy_string(format, "%03d", 5);
+    Ioss::Utils::copy_string(format, "%03d");
   }
   else if (ncomp < 10000) {
-    Ioss::Utils::copy_string(format, "%04d", 5);
+    Ioss::Utils::copy_string(format, "%04d");
   }
   else if (ncomp < 100000) {
-    Ioss::Utils::copy_string(format, "%05d", 5);
+    Ioss::Utils::copy_string(format, "%05d");
   }
   else {
     std::ostringstream errmsg;

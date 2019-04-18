@@ -71,6 +71,7 @@ namespace Xpetra {
   // const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> toTpetraCrsMatrix(const Xpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &);
   //
 
+
   template<class Scalar = CrsMatrix<>::scalar_type,
            class LocalOrdinal =
              typename CrsMatrix<Scalar>::local_ordinal_type,
@@ -449,8 +450,8 @@ namespace Xpetra {
 
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
-      : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
-
+      :  mtx_(Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*(matrix.mtx_),Teuchos::Copy))) {}
+      
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
       XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
@@ -544,13 +545,14 @@ namespace Xpetra {
     }
 
     // @}
-
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED
     clone (const RCP<Node2> &node2) const
     {
       return RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > (new TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> (mtx_->clone (node2)));
     }
+#endif
 
     //! @name Xpetra specific
     //@{
@@ -947,11 +949,11 @@ namespace Xpetra {
     void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) {   }
 
     // @}
-
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED
     clone (const RCP<Node2> &node2) const {  return Teuchos::null;  }
-
+#endif
     //! @name Xpetra specific
     //@{
 
@@ -1340,11 +1342,11 @@ namespace Xpetra {
     void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) {   }
 
     // @}
-
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED
     clone (const RCP<Node2> &node2) const {  return Teuchos::null;  }
-
+#endif
     //! @name Xpetra specific
     //@{
 

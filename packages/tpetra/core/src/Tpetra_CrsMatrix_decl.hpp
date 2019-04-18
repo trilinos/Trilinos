@@ -802,6 +802,13 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+    /// \brief Copy constructor, with option to do deep or shallow copy.
+    // This function in 'Copy' mode is only guaranteed to work correctly for matrices
+    // which are fillComplete.
+    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+               const Teuchos::DataAccess copyOrView);
+
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
@@ -830,8 +837,9 @@ namespace Tpetra {
     ///   The domain Map and range Map passed to fillComplete() are
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
@@ -1048,6 +1056,7 @@ namespace Tpetra {
       }
       return clonedMatrix;
     }
+#endif
 
     /// \brief Copy constructor (forbidden).
     ///

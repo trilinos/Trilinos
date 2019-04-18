@@ -83,7 +83,7 @@ namespace Stokhos {
     // Create new map
     RCP<Map> flat_map =
       rcp(new Map(flat_num_global_entries, flat_element_list(),
-                  flat_index_base, map.getComm(), map.getNode()));
+                  flat_index_base, map.getComm()));
 
     return flat_map;
   }

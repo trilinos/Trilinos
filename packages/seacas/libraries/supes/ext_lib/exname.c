@@ -117,7 +117,7 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
       /* We need this to give us the length of the ENVIRONMENT
        * variable while calling strlen() only once.
        */
-      copy_string(name, darg, DargLen);
+      copy_string(name, darg, DargLen + 1);
       *ln = DargLen;
     }
     else if (!ExtSymbol) {

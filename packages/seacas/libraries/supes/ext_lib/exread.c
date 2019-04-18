@@ -100,7 +100,7 @@ C
     while (dlen-- > 0) /* Blank out the entire string. */
       *ds++ = ' ';
 
-    copy_string(internal_prompt, prompt, PromptLength);
+    copy_string(internal_prompt, prompt, 128);
     internal_prompt[PromptLength - 1] = ' ';
     internal_prompt[PromptLength]     = '\0';
 

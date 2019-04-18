@@ -328,9 +328,12 @@ namespace MueLu {
       dumpFile_  = filename;
     }
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     template<class Node2>
     Teuchos::RCP< Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    MUELU_DEPRECATED
     clone (const RCP<Node2> &node2) const;
+#endif
 
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
@@ -407,9 +410,11 @@ namespace MueLu {
 
   }; //class Hierarchy
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template<typename Node2>
   Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+  MUELU_DEPRECATED
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clone (const Teuchos::RCP<Node2> &node2) const {
     typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2>           New_H_Type;
@@ -463,6 +468,7 @@ namespace MueLu {
 
     return new_h;
   }
+#endif
 
 } //namespace MueLu
 

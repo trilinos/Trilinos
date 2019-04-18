@@ -193,7 +193,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
     const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
     gatherMap = rcp (new MapType (INVALID, allElts,
                                   oneToOneMap->getIndexBase (),
-                                  comm, map->getNode ()));
+                                  comm));
   }
   if (! err.is_null ()) {
     err->popTab ();

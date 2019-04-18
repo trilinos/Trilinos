@@ -191,9 +191,9 @@ int main(int argc, char **argv)
   blocks[2].num_entry           = 1;
   blocks[2].num_nodes_per_entry = 16;
 
-  ex_copy_string(blocks[0].topology, "hex", 32);
-  ex_copy_string(blocks[1].topology, "wedge", 32);
-  ex_copy_string(blocks[2].topology, "hex", 32);
+  ex_copy_string(blocks[0].topology, "hex", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[1].topology, "wedge", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[2].topology, "hex", MAX_STR_LENGTH + 1);
 
   const char *block_names[3];
   block_names[0] = "block_10";

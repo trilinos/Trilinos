@@ -329,8 +329,10 @@ namespace Xpetra {
     //@}
 
     //! Deep copy constructor
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
       : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
+#endif
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
@@ -423,10 +425,12 @@ namespace Xpetra {
 
     // @}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
       return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
     }
+#endif
 
     //! @name Xpetra specific
     //@{
@@ -783,8 +787,10 @@ namespace Xpetra {
 
     // @}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+#endif
 
     //! @name Xpetra specific
     //@{
@@ -1132,8 +1138,10 @@ namespace Xpetra {
 
     // @}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+#endif
 
     //! @name Xpetra specific
     //@{

@@ -57,6 +57,33 @@ ENDIF()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE
+  "Whether MueLu enables deprecated code (that is, anything marked with the MUELU_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  YES
+)
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
+  MESSAGE(STATUS "MueLu: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "MueLu: Disabling deprecated code")
+ENDIF ()
+
+IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS)
+  MESSAGE(FATAL_ERROR "MueLu: You cannot enable deprecated tests when deprecated codes is disabled!")
+ENDIF ()
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS
+  HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS
+  "Whether MueLu compiles and run tests (or areas of a test) that contain deprecated code (that is, anything marked with the MUELU_DEPRECATED macro).  Default is OFF (deprecated tests disabled).  If ON, then deprecated tests are compiled and tested."
+  NO
+)
+
+IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
+  MESSAGE(STATUS "MueLu: Enabling deprecated tests")
+ENDIF ()
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()

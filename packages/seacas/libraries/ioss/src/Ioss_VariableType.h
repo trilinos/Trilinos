@@ -68,14 +68,8 @@ namespace Ioss {
 #define MAX_SUFFIX 8
   struct Suffix
   {
-    explicit Suffix(const char new_data[MAX_SUFFIX])
-    {
-      Ioss::Utils::copy_string(m_data, new_data, MAX_SUFFIX);
-    }
-    explicit Suffix(const std::string &new_data)
-    {
-      Ioss::Utils::copy_string(m_data, new_data.c_str(), MAX_SUFFIX);
-    }
+    explicit Suffix(const char new_data[MAX_SUFFIX]) { Ioss::Utils::copy_string(m_data, new_data); }
+    explicit Suffix(const std::string &new_data) { Ioss::Utils::copy_string(m_data, new_data); }
     bool operator==(const std::string &str) const
     {
       return std::strncmp(m_data, str.c_str(), MAX_SUFFIX) == 0;

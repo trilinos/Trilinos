@@ -86,5 +86,5 @@ void extime(char *string, long int len)
   t   = localtime(&tim);
 
   sprintf(Temp, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec);
-  copy_string(string, Temp, STRLEN);
+  copy_string(string, Temp, STRLEN + 1);
 }

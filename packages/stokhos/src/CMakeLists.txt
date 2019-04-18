@@ -25,6 +25,10 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES SRC_DIR BASE_NAME APPEN
     string(TOLOWER "${DEVICE}" LOWER_DEVICE)
     string(CONCAT INST_VAR "Tpetra_INST_" "${UPPER_DEVICE}")
 
+    # Check if we are a device node and set a variable suitable for the
+    # preprocessor accordingly
+    string(COMPARE EQUAL "${DEVICE}" "Cuda" IS_DEVICE_NODE)
+
     # Create libraries for each enabled device instantation
     if(${${INST_VAR}})
 
@@ -103,6 +107,10 @@ FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_
     string(TOUPPER "${DEVICE}" UPPER_DEVICE)
     string(TOLOWER "${DEVICE}" LOWER_DEVICE)
     string(CONCAT INST_VAR "Tpetra_INST_" "${UPPER_DEVICE}")
+
+    # Check if we are a device node and set a variable suitable for the
+    # preprocessor accordingly
+    string(COMPARE EQUAL "${DEVICE}" "Cuda" IS_DEVICE_NODE)
 
     # Create libraries for each enabled device instantation
     if(${${INST_VAR}})
@@ -791,6 +799,9 @@ IF (Stokhos_ENABLE_Sacado)
         MatrixMatrix
         TripleMatrixMultiply
         )
+      SET(TPETRA_SD_ETI_CLASSES
+        Details::normImpl
+        )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
@@ -800,6 +811,15 @@ IF (Stokhos_ENABLE_Sacado)
           "${TPETRA_ETI_CLASSES}"
           "sacado/kokkos/vector/tpetra"
           "Tpetra"
+          TRUE
+          "${STOKHOS_DEPLIBS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+       PROCESS_ENSEMBLE_ETI(
+          "${Stokhos_ETI_Ensemble_Sizes}"
+          "${TPETRA_SD_ETI_CLASSES}"
+          "sacado/kokkos/vector/tpetra"
+          "Tpetra_SD"
           TRUE
           "${STOKHOS_DEPLIBS}"
           DEPLIBS_OUT)
@@ -831,6 +851,15 @@ IF (Stokhos_ENABLE_Sacado)
           "${EXTRA_TPETRA_ETI_CLASSES}"
           "sacado/kokkos/pce/tpetra"
           "Tpetra"
+          TRUE
+          "${STOKHOS_DEPLIBS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        PROCESS_PCE_ETI(
+          "${TPETRA_SD_ETI_CLASSES}"
+          ""
+          "sacado/kokkos/pce/tpetra"
+          "Tpetra_SD"
           TRUE
           "${STOKHOS_DEPLIBS}"
           DEPLIBS_OUT)

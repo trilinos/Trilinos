@@ -1113,157 +1113,6 @@ namespace {
   }
 
 
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NodeConversion, LO, GO, N2 )
-  {
-    using std::cerr;
-    using std::endl;
-    using Teuchos::REDUCE_MIN;
-    using N1 = Tpetra::Map<>::node_type; // default Tpetra Node type
-    using Map1 = Tpetra::Map<LO, GO, N1>;
-    using Graph1 = Tpetra::CrsGraph<LO, GO, N1>;
-    using Graph2 = Tpetra::CrsGraph<LO, GO, N2>;
-
-    out << "Tpetra test: CrsGraph, NodeConversion" << endl;
-    Teuchos::OSTab tab0 (out);
-
-    // create a comm
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
-    out << "Number of processes: " << numProcs << endl;
-
-    const size_t numLocal = 10;
-    const GST numGlobal = numProcs*numLocal;
-
-    // create a contiguous uniform distributed map with numLocal entries per node
-    out << "Creating Map" << endl;
-    RCP<const Map1> map1 = rcp (new Map1 (numGlobal,0,comm));
-    out << "Creating CrsGraph" << endl;
-    RCP<Graph1>       A1 = createCrsGraph(map1,3);
-    RCP<N2> n2; // this can be null; we keep it to help type deduction
-
-    // empty source, not filled
-
-    {
-      out << "Testing clone (1)" << endl;
-
-      RCP<ParameterList> plClone = parameterList();
-      // default: plClone->set("fillComplete clone",true);
-      RCP<Graph2> A2;
-      try {
-        A2 = A1->template clone<N2> (n2, plClone);
-      } catch (std::exception& e) {
-        std::ostringstream err;
-        err << "Process " << myRank << ": clone raised exception: "
-            << e.what () << endl;
-        cerr << err.str ();
-      }
-
-      int lclSuccess = (success && ! A2.is_null ()) ? 1 : 0;
-      int gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-
-      if (gblSuccess == 1) {
-        out << "Clone succeeded on all processes!" << endl;
-      } else {
-        out << "Clone FAILED on at least one process!" << endl;
-      }
-      TEST_EQUALITY_CONST( gblSuccess , 1)
-
-      if (gblSuccess == 1 && ! A2.is_null ()) {
-        out << "Testing status of newly created graph" << endl;
-        TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-        TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
-        TEST_EQUALITY_CONST( A2->getNodeNumEntries(), (size_t)0 );
-        TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)0 );
-      }
-    }
-
-    out << "Filling graph" << endl;
-    // one entry per row
-    for (GO grow =map1->getMinGlobalIndex();
-            grow<=map1->getMaxGlobalIndex();
-            ++grow)
-    {
-      if (grow == map1->getMinGlobalIndex())      A1->insertGlobalIndices(grow, tuple<GO>(grow,grow+1));
-      else if (grow == map1->getMaxGlobalIndex()) A1->insertGlobalIndices(grow, tuple<GO>(grow-1,grow));
-      else                                        A1->insertGlobalIndices(grow, tuple<GO>(grow-1,grow,grow+1));
-    }
-    // source has global indices, not filled, dynamic profile
-    out << "Testing clone (2)" << endl;
-    {
-      RCP<ParameterList> plClone = parameterList();
-      plClone->set("fillComplete clone",false);
-      plClone->set("Static profile clone",false);
-      // default: plClone->set("Locally indexed clone",false);
-      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
-      TEST_EQUALITY_CONST( A2->hasColMap(), false );
-      TEST_EQUALITY_CONST( A2->isFillComplete(), false );
-      TEST_EQUALITY_CONST( A2->isGloballyIndexed(), true );
-      TEST_EQUALITY_CONST( A2->getNodeAllocationSize(), (size_t)(numLocal*3-2) );
-      TEST_EQUALITY( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMaxGlobalIndex(), tuple<GO>(map1->getMinGlobalIndex()) ) );
-      TEST_NOTHROW( A2->insertGlobalIndices( map1->getMinGlobalIndex(), tuple<GO>(map1->getMaxGlobalIndex()) ) );
-      TEST_NOTHROW( A2->fillComplete() );
-      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+2 );
-    }
-
-    // source has local indices
-    out << "Calling fillComplete on original" << endl;
-    A1->fillComplete();
-
-    out << "Testing clone (3)" << endl;
-    {
-      RCP<ParameterList> plClone = parameterList();
-      plClone->set("Static profile clone", false);
-      RCP<ParameterList> plCloneFill = sublist(plClone,"fillComplete");
-      plCloneFill->set("Optimize Storage",false);
-      RCP<Graph2> A2 = A1->template clone<N2>(n2,plClone);
-
-      out << "Finished clone; testing result" << endl;
-      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-      TEST_EQUALITY_CONST( A2->isStorageOptimized(), false );
-      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries() );
-
-      out << "Calling resumeFill on result of clone" << endl;
-      A2->resumeFill();
-
-      out << "Filling result of clone" << endl;
-      for (LO lrow = map1->getMinLocalIndex();
-              lrow < map1->getMaxLocalIndex()-1;
-              ++lrow)
-      {
-        TEST_NOTHROW( A2->insertLocalIndices(lrow, tuple<LO>(lrow+2)) );
-      }
-      out << "Calling fillComplete on result of clone" << endl;
-      A2->fillComplete();
-
-      // Call computeGlobal constants multiple times to make sure nothing crashes
-      A2->computeGlobalConstants();
-      A2->computeGlobalConstants();
-      A2->computeGlobalConstants();
-
-
-      out << "Testing result of clone" << endl;
-      TEST_EQUALITY_CONST( A2->isFillComplete(), true );
-      TEST_EQUALITY_CONST( A2->isStorageOptimized(), true );
-      TEST_EQUALITY_CONST( A2->getNodeNumEntries(), A1->getNodeNumEntries()+numLocal-2 );
-    }
-
-    {
-      int lclSuccess = success ? 1 : 0;
-      int gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST( gblSuccess , 1)
-      if (gblSuccess == 1) {
-        out << "Test succeeded on all processes!" << endl;
-      } else {
-        out << "Test FAILED on at least one process!" << endl;
-      }
-    }
-  }
-
 //
 // INSTANTIATIONS
 //
@@ -1281,12 +1130,6 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag,        LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews,    LO, GO, NODE )
-
-// Test(s) for "Node conversion" (i.e., the clone() template method of
-// CrsGraph).  We will instantiate them over all enabled Kokkos Node
-// (N2) types.
-#define NC_TESTS(N2)
-  //    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
 
 // mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
 // debug build.  The BadGIDs test fails in a release build.
@@ -1308,5 +1151,4 @@ namespace {
 
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_ONLY )
 
-    TPETRA_INSTANTIATE_N(NC_TESTS)
 }

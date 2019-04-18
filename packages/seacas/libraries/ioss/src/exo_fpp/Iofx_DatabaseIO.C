@@ -4941,10 +4941,10 @@ void DatabaseIO::write_meta_data()
   // Title...
   if (region->property_exists("title")) {
     std::string title_str = region->get_property("title").get_string();
-    Ioss::Utils::copy_string(the_title, title_str.c_str(), max_line_length);
+    Ioss::Utils::copy_string(the_title, title_str);
   }
   else {
-    Ioss::Utils::copy_string(the_title, "IOSS Default Output Title", max_line_length);
+    Ioss::Utils::copy_string(the_title, "IOSS Default Output Title");
   }
 
   Ioex::get_id(node_blocks[0], EX_NODE_BLOCK, &ids_);
