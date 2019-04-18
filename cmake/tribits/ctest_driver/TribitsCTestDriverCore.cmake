@@ -840,15 +840,18 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   ``CTEST_DO_INSTALL=[TRUE|FALSE]``
 #
-#     If ``TRUE``, then the 'install' target will be built to install what has
-#     been configured and built by the build step for the all-at-once mode
-#     (i.e. ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE``.  If ``FALSE``, no
-#     install is performed.  (NOTE: The cmake var ``CMAKE_INSTALL_PREFIX``
-#     must be set on the inner cmake configure for this to work correctly.
-#     Also, the install is currently not implemented for the
-#     package-by-package mode ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=FALSE``
-#     and this option will simply be ignored in that case.)  Default
-#     ``FALSE``.
+#     If ``TRUE``, then ``-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON`` will be
+#     passed th the inner CMake configure and the 'install_package_by_package'
+#     target will be built to install what has been configured and built by
+#     the build step for the all-at-once mode
+#     (i.e. ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE``).  If ``FALSE``,
+#     then ``-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON`` is **not** added to the
+#     inner configure and no install is performed.  (NOTE: The cmake var
+#     ``CMAKE_INSTALL_PREFIX`` must be set on the inner cmake configure for
+#     this to work correctly.  Also, the install is currently not implemented
+#     for the package-by-package mode
+#     ``${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=FALSE`` and this option will
+#     simply be ignored in that case.)  Default ``FALSE``.
 #
 #   .. _CTEST_DO_TEST:
 #
