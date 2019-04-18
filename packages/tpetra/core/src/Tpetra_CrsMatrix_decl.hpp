@@ -424,8 +424,10 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    , public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   {
   public:
     //! @name Typedefs
@@ -2657,7 +2659,6 @@ namespace Tpetra {
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
     size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -2685,7 +2686,6 @@ namespace Tpetra {
     /// them.
     size_t getNodeNumDiagsImpl () const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Whether the matrix is locally lower triangular.
     ///
     /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -2709,7 +2709,6 @@ namespace Tpetra {
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -2736,6 +2735,7 @@ namespace Tpetra {
     /// <i>they</i> call deprecated methods, not if <i>we</i> call
     /// them.
     bool isUpperTriangularImpl () const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Whether the matrix is locally indexed on the calling
     ///   process.

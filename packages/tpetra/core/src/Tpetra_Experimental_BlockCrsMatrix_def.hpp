@@ -3782,7 +3782,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   global_size_t TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalNumDiags() const
+  getGlobalNumDiags () const
   {
     using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (this->graph_).getGlobalNumDiagsImpl ();
@@ -3791,7 +3791,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   size_t TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumDiags() const
+  getNodeNumDiags () const
   {
     using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();
