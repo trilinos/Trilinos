@@ -75,9 +75,9 @@ namespace Tpetra {
   // Forward declaration for CrsGraph::swap() test
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class crsGraph_Swap_Tester;
 
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     // Forward declaration of an implementation detail of CrsGraph::clone.
     template<class OutputCrsGraphType, class InputCrsGraphType>
     class CrsGraphCopier {
@@ -87,6 +87,7 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };  // class CrsGraphCopier
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     template<class LO, class GO, class NT>
     void
@@ -185,7 +186,7 @@ namespace Tpetra {
       STORAGE_UB //<! Invalid value; upper bound on enum values
     };
 
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Mix-in to avoid spurious deprecation warnings due to #2630.
     ///
     /// CrsMatrix has methods deprecated by #2630, that need to call
@@ -196,12 +197,13 @@ namespace Tpetra {
     /// deprecated methods without emitting spurious warnings.
     class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
     public:
-      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () {}
+      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () = default;
       virtual bool isLowerTriangularImpl () const = 0;
       virtual bool isUpperTriangularImpl () const = 0;
       virtual size_t getGlobalNumDiagsImpl () const = 0;
       virtual global_size_t getNodeNumDiagsImpl () const = 0;
     };  // class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   } // namespace Details
 
   /// \class CrsGraph
@@ -271,8 +273,10 @@ namespace Tpetra {
                       LocalOrdinal,
                       GlobalOrdinal,
                       Node>,
-    public Teuchos::ParameterListAcceptorDefaultBase,
-    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public Teuchos::ParameterListAcceptorDefaultBase
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    , public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -1078,7 +1082,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const override;
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override;
 
     /// \brief Number of diagonal entries on the calling process.
     ///
@@ -1086,8 +1090,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags() const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -1115,7 +1118,6 @@ namespace Tpetra {
     /// methods, not if <i>we</i> call them.
     size_t getNodeNumDiagsImpl () const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Whether the graph is locally lower triangular.
     ///
     /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -1139,7 +1141,6 @@ namespace Tpetra {
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -1166,17 +1167,30 @@ namespace Tpetra {
     /// to see deprecated warnings if <i>they</i> call deprecated
     /// methods, not if <i>we</i> call them.
     bool isUpperTriangularImpl () const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-    //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
+    /// \brief Whether the graph's column indices are stored as local indices.
+    ///
+    /// Weird quirk inherited from Epetra:
+    /// <tt>! isLocallyIndexed() && ! isGloballyIndexed()</tt>
+    /// means that there are no graph entries on the calling process.
+    /// Please don't rely on this behavior, but note that it's
+    /// possible.
     bool isLocallyIndexed () const override;
 
-    //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
+    /// \brief Whether the graph's column indices are stored as global indices.
+    ///
+    /// Weird quirk inherited from Epetra:
+    /// <tt>! isLocallyIndexed() && ! isGloballyIndexed()</tt>
+    /// means that there are no graph entries on the calling process.
+    /// Please don't rely on this behavior, but note that it's
+    /// possible.
     bool isGloballyIndexed () const override;
 
-    //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
+    //! Whether fillComplete() has been called and the graph is in compute mode.
     bool isFillComplete () const override;
 
-    //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
+    //! Whether resumeFill() has been called and the graph is in edit mode.
     bool isFillActive () const;
 
     /// \brief Whether graph indices in all rows are known to be sorted.
@@ -1202,25 +1216,25 @@ namespace Tpetra {
 
     /// \brief Get a copy of the given row, using global indices.
     ///
-    /// \param GlobalRow [in] Global index of the row.
-    /// \param Indices [out] On output: Global column indices.
-    /// \param NumIndices [out] Number of indices returned.
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] On output: Global column indices.
+    /// \param numColInds [out] Number of indices returned.
     void
-    getGlobalRowCopy (global_ordinal_type GlobalRow,
-                      const Teuchos::ArrayView<global_ordinal_type>& Indices,
-                      size_t& NumIndices) const override;
+    getGlobalRowCopy (global_ordinal_type gblRow,
+                      const Teuchos::ArrayView<global_ordinal_type>& gblColInds,
+                      size_t& numColInds) const override;
 
     /// \brief Get a copy of the given row, using local indices.
     ///
-    /// \param LocalRow [in] Local index of the row.
-    /// \param Indices [out] On output: Local column indices.
-    /// \param NumIndices [out] Number of indices returned.
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] On output: Local column indices.
+    /// \param numColInds [out] Number of indices returned.
     ///
     /// \pre <tt>hasColMap()</tt>
     void
-    getLocalRowCopy (local_ordinal_type LocalRow,
-                     const Teuchos::ArrayView<local_ordinal_type>& indices,
-                     size_t& NumIndices) const override;
+    getLocalRowCopy (local_ordinal_type lclRow,
+                     const Teuchos::ArrayView<local_ordinal_type>& lclColInds,
+                     size_t& numColInds) const override;
 
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
@@ -2812,8 +2826,8 @@ namespace Tpetra {
     return destGraph;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
-
     template<class LocalOrdinal,
              class GlobalOrdinal,
              class OutputNodeType,
@@ -3212,8 +3226,9 @@ namespace Tpetra {
         return clonedGraph;
       }
     };  // class CrsGraphCopier
-
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 } // namespace Tpetra
 
 #endif // TPETRA_CRSGRAPH_DECL_HPP

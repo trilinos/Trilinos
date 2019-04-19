@@ -305,14 +305,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Sca
     return;
   }
 
-  // Create the Node instance.  This ensures that the test will work
-  // even if Node is not the default Node type.
-  RCP<Node> node;
-  { // All Node constructors demand a ParameterList input.
-    ParameterList junk;
-    node = rcp (new Node (junk));
-  }
-
   // The number of rows of the matrix and vectors owned by the calling
   // process.  One process (Proc 0) owns zero rows, and the other
   // process(es) own a nonzero amount of rows.  This is the point of
