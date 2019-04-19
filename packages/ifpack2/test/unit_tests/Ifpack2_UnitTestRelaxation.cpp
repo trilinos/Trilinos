@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SymGaussSeidelZeroRows, Sca
   }
 
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-  RCP<const map_type> rowMap (new map_type (INVALID, nelPerProc, 0, comm, node));
+  RCP<const map_type> rowMap (new map_type (INVALID, nelPerProc, 0, comm));
   RCP<const crs_matrix_type> crsMatrix = tif_utest::create_test_matrix<Scalar,LO,GO,Node> (rowMap);
 
   // We don't really need prec to be a pointer here, but it's
