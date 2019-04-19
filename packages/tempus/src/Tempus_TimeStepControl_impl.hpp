@@ -77,11 +77,9 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     const int iStep = metaData->getIStep();
     int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
-    bool output = metaData->getOutput();
+    bool output = false;
 
     RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
-
-    output = false;
 
     if (getStepType() == "Variable") {
       // If last time step was adjusted for output, reinstate previous dt.
@@ -139,7 +137,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     const int iInterval = tscPL_->get<int>("Output Index Interval");
     if ( (iStep - getInitIndex()) % iInterval == 0) output = true;
 
-    // Adjust time step to hit output times (if Variable timestep).
+    // Check if we need to output in the next timestep based on
+    // outputTimes_ or "Output Time Interval".
     Scalar reltol = 1.0e-6;
     const Scalar endTime = lastTime+dt+getMinTimeStep();
     bool checkOutput = false;
@@ -164,9 +163,12 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     }
 
     if (checkOutput == true) {
-      if (std::abs((lastTime+dt-oTime)/(lastTime+dt)) < reltol) {
-        output = true;
-        if (getStepType() == "Variable") {
+      const bool outputExactly =
+        tscPL_->get<bool>("Output Exactly On Output Times");
+      if (getStepType() == "Variable" && outputExactly == true) {
+        // Adjust time step to hit output times.
+        if (std::abs((lastTime+dt-oTime)/(lastTime+dt)) < reltol) {
+          output = true;
           if (printChanges) *out << changeDT(iStep, dt, oTime - lastTime,
             "Adjusting dt for numerical roundoff to hit the next output time.");
           // Next output time IS VERY near next time (<reltol away from it),
@@ -174,11 +176,9 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           outputAdjustedDt_ = true;
           dtAfterOutput_ = dt;
           dt = oTime - lastTime;
-        }
-      } else if (lastTime*(1.0+reltol) < oTime &&
-                 oTime < (lastTime+dt-getMinTimeStep())*(1.0+reltol)) {
-        output = true;
-        if (getStepType() == "Variable") {
+        } else if (lastTime*(1.0+reltol) < oTime &&
+                   oTime < (lastTime+dt-getMinTimeStep())*(1.0+reltol)) {
+          output = true;
           if (printChanges) *out << changeDT(iStep, dt, oTime - lastTime,
             "Adjusting dt to hit the next output time.");
           // Next output time is not near next time
@@ -187,9 +187,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           outputAdjustedDt_ = true;
           dtAfterOutput_ = dt;
           dt = oTime - lastTime;
-        }
-      } else {
-        if (getStepType() == "Variable") {
+        } else {
           if (printChanges) *out << changeDT(iStep, dt, (oTime - lastTime)/2.0,
             "The next output time is within the minimum dt of the next time. "
             "Adjusting dt to take two steps.");
@@ -198,6 +196,11 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           // Take two time steps to get to next output time.
           dt = (oTime - lastTime)/2.0;
         }
+      } else {
+        // Stepping over output time and want this time step for output,
+        // but do not want to change dt. Either because of 'Constant' time
+        // step or user specification, "Output Exactly On Output Times"=false.
+        output = true;
       }
     }
 
@@ -561,6 +564,12 @@ TimeStepControl<Scalar>::getValidParameters() const
     "the time step to be modified.\n"
     "  'Constant' - Integrator will take constant time step sizes.\n"
     "  'Variable' - Integrator will allow changes to the time step size.\n");
+
+  pl->set<bool>("Output Exactly On Output Times", true,
+    "This determines if the timestep size will be adjusted to exactly land\n"
+    "on the output times for 'Variable' timestepping (default=true).\n"
+    "When set to 'false' or for 'Constant' time stepping, the timestep\n"
+    "following the output time will be flagged for output.\n");
 
   pl->set<std::string>("Output Time List", "",
     "Comma deliminated list of output times");
