@@ -415,6 +415,11 @@ if(TPL_ENABLE_MATLAB)
   IF(NOT ${PACKAGE_NAME}_ENABLE_Epetra OR NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
       MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PACKAGE_NAME}_ENABLE_Epetra:BOOL=ON\" and \"-D${PACKAGE_NAME}_ENABLE_Tpetra:BOOL=ON\".")
   ENDIF()
+
+  IF(NOT Tpetra_INST_INT_INT OR  Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+    MESSAGE(FATAL_ERROR "Muemex interfaces require that Tpetra only be instantiated with Tpetra_INST_INT_INT, not Tpetra_INST_INT_LONG or Tpetra_INST_INT_LONG_LONG")
+  ENDIF()
+
 ENDIF()
 
 if(TPL_ENABLE_MATLAB)
