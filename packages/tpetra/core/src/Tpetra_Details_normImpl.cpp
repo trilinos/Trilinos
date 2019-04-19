@@ -50,11 +50,21 @@
 #include "Tpetra_Details_normImpl_def.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
+
+#if defined(HAVE_TPETRA_INST_INT_INT)
+// don't need to do anything; Scalar=int is already added
+# define TPETRA_DETAILS_NORMIMPL_INSTANT_INT( NODE )
+#else 
+# define TPETRA_DETAILS_NORMIMPL_INSTANT_INT( NODE ) \
+  TPETRA_DETAILS_NORMIMPL_INSTANT( int, NODE )
+#endif 
+
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
   TPETRA_INSTANTIATE_SN( TPETRA_DETAILS_NORMIMPL_INSTANT )
+  TPETRA_INSTANTIATE_N( TPETRA_DETAILS_NORMIMPL_INSTANT_INT )
 
 #ifdef HAVE_TPETRA_INST_CUDA
 
@@ -66,6 +76,9 @@ namespace Tpetra {
   TPETRA_DETAILS_NORMIMPL_INSTANT( S, cuda_host_mirror_device_type )
 
   TPETRA_INSTANTIATE_S( TPETRA_DETAILS_NORMIMPL_INSTANT_CUDAHOSTMIRROR )
+#if ! defined(HAVE_TPETRA_INST_INT_INT)
+  TPETRA_DETAILS_NORMIMPL_INSTANT_CUDAHOSTMIRROR( int )
+#endif 
 
 #endif // HAVE_TPETRA_INST_CUDA
 
