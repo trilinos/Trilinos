@@ -7,7 +7,7 @@
 
 namespace PHX {
 
-  /** \brief Function to allow evalautors to allocate a
+  /** \brief Function to allow evaluators to allocate a
       DeviceEvaluator on the device. The object is lambda captured on
       device and the copy constructor is used to allocate on device
       with Kokkos::malloc so that the vtable is allocated on the

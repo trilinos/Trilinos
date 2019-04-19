@@ -1,10 +1,10 @@
 This is an example for finite element assembly that mixes different
-field types in Evalautors: MDField, Field, and Kokkos::View objects to
+field types in Evaluators: MDField, Field, and Kokkos::View objects to
 demonstrate that the various field implementations can be mixed in an
 evaluation DAG.
 
 For testing/code coverage purposes, must call the following functions
-in the EvalautorWithBaseImpl object for both Field and Kokkos::View
+in the EvaluatorWithBaseImpl object for both Field and Kokkos::View
 Types in the FieldManagerObject (other assembly example covers
 MDFields):
 

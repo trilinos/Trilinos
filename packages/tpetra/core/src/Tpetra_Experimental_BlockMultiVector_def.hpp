@@ -485,17 +485,10 @@ checkSizes (const Tpetra::SrcDistObject& src)
   return ! getMultiVectorFromSrcDistObject (src).is_null ();
 }
 
-template<class Scalar, class LO, class GO, class Node>
-bool BlockMultiVector<Scalar, LO, GO, Node>::
-useNewInterface ()
-{
-  return true;
-}
-
 template<class SC, class LO, class GO, class NT>
 std::pair<int, std::unique_ptr<std::string>>
 BlockMultiVector<SC, LO, GO, NT>::
-copyAndPermuteNewImpl
+copyAndPermuteImpl
   (const BlockMultiVector<SC, LO, GO, NT>& src,
    const size_t numSameIDs,
    const Kokkos::DualView<
@@ -508,7 +501,7 @@ copyAndPermuteNewImpl
    >& permuteFromLIDs)
 {
   using std::endl;
-  const char tfecfFuncName[] = "copyAndPermuteNewImpl: ";
+  const char tfecfFuncName[] = "copyAndPermuteImpl: ";
   std::unique_ptr<std::string> errMsg;
   const bool debug = ::Tpetra::Details::Behavior::debug ("BlockMultiVector");
   const int myRank = src.getMap ()->getComm ()->getRank ();
@@ -584,34 +577,39 @@ copyAndPermuteNewImpl
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-copyAndPermuteNew (const SrcDistObject& src,
-                   const size_t numSameIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteToLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteFromLIDs)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const SrcDistObject& src,
+ const size_t numSameIDs,
+ const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& permuteToLIDs,
+ const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& permuteFromLIDs)
 {
-  const char tfecfFuncName[] = "copyAndPermuteNew: ";
+  const char tfecfFuncName[] = "copyAndPermute: ";
 
   auto srcPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (srcPtr.is_null (), std::invalid_argument,
      "The source of an Import or Export to a BlockMultiVector "
      "must also be a BlockMultiVector.");
-  const auto ret = copyAndPermuteNewImpl (*srcPtr, numSameIDs,
-                                          permuteToLIDs, permuteFromLIDs);
+  const auto ret = copyAndPermuteImpl (*srcPtr, numSameIDs,
+                                       permuteToLIDs, permuteFromLIDs);
   // TODO (mfh 15 Apr 2019) Instead of throwing here, which could
   // cause an MPI parallel hang, we should record the error in *this
   // (the target BMV instance).
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    (ret.first != 0, std::runtime_error, "copyAndPermuteNewImpl "
+    (ret.first != 0, std::runtime_error, "copyAndPermuteImpl "
      "reports an error: " << * (ret.second));
 }
 
 template<class SC, class LO, class GO, class NT>
 std::pair<int, std::unique_ptr<std::string>>
 BlockMultiVector<SC, LO, GO, NT>::
-packAndPrepareNewImpl
+packAndPrepareImpl
   (const Kokkos::DualView<
      const local_ordinal_type*,
      buffer_device_type
@@ -633,7 +631,7 @@ packAndPrepareNewImpl
   using host_device_type = typename exports_dv_type::t_host::device_type;
   using dst_little_vec_type = Kokkos::View<IST*, host_device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  const char tfecfFuncName[] = "packAndPrepareNewImpl: ";
+  const char tfecfFuncName[] = "packAndPrepareImpl: ";
   std::unique_ptr<std::string> errMsg;
   const bool debug = ::Tpetra::Details::Behavior::debug ("BlockMultiVector");
 
@@ -707,17 +705,22 @@ packAndPrepareNewImpl
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-packAndPrepareNew (const SrcDistObject& src,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& exportLIDs,
-                   Kokkos::DualView<packet_type*,
-                     buffer_device_type>& exports,
-                   Kokkos::DualView<size_t*,
-                     buffer_device_type> numPacketsPerLID,
-                   size_t& constantNumPackets,
-                   Distributor& distor)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const SrcDistObject& src,
+ const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& exportLIDs,
+ Kokkos::DualView<packet_type*,
+   buffer_device_type>& exports,
+ Kokkos::DualView<size_t*,
+   buffer_device_type> numPacketsPerLID,
+ size_t& constantNumPackets,
+ Distributor& distor)
 {
-  const char tfecfFuncName[] = "packAndPrepareNew: ";
+  const char tfecfFuncName[] = "packAndPrepare: ";
 
   auto srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -725,21 +728,21 @@ packAndPrepareNew (const SrcDistObject& src,
      "The source of an Import or Export to a BlockMultiVector "
      "must also be a BlockMultiVector.");
   const auto ret =
-    srcAsBmvPtr->packAndPrepareNewImpl (exportLIDs, exports,
-                                        numPacketsPerLID,
-                                        constantNumPackets, distor);
+    srcAsBmvPtr->packAndPrepareImpl (exportLIDs, exports,
+                                     numPacketsPerLID,
+                                     constantNumPackets, distor);
   // TODO (mfh 15 Apr 2019) Instead of throwing here, which could
   // cause an MPI parallel hang, we should record the error in *this
   // (the target BMV instance).
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    (ret.first != 0, std::runtime_error, "packAndPrepareNewImpl "
+    (ret.first != 0, std::runtime_error, "packAndPrepareImpl "
      "reports an error: " << * (ret.second));
 }
 
 template<class SC, class LO, class GO, class NT>
 std::pair<int, std::unique_ptr<std::string>>
 BlockMultiVector<SC, LO, GO, NT>::
-unpackAndCombineNewImpl
+unpackAndCombineImpl
   (const Kokkos::DualView<
      const local_ordinal_type*,
      buffer_device_type
@@ -763,7 +766,7 @@ unpackAndCombineNewImpl
   using host_device_type = typename imports_dv_type::t_host::device_type;
   using src_little_vec_type = Kokkos::View<const IST*, host_device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  const char tfecfFuncName[] = "unpackAndCombineNewImpl: ";
+  const char tfecfFuncName[] = "unpackAndCombineImpl: ";
   std::unique_ptr<std::string> errMsg;
   const bool debug = ::Tpetra::Details::Behavior::debug ("BlockMultiVector");
 
@@ -854,25 +857,30 @@ unpackAndCombineNewImpl
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& importLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type> imports,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID,
-                     const size_t constantNumPackets,
-                     Distributor& distor,
-                     const CombineMode combineMode)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& importLIDs,
+ Kokkos::DualView<packet_type*,
+   buffer_device_type> imports,
+ Kokkos::DualView<size_t*,
+   buffer_device_type> numPacketsPerLID,
+ const size_t constantNumPackets,
+ Distributor& distor,
+ const CombineMode combineMode)
 {
-  const char tfecfFuncName[] = "unpackAndCombineNew: ";
+  const char tfecfFuncName[] = "unpackAndCombine: ";
   const auto ret =
-    unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
-                             constantNumPackets, distor, combineMode);
+    unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
+                          constantNumPackets, distor, combineMode);
   // TODO (mfh 15 Apr 2019) Instead of throwing here, which could
   // cause an MPI parallel hang, we should record the error in *this
   // (the target BMV instance).
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    (ret.first != 0, std::runtime_error, "unpackAndCombineNewImpl "
+    (ret.first != 0, std::runtime_error, "unpackAndCombineImpl "
      "reports an error: " << * (ret.second));
 }
 

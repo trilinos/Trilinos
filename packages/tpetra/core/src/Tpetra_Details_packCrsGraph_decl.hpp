@@ -149,13 +149,13 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 /// \param exportLIDs [in] Local indices of the rows to pack.
 ///
 /// \param constantNumPackets [out] Same as the constantNumPackets
-///   output argument of Tpetra::DistObject::packAndPrepareNew (which
+///   output argument of Tpetra::DistObject::packAndPrepare (which
 ///   see).
 ///
 /// \param distor [in] (Not used.)
 ///
 /// This method implements CrsGraph::packNew, and thus
-/// CrsGraph::packAndPrepareNew, for the case where the graph to
+/// CrsGraph::packAndPrepare, for the case where the graph to
 /// pack has a valid KokkosSparse::CrsGraph.
 template<typename LO, typename GO, typename NT>
 void

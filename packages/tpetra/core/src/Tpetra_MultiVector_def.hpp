@@ -867,10 +867,15 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermuteNew (const SrcDistObject& sourceObj,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& permuteFromLIDs)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& sourceObj,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
@@ -880,8 +885,8 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    const char tfecfFuncName[] = "copyAndPermuteNew: ";
-    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermuteNew");
+    const char tfecfFuncName[] = "copyAndPermute: ";
+    ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
     const bool verbose = Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
@@ -890,7 +895,7 @@ namespace Tpetra {
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::copyAndPermuteNew: ";
+      os << "Proc " << myRank << ": MV::copyAndPermute: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << "Start" << endl;
       std::cerr << os.str ();
@@ -1174,12 +1179,17 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepareNew (const SrcDistObject& sourceObj,
-                     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
-                     size_t& constantNumPackets,
-                     Distributor & /* distor */ )
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& sourceObj,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+   Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
+   Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
+   size_t& constantNumPackets,
+   Distributor & /* distor */ )
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1188,8 +1198,8 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    const char tfecfFuncName[] = "packAndPrepareNew: ";
-    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepareNew");
+    const char tfecfFuncName[] = "packAndPrepare: ";
+    ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1210,7 +1220,7 @@ namespace Tpetra {
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepareNew: ";
+      os << "Proc " << myRank << ": MV::packAndPrepare: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << "Start" << endl;
       std::cerr << os.str ();
@@ -1418,12 +1428,17 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                       Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
-                       Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
-                       const size_t constantNumPackets,
-                       Distributor& /* distor */,
-                       const CombineMode CM)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+   Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
+   Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
+   const size_t constantNumPackets,
+   Distributor& /* distor */,
+   const CombineMode CM)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1432,8 +1447,8 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
     using IST = impl_scalar_type;
-    const char tfecfFuncName[] = "unpackAndCombineNew: ";
-    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombineNew");
+    const char tfecfFuncName[] = "unpackAndCombine: ";
+    ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
     // have the option to check indices.  We do so when Tpetra is in
@@ -1450,7 +1465,7 @@ namespace Tpetra {
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": MV::packAndPrepareNew: ";
+      os << "Proc " << myRank << ": MV::packAndPrepare: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << "Start" << endl;
       std::cerr << os.str ();
