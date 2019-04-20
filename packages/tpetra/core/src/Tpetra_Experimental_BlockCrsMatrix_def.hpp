@@ -48,6 +48,8 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 #ifdef HAVE_TPETRA_DEBUG
@@ -2177,12 +2179,17 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  copyAndPermuteNew (const ::Tpetra::SrcDistObject& source,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteFromLIDs)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const ::Tpetra::SrcDistObject& source,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteFromLIDs)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -2190,7 +2197,7 @@ public:
     using std::endl;
     using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
 
-    ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::copyAndPermuteNew");
+    ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::copyAndPermute");
     const bool debug = Behavior::debug();
     const bool verbose = Behavior::verbose();
 
@@ -2199,7 +2206,7 @@ public:
     {
       std::ostringstream os;
       const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": BlockCrsMatrix::copyAndPermuteNew : " << endl;
+      os << "Proc " << myRank << ": BlockCrsMatrix::copyAndPermute : " << endl;
       prefix = os.str();
     }
 
@@ -2835,15 +2842,20 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  packAndPrepareNew (const ::Tpetra::SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>& exports, // output
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID, // output
-                     size_t& constantNumPackets,
-                     Distributor& /* distor */)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const ::Tpetra::SrcDistObject& source,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& exportLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type>& exports, // output
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID, // output
+   size_t& constantNumPackets,
+   Distributor& /* distor */)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -2854,7 +2866,7 @@ public:
 
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
 
-    ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::packAndPrepareNew");
+    ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::packAndPrepare");
 
     const bool debug = Behavior::debug();
     const bool verbose = Behavior::verbose();
@@ -2864,7 +2876,7 @@ public:
     {
       std::ostringstream os;
       const int myRank = this->graph_.getRowMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": BlockCrsMatrix::packAndPrepareNew : " << std::endl;
+      os << "Proc " << myRank << ": BlockCrsMatrix::packAndPrepare: " << std::endl;
       prefix = os.str();
     }
 
@@ -3083,15 +3095,20 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& importLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type> imports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       const size_t /* constantNumPackets */,
-                       Distributor& /* distor */,
-                       const CombineMode combineMode)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t /* constantNumPackets */,
+   Distributor& /* distor */,
+   const CombineMode combineMode)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -3101,7 +3118,7 @@ public:
     using host_exec =
       typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
 
-    ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombineNew");
+    ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombine");
     const bool verbose = Behavior::verbose ();
 
     // Define this function prefix
@@ -3111,7 +3128,7 @@ public:
       auto map = this->graph_.getRowMap ();
       auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const int myRank = comm.is_null () ? -1 : comm->getRank ();
-      os << "Proc " << myRank << ": Tpetra::BlockCrsMatrix::unpackAndCombineNew: ";
+      os << "Proc " << myRank << ": Tpetra::BlockCrsMatrix::unpackAndCombine: ";
       prefix = os.str ();
       if (verbose) {
         os << "Start" << endl;
@@ -3258,7 +3275,7 @@ public:
     {
       const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numImportLIDs+1);
       Kokkos::parallel_scan
-        ("Tpetra::BlockCrsMatrix::unpackAndCombineNew: offsets", policy,
+        ("Tpetra::BlockCrsMatrix::unpackAndCombine: offsets", policy,
          [=] (const size_t &i, size_t &update, const bool &final) {
           if (final) offset(i) = update;
           update += (i == numImportLIDs ? 0 : numPacketsPerLIDHost(i));
@@ -3283,7 +3300,7 @@ public:
       using host_scratch_space = typename host_exec::scratch_memory_space;
       using pair_type = Kokkos::pair<size_t, size_t>;
       Kokkos::parallel_for
-        ("Tpetra::BlockCrsMatrix::unpackAndCombineNew: unpack", policy,
+        ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
          [=] (const typename policy_type::member_type& member) {
           const size_t i = member.league_rank();
 
@@ -3765,7 +3782,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   global_size_t TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalNumDiags() const
+  getGlobalNumDiags () const
   {
     using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (this->graph_).getGlobalNumDiagsImpl ();
@@ -3774,7 +3791,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   size_t TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNodeNumDiags() const
+  getNodeNumDiags () const
   {
     using HDM = Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers;
     return dynamic_cast<const HDM&> (this->graph_).getNodeNumDiagsImpl ();

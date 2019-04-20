@@ -42,7 +42,9 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP
 
-#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace { // anonymous
 
@@ -275,7 +277,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
 
   if (meshMap.isContiguous ()) {
     return map_type (gblNumPointMapInds, lclNumPointMapInds, indexBase,
-                     meshMap.getComm (), meshMap.getNode ());
+                     meshMap.getComm ());
   }
   else {
     // "Hilbert's Hotel" trick: multiply each process' GIDs by
@@ -295,7 +297,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
       }
     }
     return map_type (gblNumPointMapInds, lclPointGblInds (), indexBase,
-                     meshMap.getComm (), meshMap.getNode ());
+                     meshMap.getComm ());
   }
 }
 
@@ -483,156 +485,411 @@ checkSizes (const Tpetra::SrcDistObject& src)
   return ! getMultiVectorFromSrcDistObject (src).is_null ();
 }
 
-template<class Scalar, class LO, class GO, class Node>
-void BlockMultiVector<Scalar, LO, GO, Node>::
-copyAndPermute (const Tpetra::SrcDistObject& src,
-                const size_t numSameIDs,
-                const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                const Teuchos::ArrayView<const LO>& permuteFromLIDs)
+template<class SC, class LO, class GO, class NT>
+std::pair<int, std::unique_ptr<std::string>>
+BlockMultiVector<SC, LO, GO, NT>::
+copyAndPermuteImpl
+  (const BlockMultiVector<SC, LO, GO, NT>& src,
+   const size_t numSameIDs,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type
+   >& permuteToLIDs,
+   const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type
+   >& permuteFromLIDs)
 {
-  const char tfecfFuncName[] = "copyAndPermute: ";
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-    "permuteToLIDs and permuteFromLIDs must have the same size."
-    << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-    << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
+  using std::endl;
+  const char tfecfFuncName[] = "copyAndPermuteImpl: ";
+  std::unique_ptr<std::string> errMsg;
+  const bool debug = ::Tpetra::Details::Behavior::debug ("BlockMultiVector");
+  const int myRank = src.getMap ()->getComm ()->getRank ();
 
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    srcAsBmvPtr.is_null (), std::invalid_argument,
-    "The source of an Import or Export to a BlockMultiVector "
-    "must also be a BlockMultiVector.");
-  const BMV& srcAsBmv = *srcAsBmvPtr;
+  std::unique_ptr<std::string> prefix;
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName;
+    prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    os << "Start" << endl;
+    std::cerr << os.str ();
+  }
+  if (permuteToLIDs.need_sync_host () || permuteFromLIDs.need_sync_host ()) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName << "permuteToLIDs and/or "
+      "permuteFromLIDs need sync to host.  This should never happen.";
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -1, std::move (errMsg) };
+  }
 
+  const size_t numPermuteLIDs = static_cast<size_t> (permuteToLIDs.extent (0));
+  if (static_cast<size_t> (permuteFromLIDs.extent (0)) != numPermuteLIDs) {
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName
+       << "permuteToLIDs.extent(0) = " << numPermuteLIDs
+       << " != permuteFromLIDs.extent(0) = " << permuteFromLIDs.extent (0)
+       << ".";
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -2, std::move (errMsg) };
+  }
+
+  const size_t numVecs = static_cast<size_t> (src.getNumVectors ());
+  if (debug) {
+    std::ostringstream os;
+    os << *prefix << "Sames: numSameIDs=" << numSameIDs
+       << ", numVecs=" << numVecs << endl;
+    std::cerr << os.str ();
+  }
   // FIXME (mfh 23 Apr 2014) This implementation is sequential and
   // assumes UVM.
-
-  const LO numVecs = getNumVectors ();
-  const LO numSame = static_cast<LO> (numSameIDs);
-  for (LO j = 0; j < numVecs; ++j) {
-    for (LO lclRow = 0; lclRow < numSame; ++lclRow) {
-      deep_copy (getLocalBlock (lclRow, j), srcAsBmv.getLocalBlock (lclRow, j));
+  for (size_t j = 0; j < numVecs; ++j) {
+    for (size_t lclRow = 0; lclRow < numSameIDs; ++lclRow) {
+      deep_copy (this->getLocalBlock (lclRow, j),
+                 src.getLocalBlock (lclRow, j));
     }
   }
+
+  if (debug) {
+    std::ostringstream os;
+    os << *prefix << "Permutes: numPermuteLIDs=" << numPermuteLIDs << endl;
+    std::cerr << os.str ();
+  }
+  auto permuteToLIDs_h = permuteToLIDs.view_host ();
+  auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
 
   // FIXME (mfh 20 June 2012) For an Export with duplicate GIDs on the
   // same process, this merges their values by replacement of the last
   // encountered GID, not by the specified merge rule (such as ADD).
-  const LO numPermuteLIDs = static_cast<LO> (permuteToLIDs.size ());
-  for (LO j = 0; j < numVecs; ++j) {
-    for (LO k = numSame; k < numPermuteLIDs; ++k) {
-      deep_copy (getLocalBlock (permuteToLIDs[k], j), srcAsBmv.getLocalBlock (permuteFromLIDs[k], j));
+  for (size_t j = 0; j < numVecs; ++j) {
+    for (size_t k = numSameIDs; k < numPermuteLIDs; ++k) {
+      deep_copy (this->getLocalBlock (permuteToLIDs_h[k], j),
+                 src.getLocalBlock (permuteFromLIDs_h[k], j));
     }
   }
+
+  if (debug) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str ();
+  }
+  return { 0, std::move (errMsg) };
 }
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-packAndPrepare (const Tpetra::SrcDistObject& src,
-                const Teuchos::ArrayView<const LO>& exportLIDs,
-                Teuchos::Array<impl_scalar_type>& exports,
-                const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                size_t& constantNumPackets,
-                Tpetra::Distributor& /* distor */)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const SrcDistObject& src,
+ const size_t numSameIDs,
+ const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& permuteToLIDs,
+ const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& permuteFromLIDs)
 {
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  const char tfecfFuncName[] = "packAndPrepare: ";
+  const char tfecfFuncName[] = "copyAndPermute: ";
 
-  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    srcAsBmvPtr.is_null (), std::invalid_argument,
-    "The source of an Import or Export to a BlockMultiVector "
-    "must also be a BlockMultiVector.");
-  const BMV& srcAsBmv = *srcAsBmvPtr;
+  auto srcPtr = getBlockMultiVectorFromSrcDistObject (src);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (srcPtr.is_null (), std::invalid_argument,
+     "The source of an Import or Export to a BlockMultiVector "
+     "must also be a BlockMultiVector.");
+  const auto ret = copyAndPermuteImpl (*srcPtr, numSameIDs,
+                                       permuteToLIDs, permuteFromLIDs);
+  // TODO (mfh 15 Apr 2019) Instead of throwing here, which could
+  // cause an MPI parallel hang, we should record the error in *this
+  // (the target BMV instance).
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (ret.first != 0, std::runtime_error, "copyAndPermuteImpl "
+     "reports an error: " << * (ret.second));
+}
 
-  const LO numVecs = getNumVectors ();
-  const LO blockSize = getBlockSize ();
+template<class SC, class LO, class GO, class NT>
+std::pair<int, std::unique_ptr<std::string>>
+BlockMultiVector<SC, LO, GO, NT>::
+packAndPrepareImpl
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type
+   >& exportLIDs,
+   Kokkos::DualView<
+     impl_scalar_type*,
+     buffer_device_type
+   >& exports,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type
+   > /* numPacketsPerLID */,
+   size_t& constantNumPackets,
+   Distributor& /* distor */ ) const
+{
+  using std::endl;
+  using IST = impl_scalar_type;
+  using exports_dv_type = Kokkos::DualView<packet_type*, buffer_device_type>;
+  using host_device_type = typename exports_dv_type::t_host::device_type;
+  using dst_little_vec_type = Kokkos::View<IST*, host_device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  const char tfecfFuncName[] = "packAndPrepareImpl: ";
+  std::unique_ptr<std::string> errMsg;
+  const bool debug = ::Tpetra::Details::Behavior::debug ("BlockMultiVector");
+
+  std::unique_ptr<std::string> prefix;
+  if (debug) {
+    const int myRank = this->getMap ()->getComm ()->getRank ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName;
+    prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    os << "Start" << endl;
+    std::cerr << os.str ();
+  }
+  if (exportLIDs.need_sync_host ()) {
+    const int myRank = this->getMap ()->getComm ()->getRank ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName << "exportLIDs "
+      "needs sync to host.  This should never happen.";
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -1, std::move (errMsg) };
+  }
+
+  const size_t numVecs = static_cast<size_t> (this->getNumVectors ());
+  const size_t blockSize = static_cast<size_t> (this->getBlockSize ());
 
   // Number of things to pack per LID is the block size, times the
   // number of columns.  Input LIDs correspond to the mesh points, not
   // the degrees of freedom (DOFs).
-  constantNumPackets =
-    static_cast<size_t> (blockSize) * static_cast<size_t> (numVecs);
-  const size_type numMeshLIDs = exportLIDs.size ();
+  constantNumPackets = blockSize * numVecs;
+  const size_t numMeshLIDs = static_cast<size_t> (exportLIDs.extent (0));
+  const size_t requiredExportsSize = numMeshLIDs * blockSize * numVecs;
 
-  const size_type requiredExportsSize = numMeshLIDs *
-    static_cast<size_type> (blockSize) * static_cast<size_type> (numVecs);
-  exports.resize (requiredExportsSize);
+  if (static_cast<size_t> (exports.extent (0)) != requiredExportsSize) {
+    exports = exports_dv_type ();
+    exports = exports_dv_type ("exports", requiredExportsSize);
+  }
+  exports.clear_sync_state ();
+  exports.modify_host ();
+  auto exports_h = exports.view_host ();
+  auto exportLIDs_h = exportLIDs.view_host ();
 
   try {
-    size_type curExportPos = 0;
-    for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
-      for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
-        const LO meshLid = exportLIDs[meshLidIndex];
-        impl_scalar_type* const curExportPtr = &exports[curExportPos];
-        typename little_vec_type::HostMirror X_dst (curExportPtr, blockSize);
-        auto X_src = srcAsBmv.getLocalBlock (meshLid, j);
+    size_t curExportPos = 0;
+    for (size_t meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
+      for (size_t j = 0; j < numVecs; ++j, curExportPos += blockSize) {
+        const LO meshLid = exportLIDs_h[meshLidIndex];
+
+        IST* const curExportPtr = &exports_h[curExportPos];
+        dst_little_vec_type X_dst (curExportPtr, blockSize);
+        auto X_src = this->getLocalBlock (meshLid, j);
 
         Kokkos::deep_copy (X_dst, X_src);
       }
     }
-  } catch (std::exception& e) {
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      true, std::logic_error, "Oh no!  packAndPrepare on Process "
-      << meshMap_.getComm ()->getRank () << " raised the following exception: "
-      << e.what ());
   }
+  catch (std::exception& e) {
+    const int myRank = this->getMap ()->getComm ()->getRank ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName
+       << " threw an exception: " << e.what ();
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -2, std::move (errMsg) };
+  }
+
+  if (debug) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str ();
+  }
+  return { 0, std::move (errMsg) };
 }
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
-unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
-                  const Teuchos::ArrayView<const impl_scalar_type>& imports,
-                  const Teuchos::ArrayView<size_t>& /* numPacketsPerLID */,
-                  const size_t /* constantNumPackets */,
-                  Tpetra::Distributor& /* distor */,
-                  Tpetra::CombineMode CM)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const SrcDistObject& src,
+ const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& exportLIDs,
+ Kokkos::DualView<packet_type*,
+   buffer_device_type>& exports,
+ Kokkos::DualView<size_t*,
+   buffer_device_type> numPacketsPerLID,
+ size_t& constantNumPackets,
+ Distributor& distor)
 {
-  typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-  const char tfecfFuncName[] = "unpackAndCombine: ";
+  const char tfecfFuncName[] = "packAndPrepare: ";
 
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX && CM != ZERO,
-    std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
-    "CombineMode values are ADD, REPLACE, INSERT, ABSMAX, and ZERO.");
+  auto srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (srcAsBmvPtr.is_null (), std::invalid_argument,
+     "The source of an Import or Export to a BlockMultiVector "
+     "must also be a BlockMultiVector.");
+  const auto ret =
+    srcAsBmvPtr->packAndPrepareImpl (exportLIDs, exports,
+                                     numPacketsPerLID,
+                                     constantNumPackets, distor);
+  // TODO (mfh 15 Apr 2019) Instead of throwing here, which could
+  // cause an MPI parallel hang, we should record the error in *this
+  // (the target BMV instance).
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (ret.first != 0, std::runtime_error, "packAndPrepareImpl "
+     "reports an error: " << * (ret.second));
+}
 
-  if (CM == ZERO) {
-    return; // Combining does nothing, so we don't have to combine anything.
+template<class SC, class LO, class GO, class NT>
+std::pair<int, std::unique_ptr<std::string>>
+BlockMultiVector<SC, LO, GO, NT>::
+unpackAndCombineImpl
+  (const Kokkos::DualView<
+     const local_ordinal_type*,
+     buffer_device_type
+   >& importLIDs,
+   Kokkos::DualView<
+     impl_scalar_type*,
+     buffer_device_type
+   > imports,
+   Kokkos::DualView<
+     size_t*,
+     buffer_device_type
+   > numPacketsPerLID,
+   const size_t constantNumPackets,
+   Distributor& distor,
+   const CombineMode combineMode)
+{
+  using std::endl;
+  using IST = impl_scalar_type;
+  using KAT = Kokkos::ArithTraits<IST>;
+  using imports_dv_type = Kokkos::DualView<packet_type*, buffer_device_type>;
+  using host_device_type = typename imports_dv_type::t_host::device_type;
+  using src_little_vec_type = Kokkos::View<const IST*, host_device_type,
+    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  const char tfecfFuncName[] = "unpackAndCombineImpl: ";
+  std::unique_ptr<std::string> errMsg;
+  const bool debug = ::Tpetra::Details::Behavior::debug ("BlockMultiVector");
+
+  std::unique_ptr<std::string> prefix;
+  if (debug) {
+    const int myRank = this->getMap ()->getComm ()->getRank ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName;
+    prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    os << "Start" << endl;
+    std::cerr << os.str ();
+  }
+
+  if (combineMode != ADD && combineMode != REPLACE &&
+      combineMode != INSERT && combineMode != ABSMAX &&
+      combineMode != ZERO) {
+    std::ostringstream os;
+    os << tfecfFuncName << "Invalid CombineMode: " << combineMode << ".  "
+      "Valid CombineMode values: ADD, REPLACE, INSERT, ABSMAX, and ZERO.";
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -1, std::move (errMsg) };
+  }
+  if (combineMode == ZERO) {
+    return { 0, std::move (errMsg) };
+  }
+
+  if (importLIDs.need_sync_host ()) {
+    const int myRank = this->getMap ()->getComm ()->getRank ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName << "importLIDs "
+      "needs sync to host.  This should never happen.";
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -2, std::move (errMsg) };
   }
 
   // Number of things to pack per LID is the block size.
   // Input LIDs correspond to the mesh points, not the DOFs.
-  const size_type numMeshLIDs = importLIDs.size ();
-  const LO blockSize = getBlockSize ();
-  const LO numVecs = getNumVectors ();
+  const size_t numMeshLIDs = static_cast<size_t> (importLIDs.extent (0));
+  const size_t blockSize = static_cast<size_t> (this->getBlockSize ());
+  const size_t numVecs = static_cast<size_t> (this->getNumVectors ());
 
-  const size_type requiredImportsSize = numMeshLIDs *
-    static_cast<size_type> (blockSize) * static_cast<size_type> (numVecs);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    imports.size () < requiredImportsSize, std::logic_error,
-    ": imports.size () = " << imports.size ()
-    << " < requiredImportsSize = " << requiredImportsSize << ".");
+  const size_t requiredImportsSize = numMeshLIDs * blockSize * numVecs;
+  if (static_cast<size_t> (imports.extent (0)) < requiredImportsSize) {
+    const int myRank = this->getMap ()->getComm ()->getRank ();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": " << tfecfFuncName << "imports.extent(0) = "
+       << imports.extent (0) << " < requiredImportsSize = "
+       << requiredImportsSize << ".";
+    errMsg = std::unique_ptr<std::string> (new std::string (os.str ()));
+    return { -3, std::move (errMsg) };
+  }
 
-  size_type curImportPos = 0;
-  for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
-    for (LO j = 0; j < numVecs; ++j, curImportPos += blockSize) {
-      const LO meshLid = importLIDs[meshLidIndex];
-      const impl_scalar_type* const curImportPtr = &imports[curImportPos];
+  auto importLIDs_h = importLIDs.view_host ();
+  if (imports.need_sync_host ()) {
+    imports.sync_host ();
+  }
+  auto imports_h = imports.view_host ();
 
-      typename const_little_vec_type::HostMirror::const_type X_src (curImportPtr, blockSize);
-      auto X_dst = getLocalBlock (meshLid, j);
+  size_t curImportPos = 0;
+  for (size_t meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
+    for (size_t j = 0; j < numVecs; ++j, curImportPos += blockSize) {
+      const LO meshLid = importLIDs_h[meshLidIndex];
+      const IST* const curImportPtr = &imports_h[curImportPos];
 
-      if (CM == INSERT || CM == REPLACE) {
+      src_little_vec_type X_src (curImportPtr, blockSize);
+      auto X_dst = this->getLocalBlock (meshLid, j);
+
+      if (combineMode == INSERT || combineMode == REPLACE) {
         deep_copy (X_dst, X_src);
-      } else if (CM == ADD) {
-        AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
-      } else if (CM == ABSMAX) {
-        Impl::absMax (X_dst, X_src);
+      }
+      else if (combineMode == ADD) {
+        using ::Tpetra::Experimental::AXPY;
+        AXPY (static_cast<IST> (KAT::one ()), X_src, X_dst);
+      }
+      else if (combineMode == ABSMAX) {
+        ::Tpetra::Experimental::Impl::absMax (X_dst, X_src);
       }
     }
   }
+
+  if (debug) {
+    std::ostringstream os;
+    os << *prefix << "Done" << endl;
+    std::cerr << os.str ();
+  }
+  return { 0, std::move (errMsg) };
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+(const Kokkos::DualView<const local_ordinal_type*,
+   buffer_device_type>& importLIDs,
+ Kokkos::DualView<packet_type*,
+   buffer_device_type> imports,
+ Kokkos::DualView<size_t*,
+   buffer_device_type> numPacketsPerLID,
+ const size_t constantNumPackets,
+ Distributor& distor,
+ const CombineMode combineMode)
+{
+  const char tfecfFuncName[] = "unpackAndCombine: ";
+  const auto ret =
+    unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
+                          constantNumPackets, distor, combineMode);
+  // TODO (mfh 15 Apr 2019) Instead of throwing here, which could
+  // cause an MPI parallel hang, we should record the error in *this
+  // (the target BMV instance).
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (ret.first != 0, std::runtime_error, "unpackAndCombineImpl "
+     "reports an error: " << * (ret.second));
+}
+
+template<class Scalar, class LO, class GO, class Node>
+bool BlockMultiVector<Scalar, LO, GO, Node>::
+isValidLocalMeshIndex (const LO meshLocalIndex) const
+{
+  return meshLocalIndex != Teuchos::OrdinalTraits<LO>::invalid () &&
+    meshMap_.isNodeLocalElement (meshLocalIndex);
 }
 
 template<class Scalar, class LO, class GO, class Node>

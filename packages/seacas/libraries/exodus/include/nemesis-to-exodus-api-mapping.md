@@ -2,7 +2,7 @@
 
 \section initial Initial Information Routines
 
-Nemesis API	      |      Exodus API
+Nemesis API           |      Exodus API
 ----------------------|------------------------------
 ne_get_init_info      |      ex_get_init_info()
 ne_put_init_info      |      ex_put_init_info()
@@ -12,7 +12,7 @@ ne_put_version        |      ex_put_nemesis_version()
 
 \section lb Loadbalance Parameter Routines
 
-Nemesis API	      |      Exodus API
+Nemesis API           |      Exodus API
 ----------------------|------------------------------
 ne_get_loadbal_param  |       ex_get_loadbal_param()
 ne_put_loadbal_param  |       ex_put_loadbal_param()
@@ -20,7 +20,7 @@ ne_put_loadbal_param_cc |     ex_put_loadbal_param_cc()
 
 \section param Nodeset, Sideset & Element Block Global Parameter Routines
 
-Nemesis API	        |      Exodus API
+Nemesis API             |      Exodus API
 ------------------------|------------------------------
 ne_get_ns_param_global  |     ex_get_ns_param_global()
 ne_put_ns_param_global  |     ex_put_ns_param_global()
@@ -31,7 +31,7 @@ ne_put_eb_info_global   |     ex_put_eb_info_global()
 
 \section subset Nodeset, Sideset & Element Block Subset Routines
 
-Nemesis API	        |      Exodus API
+Nemesis API             |      Exodus API
 ------------------------|------------------------------
 ne_get_n_side_set       |       ex_get_partial_set()
 ne_put_n_side_set       |     ex_put_partial_set()
@@ -51,7 +51,7 @@ ne_get_elem_type        |     ex_get_elem_type()
 
 \section variable Variable Routines
 
-Nemesis API	        |      Exodus API
+Nemesis API             |      Exodus API
 ------------------------|------------------------------
 ne_get_n_elem_var       |     ex_get_partial_var()
 ne_put_elem_var_slab    |     ex_put_partial_var()
@@ -60,7 +60,7 @@ ne_put_nodal_var_slab   |     ex_put_partial_var()
 
 \section map Number Map Routines
 
-Nemesis API	        |      Exodus API
+Nemesis API             |      Exodus API
 ------------------------|------------------------------
 ne_get_n_elem_num_map   |     ex_get_partial_id_map()
 ne_put_n_elem_num_map   |     ex_put_partial_id_map()
@@ -73,7 +73,7 @@ ne_put_elem_map         |     ex_put_processor_elem_maps()
 
 \section comm  Communications Maps Routines
 
-Nemesis API	      |      Exodus API
+Nemesis API           |      Exodus API
 ----------------------|------------------------------
 ne_get_cmap_params     |      ex_get_cmap_params()
 ne_put_cmap_params      |     ex_put_cmap_params()

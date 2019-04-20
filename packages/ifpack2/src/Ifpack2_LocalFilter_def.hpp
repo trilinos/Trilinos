@@ -147,7 +147,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 
   localRowMap_ =
     rcp (new map_type (numRows, indexBase, localComm,
-                       Tpetra::GloballyDistributed, A_->getNode ()));
+                       Tpetra::GloballyDistributed));
   // If the original matrix's range Map is not fitted to its row Map,
   // we'll have to do an Export when applying the matrix.
   localRangeMap_ = localRowMap_;
@@ -163,7 +163,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
     const size_t numCols = A_->getDomainMap()->getNodeNumElements ();
     localDomainMap_ =
       rcp (new map_type (numCols, indexBase, localComm,
-                         Tpetra::GloballyDistributed, A_->getNode ()));
+                         Tpetra::GloballyDistributed));
   }
 
   // NodeNumEntries_ will contain the actual number of nonzeros for

@@ -324,6 +324,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createMultiVector,
 {
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type NODE;
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar> ConverterT;
 
   const int numCols = 3;
@@ -333,8 +334,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createMultiVector,
     Thyra::createVectorSpace<Scalar>(tpetraMap);
 
   const RCP<const TpetraMap_t> tpetraLocRepMap =
-    Tpetra::createLocalMapWithNode<LO, GO>(
-      numCols, tpetraMap->getComm(), tpetraMap->getNode());
+    Tpetra::createLocalMapWithNode<LO,GO,NODE>(
+      numCols, tpetraMap->getComm());
   const RCP<const VectorSpaceBase<Scalar> > domainVs =
     Thyra::createVectorSpace<Scalar>(tpetraLocRepMap);
 
@@ -375,6 +376,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstMultiVector,
 {
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::Map<>::node_type NODE;
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar> ConverterT;
 
   const int numCols = 3;
@@ -384,8 +386,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, createConstMultiVector,
     Thyra::createVectorSpace<Scalar>(tpetraMap);
 
   const RCP<const TpetraMap_t> tpetraLocRepMap =
-    Tpetra::createLocalMapWithNode<LO,GO>(
-      numCols, tpetraMap->getComm(), tpetraMap->getNode());
+    Tpetra::createLocalMapWithNode<LO,GO,NODE>(
+      numCols, tpetraMap->getComm());
   const RCP<const VectorSpaceBase<Scalar> > domainVs =
     Thyra::createVectorSpace<Scalar>(tpetraLocRepMap);
 

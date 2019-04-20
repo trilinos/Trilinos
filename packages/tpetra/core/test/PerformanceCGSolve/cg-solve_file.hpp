@@ -74,18 +74,6 @@ struct result_struct {
     final_residual(res),niters(niter) {};
 };
 
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node);
-
-template<class Node>
-Teuchos::XMLTestNode machine_configuration(Node node) {
-  Teuchos::XMLTestNode config = Teuchos::PerfTest_MachineConfig();
-  config.addString("KokkosNodeType",node->name());
-  return config;
-}
-
-
 template<class CrsMatrix>
 Teuchos::XMLTestNode test_entry(
     const std::string& filename_matrix,
@@ -343,7 +331,7 @@ run (int argc, char *argv[])
     A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm);
   }
   else {
-    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, Teuchos::null);
+    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm);
   }
 
   if (printMatrix) {
@@ -366,11 +354,17 @@ run (int argc, char *argv[])
   if (nsize < 0) {
     typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
     b = reader_type::readVectorFile (filename_vector, map->getComm (),
-                                     map->getNode (), map);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                     map->getNode (),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                     map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm (),
-                                          map->getNode ());
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                                          , map->getNode ()
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+                                         );
   }
 
   // The vector x on input is the initial guess for the CG solve.
@@ -382,8 +376,7 @@ run (int argc, char *argv[])
 
   // Print results.
   if (myRank == 0) {
-    Teuchos::XMLTestNode machine_config =
-      machine_configuration (map->getNode ());
+    Teuchos::XMLTestNode machine_config = Teuchos::PerfTest_MachineConfig();
     Teuchos::XMLTestNode test =
       test_entry (filename, filename_vector, nsize, comm->getSize (), numteams,
                   numthreads, A, results, niters, tolerance, tol_small,

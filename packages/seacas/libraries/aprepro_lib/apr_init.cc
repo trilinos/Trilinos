@@ -40,7 +40,6 @@
 #include "apr_builtin.h"
 #include "aprepro.h"      // for symrec, Aprepro, etc
 #include "init_structs.h" // for array_a_init, array_c_init, etc
-#include <cstring>        // for strncpy
 #include <string>         // for string
 
 namespace SEAMS {

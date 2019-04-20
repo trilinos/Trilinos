@@ -460,14 +460,10 @@ namespace Ioex {
       {
         int j = 0;
         for (size_t i = 0; i < num_qa_records; i++) {
-          std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-          qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
-          qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
-          qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
-          qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
+          Ioss::Utils::copy_string(qa[i].qa_record[0][0], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][1], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][2], qaRecords[j++], MAX_STR_LENGTH + 1);
+          Ioss::Utils::copy_string(qa[i].qa_record[0][3], qaRecords[j++], MAX_STR_LENGTH + 1);
         }
       }
 
@@ -484,14 +480,8 @@ namespace Ioex {
         version = get_region()->get_property("code_version").get_string();
       }
 
-      char buffer[MAX_STR_LENGTH + 1];
-      std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
-      buffer[MAX_STR_LENGTH] = '\0';
-      std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
-
-      std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
-      buffer[MAX_STR_LENGTH] = '\0';
-      std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][0], codename, MAX_STR_LENGTH + 1);
+      Ioss::Utils::copy_string(qa[num_qa_records].qa_record[0][1], version, MAX_STR_LENGTH + 1);
 
       int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
       if (ierr < 0) {
@@ -540,20 +530,18 @@ namespace Ioex {
           total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
       int i = 0;
-      std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
+      Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information(), max_line_length + 1);
 
-      std::strncpy(info[i++], Ioex::Version(), max_line_length);
+      Ioss::Utils::copy_string(info[i++], Ioex::Version(), max_line_length + 1);
 
       // Copy input file lines into 'info' array...
       for (size_t j = 0; j < input_lines.size(); j++, i++) {
-        std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
-        info[i][max_line_length] = '\0'; // Once more for good luck...
+        Ioss::Utils::copy_string(info[i], input_lines[j], max_line_length + 1);
       }
 
       // Copy "information_records" property data ...
       for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-        std::strncpy(info[i], informationRecords[j].c_str(), max_line_length);
-        info[i][max_line_length] = '\0'; // Once more for good luck...
+        Ioss::Utils::copy_string(info[i], informationRecords[j], max_line_length + 1);
       }
 
       int ierr = ex_put_info(get_file_pointer(), total_lines, info);
@@ -1096,12 +1084,11 @@ namespace Ioex {
     // Title...
     if (get_region()->property_exists("title")) {
       std::string title_str = get_region()->get_property("title").get_string();
-      std::strncpy(the_title, title_str.c_str(), max_line_length);
+      Ioss::Utils::copy_string(the_title, title_str);
     }
     else {
-      std::strncpy(the_title, "IOSS Default Title", max_line_length);
+      Ioss::Utils::copy_string(the_title, "IOSS Default Title");
     }
-    the_title[max_line_length] = '\0';
 
     Ioex::Mesh mesh(spatialDimension, the_title, !usingParallelIO);
     mesh.populate(get_region());
@@ -1568,11 +1555,11 @@ namespace Ioex {
           IOSS_WARNING << "WARNING: There are variables names whose length (" << name_length
                        << ") exceeds the current "
                           "maximum name length ("
-                       << maximumNameLength << ") set for this database (" << get_filename()
-                       << ").\n"
+                       << maximumNameLength << ")\n         set for this database ("
+                       << get_filename() << ").\n"
                        << "         You should either reduce the length of the variable name, or "
-                          "set the 'MAXIMUM_NAME_LENGTH' property "
-                       << "to at least " << name_length
+                          "set the 'MAXIMUM_NAME_LENGTH' property\n"
+                       << "         to at least " << name_length
                        << ".\n         Contact gdsjaar@sandia.gov for more information.\n\n";
         }
       }

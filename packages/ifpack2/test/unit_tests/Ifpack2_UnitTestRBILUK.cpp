@@ -60,6 +60,7 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_RowMatrix.hpp"
 

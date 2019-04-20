@@ -1769,7 +1769,7 @@ int main(int argc, char *argv[]) {
       std::string aggregationRegionType = setAggregationTypePerRegion(problemType, myRank);
 
       // create nullspace vector
-      RCP<Epetra_Vector> nullspace = rcp(new Epetra_Vector(*revisedRowMapPerGrp[j]));
+      RCP<Epetra_MultiVector> nullspace = rcp(new Epetra_MultiVector(*revisedRowMapPerGrp[j], 1));
       nullspace->PutScalar(1.0);
 
       // create dummy coordinates vector
@@ -1784,10 +1784,11 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
       userParamList.set<Array<int> >("Array<LO> lNodesPerDim", lNodesPerDim);
       userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType);
+      userParamList.set<RCP<Epetra_MultiVector> >("Coordinates", coordinates);
+      userParamList.set<RCP<Epetra_MultiVector> >("Nullspace", nullspace);
 
       // Setup hierarchy
-      RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(regionGrpMats[j], *mueluParams,
-          coordinates, nullspace);
+      RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(regionGrpMats[j], *mueluParams);
       regGrpHierarchy[j] = eH->GetHierarchy();
     }
 

@@ -59,8 +59,10 @@
 
 namespace MueLu {
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node1, class Node2>
 Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >
+MUELU_DEPRECATED
 clone (const Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node1> >& SB,
        const Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >& cloneA,
        const RCP<Node2>& node2)
@@ -93,6 +95,7 @@ clone (const Teuchos::RCP<SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,Node1> 
 #endif
 
 }
+#endif
 } //namespace MueLu
 
 #define MUELU_SMOOTHERBASECLONER_SHORT

@@ -515,7 +515,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             return 0;
           }
           char tmpstr[2048];
-          iret     = sscanf(value, "%s", tmpstr);
+          iret     = sscanf(value, "%2047s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
             Gen_Error(0, "FATAL: invalid value associated with file");
@@ -549,7 +549,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             Gen_Error(0, "FATAL: need to specify a value with outfile");
             return 0;
           }
-          iret     = sscanf(value, "%s", tmpstr);
+          iret     = sscanf(value, "%2047s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
             Gen_Error(0, "FATAL: invalid value associated with outfile");
@@ -825,7 +825,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 }
 
                 cptr2++;
-                iret     = sscanf(cptr2, "%s", tmpstr);
+                iret     = sscanf(cptr2, "%2047s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
                   Gen_Error(0, "FATAL: invalid value for infile");
@@ -877,7 +877,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 }
 
                 cptr2++;
-                iret     = sscanf(cptr2, "%s", tmpstr);
+                iret     = sscanf(cptr2, "%2047s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
                   Gen_Error(0, "FATAL: invalid value for outfile");

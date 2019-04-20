@@ -1000,7 +1000,6 @@ namespace Tpetra {
   {
     return this->getNodeNumDiagsImpl ();
   }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
@@ -1023,6 +1022,7 @@ namespace Tpetra {
   {
     return nodeNumDiags_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Node>
@@ -1240,7 +1240,6 @@ namespace Tpetra {
   {
     return this->isUpperTriangularImpl ();
   }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1257,6 +1256,7 @@ namespace Tpetra {
   {
     return this->upperTriangular_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -5557,36 +5557,33 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  useNewInterface ()
-  {
-    return true;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  copyAndPermuteNew (const SrcDistObject& source,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteFromLIDs)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& source,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteFromLIDs)
   {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
     using this_type = CrsGraph<LO, GO, node_type>;
     using row_graph_type = RowGraph<LO, GO, node_type>;
-    const char tfecfFuncName[] = "copyAndPermuteNew: ";
+    const char tfecfFuncName[] = "copyAndPermute: ";
     const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
 
     std::unique_ptr<std::string> prefix;
     if (debug) {
       std::ostringstream os;
       const int myRank = this->getMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": Tpetra::CrsGraph::copyAndPermuteNew: ";
+      os << "Proc " << myRank << ": Tpetra::CrsGraph::copyAndPermute: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << endl;
       std::cerr << os.str ();
@@ -5936,15 +5933,20 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  packAndPrepareNew (const SrcDistObject& source,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& distor)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& source,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& exportLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type>& exports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   size_t& constantNumPackets,
+   Distributor& distor)
   {
     using Tpetra::Details::ProfilingRegion;
     using GO = global_ordinal_type;
@@ -5953,15 +5955,15 @@ namespace Tpetra {
       CrsGraph<local_ordinal_type, global_ordinal_type, node_type>;
     using row_graph_type =
       RowGraph<local_ordinal_type, global_ordinal_type, node_type>;
-    const char tfecfFuncName[] = "packAndPrepareNew: ";
-    ProfilingRegion region_papn ("Tpetra::CrsGraph::packAndPrepareNew");
+    const char tfecfFuncName[] = "packAndPrepare: ";
+    ProfilingRegion region_papn ("Tpetra::CrsGraph::packAndPrepare");
 
     const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
     std::unique_ptr<std::string> prefix;
     if (debug) {
       std::ostringstream os;
       const int myRank = this->getMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": Tpetra::CrsGraph::packAndPrepareNew: ";
+      os << "Proc " << myRank << ": Tpetra::CrsGraph::packAndPrepare: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << "Start" << endl;
       std::cerr << os.str ();
@@ -6564,27 +6566,32 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& importLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type> imports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       const size_t /* constantNumPackets */,
-                       Distributor& /* distor */,
-                       const CombineMode /* combineMode */ )
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t /* constantNumPackets */,
+   Distributor& /* distor */,
+   const CombineMode /* combineMode */ )
   {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
-    const char tfecfFuncName[] = "unpackAndCombineNew: ";
+    const char tfecfFuncName[] = "unpackAndCombine: ";
     const bool debug = ::Tpetra::Details::Behavior::debug ("CrsGraph");
 
     std::unique_ptr<std::string> prefix;
     if (debug) {
       std::ostringstream os;
       const int myRank = this->getMap ()->getComm ()->getRank ();
-      os << "Proc " << myRank << ": Tpetra::CrsGraph::unpackAndCombineNew: ";
+      os << "Proc " << myRank << ": Tpetra::CrsGraph::unpackAndCombine: ";
       prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
       os << endl;
       std::cerr << os.str ();

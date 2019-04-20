@@ -166,7 +166,11 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
   return identityMatrix;
 }
 
-
+template<class Matrix_t>
+RCP<Matrix_t>
+copyMatrix(const RCP<Matrix_t> &A) {
+  return rcp(new Matrix_t(*A,Teuchos::Copy));
+}
 
 typedef struct add_test_results_struct{
   double correctNorm;
@@ -662,21 +666,17 @@ mult_test_results multiply_reuse_test(
   computedC1->leftScale (*leftScaling);
   computedC1->rightScale(*rightScaling);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
   //   A*leftScaling,   if AT=true
-  RCP<Matrix_t> As = A->clone(node);
+  RCP<Matrix_t> As = copyMatrix(A);
   if (AT == false) As->leftScale (*leftScaling);
   else             As->rightScale(*leftScaling);
 
   // Bs = op(B) * rightScaling =
   //   B * rightScaling, if BT=false
   //   rightScaling*B,   if BT=true
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   if (BT == false) Bs->rightScale(*rightScaling);
   else             Bs->leftScale (*rightScaling);
 
@@ -813,11 +813,7 @@ mult_test_results jacobi_reuse_test(
   computedC1->rightScale(*rightScaling);
 
   // Bs = B * rightScaling
-
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = map->getNode ();
-  RCP<Matrix_t> Bs = B->clone(node);
+  RCP<Matrix_t> Bs = copyMatrix(B);
   Bs->rightScale(*rightScaling);
 
   // computedC2 = (I - Dinv*A)*Bs
@@ -1171,9 +1167,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   RCP<Matrix_t > dummy =
     getIdentityMatrix<SC,LO,GO,NT> (newOut, globalNumRows, comm);
 
-  // This is just to fulfill syntax requirements.  It could even be null.
-  RCP<NT> node = dummy->getNode ();
-
 //Create "B"
   Array<GO> myRows = tuple<GO>(
     rank*numRowsPerProc,
@@ -1198,12 +1191,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
 
   newOut << "Create row, range, and domain Maps of B" << endl;
   RCP<const Map_t > bRowMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(myRows, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(myRows, comm);
   RCP<const Map_t > bRangeMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(rangeElements, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(rangeElements, comm);
   //We divide by 2 to make the matrix tall and "skinny"
   RCP<const Map_t > bDomainMap =
-    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm);
 
   newOut << "Create identityMatrix" << endl;
   RCP<Matrix_t > identityMatrix =
@@ -1269,9 +1262,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   newOut << bTransRangeElements << endl;
 
   RCP<const Map_t > bTransRangeMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(bTransRangeElements, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(bTransRangeElements, comm);
   RCP<const Map_t > bTransDomainMap =
-    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows, comm);
 
   newOut << "Compute identity * transpose(bTrans)" << endl;
   Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
@@ -1372,10 +1365,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
   RCP<Matrix_t> identityMatrix =
     getIdentityMatrix<SC,LO,GO,NT> (newOut, globalNumRows, comm);
 
-  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
-  // point only for the syntax.
-  RCP<NT> node = identityMatrix->getNode ();
-
   newOut << "Create Maps for matrix aMat" << endl;
   Array<GO> aMyRows = tuple<GO>(
     rank*numRowsPerProc,
@@ -1383,9 +1372,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
     rank*numRowsPerProc+2,
     rank*numRowsPerProc+3);
   RCP<const Map_t> aRowMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aMyRows, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aMyRows, comm);
   RCP<const Map_t> aDomainMap =
-    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO,GO,NT>(globalNumRows/2, comm);
   Array<GO> aRangeElements;
   if(rank == 0){
     aRangeElements = tuple<GO>(
@@ -1402,7 +1391,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
       (rank-1)*numRowsPerProc+3);
   }
   RCP<const Map<LO,GO,NT> > aRangeMap =
-    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aRangeElements, comm, node);
+    Tpetra::createNonContigMapWithNode<LO,GO,NT>(aRangeElements, comm);
 
   newOut << "Create matrix aMat" << endl;
   RCP<Matrix_t> aMat =

@@ -389,7 +389,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     userParamList.set("ArrayRCP<LO> DofPresent", dofPresent);
 
     RCP<Hierarchy> H;
-    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList, paramList /*coordinates*/);
+    H = MueLu::CreateXpetraPreconditioner(DistributedMatrix, paramList);
 
 #ifdef HAVE_MUELU_BELOS
     {

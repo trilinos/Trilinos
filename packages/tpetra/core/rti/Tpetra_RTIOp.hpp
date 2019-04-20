@@ -86,27 +86,16 @@ namespace Tpetra {
 	  ": neither domainMap nor rangeMap may be specified null:\ndomainMap: " 
 	  << _domainMap << "\nrangeMap: " << _rangeMap << "\n");
 #ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          _rangeMap->getNode() != _domainMap->getNode(), std::runtime_error, 
-	  ": all specified maps must have the same Node instance.");
 	if (_importer != null) {
 	  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
             ! _importer->getSourceMap ()->isSameAs (*_domainMap), 
 	    std::runtime_error, 
 	    ": domain Map is not consistent with importer.");
-	  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            _importer->getSourceMap ()->getNode () != _domainMap->getNode (),
-	    std::runtime_error, 
-	    ": all specified Maps must have the same Node instance.");
 	}
 	if (_exporter != null) {
 	  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
             ! _exporter->getTargetMap ()->isSameAs (*_rangeMap), 
 	    std::runtime_error, ": range Map is not consistent with importer.");
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-            _exporter->getTargetMap ()->getNode () != _domainMap->getNode (), 
-	    std::runtime_error, 
-	    ": all specified Maps must have the same Node instance.");
 	}
 #endif // HAVE_TPETRA_DEBUG
       }

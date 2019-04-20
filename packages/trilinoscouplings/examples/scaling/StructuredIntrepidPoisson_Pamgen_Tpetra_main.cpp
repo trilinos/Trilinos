@@ -298,6 +298,7 @@ main (int argc, char *argv[])
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
+      RCP<operator_type> opA(A);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
@@ -310,9 +311,9 @@ main (int argc, char *argv[])
               Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
               userParamList.set<RCP<realmultivector_type> >("Coordinates", Coordinates);
               userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA, mueluParams);
             } else {
-              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA);
             }
           }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU

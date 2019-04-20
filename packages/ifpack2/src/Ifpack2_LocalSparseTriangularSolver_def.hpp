@@ -363,9 +363,11 @@ void
 LocalSparseTriangularSolver<MatrixType>::
 initialize ()
 {
+  using Tpetra::Details::determineLocalTriangularStructure;
   using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type>;
   using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using LO = local_ordinal_type;
 
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
   if (! out_.is_null ()) {
@@ -395,14 +397,26 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
-  // FIXME (mfh 01,02 Jun 2018) isUpperTriangular has been DEPRECATED.
-  // See GitHub Issue #2630.  I'm using isUpperTriangularImpl ONLY to
-  // avoid deprecated warnings.  Users may NOT call this method.
-  //
-  // FIXME (mfh 02 Jun 2018) Move the
-  // determineLocalTriangularStructure call above this test, so we can
-  // use that result, rather than the deprecated method.
-  if (reverseStorage_ && A_crs_->isUpperTriangularImpl() && htsImpl_.is_null()) {
+  // mfh 30 Apr 2018: See GitHub Issue #2658.
+  constexpr bool ignoreMapsForTriStructure = true;
+  auto lclTriStructure = [&] {
+    auto lclMatrix = A_crs_->getLocalMatrix ();
+    auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
+    auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
+    auto lclTriStruct =
+      determineLocalTriangularStructure (lclMatrix.graph,
+                                         lclRowMap,
+                                         lclColMap,
+                                         ignoreMapsForTriStructure);
+    const LO lclNumRows = lclRowMap.getNodeNumElements ();
+    this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
+    this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
+      (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
+    return lclTriStruct;
+  } ();
+
+  if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
+      htsImpl_.is_null ()) {
     // Reverse the storage for an upper triangular matrix
     auto Alocal = A_crs_->getLocalMatrix();
     auto ptr    = Alocal.graph.row_map;
@@ -467,6 +481,19 @@ initialize ()
     A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
 
     isInternallyChanged_ = true;
+
+    // FIXME (mfh 18 Apr 2019) Recomputing this is unnecessary, but I
+    // didn't want to break any invariants, especially considering
+    // that this branch is likely poorly tested.
+    auto newLclTriStructure =
+      determineLocalTriangularStructure (newLocalMatrix.graph,
+                                         newRowMap->getLocalMap (),
+                                         newColMap->getLocalMap (),
+                                         ignoreMapsForTriStructure);
+    const LO newLclNumRows = newRowMap->getNodeNumElements ();
+    this->diag_ = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
+    this->uplo_ = newLclTriStructure.couldBeLowerTriangular ? "L" :
+      (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
   }
 
   if (Teuchos::nonnull (htsImpl_))
@@ -474,21 +501,6 @@ initialize ()
     htsImpl_->initialize (*A_crs_);
     isInternallyChanged_ = true;
   }
-
-  auto lclMatrix = A_crs_->getLocalMatrix ();
-  auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
-  auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
-  using Tpetra::Details::determineLocalTriangularStructure;
-  // mfh 30 Apr 2018: See GitHub Issue #2658 for why this is false.
-  constexpr bool ignoreMapsForTriangularStructure = true;
-  auto result =
-    determineLocalTriangularStructure (lclMatrix.graph, lclRowMap, lclColMap,
-                                       ignoreMapsForTriangularStructure);
-  using LO = local_ordinal_type;
-  const LO lclNumRows = lclRowMap.getNodeNumElements ();
-  this->diag_ = (result.diagCount < lclNumRows) ? "U" : "N";
-  this->uplo_ = result.couldBeLowerTriangular ? "L" :
-    (result.couldBeUpperTriangular ? "U" : "N");
 
   isInitialized_ = true;
   ++numInitialize_;

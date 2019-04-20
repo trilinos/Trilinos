@@ -194,8 +194,7 @@ namespace MueLu {
                                Teuchos::OrdinalTraits<GO>::invalid(),
                                numCoarseNodes,
                                graph.GetDomainMap()->getIndexBase(),
-                               graph.GetDomainMap()->getComm(),
-                               graph.GetDomainMap()->getNode());
+                               graph.GetDomainMap()->getComm());
     domainMap = colMap;
 
     myGraph = CrsGraphFactory::Build(myLocalGraph, graph.GetDomainMap(), colMap,

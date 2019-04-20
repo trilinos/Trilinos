@@ -96,9 +96,11 @@ class Epetra_Vector;
 
 #ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_FECrsMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_FEMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #endif
@@ -128,10 +130,17 @@ namespace MueLu {
   RCP<Xpetra::Matrix<SC, LO, GO, NO> >
   TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >& Atpetra);
 
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::Matrix<SC, LO, GO, NO> >
+  TpetraFECrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::FECrsMatrix<SC, LO, GO, NO> >& Atpetra);
 
   template<typename SC,typename LO,typename GO,typename NO>
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
-  TpetraCrs_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> >& Vtpetra);
+  TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> >& Vtpetra);
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
+  TpetraFEMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::FEMultiVector<SC, LO, GO, NO> >& Vtpetra);
 #endif
 
   /*!
@@ -936,6 +945,22 @@ namespace MueLu {
     return rcp(new XCrsMatrixWrap(Atmp));
   }
 
+  /*! \fn TpetraCrs_To_XpetraMatrix
+    @brief Helper function to convert a Tpetra::FECrsMatrix to an Xpetra::Matrix
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraFECrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra) {
+    typedef typename Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_matrix_type tpetra_crs_matrix_type;
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XTCrsMatrix;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
+
+    RCP<XCrsMatrix> Atmp = rcp(new XTCrsMatrix(rcp_dynamic_cast<tpetra_crs_matrix_type>(Atpetra)));
+    return rcp(new XCrsMatrixWrap(Atmp));
+  }
+
   /*! \fn TpetraMultiVector_To_XpetraMultiVector
     @brief Helper function to convert a Tpetra::MultiVector to an Xpetra::MultiVector
     TODO move this function to an Xpetra utility file
@@ -945,6 +970,19 @@ namespace MueLu {
   TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
     return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
   }
+
+  /*! \fn TpetraFEMultiVector_To_XpetraMultiVector
+  @brief Helper function to convert a Tpetra::FEMultiVector to an Xpetra::MultiVector
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraFEMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    RCP<const MV> Vmv = Teuchos::rcp_dynamic_cast<const MV>(Vtpetra);
+    return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vmv));
+  }
+
 #endif
 
   //! Little helper function to convert non-string types to strings
