@@ -14,6 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#parallel-build-and-test-processes">Parallel build and test processes</a>
 * <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#ctest-s-local-test-driversh">ctest-s-local-test-driver.sh</a>
@@ -360,6 +361,30 @@ where
 * If the CMake cache variable `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is
   not specified, then it is given the name `ATDM_TRILINOS_INSTALL_PREFIX` by
   default.
+
+
+## Parallel build and test processes
+
+By defualt, each system's `<system_name>/environment.sh` script automatically
+sets the parallel build and test jobs by seeing:
+
+* `ATDM_CONFIG_BUILD_COUNT`: Number of default parallel build jobs passed to
+  `ninja -j ${ATDM_CONFIG_BUILD_COUNT}`
+
+* `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT`: Max number of parallel processes
+  allowed to build object files with ninja (default is usually empty).
+
+* `ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT`: Max number of parallel processes
+  allowed to link libraries and executables (default is usually empty).
+
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: Number passed to `ctest -j ${ATDM_CONFIG_CTEST_PARALLEL_LEVEL}`
+
+These values can be overridden by setting the env vars:
+
+* `ATDM_CONFIG_BUILD_COUNT_OVERRIDE`
+* `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT_OVERRIDE`
+* `ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT_OVERRIDE`
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE`
 
 
 ## checkin-test-atdm.sh
