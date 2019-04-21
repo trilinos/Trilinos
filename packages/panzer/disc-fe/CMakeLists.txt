@@ -7,10 +7,10 @@ SET(PANZER_HAVE_CAMAL ${${PARENT_PACKAGE_NAME}_ENABLE_CAMAL} )
 #Optional PAPI TPL dependency
 #############################
 COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_PAPI_SUPPORT
-  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_PAPI Teuchos_ENABLE_LONG_LONG_INT
+  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_PAPI
   DOCSTR "Enables support for the PAPI performance counters."
-    " Defaults to ON if both the PAPI TPL is enabled and long long int "
-    " support is enabled in Teuchos, otherwise defaults to OFF."
+    " Defaults to ON if the PAPI TPL is enabled,"
+    " otherwise defaults to OFF."
   )
 
 #Optional Hessian support

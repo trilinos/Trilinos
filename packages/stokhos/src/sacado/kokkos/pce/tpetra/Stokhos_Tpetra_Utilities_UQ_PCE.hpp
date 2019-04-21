@@ -60,7 +60,7 @@ namespace Stokhos {
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_cijk_crs_graph(const CijkType& cijk,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                        const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
+                        const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& /*node*/,
                         const size_t matrix_pce_size) {
     using Teuchos::RCP;
     using Teuchos::arrayView;
@@ -71,7 +71,7 @@ namespace Stokhos {
 
     const size_t pce_sz = cijk.dimension();
     RCP<const Map> map =
-      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(pce_sz, comm, node);
+      Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(pce_sz, comm);
     RCP<Graph> graph = Tpetra::createCrsGraph(map);
     if (matrix_pce_size == 1) {
       // Mean-based case -- graph is diagonal

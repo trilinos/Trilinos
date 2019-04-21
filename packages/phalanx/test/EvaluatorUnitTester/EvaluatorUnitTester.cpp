@@ -103,8 +103,8 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, simple)
   c.deep_copy(3.0);
   Kokkos::fence();
 
-  PHX::EvalautorUnitTester<EvalType,MyTraits> tester;
-  tester.setEvalautorToTest(e);
+  PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
+  tester.setEvaluatorToTest(e);
   tester.setDependentFieldValues(b);
   tester.setDependentFieldValues(c);
   tester.testEvaluator(num_cells,num_cells,num_cells,num_cells);
@@ -140,8 +140,8 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, DuplicateField)
   c.deep_copy(3.0);
   Kokkos::fence();
 
-  PHX::EvalautorUnitTester<EvalType,MyTraits> tester;
-  tester.setEvalautorToTest(e);
+  PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
+  tester.setEvaluatorToTest(e);
   tester.setDependentFieldValues(b);
   tester.setDependentFieldValues(c);
   tester.testEvaluator(num_cells,num_cells,num_cells,num_cells);
@@ -191,8 +191,8 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, AllRanks)
   f6.deep_copy(6.0);
   Kokkos::fence();
 
-  PHX::EvalautorUnitTester<EvalType,MyTraits> tester;
-  tester.setEvalautorToTest(e);
+  PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
+  tester.setEvaluatorToTest(e);
   tester.setDependentFieldValues(f1);
   tester.setDependentFieldValues(f2);
   tester.setDependentFieldValues(f3);

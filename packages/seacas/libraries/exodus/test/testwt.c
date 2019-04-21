@@ -61,6 +61,7 @@
 #include <string.h>
 
 #include "exodusII.h"
+#include "exodusII_int.h"
 
 int main(int argc, char **argv)
 {
@@ -327,13 +328,13 @@ int main(int argc, char **argv)
   block_names[5] = "block_6";
   block_names[6] = "block_7";
 
-  strncpy(blocks[0].topology, "quad", 32);
-  strncpy(blocks[1].topology, "quad", 32);
-  strncpy(blocks[2].topology, "hex", 32);
-  strncpy(blocks[3].topology, "tetra", 32);
-  strncpy(blocks[4].topology, "wedge", 32);
-  strncpy(blocks[5].topology, "tetra", 32);
-  strncpy(blocks[6].topology, "tri", 32);
+  ex_copy_string(blocks[0].topology, "quad", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[1].topology, "quad", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[2].topology, "hex", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[3].topology, "tetra", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[4].topology, "wedge", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[5].topology, "tetra", MAX_STR_LENGTH + 1);
+  ex_copy_string(blocks[6].topology, "tri", MAX_STR_LENGTH + 1);
 
   blocks[0].num_entry = 1;
   blocks[1].num_entry = 1;
@@ -1002,7 +1003,7 @@ int main(int argc, char **argv)
   qa_record[0][1] = "testwt";
   qa_record[0][2] = "07/07/93";
   qa_record[0][3] = "15:41:33";
-  qa_record[1][0] = "";
+  qa_record[1][0] = "Thirty-Two character QA Record|";
   qa_record[1][1] = "                            ";
   qa_record[1][2] = "";
   qa_record[1][3] = "                        ";
@@ -1021,7 +1022,7 @@ int main(int argc, char **argv)
 
   info[0] = "This is the first information record.";
   info[1] = "";
-  info[2] = "                                     ";
+  info[2] = "This info record is exactly 80 characters long.  last character should be pipe |";
 
   error = ex_put_info(exoid, num_info, info);
   printf("after ex_put_info, error = %d\n", error);

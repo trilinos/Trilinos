@@ -27,6 +27,10 @@
 
 #cmakedefine HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT
 
+#cmakedefine HAVE_MUELU_DEPRECATED_CODE
+
+#cmakedefine HAVE_MUELU_DEPRECATED_TESTS
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS
@@ -100,7 +104,7 @@
 #cmakedefine HAVE_MUELU_OPENMP
 #cmakedefine HAVE_MUELU_CUDA
 
-/*  
+/*
  If deprecated warnings are on, and the compiler supports them, then
  define MUELU_DEPRECATED to emit deprecated warnings.  Otherwise,
  give it an empty definition.

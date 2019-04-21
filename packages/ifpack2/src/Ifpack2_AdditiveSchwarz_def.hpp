@@ -1101,7 +1101,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     RCP<const Teuchos::Comm<int> > comm = Matrix_->getComm ();
     RCP<const map_type> rowMap = Matrix_->getRowMap ();
-    RCP<node_type> node = Matrix_->getNode ();
     const global_size_t INVALID =
       Teuchos::OrdinalTraits<global_size_t>::invalid ();
 
@@ -1121,7 +1120,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
       // global index in the list of GIDs on this process?
       localMap_ =
         rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
-                           indexBase, localComm, node));
+                           indexBase, localComm));
     }
 
     // compute the overlapping matrix if necessary

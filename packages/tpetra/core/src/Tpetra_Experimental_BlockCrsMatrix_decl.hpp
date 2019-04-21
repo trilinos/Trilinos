@@ -47,7 +47,7 @@
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Experimental_BlockMultiVector_decl.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
@@ -739,12 +739,6 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
-  //! Whether this class implements the old or new interface of DistObject.
-  virtual bool useNewInterface () {
-    return true;
-  }
-
   /// \typedef buffer_device_type
   /// \brief Kokkos::Device specialization for communication buffers.
   ///
@@ -752,35 +746,52 @@ protected:
   using buffer_device_type = typename DistObject<Scalar, LO, GO,
                                                  Node>::buffer_device_type;
 
-  virtual void
-  copyAndPermuteNew (const SrcDistObject& sourceObj,
-                     const size_t numSameIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteToLIDs,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& permuteFromLIDs);
+  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
 
   virtual void
-  packAndPrepareNew (const SrcDistObject& sourceObj,
-                     const Kokkos::DualView<const local_ordinal_type*,
-                       buffer_device_type>& exportLIDs,
-                     Kokkos::DualView<packet_type*,
-                       buffer_device_type>& exports,
-                     Kokkos::DualView<size_t*,
-                       buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& /* distor */);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& sourceObj,
+   const size_t numSameIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& permuteFromLIDs);
 
   virtual void
-  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& importLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type> imports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       const size_t constantNumPackets,
-                       Distributor& /* distor */,
-                       const CombineMode combineMode);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const SrcDistObject& sourceObj,
+   const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& exportLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type>& exports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   size_t& constantNumPackets,
+   Distributor& /* distor */);
+
+  virtual void
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+  unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  (const Kokkos::DualView<const local_ordinal_type*,
+     buffer_device_type>& importLIDs,
+   Kokkos::DualView<packet_type*,
+     buffer_device_type> imports,
+   Kokkos::DualView<size_t*,
+     buffer_device_type> numPacketsPerLID,
+   const size_t constantNumPackets,
+   Distributor& /* distor */,
+   const CombineMode combineMode);
   //@}
 
 private:
@@ -1185,6 +1196,41 @@ public:
   ///   the number of entries.
   virtual size_t getNumEntriesInGlobalRow (GO globalRow) const;
 
+  /// \brief The maximum number of entries in any row over all
+  ///   processes in the matrix's communicator.
+  virtual size_t getGlobalMaxNumRowEntries () const;
+
+  //! Whether this matrix has a well-defined column Map.
+  virtual bool hasColMap () const;
+
+  /// \brief Whether matrix indices are locally indexed.
+  ///
+  /// A RowMatrix may store column indices either as global indices
+  /// (of type <tt>GO</tt>), or as local indices (of type
+  /// <tt>LO</tt>).  In some cases (for example, if the
+  /// column Map has not been computed), it is not possible to
+  /// switch from global to local indices without extra work.
+  /// Furthermore, some operations only work for one or the other
+  /// case.
+  virtual bool isLocallyIndexed () const;
+
+  /// \brief Whether matrix indices are globally indexed.
+  ///
+  /// A RowMatrix may store column indices either as global indices
+  /// (of type <tt>GO</tt>), or as local indices (of type
+  /// <tt>LO</tt>).  In some cases (for example, if the
+  /// column Map has not been computed), it is not possible to
+  /// switch from global to local indices without extra work.
+  /// Furthermore, some operations only work for one or the other
+  /// case.
+  virtual bool isGloballyIndexed () const;
+
+  //! Whether fillComplete() has been called.
+  virtual bool isFillComplete () const;
+
+  //! Whether this object implements getLocalRowView() and getGlobalRowView().
+  virtual bool supportsRowViews () const;
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Number of diagonal entries in the matrix's graph, over
   ///   all processes in the matrix's communicator.
@@ -1203,15 +1249,7 @@ public:
   /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
   ///   go away at any time.
   virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-  //! The maximum number of entries across all rows/columns on all nodes.
-  virtual size_t getGlobalMaxNumRowEntries() const;
-
-  //! Whether this matrix has a well-defined column map.
-  virtual bool hasColMap() const;
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Whether the matrix's graph is locally lower triangular.
   ///
   /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -1236,34 +1274,6 @@ public:
   ///   method may return different results on different processes.
   virtual bool TPETRA_DEPRECATED isUpperTriangular () const;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
-
-  /// \brief Whether matrix indices are locally indexed.
-  ///
-  /// A RowMatrix may store column indices either as global indices
-  /// (of type <tt>GO</tt>), or as local indices (of type
-  /// <tt>LO</tt>).  In some cases (for example, if the
-  /// column Map has not been computed), it is not possible to
-  /// switch from global to local indices without extra work.
-  /// Furthermore, some operations only work for one or the other
-  /// case.
-  virtual bool isLocallyIndexed() const;
-
-  /// \brief Whether matrix indices are globally indexed.
-  ///
-  /// A RowMatrix may store column indices either as global indices
-  /// (of type <tt>GO</tt>), or as local indices (of type
-  /// <tt>LO</tt>).  In some cases (for example, if the
-  /// column Map has not been computed), it is not possible to
-  /// switch from global to local indices without extra work.
-  /// Furthermore, some operations only work for one or the other
-  /// case.
-  virtual bool isGloballyIndexed() const;
-
-  //! Whether fillComplete() has been called.
-  virtual bool isFillComplete() const;
-
-  //! Whether this object implements getLocalRowView() and getGlobalRowView().
-  virtual bool supportsRowViews() const;
 
   //@}
   //! @name Extraction Methods

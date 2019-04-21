@@ -1513,6 +1513,16 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
   }
 }
 
+// Safer than Ioss::Utils::copy_string -- guarantees null termination
+void Ioss::Utils::copy_string(char *dest, char const *source, size_t elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+}
+
 namespace {
   const int tab64[64] = {63, 0,  58, 1,  59, 47, 53, 2,  60, 39, 48, 27, 54, 33, 42, 3,
                          61, 51, 37, 40, 49, 18, 28, 20, 55, 30, 34, 11, 43, 14, 22, 4,

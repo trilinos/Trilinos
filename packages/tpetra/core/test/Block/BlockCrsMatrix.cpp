@@ -47,6 +47,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
@@ -257,9 +258,8 @@ namespace {
 
     out << "Test getLocalRowView, getLocalRowCopy, and replaceLocalValues" << endl;
 
-    // We're modifying data on host.
-    blockMat.template sync<Kokkos::HostSpace> ();
-    blockMat.template modify<Kokkos::HostSpace> ();
+    blockMat.sync_host ();
+    blockMat.modify_host ();
     {
       if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
         TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
@@ -441,6 +441,7 @@ namespace {
       }
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y) );
+      Kokkos::fence ();
 
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
@@ -473,6 +474,7 @@ namespace {
       Scalar beta = -(STS::one () + STS::one () + STS::one ());
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
@@ -549,6 +551,7 @@ namespace {
       }
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y) );
+      Kokkos::fence ();
 
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
@@ -584,6 +587,7 @@ namespace {
       Scalar beta = -three;
 
       TEST_NOTHROW( blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
@@ -659,6 +663,7 @@ namespace {
       vec_type Y_vec = Y.getVectorView ();
 
       TEST_NOTHROW( blockMat.apply (X_vec, Y_vec) );
+      Kokkos::fence ();
 
       // This test also exercises whether getVectorView really does
       // return a view, since we access and test results using the
@@ -695,6 +700,7 @@ namespace {
       Scalar beta = -(STS::one () + STS::one () + STS::one ());
 
       TEST_NOTHROW( blockMat.apply (X_vec, Y_vec, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
@@ -774,6 +780,7 @@ namespace {
       mv_type Y_mv = Y.getMultiVectorView ();
 
       TEST_NOTHROW( blockMat.apply (X_mv, Y_mv) );
+      Kokkos::fence ();
 
       // This test also exercises whether getMultiVectorView really
       // does return a view, since we access and test results using
@@ -813,6 +820,7 @@ namespace {
       Scalar beta = -three;
 
       TEST_NOTHROW( blockMat.apply (X_mv, Y_mv, Teuchos::NO_TRANS, alpha, beta) );
+      Kokkos::fence ();
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
@@ -1062,6 +1070,7 @@ namespace {
     // later for getLocalDiagCopy.
     typedef typename Node::device_type DT;
     Kokkos::View<size_t*, DT> diagMeshOffsets ("offsets", numLclMeshPoints);
+    Kokkos::fence ();
     try {
       graph.getLocalDiagOffsets (diagMeshOffsets);
     } catch (std::exception& e) {
@@ -1071,6 +1080,7 @@ namespace {
         "threw an exception: " << e.what () << endl;
       std::cerr << os.str ();
     }
+    Kokkos::fence ();
 
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1189,7 +1199,9 @@ namespace {
     typedef Kokkos::View<IST***, device_type> diag_blocks_type;
     diag_blocks_type diagBlocks ("diagBlocks", numLclMeshPoints,
                                  blockSize, blockSize);
+    Kokkos::fence ();
     blockMat.getLocalDiagCopy (diagBlocks, diagMeshOffsets);
+    Kokkos::fence ();
 
     bool allBlocksGood = true;
     for (LO lclRowInd = 0; lclRowInd < static_cast<LO> (numLclMeshPoints); ++lclRowInd) {
@@ -1315,6 +1327,7 @@ namespace {
     X.putScalar (STS::one ());
     BMV Y (* (graph.getRangeMap ()), pointRangeMap, blockSize, static_cast<LO> (1));
     blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Kokkos::fence ();
 
     out << "Make sure applyBlock got the right answer" << endl;
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
@@ -1328,6 +1341,8 @@ namespace {
 
     TEST_NOTHROW( blockMat.setAllToScalar (STS::zero ()) );
     blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Kokkos::fence ();
+
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
       typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
@@ -1478,6 +1493,7 @@ namespace {
     X.putScalar (STS::one ());
     BMV Y (* (graph.getRangeMap ()), * (A2.getRangeMap ()), blockSize, static_cast<LO> (1));
     A2.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
+    Kokkos::fence ();
 
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
@@ -2075,11 +2091,18 @@ namespace {
     typedef Kokkos::View<IST***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
                                blockSize, blockSize);
+    Kokkos::fence ();
     blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
+    Kokkos::fence ();
 
-    Kokkos::View<int**, device_type> pivots ("pivots", numLocalMeshPoints, blockSize);
+    using Kokkos::view_alloc;
+    using Kokkos::WithoutInitializing;
+    Kokkos::View<int**, device_type> pivots (view_alloc ("pivots", WithoutInitializing),
+                                             numLocalMeshPoints, blockSize);
     // That's how we found this test: the pivots array was filled with ones.
     Kokkos::deep_copy (pivots, 1);
+
+    Kokkos::fence ();
 
     for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
@@ -2145,6 +2168,7 @@ namespace {
     }
 
     blockMat.getLocalDiagCopy (blockDiag, diagonalOffsets);
+    Kokkos::fence ();
 
     for (LO lclMeshRow = 0; lclMeshRow < static_cast<LO> (numLocalMeshPoints); ++lclMeshRow) {
       auto diagBlock = Kokkos::subview (blockDiag, lclMeshRow, ALL (), ALL ());
@@ -2163,6 +2187,7 @@ namespace {
 
     blockMat.localGaussSeidel (residual, solution, blockDiag,
                                STS::one (), Tpetra::Symmetric);
+    Kokkos::fence ();
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {

@@ -110,12 +110,12 @@ The most recent released version is recommended. For use with Exodus, some local
    ```bash
    # Features
    --------
-   NetCDF-2 API:	no
-   NetCDF-4 API:	yes
-   CDF-5 Support:	yes
-   HDF5 Support:	yes
-   PNetCDF Support:	yes
-   NC-4 Parallel Support:	yes
+   NetCDF-2 API:        no
+   NetCDF-4 API:        yes
+   CDF-5 Support:       yes
+   HDF5 Support:        yes
+   PNetCDF Support:     yes
+   NC-4 Parallel Support:       yes
    ```
    There will be other features, but their settings are not important
    for seacas. For a serial build, `PNetCDF` and `NC-4 Parallel Support`

@@ -64,92 +64,116 @@ namespace Tpetra {
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
   private:
-    friend ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using base_type = ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    friend base_type;
+
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
-    //! This class' first template parameter; the Scalar type.
-    typedef Scalar scalar_type;
-    //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
-    //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! This class' fourth template parameter; the Kokkos Node type.
-    typedef Node node_type;
+    //! The type of each entry of the object.
+    using scalar_type = Scalar;
+    //! The type of the object's local indices.
+    using local_ordinal_type = LocalOrdinal;
+    //! The type of the object's global indices.
+    using global_ordinal_type = GlobalOrdinal;
 
-    //! The dual_view_type picked up from MultiVector
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+    //! The object's Kokkos::Device specialization.
+    using device_type = typename base_type::device_type;
+
+    //! The object's Kokkos execution space.
+    using execution_space = typename base_type::execution_space;
+
+    //! Legacy typedef that will eventually disappear.
+    using node_type = Node;
+
+    //! Specialization of dual_view_type that this object may use.
+    using dual_view_type = typename base_type::dual_view_type;
 
     //! The type of the Map specialization used by this class.
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type map_type;
+    using map_type = typename base_type::map_type;
 
-    //! Grab impl_scalar_type from superclass
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type impl_scalar_type;
+    //! The storage type of each entry of the object.
+    using impl_scalar_type = typename base_type::impl_scalar_type;
 
-    //! Grab dot_type from superclass
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+    //! The type of this object's dot product result.
+    using dot_type = typename base_type::dot_type;
 
-    //! Grab mag_type from superclass
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
-
-    //! Grab device_type from superclass
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type device_type;
-
-    //! Grab execution_space from superclass
-    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space execution_space;
-
-    //! The type of the base class of this class.
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+    //! The type of this object's norm result.
+    using mag_type = typename base_type::mag_type;
 
     //@}
     //! @name Constructors and destructor
     //@{
-    /// \brief Basic constructor.
-    /// \param map [in] Map describing the distribution of rows of the
-    ///   resulting MultiVector.  If the importer is not null, this must be the same as importer->getSourceMap()
-    /// \param importer [in] Import describing the distribution of rows of the the multivector in two separate modes.
-    ///   In the case of finite element assembly, importer->getSourceMap() should correspond to the uniquely owned entries in the domain map
-    ///   of the finite element problem.  importer->getTargetMap() should correspond to the overlapped entries needed for assembly.  The
-    ///   cannonical way to get this importer is to take the Import object associated with the CrsGraph for your finite element matrix.
-    /// \param numVectors [in] Number of columns of the resulting MultiVector.
-    // NOTE: A map AND an importer need to be arguments because in serial, the importer will be null
-    // This will default to importer->getTargetMap() being the active MultiVector
-    FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map,
-                  const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
-                  const size_t numVecs,
-                  const bool zeroOut = true);
 
-    //! Destructor (virtual for memory safety of derived classes).
-    virtual ~FEMultiVector () {}
+    //! Default constructor (forbidden).
+    FEMultiVector () = delete;
+
+    /// \brief Basic constructor.
+    ///
+    /// \param map [in] Map describing the distribution of rows of the
+    ///   resulting MultiVector.  If the importer is not null, this
+    ///   must be the same as importer->getSourceMap().
+    ///
+    /// \param importer [in] Import describing the distribution of
+    ///   rows of the the multivector in two separate modes.  In the
+    ///   case of finite-element assembly, importer->getSourceMap()
+    ///   should correspond to the uniquely owned entries in the
+    ///   domain Map of the finite element problem.
+    ///   importer->getTargetMap() should correspond to the overlapped
+    ///   entries needed for assembly.  The canonical way to get this
+    ///   Import object is to take the Import object associated with
+    ///   the CrsGraph for your finite element matrix.
+    ///
+    /// \param numVectors [in] Number of columns of the resulting
+    ///   MultiVector.
+    ///
+    /// \note A Map AND an Import need to be arguments because in
+    ///   serial, the importer will be null.  This will default to
+    ///   importer->getTargetMap() being the active MultiVector.
+    FEMultiVector (const Teuchos::RCP<const map_type>& map,
+                   const Teuchos::RCP<const Import<local_ordinal_type, global_ordinal_type, node_type>>& importer,
+                   const size_t numVecs,
+                   const bool zeroOut = true);
+
+    //! Copy constructor (forbidden).
+    FEMultiVector (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    //! Move constructor (forbidden).
+    FEMultiVector (FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    //! Copy assigment (forbidden).
+    FEMultiVector&
+    operator= (const FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    //! Move assigment (forbidden).
+    FEMultiVector&
+    operator= (FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=delete</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~FEMultiVector () = default;
 
     //@}
     //! @name Post-construction modification routines
     //@{
 
-    // ! Calls endFill()
-    void globalAssemble() {endFill();}
+    //! Declare the beginning of a phase of owned+shared modifications.
+    void beginFill ();
 
-    //! Calls doTargetToSource() and then activates the source map mode
-    void endFill()
-    {
-      if(*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-        doOwnedPlusSharedToOwned(Tpetra::ADD);
-        switchActiveMultiVector();
-      }
-      else
-        throw std::runtime_error("FEMultiVector: Owned+Shared MultiVector already active.  Cannot endFill()");
-    }
+    //! Declare the end of a phase of owned+shared modifications.
+    void endFill ();
 
-    //! Activates the target map mode
-    void beginFill()
-    {
-      // Note: This does not throw an error since the on construction, the FEMV is in owned+shared  mode.  Ergo, calling beginFill(),
-      // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeMultiVector_ == FE_ACTIVE_OWNED) {
-        switchActiveMultiVector();
-      }
-    }
+    /// \brief Declare the end of a phase of owned+shared
+    ///   modifications; same as endFill().
+    void globalAssemble ();
 
     /// \brief Migrate data from the owned+shared to the owned multivector
     /// Since this is non-unique -> unique, we need a combine mode.
@@ -167,38 +191,33 @@ namespace Tpetra {
     //! Switches which Multivector is active (without migrating data)
     void switchActiveMultiVector();
 
-  private:
-    //! Default c'tor (private so it does not get used)
-    FEMultiVector() = delete;
-
   protected:
-    //@{
-    //! @name Internal routines and data structures
-
     /// \brief Replace the underlying Map in place.
     ///
     /// \warning FEMultiVector does not allow this and will throw if
     ///   you call this method.
     void replaceMap (const Teuchos::RCP<const map_type>& map);
 
-    // Enum for activity
+    //! Enum for activity
     enum FEWhichActive
     {
       FE_ACTIVE_OWNED_PLUS_SHARED,
       FE_ACTIVE_OWNED
     };
 
+    //! Whichever MultiVector is <i>not</i> currently active.
+    Teuchos::RCP<base_type> inactiveMultiVector_;
 
-    // This is whichever multivector isn't currently active
-    Teuchos::RCP< MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveMultiVector_;
-    // This is in RCP to make shallow copies of the FEMultiVector work correctly
+    /// \brief Whether the owned MultiVector or the owned plus shared
+    ///   MultiVector is active.
+    ///
+    /// This is an RCP in order to make shallow copies of the
+    /// FEMultiVector work correctly.
     Teuchos::RCP<FEWhichActive> activeMultiVector_;
 
-    // Importer
-    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
-
-    //@}
-  }; // class FEMultiVector
+    //! Import object used for communication between the two MultiVectors.
+    Teuchos::RCP<const Import<local_ordinal_type, global_ordinal_type, node_type>> importer_;
+  };
 
 } // namespace Tpetra
 

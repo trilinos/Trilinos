@@ -75,9 +75,9 @@ namespace Tpetra {
   // Forward declaration for CrsGraph::swap() test
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class crsGraph_Swap_Tester;
 
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   namespace Details {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     // Forward declaration of an implementation detail of CrsGraph::clone.
     template<class OutputCrsGraphType, class InputCrsGraphType>
     class CrsGraphCopier {
@@ -87,6 +87,7 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };  // class CrsGraphCopier
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     template<class LO, class GO, class NT>
     void
@@ -185,7 +186,7 @@ namespace Tpetra {
       STORAGE_UB //<! Invalid value; upper bound on enum values
     };
 
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Mix-in to avoid spurious deprecation warnings due to #2630.
     ///
     /// CrsMatrix has methods deprecated by #2630, that need to call
@@ -196,12 +197,13 @@ namespace Tpetra {
     /// deprecated methods without emitting spurious warnings.
     class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers {
     public:
-      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () {}
+      virtual ~HasDeprecatedMethods2630_WarningThisClassIsNotForUsers () = default;
       virtual bool isLowerTriangularImpl () const = 0;
       virtual bool isUpperTriangularImpl () const = 0;
       virtual size_t getGlobalNumDiagsImpl () const = 0;
       virtual global_size_t getNodeNumDiagsImpl () const = 0;
     };  // class HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   } // namespace Details
 
   /// \class CrsGraph
@@ -271,8 +273,10 @@ namespace Tpetra {
                       LocalOrdinal,
                       GlobalOrdinal,
                       Node>,
-    public Teuchos::ParameterListAcceptorDefaultBase,
-    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public Teuchos::ParameterListAcceptorDefaultBase
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    , public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
@@ -594,7 +598,27 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    //! Destructor.
+    //! Copy constructor (default).
+    CrsGraph (const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Assignment operator (default).
+    CrsGraph& operator= (const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&) = default;
+
+    //! Move constructor (default).
+    CrsGraph (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    //! Move assignment (default).
+    CrsGraph& operator= (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
     virtual ~CrsGraph () = default;
 
     /// \brief Create a cloned CrsGraph for a different Node type.
@@ -624,8 +648,9 @@ namespace Tpetra {
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >
+    Teuchos::RCP<CrsGraph<local_ordinal_type, global_ordinal_type, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
@@ -634,6 +659,7 @@ namespace Tpetra {
       typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
+#endif
 
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
@@ -1056,7 +1082,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    global_size_t TPETRA_DEPRECATED getGlobalNumDiags() const override;
+    global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const override;
 
     /// \brief Number of diagonal entries on the calling process.
     ///
@@ -1064,8 +1090,7 @@ namespace Tpetra {
     ///
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
-    size_t TPETRA_DEPRECATED getNodeNumDiags() const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -1093,7 +1118,6 @@ namespace Tpetra {
     /// methods, not if <i>we</i> call them.
     size_t getNodeNumDiagsImpl () const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Whether the graph is locally lower triangular.
     ///
     /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -1117,7 +1141,6 @@ namespace Tpetra {
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -1144,17 +1167,30 @@ namespace Tpetra {
     /// to see deprecated warnings if <i>they</i> call deprecated
     /// methods, not if <i>we</i> call them.
     bool isUpperTriangularImpl () const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-    //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
+    /// \brief Whether the graph's column indices are stored as local indices.
+    ///
+    /// Weird quirk inherited from Epetra:
+    /// <tt>! isLocallyIndexed() && ! isGloballyIndexed()</tt>
+    /// means that there are no graph entries on the calling process.
+    /// Please don't rely on this behavior, but note that it's
+    /// possible.
     bool isLocallyIndexed () const override;
 
-    //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
+    /// \brief Whether the graph's column indices are stored as global indices.
+    ///
+    /// Weird quirk inherited from Epetra:
+    /// <tt>! isLocallyIndexed() && ! isGloballyIndexed()</tt>
+    /// means that there are no graph entries on the calling process.
+    /// Please don't rely on this behavior, but note that it's
+    /// possible.
     bool isGloballyIndexed () const override;
 
-    //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
+    //! Whether fillComplete() has been called and the graph is in compute mode.
     bool isFillComplete () const override;
 
-    //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
+    //! Whether resumeFill() has been called and the graph is in edit mode.
     bool isFillActive () const;
 
     /// \brief Whether graph indices in all rows are known to be sorted.
@@ -1180,25 +1216,25 @@ namespace Tpetra {
 
     /// \brief Get a copy of the given row, using global indices.
     ///
-    /// \param GlobalRow [in] Global index of the row.
-    /// \param Indices [out] On output: Global column indices.
-    /// \param NumIndices [out] Number of indices returned.
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] On output: Global column indices.
+    /// \param numColInds [out] Number of indices returned.
     void
-    getGlobalRowCopy (global_ordinal_type GlobalRow,
-                      const Teuchos::ArrayView<global_ordinal_type>& Indices,
-                      size_t& NumIndices) const override;
+    getGlobalRowCopy (global_ordinal_type gblRow,
+                      const Teuchos::ArrayView<global_ordinal_type>& gblColInds,
+                      size_t& numColInds) const override;
 
     /// \brief Get a copy of the given row, using local indices.
     ///
-    /// \param LocalRow [in] Local index of the row.
-    /// \param Indices [out] On output: Local column indices.
-    /// \param NumIndices [out] Number of indices returned.
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] On output: Local column indices.
+    /// \param numColInds [out] Number of indices returned.
     ///
     /// \pre <tt>hasColMap()</tt>
     void
-    getLocalRowCopy (local_ordinal_type LocalRow,
-                     const Teuchos::ArrayView<local_ordinal_type>& indices,
-                     size_t& NumIndices) const override;
+    getLocalRowCopy (local_ordinal_type lclRow,
+                     const Teuchos::ArrayView<local_ordinal_type>& lclColInds,
+                     size_t& numColInds) const override;
 
     /// \brief Get a const, non-persisting view of the given global
     ///   row's global column indices, as a Teuchos::ArrayView.
@@ -1261,16 +1297,18 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
-    virtual bool
-    useNewInterface () override;
-
     virtual void
-    copyAndPermuteNew (const SrcDistObject& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& permuteFromLIDs) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& source,
+     const size_t numSameIDs,
+     const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& permuteToLIDs,
+     const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& permuteFromLIDs) override;
 
     void
     applyCrsPadding (const Kokkos::UnorderedMap<local_ordinal_type, size_t, device_type>& padding);
@@ -1300,15 +1338,20 @@ namespace Tpetra {
                             buffer_device_type> numPacketsPerLID) const;
 
     virtual void
-    packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*,
-                         buffer_device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*,
-                         buffer_device_type>& exports,
-                       Kokkos::DualView<size_t*,
-                         buffer_device_type> numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& source,
+     const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<packet_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<size_t*,
+       buffer_device_type> numPacketsPerLID,
+     size_t& constantNumPackets,
+     Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
@@ -1335,15 +1378,21 @@ namespace Tpetra {
                        Distributor& distor) const;
 
     virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*,
-                           buffer_device_type>& importLIDs,
-                         Kokkos::DualView<packet_type*,
-                           buffer_device_type> imports,
-                         Kokkos::DualView<size_t*,
-                           buffer_device_type> numPacketsPerLID,
-                         const size_t constantNumPackets,
-                         Distributor& distor,
-                         const CombineMode combineMode) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const Kokkos::DualView<const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<packet_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<size_t*,
+       buffer_device_type> numPacketsPerLID,
+     const size_t constantNumPackets,
+     Distributor& distor,
+     const CombineMode combineMode) override;
+
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -2777,8 +2826,8 @@ namespace Tpetra {
     return destGraph;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
-
     template<class LocalOrdinal,
              class GlobalOrdinal,
              class OutputNodeType,
@@ -2789,7 +2838,7 @@ namespace Tpetra {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, InputNodeType> input_crs_graph_type;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, OutputNodeType> output_crs_graph_type;
 
-      static Teuchos::RCP<output_crs_graph_type>
+      static Teuchos::RCP<output_crs_graph_type> TPETRA_DEPRECATED
       clone (const input_crs_graph_type& graphIn,
              const Teuchos::RCP<OutputNodeType> &nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
@@ -3177,8 +3226,9 @@ namespace Tpetra {
         return clonedGraph;
       }
     };  // class CrsGraphCopier
-
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 } // namespace Tpetra
 
 #endif // TPETRA_CRSGRAPH_DECL_HPP

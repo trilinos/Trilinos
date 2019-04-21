@@ -424,8 +424,10 @@ namespace Tpetra {
             class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
-    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
-    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    , public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   {
   public:
     //! @name Typedefs
@@ -652,7 +654,8 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying a previously constructed graph and entries array
+    /// \brief Constructor specifying a previously constructed graph
+    ///   and entries array
     ///
     /// Calling this constructor fixes the graph structure of the
     /// sparse matrix.  We say in this case that the matrix has a
@@ -801,10 +804,18 @@ namespace Tpetra {
                const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+
+    /// \brief Copy constructor, with option to do deep or shallow copy.
+    // This function in 'Copy' mode is only guaranteed to work correctly for matrices
+    // which are fillComplete.
+    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+               const Teuchos::DataAccess copyOrView);
+
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2>
     friend class CrsMatrix;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Create a deep copy of this CrsMatrix, where the copy
     ///   may have a different Node type.
     ///
@@ -830,7 +841,7 @@ namespace Tpetra {
     ///   those of the map being cloned, if they exist. Otherwise, the
     ///   row Map is used.
     template <class Node2>
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
     {
@@ -1047,13 +1058,60 @@ namespace Tpetra {
       }
       return clonedMatrix;
     }
+#endif
 
-    //! Destructor.
-    virtual ~CrsMatrix ();
+    /// \brief Copy constructor (forbidden).
+    ///
+    /// \note There's no obvious reason why copy construction should
+    ///   ever have been forbidden, but it was historically, so I'm
+    ///   continuing the tradition for now.  Tpetra developers should
+    ///   feel free to change this, as long as they change the other
+    ///   three (move constructor, copy assignment, and move
+    ///   assignment) consistently.
+    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
 
+    /// \brief Move constructor (forbidden).
+    ///
+    /// \note This is deleted for consistency with copy construction,
+    ///   which is also deleted.  Tpetra developers should feel free
+    ///   to change this, as long as they change the other three (copy
+    ///   constructor, copy assignment, and move assignment)
+    ///   consistently.
+    CrsMatrix (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Copy assignment (forbidden).
+    ///
+    /// \note There's no obvious reason why copy assignment should
+    ///   ever have been forbidden, but it was historically, so I'm
+    ///   continuing the tradition for now.  Tpetra developers should
+    ///   feel free to change this, as long as they change the other
+    ///   three (copy constructor, move constructor, and move
+    ///   assignment) consistently.
+    CrsMatrix&
+    operator= (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = delete;
+
+    /// \brief Move assignment (forbidden).
+    ///
+    /// \note This is deleted for consistency with copy assignment,
+    ///   which is also deleted.  Tpetra developers should feel free
+    ///   to change this, as long as they change the other three (copy
+    ///   constructor, move constructor, and copy assignment)
+    ///   consistently.
+    CrsMatrix&
+    operator= (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = delete;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=delete</tt> (or
+    ///   <tt>=default</tt>) declarations for copy construction, move
+    ///   construction, copy assignment, and move assignment.
+    virtual ~CrsMatrix () = default;
 
   public:
-
     //@}
     //! @name Methods for inserting, modifying, or removing entries
     //@{
@@ -2601,7 +2659,6 @@ namespace Tpetra {
     /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
     ///   go away at any time.
     size_t TPETRA_DEPRECATED getNodeNumDiags () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -2629,7 +2686,6 @@ namespace Tpetra {
     /// them.
     size_t getNodeNumDiagsImpl () const override;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Whether the matrix is locally lower triangular.
     ///
     /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -2653,7 +2709,6 @@ namespace Tpetra {
     /// \note This is entirely a local property.  That means this
     ///   method may return different results on different processes.
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief DO NOT CALL THIS METHOD; THIS IS NOT FOR USERS.
     ///
@@ -2680,6 +2735,7 @@ namespace Tpetra {
     /// <i>they</i> call deprecated methods, not if <i>we</i> call
     /// them.
     bool isUpperTriangularImpl () const override;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Whether the matrix is locally indexed on the calling
     ///   process.
@@ -2714,7 +2770,8 @@ namespace Tpetra {
     ///
     /// The following is always true:
     /// \code
-    /// (! locallyIndexed() && ! globallyIndexed()) || (locallyIndexed() || globallyIndexed());
+    /// (! locallyIndexed() && ! globallyIndexed()) ||
+    ///   (locallyIndexed() || globallyIndexed());
     /// \endcode
     /// That is, a matrix may be neither locally nor globally indexed,
     /// but it can never be both.  Furthermore a matrix that is not
@@ -3826,91 +3883,94 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) override;
 
-    /// \brief Whether the subclass implements the "old" or "new"
-    ///   (Kokkos-friendly) interface.
-    ///
-    /// The "old" interface consists of copyAndPermute,
-    /// packAndPrepare, and unpackAndCombine.  The "new" interface
-    /// consists of copyAndPermuteNew, packAndPrepareNew, and
-    /// unpackAndCombineNew.  We prefer the new interface, because it
-    /// facilitates thread parallelization using Kokkos data
-    /// structures.
-    ///
-    /// At some point, we will remove the old interface, and rename
-    /// the "new" interface (by removing "New" from the methods'
-    /// names), so that it becomes the only interface.
-    virtual bool
-    useNewInterface () override;
-
   private:
-
     void
     copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                         const size_t numSameIDs,
                         const LocalOrdinal permuteToLIDs[],
                         const LocalOrdinal permuteFromLIDs[],
                         const size_t numPermutes);
-
   protected:
     virtual void
-    copyAndPermuteNew (const SrcDistObject& source,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& source,
+     const size_t numSameIDs,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& permuteToLIDs,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& permuteFromLIDs) override;
 
     virtual void
-    packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                       Kokkos::DualView<char*, buffer_device_type>& exports,
-                       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& source,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<char*, buffer_device_type>& exports,
+     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+     size_t& constantNumPackets,
+     Distributor& distor) override;
 
   private:
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineNewImpl (const Kokkos::DualView<const local_ordinal_type*,
-                               buffer_device_type>& importLIDs,
-                             const Kokkos::DualView<const char*,
-                               buffer_device_type>& imports,
-                             const Kokkos::DualView<const size_t*,
-                               buffer_device_type>& numPacketsPerLID,
-                             const size_t constantNumPackets,
-                             Distributor& distor,
-                             const CombineMode combineMode,
-                             const bool atomic = useAtomicUpdatesByDefault);
-    /// \brief Implementation of unpackAndCombineNewImpl for when the
+    unpackAndCombineImpl (const Kokkos::DualView<const local_ordinal_type*,
+                            buffer_device_type>& importLIDs,
+                          const Kokkos::DualView<const char*,
+                            buffer_device_type>& imports,
+                          const Kokkos::DualView<const size_t*,
+                            buffer_device_type>& numPacketsPerLID,
+                          const size_t constantNumPackets,
+                          Distributor& distor,
+                          const CombineMode combineMode,
+                          const bool atomic = useAtomicUpdatesByDefault);
+
+    /// \brief Implementation of unpackAndCombineImpl for when the
     ///   target matrix's structure may change.
     void
-    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
-                                        buffer_device_type>& importLIDs,
-                                      const Kokkos::DualView<const char*,
-                                        buffer_device_type>& imports,
-                                      const Kokkos::DualView<const size_t*,
-                                        buffer_device_type>& numPacketsPerLID,
-                                      const size_t constantNumPackets,
-                                      Distributor& distor,
-                                      const CombineMode combineMode);
+    unpackAndCombineImplNonStatic (const Kokkos::DualView<const local_ordinal_type*,
+                                     buffer_device_type>& importLIDs,
+                                   const Kokkos::DualView<const char*,
+                                     buffer_device_type>& imports,
+                                   const Kokkos::DualView<const size_t*,
+                                     buffer_device_type>& numPacketsPerLID,
+                                   const size_t constantNumPackets,
+                                   Distributor& distor,
+                                   const CombineMode combineMode);
 
   public:
     /// \brief Unpack the imported column indices and values, and
-    ///   combine into matrix; implements "new" DistObject interface.
+    ///   combine into matrix.
     ///
-    /// \warning The allowed \c combineMode depends on whether the
+    /// \warning The allowed CombineMode depends on whether the
     ///   matrix's graph is static or dynamic.  ADD, REPLACE, and
-    ///   ABSMAX are valid for a static graph, but INSERT is not.
-    ///   ADD and INSERT are valid for a dynamic graph; ABSMAX and
-    ///   REPLACE have not yet been implemented (and would require
-    ///   serious changes to matrix assembly in order to implement
-    ///   sensibly).
+    ///   ABSMAX are valid for a static graph, but INSERT is not.  ADD
+    ///   and INSERT are valid for a dynamic graph; ABSMAX and REPLACE
+    ///   have not yet been implemented (and would require serious
+    ///   changes to matrix assembly in order to implement sensibly).
     void
-    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
-                         Kokkos::DualView<char*, buffer_device_type> imports,
-                         Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-                         const size_t constantNumPackets,
-                         Distributor& distor,
-                         const CombineMode CM) override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+     Kokkos::DualView<char*, buffer_device_type> imports,
+     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+     const size_t constantNumPackets,
+     Distributor& distor,
+     const CombineMode CM) override;
 
     /// \brief Pack this object's data for an Import or Export.
     ///
@@ -4027,9 +4087,9 @@ namespace Tpetra {
              Distributor& dist) const;
 
   private:
-    /// \brief Pack this matrix (part of implementation of packAndPrepareNew).
+    /// \brief Pack this matrix (part of implementation of packAndPrepare).
     ///
-    /// This method helps implement packAndPrepareNew.
+    /// This method helps implement packAndPrepare.
     ///
     /// Call this only when this matrix (which is the source matrix to
     /// pack) does not yet have a KokkosSparse::CrsMatrix.
@@ -4143,7 +4203,7 @@ namespace Tpetra {
 
     /// \brief Allocate space for packNew() to pack entries to send.
     ///
-    /// This is part of the implementation of packAndPrepareNew, which
+    /// This is part of the implementation of packAndPrepare, which
     /// helps implement the "new" DistObject interface.
     ///
     /// \param exports [in/out] Pack buffer to (re)allocate.
@@ -4351,14 +4411,6 @@ namespace Tpetra {
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
-    // We forbid copy construction by declaring this method private
-    // and not implementing it.
-    CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
-
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
-    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
 
     /// \brief Common implementation detail of insertGlobalValues and
     ///   insertGlobalValuesFiltered.

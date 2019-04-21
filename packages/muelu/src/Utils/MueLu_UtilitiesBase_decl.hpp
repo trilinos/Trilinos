@@ -963,7 +963,7 @@ namespace MueLu {
       // Generate the new submaps
       std::vector<RCP<const Map> > subMaps(numSubMaps);
       for(size_t i=0; i<numSubMaps; i++) {	       
-	subMaps[i] = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib,Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),elementsInSubMap[i](),targetMap->getIndexBase(),targetMap->getComm(),targetMap->getNode());	
+	subMaps[i] = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib,Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),elementsInSubMap[i](),targetMap->getIndexBase(),targetMap->getComm());	
       }		
       
       // Build the BlockedMap

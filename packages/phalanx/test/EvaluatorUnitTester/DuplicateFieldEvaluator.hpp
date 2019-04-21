@@ -48,19 +48,19 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
 
-/** \brief Corner case test evalautor 
+/** \brief Corner case test evaluator 
 
     This class is used to test the EvaluatorUnitTester object. It also
     servers to test a corner case for the default implementation of
-    the evalautor class. In particular, if a single evaluator
+    the evaluator class. In particular, if a single evaluator
     registers two MDField objects that point to the same underlying
     MDField, both fields need to be bound to the same memory with
     automatic binding. This replicates a bug from a using an
     unordered_map instead of unordered_multimap to store the field
-    pointers in the EvalautorWithBaseImpl class. This is a valid use
-    case where some fields in an evalautor have arbitrary names,
+    pointers in the EvaluatorWithBaseImpl class. This is a valid use
+    case where some fields in an evaluator have arbitrary names,
     chosen at runtime, and could potentially require the same field as
-    another field in the evalautor.
+    another field in the evaluator.
     */
 template<typename EvalT, typename Traits>
 class DuplicateFieldEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,

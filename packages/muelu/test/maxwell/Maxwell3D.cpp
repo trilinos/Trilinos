@@ -65,6 +65,10 @@
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
+#ifdef HAVE_MUELU_TPETRA
+#include <MueLu_TpetraOperator.hpp>
+#endif
+
 // Belos
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -246,6 +250,15 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
         = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
                                                   M1_Matrix,Teuchos::null,coords,params) );
+
+
+#ifdef HAVE_MUELU_TPETRA
+      {
+        // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
+        RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(precOp);
+        MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);   
+      }
+#endif
 
       // Belos linear problem
 #ifdef HAVE_MUELU_BELOS

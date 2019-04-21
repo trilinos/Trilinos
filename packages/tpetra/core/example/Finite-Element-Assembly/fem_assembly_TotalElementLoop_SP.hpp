@@ -61,13 +61,14 @@
 
 namespace TpetraExamples
 {
-using comm_ptr_t = Teuchos::RCP<const Teuchos::Comm<int> >;
 
-int executeTotalElementLoopSP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts);
+int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                               const struct CmdLineOpts& opts);
 
 
 
-int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts & opts)
+int executeTotalElementLoopSP(const Teuchos::RCP<const Teuchos::Comm<int> >& comm, 
+                              const struct CmdLineOpts & opts)
 {
   using Teuchos::RCP;
 
@@ -90,7 +91,8 @@ int executeTotalElementLoopSP(const comm_ptr_t& comm, const struct CmdLineOpts &
 
 
 
-int executeTotalElementLoopSP_(const comm_ptr_t& comm, const struct CmdLineOpts& opts)
+int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                               const struct CmdLineOpts& opts)
 {
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;

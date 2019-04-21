@@ -76,6 +76,7 @@ namespace Teuchos {
 
 namespace Tpetra {
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
     ///
@@ -112,6 +113,7 @@ namespace Tpetra {
              const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
     };
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Copy the contents of the MultiVector \c src into \c dst.
   /// \relatesalso MultiVector
@@ -425,9 +427,8 @@ namespace Tpetra {
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
-    /// \brief This class' first template parameter; the type of
-    ///   each entry in the MultiVector.
-    typedef Scalar scalar_type;
+    /// \brief The type of each entry in the MultiVector.
+    using scalar_type = Scalar;
     /// \brief The type used internally in place of \c Scalar.
     ///
     /// Some \c Scalar types might not work with Kokkos on all
@@ -443,28 +444,27 @@ namespace Tpetra {
     /// if you ask for a Kokkos::View or Kokkos::DualView of the
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
-    //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! This class' fourth template parameter; the Kokkos Node type.
-    typedef Node node_type;
+    using impl_scalar_type =
+      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
 
-    //! The Kokkos device type.
-    typedef typename Node::device_type device_type;
+    //! The type of the Map specialization used by this class.
+    using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
+    //! The type of local indices that this class uses.
+    using local_ordinal_type = typename map_type::local_ordinal_type;
+    //! The type of global indices that this class uses.
+    using global_ordinal_type = typename map_type::global_ordinal_type;
+    //! This class' preferred Kokkos device type.
+    using device_type = typename map_type::device_type;
+    //! Legacy thing that you should not use any more.
+    using node_type = typename map_type::node_type;
 
-  private:
-    //! The type of the base class of this class.
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
-
-  public:
     /// \brief Type of an inner ("dot") product result.
     ///
     /// This is usually the same as <tt>impl_scalar_type</tt>, but may
     /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
     /// quantification type from the Stokhos package.
-    typedef typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type dot_type;
+    using dot_type =
+      typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type;
 
     /// \brief Type of a norm result.
     ///
@@ -472,15 +472,13 @@ namespace Tpetra {
     /// (absolute value) of <tt>impl_scalar_type</tt>, but may differ if
     /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
     /// type from the Stokhos package.
-    typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
+    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
 
     /// \brief Type of the (new) Kokkos execution space.
     ///
     /// The execution space implements parallel operations, like
-    /// parallel_for, parallel_reduce, and parallel_scan.  It also has
-    /// a default memory space, in which the Tpetra object's data
-    /// live.
-    typedef typename Node::execution_space execution_space;
+    /// parallel_for, parallel_reduce, and parallel_scan.
+    using execution_space = typename device_type::execution_space;
 
     /// \brief Kokkos::DualView specialization used by this class.
     ///
@@ -504,11 +502,9 @@ namespace Tpetra {
     /// even if the user-specified DeviceType is Kokkos::Serial.  That
     /// is why we go through the trouble of asking for the
     /// execution_space's execution space.
-    typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutLeft,
-      typename execution_space::execution_space> dual_view_type;
-
-    //! The type of the Map specialization used by this class.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using dual_view_type = Kokkos::DualView<impl_scalar_type**,
+                                            Kokkos::LayoutLeft,
+                                            execution_space>;
 
     //@}
     //! @name Constructors and destructor
@@ -527,9 +523,6 @@ namespace Tpetra {
                  const size_t numVecs,
                  const bool zeroOut = true);
 
-    //! Copy constructor (shallow copy!).
-    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
-
     /// \brief Copy constructor, with option to do deep or shallow copy.
     ///
     /// The current (so-called "Kokkos refactor," circa >= 2014/5)
@@ -540,8 +533,6 @@ namespace Tpetra {
     /// copyOrView = Teuchos::Copy will make the resulting MultiVector
     /// a deep copy of the input MultiVector.
     ///
-    /// \warning The case where copyOrView = Teuchos::Copy constructor
-    ///   has been DEPRECATED and may be removed soon.
     MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                  const Teuchos::DataAccess copyOrView);
 
@@ -802,6 +793,42 @@ namespace Tpetra {
                  const map_type& subMap,
                  const size_t offset = 0);
 
+    /// \brief Copy constructor (shallow copy).
+    ///
+    /// MultiVector's copy constructor always does a shallow copy.
+    /// Use the nonmember function <tt>Tpetra::deep_copy</tt> (see
+    /// below) to deep-copy one existing MultiVector to another, and
+    /// use the two-argument "copy constructor" (in this file, with
+    /// <tt>copyOrView=Teuchos::Copy</tt>) to create a MultiVector
+    /// that is a deep copy of an existing MultiVector.
+    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+    //! Move constructor (shallow move).
+    MultiVector (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+    /// \brief Copy assigment (shallow copy).
+    ///
+    /// MultiVector's copy constructor always does a shallow copy.
+    /// Use the nonmember function <tt>Tpetra::deep_copy</tt> (see
+    /// below) to deep-copy one existing MultiVector to another.
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&) = default;
+
+    //! Move assigment (shallow move).
+    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+    operator= (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&&) = default;
+
+    /// \brief Destructor (virtual for memory safety of derived classes).
+    ///
+    /// \note To Tpetra developers: See the C++ Core Guidelines C.21
+    ///   ("If you define or <tt>=delete</tt> any default operation,
+    ///   define or <tt>=delete</tt> them all"), in particular the
+    ///   AbstractBase example, for why this destructor declaration
+    ///   implies that we need the above four <tt>=default</tt>
+    ///   declarations for copy construction, move construction, copy
+    ///   assignment, and move assignment.
+    virtual ~MultiVector () = default;
+
     /// \brief Return a deep copy of this MultiVector, with a
     ///   different Node type.
     ///
@@ -810,15 +837,14 @@ namespace Tpetra {
     /// \warning We prefer that you use Tpetra::deep_copy (see below)
     ///   rather than this method.  This method will go away at some
     ///   point.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2) const;
+#endif
 
     //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
-
-    //! Destructor (virtual for memory safety of derived classes).
-    virtual ~MultiVector () = default;
 
     //@}
     //! @name Post-construction modification routines
@@ -1236,10 +1262,6 @@ namespace Tpetra {
     ///
     /// \pre isDistributed() == false
     void reduce();
-
-    //! Shallow copy: assign \c source to \c *this.
-    MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
-    operator= (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source);
 
     //@}
 
@@ -1763,9 +1785,9 @@ namespace Tpetra {
             const Scalar& gamma);
 
     /// \brief Compute the one-norm of each vector (column), storing
-    ///   the result in a device view.
+    ///   the result in a host view.
     ///
-    /// \param norms [out] Device View with getNumVectors() entries.
+    /// \param norms [out] Host View with getNumVectors() entries.
     ///
     /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
@@ -1773,22 +1795,21 @@ namespace Tpetra {
     /// The one-norm of a vector is the sum of the magnitudes of the
     /// vector's entries.  On exit, norms(j) is the one-norm of column
     /// j of this MultiVector.
-    ///
-    /// We use Kokkos::Details::InnerProductSpaceTraits to define
-    /// "magnitude."  See the KokkosKernels package, and that class'
-    /// documentation in particular, for details.  This matters only
-    /// for "interesting" Scalar types, such as one might find in the
-    /// Stokhos package.
+    void
+    norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
+
     template<class ViewType>
       typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
                               std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
     norm1 (const ViewType& norms) const {
-      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
-      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
-      this->normImpl (h_norms, NORM_ONE);
-      Kokkos::deep_copy(norms,h_norms);
+      // FIXME (mfh 11 Apr 2019) The enable_ifs make it useless for
+      // this method to be templated.  (It only exists in case
+      // HostSpace = device_type::memory_space.)
+      using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
+      host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
+      this->norm1 (h_norms);
+      Kokkos::deep_copy (norms, h_norms);
     }
-    void norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1855,9 +1876,9 @@ namespace Tpetra {
     }
 
     /// \brief Compute the two-norm of each vector (column), storing
-    ///   the result in a device view.
+    ///   the result in a host View.
     ///
-    /// \param norms [out] Device View with getNumVectors() entries.
+    /// \param norms [out] Host View with getNumVectors() entries.
     ///
     /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
@@ -1866,22 +1887,21 @@ namespace Tpetra {
     /// square root of the sum of squares of the magnitudes of the
     /// vector's entries.  On exit, norms(k) is the two-norm of column
     /// k of this MultiVector.
-    ///
-    /// We use Kokkos::Details::InnerProductSpaceTraits to define
-    /// "magnitude."  See the KokkosKernels package, and that class'
-    /// documentation in particular, for details.  This matters only
-    /// for "interesting" Scalar types, such as one might find in the
-    /// Stokhos package.
+    void
+    norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
+
     template<class ViewType>
       typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
                               std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
     norm2 (const ViewType& norms) const {
-      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
-      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
-      this->normImpl (h_norms, NORM_TWO);
-      Kokkos::deep_copy(norms,h_norms);
+      // FIXME (mfh 11 Apr 2019) The enable_ifs make it useless for
+      // this method to be templated.  (It only exists in case
+      // HostSpace = device_type::memory_space.)
+      using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
+      host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
+      this->norm2 (h_norms);
+      Kokkos::deep_copy (norms, h_norms);
     }
-    void norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1946,30 +1966,28 @@ namespace Tpetra {
     }
 
     /// \brief Compute the infinity-norm of each vector (column),
-    ///   storing the result in a device view.
+    ///   storing the result in a host View.
     ///
     /// The infinity-norm of a vector is the maximum of the magnitudes
     /// of the vector's entries.  On exit, norms(j) is the
     /// infinity-norm of column j of this MultiVector.
-    ///
-    /// We use Kokkos::Details::InnerProductSpaceTraits to define
-    /// "magnitude."  See the KokkosKernels package, and that class'
-    /// documentation in particular, for details.  This matters only
-    /// for "interesting" Scalar types, such as one might find in the
-    /// Stokhos package.
+    void normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
+
     template<class ViewType>
       typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
                               std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
     normInf (const ViewType& norms) const {
-      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
-      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
-      this->normImpl (h_norms, NORM_INF);
-      Kokkos::deep_copy(norms,h_norms);
+      // FIXME (mfh 11 Apr 2019) The enable_ifs make it useless for
+      // this method to be templated.  (It only exists in case
+      // HostSpace = device_type::memory_space.)
+      using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
+      host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
+      this->normInf (h_norms);
+      Kokkos::deep_copy (norms, h_norms);
     }
-    void normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
-    /// \brief Compute the two-norm of each vector (column), storing
-    ///   the result in a device view.
+    /// \brief Compute the infinity-norm of each vector (column),
+    ///   storing the result in a device view.
     ///
     /// See the above normInf() method for documentation.
     ///
@@ -2276,6 +2294,11 @@ namespace Tpetra {
     ///
     bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const;
 
+  private:
+    //! The type of the base class of this class.
+    using base_type = DistObject<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type>;
+
   protected:
     template <class DS, class DL, class DG, class DN,
               class SS, class SL, class SG, class SN>
@@ -2339,32 +2362,6 @@ namespace Tpetra {
     template<class SC, class LO, class GO, class NT>
     friend ::Teuchos::ArrayView<const size_t> getMultiVectorWhichVectors (const ::Tpetra::MultiVector<SC, LO, GO, NT>& X);
 
-    //! \name Generic implementation of various norms
-    //@{
-
-    //! Input argument for normImpl() (which see).
-    enum EWhichNorm {
-      NORM_ONE, //<! Use the one-norm
-      NORM_TWO, //<! Use the two-norm
-      NORM_INF  //<! Use the infinity-norm
-    };
-
-    /// \brief Compute the norm of each vector (column), storing the
-    ///   result in a device View.
-    ///
-    /// This method consolidates all common code between the
-    /// infinity-norm, 1-norm, and 2-norm calculations.  On exit,
-    /// norms(j) is the norm (of the selected type) of column j of
-    /// this MultiVector.
-    void
-    normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
-              const EWhichNorm whichNorm) const;
-
-    //@}
-    //! \name Implementation of various useful kernel utilities
-    //@{
-
-
     //@}
     //! @name Misc. implementation details
     //@{
@@ -2427,6 +2424,16 @@ namespace Tpetra {
     //! @name Implementation of Tpetra::DistObject
     //@{
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    using buffer_device_type =
+      typename DistObject<scalar_type,
+                          local_ordinal_type,
+                          global_ordinal_type,
+                          node_type>::buffer_device_type;
+
     /// \brief Whether data redistribution between \c sourceObj and this object is legal.
     ///
     /// This method is called in DistObject::doTransfer() to check
@@ -2437,37 +2444,54 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    //! Whether this class implements the old or new interface of DistObject.
-    virtual bool useNewInterface () { return true; }
-
-    /// \typedef buffer_device_type
-    /// \brief Kokkos::Device specialization for communication buffers.
-    ///
-    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
-    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal,
-                                Node>::buffer_device_type buffer_device_type;
+    virtual void
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& sourceObj,
+     const size_t numSameIDs,
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
 
     virtual void
-    copyAndPermuteNew (const SrcDistObject& sourceObj,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& sourceObj,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     size_t& constantNumPackets,
+     Distributor& /* distor */);
 
     virtual void
-    packAndPrepareNew (const SrcDistObject& sourceObj,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                       Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-                       Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
-                       size_t& constantNumPackets,
-                       Distributor& /* distor */);
-
-    virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& importLIDs,
-                         Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
-                         Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
-                         const size_t constantNumPackets,
-                         Distributor& /* distor */,
-                         const CombineMode CM);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     const size_t constantNumPackets,
+     Distributor& /* distor */,
+     const CombineMode CM);
     //@}
   }; // class MultiVector
 
@@ -2478,11 +2502,14 @@ namespace Tpetra {
     return X.whichVectors_ ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
-
     template<class DstMultiVectorType,
              class SrcMultiVectorType>
-    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>
+    Teuchos::RCP<
+      typename MultiVectorCloner<
+        DstMultiVectorType,
+        SrcMultiVectorType>::dst_mv_type>
     MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::
     clone (const src_mv_type& X,
            const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
@@ -2507,8 +2534,8 @@ namespace Tpetra {
       ::Tpetra::deep_copy (*Y, X);
       return Y ;
     }
-
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Specialization of deep_copy for MultiVector objects with
   ///   the same template parameters.
@@ -2530,8 +2557,6 @@ namespace Tpetra {
   deep_copy (MultiVector<DS, DL, DG, DN>& dst,
              const MultiVector<SS, SL, SG, SN>& src)
   {
-    typedef typename DN::device_type DD;
-    //typedef typename SN::device_type SD;
     using ::Tpetra::getMultiVectorWhichVectors;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2549,244 +2574,39 @@ namespace Tpetra {
       "objects do not match.  src has " << src.getLocalLength () << " row(s) "
       << " and dst has " << dst.getLocalLength () << " row(s).");
 
+    const bool srcMostUpToDateOnDevice = ! src.need_sync_device ();
+    dst.clear_sync_state ();
+    dst.modify_device ();
+
     if (src.isConstantStride () && dst.isConstantStride ()) {
-      typedef typename MultiVector<DS, DL, DG, DN>::dual_view_type::t_host::execution_space HES;
-      typedef typename MultiVector<DS, DL, DG, DN>::dual_view_type::t_dev::execution_space DES;
-
-      // If we need sync to device, then host has the most recent version.
-      const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
-
-      if (! useHostVersion) {
-        // Device memory has the most recent version of src.
-        dst.template modify<DES> (); // We are about to modify dst on device.
-        // Copy from src to dst on device.
+      if (srcMostUpToDateOnDevice) {
         Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
                                            src.getLocalViewDevice ());
-        dst.sync_host (); // Sync dst from device to host.
       }
-      else { // Host memory has the most recent version of src.
-        dst.template modify<HES> (); // We are about to modify dst on host.
-        // Copy from src to dst on host.
-        Details::localDeepCopyConstStride (dst.getLocalViewHost (),
+      else {
+        Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
                                            src.getLocalViewHost ());
-        dst.template sync<DES> (); // Sync dst from host to device.
       }
     }
     else {
-      typedef Kokkos::DualView<SL*, DD> whichvecs_type;
-      typedef typename whichvecs_type::t_dev::execution_space DES;
-      typedef typename whichvecs_type::t_host::execution_space HES;
+      auto dstWhichVecs = getMultiVectorWhichVectors (dst);
+      auto srcWhichVecs = getMultiVectorWhichVectors (src);
 
-      if (dst.isConstantStride ()) {
-        const SL numWhichVecs =
-          static_cast<SL> (getMultiVectorWhichVectors (src).size ());
-        const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
-
-        // We can't sync src, since it is only an input argument.
-        // Thus, we have to use the most recently modified version of
-        // src, which could be either the device or host version.
-        //
-        // If we need sync to device, then host has the most recent version.
-        const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
-
-        if (! useHostVersion) { // Copy from the device version of src.
-          // whichVecs tells the kernel which vectors (columns) of src
-          // to copy.  Fill whichVecs on the host, and sync to device.
-          whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          whichVecs.modify_host ();
-
-          Teuchos::ArrayView<const size_t> src_whichVectors =
-            getMultiVectorWhichVectors (src);
-          for (SL i = 0; i < numWhichVecs; ++i) {
-            whichVecs.h_view(i) = static_cast<SL> (src_whichVectors[i]);
-          }
-          // Sync the host version of whichVecs to the device.
-          whichVecs.template sync<DES> ();
-
-          // Mark the device version of dst's DualView as modified.
-          dst.template modify<DES> ();
-          // Copy from the selected vectors of src to dst, on the device.
-          Details::localDeepCopy (dst.getLocalViewDevice (),
-                                  src.getLocalViewDevice (),
-                                  dst.isConstantStride (),
-                                  src.isConstantStride (),
-                                  whichVecs.d_view,
-                                  whichVecs.d_view);
-          // Sync dst's DualView to the host.  This is cheaper than
-          // repeating the above copy from src to dst on the host.
-          dst.sync_host ();
-        }
-        else { // host version of src was the most recently modified
-          // Copy from the host version of src.
-          //
-          // whichVecs tells the kernel which vectors (columns) of src
-          // to copy.  Fill whichVecs on the host, and use it there.
-          typedef Kokkos::View<SL*, HES> the_whichvecs_type;
-          the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          Teuchos::ArrayView<const size_t> src_whichVectors =
-            getMultiVectorWhichVectors (src);
-          for (SL i = 0; i < numWhichVecs; ++i) {
-            whichVecs(i) = static_cast<SL> (src_whichVectors[i]);
-          }
-          // Copy from the selected vectors of src to dst, on the
-          // host.  The function ignores the first instance of
-          // 'whichVecs' in this case.
-          Details::localDeepCopy (dst.getLocalViewHost (),
-                                  src.getLocalViewHost (),
-                                  dst.isConstantStride (),
-                                  src.isConstantStride (),
-                                  whichVecs, whichVecs);
-          // Sync dst back to the device, since we only copied on the host.
-          dst.template sync<DES> ();
-        }
+      if (srcMostUpToDateOnDevice) {
+        Details::localDeepCopy (dst.getLocalViewDevice (),
+                                src.getLocalViewDevice (),
+                                dst.isConstantStride (),
+                                src.isConstantStride (),
+                                dstWhichVecs,
+                                srcWhichVecs);
       }
-      else { // dst is NOT constant stride
-        if (src.isConstantStride ()) {
-
-          // If we need sync to device, then host has the most recent version.
-          const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
-
-          if (! useHostVersion) { // Copy from the device version of src.
-            // whichVecs tells the kernel which vectors (columns) of dst
-            // to copy.  Fill whichVecs on the host, and sync to device.
-            typedef Kokkos::DualView<DL*, DES> the_whichvecs_type;
-            const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
-            Teuchos::ArrayView<const size_t> dst_whichVectors =
-              getMultiVectorWhichVectors (dst);
-            const DL numWhichVecs = static_cast<DL> (dst_whichVectors.size ());
-            the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-            whichVecs.template modify<HES> ();
-            for (DL i = 0; i < numWhichVecs; ++i) {
-              whichVecs.h_view(i) = dst_whichVectors[i];
-            }
-            // Sync the host version of whichVecs to the device.
-            whichVecs.template sync<DES> ();
-
-            // Copy src to the selected vectors of dst, on the device.
-            Details::localDeepCopy (dst.template getLocalView<typename DN::device_type> (),
-                                    src.template getLocalView<typename SN::device_type> (),
-                                    dst.isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVecs.d_view,
-                                    whichVecs.d_view);
-            // We can't sync src and repeat the above copy on the
-            // host, so sync dst back to the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            dst.sync_host ();
-          }
-          else { // host version of src was the most recently modified
-            // Copy from the host version of src.
-            //
-            // whichVecs tells the kernel which vectors (columns) of src
-            // to copy.  Fill whichVecs on the host, and use it there.
-            typedef Kokkos::View<DL*, HES> the_whichvecs_type;
-            Teuchos::ArrayView<const size_t> dst_whichVectors =
-              getMultiVectorWhichVectors (dst);
-            const DL numWhichVecs = static_cast<DL> (dst_whichVectors.size ());
-            the_whichvecs_type whichVecs ("MV::deep_copy::whichVecs",
-                                          numWhichVecs);
-            for (DL i = 0; i < numWhichVecs; ++i) {
-              whichVecs(i) = static_cast<DL> (dst_whichVectors[i]);
-            }
-            // Copy from src to the selected vectors of dst, on the host.
-            Details::localDeepCopy (dst.getLocalViewHost (),
-                                    src.getLocalViewHost (),
-                                    dst.isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVecs, whichVecs);
-            // Sync dst back to the device, since we only copied on the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            dst.template sync<DES> ();
-          }
-        }
-        else { // neither src nor dst have constant stride
-
-          // If we need sync to device, then host has the most recent version.
-          const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
-
-          if (! useHostVersion) { // Copy from the device version of src.
-            // whichVectorsDst tells the kernel which columns of dst
-            // to copy.  Fill it on the host, and sync to device.
-            Teuchos::ArrayView<const size_t> dst_whichVectors =
-              getMultiVectorWhichVectors (dst);
-            const DL dstNumWhichVecs =
-              static_cast<DL> (dst_whichVectors.size ());
-            Kokkos::DualView<DL*, DES> whichVecsDst ("MV::deep_copy::whichVecsDst",
-                                                     dstNumWhichVecs);
-            whichVecsDst.template modify<HES> ();
-            for (DL i = 0; i < dstNumWhichVecs; ++i) {
-              whichVecsDst.h_view(i) = static_cast<DL> (dst_whichVectors[i]);
-            }
-            // Sync the host version of whichVecsDst to the device.
-            whichVecsDst.template sync<DES> ();
-
-            // whichVectorsSrc tells the kernel which vectors
-            // (columns) of src to copy.  Fill it on the host, and
-            // sync to device.  Use the destination MultiVector's
-            // LocalOrdinal type here.
-            Teuchos::ArrayView<const size_t> src_whichVectors =
-              getMultiVectorWhichVectors (src);
-            const DL srcNumWhichVecs =
-              static_cast<DL> (src_whichVectors.size ());
-            Kokkos::DualView<DL*, DES> whichVecsSrc ("MV::deep_copy::whichVecsSrc",
-                                                     srcNumWhichVecs);
-            whichVecsSrc.template modify<HES> ();
-            for (DL i = 0; i < srcNumWhichVecs; ++i) {
-              whichVecsSrc.h_view(i) = static_cast<DL> (src_whichVectors[i]);
-            }
-            // Sync the host version of whichVecsSrc to the device.
-            whichVecsSrc.template sync<DES> ();
-
-            // Copy from the selected vectors of src to the selected
-            // vectors of dst, on the device.
-            Details::localDeepCopy (dst.template getLocalView<typename DN::device_type> (),
-                                    src.template getLocalView<typename SN::device_type> (),
-                                    dst.isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVecsDst.d_view,
-                                    whichVecsSrc.d_view);
-          }
-          else {
-            Teuchos::ArrayView<const size_t> dst_whichVectors =
-              getMultiVectorWhichVectors (dst);
-            const DL dstNumWhichVecs =
-              static_cast<DL> (dst_whichVectors.size ());
-            Kokkos::View<DL*, HES> whichVectorsDst ("dstWhichVecs",
-                                                    dstNumWhichVecs);
-            for (DL i = 0; i < dstNumWhichVecs; ++i) {
-              whichVectorsDst(i) = dst_whichVectors[i];
-            }
-
-            Teuchos::ArrayView<const size_t> src_whichVectors =
-              getMultiVectorWhichVectors (src);
-            // Use the destination MultiVector's LocalOrdinal type here.
-            const DL srcNumWhichVecs =
-              static_cast<DL> (src_whichVectors.size ());
-            Kokkos::View<DL*, HES> whichVectorsSrc ("srcWhichVecs",
-                                                    srcNumWhichVecs);
-            for (DL i = 0; i < srcNumWhichVecs; ++i) {
-              whichVectorsSrc(i) = src_whichVectors[i];
-            }
-
-            // Copy from the selected vectors of src to the selected
-            // vectors of dst, on the host.
-            Details::localDeepCopy (dst.getLocalViewHost (),
-                                    src.getLocalViewHost (),
-                                    dst.isConstantStride (),
-                                    src.isConstantStride (),
-                                    whichVectorsDst, whichVectorsSrc);
-            // We can't sync src and repeat the above copy on the
-            // host, so sync dst back to the host.
-            //
-            // FIXME (mfh 29 Jul 2014) This may overwrite columns that
-            // don't actually belong to dst's view.
-            dst.sync_host ();
-          }
-        }
+      else {
+        Details::localDeepCopy (dst.getLocalViewDevice (),
+                                src.getLocalViewHost (),
+                                dst.isConstantStride (),
+                                src.isConstantStride (),
+                                dstWhichVecs,
+                                srcWhichVecs);
       }
     }
   }

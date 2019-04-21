@@ -828,7 +828,7 @@ namespace MueLu {
       GetOStream(Statistics1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       // 3) create graph of amalgamated matrix
-      RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
+      RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, A->getNodeMaxNumRowEntries()*blockdim, Xpetra::StaticProfile);
 
       LO numRows = A->getRowMap()->getNodeNumElements();
       LO numNodes = nodeMap->getNodeNumElements();

@@ -89,10 +89,7 @@ int main(int argc, char *argv[]) {
 
     int MyPID = 0;
 
-    typedef Tpetra::Map<>::node_type Node;
-
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    RCP<Node>             node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor
@@ -135,7 +132,7 @@ int main(int argc, char *argv[]) {
     // Get the data from the HB file and build the Map,Matrix
     //
     RCP<CrsMatrix<ST> > A;
-    Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+    Tpetra::Utils::readHBMatrix(filename,comm,A);
     RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors

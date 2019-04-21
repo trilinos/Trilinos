@@ -473,7 +473,9 @@ namespace MueLu {
 #endif
       if (!AH_.is_null()) {
         int oldRank = SetProcRankVerbose(AH_->getDomainMap()->getComm()->getRank());
-        HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_, CoordsH_);
+        ParameterList& userParamList = precList11_.sublist("user data");
+        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+        HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
         SetProcRankVerbose(oldRank);
       }
       VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
@@ -640,7 +642,9 @@ namespace MueLu {
 
       if (!A22_.is_null()) {
         int oldRank = SetProcRankVerbose(A22_->getDomainMap()->getComm()->getRank());
-        Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_, Coords_);
+        ParameterList& userParamList = precList22_.sublist("user data");
+        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+        Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
         SetProcRankVerbose(oldRank);
       }
       VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
@@ -1663,9 +1667,9 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVector& RHS, MultiVector& X,
-                                                                  Teuchos::ETransp mode,
-                                                                  Scalar alpha,
-                                                                  Scalar beta) const {
+                                                                  Teuchos::ETransp /* mode */,
+                                                                  Scalar /* alpha */,
+                                                                  Scalar /* beta */) const {
 
     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve"));
 
@@ -1775,7 +1779,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+  describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel /* verbLevel */) const {
 
     std::ostringstream oss;
 

@@ -311,7 +311,6 @@ class crsMatrix_Swap_Tester
         using Teuchos::Comm;
         using Teuchos::RCP;
 
-        using graph_type           = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;     // Tpetra CrsGraph type
         using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;          // Tpetra Map type
         using map_rows_type        = std::map<GlobalOrdinal, int>;                            // map rows to pid's
         using vec_go_type          = std::vector<GlobalOrdinal>;                              // vector of GlobalOrdinals
@@ -474,7 +473,6 @@ class crsMatrix_Swap_Tester
         using vec_go_type          = std::vector<GlobalOrdinal>;                                        // vector of GlobalOrdinals
         using map_row_to_cols_type = std::map<GlobalOrdinal, vec_go_type>;                              // Map rows to columns
 
-        using matrix_type          = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;      // Tpetra CrsMatrix type
         using vec_scalar_type      = std::vector<Scalar>;                                               // Vector of Scalars
         using map_row_to_vals_type = std::map<GlobalOrdinal, vec_scalar_type>;
 
