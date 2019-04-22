@@ -198,4 +198,11 @@ SET(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 ## The TPLs enabled for this project
 SET(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
 
-${PROJECT_CONFIG_CODE}
+## Load configurations for enabled packages in components list
+FOREACH(comp ${PDOLLAR}{COMPONENTS_LIST})
+  SET(
+    PACKAGE_CONFIG_INCLUDE_FILE
+    "${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake"
+    )
+  INCLUDE("${PDOLLAR}{PACKAGE_CONFIG_INCLUDE_FILE}")
+ENDFOREACH()
