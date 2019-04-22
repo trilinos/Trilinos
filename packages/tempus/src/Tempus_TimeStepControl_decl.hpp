@@ -117,6 +117,8 @@ public:
       { return tscPL_->get<int>   ("Maximum Order"); }
     virtual std::string getStepType() const
       { return tscPL_->get<std::string>("Integrator Step Type"); }
+    virtual bool getOutputExactly() const
+      { return tscPL_->get<bool>("Output Exactly On Output Times"); }
     virtual std::vector<int> getOutputIndices() const
       { return outputIndices_; }
     virtual std::vector<Scalar> getOutputTimes() const
@@ -160,6 +162,8 @@ public:
       { tscPL_->set<int>   ("Maximum Order"            , MaxOrder    ); }
     virtual void setStepType(std::string StepType)
       { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
+    virtual void setOutputExactly(bool OutputExactly)
+      { tscPL_->get<bool>("Output Exactly On Output Times", OutputExactly); }
     virtual void setOutputIndices(std::vector<int> OutputIndices)
       { outputIndices_ = OutputIndices;
         std::ostringstream ss;
