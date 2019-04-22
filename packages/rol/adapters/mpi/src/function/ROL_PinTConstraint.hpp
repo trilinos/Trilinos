@@ -1381,11 +1381,13 @@ public:
        temp_u = output_u->clone();
        temp_v = output_v->clone();
        temp_z = output_z->clone();
+       temp_schur = output_v->clone();
        
        WathenInverseStorage data;
        data.temp_u = temp_u;
        data.temp_z = temp_z;
        data.temp_v = temp_v;
+       data.temp_schur = temp_schur;
 
        inverseKKTStorage_[level] = data;
      }
@@ -1393,6 +1395,7 @@ public:
        temp_u = store->second.temp_u;
        temp_v = store->second.temp_v;
        temp_z = store->second.temp_z;
+       temp_schur = store->second.temp_schur;
      }
  
      temp_u->zero();
@@ -1420,7 +1423,7 @@ public:
 
      // t_z = - K' * inv(P)*t_v + f_w
      {
-       auto scratch = temp_u->clone();
+       auto scratch = temp_schur;
        scratch->zero();
 
        computeInvP(*scratch,*temp_v,u,z,tol,level);
@@ -1438,7 +1441,7 @@ public:
      
      // o_v = inv(P)*(t_v-K*o_z)
      {
-       auto scratch = temp_v->clone();
+       auto scratch = temp_schur;
        scratch->zero();
 
        applyJacobian_2_leveled(*scratch,*output_z,u,z,tol,level);
@@ -1467,8 +1470,8 @@ public:
                                  Real & tol,
                                  int level) 
    {
-     Ptr<Vector<Real>> temp_k = u.clone();
-     Ptr<Vector<Real>> temp_schur = u.clone();
+     auto temp_k = u.clone();
+     auto temp_schur = u.clone();
 
      // K*x
      applyJacobian_2_leveled(*temp_k,x,u,z,tol,level);
@@ -1526,6 +1529,11 @@ public:
        Real alpha = rold / pAp;
 
        x.axpy(alpha,*p);
+
+       // exist early
+       if(i==iters-1)
+         break;
+
        r->axpy(-alpha,*Ap);
 
        Real rnew = r->dot(*r);
