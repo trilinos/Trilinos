@@ -232,7 +232,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto kkt_x_out = kkt_vector->clone();
     kkt_x_out->zero();
 
-    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol); // apply Wathen style preconditioner serially
+    pint_con->applyWathenInverse(*kkt_x_out,*kkt_b,*state,*control,tol); // apply Wathen style preconditioner serially
 
     kkt_x_out->axpy(-1.0,*kkt_x_in);
 
@@ -265,7 +265,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       if(myRank==0)
         (*outStream) << "NORM RES = " << norm_res << "  " << norm_res/res_0<< std::endl;
     
-      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
+      pint_con->applyWathenInverse(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
       kkt_x_out->axpy(omega,*kkt_diff);                                                // x_{i+1} = x_i + omega*dx_i
 

@@ -126,7 +126,7 @@ public:
   }
   void applyInverse( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
   {
-    pint_con->applyAugmentedInverseKKT(Hv,v,*state,*control,tol,false,0);
+    pint_con->applyWathenInverse(Hv,v,*state,*control,tol,false,0);
   }
 };
 

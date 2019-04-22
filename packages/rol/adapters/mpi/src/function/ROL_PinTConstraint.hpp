@@ -134,10 +134,12 @@ private:
   Real omega_;
   Real omegaCoarse_;
 
+  int numCGIter_; // number of CG interations for the smoother
+
   Real globalScale_;
 
   // clone vector storage
-  struct InverseKKTStorage {
+  struct WathenInverseStorage {
     Ptr<Vector<Real>> temp_u;
     Ptr<Vector<Real>> temp_z;
     Ptr<Vector<Real>> temp_v;
@@ -150,7 +152,7 @@ private:
     Ptr<Vector<Real>> residual;
   };
 
-  std::map<int,InverseKKTStorage> inverseKKTStorage_; 
+  std::map<int,WathenInverseStorage> inverseKKTStorage_; 
 
   std::map<int,MGAugmentedKKTStorage> mgAugmentedKKTStorage_;
 
@@ -232,6 +234,7 @@ public:
     , numCoarseSweeps_(1)
     , omega_(2.0/3.0)
     , omegaCoarse_(1.0)
+    , numCGIter_(2)
     , globalScale_(0.99e0)
     , recordResidualReductions_(false)
   { }
@@ -256,6 +259,7 @@ public:
     , numSweeps_(1)
     , omega_(2.0/3.0)
     , globalScale_(0.99e0)
+    , numCGIter_(2)
     , recordResidualReductions_(false)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
@@ -266,6 +270,9 @@ public:
    */
   void setSweeps(int s)
   { numSweeps_ = s; }
+
+  void setCGIterations(int iter)
+  { numCGIter_ = iter; }
 
   /**
    * Set sweeps for coarse level solver
@@ -284,6 +291,7 @@ public:
    */
   void setCoarseRelaxation(Real o)
   { omegaCoarse_ = o; }
+
 
   /**
    * Set the global scaling for the coupling constraints.
@@ -1203,13 +1211,13 @@ public:
     *                   otherwise do the serial Wathen preconditioner, default false
     * \param[in] level Level of the multigrid hierarchy, default is 0 (fine level)        
     */
-   void applyAugmentedInverseKKT(Vector<Real> & output, 
-                                 const Vector<Real> & input,
-                                 const Vector<Real> & u, 
-                                 const Vector<Real> & z,
-                                 Real & tol,
-                                 bool approx=false,
-                                 int level=0) 
+   void applyWathenInverse(Vector<Real> & output, 
+                           const Vector<Real> & input,
+                           const Vector<Real> & u, 
+                           const Vector<Real> & z,
+                           Real & tol,
+                           bool approx=false,
+                           int level=0) 
    {
      using PartitionedVector = PartitionedVector<Real>;
 
@@ -1222,7 +1230,7 @@ public:
        levelStr = ss.str();
      }
 
-     timer->start("applyAugmentedInverseKKT"+levelStr); 
+     timer->start("applyWathenInverse"+levelStr); 
 
      auto part_output = dynamic_cast<PartitionedVector&>(output);
      auto part_input = dynamic_cast<const PartitionedVector&>(input);
@@ -1246,7 +1254,7 @@ public:
        temp_v = output_v->clone();
        temp_schur = output_v->clone();
        
-       InverseKKTStorage data;
+       WathenInverseStorage data;
        data.temp_u = temp_u;
        data.temp_z = temp_z;
        data.temp_v = temp_v;
@@ -1313,8 +1321,228 @@ public:
      output_u->scale(-1.0);
      output_u->axpy(1.0,*temp_u);
 
-     timer->stop("applyAugmentedInverseKKT"+levelStr); 
+     timer->stop("applyWathenInverse"+levelStr); 
    }
+
+
+   void computeInvP(Vector<Real> & output, 
+                    const Vector<Real> & input,
+                    const Vector<Real> & u, 
+                    const Vector<Real> & z,
+                    Real & tol,
+                    int level) 
+   {
+     auto temp_schur = output.clone();
+     temp_schur->zero();
+
+     invertTimeStepJacobian(*temp_schur, input, u,z,tol,level);
+     invertAdjointTimeStepJacobian(output,*temp_schur,u,z,tol,level);
+
+     output.scale(-1.0);
+   }
+
+   void applyLocalInverse(Vector<Real> & output, 
+                          const Vector<Real> & input,
+                          const Vector<Real> & u, 
+                          const Vector<Real> & z,
+                          Real & tol,
+                          int level=0) 
+   {
+     using PartitionedVector = PartitionedVector<Real>;
+
+     auto timer = Teuchos::TimeMonitor::getStackedTimer();
+
+     std::string levelStr = "";
+     {
+       std::stringstream ss;
+       ss << "-" << level;
+       levelStr = ss.str();
+     }
+
+     timer->start("applyLocalInverse"+levelStr); 
+
+     auto part_output = dynamic_cast<PartitionedVector&>(output);
+     auto part_input = dynamic_cast<const PartitionedVector&>(input);
+ 
+     part_output.zero();
+ 
+     auto output_u = part_output.get(0);
+     auto output_z = part_output.get(1);
+     auto output_v = part_output.get(2);
+
+     auto input_u  = part_input.get(0);
+     auto input_z  = part_input.get(1);
+     auto input_v  = part_input.get(2);
+
+     Ptr<Vector<Real>> temp_u, temp_z, temp_v, temp_schur;
+
+     auto store = inverseKKTStorage_.find(level);
+     if(store==inverseKKTStorage_.end()) {
+       temp_u = output_u->clone();
+       temp_v = output_v->clone();
+       temp_z = output_z->clone();
+       
+       WathenInverseStorage data;
+       data.temp_u = temp_u;
+       data.temp_z = temp_z;
+       data.temp_v = temp_v;
+
+       inverseKKTStorage_[level] = data;
+     }
+     else {
+       temp_u = store->second.temp_u;
+       temp_v = store->second.temp_v;
+       temp_z = store->second.temp_z;
+     }
+ 
+     temp_u->zero();
+     temp_v->zero();
+     temp_z->zero();
+
+     //
+     // [ I  J'   ]   [ I               ]   [ I  J'   ]
+     // [ J     K ] = [ J     I         ] * [    P  K ]
+     // [    K' I ]   [    K'*inv(P)  I ]   [       S ]
+     //
+     //   P = -J*J',   S = I - K'*inv(P)*K
+     // 
+   
+     // L Factor
+     /////////////////////
+
+     // t_u = rhs_u
+     temp_u->axpy(1.0,*input_u);
+ 
+     // t_v = -J * t_u + f_v
+     applyJacobian_1_leveled_approx(*temp_v,*temp_u,u,z,tol,level);
+     temp_v->scale(-1.0);
+     temp_v->axpy(1.0,*input_v);
+
+     // t_z = - K' * inv(P)*t_v + f_w
+     {
+       auto scratch = temp_u->clone();
+       scratch->zero();
+
+       computeInvP(*scratch,*temp_v,u,z,tol,level);
+       applyAdjointJacobian_2_leveled(*temp_z,*scratch,u,z,tol,level);
+
+       temp_z->scale(-1.0);
+       temp_z->axpy(1.0,*input_z);
+     }
+ 
+     // U Factor
+     /////////////////////
+
+     // o_z = inv(S)*t_z
+     applyLocalReducedInverseHessian(*output_z,*temp_z,u,z,tol,level);
+     
+     // o_v = inv(P)*(t_v-K*o_z)
+     {
+       auto scratch = temp_v->clone();
+       scratch->zero();
+
+       applyJacobian_2_leveled(*scratch,*output_z,u,z,tol,level);
+       scratch->scale(-1.0);
+       scratch->axpy(1.0,*temp_v);
+       
+       computeInvP(*output_v,*scratch,u,z,tol,level);
+     }
+
+     // o_u = t_u - J'*o_v
+     applyAdjointJacobian_1_leveled_approx(*output_u,*output_v,u,z,tol,level); 
+     output_u->scale(-1.0);
+     output_u->axpy(1.0,*temp_u);
+
+     timer->stop("applyLocalInverse"+levelStr); 
+   }
+
+   /**
+    * The reduced Hessian operator for the augmented KKT sytem looks
+    * like I-K'*inv(-J*J')*K. Set up this operator's action. 
+    */
+   void applyLocalReducedHessian(Vector<Real> & y, 
+                                 const Vector<Real> & x,
+                                 const Vector<Real> & u, 
+                                 const Vector<Real> & z,
+                                 Real & tol,
+                                 int level) 
+   {
+     Ptr<Vector<Real>> temp_k = u.clone();
+     Ptr<Vector<Real>> temp_schur = u.clone();
+
+     // K*x
+     applyJacobian_2_leveled(*temp_k,x,u,z,tol,level);
+
+     // inv(J)*K*x
+     invertTimeStepJacobian(*temp_schur,*temp_k, u,z,tol,level);
+
+     // inv(J')*inv(J)*K*x
+     invertAdjointTimeStepJacobian(*temp_k,*temp_schur,u,z,tol,level);
+     
+     // K'*inv(J')*inv(J)*K*x
+     applyAdjointJacobian_2_leveled(y,*temp_k,u,z,tol,level);
+
+     // (I+K'*inv(J')*inv(J)*K)*x
+     y.axpy(1.0,x);
+   }
+
+   /**
+    * The reduced Hessian operator for the augmented KKT sytem looks
+    * like I-K'*inv(-J*J')*K. Compute its inverse using a hand rolled CG.
+    */
+   void applyLocalReducedInverseHessian(Vector<Real> & x, 
+                                        const Vector<Real> & b,
+                                        const Vector<Real> & u, 
+                                        const Vector<Real> & z,
+                                        Real & tol,
+                                        int level) 
+   {
+     const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+     int timeRank = pint_u.communicators().getTimeRank();
+
+     Ptr<Vector<Real>> r = z.clone();   
+     Ptr<Vector<Real>> Ap = z.clone();   
+     Ptr<Vector<Real>> p = z.clone();   
+     
+     // r = b-A*x
+     applyLocalReducedHessian(*r,x,u,z,tol,level);
+     r->axpy(-1.0,b);
+     r->scale(-1.0);
+
+     // rold = r.r
+     Real rold = r->dot(*r);
+     Real rorg = rold;
+
+     // if(timeRank==0)
+     //   std::cout << "START CG = " << std::sqrt(rorg) << std::endl;
+
+     p->set(*r);
+     
+     int iters = numCGIter_;
+     for(int i=0;i<iters;i++) {
+       applyLocalReducedHessian(*Ap,*p,u,z,tol,level);
+
+       Real pAp = Ap->dot(*p);
+       Real alpha = rold / pAp;
+
+       x.axpy(alpha,*p);
+       r->axpy(-alpha,*Ap);
+
+       Real rnew = r->dot(*r);
+
+       // if(timeRank==0)
+       //   std::cout << "CG Residual " << i << " = " << std::sqrt(rnew / rorg)  << std::endl;
+
+       p->scale(rnew/rold);
+       p->axpy(1.0,*r);
+
+       rold = rnew;
+     }
+
+     // if(timeRank==0)
+     //   std::cout << "CG Residual Reduction  = " << std::sqrt(rold / rorg)  << std::endl;
+   }
+   
 
    /**
     * Apply the specified relaxation given an initial condition (output value)
@@ -1337,7 +1565,8 @@ public:
                         Real & tol,
                         int level,
                         bool assumeZeroInitial,
-                        bool computeFinalResidual) 
+                        bool computeFinalResidual,
+                        int numSweeps) 
    {
      bool approxSmoother = true;
 
@@ -1359,15 +1588,19 @@ public:
        res_norm = residual->norm();
 
      // apply one smoother sweep
-     for(int i=0;i<numSweeps_;i++) {
+     for(int i=0;i<numSweeps;i++) {
 
-       applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
+       if(numCGIter_==0)
+         applyWathenInverse(*dx,*residual,u,z,tol,approxSmoother,level); 
+       else
+         applyLocalInverse(*dx,*residual,u,z,tol,level); 
+
        x.axpy(omega_,*dx);
 
        // compute the residual
        applyAugmentedKKT(*residual,x,u,z,tol,level);
  
-       if(i<numSweeps_-1 or computeFinalResidual or recordResidualReductions_) {
+       if(i<numSweeps-1 or computeFinalResidual or recordResidualReductions_) {
          residual->scale(-1.0);
          residual->axpy(1.0,b);
        }
@@ -1397,10 +1630,10 @@ public:
                                 const Vector<Real> & u, 
                                 const Vector<Real> & z,
                                 Real & tol,
-                                int level=0) 
+                                int level=0)
    {
      using PartitionedVector = PartitionedVector<Real>;
-
+     
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
 
      const PinTVector<Real>       & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
@@ -1461,7 +1694,7 @@ public:
          residual->scale(-1.0);
          residual->axpy(1.0,b);
 
-         applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
+         applyWathenInverse(*dx,*residual,u,z,tol,approxSmoother,level); 
          x.axpy(relax,*dx);
        }
 
@@ -1475,6 +1708,7 @@ public:
        }
 
        timer->stop("applyMGAugmentedKKT"+levelStr);
+
        return;
      }
 
@@ -1485,7 +1719,7 @@ public:
      {
        bool finalResidualRequired  = true;
        bool assumeZeroInitialGuess = true;
-       double relativeResidual = applySmoother(x,b,u,z,tol,level,assumeZeroInitialGuess,finalResidualRequired);
+       double relativeResidual = applySmoother(x,b,u,z,tol,level,assumeZeroInitialGuess,finalResidualRequired,numSweeps_);
        preSmoothResidualReduction_[level].push_back(relativeResidual);
      }
 
@@ -1548,7 +1782,7 @@ public:
      {
        bool finalResidualRequired = false;
        bool assumeZeroInitialGuess     = false;
-       double relativeResidual = applySmoother(x,b,u,z,tol,level,assumeZeroInitialGuess,finalResidualRequired);
+       double relativeResidual = applySmoother(x,b,u,z,tol,level,assumeZeroInitialGuess,finalResidualRequired,numSweeps_);
        postSmoothResidualReduction_[level].push_back(relativeResidual);
      }
 

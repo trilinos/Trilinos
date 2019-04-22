@@ -129,7 +129,7 @@ public:
   }
   void applyInverse( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
   {
-    pint_con->applyAugmentedInverseKKT(Hv,v,*state,*control,tol,false,0); 
+    pint_con->applyWathenInverse(Hv,v,*state,*control,tol,false,0); 
   }
 };
 
@@ -205,6 +205,7 @@ int main(int argc, char *argv[])
     int spaceProc      = parlist->get("MGRIT Spatial Procs",1);
     double globalScale = parlist->get("MGRIT Global Scale",1.0);
     bool rebalance     = parlist->get("MGRIT Rebalance",false);
+    int cgIterations   = parlist->get("MGRIT CG Iterations",1);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
     ROL::Ptr<const Teuchos::Comm<int>> mpiSpaceComm = ROL::makePtr<Teuchos::MpiComm<int>>(communicators->getSpaceCommunicator());
@@ -278,6 +279,11 @@ int main(int argc, char *argv[])
       (*outStream) << "Coarse Omega  = " << coarseOmega  << std::endl;
       (*outStream) << "Global Scale  = " << globalScale  << std::endl;
       (*outStream) << "Rebalance     = " << rebalance    << std::endl;
+      (*outStream) << "CG Iterations = " << cgIterations;
+      if(cgIterations==0)
+        *(outStream) << " (apply Wathen smoothing)" << std::endl;
+      else
+        *(outStream) << " (apply CG fix to Wathen smoothing)" << std::endl;
     }
 
     // build the parallel in time constraint from the user constraint
@@ -288,6 +294,7 @@ int main(int argc, char *argv[])
     pint_con->setCoarseSweeps(coarseSweeps);
     pint_con->setCoarseRelaxation(coarseOmega);
     pint_con->setGlobalScale(globalScale);
+    pint_con->setCGIterations(cgIterations);
     pint_con->setRecordResidualReductions(true);
 
     /*************************************************************************/
