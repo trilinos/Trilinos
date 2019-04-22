@@ -23,16 +23,16 @@ namespace Zoltan2{
  *
  *  NOTE: REQUIRES RCA library to run
  *
- *  Nodes in Cori are divided into groups(RCA x_dim) of 96 nodes
+ *  Nodes in Cori are divided into groups(RCA x_dim) of 384 nodes
  *  and all groups are connected with an all-to-all connection.
- *  Within a group, nodes are arranged into 6 rows (RCA y_dim) 
- *  and 16 columns (RCA z_dim).
+ *  Within a group, clusters of 4 nodes are arranged into 6 
+ *  rows (RCA y_dim) and 16 columns (RCA z_dim).
  *  All nodes within a row are connected with an all-to-all. Same 
  *  for columns. Therefore: 
  *  (3, 2, 1) -> (3, 4, 11) will take 2 hops.
  *  (5, 1, 1) -> (5, 1, 5)  will take 1 hop.
  *
- *  We represent this "nearness" by transformation using a high 
+ *  We represent the "nearness" by transformation using a high 
  *  dimensional coord-system of size (1 + N_y + N_z). The first 
  *  element represents the group, the next N_y elements represent
  *  the row, the next N_z elements represent the columns.
