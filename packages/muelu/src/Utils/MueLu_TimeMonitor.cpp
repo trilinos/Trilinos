@@ -77,7 +77,7 @@ namespace MueLu {
     }
   } //TimeMonitor::TimeMonitor()
 
-  TimeMonitor::TimeMonitor() {};
+  TimeMonitor::TimeMonitor() {}
 
   TimeMonitor::~TimeMonitor() {
     // Stop the timer if present
