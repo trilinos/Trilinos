@@ -215,6 +215,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
       M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
       M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+    } else if (M0inv_file == "none") {
+      // pass
     } else {
       M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
     }
@@ -454,6 +456,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
       M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
       M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+    } else if (M0inv_file == "none") {
+      // pass
     } else {
       M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
     }
