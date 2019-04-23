@@ -18,9 +18,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-## Epetra needs tpetra<int,int> 
-
-IF (Tpetra_INST_INT_INT)
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Epetra_MultiVector_Adapter_UnitTests
@@ -51,5 +48,4 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       STANDARD_PASS_OUTPUT
       )
   ENDIF()
-ENDIF()
 ENDIF()

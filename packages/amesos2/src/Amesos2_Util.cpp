@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2011 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -53,7 +53,6 @@
 #  endif
 #endif
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #  include <Epetra_Map.h>
 #  ifdef HAVE_MPI
@@ -61,9 +60,7 @@
 #  endif
 #  include <Epetra_SerialComm.h>
 #endif
-#endif
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 const Teuchos::RCP<const Teuchos::Comm<int> >
 Amesos2::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c)
@@ -112,12 +109,11 @@ Amesos2::Util::to_epetra_comm(Teuchos::RCP<const Teuchos::Comm<int> > c)
     Teuchos::RCP<const Epetra_SerialComm> serialComm = rcp(new Epetra_SerialComm());
     return serialComm;
   }
-#endif	// HAVE_MPI
+#endif  // HAVE_MPI
 
   return Teuchos::null;
 }
-#endif	// HAVE_AMESOS2_EPETRA
-#endif  // HAVE_TPETRA_INST_INT_INT
+#endif  // HAVE_AMESOS2_EPETRA
 
 /// Prints a line of 80 "-"s on out.
 void Amesos2::Util::printLine( Teuchos::FancyOStream& out )
