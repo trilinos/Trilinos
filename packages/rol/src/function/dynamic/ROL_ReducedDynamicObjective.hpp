@@ -88,18 +88,18 @@ private:
   // General sketch information.
   const bool                         useSketch_;
   // State sketch information.
-  int                                rankState_;
+  size_type                          rankState_;
   Ptr<Sketch<Real>>                  stateSketch_;
   // Adjoint sketch information.
-  const int                          rankAdjoint_;
+  const size_type                    rankAdjoint_;
   Ptr<Sketch<Real>>                  adjointSketch_;
   // State sensitivity sketch information.
-  const int                          rankStateSens_;
+  const size_type                    rankStateSens_;
   Ptr<Sketch<Real>>                  stateSensSketch_;
   // Inexactness information.
   const bool                         useInexact_;
-  const Real                         updateFactor_;
-  const int                          maxRank_;
+  const size_type                    updateFactor_;
+  const size_type                    maxRank_;
   // Vector storage for intermediate computations.
   std::vector<Ptr<Vector<Real>>>     uhist_;              // State history.
   std::vector<Ptr<Vector<Real>>>     lhist_;              // Adjoint history.
@@ -117,6 +117,8 @@ private:
   bool                               isAdjointComputed_;  // Whether adjoint has been solved.
   bool                               useHessian_;         // Whether to use Hessian or FD.
   bool                               useSymHess_;         // Whether to use symmetric Hessian approximation.
+  // Output information
+  Ptr<std::ostream>                  stream_;
 
   PartitionedVector<Real>& partition ( Vector<Real>& x ) const {
     return static_cast<PartitionedVector<Real>&>(x);
@@ -126,6 +128,21 @@ private:
     return static_cast<const PartitionedVector<Real>&>(x);
   }
 
+  void throwError(const int err, const std::string &sfunc,
+                  const std::string &func, const int line) const {
+    if (err != 0) {
+      std::stringstream out;
+      out << ">>> ROL::ReducedDynamicObjective::" << func << " (Line " << line << "): ";
+      if (err == 1) {
+        out << "Input column index exceeds total number of columns!";
+      }
+      else if (err == 2) {
+        out << "Reconstruction has already been called!";
+      }
+      throw Exception::NotImplemented(out.str());
+    }
+  }
+
 public:
   ReducedDynamicObjective(const Ptr<DynamicObjective<Real>>  &obj,
                           const Ptr<DynamicConstraint<Real>> &con,
@@ -133,7 +150,8 @@ public:
                           const Ptr<Vector<Real>>            &zvec,
                           const Ptr<Vector<Real>>            &cvec,
                           const std::vector<TimeStamp<Real>> &timeStamp,
-                          ROL::ParameterList                 &pl)
+                          ROL::ParameterList                 &pl,
+                          const Ptr<std::ostream>            &stream = nullPtr)
     : obj_               ( obj ),                                           // Dynamic objective function.
       con_               ( con ),                                           // Dynamic constraint function.
       u0_                ( u0 ),                                            // Initial condition.
@@ -147,13 +165,14 @@ public:
       rankStateSens_     ( pl.get("State Sensitivity Rank", 10) ),          // Rank of state sensitivity sketch.
       stateSensSketch_   ( nullPtr ),                                       // State sensitivity sketch object.
       useInexact_        ( pl.get("Adaptive Rank", false) ),                // Update rank adaptively.
-      updateFactor_      ( pl.get("Rank Update Factor", 2.0) ),             // Rank update factor.
-      maxRank_           ( pl.get("Maximum Rank", Nt_) ),                   // Maximum rank.
+      updateFactor_      ( pl.get("Rank Update Factor", 2) ),               // Rank update factor.
+      maxRank_           ( pl.get("Maximum Rank", 100) ),                   // Maximum rank.
       isValueComputed_   ( false ),                                         // Flag indicating whether value has been computed.
       isStateComputed_   ( false ),                                         // Flag indicating whether state has been computed.
       isAdjointComputed_ ( false ),                                         // Flag indicating whether adjoint has been computed.
       useHessian_        ( pl.get("Use Hessian", true) ),                   // Flag indicating whether to use the Hessian.
-      useSymHess_        ( pl.get("Use Only Sketched Sensitivity", true) ) {// Flag indicating whether to use symmetric sketched Hessian.
+      useSymHess_        ( pl.get("Use Only Sketched Sensitivity", true) ), // Flag indicating whether to use symmetric sketched Hessian.
+      stream_            (stream) {                                         // Output stream to print sketch information.
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
       stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_);
@@ -211,6 +230,7 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
+    int eflag(0);
     if (!isValueComputed_) {
       const Real one(1);
       const PartitionedVector<Real> &xp = partition(x);
@@ -236,7 +256,8 @@ public:
         val_ += valk;
         // Sketch state
         if (useSketch_) {
-          stateSketch_->advance(one,*uhist_[1],static_cast<int>(k)-1,one);
+          eflag = stateSketch_->advance(one,*uhist_[1],static_cast<int>(k)-1,one);
+          throwError(eflag,"advance","value",255);
           uhist_[0]->set(*uhist_[1]);
         }
       }
@@ -247,6 +268,7 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
+    int eflag(0);
     PartitionedVector<Real>       &gp = partition(g);
     gp.get(0)->zero(); // zero for the nonexistant zeroth control interval
     const PartitionedVector<Real> &xp = partition(x);
@@ -256,14 +278,25 @@ public:
     // Must first compute the value
     solveState(x);
     if (useSketch_ && useInexact_) {
+      if (stream_ != nullPtr) {
+        *stream_ << std::string(80,'=') << std::endl; 
+        *stream_ << "  ROL::ReducedDynamicObjective::gradient" << std::endl;
+      }
       tol = updateSketch(x,tol);
+      if (stream_ != nullPtr) {
+        *stream_ << "    State Rank for Gradient Computation: " << rankState_ << std::endl;
+        *stream_ << "    Residual Norm:                       " << tol << std::endl;
+        *stream_ << std::string(80,'=') << std::endl; 
+      }
     }
     // Recover state from sketch
     if (useSketch_) {
       uhist_[1]->set(*uhist_[0]);
-      stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+      eflag = stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+      throwError(eflag,"reconstruct","gradient",282);
       if (isAdjointComputed_) {
-        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
+        eflag = adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
+        throwError(eflag,"reconstruct","gradient",285);
       }
     }
     // Update dynamic constraint and objective
@@ -275,7 +308,8 @@ public:
                            *uhist_[uindex-1], *uhist_[uindex],
                            *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
       if (useSketch_) {
-        adjointSketch_->advance(one,*lhist_[0],static_cast<int>(Nt_)-2,one);
+        eflag = adjointSketch_->advance(one,*lhist_[0],static_cast<int>(Nt_)-2,one);
+        throwError(eflag,"advance","gradient",298);
       }
     }
     // Update gradient on terminal interval
@@ -299,10 +333,12 @@ public:
           uhist_[0]->set(*u0_);
         }
         else {
-          stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+          eflag = stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+          throwError(eflag,"reconstruct","gradient",323);
         }
         if (isAdjointComputed_) {
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+          eflag = adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+          throwError(eflag,"reconstruct","gradient",327);
         }
       }
       // Update dynamic constraint and objective
@@ -314,7 +350,8 @@ public:
                        *uhist_[uindex-1], *uhist_[uindex],
                        *xp.get(k),        timeStamp_[k]);
         if (useSketch_) {
-          adjointSketch_->advance(one,*lhist_[0],static_cast<int>(k)-1,one);
+          eflag = adjointSketch_->advance(one,*lhist_[0],static_cast<int>(k)-1,one);
+          throwError(eflag,"advance","gradient",340);
         }
       }
       // Update gradient on interval k
@@ -326,6 +363,7 @@ public:
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    int eflag(0);
     if (useHessian_) {
       // Must first solve the state and adjoint equations
       solveState(x);
@@ -349,8 +387,10 @@ public:
         lindex = (useSketch_ ? 0 : k);
         // Reconstruct sketched state
         if (useSketch_) {
-          stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k)-1);
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+          eflag = stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k)-1);
+          throwError(eflag,"reconstruct","hessVec",377);
+          eflag = adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+          throwError(eflag,"reconstruct","hessVec",379);
         }
         // Update dynamic constraint and objective
         con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(k), timeStamp_[k]);
@@ -374,7 +414,8 @@ public:
         }
         // Sketch state sensitivity
         if (useSketch_) {
-          stateSensSketch_->advance(one,*whist_[1],static_cast<int>(k)-1,one);
+          eflag = stateSensSketch_->advance(one,*whist_[1],static_cast<int>(k)-1,one);
+          throwError(eflag,"advance","hessVec",304);
           whist_[0]->set(*whist_[1]);
           uhist_[0]->set(*uhist_[1]);
         }
@@ -386,12 +427,15 @@ public:
       if (useSketch_) {
         // Recover terminal state
         uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+        eflag = stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+        throwError(eflag,"reconstruct","hessVec",417);
         // Recover terminal adjoint
-        adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
+        eflag = adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(Nt_)-2);
+        throwError(eflag,"reconstruct","hessVec",420);
         // Recover terminal state sensitivity
         whist_[1]->set(*whist_[0]);
-        stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(Nt_)-3);
+        eflag = stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(Nt_)-3);
+        throwError(eflag,"reconstruct","hessVec",424);
       }
       // Update dynamic constraint and objective
       con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
@@ -439,10 +483,13 @@ public:
             whist_[0]->zero();
           }
           else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
-            stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(k)-2);
+            eflag = stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+            throwError(eflag,"reconstruct","hessVec",473);
+            eflag = stateSensSketch_->reconstruct(*whist_[0],static_cast<int>(k)-2);
+            throwError(eflag,"reconstruct","hessVec",475);
           }
-          adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+          eflag = adjointSketch_->reconstruct(*lhist_[0],static_cast<int>(k)-1);
+          throwError(eflag,"reconstruct","hessVec",478);
         }
         uindex = (useSketch_ ? 1 : k);
         lindex = (useSketch_ ? 0 : k);
@@ -487,6 +534,7 @@ private:
   /************ Method to solve state equation *******************************/
   /***************************************************************************/
   void solveState(const Vector<Real> &x) {
+    int eflag(0);
     if (!isStateComputed_) {
       const Real one(1);
       const PartitionedVector<Real> &xp = partition(x);
@@ -506,7 +554,8 @@ private:
         con_->solve(*cprimal_, *uhist_[index-1], *uhist_[index], *xp.get(k), timeStamp_[k]);
         // Sketch state
         if (useSketch_) {
-          stateSketch_->advance(one,*uhist_[index],static_cast<int>(k)-1,one);
+          eflag = stateSketch_->advance(one,*uhist_[index],static_cast<int>(k)-1,one);
+          throwError(eflag,"advance","solveState",544);
           uhist_[index-1]->set(*uhist_[index]);
         }
       }
@@ -515,6 +564,7 @@ private:
   }
 
   Real updateSketch(const Vector<Real> &x, const Real tol) {
+    int eflag(0);
     const PartitionedVector<Real> &xp = partition(x);
     Real err(0), cnorm(0);
     bool flag = true;
@@ -522,13 +572,16 @@ private:
       err = static_cast<Real>(0);
       uhist_[0]->set(*u0_);
       for (size_type k = 1; k < Nt_; ++k) {
-        stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k));
+        eflag = stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k)-1);
+        throwError(eflag,"reconstruct","updateSketch",562);
+        con_->update(*uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
         con_->value(*cprimal_, *uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
         cnorm = cprimal_->norm();
         err   = (cnorm > err ? cnorm : err); // Use Linf norm.  Could change to use, e.g., L2.
         if (err > tol) {
           break;
         }
+        uhist_[0]->set(*uhist_[1]);
       }
       if (err > tol) {
         rankState_ *= updateFactor_; // Perhaps there is a better update strategy
@@ -540,6 +593,11 @@ private:
       else {
         flag = false;
         break;
+      }
+      if (stream_ != nullPtr) {
+        *stream_ << "    *** State Rank:                      " << rankState_ << std::endl;
+        *stream_ << "    *** Required Tolerance:              " << tol << std::endl;
+        *stream_ << "    *** Residual Norm:                   " << err << std::endl;
       }
     }
     return err;
@@ -573,6 +631,7 @@ private:
   }
 
   void solveAdjoint(const Vector<Real> &x) {
+    int eflag(0);
     if (!isAdjointComputed_) {
       const PartitionedVector<Real> &xp = partition(x);
       const Real one(1);
@@ -583,7 +642,8 @@ private:
       // Recover state from sketch
       if (useSketch_) {
         uhist_[1]->set(*uhist_[0]);
-        stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+        eflag = stateSketch_->reconstruct(*uhist_[0],static_cast<int>(Nt_)-3);
+        throwError(eflag,"reconstruct","solveAdjoint",625); 
       }
       // Update dynamic constraint and objective
       con_->update(*uhist_[uindex-1], *uhist_[uindex], *xp.get(Nt_-1), timeStamp_[Nt_-1]);
@@ -593,7 +653,8 @@ private:
                            *uhist_[uindex-1], *uhist_[uindex],
                            *xp.get(Nt_-1),    timeStamp_[Nt_-1]);
       if (useSketch_) {
-        adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(Nt_)-2,one);
+        eflag = adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(Nt_)-2,one);
+        throwError(eflag,"advance","solveAdjoint",636);
       }
       // Run reverse time stepper
       for (size_type k = Nt_-2; k > 0; --k) {
@@ -608,7 +669,8 @@ private:
             uhist_[0]->set(*u0_);
           }
           else {
-            stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+            eflag = stateSketch_->reconstruct(*uhist_[0],static_cast<int>(k)-2);
+            throwError(eflag,"reconstruct","solveAdjoint",652); 
           }
         }
         uindex = (useSketch_ ? 1 : k);
@@ -621,7 +683,8 @@ private:
                        *uhist_[uindex-1], *uhist_[uindex],
                        *xp.get(k),        timeStamp_[k]);
         if (useSketch_) {
-          adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(k)-1,one);
+          eflag = adjointSketch_->advance(one,*lhist_[lindex],static_cast<int>(k)-1,one);
+          throwError(eflag,"advance","solveAdjoint",666);
         }
       }
       isAdjointComputed_ = true;

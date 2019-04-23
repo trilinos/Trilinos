@@ -212,8 +212,20 @@ public:
   void setRank(const int rank) {
     rank_ = rank;
     // Compute reduced dimensions
+    Real lold = l_, kold = k_;
     l_ = std::min(4*rank_+3,ncol_);
     k_ = std::min(2*rank_+1,l_);
+    Omega_.reshape(ncol_,k_); W_.reshape(l_,ncol_);
+    if (l_ > lold) {
+      for (int i = lold; i < l_; ++i) {
+        Psi_.push_back(Psi_[0]->clone());
+      }
+    }
+    if (k_ > kold) {
+      for (int i = kold; i < k_; ++i) {
+        Y_.push_back(Y_[0]->clone());
+      }
+    }
     update();
   }
 
@@ -224,10 +236,11 @@ public:
     reset();
   }
 
-  void advance(const Real alpha, Vector<Real> &h, const int col, const Real beta = 1.0) {
+  int advance(const Real alpha, Vector<Real> &h, const int col, const Real beta = 1.0) {
     // Check to see if col is less than ncol_
     if ( col >= ncol_ ) {
-      throw Exception::NotImplemented(">>> ROL::Sketch::advance: Input column index exceeds total number of columns!");
+      // Input column index exceeds total number of columns!
+      return 1;
     }
     if (!flagQ_ && !flagX_) {
       // Update Y
@@ -244,14 +257,17 @@ public:
       }
     }
     else {
-      throw Exception::NotImplemented(">>> ROL::Sketch::advance: Reconstruct has already been called!");
+      // Reconstruct has already been called!
+      return 2;
     }
+    return 0;
   }
 
-  void reconstruct(Vector<Real> &a, const int col) {
+  int reconstruct(Vector<Real> &a, const int col) {
     // Check to see if col is less than ncol_
     if ( col >= ncol_ ) {
-      throw Exception::NotImplemented(">>> ROL::Sketch::reconstruct: Input column index exceeds total number of columns!");
+      // Input column index exceeds total number of columns!
+      return 1;
     }
     // Compute QR factorization of Y store in Y
     computeQ();
@@ -262,6 +278,7 @@ public:
     for (int i = 0; i < k_; ++i) {
       a.axpy(W_(i,col),*Y_[i]);
     }
+    return 0;
   }
 
   bool test(const int rank, std::ostream &outStream = std::cout, const int verbosity = 0) {
