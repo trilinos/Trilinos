@@ -26,6 +26,7 @@
       <Parameter docString="" id="15" isDefault="true" isUsed="true" name="Maximum Absolute Error" type="double" value="1.00000000000000002e-08"/>
       <Parameter docString="" id="16" isDefault="true" isUsed="true" name="Maximum Relative Error" type="double" value="1.00000000000000002e-08"/>
       <Parameter docString="" id="20" isDefault="true" isUsed="true" name="Integrator Step Type" type="string" value="Variable"/>
+      <Parameter docString="" id="37" isDefault="true" isUsed="true" name="Output Exactly On Output Times" type="bool" value="true"/>
       <Parameter docString="" id="21" isDefault="true" isUsed="true" name="Output Time List" type="string" value=""/>
       <Parameter docString="" id="22" isDefault="true" isUsed="true" name="Output Index List" type="string" value=""/>
       <Parameter docString="" id="23" isDefault="true" isUsed="true" name="Output Time Interval" type="double" value="1.0e+99"/>

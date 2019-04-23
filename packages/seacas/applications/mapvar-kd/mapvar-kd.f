@@ -286,7 +286,7 @@ C     here and then refuse to run...
      *      'FATAL ERROR: Mapvar is buggy and cannot correctly'
      *      ' handle interpolating a mesh with nodal variables,',
      *      /,14x,'multiple timesteps and multiple element blocks.',
-     *      /,14x'See https://github.com/gsjaardema/seacas/packages'
+     *      /,14x,'See https://github.com/gsjaardema/seacas/packages'
      *      '/seacas/MAPVAR.md')
         stop('INTERNAL ERROR')
       end if
@@ -299,7 +299,7 @@ C ... Warn if multiple blocks...
      *      ' handle interpolating a mesh with nodal variables',
      *      /,9x,'and multiple element blocks. Shared nodes',
      *      ' might be incorrect.',
-     *      /,9x'See https://github.com/gsjaardema/seacas/packages'
+     *      /,9x,'See https://github.com/gsjaardema/seacas/packages'
      *      '/seacas/MAPVAR.md')
         end if
       end if
