@@ -50,16 +50,16 @@
 #  include <Teuchos_DefaultMpiComm.hpp>
 #  ifdef HAVE_AMESOS2_EPETRA
 #    include <Teuchos_OpaqueWrapper.hpp>
-#  endif
-#endif
+#  endif // HAVE_AMESOS2_EPETRA
+#endif // HAVE_MPI
 
 #ifdef HAVE_AMESOS2_EPETRA
 #  include <Epetra_Map.h>
 #  ifdef HAVE_MPI
 #    include <Epetra_MpiComm.h>
-#  endif
+#  endif // HAVE_MPI
 #  include <Epetra_SerialComm.h>
-#endif
+#endif // HAVE_AMESOS2_EPETRA
 
 #ifdef HAVE_AMESOS2_EPETRA
 const Teuchos::RCP<const Teuchos::Comm<int> >
@@ -77,7 +77,7 @@ Amesos2::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c)
       rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
     return Teuchos::createMpiComm<int>(rawMpiComm);
   } else
-#endif
+#endif // HAVE_MPI
     if( rcp_dynamic_cast<const Epetra_SerialComm>(c) != Teuchos::null )
       return Teuchos::createSerialComm<int>();
     else
@@ -101,7 +101,7 @@ Amesos2::Util::to_epetra_comm(Teuchos::RCP<const Teuchos::Comm<int> > c)
       mpiComm = rcp(new Epetra_MpiComm(*rawMpiComm()));
     return mpiComm;
   }
-#else
+#else // NOT HAVE_MPI
   Teuchos::RCP<const Teuchos::SerialComm<int> >
     serialTeuchosComm = rcp_dynamic_cast<const Teuchos::SerialComm<int> >(c);
 
@@ -109,11 +109,11 @@ Amesos2::Util::to_epetra_comm(Teuchos::RCP<const Teuchos::Comm<int> > c)
     Teuchos::RCP<const Epetra_SerialComm> serialComm = rcp(new Epetra_SerialComm());
     return serialComm;
   }
-#endif  // HAVE_MPI
+#endif // HAVE_MPI
 
   return Teuchos::null;
 }
-#endif  // HAVE_AMESOS2_EPETRA
+#endif // HAVE_AMESOS2_EPETRA
 
 /// Prints a line of 80 "-"s on out.
 void Amesos2::Util::printLine( Teuchos::FancyOStream& out )
