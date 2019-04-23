@@ -152,9 +152,18 @@ private:
     Ptr<Vector<Real>> residual;
   };
 
+  // CG Reduced Hessian Solver
+  struct CGReducedHessStorage {
+    Ptr<Vector<Real>> temp_r;
+    Ptr<Vector<Real>> temp_Ap;
+    Ptr<Vector<Real>> temp_p;
+  };
+
   std::map<int,WathenInverseStorage> inverseKKTStorage_; 
 
   std::map<int,MGAugmentedKKTStorage> mgAugmentedKKTStorage_;
+
+  std::map<int,CGReducedHessStorage> cgReducedHessStorage_;
 
   std::map<int,Ptr<Vector<Real>>> inverseAdjointStorage_;
 
@@ -1437,6 +1446,7 @@ public:
      /////////////////////
 
      // o_z = inv(S)*t_z
+     output_z->zero();
      applyLocalReducedInverseHessian(*output_z,*temp_z,u,z,tol,level);
      
      // o_v = inv(P)*(t_v-K*o_z)
@@ -1498,19 +1508,46 @@ public:
                                         const Vector<Real> & u, 
                                         const Vector<Real> & z,
                                         Real & tol,
-                                        int level) 
+                                        int level,
+                                        bool skipInitialMatVec=true)  // if x==0, no need
    {
      const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
      int timeRank = pint_u.communicators().getTimeRank();
 
-     Ptr<Vector<Real>> r = z.clone();   
-     Ptr<Vector<Real>> Ap = z.clone();   
-     Ptr<Vector<Real>> p = z.clone();   
+     Ptr<Vector<Real>> r;
+     Ptr<Vector<Real>> Ap;
+     Ptr<Vector<Real>> p;
+
+     auto store = cgReducedHessStorage_.find(level);
+     if(store==cgReducedHessStorage_.end()) {
+       r  = z.clone();   
+       Ap = z.clone();   
+       p  = z.clone();   
+
+       CGReducedHessStorage data;
+       data.temp_r  = r;
+       data.temp_Ap = Ap;
+       data.temp_p  = p;
+
+       cgReducedHessStorage_[level] = data;
+     }
+     else {
+       r  = store->second.temp_r;
+       Ap = store->second.temp_Ap;
+       p  = store->second.temp_p;
+     }
      
      // r = b-A*x
-     applyLocalReducedHessian(*r,x,u,z,tol,level);
-     r->axpy(-1.0,b);
-     r->scale(-1.0);
+     if(skipInitialMatVec) {
+       // this performance optimization is really important as the
+       // applyLocal is super expensive
+       r->set(b);
+     }
+     else {
+       applyLocalReducedHessian(*r,x,u,z,tol,level);
+       r->axpy(-1.0,b);
+       r->scale(-1.0);
+     }
 
      // rold = r.r
      Real rold = r->dot(*r);
