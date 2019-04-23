@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     }
     ROL::ParameterList &rpl = parlist->sublist("Reduced Dynamic Objective");
     ROL::Ptr<ROL::ReducedDynamicObjective<RealT>> obj
-      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl);
+      = ROL::makePtr<ROL::ReducedDynamicObjective<RealT>>(dyn_obj, dyn_con, u0, zk, ck, timeStamp, rpl,outStream);
  
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
