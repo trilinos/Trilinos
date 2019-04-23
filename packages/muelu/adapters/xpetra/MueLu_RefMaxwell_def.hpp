@@ -233,14 +233,34 @@ namespace MueLu {
     if (useKokkos_) {
       BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
       BCcolsKokkos_ = Utilities_kokkos::DetectDirichletCols(*D0_Matrix_,BCrowsKokkos_);
-    } else {
+      if (IsPrint(Statistics2)) {
+        int BCrowcount = 0;
+        for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
+          if (BCrowsKokkos_(i))
+            BCrowcount += 1;
+        int BCcolcount = 0;
+        for (size_t i = 0; i<BCcolsKokkos_.size(); i++)
+          if (BCcolsKokkos_(i))
+            BCcolcount += 1;
+        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+      }
+    } else
+#endif
+    {
       BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
       BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
+      if (IsPrint(Statistics2)) {
+        int BCrowcount = 0;
+        for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
+          if (*it)
+            BCrowcount += 1;
+        int BCcolcount = 0;
+        for (auto it = BCcols_.begin(); it != BCcols_.end(); ++it)
+          if (*it)
+            BCcolcount += 1;
+        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCrowcount << " BC rows and " << BCcolcount << " BC columns." << std::endl;
+      }
     }
-#else
-    BCrows_ = Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
-    BCcols_ = Utilities::DetectDirichletCols(*D0_Matrix_,BCrows_);
-#endif
 
     // build nullspace if necessary
     if(Nullspace_ != null) {
