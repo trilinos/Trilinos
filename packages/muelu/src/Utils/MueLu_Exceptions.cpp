@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package
-//                  Copyright 2011 Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,34 +35,35 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
+#include <Teuchos_Exceptions.hpp>
+#include <MueLu_Exceptions.hpp>
 
-#include "Amesos2_config.h"
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#include "MueLu_ConfigDefs.hpp"
 
-#include "Amesos2_Superlu_decl.hpp"
-#include "Amesos2_Superlu_def.hpp"
-#include "Amesos2_ExplicitInstantiationHelpers.hpp"
-#include "TpetraCore_ETIHelperMacros.h"
+namespace MueLu {
+  namespace Exceptions {
 
-namespace Amesos2 {
+      BadCast::BadCast(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
 
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(Superlu);
-#endif
+      NotImplemented::NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
 
-} // namespace Amesos2
+      RuntimeError::RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
 
-#define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N) \
-  template class Amesos2::Superlu<Tpetra::CrsMatrix<S, LO, GO, N>, \
-                                  Tpetra::MultiVector<S, LO, GO, N> >;
+      Overflow::Overflow(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+      Incompatible::Incompatible(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
 
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(AMESOS2_SUPERLU_LOCAL_INSTANT)
+      DependencyError::DependencyError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
 
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+      InvalidArgument::InvalidArgument(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) { }
+
+  }
+}

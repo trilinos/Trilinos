@@ -276,9 +276,8 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
   for (i = 0; i < num_entity; i++) {
     if (names != NULL && *names != NULL && *names[i] != '\0') {
       found_name = 1;
-      ex_copy_string(&int_names[idx], names[i], name_length - 1);
-      int_names[idx + name_length - 1] = '\0';
-      length                           = strlen(names[i]) + 1;
+      ex_copy_string(&int_names[idx], names[i], name_length);
+      length = strlen(names[i]) + 1;
       if (length > name_length) {
         fprintf(stderr,
                 "Warning: The %s %s name '%s' is too long.\n\tIt will "

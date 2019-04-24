@@ -71,10 +71,10 @@ class RowMatrix :
 public:
   //! \name Typedefs
   //@{
-  typedef typename MatrixType::scalar_type scalar_type;
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
+  using scalar_type = typename MatrixType::scalar_type;
+  using local_ordinal_type = typename MatrixType::local_ordinal_type;
+  using global_ordinal_type = typename MatrixType::global_ordinal_type;
+  using node_type = typename MatrixType::node_type;
 
   //@}
   //! \name Destructor
@@ -84,13 +84,14 @@ public:
   virtual ~RowMatrix () = default;
 
   //@}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \name Work-around implementations of deprecated virtual methods
   ///
   /// These methods exist to smooth the path for fixing GitHub Issue
   /// #2630.  This is why their existence depends on a Tpetra macro.
   //@{
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief The global number of diagonal entries.
   ///
   /// \warning This method is DEPRECATED and will be removed soon!
@@ -129,6 +130,8 @@ public:
     throwBecauseDeprecated ("isUpperTriangular");
     return false;
   }
+
+  //@}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 };
 

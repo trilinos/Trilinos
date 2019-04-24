@@ -292,7 +292,7 @@ setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a)
   // An unmanaged field is a MDField where the user has manually
   // allocated the underlying memory for the field. If setup was
   // already called, we need to reassign the memory and rebind all
-  // the evalautors that use the unmanaged field. If setup has not
+  // the evaluators that use the unmanaged field. If setup has not
   // been called, then we can store off the memory and assign normally
   // as part of the postRegistrationSetup() process.
   if (this->setupCalled())
@@ -328,7 +328,7 @@ bindField(const PHX::FieldTag& f, const PHX::any& a)
   // Set the new memory
   fields_[f.identifier()] = a;
 
-  // Loop through evalautors and rebind the field
+  // Loop through evaluators and rebind the field
   auto& evaluators = this->dag_manager_.getEvaluatorsBindingField(f);
   for (auto& e : evaluators)
     e->bindField(f,a);

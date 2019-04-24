@@ -134,7 +134,7 @@ namespace MueLu {
     else Input(fineLevel, "Mdiag");
 
     // CFL array stuff
-    if(pL.isParameter("rap: cfl array")) {
+    if(pL.isParameter("rap: cfl array") && pL.get<Teuchos::Array<double> >("rap: cfl array").size() > 0) {
       if(fineLevel.GetLevelID() == 0) {
         if(fineLevel.IsAvailable("deltaT", NoFactory::get())) {
           fineLevel.DeclareInput("deltaT", NoFactory::get(), this);
