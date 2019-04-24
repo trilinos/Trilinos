@@ -223,7 +223,7 @@ namespace Xpetra {
     { return mtx_->haveGlobalConstants();}
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resumeFill(const RCP< ParameterList > &params) { XPETRA_MONITOR("TpetraCrsMatrix::resumeFill"); mtx_->resumeFill(params); };
+    void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::resumeFill(const RCP< ParameterList > &params) { XPETRA_MONITOR("TpetraCrsMatrix::resumeFill"); mtx_->resumeFill(params); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params) { XPETRA_MONITOR("TpetraCrsMatrix::fillComplete"); mtx_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), params); }
