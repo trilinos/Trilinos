@@ -138,6 +138,8 @@ private:
 
   Real globalScale_;
 
+  Real controlRegParam_;
+
   // clone vector storage
   struct WathenInverseStorage {
     Ptr<Vector<Real>> temp_u;
@@ -268,6 +270,7 @@ public:
     , numSweeps_(1)
     , omega_(2.0/3.0)
     , globalScale_(0.99e0)
+    , controlRegParam_(1.0)
     , numCGIter_(2)
     , recordResidualReductions_(false)
   { 
@@ -307,6 +310,14 @@ public:
    */
   void setGlobalScale(Real o)
   { globalScale_ = o; }
+
+  /**
+   * Set the scaling for the control regularization parameter,
+   * this defaults to 1.0. Only relevant for the KKT system and
+   * multigrid solvers.
+   */
+  void setControlRegParam(Real o)
+  { controlRegParam_ = o; }
 
   /**
    *  For analysis purposes, record all the residual reductions.
@@ -1190,7 +1201,7 @@ public:
      output_u->axpy(1.0,*input_u);
 
      applyAdjointJacobian_2_leveled(*output_z,*input_v,u,z,tol,level);
-     output_z->axpy(1.0,*input_z);
+     output_z->axpy(controlRegParam_,*input_z); // multiply by \alpha * I
 
      // constraint
      applyJacobian_1_leveled(*output_v_tmp,*input_u,u,z,tol,level);
@@ -1282,14 +1293,14 @@ public:
      temp_z->zero();
      temp_v->zero();
  
-     // [ I   0  J' * inv(J*J') ] [  I        ]
-     // [     I  K' * inv(J*J') ] [  0  I     ]
-     // [            -inv(J*J') ] [ -J -K  I  ]
+     // [ I         0  J' * inv(J*J') ] [  I              ]
+     // [     I/alpha  K' * inv(J*J') ] [  0     I        ]
+     // [                  -inv(J*J') ] [ -J -K/alpha  I  ]
     
      // L Factor
      /////////////////////
      temp_u->axpy(1.0,*input_u);
-     temp_z->axpy(1.0,*input_z);
+     temp_z->axpy(1.0/controlRegParam_,*input_z);
  
      // apply -J
      if(not approx)
@@ -1412,11 +1423,11 @@ public:
      temp_z->zero();
 
      //
-     // [ I  J'   ]   [ I               ]   [ I  J'   ]
-     // [ J     K ] = [ J     I         ] * [    P  K ]
-     // [    K' I ]   [    K'*inv(P)  I ]   [       S ]
+     // [ I  J'         ]   [ I               ]   [ I  J'   ]
+     // [ J           K ] = [ J     I         ] * [    P  K ]
+     // [    K' alpha*I ]   [    K'*inv(P)  I ]   [       S ]
      //
-     //   P = -J*J',   S = I - K'*inv(P)*K
+     //   P = -J*J',   S = alpha*I - K'*inv(P)*K
      // 
    
      // L Factor
@@ -1496,7 +1507,7 @@ public:
      applyAdjointJacobian_2_leveled(y,*temp_k,u,z,tol,level);
 
      // (I+K'*inv(J')*inv(J)*K)*x
-     y.axpy(1.0,x);
+     y.axpy(controlRegParam_,x);
    }
 
    /**

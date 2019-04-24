@@ -206,6 +206,7 @@ int main(int argc, char *argv[])
     double globalScale = parlist->get("MGRIT Global Scale",1.0);
     bool rebalance     = parlist->get("MGRIT Rebalance",false);
     int cgIterations   = parlist->get("MGRIT CG Iterations",1);
+    double cntrlRegPar = parlist->get("MGRIT Control Regularization Parameter",1.0);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
     ROL::Ptr<const Teuchos::Comm<int>> mpiSpaceComm = ROL::makePtr<Teuchos::MpiComm<int>>(communicators->getSpaceCommunicator());
@@ -284,6 +285,7 @@ int main(int argc, char *argv[])
         *(outStream) << " (apply Wathen smoothing)" << std::endl;
       else
         *(outStream) << " (apply CG fix to Wathen smoothing)" << std::endl;
+      (*outStream) << "Cntrl Reg Par = " << cntrlRegPar << std::endl;
     }
 
     // build the parallel in time constraint from the user constraint
@@ -295,6 +297,7 @@ int main(int argc, char *argv[])
     pint_con->setCoarseRelaxation(coarseOmega);
     pint_con->setGlobalScale(globalScale);
     pint_con->setCGIterations(cgIterations);
+    pint_con->setControlRegParam(cntrlRegPar);
     pint_con->setRecordResidualReductions(true);
 
     /*************************************************************************/
