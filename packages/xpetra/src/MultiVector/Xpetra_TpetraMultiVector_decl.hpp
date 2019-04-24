@@ -46,11 +46,13 @@
 #ifndef XPETRA_TPETRAMULTIVECTOR_DECL_HPP
 #define XPETRA_TPETRAMULTIVECTOR_DECL_HPP
 
-
 #include "Xpetra_TpetraConfigDefs.hpp"
 #include "Xpetra_MultiVector.hpp"
-#include "Xpetra_Import.hpp"
-#include "Xpetra_Export.hpp"
+
+#include "Xpetra_TpetraMap.hpp" //TMP
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_TpetraImport.hpp"
+#include "Xpetra_TpetraExport.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
