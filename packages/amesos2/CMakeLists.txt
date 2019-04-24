@@ -13,11 +13,7 @@ SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/28/2011")
 #
 
 IF (NOT Tpetra_INST_INT_INT)
-
-   MESSAGE(WARNING "*****Amesos2 will not provide Epetra Matrix Support with Tpetra_INST_INT_INT OFF.*****")
    MESSAGE(WARNING "*****Amesos2 will not provide MUMPS Support with Tpetra_INST_INT_INT OFF.*****")
-
-
 ENDIF ()
 
 IF (Amesos2_ENABLE_UMFPACK)
