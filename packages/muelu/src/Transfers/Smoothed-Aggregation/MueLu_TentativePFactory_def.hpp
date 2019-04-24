@@ -229,7 +229,7 @@ namespace MueLu {
     const GO     numAggs   = aggregates->GetNumAggregates();
     const size_t NSDim     = fineNullspace->getNumVectors();
 
-    printf("CMS: numAggs = %d\n",(int)numAggs);
+    //    printf("CMS: numAggs = %d\n",(int)numAggs);
 
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
@@ -299,7 +299,6 @@ namespace MueLu {
       ////////////////////////////////
       for (GO agg = 0; agg < numAggs; agg++) {
         LO aggSize = aggStart[agg+1] - aggStart[agg];
-        printf("aggSize = %d NSDim = %d\n",aggSize,NSDim);
 
         Xpetra::global_size_t offset = agg*NSDim;
 
