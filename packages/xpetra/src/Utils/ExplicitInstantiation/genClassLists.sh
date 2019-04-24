@@ -37,3 +37,4 @@ function XpetraGenerateCmakeFile() {
 
 XpetraGenerateCmakeFile "LO-GO-NO.classList"                "XPETRA_LO_GO_NO_ETI_CLASSES"                "ETI_LO_GO_NO_classes.cmake"
 XpetraGenerateCmakeFile "SC-LO-GO-NO.classList"             "XPETRA_SC_LO_GO_NO_ETI_CLASSES"             "ETI_SC_LO_GO_NO_classes.cmake"
+XpetraGenerateCmakeFile "GO-LO-GO-NO.classList"             "XPETRA_GO_LO_GO_NO_ETI_CLASSES"             "ETI_GO_LO_GO_NO_classes.cmake"

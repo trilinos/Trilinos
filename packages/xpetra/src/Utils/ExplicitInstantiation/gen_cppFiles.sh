@@ -5,7 +5,7 @@ IFS=$'\n'
 
 classListDir=../ClassList/
 
-for i in LO-GO-NO SC-LO-GO-NO
+for i in LO-GO-NO SC-LO-GO-NO GO-LO-GO-NO
   do
 
   classList=$classListDir/$i.classList
@@ -28,13 +28,19 @@ for i in LO-GO-NO SC-LO-GO-NO
             conditionOpen2=""
             conditionClose=""
         fi
+        
+        if [ $i == "GO-LO-GO-NO" ]; then
+            OUTFILE=Xpetra_${className}_go.cpp
+        else
+            OUTFILE=Xpetra_$className.cpp
+        fi
 
         cat $tmpl \
             | sed "s/\$TMPL_CLASS/$className/g" \
             | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
             | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
             | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
-            > Xpetra_$className.cpp
+            > $OUTFILE
     fi
 
   done

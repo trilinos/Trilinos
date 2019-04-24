@@ -460,40 +460,6 @@ namespace Xpetra {
   }
 
   
-  // TODO: move that elsewhere
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
-    typedef TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraMultiVectorClass;
-      XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, x, tX, "toTpetra");
-      return *tX.getTpetra_MultiVector();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Tpetra::MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
-    typedef TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraMultiVectorClass;
-      XPETRA_DYNAMIC_CAST(      TpetraMultiVectorClass, x, tX, "toTpetra");
-      return *tX.getTpetra_MultiVector();
-  }
-  //
-
-
-  // Things we actually need
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
-    if (!vec.is_null())
-      return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));
-
-    return Teuchos::null;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
-    if (!vec.is_null())
-      return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec));
-
-    return Teuchos::null;
-  }
-
 #ifdef HAVE_XPETRA_EPETRA
 
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
