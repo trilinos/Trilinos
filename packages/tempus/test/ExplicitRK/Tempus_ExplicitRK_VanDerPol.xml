@@ -112,7 +112,9 @@
                 <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
                 <Parameter name="Maximum Relative Error" type="double" value="1.0e-3"/>
                 <Parameter name="Output Index Interval"  type="int"    value="1"/>
-                <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
+                <Parameter name="Integrator Step Type"   type="string" value="Variable"/>
+                <Parameter name="Output Exactly On Output Times"  type="bool" value="false"/>
+                <Parameter name="Output Time List"       type="string" value="0.12"/>
                 <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
                 <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
                 <ParameterList name="Time Step Control Strategy">

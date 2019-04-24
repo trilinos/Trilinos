@@ -54,10 +54,11 @@
 
 #include "Amesos2_config.h"
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_BLAS_types.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_FancyOStream.hpp>
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_BLAS_types.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_DistObject_decl.hpp>
@@ -66,10 +67,8 @@
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 #include <Epetra_Map.h>
-#endif
 #endif
 
 
@@ -119,7 +118,6 @@ namespace Amesos2 {
                        const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >& map = Teuchos::null);
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 
     /**
@@ -154,7 +152,6 @@ namespace Amesos2 {
      */
     const RCP<const Epetra_Comm> to_epetra_comm(RCP<const Teuchos::Comm<int> > c);
 #endif  // HAVE_AMESOS2_EPETRA
-#endif // HAVE_TPETRA_INST_INT_INT
 
     /**
      * Transposes the compressed sparse matrix representation.
@@ -453,7 +450,7 @@ namespace Amesos2 {
                          const ArrayView<S> nzvals,
                          const ArrayView<GO> indices,
                          const ArrayView<GS> pointers,
-                         GS& nnz, 
+                         GS& nnz,
                          EDistribution distribution,
                          EStorage_Ordering ordering=ARBITRARY,
                          GO indexBase = 0)
@@ -466,9 +463,9 @@ namespace Amesos2 {
           const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
           = getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
                                                       Op::get_dimension(mat),
-                                                      mat->getComm(), 
-                                                      indexBase, 
-                                                      Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap 
+                                                      mat->getComm(),
+                                                      indexBase,
+                                                      Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap
                                                       );
 
           do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
@@ -482,7 +479,7 @@ namespace Amesos2 {
                          const ArrayView<S> nzvals,
                          const ArrayView<GO> indices,
                          const ArrayView<GS> pointers,
-                         GS& nnz, 
+                         GS& nnz,
                          EDistribution distribution, // Does this one need a distribution argument??
                          EStorage_Ordering ordering=ARBITRARY)
       {
@@ -515,7 +512,7 @@ namespace Amesos2 {
           diff_scalar_helper<Matrix,S,GO,GS,Op> >::type::do_get(mat,
                                                                 nzvals, indices,
                                                                 pointers, nnz,
-                                                                map, 
+                                                                map,
                                                                 distribution, ordering);
       }
     };
@@ -714,7 +711,7 @@ namespace Amesos2 {
       case CONTIGUOUS_AND_ROOTED:
         {
           const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > gathermap
-          = getGatherMap<LO,GO,GS,Node>( map );  //getMap must be the map returned, NOT rowmap or colmap 
+          = getGatherMap<LO,GO,GS,Node>( map );  //getMap must be the map returned, NOT rowmap or colmap
           return gathermap;
         }
       default:
@@ -726,7 +723,6 @@ namespace Amesos2 {
     }
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
 
     //#pragma message "include 3"
@@ -743,9 +739,23 @@ namespace Amesos2 {
       Teuchos::Array<int> my_global_elements(num_my_elements);
       map.MyGlobalElements(my_global_elements.getRawPtr());
 
+      Teuchos::Array<GO> my_gbl_inds_buf;
+      Teuchos::ArrayView<GO> my_gbl_inds;
+      if (! std::is_same<int, GO>::value) {
+        my_gbl_inds_buf.resize (num_my_elements);
+        my_gbl_inds = my_gbl_inds_buf ();
+        for (int k = 0; k < num_my_elements; ++k) {
+          my_gbl_inds[k] = static_cast<GO> (my_global_elements[k]);
+        }
+      }
+      else {
+        using Teuchos::av_reinterpret_cast;
+        my_gbl_inds = av_reinterpret_cast<GO> (my_global_elements ());
+      }
+
       typedef Tpetra::Map<LO,GO,Node> map_t;
       RCP<map_t> tmap = rcp(new map_t(Teuchos::OrdinalTraits<GS>::invalid(),
-                                      my_global_elements(),
+                                      my_gbl_inds(),
                                       as<GO>(map.IndexBase()),
                                       to_teuchos_comm(Teuchos::rcpFromRef(map.Comm()))));
       return tmap;
@@ -774,7 +784,6 @@ namespace Amesos2 {
       return emap;
     }
 #endif  // HAVE_AMESOS2_EPETRA
-#endif  // HAVE_TPETRA_INST_INT_INT
 
     template <typename Scalar,
               typename GlobalOrdinal,

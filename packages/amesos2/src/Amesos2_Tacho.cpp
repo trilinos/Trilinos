@@ -49,16 +49,11 @@
 #  include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 
-
-namespace Amesos2 {
-
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
+namespace Amesos2 {
   AMESOS2_SOLVER_EPETRA_INST(TachoSolver);
-#endif
-#endif
-
 }
+#endif
 
 
 #ifdef HAVE_TPETRA_INST_INT_INT

@@ -15,6 +15,7 @@
   </ParameterList>
 
   <ParameterList name="refmaxwell: 11list">
+    <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
     <Parameter name="number of equations" type="int" value="3"/>
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
@@ -28,6 +29,7 @@
   </ParameterList>
 
   <ParameterList name="refmaxwell: 22list">
+    <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
     <Parameter name="coarse: max size" type="int" value="128"/>

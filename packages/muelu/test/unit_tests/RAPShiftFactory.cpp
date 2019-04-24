@@ -764,7 +764,6 @@ namespace MueLuTests {
     Params->set("rap: cfl array",cfls);
     Params->set("coarse: max size",10);
     Params->set("verbosity","high");
-    Params->set("coarse: max size",10);
     Params->set("max levels",4);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);

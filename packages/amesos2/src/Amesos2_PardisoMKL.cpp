@@ -53,10 +53,8 @@
 
 namespace Amesos2 {
 
-#ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_AMESOS2_EPETRA
   AMESOS2_SOLVER_EPETRA_INST(PardisoMKL);
-#endif
 #endif
 
 }
@@ -307,7 +305,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    #ifdef HAVE_TPETRA_INST_INT_INT 
+    #ifdef HAVE_TPETRA_INST_INT_INT
      AMESOS2_PARDISOMKL_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
     #endif
     #ifdef HAVE_TPETRA_INST_INT_LONG
