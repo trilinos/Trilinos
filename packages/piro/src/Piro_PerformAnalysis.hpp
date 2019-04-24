@@ -49,8 +49,8 @@
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-#ifdef HAVE_PIRO_OPTIPACK
 #ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#ifdef HAVE_PIRO_OPTIPACK
 #include "OptiPack_Config.h"
 #endif
 #endif 
