@@ -120,7 +120,6 @@ Piro::PerformAnalysis(
 
   }
 #endif
-
 #ifdef HAVE_PIRO_OPTIPACK
 #ifndef OPTIPACK_HIDE_DEPRECATED_CODE
   else if (analysis == "OptiPack") {
