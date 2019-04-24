@@ -189,18 +189,18 @@ namespace PHX {
      */
     void analyzeGraph(double& speedup, double& parallelizability) const;
 
-    /** \brief Returns all evalautors that either evaluate or require
+    /** \brief Returns all evaluators that either evaluate or require
         the given field. This is used to bind memory for unmanaged
         views.
 
         CAUTION: The returned vector is non-const to rebind memory for
-        fields in evalautors. Be careful not to corrupt the actual
+        fields in evaluators. Be careful not to corrupt the actual
         vector.
      */
     std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
     getEvaluatorsBindingField(const PHX::FieldTag& ft);
 
-    /** \brief Print to user specified ostream when each evalautor
+    /** \brief Print to user specified ostream when each evaluator
         starts and stops. Useful for debugging. Enabled only in debug
         builds.
 
@@ -223,7 +223,7 @@ namespace PHX {
     //! Helper function.
     void printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const;
 
-    void createEvalautorBindingFieldMap();
+    void createEvaluatorBindingFieldMap();
     
   protected:
 
@@ -275,7 +275,7 @@ namespace PHX {
     //std::vector<Kokkos::Experimental::Future<void,PHX::exec_space>> node_futures_;
 #endif
 
-    //! A map that returns all evalautors that bind the memory of a particular field. Key is unique field identifier.  
+    //! A map that returns all evaluators that bind the memory of a particular field. Key is unique field identifier.  
     std::unordered_map<std::string,std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>> field_to_evaluators_binding_;
 
     //! If set to true, allocated DeviceEvaluators for Device DAG for evaluation
@@ -284,7 +284,7 @@ namespace PHX {
     //! Contians pointers to DeviceEvaluators for Device DAG support.
     Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> device_evaluators_;
 
-    //! If non-null, in debug builds, the DAG manager will print when an evalautor starts and stops.
+    //! If non-null, in debug builds, the DAG manager will print when an evaluator starts and stops.
     Teuchos::RCP<std::ostream> start_stop_debug_ostream_;
   };
   

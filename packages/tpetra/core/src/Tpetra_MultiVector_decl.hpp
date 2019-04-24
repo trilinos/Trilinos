@@ -76,6 +76,7 @@ namespace Teuchos {
 
 namespace Tpetra {
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
     ///
@@ -112,6 +113,7 @@ namespace Tpetra {
              const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
     };
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Copy the contents of the MultiVector \c src into \c dst.
   /// \relatesalso MultiVector
@@ -425,9 +427,8 @@ namespace Tpetra {
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
-    /// \brief This class' first template parameter; the type of
-    ///   each entry in the MultiVector.
-    typedef Scalar scalar_type;
+    /// \brief The type of each entry in the MultiVector.
+    using scalar_type = Scalar;
     /// \brief The type used internally in place of \c Scalar.
     ///
     /// Some \c Scalar types might not work with Kokkos on all
@@ -443,28 +444,27 @@ namespace Tpetra {
     /// if you ask for a Kokkos::View or Kokkos::DualView of the
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
-    //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! This class' fourth template parameter; the Kokkos Node type.
-    typedef Node node_type;
+    using impl_scalar_type =
+      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
 
-    //! The Kokkos device type.
-    typedef typename Node::device_type device_type;
+    //! The type of the Map specialization used by this class.
+    using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
+    //! The type of local indices that this class uses.
+    using local_ordinal_type = typename map_type::local_ordinal_type;
+    //! The type of global indices that this class uses.
+    using global_ordinal_type = typename map_type::global_ordinal_type;
+    //! This class' preferred Kokkos device type.
+    using device_type = typename map_type::device_type;
+    //! Legacy thing that you should not use any more.
+    using node_type = typename map_type::node_type;
 
-  private:
-    //! The type of the base class of this class.
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
-
-  public:
     /// \brief Type of an inner ("dot") product result.
     ///
     /// This is usually the same as <tt>impl_scalar_type</tt>, but may
     /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
     /// quantification type from the Stokhos package.
-    typedef typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type dot_type;
+    using dot_type =
+      typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type;
 
     /// \brief Type of a norm result.
     ///
@@ -472,15 +472,13 @@ namespace Tpetra {
     /// (absolute value) of <tt>impl_scalar_type</tt>, but may differ if
     /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
     /// type from the Stokhos package.
-    typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
+    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
 
     /// \brief Type of the (new) Kokkos execution space.
     ///
     /// The execution space implements parallel operations, like
-    /// parallel_for, parallel_reduce, and parallel_scan.  It also has
-    /// a default memory space, in which the Tpetra object's data
-    /// live.
-    typedef typename Node::execution_space execution_space;
+    /// parallel_for, parallel_reduce, and parallel_scan.
+    using execution_space = typename device_type::execution_space;
 
     /// \brief Kokkos::DualView specialization used by this class.
     ///
@@ -504,11 +502,9 @@ namespace Tpetra {
     /// even if the user-specified DeviceType is Kokkos::Serial.  That
     /// is why we go through the trouble of asking for the
     /// execution_space's execution space.
-    typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutLeft,
-      typename execution_space::execution_space> dual_view_type;
-
-    //! The type of the Map specialization used by this class.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using dual_view_type = Kokkos::DualView<impl_scalar_type**,
+                                            Kokkos::LayoutLeft,
+                                            execution_space>;
 
     //@}
     //! @name Constructors and destructor
@@ -2298,6 +2294,11 @@ namespace Tpetra {
     ///
     bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const;
 
+  private:
+    //! The type of the base class of this class.
+    using base_type = DistObject<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type>;
+
   protected:
     template <class DS, class DL, class DG, class DN,
               class SS, class SL, class SG, class SN>
@@ -2501,11 +2502,14 @@ namespace Tpetra {
     return X.whichVectors_ ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
-
     template<class DstMultiVectorType,
              class SrcMultiVectorType>
-    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>  TPETRA_DEPRECATED
+    Teuchos::RCP<
+      typename MultiVectorCloner<
+        DstMultiVectorType,
+        SrcMultiVectorType>::dst_mv_type>
     MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::
     clone (const src_mv_type& X,
            const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
@@ -2530,8 +2534,8 @@ namespace Tpetra {
       ::Tpetra::deep_copy (*Y, X);
       return Y ;
     }
-
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Specialization of deep_copy for MultiVector objects with
   ///   the same template parameters.

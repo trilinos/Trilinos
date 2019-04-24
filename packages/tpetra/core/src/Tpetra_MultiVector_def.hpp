@@ -874,8 +874,8 @@ namespace Tpetra {
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
-   const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& permuteFromLIDs)
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;

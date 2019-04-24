@@ -1000,7 +1000,6 @@ namespace Tpetra {
   {
     return this->getNodeNumDiagsImpl ();
   }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
@@ -1023,6 +1022,7 @@ namespace Tpetra {
   {
     return nodeNumDiags_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1243,7 +1243,6 @@ namespace Tpetra {
   {
     return this->isUpperTriangularImpl ();
   }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -1260,6 +1259,7 @@ namespace Tpetra {
   {
     return this->upperTriangular_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool

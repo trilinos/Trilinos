@@ -1198,6 +1198,41 @@ public:
   ///   the number of entries.
   virtual size_t getNumEntriesInGlobalRow (GO globalRow) const;
 
+  /// \brief The maximum number of entries in any row over all
+  ///   processes in the matrix's communicator.
+  virtual size_t getGlobalMaxNumRowEntries () const;
+
+  //! Whether this matrix has a well-defined column Map.
+  virtual bool hasColMap () const;
+
+  /// \brief Whether matrix indices are locally indexed.
+  ///
+  /// A RowMatrix may store column indices either as global indices
+  /// (of type <tt>GO</tt>), or as local indices (of type
+  /// <tt>LO</tt>).  In some cases (for example, if the
+  /// column Map has not been computed), it is not possible to
+  /// switch from global to local indices without extra work.
+  /// Furthermore, some operations only work for one or the other
+  /// case.
+  virtual bool isLocallyIndexed () const;
+
+  /// \brief Whether matrix indices are globally indexed.
+  ///
+  /// A RowMatrix may store column indices either as global indices
+  /// (of type <tt>GO</tt>), or as local indices (of type
+  /// <tt>LO</tt>).  In some cases (for example, if the
+  /// column Map has not been computed), it is not possible to
+  /// switch from global to local indices without extra work.
+  /// Furthermore, some operations only work for one or the other
+  /// case.
+  virtual bool isGloballyIndexed () const;
+
+  //! Whether fillComplete() has been called.
+  virtual bool isFillComplete () const;
+
+  //! Whether this object implements getLocalRowView() and getGlobalRowView().
+  virtual bool supportsRowViews () const;
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Number of diagonal entries in the matrix's graph, over
   ///   all processes in the matrix's communicator.
@@ -1216,15 +1251,7 @@ public:
   /// \warning This method is DEPRECATED.  DO NOT CALL IT.  It may
   ///   go away at any time.
   virtual size_t TPETRA_DEPRECATED getNodeNumDiags() const;
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-  //! The maximum number of entries across all rows/columns on all nodes.
-  virtual size_t getGlobalMaxNumRowEntries() const;
-
-  //! Whether this matrix has a well-defined column map.
-  virtual bool hasColMap() const;
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Whether the matrix's graph is locally lower triangular.
   ///
   /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
@@ -1249,34 +1276,6 @@ public:
   ///   method may return different results on different processes.
   virtual bool TPETRA_DEPRECATED isUpperTriangular () const;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
-
-  /// \brief Whether matrix indices are locally indexed.
-  ///
-  /// A RowMatrix may store column indices either as global indices
-  /// (of type <tt>GO</tt>), or as local indices (of type
-  /// <tt>LO</tt>).  In some cases (for example, if the
-  /// column Map has not been computed), it is not possible to
-  /// switch from global to local indices without extra work.
-  /// Furthermore, some operations only work for one or the other
-  /// case.
-  virtual bool isLocallyIndexed() const;
-
-  /// \brief Whether matrix indices are globally indexed.
-  ///
-  /// A RowMatrix may store column indices either as global indices
-  /// (of type <tt>GO</tt>), or as local indices (of type
-  /// <tt>LO</tt>).  In some cases (for example, if the
-  /// column Map has not been computed), it is not possible to
-  /// switch from global to local indices without extra work.
-  /// Furthermore, some operations only work for one or the other
-  /// case.
-  virtual bool isGloballyIndexed() const;
-
-  //! Whether fillComplete() has been called.
-  virtual bool isFillComplete() const;
-
-  //! Whether this object implements getLocalRowView() and getGlobalRowView().
-  virtual bool supportsRowViews() const;
 
   //@}
   //! @name Extraction Methods

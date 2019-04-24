@@ -107,32 +107,32 @@ ENDIF()
 # the required components wasn't found.
 SET(${PROJECT_NAME}_FOUND TRUE)
 FOREACH(comp ${PDOLLAR}{COMPONENTS_LIST})
-   SET(
-     INCLUDE_FILE
-     ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
-     )
-   IF (EXISTS ${PDOLLAR}{INCLUDE_FILE})
-       # Set ${PROJECT_NAME}_<component>_FOUND.
-       SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
-       # Include the package file.
-       INCLUDE(${PDOLLAR}{INCLUDE_FILE})
-       # Add variables to lists.
-       LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
-       LIST(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
-       LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
-   ELSE()
-       # Component not found.
-       MESSAGE(WARNING "Component \"${PDOLLAR}{comp}\" NOT found.")
-       # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
-       SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
-       # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
-       IF(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
-           SET(${PROJECT_NAME}_FOUND FALSE)
-       ENDIF()
+  SET(
+    INCLUDE_FILE
+    ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
+    )
+ IF (EXISTS ${PDOLLAR}{INCLUDE_FILE})
+   # Set ${PROJECT_NAME}_<component>_FOUND.
+   SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
+   # Include the package file.
+   INCLUDE(${PDOLLAR}{INCLUDE_FILE})
+   # Add variables to lists.
+   LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
+   LIST(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
+   LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
+ ELSE()
+   # Component not found.
+   MESSAGE(WARNING "Component \"${PDOLLAR}{comp}\" NOT found.")
+   # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
+   SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+   # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
+   IF(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+     SET(${PROJECT_NAME}_FOUND FALSE)
    ENDIF()
+ ENDIF()
 ENDFOREACH()
 
 # Resolve absolute paths and remove duplicate paths
@@ -197,5 +197,3 @@ SET(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
 ## The TPLs enabled for this project
 SET(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
-
-${PROJECT_CONFIG_CODE}

@@ -133,10 +133,10 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
                                                                      "to use for solving the linear system. "
                                                                      "(\"Belos\")");
+    std::string belosSolverType = "Block CG";          clp.setOption("belosSolverType",       &belosSolverType, "Name of the Belos linear solver");
+    bool        usePrec = true;                        clp.setOption("usePrec", "noPrec",     &usePrec, "use RefMaxwell preconditioner");
     std::string xml = "";                              clp.setOption("xml",                   &xml, "xml file with solver parameters");
     
-    int nedges  = 3630;  clp.setOption("nedges",               &nedges,           "number of edges");
-    int nnodes  = 1331;  clp.setOption("nnodes",               &nnodes,           "number of nodes");
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file;
     if (!TYPE_EQUAL(SC, std::complex<double>)) {
       S_file = "S.mat";
@@ -176,9 +176,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
     // Read matrices in from files
+    // gradient matrix
+    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
     // maps for nodal and edge matrices
-    RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
-    RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
+    RCP<const Map> node_map = D0_Matrix->getDomainMap();
+    RCP<const Map> edge_map = D0_Matrix->getRangeMap();
     // edge mass matrix
     RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
     // build stiffness plus mass matrix (SM_Matrix)
@@ -213,11 +215,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
       M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
       M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+    } else if (M0inv_file == "none") {
+      // pass
     } else {
       M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
     }
-    // gradient matrix
-    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, Teuchos::null, node_map, edge_map);
     // coordinates
     RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
 
@@ -269,7 +271,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
       problem -> setOperator( belosOp );
       Teuchos::RCP<OP> belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
-      problem -> setRightPrec( belosPrecOp );
+      if (usePrec)
+        problem -> setRightPrec( belosPrecOp );
 
       problem -> setProblem( X, B );
 
@@ -289,7 +292,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
-      solver = factory->create("Block CG",belosParams);
+      solver = factory->create(belosSolverType,belosParams);
 
       comm->barrier();
       tm2=Teuchos::null;
@@ -371,10 +374,10 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
                                                                      "to use for solving the linear system. "
                                                                      "(\"Belos\" or \"Stratimikos\")");
+    std::string belosSolverType = "Block CG";          clp.setOption("belosSolverType",       &belosSolverType, "Name of the Belos linear solver");
+    bool        usePrec = true;                        clp.setOption("usePrec", "noPrec",     &usePrec, "use RefMaxwell preconditioner");
     std::string xml = "";                              clp.setOption("xml",                   &xml, "xml file with solver parameters");
 
-    int nedges  = 3630;  clp.setOption("nedges",               &nedges,           "number of edges");
-    int nnodes  = 1331;  clp.setOption("nnodes",               &nnodes,           "number of nodes");
     std::string S_file, SM_file, M1_file, M0_file, M0inv_file, D0_file, coords_file;
     if (!TYPE_EQUAL(SC, std::complex<double>)) {
       S_file = "S.mat";
@@ -414,9 +417,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
     // Read matrices in from files
+    // gradient matrix
+    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
     // maps for nodal and edge matrices
-    RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
-    RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
+    RCP<const Map> node_map = D0_Matrix->getDomainMap();
+    RCP<const Map> edge_map = D0_Matrix->getRangeMap();
     // edge mass matrix
     RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
     // build stiffness plus mass matrix (SM_Matrix)
@@ -451,11 +456,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
       M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
       M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+    } else if (M0inv_file == "none") {
+      // pass
     } else {
       M0inv_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0inv_file, node_map);
     }
-    // gradient matrix
-    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, Teuchos::null, node_map, edge_map);
     // coordinates
     RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector(coords_file, node_map);
 
@@ -498,7 +503,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
       problem -> setOperator( belosOp );
       Teuchos::RCP<OP> belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
-      problem -> setRightPrec( belosPrecOp );
+      if (usePrec)
+        problem -> setRightPrec( belosPrecOp );
 
       problem -> setProblem( X, B );
 
@@ -518,7 +524,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
       belosParams->set("Output Frequency",1);
       belosParams->set("Output Style",Belos::Brief);
-      solver = factory->create("Pseudo Block CG",belosParams);
+      solver = factory->create(belosSolverType,belosParams);
 
       comm->barrier();
 
@@ -542,12 +548,12 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       // Build the rest of the Stratimikos list
       Teuchos::ParameterList SList;
       SList.set("Linear Solver Type","Belos");
-      SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", "Pseudo Block CG");
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency",1);
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Maximum Iterations",100);
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Convergence Tolerance",1e-4);
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Style",1);
-      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity",33);
+      SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", belosSolverType);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Frequency",1);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Maximum Iterations",100);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Convergence Tolerance",1e-4);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Output Style",1);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist(belosSolverType).set("Verbosity",33);
       SList.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
       SList.set("Preconditioner Type","MueLuRefMaxwell");
       params.set("parameterlist: syntax","muelu");

@@ -207,7 +207,6 @@ namespace {
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Cloner, LO, GO, Scalar , Node )
   {
     typedef Tpetra::Map<LO, GO, Node> map_type;

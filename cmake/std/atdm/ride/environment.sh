@@ -135,10 +135,20 @@ export ATDM_CONFIG_USE_NINJA=ON
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
   [[ "${ATDM_CONFIG_CUDA_RDC}" == "ON" ]] ; then
-  export ATDM_CONFIG_BUILD_COUNT=32
-  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
-  # When CUDA+RDC is enabled, using all 64 cores to build and link results in
-  # build errors as described in #4502.
+  # When CUDA+RDC is enabled, it uses more RAM building with more build
+  # processes crashes nodes on 'white' and 'ride (see #4502)
+  if [[ "${ATDM_CONFIG_PT_PACKAGES}" == "ON" ]] ; then
+    # Building with all PT packages crashes nodes on 'white' and 'ride' for
+    # the same parallel levels that work for just the ATDM packages below.
+    # See ATDV-155.
+    export ATDM_CONFIG_BUILD_COUNT=20
+    export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=10
+  else
+    # We seem to be able to use more build processes when just ATDM packages
+    # are enabled.
+    export ATDM_CONFIG_BUILD_COUNT=32
+    export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
+  fi
 else
   export ATDM_CONFIG_BUILD_COUNT=64
 fi

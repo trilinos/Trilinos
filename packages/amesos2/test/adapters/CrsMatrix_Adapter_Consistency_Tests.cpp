@@ -45,10 +45,10 @@
  * \file   CrsMatrix_Adapter_Consistency_Tests.cpp
  * \author Eric Bavier <etbavie@muenster.srn.sandia.gov>
  * \date   Fri Jul 15 07:36:37 2011
- * 
+ *
  * \brief Checks consistency between the Epetra_CrsMatrix and
  * Tpetra::CrsMatrix adapters.
- * 
+ *
  * For the same input matrices, the adapters should return the same
  * output values.  These tests only check double scalar and int
  * ordinal.
@@ -105,7 +105,7 @@ namespace {
   using Amesos2::MatrixAdapter;
 
   using Amesos2::Meta::is_same;
-  
+
   using Amesos2::Util::to_teuchos_comm;
 
   using Amesos2::ROOTED;
@@ -162,7 +162,7 @@ namespace {
     }
     return(r);
   }
-  
+
   template<typename T>
   bool contains(const ArrayView<T> a, T t)
   {
@@ -179,7 +179,7 @@ namespace {
     // by the Tpetra::CrsMatrix
     // Check equality of mapped method calls
     typedef Epetra_CrsMatrix EMAT;
-    typedef Tpetra::CrsMatrix<double,int,int> TMAT;
+    typedef Tpetra::CrsMatrix<double> TMAT;
     typedef MatrixAdapter<EMAT> EADAPT;
     typedef MatrixAdapter<TMAT> TADAPT;
 
@@ -213,7 +213,7 @@ namespace {
     /* Test the getCrs() method of MatrixAdapter.
      */
     typedef Epetra_CrsMatrix EMAT;
-    typedef Tpetra::CrsMatrix<double,int,int> TMAT;
+    typedef Tpetra::CrsMatrix<double> TMAT;
     typedef MatrixAdapter<EMAT> EADAPT;
     typedef MatrixAdapter<TMAT> TADAPT;
 
@@ -261,7 +261,7 @@ namespace {
      * representation should be valid on all processors
      */
     typedef Epetra_CrsMatrix EMAT;
-    typedef Tpetra::CrsMatrix<double,int,int> TMAT;
+    typedef Tpetra::CrsMatrix<double> TMAT;
     typedef MatrixAdapter<EMAT> EADAPT;
     typedef MatrixAdapter<TMAT> TADAPT;
 
@@ -308,7 +308,7 @@ namespace {
      * test matrix that we construct on the fly.
      */
     typedef Epetra_CrsMatrix EMAT;
-    typedef Tpetra::CrsMatrix<double,int,int> TMAT;
+    typedef Tpetra::CrsMatrix<double> TMAT;
     typedef MatrixAdapter<EMAT> EADAPT;
     typedef MatrixAdapter<TMAT> TADAPT;
 
@@ -347,14 +347,14 @@ namespace {
     TADAPT::global_size_t my_num_rows = OrdinalTraits<TADAPT::global_size_t>::zero();
     if ( numprocs > 1 ){
       if ( rank < 2 ){
-	my_num_rows = g_num_rows / 2;
+        my_num_rows = g_num_rows / 2;
       }
       // If we have an odd number of rows, rank=0 gets the remainder
       if ( rank == 0 ) my_num_rows += g_num_rows % 2;
-    } else {			// We only have 1 proc, then she just takes it all
+    } else {                    // We only have 1 proc, then she just takes it all
       my_num_rows = g_num_rows;
     }
-    const Tpetra::Map<int,int> half_map(g_num_rows, my_num_rows, 0, tcomm);
+    const Tpetra::Map<> half_map(g_num_rows, my_num_rows, 0, tcomm);
 
     tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
     eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED);
@@ -370,7 +370,7 @@ namespace {
       TEST_EQUALITY(tnnz, ennz);
       TEST_EQUALITY_CONST(trowptr[my_num_rows], tnnz);
       TEST_EQUALITY_CONST(erowptr[my_num_rows], ennz);
-	
+
       TEST_COMPARE_ARRAYS(tnzvals.view(0,tnnz), enzvals.view(0,ennz));
       TEST_COMPARE_ARRAYS(tcolind.view(0,tnnz), ecolind.view(0,ennz));
       TEST_COMPARE_ARRAYS(trowptr.view(0,my_num_rows), erowptr.view(0,my_num_rows));
@@ -378,7 +378,7 @@ namespace {
       TEST_EQUALITY(tnnz, ennz);
       TEST_EQUALITY_CONST(trowptr[my_num_rows], tnnz);
       TEST_EQUALITY_CONST(erowptr[my_num_rows], ennz);
-	
+
       TEST_COMPARE_ARRAYS(tnzvals.view(0,tnnz), enzvals.view(0,ennz));
       TEST_COMPARE_ARRAYS(tcolind.view(0,tnnz), ecolind.view(0,ennz));
       TEST_COMPARE_ARRAYS(trowptr.view(0,my_num_rows), erowptr.view(0,my_num_rows));
@@ -386,4 +386,4 @@ namespace {
   }
 } // end anonymous namespace
 
-  
+

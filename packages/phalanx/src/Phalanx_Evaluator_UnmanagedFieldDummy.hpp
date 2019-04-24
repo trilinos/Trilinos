@@ -50,7 +50,7 @@
 
 namespace PHX {
 
-/** \brief Evalautor that performs no computations. Typically used to
+/** \brief Evaluator that performs no computations. Typically used to
     satisfy DAG dependencies for unmanaged fields that are evalatued
     external to the DAG. */
 template<typename EvalT, typename Traits, typename FieldT>
