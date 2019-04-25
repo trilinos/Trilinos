@@ -1,4 +1,11 @@
 
+/* Deprecation notice */
+#if !defined(TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS)
+#ifdef __GNUC__
+#  warning "The package Trios is deprecated in April 2019; it will be removed from Trilinos in May 2019."
+#endif
+#endif
+
 /* ************************************************
  * Network configuration
  * ************************************************ */

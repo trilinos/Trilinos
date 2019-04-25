@@ -15,6 +15,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SClaps
   "Enable Sandia Claps interface."
   OFF )
 
+# Claps package is deprecated April 2019; to be removed May 2019
+MESSAGE(WARNING "***** WARNING:  Package Claps is deprecated in April 2019; it will be removed in May 2019 *****")
+
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 #
 # C) Add the libraries, tests, and examples
 #
