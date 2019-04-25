@@ -774,7 +774,7 @@ namespace Tpetra {
     public:
       // FIXME (mfh 22 Oct 2018) See FIXME below.
       using master_local_object_type =
-        Kokkos::View<value_type**,
+        Kokkos::View<value_type*,
                      typename global_object_type::dual_view_type::t_dev::array_layout,
                      MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
 
@@ -800,8 +800,10 @@ namespace Tpetra {
         // could just be std::shared_ptr and could handle copy-back via
         // custom deleter.
         if (LA.isValid ()) {
+          auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
+          auto G_lcl_1d = Kokkos::subview (G_lcl_2d, Kokkos::ALL (), 0);
           // this converts to const if applicable
-          return master_local_object_type (LA.G_.template getLocalView<memory_space> ());
+          return master_local_object_type (G_lcl_1d);
         }
         else {
           return master_local_object_type (); // "null" Kokkos::View
@@ -985,6 +987,18 @@ namespace { // (anonymous)
     {
       auto X_lcl_1d_ro = Tpetra::Impl::getLocalVector
         (Tpetra::readOnly (vec));
+      Kokkos::View<const double*,
+                   Kokkos::LayoutLeft,
+                   multivec_type::device_type,
+                   Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
+      static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
+    }
+    {
+      auto X_lcl_1d_ro_owning = Tpetra::Impl::getMasterLocalObject
+        (Tpetra::readOnly (vec));
+      auto X_lcl_1d_ro =
+        Tpetra::Impl::getNonowningLocalObject (X_lcl_1d_ro_owning);
       Kokkos::View<const double*,
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
