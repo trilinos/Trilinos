@@ -124,6 +124,8 @@ namespace MueLu {
         @param[in] label       An optional prefix label.
     */
     Monitor(const BaseClass& object, const std::string & msg, const std::string & label, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0);
+
+    virtual ~Monitor() = default;
     
   private:
     //! Manages printing.
