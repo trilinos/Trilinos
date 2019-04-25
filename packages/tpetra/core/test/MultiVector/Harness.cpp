@@ -708,13 +708,13 @@ namespace Tpetra {
           const non_const_value_type,
           non_const_value_type
         >::type;
-
+      using view_type = Kokkos::View<
+        value_type**,
+        typename global_object_type::dual_view_type::t_dev::array_layout,
+        MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution space matches
     public:
       // FIXME (mfh 22 Oct 2018) See FIXME below.
-      using master_local_object_type =
-        Kokkos::View<value_type**,
-                     typename global_object_type::dual_view_type::t_dev::array_layout,
-                     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+      using master_local_object_type = view_type;
 
       static master_local_object_type
       get (local_access_type LA)
@@ -770,13 +770,14 @@ namespace Tpetra {
           const non_const_value_type,
           non_const_value_type
         >::type;
+      using view_type = Kokkos::View<
+        value_type*,
+        typename global_object_type::dual_view_type::t_dev::array_layout,
+        MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
 
     public:
       // FIXME (mfh 22 Oct 2018) See FIXME below.
-      using master_local_object_type =
-        Kokkos::View<value_type*,
-                     typename global_object_type::dual_view_type::t_dev::array_layout,
-                     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+      using master_local_object_type = view_type;
 
       static master_local_object_type
       get (local_access_type LA)
