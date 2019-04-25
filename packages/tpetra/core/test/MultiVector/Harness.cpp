@@ -881,12 +881,29 @@ namespace { // (anonymous)
     vec_type vec (map);
     TEST_EQUALITY_CONST(vec.getNumVectors (), size_t (1));
 
+    // Test read-only nonowning MultiVector access.
     {
-      auto X_lcl_ro =
-        Tpetra::Impl::getLocalMultiVector (Tpetra::readOnly (mvec));
+      auto X_lcl_ro = Tpetra::Impl::getLocalMultiVector
+        (Tpetra::readOnly (mvec));
       // Make sure X_lcl_ro can be assigned to the type we expect it
       // to be.  It doesn't have to be that type, it just has to be
       // assignable to that type.
+      Kokkos::View<const double**,
+                   Kokkos::LayoutLeft,
+                   multivec_type::device_type,
+                   Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
+      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
+    }
+    {
+      // We make no promises about the type of getMasterLocalObject,
+      // except that it does the right thing in
+      // getNonowningLocalObject.
+      auto X_lcl_ro_owning = Tpetra::Impl::getMasterLocalObject
+        (Tpetra::readOnly (mvec));
+      auto X_lcl_ro =
+        Tpetra::Impl::getNonowningLocalObject (X_lcl_ro_owning);
       Kokkos::View<const double**,
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
@@ -912,6 +929,7 @@ namespace { // (anonymous)
       TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
     }
 
+    // Test write-only nonowning MultiVector access.
     {
       auto X_lcl_wo = Tpetra::Impl::getLocalMultiVector
         (Tpetra::writeOnly (mvec));
@@ -923,7 +941,21 @@ namespace { // (anonymous)
       TEST_ASSERT( size_t (X_lcl_wo.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_wo.extent (1)) == numVecs );
     }
+    {
+      auto X_lcl_wo_owning = Tpetra::Impl::getMasterLocalObject
+        (Tpetra::writeOnly (mvec));
+      auto X_lcl_wo =
+        Tpetra::Impl::getNonowningLocalObject (X_lcl_wo_owning);
+      Kokkos::View<double**,
+                   Kokkos::LayoutLeft,
+                   multivec_type::device_type,
+                   Kokkos::MemoryUnmanaged> X_lcl_wo2 = X_lcl_wo;
+      static_assert (decltype (X_lcl_wo)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_wo.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_wo.extent (1)) == numVecs );
+    }
 
+    // Test read-write nonowning MultiVector access.
     {
       auto X_lcl_rw = Tpetra::Impl::getLocalMultiVector
         (Tpetra::readWrite (mvec));
@@ -935,29 +967,21 @@ namespace { // (anonymous)
       TEST_ASSERT( size_t (X_lcl_rw.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_rw.extent (1)) == numVecs );
     }
-
-    // NOTE (mfh 23 Oct 2018) Don't use the commented-out interface
-    // below.  It's really only meant to be an implementation detail
-    // of withLocalAccess, which we're not using for VectorHarness.
-#if 0
     {
-      auto X_lcl_ro = Tpetra::Impl::getNonowningLocalObject
-        (Tpetra::Impl::getMasterLocalObject
-         (Tpetra::readOnly (mvec)));
-
-      // Make sure X_lcl_ro can be assigned to the type we expect it to
-      // be.  It doesn't have to be that type, it just has to be
-      // assignable to that type.
-      Kokkos::View<const double**,
+      auto X_lcl_rw_owning = Tpetra::Impl::getMasterLocalObject
+        (Tpetra::readWrite (mvec));
+      auto X_lcl_rw =
+        Tpetra::Impl::getNonowningLocalObject (X_lcl_rw_owning);
+      Kokkos::View<double**,
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
-      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
-      TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
-      TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
+                   Kokkos::MemoryUnmanaged> X_lcl_rw2 = X_lcl_rw;
+      static_assert (decltype (X_lcl_rw)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_rw.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_rw.extent (1)) == numVecs );
     }
-#endif // 0
 
+    // Test read-write nonowning Vector access.
     {
       auto X_lcl_1d_ro = Tpetra::Impl::getLocalVector
         (Tpetra::readOnly (vec));
@@ -969,6 +993,7 @@ namespace { // (anonymous)
       TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
     }
 
+    // Test write-only nonowning Vector access.
     {
       auto X_lcl_1d_wo = Tpetra::Impl::getLocalVector
         (Tpetra::writeOnly (vec));
@@ -980,6 +1005,7 @@ namespace { // (anonymous)
       TEST_ASSERT( size_t (X_lcl_1d_wo.extent (0)) == numLocal );
     }
 
+    // Test read-write nonowning Vector access.
     {
       auto X_lcl_1d_wr = Tpetra::Impl::getLocalVector
         (Tpetra::readWrite (vec));
