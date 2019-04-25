@@ -54,10 +54,11 @@
 
 #include "@CLASS_FILE_NAME@_def.hpp"
 
-#define XPETRA_ETI_GROUP(LO,GO,NO) \
-  template class @CLASS_NAME@<GO,LO,GO,NO>;
+#define XPETRA_ETI_GROUP(SC,LO,GO,NO) \
+  template class @CLASS_NAME@<SC,LO,GO,NO>;
 
-#include "Xpetra_ETI_3arg.hpp"
+
+#include "Xpetra_ETI_4arg_slgn.hpp"
 
 @CONDITION_NAME_END@ // @CONDITION_NAME@
 

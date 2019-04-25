@@ -80,14 +80,13 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     Xpetra_ETI_SC_LO_GO_NO_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_SC_LO_GO_NO_SRC})
 
-  # For stuff like MultiVector that picks up GO as its SC tyoe
+  # For stuff like MultiVector that picks up GO as anSC tyoe
   GLOBAL_SET(XPETRA_GO_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_GO_LO_GO_NO_classes.cmake)
-
   XPETRA_PROCESS_ETI_TEMPLATE(
     "${XPETRA_GO_LO_GO_NO_ETI_CLASSES}"
     Utils/ExplicitInstantiation/Xpetra_ETI_GO_LO_GO_NO.tmpl
-    "Utils/ExplicitInstantiation/CLASS_FILE_NAME_go.cpp"
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_GO_LO_GO_NO_SRC)
 
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_GO_LO_GO_NO_SRC})
@@ -205,6 +204,7 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

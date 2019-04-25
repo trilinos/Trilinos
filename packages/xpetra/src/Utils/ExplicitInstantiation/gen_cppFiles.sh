@@ -29,11 +29,7 @@ for i in LO-GO-NO SC-LO-GO-NO GO-LO-GO-NO
             conditionClose=""
         fi
         
-        if [ $i == "GO-LO-GO-NO" ]; then
-            OUTFILE=Xpetra_${className}_go.cpp
-        else
-            OUTFILE=Xpetra_$className.cpp
-        fi
+        OUTFILE=Xpetra_$className.cpp
 
         cat $tmpl \
             | sed "s/\$TMPL_CLASS/$className/g" \

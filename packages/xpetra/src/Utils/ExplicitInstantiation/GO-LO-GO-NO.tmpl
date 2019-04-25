@@ -48,9 +48,9 @@ $TMPL_CONDITION_OPEN2
 
 #include "Xpetra_$TMPL_CLASS_def.hpp"
 
-#define XPETRA_ETI_GROUP(LO,GO,NO) \
-  template class Xpetra::$TMPL_CLASS<GO,LO,GO,NO>;
+#define XPETRA_ETI_GROUP(SC,LO,GO,NO) \
+  template class Xpetra::$TMPL_CLASS<SC,LO,GO,NO>;
 
-#include "Xpetra_ETI_3arg.hpp"
+#include "Xpetra_ETI_4arg_slgn.hpp"
 
 $TMPL_CONDITION_CLOSE
