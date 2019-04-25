@@ -182,7 +182,7 @@ APPEND_GLOB(HEADERS Vector/*.hpp)
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
-APPEND_SET(HEADERS ${DIR}/Xpetra_config.hpp)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # C) Define the targets for package's library(s)
