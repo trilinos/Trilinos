@@ -400,7 +400,7 @@ namespace Tpetra {
       // would need some kind of object whose destructor copies back,
       // and it would need to have the whole DualView, not just the
       // View on one side.  Watch out for copy elision.  The object
-      // could just be std::shared_ptr and could handle copy-back via
+      // could just be std::unique_ptr and could handle copy-back via
       // custom deleter.
 
       // this converts to const if applicable
@@ -735,7 +735,7 @@ namespace Tpetra {
         // would need some kind of object whose destructor copies back,
         // and it would need to have the whole DualView, not just the
         // View on one side.  Watch out for copy elision.  The object
-        // could just be std::shared_ptr and could handle copy-back via
+        // could just be std::unique_ptr and could handle copy-back via
         // custom deleter.
         if (LA.isValid ()) {
           // this converts to const if applicable
@@ -797,7 +797,7 @@ namespace Tpetra {
         // would need some kind of object whose destructor copies back,
         // and it would need to have the whole DualView, not just the
         // View on one side.  Watch out for copy elision.  The object
-        // could just be std::shared_ptr and could handle copy-back via
+        // could just be std::unique_ptr and could handle copy-back via
         // custom deleter.
         if (LA.isValid ()) {
           auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
