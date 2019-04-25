@@ -51,13 +51,13 @@
 
 namespace Tpetra {
 
-  enum class AccessMode {
-    ReadOnly,
-    WriteOnly,
-    ReadWrite
-  };
-
   namespace Impl {
+    enum class AccessMode {
+      ReadOnly,
+      WriteOnly,
+      ReadWrite
+    };
+
     // Given a global object, get its default memory space (both the
     // type and the default instance thereof).
     template<class GlobalObjectType>
@@ -147,13 +147,13 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
                     typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    AccessMode::ReadOnly>
+                    Impl::AccessMode::ReadOnly>
   readOnly (GlobalObjectType&);
 
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
                     typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    AccessMode::ReadOnly>
+                    Impl::AccessMode::ReadOnly>
   readOnly (const GlobalObjectType&);
 
   // Declare that you want to access the given global object's local
@@ -161,7 +161,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
                     typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    AccessMode::WriteOnly>
+                    Impl::AccessMode::WriteOnly>
   writeOnly (GlobalObjectType&);
 
   // Declare that you want to access the given global object's local
@@ -169,7 +169,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
                     typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    AccessMode::ReadWrite>
+                    Impl::AccessMode::ReadWrite>
   readWrite (GlobalObjectType&);
 
   namespace Impl {
@@ -276,7 +276,7 @@ namespace Tpetra {
 
   template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    AccessMode::ReadOnly>
+                    Impl::AccessMode::ReadOnly>
   readOnly (GOT& G)
   {
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
@@ -284,7 +284,7 @@ namespace Tpetra {
 
   template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    AccessMode::ReadOnly>
+                    Impl::AccessMode::ReadOnly>
   readOnly (const GOT& G)
   {
     GOT& G_nc = const_cast<GOT&> (G);
@@ -293,7 +293,7 @@ namespace Tpetra {
 
   template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    AccessMode::WriteOnly>
+                    Impl::AccessMode::WriteOnly>
   writeOnly (GOT& G)
   {
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
@@ -301,7 +301,7 @@ namespace Tpetra {
 
   template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    AccessMode::ReadWrite>
+                    Impl::AccessMode::ReadWrite>
   readWrite (GOT& G)
   {
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
@@ -338,14 +338,14 @@ namespace Tpetra {
   // Tpetra::MultiVector's local data.
   template<class SC, class LO, class GO, class NT,
            class MemorySpace,
-           const AccessMode access_mode>
+           const Impl::AccessMode access_mode>
   Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT,
                                                 MemorySpace,
                                                 access_mode>
   getLocalMultiVector (Impl::LocalAccess<
-                    Tpetra::MultiVector<SC, LO, GO, NT>,
-                    MemorySpace,
-                    access_mode> LA)
+                       Tpetra::MultiVector<SC, LO, GO, NT>,
+                       MemorySpace,
+                       access_mode> LA)
   {
     // Use the execution space when calling sync etc., to avoid
     // confusion between CudaSpace and CudaUVMSpace that could result
@@ -360,7 +360,7 @@ namespace Tpetra {
       return ret_type (); // "null" Kokkos::View
     }
 
-    if (access_mode == AccessMode::WriteOnly) {
+    if (access_mode == Impl::AccessMode::WriteOnly) {
       LA.G_.clear_sync_state ();
     }
     else {
@@ -369,7 +369,7 @@ namespace Tpetra {
       }
     }
 
-    if (access_mode != AccessMode::ReadWrite) {
+    if (access_mode != Impl::AccessMode::ReadWrite) {
       LA.G_.template modify<execution_space> ();
     }
 
@@ -391,13 +391,13 @@ namespace Tpetra {
   // column's local data.
   template<class SC, class LO, class GO, class NT,
            class MemorySpace,
-           const AccessMode access_mode>
+           const Impl::AccessMode access_mode>
   auto
   getLocalVector (Impl::LocalAccess<
-               Tpetra::MultiVector<SC, LO, GO, NT>,
-               MemorySpace,
-               access_mode> LA,
-             const int whichColumn = 0)
+                    Tpetra::MultiVector<SC, LO, GO, NT>,
+                    MemorySpace,
+                    access_mode> LA,
+                  const int whichColumn = 0)
     -> decltype (Kokkos::subview (getLocalMultiVector (LA),
                                   Kokkos::ALL (),
                                   whichColumn))
@@ -423,13 +423,13 @@ namespace Tpetra {
   // rank-1 Kokkos::View of the Tpetra::Vector's local data.
   template<class SC, class LO, class GO, class NT,
            class MemorySpace,
-           const AccessMode access_mode>
+           const Impl::AccessMode access_mode>
   auto
   getLocalVector (Impl::LocalAccess<
-               Tpetra::Vector<SC, LO, GO, NT>,
-               MemorySpace,
-               access_mode> LA,
-             const int whichColumn = 0)
+                    Tpetra::Vector<SC, LO, GO, NT>,
+                    MemorySpace,
+                    access_mode> LA,
+                  const int whichColumn = 0)
     -> decltype (getLocalVector (Impl::LocalAccess<
                               Tpetra::MultiVector<SC, LO, GO, NT>,
                                MemorySpace,
@@ -631,18 +631,24 @@ namespace Tpetra {
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
              const AccessMode am>
-    struct GetMasterLocalObject<LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> > {
+    struct GetMasterLocalObject<
+      LocalAccess<
+        Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> > {
     public:
-      using local_access_type = LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
+      using local_access_type =
+        LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
     private:
-      using global_object_type = typename local_access_type::global_object_type;
+      using global_object_type =
+        typename local_access_type::global_object_type;
       using memory_space = typename local_access_type::memory_space;
-      static constexpr AccessMode access_mode = local_access_type::access_mode;
-      using non_const_value_type = typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type;
+      static constexpr AccessMode access_mode =
+        local_access_type::access_mode;
+      using non_const_value_type =
+        typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type;
       using value_type = typename std::conditional<
-        access_mode == AccessMode::ReadOnly,
-        const non_const_value_type,
-        non_const_value_type
+          access_mode == AccessMode::ReadOnly,
+          const non_const_value_type,
+          non_const_value_type
         >::type;
 
     public:
@@ -655,14 +661,14 @@ namespace Tpetra {
       static master_local_object_type
       get (local_access_type LA)
       {
-        if (access_mode == AccessMode::WriteOnly) {
+        if (access_mode == Impl::AccessMode::WriteOnly) {
           LA.G_.clear_sync_state ();
         }
 
         if (LA.G_.template need_sync<memory_space> ()) {
           LA.G_.template sync<memory_space> ();
         }
-        if (access_mode != AccessMode::ReadWrite) {
+        if (access_mode != Impl::AccessMode::ReadWrite) {
           LA.G_.template modify<memory_space> ();
         }
         // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
@@ -686,19 +692,24 @@ namespace Tpetra {
     // Specialization of GetMasterLocalObject for Tpetra::Vector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
-             const AccessMode am>
-    struct GetMasterLocalObject<LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> > {
+             const Impl::AccessMode am>
+    struct GetMasterLocalObject<
+      LocalAccess<
+        Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> > {
     public:
-      using local_access_type = LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;
+      using local_access_type =
+        LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;
     private:
       using global_object_type = typename local_access_type::global_object_type;
       using memory_space = typename local_access_type::memory_space;
-      static constexpr AccessMode access_mode = local_access_type::access_mode;
-      using non_const_value_type = typename global_object_type::impl_scalar_type;
+      static constexpr Impl::AccessMode access_mode =
+        local_access_type::access_mode;
+      using non_const_value_type =
+        typename global_object_type::impl_scalar_type;
       using value_type = typename std::conditional<
-        access_mode == AccessMode::ReadOnly,
-        const non_const_value_type,
-        non_const_value_type
+          access_mode == AccessMode::ReadOnly,
+          const non_const_value_type,
+          non_const_value_type
         >::type;
 
     public:
@@ -711,14 +722,14 @@ namespace Tpetra {
       static master_local_object_type
       get (local_access_type LA)
       {
-        if (access_mode == AccessMode::WriteOnly) {
+        if (access_mode == Impl::AccessMode::WriteOnly) {
           LA.G_.clear_sync_state ();
         }
 
         if (LA.G_.template need_sync<memory_space> ()) {
           LA.G_.template sync<memory_space> ();
         }
-        if (access_mode != AccessMode::ReadWrite) {
+        if (access_mode != Impl::AccessMode::ReadWrite) {
           LA.G_.template modify<memory_space> ();
         }
         // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
