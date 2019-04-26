@@ -708,13 +708,20 @@ namespace Tpetra {
           const non_const_value_type,
           non_const_value_type
         >::type;
+
+      // FIXME (mfh 22 Oct 2018, 25 Apr 2019) Need to make sure
+      // execution space matches.  If not, we would need to allocate a
+      // new View, and then we should actually make the
+      // std::unique_ptr's destructor "copy back."  This is why
+      // master_local_object_type is a std::unique_ptr<view_type>, not
+      // just a view_type.
       using view_type = Kokkos::View<
         value_type**,
         typename global_object_type::dual_view_type::t_dev::array_layout,
-        MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution space matches
+        MemorySpace>;
+
     public:
-      // FIXME (mfh 22 Oct 2018) See FIXME below.
-      using master_local_object_type = view_type;
+      using master_local_object_type = std::unique_ptr<view_type>;
 
       static master_local_object_type
       get (local_access_type LA)
@@ -729,20 +736,16 @@ namespace Tpetra {
         if (access_mode != Impl::AccessMode::ReadWrite) {
           LA.G_.template modify<memory_space> ();
         }
-        // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
-        // semantics, e.g., for a memory space for which the
-        // Tpetra::MultiVector does not store data.  In that case, we
-        // would need some kind of object whose destructor copies back,
-        // and it would need to have the whole DualView, not just the
-        // View on one side.  Watch out for copy elision.  The object
-        // could just be std::unique_ptr and could handle copy-back via
-        // custom deleter.
+
+        // See note about "copy back" above.
         if (LA.isValid ()) {
-          // this converts to const if applicable
-          return master_local_object_type (LA.G_.template getLocalView<memory_space> ());
+          // This converts the View to const if applicable.
+          return std::unique_ptr<view_type>
+            (new view_type
+             (LA.G_.template getLocalView<memory_space> ()));
         }
-        else {
-          return master_local_object_type (); // "null" Kokkos::View
+        else { // invalid; return "null" Kokkos::View
+          return std::unique_ptr<view_type> (new view_type ());
         }
       }
     };
@@ -770,14 +773,20 @@ namespace Tpetra {
           const non_const_value_type,
           non_const_value_type
         >::type;
+
+      // FIXME (mfh 22 Oct 2018, 25 Apr 2019) Need to make sure
+      // execution space matches.  If not, we would need to allocate a
+      // new View, and then we should actually make the
+      // std::unique_ptr's destructor "copy back."  This is why
+      // master_local_object_type is a std::unique_ptr<view_type>, not
+      // just a view_type.
       using view_type = Kokkos::View<
         value_type*,
         typename global_object_type::dual_view_type::t_dev::array_layout,
-        MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+        MemorySpace>;
 
     public:
-      // FIXME (mfh 22 Oct 2018) See FIXME below.
-      using master_local_object_type = view_type;
+      using master_local_object_type = std::unique_ptr<view_type>;
 
       static master_local_object_type
       get (local_access_type LA)
@@ -792,22 +801,16 @@ namespace Tpetra {
         if (access_mode != Impl::AccessMode::ReadWrite) {
           LA.G_.template modify<memory_space> ();
         }
-        // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
-        // semantics, e.g., for a memory space for which the
-        // Tpetra::MultiVector does not store data.  In that case, we
-        // would need some kind of object whose destructor copies back,
-        // and it would need to have the whole DualView, not just the
-        // View on one side.  Watch out for copy elision.  The object
-        // could just be std::unique_ptr and could handle copy-back via
-        // custom deleter.
+
+        // See note about "copy back" above.
         if (LA.isValid ()) {
           auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
           auto G_lcl_1d = Kokkos::subview (G_lcl_2d, Kokkos::ALL (), 0);
-          // this converts to const if applicable
-          return master_local_object_type (G_lcl_1d);
+          // This converts the View to const if applicable.
+          return std::unique_ptr<view_type> (new view_type (G_lcl_1d));
         }
-        else {
-          return master_local_object_type (); // "null" Kokkos::View
+        else { // invalid; return "null" Kokkos::View
+          return std::unique_ptr<view_type> (new view_type ());
         }
       }
     };
@@ -817,18 +820,23 @@ namespace Tpetra {
              class LayoutType,
              class MemorySpace>
     struct GetNonowningLocalObject<
-      Kokkos::View<DataType, LayoutType, MemorySpace>>
+      std::unique_ptr<
+        Kokkos::View<DataType, LayoutType, MemorySpace>>>
     {
-      using master_local_object_type =
-        Kokkos::View<DataType, LayoutType, MemorySpace>;
-      using nonowning_local_object_type =
-        Kokkos::View<DataType, LayoutType, MemorySpace,
-                     Kokkos::MemoryUnmanaged>;
+    private:
+      using view_type = Kokkos::View<DataType, LayoutType, MemorySpace>;
+
+    public:
+      using master_local_object_type = std::unique_ptr<view_type>;
+      using nonowning_local_object_type = view_type;
+
       static nonowning_local_object_type
       get (const master_local_object_type& M)
       {
-        // standard Kokkos::View assignment
-        return nonowning_local_object_type (M);
+        view_type* viewPtr = M.get ();
+        return viewPtr == nullptr ?
+          nonowning_local_object_type () :
+          *viewPtr;
       }
     };
   } // namespace Impl
