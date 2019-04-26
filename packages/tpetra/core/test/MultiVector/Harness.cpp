@@ -48,6 +48,7 @@
 #include <Tpetra_Vector.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
+#include <functional>
 
 namespace Tpetra {
 
@@ -180,7 +181,7 @@ namespace Tpetra {
 
   template<class LocalAccessType>
   using with_local_access_arg_type =
-    typename LocalAccessFunctionArgument<LocalAccessType>::type;
+    typename Impl::LocalAccessFunctionArgument<LocalAccessType>::type;
 
   //////////////////////////////////////////////////////////////////////
   // Users call readOnly, writeOnly, and readWrite, in order to declare
@@ -868,22 +869,192 @@ namespace Tpetra {
         Kokkos::View<DataType, LayoutType, MemorySpace>>>
     {
     private:
-      using view_type = Kokkos::View<DataType, LayoutType, MemorySpace>;
-
+      using input_view_type =
+        Kokkos::View<DataType, LayoutType, MemorySpace>;
+      using output_view_type =
+        Kokkos::View<DataType,
+                     LayoutType,
+                     MemorySpace,
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     public:
-      using master_local_object_type = std::unique_ptr<view_type>;
-      using nonowning_local_object_type = view_type;
+      using master_local_object_type = std::unique_ptr<input_view_type>;
+      using nonowning_local_object_type = output_view_type;
 
       static nonowning_local_object_type
       get (const master_local_object_type& M)
       {
-        view_type* viewPtr = M.get ();
+        input_view_type* viewPtr = M.get ();
         return viewPtr == nullptr ?
           nonowning_local_object_type () :
-          *viewPtr;
+          nonowning_local_object_type (*viewPtr);
+      }
+    };
+
+    /////////////////////////////////////////////////////////////////
+    // Use std::tuple as a compile-time list (Greenspun's 10th Rule)
+    /////////////////////////////////////////////////////////////////
+
+    // cons<T, std::tuple<Args...>>::type is std::tuple<T, Args...>.
+    // This is the usual Lisp CONS function, but for std::tuple.  I
+    // got the idea from
+    // https://stackoverflow.com/questions/18701798/building-and-accessing-a-list-of-types-at-compile-time
+    // but without "struct Void {};", and with head of new list
+    // ordered first instead of last (hence "cons").
+    template<class ...> struct cons;
+
+    // (CONS SomeType NIL)
+    template<class T, template <class ...> class List>
+    struct cons<T, List<>> {
+      using type = List<T>;
+    };
+
+    // (CONS SomeType ListOfTypes)
+    template <class T, template <class ...> class List, class ...Types>
+    struct cons<T, List<Types...>>
+    {
+      typedef List<T, Types...> type;
+    };
+
+    ////////////////////////////////////////////////////////////
+    // Map from std::tuple<Ts...> to std::function<void (Ts...)>.
+    ////////////////////////////////////////////////////////////
+
+    // I got inspiration from
+    // https://stackoverflow.com/questions/15418841/how-do-i-strip-a-tuple-back-into-a-variadic-template-list-of-types
+    //
+    // The only significant change change was from "using type =
+    // T<Ts...>;", to "using type = std::function<void (Ts...)>;".
+    template<class T>
+    struct tuple_to_function_type { };
+
+    template<typename... Ts>
+    struct tuple_to_function_type<std::tuple<Ts...> >
+    {
+      using type = std::function<void (Ts...)>;
+    };
+
+    // Map from a list of zero or more LocalAccess types, to the
+    // corresponding list of arguments for the user function to give to
+    // withLocalAccess.
+    template<class ... Args>
+    struct ArgsToFunction {};
+
+    template<>
+    struct ArgsToFunction<> {
+      using arg_list_type = std::tuple<>;
+
+      // Implementers should only use this.
+      using type = std::function<void ()>;
+    };
+
+    template<class FirstLocalAccessType, class ... Rest>
+    struct ArgsToFunction<FirstLocalAccessType, Rest...> {
+      using head_arg_type =
+        typename LocalAccessFunctionArgument<FirstLocalAccessType>::type;
+      using tail_arg_list_type =
+        typename ArgsToFunction<Rest...>::arg_list_type;
+      using arg_list_type =
+        typename cons<head_arg_type, tail_arg_list_type>::type;
+
+      // Implementers should only use this.
+      using type = typename tuple_to_function_type<arg_list_type>::type;
+    };
+
+    // Implementation of withLocalAccess.
+    template<class ... LocalAccessTypes>
+    struct WithLocalAccess {
+      using current_user_function_type =
+        typename Impl::ArgsToFunction<LocalAccessTypes...>::type;
+
+      static void
+      withLocalAccess (LocalAccessTypes...,
+                       typename Impl::ArgsToFunction<LocalAccessTypes...>::type);
+    };
+
+    // Base case: User provides no GlobalObject arguments, and a
+    // function that takes no arguments.
+    template<>
+    struct WithLocalAccess<> {
+      using current_user_function_type =
+        typename Impl::ArgsToFunction<>::type;
+
+      static void
+      withLocalAccess (current_user_function_type userFunction)
+      {
+        userFunction ();
+      }
+    };
+
+    // Recursion case.
+    template<class FirstLocalAccessType, class ... Rest>
+    struct WithLocalAccess<FirstLocalAccessType, Rest...> {
+      using current_user_function_type =
+        typename Impl::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
+
+      static void
+      withLocalAccess (FirstLocalAccessType first,
+                       Rest... rest,
+                       current_user_function_type userFunction)
+      {
+        // The "master" local object is the scope guard for local
+        // data.  Its constructor may allocate temporary storage, copy
+        // data to the desired memory space, etc.  Its destructor will
+        // put everything back.  "Put everything back" could be a
+        // no-op, or it could copy data back so where they need to go
+        // and/or free temporary storage.
+        auto first_lcl_master = getMasterLocalObject (first);
+
+        // The "nonowning" local object is a nonowning view of the
+        // "master" local object.  This is the only local object that
+        // users see, and they see it as input to their function.
+        // Subsequent slices / subviews view this nonowning local
+        // object.  All such nonowning views must have lifetime
+        // contained within the lifetime of the master local object.
+        auto first_lcl_view = getNonowningLocalObject (first_lcl_master);
+
+        // Curry the user's function by fixing the first argument.
+
+        // The commented-out implementation requires C++14, because it
+        // uses a generic lambda (the special case where parameters
+        // are "auto").  We do have the types of the arguments,
+        // though, from ArgsToFunction, so we don't need this feature.
+        
+        // WithLocalAccess<Rest...>::withLocalAccess
+        //   (rest...,
+        //    [=] (auto ... args) {
+        //      userFunction (first_lcl_view, args...);
+        //    });
+
+        WithLocalAccess<Rest...>::withLocalAccess
+          (rest...,
+           [=] (ArgsToFunction<Rest>... args) {
+             userFunction (first_lcl_view, args...);
+           });
       }
     };
   } // namespace Impl
+
+  ////////////////////////////////////////////////////////////
+  // withLocalAccess function declaration and definition
+  ////////////////////////////////////////////////////////////
+
+  // User's function goes first, followed by the list of zero or more
+  // global objects to view, annotated by LocalAccess annotations (e.g.,
+  // readOnly, writeOnly, readWrite).
+  //
+  // I would have preferred the LocalAccess arguments to go first.
+  // However, C++ needs the user function has to go first, else C++
+  // can't deduce the template parameters.  See the en.cppreference.com
+  // article on "parameter pack."
+  template<class ... LocalAccessTypes>
+  void
+  withLocalAccess (typename Impl::ArgsToFunction<LocalAccessTypes...>::type userFunction,
+                   LocalAccessTypes... localAccesses)
+  {
+    using impl_type = Impl::WithLocalAccess<LocalAccessTypes...>;
+    impl_type::withLocalAccess (localAccesses..., userFunction);
+  }
+
 } // namespace Tpetra
 
 namespace { // (anonymous)
@@ -1303,6 +1474,54 @@ namespace { // (anonymous)
       TEST_ASSERT( ok );
     }
   }
+
+  TEUCHOS_UNIT_TEST( VectorHarness, WithLocalAccess )
+  {
+    //using Kokkos::ALL;
+    constexpr bool debug = true;
+    using LO = typename multivec_type::local_ordinal_type;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test Tpetra::withLocalAccess" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create a Map" << endl;
+    auto comm = getDefaultComm ();
+    const auto INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocal = 13;
+    const size_t numVecs  = 3;
+    const GO indexBase = 0;
+    auto map = rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Create a MultiVector, and make sure that it has "
+      "the right number of vectors (columns)" << endl;
+    multivec_type X (map, numVecs);
+    TEST_EQUALITY( X.getNumVectors (), numVecs );
+
+    using const_lcl_mv_type =
+      Kokkos::View<const double**,
+                   Kokkos::LayoutLeft,
+                   typename multivec_type::device_type,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    // using lcl_vec_type =
+    //   Kokkos::View<double*,
+    //                Kokkos::LayoutLeft,
+    //                Kokkos::MemoryUnmanaged,
+    //                typename multivec_type::device_type>;
+    using Tpetra::readOnly;
+    using Tpetra::withLocalAccess;
+
+    withLocalAccess
+      ([&] (const const_lcl_mv_type& X_lcl) {
+         TEST_EQUALITY( static_cast<size_t> (X_lcl.extent (0)),
+                        static_cast<size_t> (X.getLocalLength ()) );
+       },
+       readOnly (X));
+  }  
 } // namespace (anonymous)
 
 int
