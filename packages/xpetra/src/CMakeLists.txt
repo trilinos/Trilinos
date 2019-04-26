@@ -16,9 +16,88 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 # src
 #
 
+############################################################################################
+FUNCTION(XPETRA_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
+  SET(SRCS "")
+  FOREACH(CLASS ${ETI_CLASSES})
+    # find spearator of class name and (optional) conditions
+    string(FIND ${CLASS} "-" DASHPOS)
+    IF ('${DASHPOS}' STREQUAL '-1')
+      string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
+      #MESSAGE("New class name = ${CLASS_NAME}")
+      set (CONDITION_NAME "")
+      set (CONDITION_NAME_END "")      
+    ELSE()
+      string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
+      #MESSAGE("New class name = ${CLASS_NAME}")
+      string(SUBSTRING ${CLASS} ${DASHPOS} -1 CONDITION_NAME)
+      string(REPLACE "[" "(" CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "]" ")" CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "." " " CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "-" "" CONDITION_NAME ${CONDITION_NAME})
+      string(REPLACE "?" "#" CONDITION_NAME ${CONDITION_NAME})
+      string(STRIP CONDITION_NAME ${CONDITION_NAME})
+      #MESSAGE("New condition name = ${CONDITION_NAME}")
+      set (CONDITION_NAME_END "#endif")
+    ENDIF()
+    
+    string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
+    string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
+    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    
+    # the following generates one cpp file for all instantiations and 
+    # enabled configurations
+    CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
+    #MESSAGE("Configure file ${FINAL_FILE_NAME} using template ${TEMPLATE_FILE}")
+    SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
+    
+  ENDFOREACH()
+  SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(XPETRA_PROCESS_ETI_TEMPLATE)
+
+##
+## XPETRA_ETI_CPP_SOURCES collects all filenames of the Xpetra ETI *.cpp files
+## These are later added to the gloabl list of source files (SOURCES)
+##
+SET(SOURCES "")
+SET(XPETRA_ETI_CPP_SOURCES "")
+
+##
+## only build ETI *.cpp files if ETI is enabled.
+##
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  ##
+  ## XPETRA_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
+  ## *.cpp files have to be generated for.
+  ##
+  GLOBAL_SET(XPETRA_SC_LO_GO_NO_ETI_CLASSES  )
+  INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
+
+  XPETRA_PROCESS_ETI_TEMPLATE(
+    "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
+    Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    Xpetra_ETI_SC_LO_GO_NO_SRC)
+  LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_SC_LO_GO_NO_SRC})
+
+  MESSAGE("XPETRA_ETI_CPP_SOURCES=${XPETRA_ETI_CPP_SOURCES}")
+
+  # At this point, XPETRA_ETI_CPP_SOURCES contains the Xpetra classes
+  # that will be ETI'd.
+
+  APPEND_GLOB(SOURCES ${XPETRA_ETI_CPP_SOURCES})
+
+  SET(SOURCES ${XPETRA_ETI_CPP_SOURCES})
+  # grab any hand rolled ETI source files
+  APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
+  
+ENDIF()
+
+############################################################################################
+
 SET(HEADERS "")
 
-SET(SOURCES
+APPEND_GLOB(SOURCES
   Utils/Xpetra_Utils.cpp
   Utils/Xpetra_EpetraUtils.cpp
   Platform/Xpetra_DefaultPlatform.cpp
@@ -36,6 +115,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     Vector/Xpetra_EpetraIntVector.cpp
     )
 ENDIF()
+
+MESSAGE("JHU: CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix NOSIERRABJAM)
 
 #SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -96,11 +178,11 @@ APPEND_GLOB(HEADERS Utils/ForwardDeclaration/*.hpp)
 APPEND_GLOB(HEADERS Utils/*.hpp)
 APPEND_GLOB(HEADERS Vector/*.hpp)
 
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+#TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
-APPEND_SET(HEADERS ${DIR}/Xpetra_config.hpp)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 #
 # C) Define the targets for package's library(s)

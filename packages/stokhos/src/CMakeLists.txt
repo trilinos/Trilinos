@@ -910,6 +910,59 @@ IF (Stokhos_ENABLE_Sacado)
     LIST(APPEND STOKHOS_TPETRA_DEPLIBS stokhos_tpetra)
     LIST(APPEND STOKHOS_DEPLIBS ${STOKHOS_TPETRA_DEPLIBS})
 
+    IF (Stokhos_ENABLE_Xpetra)
+      SET(XPETRA_HEADERS "")
+      SET(XPETRA_CPP_SOURCES Stokhos_Dummy.cpp)
+      SET(STOKHOS_XPETRA_DEPLIBS "")
+
+      # Load list of Xpetra ETI classes
+      GLOBAL_SET(XPETRA_SC_LO_GO_NO_ETI_CLASSES  )
+      IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
+        INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../xpetra/src/Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
+      ENDIF()
+
+      IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra)
+        APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/xpetra/*.hpp)
+        IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
+          PROCESS_ENSEMBLE_ETI(
+            "${Stokhos_ETI_Ensemble_Sizes}"
+            "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
+            "sacado/kokkos/vector/xpetra"
+            "Xpetra"
+            FALSE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_XPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+      ENDIF()
+      IF(Stokhos_ENABLE_PCE_Scalar_Type)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra)
+        APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra/*.hpp)
+        IF(Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
+          PROCESS_PCE_ETI(
+            "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
+            ""
+            "sacado/kokkos/pce/xpetra"
+            "Xpetra"
+            FALSE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_XPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+      ENDIF()
+      TRIBITS_ADD_LIBRARY(
+        stokhos_xpetra
+        HEADERS ${XPETRA_HEADERS}
+        SOURCES ${XPETRA_CPP_SOURCES}
+        DEPLIBS ${STOKHOS_DEPLIBS}
+        ADDED_LIB_TARGET_NAME_OUT STOKHOS_XPETRA_LIBNAME
+        )
+      SET_PROPERTY(TARGET ${STOKHOS_XPETRA_LIBNAME} APPEND PROPERTY LINKER_LANGUAGE CXX)
+      LIST(APPEND STOKHOS_DEPLIBS stokhos_xpetra)
+      LIST(APPEND STOKHOS_DEPLIBS ${STOKHOS_XPETRA_DEPLIBS})
+    ENDIF()
+
     IF (Stokhos_ENABLE_Amesos2)
       SET(AMESOS2_HEADERS "")
       SET(AMESOS2_SOURCES Stokhos_Dummy.cpp)

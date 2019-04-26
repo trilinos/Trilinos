@@ -606,6 +606,13 @@ namespace {
       assert(off_data / count == INT_PER_ZGC);
       assert(off_name % count == 0 && off_name / count == BYTE_PER_NAME);
 
+#if IOSS_DEBUG_OUTPUT
+      std::cerr << "ZGC_CONSOLIDATE: Before consolidation: (" << zgc.size() << ")\n";
+      for (const auto &z : zgc) {
+        std::cerr << "\tOZ " << z.m_ownerZone << z << "\n";
+      }
+#endif
+
       // Consolidate down to the minimum set that has the union of all ranges.
       for (size_t i = 0; i < zgc.size(); i++) {
         if (zgc[i].m_ownerZone > 0 && zgc[i].m_donorZone > 0) {
@@ -614,14 +621,24 @@ namespace {
 
           for (size_t j = i + 1; j < zgc.size(); j++) {
             if (zgc[j].m_connectionName == zgc[i].m_connectionName &&
-                zgc[j].m_ownerZone == owner_zone && zgc[j].m_donorZone == donor_zone) {
-              // Found another instance of the "same" zgc...  Union the ranges
-              union_zgc_range(zgc[i], zgc[j]);
-              assert(zgc[i].is_valid());
+                zgc[j].m_ownerZone == owner_zone) {
+              if (zgc[j].m_donorZone == donor_zone) {
+                // Found another instance of the "same" zgc...  Union the ranges
+                union_zgc_range(zgc[i], zgc[j]);
+                assert(zgc[i].is_valid());
 
-              // Flag the 'j' instance so it is processed only this time.
-              zgc[j].m_ownerZone = -1;
-              zgc[j].m_donorZone = -1;
+                // Flag the 'j' instance so it is processed only this time.
+                zgc[j].m_ownerZone = -1;
+                zgc[j].m_donorZone = -1;
+              }
+              else {
+                // We have a bad zgc -- name and owner_zone match, but not donor_zone.
+                std::ostringstream errmsg;
+                errmsg << "ERROR: CGNS: Found zgc named " << zgc[i].m_connectionName << " on zone "
+                       << owner_zone << " which has two different donor zones: " << donor_zone
+                       << " and " << zgc[j].m_donorZone << "\n";
+                IOSS_ERROR(errmsg);
+              }
             }
           }
         }
@@ -649,6 +666,13 @@ namespace {
       assert(off_data % count == 0);
       assert(off_data / count == INT_PER_ZGC);
       assert(off_name % count == 0 && off_name / count == BYTE_PER_NAME);
+
+#if IOSS_DEBUG_OUTPUT
+      std::cerr << "ZGC_CONSOLIDATE: After consolidation: (" << zgc.size() << ")\n";
+      for (const auto &z : zgc) {
+        std::cerr << "\tOZ " << z.m_ownerZone << z << "\n";
+      }
+#endif
     } // End of processor 0 only processing...
 
     // Send the list of unique zgc instances to all processors so they can all output.
@@ -932,8 +956,10 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     if (is_parallel_io) {
       region.get_database()->progress("\t\tZone Grid Connectivity");
     }
-    std::set<std::string>
-        zgc_names; // Used to detect duplicate zgc names in parallel but non-parallel-io case
+
+    // Used to detect duplicate zgc names in parallel but non-parallel-io case
+    std::set<std::string> zgc_names;
+
     for (const auto &zgc : sb->m_zoneConnectivity) {
       if (zgc.is_valid() && zgc.is_active()) {
         int                     zgc_idx = 0;
@@ -962,6 +988,26 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
                   break;
                 }
               }
+	      if (connect_name == zgc.m_connectionName) {
+		bool done = false;
+		for (char c1 = 'A'; c1 <= 'Z' && !done; c1++) {
+		  for (char c2 = 'A'; c2 <= 'Z' && !done; c2++) {
+		    std::string potential = connect_name + c1 + c2;
+		    iter                  = zgc_names.insert(potential);
+		    if (iter.second) {
+		      connect_name = potential;
+		      done = true;
+		    }
+		  }
+		}
+		if (connect_name == zgc.m_connectionName) {
+		  std::ostringstream errmsg;
+		  errmsg << "ERROR: CGNS: Duplicate ZGC Name '" << zgc.m_connectionName
+			 << "' on zone '" << sb->name() << "', processor "
+			 << zgc.m_ownerProcessor << "\n";
+		  IOSS_ERROR(errmsg);
+		}
+	      }
             }
           }
           donor_name += "_proc-";
@@ -1440,7 +1486,7 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
         }
       }
     }
-#if 1 && IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cerr << "P" << my_processor << ", Block " << owner_block->name()
               << " Shared Nodes: " << shared_nodes[owner_zone].size() << "\n";
 #endif
