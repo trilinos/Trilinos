@@ -595,6 +595,9 @@ namespace MueLuTests {
     Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      Params->set("use kokkos refactor", false);
+    }
 
     // Build hierarchy
     Teuchos::ParameterList& userParamList = Params->sublist("user data");
@@ -682,6 +685,9 @@ namespace MueLuTests {
     Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      Params->set("use kokkos refactor", false);
+    }
 
     // Build hierarchy
     Teuchos::ParameterList& userParamList = Params->sublist("user data");
@@ -767,6 +773,9 @@ namespace MueLuTests {
     Params->set("max levels",4);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("Mdiag",Mdiag);
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      Params->set("use kokkos refactor", false);
+    }
     Teuchos::ParameterList & user = Params->sublist("user data");
     user.set("double deltaT",1.0);
     user.set("double cfl",1.0);
