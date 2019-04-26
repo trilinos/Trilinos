@@ -81,51 +81,91 @@ namespace Tpetra {
              const AccessMode am>
     class LocalAccess; // forward declaration
 
-    // Mapping from LocalAccess to the "master" local object type.  The
-    // latter gets the local data from a global object, and holds on to
-    // it until after the user's function (input to withLocalAccess)
-    // returns.
+    /// \brief Mapping from LocalAccess to the "master" local object type.
+    ///
+    /// The latter gets the local data from a global object, and holds
+    /// on to it until after the user's function (input to
+    /// withLocalAccess) returns.  "Holds on to it" is key: the master
+    /// object owns (governs the lifetime of) any data accessible from
+    /// any resulting nonowning local object (see
+    /// GetNonowningLocalObject below).
+    ///
+    /// Specializations require the following two public features:
+    /// <ul>
+    /// <li> <tt>master_local_object_type</tt> typedef </li>
+    /// <li> <tt>master_local_object_type get(LocalAccessType)</tt>
+    ///      static method </li>
+    /// </ul>
     template<class LocalAccessType>
     struct GetMasterLocalObject {};
 
-    // Given a LocalAccess instance (which has a reference to a global
-    // object), get an instance of its master local object.  This may be
-    // a heavyweight operation.
-    //
-    // If you need to specialize this, just specialize get() in
-    // GetMasterLocalObject above.
+    /// \brief Given a LocalAccess instance (which has a reference to
+    ///   a global object), get an instance of its master local object.
+    ///
+    /// This may be a heavyweight operation.  In fact, implementations
+    /// for particular global object types may make this an MPI
+    /// collective.  For example, a reasonable generalization of
+    /// LocalAccess with
+    /// <tt>GlobalObjectType=Tpetra::MultiVector</tt>, is LocalAccess
+    /// with <tt>GlobalObjectType=pair<Tpetra::MultiVector,
+    /// Tpetra::Import></tt>.  At that point, it may make sense to
+    /// have a method on LocalAccess that annotates it with an Import
+    /// (or Export).
+    ///
+    /// Developers should not need to overload this function.  The
+    /// right way is to specialize GetMasterLocalObject::get (see
+    /// above).
     template<class LocalAccessType>
     typename GetMasterLocalObject<LocalAccessType>::master_local_object_type
     getMasterLocalObject (LocalAccessType LA) {
       return GetMasterLocalObject<LocalAccessType>::get (LA);
     }
 
-    // Mapping from "master" local object type to the nonowning "local
-    // view" type that users see (as arguments to the function that they
-    // give to withLocalAccess).  The master local object may encode the
-    // memory space and access mode, but the mapping to local view type
-    // may also need run-time information.
+    /// \brief Mapping from "master" local object type to the
+    ///   nonowning "local view" type that users see (as arguments to
+    ///   the function that they give to withLocalAccess).
+    ///
+    /// The master local object may encode the memory space and access
+    /// mode, but the mapping to local view type may also need
+    /// run-time information.
+    ///
+    /// Specializations require the following two public features:
+    /// <ul>
+    /// <li> <tt>nonowning_local_object_type</tt> typedef </li>
+    /// <li> <tt>nonowning_local_object_type get(const MasterLocalObjectType&)</tt>
+    ///      static method </li>
+    /// </ul>
     template<class MasterLocalObjectType>
     struct GetNonowningLocalObject {};
 
-    // Given a master local object, get an instance of a nonowning local
-    // object.  Users only ever see the nonowning local object, and
-    // subviews (slices) thereof.  This is supposed to be a lightweight
-    // operation.
-    //
-    // If you need to specialize this, just specialize get() in
-    // GetNonowningLocalObject above.
+    /// \brief Given a master local object, get an instance of a
+    ///   nonowning local object.
+    ///
+    /// Users only ever see the nonowning local object, and subviews
+    /// (slices) thereof.  This is supposed to be a lightweight
+    /// operation.
+    ///
+    /// Developers should not need to overload this function.  The
+    /// right way is to specialize GetNonowningLocalObject::get (see
+    /// above).
     template<class MasterLocalObjectType>
-    typename GetNonowningLocalObject<MasterLocalObjectType>::nonowning_local_object_type
+    typename GetNonowningLocalObject<MasterLocalObjectType>::
+    nonowning_local_object_type
     getNonowningLocalObject (const MasterLocalObjectType& master) {
       return GetNonowningLocalObject<MasterLocalObjectType>::get (master);
     }
 
-    // Use the LocalAccess type as the template parameter to determine
-    // the type of the nonowning local view to the global object's data.
-    // This only works if GetMasterLocalObject has been specialized for
-    // these template parameters, and if GetNonowningLocalObject has
-    // been specialized for the resulting "master" local object type.
+    /// \brief Compile-time mapping from LocalAccess specialization
+    ///   type to the corresponding withLocalAccess function argument.
+    ///
+    /// Developers: Please don't specialize this.  It's fine just as
+    /// it is.
+    ///
+    /// Use the LocalAccess type as the template parameter to determine
+    /// the type of the nonowning local view to the global object's data.
+    /// This only works if GetMasterLocalObject has been specialized for
+    /// these template parameters, and if GetNonowningLocalObject has
+    /// been specialized for the resulting "master" local object type.
     template<class LocalAccessType>
     class LocalAccessFunctionArgument {
     private:
@@ -137,6 +177,10 @@ namespace Tpetra {
       using type = typename gnlo::nonowning_local_object_type;
     };
   } // namespace Impl
+
+  template<class LocalAccessType>
+  using with_local_access_arg_type =
+    typename LocalAccessFunctionArgument<LocalAccessType>::type;
 
   //////////////////////////////////////////////////////////////////////
   // Users call readOnly, writeOnly, and readWrite, in order to declare
