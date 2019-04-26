@@ -34,9 +34,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   const int comm_rank = comm->getRank();
 
-  // Create Tpetra Node -- do this first as it initializes host/device
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
-
   // Set up stochastic discretization
   using Teuchos::Array;
   using Teuchos::RCP;
@@ -176,7 +173,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Perf perf;
   if ( cmd.USE_FIXTURE_QUADRATIC  )
     perf = fenl< Scalar , Device , BoxElemPart::ElemQuadratic >
-      ( comm , node , cmd.USE_FENL_XML_FILE ,
+      ( comm , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
@@ -185,7 +182,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         response, response_gradient, qd );
   else
     perf = fenl< Scalar , Device , BoxElemPart::ElemLinear >
-      ( comm , node , cmd.USE_FENL_XML_FILE ,
+      ( comm , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,

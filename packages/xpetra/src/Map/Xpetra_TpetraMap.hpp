@@ -241,8 +241,10 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { XPETRA_MONITOR("TpetraMap::getComm"); return map_->getComm(); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node >  getNode() const { XPETRA_MONITOR("TpetraMap::getNode"); return map_->getNode(); }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -566,8 +568,10 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return Teuchos::null; }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node >  getNode() const { return Teuchos::null; }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -768,8 +772,10 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return Teuchos::null; }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node >  getNode() const { return Teuchos::null; }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 

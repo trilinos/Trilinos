@@ -119,6 +119,7 @@ DropFilter<MatrixType>::getComm () const
   return A_->getComm ();
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 //==========================================================================
 template<class MatrixType>
 Teuchos::RCP<typename MatrixType::node_type>
@@ -126,6 +127,7 @@ DropFilter<MatrixType>::getNode () const
 {
   return A_->getNode ();
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 //==========================================================================
 template<class MatrixType>
