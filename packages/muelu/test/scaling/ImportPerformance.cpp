@@ -684,6 +684,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
                 auto MueLuSU_D2 = TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup"));
 
                 A->SetMaxEigenvalueEstimate(-one);
+                if(lib == Xpetra::UseEpetra) {mueluList.set("use kokkos refactor", false);}
                 Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
                 userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
                 H = MueLu::CreateXpetraPreconditioner(A, mueluList);

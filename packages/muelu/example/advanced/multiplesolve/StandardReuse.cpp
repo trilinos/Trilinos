@@ -239,12 +239,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   Teuchos::ParameterList paramList;
   paramList.set("verbosity", "none");
-  if (xmlFileName != "")
+  if(lib == Xpetra::UseEpetra) {
+    out << "Setting: \"use kokkos refactor\" to: false" << std::endl;
+    paramList.set("use kokkos refactor", false);
+  }
+  if (xmlFileName != "") {
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
+  }
   Teuchos::ParameterList userParamList = paramList.sublist("user data");
   userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-
-  out << "Parameter list:" << std::endl << paramList << std::endl;
 
   // =========================================================================
   // Setup #1 (no reuse)
