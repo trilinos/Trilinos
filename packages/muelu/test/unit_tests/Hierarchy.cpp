@@ -124,6 +124,10 @@ namespace MueLuTests {
     MueLuList.set("coarse: max size",numRows-1); // make it so we want two levels
     MueLuList.set("max levels",2);
 
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      MueLuList.set("use kokkos refactor", false);
+    }
+
     Teuchos::ParameterList userParamList = MueLuList.sublist("user data");
     userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
     Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H =
