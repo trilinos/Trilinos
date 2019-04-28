@@ -179,8 +179,22 @@ namespace Tpetra {
     };
   } // namespace Impl
 
+  /// \brief Type of the local object, that is an argument to the
+  ///   function the user gives to withLocalAccess.
+  ///
+  /// \tparam LocalAccessType Specialization of LocalAccess.
+  ///
+  /// withLocalAccess takes zero or more global objects, each wrapped
+  /// in a LocalAccess struct.  Wrapping happens indirectly, through
+  /// e.g., the readOnly, writeOnly, or readWrite functions.
+  /// withLocalAccess also takes a function, functor, or lambda with
+  /// the same number of arguments (the "local objects") as the number
+  /// of global objects.  If users don't have C++14 (generic lambdas),
+  /// then they will need to know the types of the local objects.
+  /// This alias maps directly from the LocalAccess struct type, to
+  /// the corresponding local object type.
   template<class LocalAccessType>
-  using with_local_access_arg_type =
+  using with_local_access_function_argument_type =
     typename Impl::LocalAccessFunctionArgument<LocalAccessType>::type;
 
   //////////////////////////////////////////////////////////////////////
@@ -240,6 +254,11 @@ namespace Tpetra {
       using memory_space = typename MemorySpace::memory_space;
       static constexpr AccessMode access_mode = am;
 
+    private:
+      using canonical_this_type = LocalAccess<global_object_type,
+                                              memory_space,
+                                              access_mode>;
+    public:
       /// \brief Constructor.
       ///
       /// Users must NOT call the LocalAccess constructor directly.
@@ -268,10 +287,7 @@ namespace Tpetra {
       /// \brief Type that users see, that's an argument to the
       ///   function that they give to withLocalAccess.
       using function_argument_type =
-        typename LocalAccessFunctionArgument<
-          LocalAccess<global_object_type,
-                      memory_space,
-                      access_mode>>::type;
+        with_local_access_function_argument_type<canonical_this_type>;
 
     public:
       /// \brief Declare at run time whether you actually want to
@@ -950,7 +966,7 @@ namespace Tpetra {
     template<class FirstLocalAccessType, class ... Rest>
     struct ArgsToFunction<FirstLocalAccessType, Rest...> {
       using head_arg_type =
-        typename LocalAccessFunctionArgument<FirstLocalAccessType>::type;
+        with_local_access_function_argument_type<FirstLocalAccessType>;
       using tail_arg_list_type =
         typename ArgsToFunction<Rest...>::arg_list_type;
       using arg_list_type =
