@@ -1018,7 +1018,7 @@ namespace Tpetra {
         // uses a generic lambda (the special case where parameters
         // are "auto").  We do have the types of the arguments,
         // though, from ArgsToFunction, so we don't need this feature.
-        
+
         // WithLocalAccess<Rest...>::withLocalAccess
         //   (rest...,
         //    [=] (auto ... args) {
@@ -1507,6 +1507,12 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    typename multivec_type::device_type,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    using nonconst_lcl_mv_type =
+      Kokkos::View<double**,
+                   Kokkos::LayoutLeft,
+                   typename multivec_type::device_type,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
     // using lcl_vec_type =
     //   Kokkos::View<double*,
     //                Kokkos::LayoutLeft,
@@ -1521,7 +1527,19 @@ namespace { // (anonymous)
                         static_cast<size_t> (X.getLocalLength ()) );
        },
        readOnly (X));
-  }  
+    withLocalAccess
+      ([&] (const nonconst_lcl_mv_type& X_lcl) {
+         TEST_EQUALITY( static_cast<size_t> (X_lcl.extent (0)),
+                        static_cast<size_t> (X.getLocalLength ()) );
+       },
+       writeOnly (X));
+    withLocalAccess
+      ([&] (const nonconst_lcl_mv_type& X_lcl) {
+         TEST_EQUALITY( static_cast<size_t> (X_lcl.extent (0)),
+                        static_cast<size_t> (X.getLocalLength ()) );
+       },
+       readWrite (X));
+  }
 } // namespace (anonymous)
 
 int
