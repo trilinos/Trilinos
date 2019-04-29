@@ -52,15 +52,20 @@
 
 namespace Tpetra {
 
+  ////////////////////////////////////////////////////////////
+  // Generic classes needed to implement withLocalAccess
+  ////////////////////////////////////////////////////////////
+
   namespace Impl {
+    /// \brief Access intent.
     enum class AccessMode {
       ReadOnly,
       WriteOnly,
       ReadWrite
     };
 
-    // Given a global object, get its default memory space (both the
-    // type and the default instance thereof).
+    /// \brief Given a global object, get its default memory space
+    ///   (both the type and the default instance thereof).
     template<class GlobalObjectType>
     struct DefaultMemorySpace {
       using type = typename GlobalObjectType::device_type::memory_space;
@@ -74,13 +79,12 @@ namespace Tpetra {
       }
     };
 
-    // Struct that tells withLocalAccess how to access a global object's
-    // local data.  Do not use this directly; start with readOnly,
-    // writeOnly, or readWrite.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
     template<class GlobalObjectType,
              class MemorySpace,
              const AccessMode am>
     class LocalAccess; // forward declaration
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \brief Mapping from LocalAccess to the "master" local object type.
     ///
@@ -238,6 +242,10 @@ namespace Tpetra {
                     Impl::AccessMode::ReadWrite>
   readWrite (GlobalObjectType&);
 
+  ////////////////////////////////////////////////////////////
+  // LocalAccess struct
+  ////////////////////////////////////////////////////////////
+
   namespace Impl {
     /// \brief Declaration of access intent for a global object.
     ///
@@ -357,6 +365,10 @@ namespace Tpetra {
     };
   } // namespace Impl
 
+  ////////////////////////////////////////////////////////////
+  // Implementations of readOnly, writeOnly, and readWrite
+  ////////////////////////////////////////////////////////////
+
   template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
                     Impl::AccessMode::ReadOnly>
@@ -389,6 +401,219 @@ namespace Tpetra {
   {
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
   }
+
+  ////////////////////////////////////////////////////////////
+  // Implementation of withLocalAccess
+  ////////////////////////////////////////////////////////////
+
+  namespace Impl {
+
+    /////////////////////////////////////////////////////////////////
+    // Use std::tuple as a compile-time list (Greenspun's 10th Rule)
+    /////////////////////////////////////////////////////////////////
+
+    // cons<T, std::tuple<Args...>>::type is std::tuple<T, Args...>.
+    // This is the usual Lisp CONS function, but for std::tuple.  I
+    // got the idea from
+    // https://stackoverflow.com/questions/18701798/building-and-accessing-a-list-of-types-at-compile-time
+    // but without "struct Void {};", and with head of new list
+    // ordered first instead of last (hence "cons").
+    template<class ...> struct cons;
+
+    // (CONS SomeType NIL)
+    template<class T, template <class ...> class List>
+    struct cons<T, List<>> {
+      using type = List<T>;
+    };
+
+    // (CONS SomeType ListOfTypes)
+    template <class T, template <class ...> class List, class ...Types>
+    struct cons<T, List<Types...>>
+    {
+      typedef List<T, Types...> type;
+    };
+
+    ////////////////////////////////////////////////////////////
+    // Map from std::tuple<Ts...> to std::function<void (Ts...)>.
+    ////////////////////////////////////////////////////////////
+
+    // I got inspiration from
+    // https://stackoverflow.com/questions/15418841/how-do-i-strip-a-tuple-back-into-a-variadic-template-list-of-types
+    //
+    // The only significant change change was from "using type =
+    // T<Ts...>;", to "using type = std::function<void (Ts...)>;".
+    template<class T>
+    struct tuple_to_function_type { };
+
+    template<typename... Ts>
+    struct tuple_to_function_type<std::tuple<Ts...> >
+    {
+      using type = std::function<void (Ts...)>;
+    };
+
+    // Map from a list of zero or more LocalAccess types, to the
+    // corresponding list of arguments for the user function to give to
+    // withLocalAccess.
+    template<class ... Args>
+    struct ArgsToFunction {};
+
+    template<>
+    struct ArgsToFunction<> {
+      using arg_list_type = std::tuple<>;
+
+      // Implementers should only use this.
+      using type = std::function<void ()>;
+    };
+
+    template<class FirstLocalAccessType, class ... Rest>
+    struct ArgsToFunction<FirstLocalAccessType, Rest...> {
+      using head_arg_type =
+        with_local_access_function_argument_type<FirstLocalAccessType>;
+      using tail_arg_list_type =
+        typename ArgsToFunction<Rest...>::arg_list_type;
+      using arg_list_type =
+        typename cons<head_arg_type, tail_arg_list_type>::type;
+
+      // Implementers should only use this.
+      using type = typename tuple_to_function_type<arg_list_type>::type;
+    };
+
+    /// \brief Implementation of withLocalAccess.
+    ///
+    /// \tparam LocalAccessTypes Zero or more possibly different
+    ///   specializations of LocalAccess.
+    template<class ... LocalAccessTypes>
+    struct WithLocalAccess {
+      using current_user_function_type =
+        typename Impl::ArgsToFunction<LocalAccessTypes...>::type;
+
+      static void
+      withLocalAccess (LocalAccessTypes...,
+                       typename Impl::ArgsToFunction<LocalAccessTypes...>::type);
+    };
+
+    /// \brief Specialization of withLocalAccess that implements the
+    ///   "base class" of the user providing no GlobalObject
+    ///   arguments, and a function that takes no arguments.
+    template<>
+    struct WithLocalAccess<> {
+      using current_user_function_type =
+        typename Impl::ArgsToFunction<>::type;
+
+      static void
+      withLocalAccess (current_user_function_type userFunction)
+      {
+        userFunction ();
+      }
+    };
+
+    /// \brief Specialization of withLocalAccess that implements the
+    ///   "recursion case."
+    ///
+    /// \tparam FirstLocalAccessType Specialization of LocalAccess.
+    /// \tparam Rest Zero or more possibly different specializations
+    ///   of LocalAccess.
+    template<class FirstLocalAccessType, class ... Rest>
+    struct WithLocalAccess<FirstLocalAccessType, Rest...> {
+      using current_user_function_type =
+        typename Impl::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
+
+      static void
+      withLocalAccess (FirstLocalAccessType first,
+                       Rest... rest,
+                       current_user_function_type userFunction)
+      {
+        // The "master" local object is the scope guard for local
+        // data.  Its constructor may allocate temporary storage, copy
+        // data to the desired memory space, etc.  Its destructor will
+        // put everything back.  "Put everything back" could be a
+        // no-op, or it could copy data back so where they need to go
+        // and/or free temporary storage.
+        //
+        // Users define this function and the type it returns by
+        // specializing GetMasterLocalObject for LocalAccess
+        // specializations.
+        auto first_lcl_master = getMasterLocalObject (first);
+
+        // The "nonowning" local object is a nonowning view of the
+        // "master" local object.  This is the only local object that
+        // users see, and they see it as input to their function.
+        // Subsequent slices / subviews view this nonowning local
+        // object.  All such nonowning views must have lifetime
+        // contained within the lifetime of the master local object.
+        //
+        // Users define this function and the type it returns by
+        // specializing GetNonowningLocalObject on the "master local
+        // object" type (the type of first_lcl_master).
+        //
+        // Constraining the nonowning views' lifetime to this scope
+        // means that master local object types may use low-cost
+        // ownership models, like that of std::unique_ptr.  There
+        // should be no need for reference counting (in the manner of
+        // std::shared_ptr) or Herb Sutter's deferred_heap.
+        auto first_lcl_view = getNonowningLocalObject (first_lcl_master);
+
+        // Curry the user's function by fixing the first argument.
+
+        // The commented-out implementation requires C++14, because it
+        // uses a generic lambda (the special case where parameters
+        // are "auto").  We do have the types of the arguments,
+        // though, from ArgsToFunction, so we don't need this feature.
+
+        // WithLocalAccess<Rest...>::withLocalAccess
+        //   (rest...,
+        //    [=] (auto ... args) {
+        //      userFunction (first_lcl_view, args...);
+        //    });
+
+        WithLocalAccess<Rest...>::withLocalAccess
+          (rest...,
+           [=] (ArgsToFunction<Rest>... args) {
+             userFunction (first_lcl_view, args...);
+           });
+      }
+    };
+
+    // Implementation detail of transform (see below).  Given a Kokkos
+    // execution space on which the user wants to run the transform,
+    // and a memory space in which the MultiVector's data live,
+    // determine the memory space that transform should use in its
+    // withLocalAccess call.
+    template<class ExecutionSpace, class MemorySpace>
+    using transform_memory_space =
+      typename std::conditional<
+        Kokkos::SpaceAccessibility<
+          ExecutionSpace,
+          typename MemorySpace::memory_space>::accessible,
+        typename MemorySpace::memory_space,
+        typename ExecutionSpace::memory_space>::type;
+
+  } // namespace Impl
+
+  ////////////////////////////////////////////////////////////
+  // withLocalAccess function declaration and definition
+  ////////////////////////////////////////////////////////////
+
+  // User's function goes first, followed by the list of zero or more
+  // global objects to view, annotated by LocalAccess annotations (e.g.,
+  // readOnly, writeOnly, readWrite).
+  //
+  // I would have preferred the LocalAccess arguments to go first.
+  // However, C++ needs the user function has to go first, else C++
+  // can't deduce the template parameters.  See the en.cppreference.com
+  // article on "parameter pack."
+  template<class ... LocalAccessTypes>
+  void
+  withLocalAccess (typename Impl::ArgsToFunction<LocalAccessTypes...>::type userFunction,
+                   LocalAccessTypes... localAccesses)
+  {
+    using impl_type = Impl::WithLocalAccess<LocalAccessTypes...>;
+    impl_type::withLocalAccess (localAccesses..., userFunction);
+  }
+
+  ////////////////////////////////////////////////////////////
+  // Specializations for Tpetra::MultiVector
+  ////////////////////////////////////////////////////////////
 
   namespace Impl {
     template<class SC, class LO, class GO, class NT,
@@ -530,222 +755,7 @@ namespace Tpetra {
                                                 LA.valid_),
                              whichColumn);
     }
-  } // namespace Impl
 
-  /// \brief Apply a function entrywise to each entry of a
-  ///   Tpetra::MultiVector.
-  ///
-  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// takes the current entry (as impl_scalar_type), the local row
-  /// index (as LO), and the local column index (as LO).
-  ///
-  /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function to apply to each entry of X.
-  ///
-  /// Let IST =
-  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
-  /// f takes (IST, LO, LO) and returns IST.
-  template<class SC, class LO, class GO, class NT,
-           class UnaryFunction,
-           class ExecutionSpace>
-  void
-  transform (ExecutionSpace execSpace,
-             Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f,
-             typename std::enable_if<
-               std::is_convertible<
-                 decltype (f(SC (), LO (), LO ())),
-                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
-                   impl_scalar_type
-               >::value,
-               int>::type* = nullptr)
-  {
-    using execution_space = typename ExecutionSpace::execution_space;
-    using memory_space = typename ExecutionSpace::memory_space;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    // Use the execution space, not the memory space, so that the sync
-    // happens to the right place, even despite CudaUVMSpace.
-    if (X.template need_sync<execution_space> ()) {
-      X.template sync<execution_space> ();
-    }
-
-    memory_space memSpace;
-    if (X.getNumVectors () == size_t (1)) {
-      auto X_lcl =
-        Impl::getLocalVector (readWrite (X).on (memSpace));
-      Kokkos::parallel_for
-        ("transform",
-         range_type (execSpace, 0, X_lcl.extent (0)),
-         KOKKOS_LAMBDA (const LO i) {
-          X_lcl(i) = f (X_lcl(i), i, 0);
-        });
-    }
-    else {
-      auto X_lcl =
-        Impl::getLocalMultiVector (readWrite (X).on (memSpace));
-      Kokkos::parallel_for
-        ("transform",
-         range_type (execSpace, 0, X_lcl.extent (0)),
-         KOKKOS_LAMBDA (const LO i) {
-          const LO numVecs = X_lcl.extent (1);
-          for (LO j = 0; j < numVecs; ++j) {
-            X_lcl(i,j) = f (X_lcl(i,j), i, j);
-          }
-        });
-    }
-  }
-
-  /// \brief Apply a function (taking current value and row index)
-  ///   entrywise to each entry of a Tpetra::MultiVector.
-  ///
-  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// takes the current entry (as impl_scalar_type) and the local row
-  /// index (as LO).
-  ///
-  /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function to apply to each entry of X.
-  ///
-  /// Let IST =
-  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
-  /// f takes (IST, LO) and returns IST.
-  template<class SC, class LO, class GO, class NT,
-           class UnaryFunction,
-           class ExecutionSpace>
-  void
-  transform (ExecutionSpace execSpace,
-             Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f,
-             typename std::enable_if<
-               std::is_convertible<
-                 decltype (f(SC (), LO ())),
-                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
-                   impl_scalar_type
-             >::value,
-             int>::type* = nullptr)
-  {
-    using execution_space = typename ExecutionSpace::execution_space;
-    using memory_space = typename ExecutionSpace::memory_space;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    // Use the execution space, not the memory space, so that the sync
-    // happens to the right place, even despite CudaUVMSpace.
-    if (X.template need_sync<execution_space> ()) {
-      X.template sync<execution_space> ();
-    }
-
-    memory_space memSpace;
-    if (X.getNumVectors () == size_t (1)) {
-      auto X_lcl =
-        Impl::getLocalVector (readWrite (X).on (memSpace));
-      Kokkos::parallel_for
-        ("transform",
-         range_type (execSpace, 0, X_lcl.extent (0)),
-         KOKKOS_LAMBDA (const LO i) {
-          X_lcl(i) = f (X_lcl(i), i);
-        });
-    }
-    else {
-      auto X_lcl =
-        Impl::getLocalMultiVector (readWrite (X).on (memSpace));
-      Kokkos::parallel_for
-        ("transform",
-         range_type (execSpace, 0, X_lcl.extent (0)),
-         KOKKOS_LAMBDA (const LO i) {
-          const LO numVecs = X_lcl.extent (1);
-          for (LO j = 0; j < numVecs; ++j) {
-            X_lcl(i,j) = f (X_lcl(i,j), i);
-          }
-        });
-    }
-  }
-
-  /// \brief Apply a function (taking current value) entrywise to each
-  ///   entry of a Tpetra::MultiVector.
-  ///
-  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// takes the current entry (as impl_scalar_type).
-  ///
-  /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function to apply to each entry of X.
-  ///
-  /// Let IST =
-  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
-  /// f takes (IST) and returns IST.
-  template<class SC, class LO, class GO, class NT,
-           class UnaryFunction,
-           class ExecutionSpace>
-  void
-  transform (ExecutionSpace execSpace,
-             Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f,
-             typename std::enable_if<
-               std::is_convertible<
-                 decltype (f(SC ())),
-                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
-                   impl_scalar_type
-             >::value,
-             int>::type* = nullptr)
-  {
-    using execution_space = typename ExecutionSpace::execution_space;
-    using memory_space = typename ExecutionSpace::memory_space;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    // Use the execution space, not the memory space, so that the sync
-    // happens to the right place, even despite CudaUVMSpace.
-    if (X.template need_sync<execution_space> ()) {
-      X.template sync<execution_space> ();
-    }
-
-    memory_space memSpace;
-    if (X.getNumVectors () == size_t (1)) {
-      auto X_lcl =
-        Impl::getLocalVector (readWrite (X).on (memSpace));
-      Kokkos::parallel_for
-        ("transform",
-         range_type (execSpace, 0, X_lcl.extent (0)),
-         KOKKOS_LAMBDA (const LO i) {
-          X_lcl(i) = f (X_lcl(i));
-        });
-    }
-    else {
-      auto X_lcl =
-        Impl::getLocalMultiVector (readWrite (X).on (memSpace));
-      Kokkos::parallel_for
-        ("transform",
-         range_type (execSpace, 0, X_lcl.extent (0)),
-         KOKKOS_LAMBDA (const LO i) {
-          const LO numVecs = X_lcl.extent (1);
-          for (LO j = 0; j < numVecs; ++j) {
-            X_lcl(i,j) = f (X_lcl(i,j));
-          }
-        });
-    }
-  }
-
-  /// \brief Overload of transform (see above) that runs on X's
-  ///   default Kokkos execution space.
-  ///
-  /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function to apply entrywise to X (could have
-  ///   different signatures; see above).
-  template<class SC, class LO, class GO, class NT,
-           class UnaryFunction>
-  void
-  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f)
-  {
-    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    using execution_space = typename MV::device_type::execution_space;
-    using memory_space = typename MV::device_type::memory_space;
-
-    transform (execution_space (), X, f);
-  }
-
-  namespace Impl {
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
@@ -905,170 +915,298 @@ namespace Tpetra {
           nonowning_local_object_type (*viewPtr);
       }
     };
-
-    /////////////////////////////////////////////////////////////////
-    // Use std::tuple as a compile-time list (Greenspun's 10th Rule)
-    /////////////////////////////////////////////////////////////////
-
-    // cons<T, std::tuple<Args...>>::type is std::tuple<T, Args...>.
-    // This is the usual Lisp CONS function, but for std::tuple.  I
-    // got the idea from
-    // https://stackoverflow.com/questions/18701798/building-and-accessing-a-list-of-types-at-compile-time
-    // but without "struct Void {};", and with head of new list
-    // ordered first instead of last (hence "cons").
-    template<class ...> struct cons;
-
-    // (CONS SomeType NIL)
-    template<class T, template <class ...> class List>
-    struct cons<T, List<>> {
-      using type = List<T>;
-    };
-
-    // (CONS SomeType ListOfTypes)
-    template <class T, template <class ...> class List, class ...Types>
-    struct cons<T, List<Types...>>
-    {
-      typedef List<T, Types...> type;
-    };
-
-    ////////////////////////////////////////////////////////////
-    // Map from std::tuple<Ts...> to std::function<void (Ts...)>.
-    ////////////////////////////////////////////////////////////
-
-    // I got inspiration from
-    // https://stackoverflow.com/questions/15418841/how-do-i-strip-a-tuple-back-into-a-variadic-template-list-of-types
-    //
-    // The only significant change change was from "using type =
-    // T<Ts...>;", to "using type = std::function<void (Ts...)>;".
-    template<class T>
-    struct tuple_to_function_type { };
-
-    template<typename... Ts>
-    struct tuple_to_function_type<std::tuple<Ts...> >
-    {
-      using type = std::function<void (Ts...)>;
-    };
-
-    // Map from a list of zero or more LocalAccess types, to the
-    // corresponding list of arguments for the user function to give to
-    // withLocalAccess.
-    template<class ... Args>
-    struct ArgsToFunction {};
-
-    template<>
-    struct ArgsToFunction<> {
-      using arg_list_type = std::tuple<>;
-
-      // Implementers should only use this.
-      using type = std::function<void ()>;
-    };
-
-    template<class FirstLocalAccessType, class ... Rest>
-    struct ArgsToFunction<FirstLocalAccessType, Rest...> {
-      using head_arg_type =
-        with_local_access_function_argument_type<FirstLocalAccessType>;
-      using tail_arg_list_type =
-        typename ArgsToFunction<Rest...>::arg_list_type;
-      using arg_list_type =
-        typename cons<head_arg_type, tail_arg_list_type>::type;
-
-      // Implementers should only use this.
-      using type = typename tuple_to_function_type<arg_list_type>::type;
-    };
-
-    // Implementation of withLocalAccess.
-    template<class ... LocalAccessTypes>
-    struct WithLocalAccess {
-      using current_user_function_type =
-        typename Impl::ArgsToFunction<LocalAccessTypes...>::type;
-
-      static void
-      withLocalAccess (LocalAccessTypes...,
-                       typename Impl::ArgsToFunction<LocalAccessTypes...>::type);
-    };
-
-    // Base case: User provides no GlobalObject arguments, and a
-    // function that takes no arguments.
-    template<>
-    struct WithLocalAccess<> {
-      using current_user_function_type =
-        typename Impl::ArgsToFunction<>::type;
-
-      static void
-      withLocalAccess (current_user_function_type userFunction)
-      {
-        userFunction ();
-      }
-    };
-
-    // Recursion case.
-    template<class FirstLocalAccessType, class ... Rest>
-    struct WithLocalAccess<FirstLocalAccessType, Rest...> {
-      using current_user_function_type =
-        typename Impl::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
-
-      static void
-      withLocalAccess (FirstLocalAccessType first,
-                       Rest... rest,
-                       current_user_function_type userFunction)
-      {
-        // The "master" local object is the scope guard for local
-        // data.  Its constructor may allocate temporary storage, copy
-        // data to the desired memory space, etc.  Its destructor will
-        // put everything back.  "Put everything back" could be a
-        // no-op, or it could copy data back so where they need to go
-        // and/or free temporary storage.
-        auto first_lcl_master = getMasterLocalObject (first);
-
-        // The "nonowning" local object is a nonowning view of the
-        // "master" local object.  This is the only local object that
-        // users see, and they see it as input to their function.
-        // Subsequent slices / subviews view this nonowning local
-        // object.  All such nonowning views must have lifetime
-        // contained within the lifetime of the master local object.
-        auto first_lcl_view = getNonowningLocalObject (first_lcl_master);
-
-        // Curry the user's function by fixing the first argument.
-
-        // The commented-out implementation requires C++14, because it
-        // uses a generic lambda (the special case where parameters
-        // are "auto").  We do have the types of the arguments,
-        // though, from ArgsToFunction, so we don't need this feature.
-
-        // WithLocalAccess<Rest...>::withLocalAccess
-        //   (rest...,
-        //    [=] (auto ... args) {
-        //      userFunction (first_lcl_view, args...);
-        //    });
-
-        WithLocalAccess<Rest...>::withLocalAccess
-          (rest...,
-           [=] (ArgsToFunction<Rest>... args) {
-             userFunction (first_lcl_view, args...);
-           });
-      }
-    };
   } // namespace Impl
 
-  ////////////////////////////////////////////////////////////
-  // withLocalAccess function declaration and definition
-  ////////////////////////////////////////////////////////////
-
-  // User's function goes first, followed by the list of zero or more
-  // global objects to view, annotated by LocalAccess annotations (e.g.,
-  // readOnly, writeOnly, readWrite).
-  //
-  // I would have preferred the LocalAccess arguments to go first.
-  // However, C++ needs the user function has to go first, else C++
-  // can't deduce the template parameters.  See the en.cppreference.com
-  // article on "parameter pack."
-  template<class ... LocalAccessTypes>
+  /// \brief Apply a function entrywise to each entry of a
+  ///   Tpetra::MultiVector.
+  ///
+  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
+  /// takes the current entry (as impl_scalar_type), the local row
+  /// index (as LO), and the local column index (as LO).
+  ///
+  /// \param execSpace [in] Kokkos execution space on which to run.
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// Let IST =
+  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
+  /// f takes (IST, LO, LO) and returns IST.
+  template<class SC, class LO, class GO, class NT,
+           class UnaryFunction,
+           class ExecutionSpace>
   void
-  withLocalAccess (typename Impl::ArgsToFunction<LocalAccessTypes...>::type userFunction,
-                   LocalAccessTypes... localAccesses)
+  transform (ExecutionSpace execSpace,
+             Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f,
+             typename std::enable_if<
+               std::is_convertible<
+                 decltype (f(typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type (), LO (), LO ())),
+                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
+                   impl_scalar_type
+               >::value,
+               int>::type* = nullptr)
   {
-    using impl_type = Impl::WithLocalAccess<LocalAccessTypes...>;
-    impl_type::withLocalAccess (localAccesses..., userFunction);
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    using preferred_memory_space = typename MV::device_type::memory_space;
+    using execution_space = typename ExecutionSpace::execution_space;
+    using memory_space = Impl::transform_memory_space<
+      execution_space, preferred_memory_space>;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    memory_space memSpace;
+    if (X.getNumVectors () == size_t (1)) {
+      auto X_0 = X.getVectorNonConst (0);
+      // Generic lambdas need C++14, so we must use arg_type here.
+      using arg_type =
+        with_local_access_function_argument_type<
+          decltype (readWrite (*X_0).on (memSpace))>;
+      withLocalAccess
+        ([=] (const arg_type& X_lcl) {
+           Kokkos::parallel_for
+             ("transform",
+              range_type (execSpace, 0, X_lcl.extent (0)),
+              KOKKOS_LAMBDA (const LO i) {
+               X_lcl(i) = f (X_lcl(i), i, 0);
+             });
+         }, readWrite (*X_0).on (memSpace));
+    }
+    else if (! X.isConstantStride ()) {
+      const size_t numVecs = X.getNumVectors ();
+      for (size_t j = 0; j < numVecs; ++j) {
+        auto X_j = X.getVectorNonConst (j);
+        // Generic lambdas need C++14, so we must use arg_type here.
+        using arg_type =
+          with_local_access_function_argument_type<
+            decltype (readWrite (*X_j).on (memSpace))>;
+        withLocalAccess
+          ([=] (const arg_type& X_j_lcl) {
+             Kokkos::parallel_for
+               ("transform",
+                range_type (execSpace, 0, X_j_lcl.extent (0)),
+                KOKKOS_LAMBDA (const LO i) {
+                 X_j_lcl(i) = f (X_j_lcl(i), i, 0);
+               });
+           }, readWrite (*X_j).on (memSpace));
+      }
+    }
+    else {
+      // Generic lambdas need C++14, so we must use arg_type here.
+      using arg_type =
+        with_local_access_function_argument_type<
+          decltype (readWrite (X).on (memSpace))>;
+      withLocalAccess
+        ([=] (const arg_type& X_lcl) {
+           Kokkos::parallel_for
+             ("transform",
+              range_type (execSpace, 0, X_lcl.extent (0)),
+              KOKKOS_LAMBDA (const LO i) {
+               const LO numVecs = X_lcl.extent (1);
+               for (LO j = 0; j < numVecs; ++j) {
+                 X_lcl(i,j) = f (X_lcl(i,j), i, j);
+               }
+             });
+         }, readWrite (X).on (memSpace));
+    }
+  }
+
+  /// \brief Apply a function (taking current value and row index)
+  ///   entrywise to each entry of a Tpetra::MultiVector.
+  ///
+  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
+  /// takes the current entry (as impl_scalar_type) and the local row
+  /// index (as LO).
+  ///
+  /// \param execSpace [in] Kokkos execution space on which to run.
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// Let IST =
+  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
+  /// f takes (IST, LO) and returns IST.
+  template<class SC, class LO, class GO, class NT,
+           class UnaryFunction,
+           class ExecutionSpace>
+  void
+  transform (ExecutionSpace execSpace,
+             Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f,
+             typename std::enable_if<
+               std::is_convertible<
+                 decltype (f(typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type (), LO ())),
+                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
+                   impl_scalar_type
+             >::value,
+             int>::type* = nullptr)
+  {
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    using preferred_memory_space = typename MV::device_type::memory_space;
+    using execution_space = typename ExecutionSpace::execution_space;
+    using memory_space = Impl::transform_memory_space<
+      execution_space, preferred_memory_space>;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    memory_space memSpace;
+    if (X.getNumVectors () == size_t (1)) {
+      auto X_0 = X.getVectorNonConst (0);
+      // Generic lambdas need C++14, so we must use arg_type here.
+      using arg_type =
+        with_local_access_function_argument_type<
+          decltype (readWrite (*X_0).on (memSpace))>;
+      withLocalAccess
+        ([=] (const arg_type& X_lcl) {
+           Kokkos::parallel_for
+             ("transform",
+              range_type (execSpace, 0, X_lcl.extent (0)),
+              KOKKOS_LAMBDA (const LO i) {
+               X_lcl(i) = f (X_lcl(i), i);
+             });
+         }, readWrite (*X_0).on (memSpace));
+    }
+    else if (! X.isConstantStride ()) {
+      const size_t numVecs = X.getNumVectors ();
+      for (size_t j = 0; j < numVecs; ++j) {
+        auto X_j = X.getVectorNonConst (j);
+        // Generic lambdas need C++14, so we must use arg_type here.
+        using arg_type =
+          with_local_access_function_argument_type<
+            decltype (readWrite (*X_j).on (memSpace))>;
+        withLocalAccess
+          ([=] (const arg_type& X_j_lcl) {
+             Kokkos::parallel_for
+               ("transform",
+                range_type (execSpace, 0, X_j_lcl.extent (0)),
+                KOKKOS_LAMBDA (const LO i) {
+                 X_j_lcl(i) = f (X_j_lcl(i), i);
+               });
+           }, readWrite (*X_j).on (memSpace));
+      }
+    }
+    else {
+      // Generic lambdas need C++14, so we must use arg_type here.
+      using arg_type =
+        with_local_access_function_argument_type<
+          decltype (readWrite (X).on (memSpace))>;
+      withLocalAccess
+        ([=] (const arg_type& X_lcl) {
+           Kokkos::parallel_for
+             ("transform",
+              range_type (execSpace, 0, X_lcl.extent (0)),
+              KOKKOS_LAMBDA (const LO i) {
+               const LO numVecs = X_lcl.extent (1);
+               for (LO j = 0; j < numVecs; ++j) {
+                 X_lcl(i,j) = f (X_lcl(i,j), i);
+               }
+             });
+         }, readWrite (X).on (memSpace));
+    }
+  }
+
+  /// \brief Apply a function (taking current value) entrywise to each
+  ///   entry of a Tpetra::MultiVector.
+  ///
+  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
+  /// takes the current entry (as impl_scalar_type).
+  ///
+  /// \param execSpace [in] Kokkos execution space on which to run.
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// Let IST =
+  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
+  /// f takes (IST) and returns IST.
+  template<class SC, class LO, class GO, class NT,
+           class UnaryFunction,
+           class ExecutionSpace>
+  void
+  transform (ExecutionSpace execSpace,
+             Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f,
+             typename std::enable_if<
+               std::is_convertible<
+                 decltype (f(typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type ())),
+                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
+                   impl_scalar_type
+             >::value,
+             int>::type* = nullptr)
+  {
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    using preferred_memory_space = typename MV::device_type::memory_space;
+    using execution_space = typename ExecutionSpace::execution_space;
+    using memory_space = Impl::transform_memory_space<
+      execution_space, preferred_memory_space>;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    memory_space memSpace;
+    if (X.getNumVectors () == size_t (1)) {
+      auto X_0 = X.getVectorNonConst (0);
+      // Generic lambdas need C++14, so we must use arg_type here.
+      using arg_type =
+        with_local_access_function_argument_type<
+          decltype (readWrite (*X_0).on (memSpace))>;
+      withLocalAccess
+        ([=] (const arg_type& X_lcl) {
+           Kokkos::parallel_for
+             ("transform",
+              range_type (execSpace, 0, X_lcl.extent (0)),
+              KOKKOS_LAMBDA (const LO i) {
+               X_lcl(i) = f (X_lcl(i));
+             });
+         }, readWrite (*X_0).on (memSpace));
+    }
+    else if (! X.isConstantStride ()) {
+      const size_t numVecs = X.getNumVectors ();
+      for (size_t j = 0; j < numVecs; ++j) {
+        auto X_j = X.getVectorNonConst (j);
+        // Generic lambdas need C++14, so we must use arg_type here.
+        using arg_type =
+          with_local_access_function_argument_type<
+            decltype (readWrite (*X_j).on (memSpace))>;
+        withLocalAccess
+          ([=] (const arg_type& X_j_lcl) {
+             Kokkos::parallel_for
+               ("transform",
+                range_type (execSpace, 0, X_j_lcl.extent (0)),
+                KOKKOS_LAMBDA (const LO i) {
+                 X_j_lcl(i) = f (X_j_lcl(i));
+               });
+           }, readWrite (*X_j).on (memSpace));
+      }
+    }
+    else {
+      // Generic lambdas need C++14, so we must use arg_type here.
+      using arg_type =
+        with_local_access_function_argument_type<
+          decltype (readWrite (X).on (memSpace))>;
+      withLocalAccess
+        ([=] (const arg_type& X_lcl) {
+           Kokkos::parallel_for
+             ("transform",
+              range_type (execSpace, 0, X_lcl.extent (0)),
+              KOKKOS_LAMBDA (const LO i) {
+               const LO numVecs = X_lcl.extent (1);
+               for (LO j = 0; j < numVecs; ++j) {
+                 X_lcl(i,j) = f (X_lcl(i,j));
+               }
+             });
+         }, readWrite (X).on (memSpace));
+    }
+  }
+
+  /// \brief Overload of transform (see above) that runs on X's
+  ///   default Kokkos execution space.
+  ///
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function to apply entrywise to X (could have
+  ///   different signatures; see above).
+  template<class SC, class LO, class GO, class NT,
+           class UnaryFunction>
+  void
+  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f)
+  {
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    using execution_space = typename MV::device_type::execution_space;
+    transform (execution_space (), X, f);
   }
 
 } // namespace Tpetra
