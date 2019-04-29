@@ -126,7 +126,7 @@ namespace Tpetra {
     template <class Node>
     TPETRA_DEPRECATED
     Teuchos::RCP<Node> getNode () {
-      return Teuchos::rcp (new Node);
+      return Teuchos::null;
     }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
