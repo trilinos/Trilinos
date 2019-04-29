@@ -94,7 +94,7 @@
 //#define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM
 
 // if defined, this use pinned memory instead of device pointer, cuda aware mpi
-//#define IFPACK2_BLOCKTRIDICONTAINER_USE_PINNED_MEMORY_FOR_MPI
+#define IFPACK2_BLOCKTRIDICONTAINER_USE_PINNED_MEMORY_FOR_MPI
 
 // if defined, all views are allocated on cuda space intead of cuda uvm space
 // #define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_SPACE
