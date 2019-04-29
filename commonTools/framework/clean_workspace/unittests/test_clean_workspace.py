@@ -8,10 +8,16 @@ sys.dont_write_bytecode = True
 import os
 sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
 
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import unittest
-import mock
+try:
+    import mock
+except ImportError:
+    import unittest.mock as mock
 
 from argparse import Namespace
 from datetime import datetime
@@ -28,8 +34,12 @@ class TestRun(unittest.TestCase):
         setattr(test_args, 'force_clean', False)
         with mock.patch.object(Cleaner, 'parse_args', return_value=test_args):
             cleanerInst = Cleaner()
-            with self.assertRaisesRegexp(SystemExit, "No directory passed - exiting!"):
-                cleanerInst.run()
+            if sys.version_info.major is not 3:
+                with self.assertRaisesRegexp(SystemExit, "No directory passed - exiting!"):
+                    cleanerInst.run()
+            else:
+                with self.assertRaisesRegex(SystemExit, "No directory passed - exiting!"):
+                    cleanerInst.run()
 
 
     def test_force_calls_clean(self):
@@ -42,7 +52,7 @@ class TestRun(unittest.TestCase):
             with mock.patch.object(Cleaner, 'force_clean_space') as force_clean, \
                  mock.patch('clean_workspace.print') as m_print:
                 cleanerInst.run()
-            force_clean.assert_called_once()
+            force_clean.assert_called_once_with()
             m_print.assert_called_once_with("Cleaning directory /dev/null/force_cleaned "
                                             "due to command line option")
 
@@ -55,15 +65,19 @@ class TestRun(unittest.TestCase):
             cleanerInst = Cleaner()
             with mock.patch.object(Cleaner, 'clean_space_by_date') as force_clean:
                 cleanerInst.run()
-            force_clean.assert_called_once()
+            force_clean.assert_called_once_with()
 
 
 class TestParseArgs(unittest.TestCase):
 
     def test_no_args_gives_help_and_exits(self):
         """Test that the function does the right thing when given no arguments"""
-        usage_message = ('usage: programName [-h] [--force-clean] dir\n'
-                         'programName: error: too few arguments\n')
+        if sys.version_info.major is not 3:
+            usage_message = ('usage: programName [-h] [--force-clean] dir\n'
+                             'programName: error: too few arguments\n')
+        else:
+            usage_message = ('usage: programName [-h] [--force-clean] dir\n'
+                             'programName: error: the following arguments are required: dir\n')
         with self.assertRaises(SystemExit), \
              mock.patch.object(sys, 'argv', ['programName']), \
              mock.patch('sys.stderr', new_callable=StringIO) as cleanOut:
@@ -144,8 +158,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
                      mock.patch('clean_workspace.update_last_clean_date') as update, \
                      mock.patch('clean_workspace.print') as m_print:
                     cleanerInst.clean_space_by_date()
-                force_clean.assert_called_once()
-                update.assert_called_once()
+                force_clean.assert_called_once_with()
+                update.assert_called_once_with()
                 m_print.assert_called_once_with("Cleaning directory /dev/null/fake_directory "
                                                 "due to newer reference date")
 
@@ -162,8 +176,8 @@ class TestCleanSpaceByDate(unittest.TestCase):
                  mock.patch('clean_workspace.update_last_clean_date') as update, \
                  mock.patch('clean_workspace.print') as m_print:
                 cleanerInst.clean_space_by_date()
-            force_clean.assert_called_once()
-            update.assert_called_once()
+            force_clean.assert_called_once_with()
+            update.assert_called_once_with()
             m_print.assert_called_once_with("Cleaning directory /dev/null/will_clean "
                                             "due to newer reference date")
 
