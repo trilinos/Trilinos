@@ -323,6 +323,18 @@ namespace NOX {
 
       Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > getModel() const;
 
+      /// Returns the left scaling vector (function scaling)
+      Teuchos::RCP<const ::Thyra::VectorBase<double>> getWeightVector() const;
+
+      /// Returns the inverse left scaling vector (function scaling)
+      Teuchos::RCP<const ::Thyra::VectorBase<double>> getInvWeightVector() const;
+
+      /// Returns the right scaling vector (solution scaling)
+      Teuchos::RCP<const ::Thyra::VectorBase<double>> getRightWeightVector() const;
+
+      /// Returns the inverse right scaling vector (solution scaling)
+      Teuchos::RCP<const ::Thyra::VectorBase<double>> getInvRightWeightVector() const;
+
     protected:
 
       //! resets the isValid flags to false
@@ -346,7 +358,7 @@ namespace NOX {
       void unscaleResidualAndJacobian() const;
 
       void computeScaledSolution();
-
+      
     protected:
 
       //! Problem interface

@@ -53,37 +53,47 @@
 #include "NOX_Thyra_Group.H"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_Assert.hpp"
 
 
 NOX::RowSumScaling::
 RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec,
-          ENOX_WhenToUpdateScaling s) :
+              const ENOX_WhenToUpdateScaling s,
+              const bool useSimilarityTransformJacobian) :
   inv_row_sum_vec_(inv_row_sum_vec),
-  when_to_update(s)
-{
+  when_to_update(s),
+  use_similarity_transform_jacobian_(useSimilarityTransformJacobian)
+{}
 
-}
-
-void NOX::RowSumScaling::
-runPreIterate(const NOX::Solver::Generic& solver)
-{
-  if (when_to_update == UpdateInvRowSumVectorAtBeginningOfIteration)
-    computeScaling(solver);
-}
-
-void NOX::RowSumScaling::
-runPreSolve(const NOX::Solver::Generic& solver)
+void NOX::RowSumScaling::runPreSolve(const NOX::Solver::Generic& solver)
 {
   if (when_to_update == UpdateInvRowSumVectorAtBeginningOfSolve)
-    computeScaling(solver);
+    this->computeScaling(solver);
+}
+
+void NOX::RowSumScaling::runPreIterate(const NOX::Solver::Generic& solver)
+{
+  if (when_to_update == UpdateInvRowSumVectorAtBeginningOfIteration)
+    this->computeScaling(solver);
+}
+
+void NOX::RowSumScaling::runPostIterate(const NOX::Solver::Generic& solver)
+{
+  if (when_to_update == UpdateInvRowSumVectorAtEndOfIteration)
+    this->computeScaling(solver);
+}
+
+void NOX::RowSumScaling::runPostSolve(const NOX::Solver::Generic& solver)
+{
+  if (when_to_update == UpdateInvRowSumVectorAtEndOfSolve)
+    this->computeScaling(solver);
 }
 
 Teuchos::RCP<const ::Thyra::VectorBase<double> >
 NOX::RowSumScaling::getInvRowSumScalingVector() const
-{
-  return inv_row_sum_vec_;
-}
+{ return inv_row_sum_vec_; }
 
 
 void NOX::RowSumScaling::
@@ -104,8 +114,19 @@ computeScaling(const NOX::Solver::Generic& solver)
     tmp_nox_thyra_group->computeJacobian();
   }
 
+  // Returns the right scaled Jacobian, does nothing with left scaling.
   RCP< const ::Thyra::LinearOpBase< double > > jac =
     thyra_group->getScaledJacobianOperator();
+
+  // If similarity transform is enabled, left scale matrix by
+  // D_{x}^{-1} before computing row sum to preserve spectral radius
+  // bound: row sum will then be of the system: D_{x}^{-1}JD_{x}
+  if (use_similarity_transform_jacobian_) {
+    const Teuchos::RCP< const ::Thyra::ScaledLinearOpBase<double> > scaled_jac =
+      Teuchos::rcp_dynamic_cast< const ::Thyra::ScaledLinearOpBase<double> >(jac, true);
+    auto& nonconst_scaled_jac = const_cast< ::Thyra::ScaledLinearOpBase<double>&>(*scaled_jac); 
+    nonconst_scaled_jac.scaleLeft(*(thyra_group->getInvRightWeightVector()));
+  }
 
   RCP< const ::Thyra::RowStatLinearOpBase< double > > row_stat_jac =
     Teuchos::rcp_dynamic_cast< const ::Thyra::RowStatLinearOpBase< double > >(jac);
@@ -116,7 +137,22 @@ computeScaling(const NOX::Solver::Generic& solver)
     inv_row_sum_vec_ = ::Thyra::createMember(jac->range());
 
   row_stat_jac->getRowStat( ::Thyra::RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM,
-                inv_row_sum_vec_.ptr());
-  thyra_group->unscaleJacobianOperator();
+                            inv_row_sum_vec_.ptr());
+  
+  if (use_similarity_transform_jacobian_) {
 
+    // Multiply inv_row_sum_vec_ by the D_x^{-1} so that all dot and
+    // norms have the correct scaling: D_{rs}^{-1}D_{x}^{-1}
+    ::Thyra::ele_wise_scale(*(thyra_group->getInvRightWeightVector()),
+                            inv_row_sum_vec_.ptr());
+
+    // Unscale the similarity transform used above: left scale by D_{x}
+    const Teuchos::RCP< const ::Thyra::ScaledLinearOpBase<double> > scaled_jac =
+      Teuchos::rcp_dynamic_cast< const ::Thyra::ScaledLinearOpBase<double> >(jac, true);
+    auto& nonconst_scaled_jac = const_cast< ::Thyra::ScaledLinearOpBase<double>&>(*scaled_jac); 
+    nonconst_scaled_jac.scaleLeft(*(thyra_group->getRightWeightVector()));
+  }
+
+  // Unscale the right weighting
+  thyra_group->unscaleJacobianOperator();
 }

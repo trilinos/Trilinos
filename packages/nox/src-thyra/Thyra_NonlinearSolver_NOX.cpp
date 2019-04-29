@@ -414,12 +414,14 @@ validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_options_su
       "Update Row Sum Scaling",
       "Before Each Nonlinear Solve",
       "Determines if function scaling of residual, Jacobian, etc. should be used.",
-      Teuchos::tuple<std::string>("Before Each Nonlinear Solve","Before Each Nonlinear Iteration"),
+      Teuchos::tuple<std::string>("Before Each Nonlinear Solve","Before Each Nonlinear Iteration",
+                                  "After Each Nonlinear Solve","After Each Nonlinear Iteration"),
       &validParams
       );
 
     validParams.set<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling", Teuchos::null);
-    validParams.set<bool >("Do Right Scaling First", false);
+    validParams.set<bool>("Do Right Scaling First", false);
+    validParams.set<bool>("Use Similarity Transform Jacobian for Row Sums",false);
   }
 
   thyra_group_options_sublist.validateParametersAndSetDefaults(validParams);
@@ -436,12 +438,21 @@ validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_options_su
     when_to_update_ = NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve;
   else if (string_when_to_update == "Before Each Nonlinear Iteration")
     when_to_update_ = NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfIteration;
-
+  else if (string_when_to_update == "After Each Nonlinear Solve")
+    when_to_update_ = NOX::RowSumScaling::UpdateInvRowSumVectorAtEndOfSolve;
+  else if (string_when_to_update == "After Each Nonlinear Iteration")
+    when_to_update_ = NOX::RowSumScaling::UpdateInvRowSumVectorAtEndOfIteration;
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                               "ERROR: Invalid parameter for \"Update Row Sum Scaling\":"
+                               " " << string_when_to_update << "\n")
+  }
+  
   if (function_scaling_ =="User Defined")
     scaling_vector_ = thyra_group_options_sublist.get<Teuchos::RCP< ::Thyra::VectorBase<double> > >("User Defined Scaling");
 
   rightScalingFirst_ = thyra_group_options_sublist.get<bool>("Do Right Scaling First");
-
+  use_similarity_transform_ = thyra_group_options_sublist.get<bool>("Use Similarity Transform Jacobian for Row Sums");
 }
 
 // ****************************************************************
@@ -456,7 +467,7 @@ void Thyra::NOXNonlinearSolver::setupRowSumScalingObjects()
   ::Thyra::V_S(scaling_vector_.ptr(),1.0);
 
   RCP<NOX::Abstract::PrePostOperator> row_sum_observer =
-    rcp(new NOX::RowSumScaling(scaling_vector_, when_to_update_));
+    rcp(new NOX::RowSumScaling(scaling_vector_, when_to_update_, use_similarity_transform_));
 
   Teuchos::ParameterList& nox_parameters = *param_list_;
 

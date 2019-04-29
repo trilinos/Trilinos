@@ -168,7 +168,7 @@ private:
   validateAndParseThyraGroupOptions(Teuchos::ParameterList& thyra_group_sublist);
 
   /** If row sum scaling is enabled, allocates scaling vector and
-      creates and sets the nox rePostOperator in the main parmaeter
+      creates and sets the noxPrePostOperator in the main parmaeter
       list.
   */
   void setupRowSumScalingObjects();
@@ -191,7 +191,7 @@ private:
   Teuchos::RCP< ::Thyra::VectorBase<double> > scaling_vector_;
   Teuchos::RCP< ::Thyra::VectorBase<double> > right_scaling_vector_;
   bool rightScalingFirst_;
-
+  bool use_similarity_transform_;
   bool rebuild_solver_;
 
   Teuchos::RCP< ::Thyra::PreconditionerBase<double>> precOp_;

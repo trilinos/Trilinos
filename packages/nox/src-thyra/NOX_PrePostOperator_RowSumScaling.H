@@ -64,7 +64,7 @@ namespace NOX {
 
 namespace NOX {
 
-  /** \brief Updates an inverse row sum scaling vector at the beginning of a solve.
+  /** \brief Updates an inverse row sum scaling vector at a user specified time.
 
   */
   class RowSumScaling : public NOX::Abstract::PrePostOperator {
@@ -73,16 +73,25 @@ namespace NOX {
 
     enum ENOX_WhenToUpdateScaling {
       UpdateInvRowSumVectorAtBeginningOfSolve,
-      UpdateInvRowSumVectorAtBeginningOfIteration
+      UpdateInvRowSumVectorAtBeginningOfIteration,
+      UpdateInvRowSumVectorAtEndOfIteration,
+      UpdateInvRowSumVectorAtEndOfSolve
     };
 
-    /** <tt>sv</tt> is the scaling vector */
+    /** \brief Ctor
+        
+        @param[in] <tt>inv_row_sum_vec</tt> Inverse row sum vector.
+        @param[in] <tt>s</tt> When to update the scaling
+        @param[in] <tt>useSimilarityTransformJacobian</tt> If true, this algorithm will use the similarity transformed row sum scaled matrix, \$D_{x}^{-1}JD_{x}\$, when computing the row sums. Additionally the inverse row sum vector will be the product of the inverse row sums and the inverse right scaling vector. If false, it uses \$JD_x\$ to compute the row sums.  
+    */
     RowSumScaling(const Teuchos::RCP< ::Thyra::VectorBase<double> >& inv_row_sum_vec,
-          ENOX_WhenToUpdateScaling s);
+                  const ENOX_WhenToUpdateScaling s,
+                  const bool useSimilarityTransformJacobian);
 
-    void runPreIterate(const NOX::Solver::Generic& solver);
-
-    void runPreSolve(const NOX::Solver::Generic& solver);
+    void runPreSolve(const NOX::Solver::Generic& solver) override;
+    void runPreIterate(const NOX::Solver::Generic& solver) override;
+    void runPostIterate(const NOX::Solver::Generic& solver) override;
+    void runPostSolve(const NOX::Solver::Generic& solver) override;
 
     Teuchos::RCP<const ::Thyra::VectorBase<double> >
     getInvRowSumScalingVector() const;
@@ -95,6 +104,8 @@ namespace NOX {
     Teuchos::RCP< ::Thyra::VectorBase<double> > inv_row_sum_vec_;
 
     ENOX_WhenToUpdateScaling when_to_update;
+
+    bool use_similarity_transform_jacobian_;
   };
 }
 

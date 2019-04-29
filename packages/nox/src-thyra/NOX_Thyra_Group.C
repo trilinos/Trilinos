@@ -751,6 +751,22 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
   return gradient_vec_;
 }
 
+Teuchos::RCP<const ::Thyra::VectorBase<double>>
+NOX::Thyra::Group::getWeightVector() const
+{return weight_vec_;}
+
+Teuchos::RCP<const ::Thyra::VectorBase<double>>
+NOX::Thyra::Group::getInvWeightVector() const
+{return inv_weight_vec_;}
+ 
+Teuchos::RCP<const ::Thyra::VectorBase<double>>
+NOX::Thyra::Group::getRightWeightVector() const
+{return right_weight_vec_;}
+
+Teuchos::RCP<const ::Thyra::VectorBase<double>>
+NOX::Thyra::Group::getInvRightWeightVector() const
+{return inv_right_weight_vec_;}
+
 void NOX::Thyra::Group::logLastLinearSolveStats(NOX::SolverStats& stats) const
 {
   stats.linearSolve.logLinearSolve(last_linear_solve_status_ == NOX::Abstract::Group::Ok,
