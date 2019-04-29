@@ -121,7 +121,7 @@ public:
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! The matrix's Node instance.
-  virtual Teuchos::RCP<node_type> getNode () const;
+  virtual TPETRA_DEPRECATED Teuchos::RCP<node_type> getNode () const;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Returns the Map that describes the row distribution in this matrix.
