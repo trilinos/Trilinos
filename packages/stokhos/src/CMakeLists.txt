@@ -920,6 +920,7 @@ IF (Stokhos_ENABLE_Sacado)
       IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
         INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../xpetra/src/Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
         INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../xpetra/src/Utils/ExplicitInstantiation/ETI_MULTIVECTOR_classes.cmake)
+        SET(XPETRA_ALL_ETI_CLASSES ${XPETRA_SC_LO_GO_NO_ETI_CLASSES} ${XPETRA_MULTIVECTOR_CLASSES})
       ENDIF()
 
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
@@ -928,7 +929,7 @@ IF (Stokhos_ENABLE_Sacado)
         IF (Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
-            "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
+            "${XPETRA_ALL_ETI_CLASSES}"
             "sacado/kokkos/vector/xpetra"
             "Xpetra"
             FALSE
@@ -942,7 +943,7 @@ IF (Stokhos_ENABLE_Sacado)
         APPEND_GLOB(XPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/xpetra/*.hpp)
         IF(Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
-            "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
+            "${XPETRA_ALL_ETI_CLASSES}"
             ""
             "sacado/kokkos/pce/xpetra"
             "Xpetra"
