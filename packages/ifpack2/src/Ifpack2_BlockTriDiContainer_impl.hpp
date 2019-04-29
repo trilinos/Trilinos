@@ -45,6 +45,7 @@
 
 #include <Teuchos_Details_MpiTypeTraits.hpp>
 
+#include <Tpetra_Details_extractMpiCommFromTeuchos.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_BlockMultiVector.hpp>
 
@@ -615,9 +616,7 @@ namespace KB = KokkosBatched::Experimental;
         dm2cm = dm2cm_;
         
 #ifdef HAVE_IFPACK2_MPI
-        const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(tgt_map->getComm());
-        TEUCHOS_ASSERT(!mpi_comm.is_null());
-        comm = *mpi_comm->getRawMpiComm();
+        comm = Tpetra::Details::extractMpiCommFromTeuchos(*tgt_map->getComm());
 #endif
         const tpetra_import_type import(src_map, tgt_map);
         
@@ -1360,7 +1359,7 @@ namespace KB = KokkosBatched::Experimental;
 
       const ConstUnmanaged<size_type_1d_view> pack_td_ptr(btdm.pack_td_ptr);
       const local_ordinal_type blocksize = btdm.values.extent(1);
-
+      
       {
         const int vector_length = impl_type::vector_length;
         const int internal_vector_length = impl_type::internal_vector_length;
@@ -1387,6 +1386,7 @@ namespace KB = KokkosBatched::Experimental;
 #else // Host architecture: team size is always one
         const team_policy_type policy(packptr.extent(0)-1, 1, 1); 
 #endif
+        typename impl_type::impl_scalar_type one(1), zero(0);
         Kokkos::parallel_for
           ("setTridiagsToIdentity::TeamPolicy", 
            policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &member) {          
@@ -1400,7 +1400,7 @@ namespace KB = KokkosBatched::Experimental;
                     const local_ordinal_type i = ibeg + ii*3;
                     for (local_ordinal_type j0=0;j0<blocksize;++j0) 
                       for (local_ordinal_type j1=0;j1<blocksize;++j1) 
-                        values(i,j0,j1,v) = (j0 == j1 ? 1 : 0);
+                        values(i,j0,j1,v) = (j0 == j1 ? one : zero);
                   });
               });
           });
@@ -3570,9 +3570,10 @@ namespace KB = KokkosBatched::Experimental;
           comm_ = *mpi_comm->getRawMpiComm();
 #endif
         }
-        work_[0] = 0; 
-        work_[1] = 0; 
-        work_[2] = -1;
+        const magnitude_type zero(0), minus_one(-1);
+        work_[0] = zero;
+        work_[1] = zero;
+        work_[2] = minus_one;
       }
 
       // Check the norm every sweep_step sweeps.
