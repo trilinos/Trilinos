@@ -3721,7 +3721,9 @@ public:
     return graph_.getComm();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNode() const
@@ -3729,6 +3731,7 @@ public:
     return graph_.getNode();
 
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template<class Scalar, class LO, class GO, class Node>
   global_size_t

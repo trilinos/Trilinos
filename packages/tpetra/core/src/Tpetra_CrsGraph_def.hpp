@@ -1024,13 +1024,16 @@ namespace Tpetra {
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const
   {
     return rowMap_.is_null () ? Teuchos::null : rowMap_->getNode ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::map_type>

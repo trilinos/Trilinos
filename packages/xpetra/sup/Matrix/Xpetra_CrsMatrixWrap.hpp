@@ -678,12 +678,12 @@ private:
   // See also CrsMatrixWrap::updateDefaultView()
   mutable bool finalDefaultView_;
 
-
+  // The underlying matrix object
   RCP<CrsMatrix> matrixData_;
 
-}; //class Matrix
+}; // class CrsMatrixWrap
 
-} //namespace Xpetra
+} // namespace Xpetra
 
 #define XPETRA_CRSMATRIXWRAP_SHORT
 #endif //XPETRA_CRSMATRIXWRAP_DECL_HPP

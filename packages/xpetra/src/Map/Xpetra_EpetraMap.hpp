@@ -214,11 +214,13 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return Teuchos::null; }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return Teuchos::rcp (new Node);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -575,11 +577,13 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return Teuchos::rcp (new Node);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 
@@ -1042,11 +1046,13 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMapT::getComm"); return toXpetra(map_->Comm()); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
       return Teuchos::rcp (new Node);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 

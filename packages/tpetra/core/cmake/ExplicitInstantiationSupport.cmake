@@ -63,6 +63,11 @@ SET(${PACKAGE_NAME}_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 # wants a CrsMatrix<int,...>?
 TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=int|unsigned|unsigned int|long|unsigned long|long long|unsigned long long" "LO=.*" "GO=.*" "N=.*")
 
+
+# Excludes for MultiVector
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_GORD_NOT_INT "S=.*" "LO=.*" "GO=int" "N=.*")
+
+
 # TriBITS' ETI system expects a set of types to be a string, delimited
 # by |.  Each template parameter (e.g., Scalar, LocalOrdinal, ...) has
 # its own set.  The JOIN commands below set up those lists.  We use
@@ -167,6 +172,27 @@ TRIBITS_ETI_GENERATE_MACROS(
     "TPETRA_INSTANTIATE_TSLG_NOGPU(CS,DS,LO,GO)"          TPETRA_ETIMACRO_TSLG_NOGPU
     "TPETRA_INSTANTIATE_CONVERT_NOGPU(SOUT,SIN,LO,GO,N)"  TPETRA_ETIMACRO_CONVERT_NOGPU
     "TPETRA_INSTANTIATE_CONVERT_NOGPU_SSL(SOUT,SIN,LO)"    TPETRA_ETIMACRO_CONVERT_NOGPU_SSL)
+
+#SET(${PACKAGE_NAME}_SCALAR_INT_ETI_FIELDS "LO|GO|N")
+#TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_SCALAR_INT_ETI_LIBRARYSET 
+#  "LO=${${PACKAGE_NAME}_ETI_LORDS}" 
+#  "GO=${${PACKAGE_NAME}_ETI_GORDS}"
+#  "N=${${PACKAGE_NAME}_ETI_NODES}")
+
+
+# For Mutlivector and friends
+TRIBITS_ETI_GENERATE_MACROS(
+    "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
+    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET_GORD_NOT_INT}"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_GLGN_NO_INT(GO,LO,GO,N)"           TPETRA_ETIMACRO_GLGN_NO_INT)
+
+TRIBITS_ETI_GENERATE_MACROS(
+    "${${PACKAGE_NAME}_ETI_FIELDS}" "${${PACKAGE_NAME}_ETI_LIBRARYSET}" 
+    "${${PACKAGE_NAME}_ETI_EXCLUDE_SET}"
+    list_of_manglings eti_typedefs
+    "TPETRA_INSTANTIATE_LLGN(LO,LO,GO,N)"           TPETRA_ETIMACRO_LLGN)
+
 
 # Tpetra::DistObject is templated on "Packet", the type of thing to be
 # sent and received.  Tpetra wants to send both Scalar and
