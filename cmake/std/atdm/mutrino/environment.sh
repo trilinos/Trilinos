@@ -37,7 +37,7 @@ export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
 
 # srun does not accept "-np" for # of processors
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
-export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node;36"
+export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--gres=none"
 
 export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
 # NOTE: Using -j8 instead of -j16 for ctest is to try to avoid 'srun' "Job
@@ -52,10 +52,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "
     module use /projects/EMPIRE/mutrino/tpls/knl/modulefiles
     export SLURM_TASKS_PER_NODE=16
     export OMP_NUM_THREADS=2
-    export OMP_PLACES=threads
-    export OMP_PROC_BIND=spread
-    export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;-c 4"
-    export ATDM_CONFIG_SBATCH_OPTIONS="-p knl -C cache --hint=multithread"
+    export OMP_PROC_BIND=false
+    unset OMP_PLACES
+    export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
 else
     echo
     echo "***"
