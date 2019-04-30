@@ -80,7 +80,7 @@ for myRank=0:nProcs-1
   elseif (nDims == 2)
     fprintf(fp,'%d %d %d %d %s\n',maxRegPerGID,maxRegPerProc,sqrt(nNodes),sqrt(nNodes),whichCase);
   else
-    error("Problems of spatial dimension %d are not implemented, yet.", nDims);
+    error('Problems of spatial dimension %d are not implemented, yet.', nDims);
   end
   fclose(fp); 
 end
@@ -110,7 +110,7 @@ if (nDims == 1)
 elseif (nDims == 2)
   mk2DAppData(allMyNodes,allMyRegions,nProcs,whichCase,globalDims,localDims,relcorners,abscorners,outDir);
 else
-  error("Problems of spatial dimension %d are not implemented, yet.", nDims);
+  error('Problems of spatial dimension %d are not implemented, yet.', nDims);
 end
 
 str = sprintf('Run now with #procs = %d', nProcs);
