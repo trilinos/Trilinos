@@ -179,8 +179,10 @@ namespace Xpetra {
     //! Get this Map's Comm object.
     virtual Teuchos::RCP< const Teuchos::Comm< int > > getComm() const = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
     virtual Teuchos::RCP< Node > getNode() const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
 

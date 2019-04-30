@@ -40,26 +40,10 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_makeValidVerboseStream.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include <numeric>
-
-namespace { // (anonymous)
-
-  Teuchos::RCP<Teuchos::FancyOStream>
-  makeValidVerboseStream (const Teuchos::RCP<Teuchos::FancyOStream>& out =
-                          Teuchos::null)
-  {
-    if (out.is_null ()) {
-      return Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
-    }
-    else {
-      return out;
-    }
-  }
-
-} // namespace (anonymous)
-
 
 namespace Tpetra {
   namespace Details {
@@ -164,7 +148,7 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::FancyOStream>& out,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
-    , out_ (makeValidVerboseStream (out))
+    , out_ (::Tpetra::Details::makeValidVerboseStream (out))
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)

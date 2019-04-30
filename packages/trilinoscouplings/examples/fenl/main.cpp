@@ -25,9 +25,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   const int comm_rank = comm->getRank();
 
-  // Create Tpetra Node
-  Teuchos::RCP<NodeType> node = createKokkosNode<NodeType>( cmd , *comm );
-
   // Print output headers
   const std::vector< size_t > widths =
     print_headers( std::cout , cmd , comm_rank );
@@ -53,7 +50,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Teuchos::Array<double> response_gradient;
   if ( cmd.USE_FIXTURE_QUADRATIC  ) {
     perf = fenl< double , Device , BoxElemPart::ElemQuadratic >
-      ( comm , node , cmd.USE_FENL_XML_FILE ,
+      ( comm , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,
@@ -63,7 +60,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   }
   else {
     perf = fenl< double , Device , BoxElemPart::ElemLinear >
-      ( comm , node , cmd.USE_FENL_XML_FILE ,
+      ( comm , cmd.USE_FENL_XML_FILE ,
         cmd.PRINT , cmd.USE_TRIALS ,
         cmd.USE_ATOMIC , cmd.USE_BELOS , cmd.USE_MUELU ,
         cmd.USE_MEANBASED ,

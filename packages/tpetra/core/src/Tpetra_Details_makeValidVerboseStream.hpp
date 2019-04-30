@@ -1,9 +1,7 @@
-// @HEADER
-//
 // ***********************************************************************
 //
-//             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,53 +33,25 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
-//
+// ************************************************************************
 // @HEADER
-#ifndef FAKEKOKKOS_DEFAULT_NODE_HPP_
-#define FAKEKOKKOS_DEFAULT_NODE_HPP_
 
-#include <Teuchos_RCP.hpp>
+#ifndef TPETRA_DETAILS_MAKEVALIDVERBOSESTREAM_HPP
+#define TPETRA_DETAILS_MAKEVALIDVERBOSESTREAM_HPP
 
-#include <Xpetra_ConfigDefs.hpp>
-#ifdef HAVE_XPETRA_KOKKOSCORE
-#  include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#else
-#  include <Kokkos_SerialNode.hpp>
-#endif
+#include "TpetraCore_config.h"
+#include "Teuchos_FancyOStream.hpp"
 
-// forward declaration for (fake) KokkosSerialWrapperNode
-// This is the node definition used if Epetra is enabled only
-/*namespace Kokkos {
-namespace Compat {
-  class KokkosSerialWrapperNode;
-}
-}*/
+namespace Tpetra {
+namespace Details {
 
-// This KokkosClassic namespace is used for getting the DefaultNode in some classes
-namespace KokkosClassic {
+Teuchos::RCP<Teuchos::FancyOStream>
+makeValidVerboseStream (const Teuchos::RCP<Teuchos::FancyOStream>& out =
+                        Teuchos::null);
 
-  namespace Details {
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    template <class NodeType>
-    Teuchos::RCP<NodeType> getNode() { return Teuchos::null; }
-#endif
-  } //namespace Details
+} // namespace Details
+} // namespace Tpetra
 
-  class DefaultNode {
-    public:
-# ifdef EPETRA_HAVE_OMP
-    typedef Kokkos::Compat::KokkosOpenMPWrapperNode DefaultNodeType;
-# else
-    typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-# endif
-  };
-
-}
-
-#endif
+#endif // TPETRA_DETAILS_MAKEVALIDVERBOSESTREAM_HPP

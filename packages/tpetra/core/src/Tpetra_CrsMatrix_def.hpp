@@ -85,17 +85,6 @@ namespace Tpetra {
 
 namespace { // (anonymous)
 
-  std::shared_ptr< ::Tpetra::Details::CommRequest>
-  iallreduceIntRaw (const int& localValue,
-                    int& globalValue,
-                    const ::Teuchos::EReductionType op,
-                    const Teuchos::Comm<int>& comm)
-  {
-    Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > localView (&localValue,1);
-    Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > globalView (&globalValue, 1);
-    return ::Tpetra::Details::iallreduce (localView, globalView, op, comm);
-  }
-
   template<class T, class BinaryFunction>
   T atomic_binary_function_update (volatile T* const dest,
                                    const T& inputVal,
@@ -810,12 +799,15 @@ namespace Tpetra {
     return getCrsGraphRef ().getComm ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const {
     return getCrsGraphRef ().getNode ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ProfileType
@@ -8463,8 +8455,9 @@ namespace Tpetra {
      const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
                                  rowTransfer.getRemoteLIDs ().size() == 0);
      mismatch = (source_vals != target_vals) ? 1 : 0;
-     iallreduceRequest = iallreduceIntRaw (mismatch, reduced_mismatch,
-                                           Teuchos::REDUCE_MAX, * (getComm ()));
+     iallreduceRequest =
+       ::Tpetra::Details::iallreduce (mismatch, reduced_mismatch,
+                                      Teuchos::REDUCE_MAX, * (getComm ()));
    }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
