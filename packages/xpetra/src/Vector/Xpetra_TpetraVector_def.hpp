@@ -66,7 +66,7 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
-: TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->TpetraVector::getNodeNumElements(),1)
+: TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1)
 { }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
