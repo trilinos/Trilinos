@@ -6042,7 +6042,6 @@ namespace Tpetra {
         Kokkos::DualView<const int*, buffer_device_type>;
       export_pids_type exportPIDs; // not filling it; needed for syntax
       using LO = local_ordinal_type;
-      using GO = global_ordinal_type;
       using NT = node_type;
       using Tpetra::Details::packCrsGraphNew;
       packCrsGraphNew<LO,GO,NT> (*srcCrsGraphPtr, exportLIDs, exportPIDs,
