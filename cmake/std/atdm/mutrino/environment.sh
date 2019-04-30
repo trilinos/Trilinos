@@ -39,15 +39,15 @@ export ATDM_CONFIG_MPI_EXEC="/opt/slurm/bin/srun"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="--ntasks"
 export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--gres=none"
 
-export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
-# NOTE: Using -j8 instead of -j16 for ctest is to try to avoid 'srun' "Job
-# <jobid> step creation temporarily disabled" failures on 'mutrino' (see
-# TRIL-214).
-
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW"  ]; then
     module use /projects/EMPIRE/mutrino/tpls/hsw/modulefiles
     export OMP_NUM_THREADS=2
-    export ATDM_CONFIG_MPI_POST_FLAGS="-c 4"
+    export OMP_PROC_BIND=false
+    unset OMP_PLACES
+    export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=12
+    # HSW nodes only have 32 cores so let's be a little conservative and not
+    # use all 32/2 = 16 cores.
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL"  ]; then
     module use /projects/EMPIRE/mutrino/tpls/knl/modulefiles
     export SLURM_TASKS_PER_NODE=16
@@ -55,6 +55,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "
     export OMP_PROC_BIND=false
     unset OMP_PLACES
     export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=24
+    # KNL nodes have 64 codes but let's be a little conservative and not us
+    # all of the 64/2 = 32 cores.
 else
     echo
     echo "***"
