@@ -46,8 +46,10 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_Details_Behavior.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 #include <functional>
 
 namespace Tpetra {
@@ -797,23 +799,22 @@ namespace Tpetra {
       static master_local_object_type
       get (local_access_type LA)
       {
-        if (access_mode == Impl::AccessMode::WriteOnly) {
-          LA.G_.clear_sync_state ();
-        }
-
-        if (LA.G_.template need_sync<memory_space> ()) {
-          LA.G_.template sync<memory_space> ();
-        }
-        if (access_mode != Impl::AccessMode::ReadWrite) {
-          LA.G_.template modify<memory_space> ();
-        }
-
-        // See note about "copy back" above.
         if (LA.isValid ()) {
+          if (access_mode == Impl::AccessMode::WriteOnly) {
+            LA.G_.clear_sync_state ();
+          }
+
+          if (LA.G_.template need_sync<memory_space> ()) {
+            LA.G_.template sync<memory_space> ();
+          }
+          if (access_mode != Impl::AccessMode::ReadOnly) {
+            LA.G_.template modify<memory_space> ();
+          }
+
+          // See note about "copy back" above.
+          auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
           // This converts the View to const if applicable.
-          return std::unique_ptr<view_type>
-            (new view_type
-             (LA.G_.template getLocalView<memory_space> ()));
+          return std::unique_ptr<view_type> (new view_type (G_lcl_2d));
         }
         else { // invalid; return "null" Kokkos::View
           return std::unique_ptr<view_type> (new view_type ());
@@ -862,19 +863,19 @@ namespace Tpetra {
       static master_local_object_type
       get (local_access_type LA)
       {
-        if (access_mode == Impl::AccessMode::WriteOnly) {
-          LA.G_.clear_sync_state ();
-        }
-
-        if (LA.G_.template need_sync<memory_space> ()) {
-          LA.G_.template sync<memory_space> ();
-        }
-        if (access_mode != Impl::AccessMode::ReadWrite) {
-          LA.G_.template modify<memory_space> ();
-        }
-
-        // See note about "copy back" above.
         if (LA.isValid ()) {
+          if (access_mode == Impl::AccessMode::WriteOnly) {
+            LA.G_.clear_sync_state ();
+          }
+
+          if (LA.G_.template need_sync<memory_space> ()) {
+            LA.G_.template sync<memory_space> ();
+          }
+          if (access_mode != Impl::AccessMode::ReadOnly) {
+            LA.G_.template modify<memory_space> ();
+          }
+
+          // See note about "copy back" above.
           auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
           auto G_lcl_1d = Kokkos::subview (G_lcl_2d, Kokkos::ALL (), 0);
           // This converts the View to const if applicable.
@@ -915,281 +916,358 @@ namespace Tpetra {
           nonowning_local_object_type (*viewPtr);
       }
     };
+
+    ////////////////////////////////////////////////////////////
+    // Implementation details of transform
+    ////////////////////////////////////////////////////////////
+
+    // transform uses this for the loop body of a parallel_for or
+    // parallel_reduce over the rows of a Tpetra::MultiVector with
+    // constant stride and multiple columns.
+    template<class ViewType,
+             class InnerLoopBodyType,
+             class IndexType>
+    struct MultiVectorOuterLoopBody {
+      static_assert (static_cast<int> (ViewType::Rank) == 2,
+                     "ViewType must be a rank-2 Kokkos::View.");
+      MultiVectorOuterLoopBody (const ViewType& X_lcl, InnerLoopBodyType f) :
+        X_lcl_ (X_lcl), f_ (f)
+      {}
+      KOKKOS_INLINE_FUNCTION void operator () (const IndexType i) const {
+        const IndexType numCols = static_cast<IndexType> (X_lcl_.extent (1));
+        for (IndexType j = 0; j < numCols; ++j) {
+          X_lcl_(i,j) = f_ (X_lcl_(i,j), i, j);
+        }
+      };
+      ViewType X_lcl_;
+      InnerLoopBodyType f_;
+    };
+
+    // transform uses this for the loop body of a parallel_for or
+    // parallel_reduce over the rows of a Tpetra::Vector (or each
+    // column of a Tpetra::MultiVector, if the Tpetra::MultiVector has
+    // nonconstant stride or only a single column).
+    template<class ViewType,
+             class InnerLoopBodyType,
+             class IndexType>
+    struct VectorOuterLoopBody {
+      static_assert (static_cast<int> (ViewType::Rank) == 1,
+                     "ViewType must be a rank-1 Kokkos::View.");
+      VectorOuterLoopBody (const ViewType& X_lcl, InnerLoopBodyType f) :
+        X_lcl_ (X_lcl), f_ (f)
+      {}
+      KOKKOS_INLINE_FUNCTION void operator () (const IndexType i) const {
+        X_lcl_(i) = f_ (X_lcl_(i), i, IndexType (0));
+      };
+      ViewType X_lcl_;
+      InnerLoopBodyType f_;
+    };
+
+    // Distinguish between functions that take (scalar, index, index),
+    // (scalar, index), and (scalar).
+    enum class EMultiVectorTransformFuncArgs {
+      SCALAR,
+      SCALAR_ROWINDEX,
+      SCALAR_ROWINDEX_COLINDEX,
+      ERROR
+    };
+
+    template<class FunctionType, class ReturnType, class IndexType>
+    constexpr bool
+    isScalarIndexIndexFunction ()
+    {
+      using func_type_1 =
+        std::function<ReturnType (const ReturnType&, const IndexType, const IndexType)>;
+      using func_type_2 =
+        std::function<ReturnType (ReturnType, IndexType, IndexType)>;
+
+      return std::is_convertible<FunctionType, func_type_1>::value ||
+        std::is_convertible<FunctionType, func_type_2>::value;
+    }
+
+    template<class FunctionType, class ReturnType, class IndexType>
+    constexpr bool
+    isScalarIndexFunction ()
+    {
+      using func_type_1 =
+        std::function<ReturnType (const ReturnType&, const IndexType)>;
+      using func_type_2 =
+        std::function<ReturnType (ReturnType, IndexType)>;
+
+      return std::is_convertible<FunctionType, func_type_1>::value ||
+        std::is_convertible<FunctionType, func_type_2>::value;
+    }
+
+    template<class FunctionType, class ReturnType>
+    constexpr bool
+    isScalarFunction ()
+    {
+      using func_type_1 =
+        std::function<ReturnType (const ReturnType&)>;
+      using func_type_2 =
+        std::function<ReturnType (ReturnType)>;
+
+      return std::is_convertible<FunctionType, func_type_1>::value ||
+        std::is_convertible<FunctionType, func_type_2>::value;
+    }
+
+    template<class FunctionType, class ReturnType, class IndexType>
+    constexpr EMultiVectorTransformFuncArgs
+    getMultiVectorTransformFuncArgs ()
+    {
+      return isScalarIndexIndexFunction<FunctionType, ReturnType, IndexType> () ?
+        EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX_COLINDEX :
+        (isScalarIndexFunction<FunctionType, ReturnType, IndexType> () ?
+         EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX :
+         (isScalarFunction<FunctionType, ReturnType> () ?
+          EMultiVectorTransformFuncArgs::SCALAR :
+          EMultiVectorTransformFuncArgs::ERROR));
+    }
+
+    // Functor that MultiVectorOuterLoopBody or VectorOuterLoopBody
+    // uses.  This functor in turn wraps the user's function given to
+    // transform.  We have different cases for whether the user's
+    // function takes (scalar, row index, column index), (scalar, row
+    // index), or (scalar).
+    template<class UserFunctionType,
+             class ReturnType,
+             class IndexType,
+             const EMultiVectorTransformFuncArgs argsType =
+               getMultiVectorTransformFuncArgs<UserFunctionType,
+                                               ReturnType,
+                                               IndexType> ()>
+    struct InnerLoopBody {
+      static_assert (argsType != EMultiVectorTransformFuncArgs::ERROR,
+                     "Please report this bug to the Tpetra developers.");
+    };
+
+    template<class UserFunctionType,
+             class ReturnType,
+             class IndexType>
+    struct InnerLoopBody<
+      UserFunctionType, ReturnType, IndexType,
+      EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX_COLINDEX>
+    {
+      InnerLoopBody (UserFunctionType f) : f_ (f) {}
+
+      KOKKOS_INLINE_FUNCTION ReturnType
+      operator () (const ReturnType& x_ij,
+                   const IndexType i,
+                   const IndexType j) const
+      {
+        return f_ (x_ij, i, j);
+      };
+
+      UserFunctionType f_;
+    };
+
+    template<class UserFunctionType,
+             class ReturnType,
+             class IndexType>
+    struct InnerLoopBody<
+      UserFunctionType, ReturnType, IndexType,
+      EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX>
+    {
+      InnerLoopBody (UserFunctionType f) : f_ (f) {}
+
+      KOKKOS_INLINE_FUNCTION ReturnType
+      operator () (const ReturnType& x_ij,
+                   const IndexType i,
+                   const IndexType /* j */) const
+      {
+        return f_ (x_ij, i);
+      };
+
+      UserFunctionType f_;
+    };
+
+    template<class UserFunctionType,
+             class ReturnType,
+             class IndexType>
+    struct InnerLoopBody<
+      UserFunctionType, ReturnType, IndexType,
+      EMultiVectorTransformFuncArgs::SCALAR>
+    {
+      InnerLoopBody (UserFunctionType f) : f_ (f) {}
+
+      KOKKOS_INLINE_FUNCTION ReturnType
+      operator () (const ReturnType& x_ij,
+                   const IndexType /* i */,
+                   const IndexType /* j */) const
+      {
+        return f_ (x_ij);
+      };
+
+      UserFunctionType f_;
+    };
+
+    // The implementation of transform uses the result of
+    // makeMultiVectorLoopBody or makeVectorLoopBody as the functor in
+    // a parallel_for over the local rows of the
+    // Tpetra::(Multi)Vector.
+
+    template<class ViewType,
+             class UserFunctionType,
+             class IndexType>
+    MultiVectorOuterLoopBody<
+      ViewType,
+      InnerLoopBody<
+        UserFunctionType,
+        typename ViewType::non_const_value_type,
+        IndexType>,
+      IndexType>
+    makeMultiVectorLoopBody (const ViewType& X_lcl,
+                             UserFunctionType f,
+                             const IndexType /* numCols */)
+    {
+      using return_type = typename ViewType::non_const_value_type;
+      using inner_loop_body_type =
+        InnerLoopBody<UserFunctionType, return_type, IndexType>;
+      using outer_loop_body_type =
+        MultiVectorOuterLoopBody<ViewType, inner_loop_body_type, IndexType>;
+      return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
+    }
+
+    template<class ViewType,
+             class UserFunctionType,
+             class IndexType>
+    VectorOuterLoopBody<
+      ViewType,
+      InnerLoopBody<
+        UserFunctionType,
+        typename ViewType::non_const_value_type,
+        IndexType>,
+      IndexType>
+    makeVectorLoopBody (const ViewType& X_lcl,
+                        UserFunctionType f,
+                        const IndexType /* numCols */)
+    {
+      using return_type = typename ViewType::non_const_value_type;
+      using inner_loop_body_type =
+        InnerLoopBody<UserFunctionType, return_type, IndexType>;
+      using outer_loop_body_type =
+        VectorOuterLoopBody<ViewType, inner_loop_body_type, IndexType>;
+      return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
+    }
+
+    // Implementation of transform (see below).
+    template<class ExecutionSpace,
+             class TpetraMultiVectorType,
+             class UserFunctionType>
+    struct Transform {
+      static void
+      transform (const char debugLabel[],
+                 ExecutionSpace execSpace,
+                 TpetraMultiVectorType& X,
+                 UserFunctionType f)
+      {
+        using Teuchos::TypeNameTraits;
+        using std::endl;
+        using MV = TpetraMultiVectorType;
+        using preferred_memory_space =
+          typename MV::device_type::memory_space;
+        using memory_space = Impl::transform_memory_space<
+          ExecutionSpace, preferred_memory_space>;
+        using LO = typename MV::local_ordinal_type;
+        using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
+
+        const int myRank = X.getMap ()->getComm ()->getRank ();
+        const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+        if (verbose) {
+          std::ostringstream os;
+          os << "Proc " << myRank << ": Tpetra::transform:" << endl
+             << " debugLabel: " << debugLabel << endl
+             << " ExecutionSpace: "
+             << TypeNameTraits<ExecutionSpace>::name () << endl
+             << " memory_space: "
+             << TypeNameTraits<memory_space>::name () << endl;
+          std::cerr << os.str ();
+        }
+
+        memory_space memSpace;
+        if (X.getNumVectors () == size_t (1) || ! X.isConstantStride ()) {
+          const size_t numVecs = X.getNumVectors ();
+          for (size_t j = 0; j < numVecs; ++j) {
+            auto X_j = X.getVectorNonConst (j);
+            // Generic lambdas need C++14, so we must use arg_type here.
+            using arg_type =
+              with_local_access_function_argument_type<
+                decltype (readWrite (*X_j).on (memSpace))>;
+            withLocalAccess
+              ([=] (const arg_type& X_j_lcl) {
+                auto loopBody =
+                  Impl::makeVectorLoopBody (X_j_lcl, f, LO (1));
+                Kokkos::parallel_for
+                  ("Tpetra::transform(Vector)",
+                   range_type (execSpace, 0, X_j_lcl.extent (0)),
+                   loopBody);
+              }, readWrite (*X_j).on (memSpace));
+          }
+        }
+        else {
+          // Generic lambdas need C++14, so we must use arg_type here.
+          using arg_type =
+            with_local_access_function_argument_type<
+              decltype (readWrite (X).on (memSpace))>;
+          withLocalAccess
+            ([=] (const arg_type& X_lcl) {
+              const LO numCols = static_cast<LO> (X_lcl.extent (1));
+              auto loopBody =
+                Impl::makeMultiVectorLoopBody (X_lcl, f, numCols);
+
+              if (verbose) {
+                std::ostringstream os;
+                os << "Proc " << myRank << ": Contiguous MV case: X_lcl: "
+                   << X_lcl.extent (0) << " x "
+                   << X_lcl.extent (1) << endl;
+                std::cerr << os.str ();
+              }
+
+              Kokkos::parallel_for
+                ("Tpetra::transform(MultiVector)",
+                 range_type (execSpace, 0, X_lcl.extent (0)),
+                 loopBody);
+
+            }, readWrite (X).on (memSpace));
+        }
+      }
+    };
   } // namespace Impl
 
   /// \brief Apply a function entrywise to each entry of a
   ///   Tpetra::MultiVector.
   ///
   /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// takes the current entry (as impl_scalar_type), the local row
-  /// index (as LO), and the local column index (as LO).
+  /// has one of the following forms:
+  ///
+  /// <ul>
+  /// <li> Takes the current entry as <tt>impl_scalar_type</tt>, the
+  ///   local row index as LO, and the local column index as LO, and
+  ///   returns <tt>impl_scalar_type</tt>; </li>
+  ///
+  /// <li> Takes the current entry as <tt>impl_scalar_type</tt> and
+  ///   the local row index as LO, and returns
+  ///   <tt>impl_scalar_type</tt>; </li>
+  ///
+  /// <li> Takes the current entry as <tt>impl_scalar_type</tt>, and
+  ///   returns <tt>impl_scalar_type</tt>; </li>
+  /// </ul>
   ///
   /// \param execSpace [in] Kokkos execution space on which to run.
   /// \param X [in/out] MultiVector to modify.
   /// \param f [in] Function to apply to each entry of X.
-  ///
-  /// Let IST =
-  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
-  /// f takes (IST, LO, LO) and returns IST.
   template<class SC, class LO, class GO, class NT,
-           class UnaryFunction,
+           class UserFunctionType,
            class ExecutionSpace>
   void
   transform (ExecutionSpace execSpace,
              Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f,
-             typename std::enable_if<
-               std::is_convertible<
-                 decltype (f(typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type (), LO (), LO ())),
-                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
-                   impl_scalar_type
-               >::value,
-               int>::type* = nullptr)
+             UserFunctionType f)
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    using preferred_memory_space = typename MV::device_type::memory_space;
-    using execution_space = typename ExecutionSpace::execution_space;
-    using memory_space = Impl::transform_memory_space<
-      execution_space, preferred_memory_space>;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    memory_space memSpace;
-    if (X.getNumVectors () == size_t (1)) {
-      auto X_0 = X.getVectorNonConst (0);
-      // Generic lambdas need C++14, so we must use arg_type here.
-      using arg_type =
-        with_local_access_function_argument_type<
-          decltype (readWrite (*X_0).on (memSpace))>;
-      withLocalAccess
-        ([=] (const arg_type& X_lcl) {
-           Kokkos::parallel_for
-             ("transform",
-              range_type (execSpace, 0, X_lcl.extent (0)),
-              KOKKOS_LAMBDA (const LO i) {
-               X_lcl(i) = f (X_lcl(i), i, 0);
-             });
-         }, readWrite (*X_0).on (memSpace));
-    }
-    else if (! X.isConstantStride ()) {
-      const size_t numVecs = X.getNumVectors ();
-      for (size_t j = 0; j < numVecs; ++j) {
-        auto X_j = X.getVectorNonConst (j);
-        // Generic lambdas need C++14, so we must use arg_type here.
-        using arg_type =
-          with_local_access_function_argument_type<
-            decltype (readWrite (*X_j).on (memSpace))>;
-        withLocalAccess
-          ([=] (const arg_type& X_j_lcl) {
-             Kokkos::parallel_for
-               ("transform",
-                range_type (execSpace, 0, X_j_lcl.extent (0)),
-                KOKKOS_LAMBDA (const LO i) {
-                 X_j_lcl(i) = f (X_j_lcl(i), i, 0);
-               });
-           }, readWrite (*X_j).on (memSpace));
-      }
-    }
-    else {
-      // Generic lambdas need C++14, so we must use arg_type here.
-      using arg_type =
-        with_local_access_function_argument_type<
-          decltype (readWrite (X).on (memSpace))>;
-      withLocalAccess
-        ([=] (const arg_type& X_lcl) {
-           Kokkos::parallel_for
-             ("transform",
-              range_type (execSpace, 0, X_lcl.extent (0)),
-              KOKKOS_LAMBDA (const LO i) {
-               const LO numVecs = X_lcl.extent (1);
-               for (LO j = 0; j < numVecs; ++j) {
-                 X_lcl(i,j) = f (X_lcl(i,j), i, j);
-               }
-             });
-         }, readWrite (X).on (memSpace));
-    }
-  }
-
-  /// \brief Apply a function (taking current value and row index)
-  ///   entrywise to each entry of a Tpetra::MultiVector.
-  ///
-  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// takes the current entry (as impl_scalar_type) and the local row
-  /// index (as LO).
-  ///
-  /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function to apply to each entry of X.
-  ///
-  /// Let IST =
-  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
-  /// f takes (IST, LO) and returns IST.
-  template<class SC, class LO, class GO, class NT,
-           class UnaryFunction,
-           class ExecutionSpace>
-  void
-  transform (ExecutionSpace execSpace,
-             Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f,
-             typename std::enable_if<
-               std::is_convertible<
-                 decltype (f(typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type (), LO ())),
-                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
-                   impl_scalar_type
-             >::value,
-             int>::type* = nullptr)
-  {
-    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    using preferred_memory_space = typename MV::device_type::memory_space;
-    using execution_space = typename ExecutionSpace::execution_space;
-    using memory_space = Impl::transform_memory_space<
-      execution_space, preferred_memory_space>;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    memory_space memSpace;
-    if (X.getNumVectors () == size_t (1)) {
-      auto X_0 = X.getVectorNonConst (0);
-      // Generic lambdas need C++14, so we must use arg_type here.
-      using arg_type =
-        with_local_access_function_argument_type<
-          decltype (readWrite (*X_0).on (memSpace))>;
-      withLocalAccess
-        ([=] (const arg_type& X_lcl) {
-           Kokkos::parallel_for
-             ("transform",
-              range_type (execSpace, 0, X_lcl.extent (0)),
-              KOKKOS_LAMBDA (const LO i) {
-               X_lcl(i) = f (X_lcl(i), i);
-             });
-         }, readWrite (*X_0).on (memSpace));
-    }
-    else if (! X.isConstantStride ()) {
-      const size_t numVecs = X.getNumVectors ();
-      for (size_t j = 0; j < numVecs; ++j) {
-        auto X_j = X.getVectorNonConst (j);
-        // Generic lambdas need C++14, so we must use arg_type here.
-        using arg_type =
-          with_local_access_function_argument_type<
-            decltype (readWrite (*X_j).on (memSpace))>;
-        withLocalAccess
-          ([=] (const arg_type& X_j_lcl) {
-             Kokkos::parallel_for
-               ("transform",
-                range_type (execSpace, 0, X_j_lcl.extent (0)),
-                KOKKOS_LAMBDA (const LO i) {
-                 X_j_lcl(i) = f (X_j_lcl(i), i);
-               });
-           }, readWrite (*X_j).on (memSpace));
-      }
-    }
-    else {
-      // Generic lambdas need C++14, so we must use arg_type here.
-      using arg_type =
-        with_local_access_function_argument_type<
-          decltype (readWrite (X).on (memSpace))>;
-      withLocalAccess
-        ([=] (const arg_type& X_lcl) {
-           Kokkos::parallel_for
-             ("transform",
-              range_type (execSpace, 0, X_lcl.extent (0)),
-              KOKKOS_LAMBDA (const LO i) {
-               const LO numVecs = X_lcl.extent (1);
-               for (LO j = 0; j < numVecs; ++j) {
-                 X_lcl(i,j) = f (X_lcl(i,j), i);
-               }
-             });
-         }, readWrite (X).on (memSpace));
-    }
-  }
-
-  /// \brief Apply a function (taking current value) entrywise to each
-  ///   entry of a Tpetra::MultiVector.
-  ///
-  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// takes the current entry (as impl_scalar_type).
-  ///
-  /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function to apply to each entry of X.
-  ///
-  /// Let IST =
-  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
-  /// f takes (IST) and returns IST.
-  template<class SC, class LO, class GO, class NT,
-           class UnaryFunction,
-           class ExecutionSpace>
-  void
-  transform (ExecutionSpace execSpace,
-             Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f,
-             typename std::enable_if<
-               std::is_convertible<
-                 decltype (f(typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type ())),
-                 typename Tpetra::MultiVector<SC, LO, GO, NT>::
-                   impl_scalar_type
-             >::value,
-             int>::type* = nullptr)
-  {
-    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    using preferred_memory_space = typename MV::device_type::memory_space;
-    using execution_space = typename ExecutionSpace::execution_space;
-    using memory_space = Impl::transform_memory_space<
-      execution_space, preferred_memory_space>;
-    using range_type = Kokkos::RangePolicy<execution_space, LO>;
-
-    memory_space memSpace;
-    if (X.getNumVectors () == size_t (1)) {
-      auto X_0 = X.getVectorNonConst (0);
-      // Generic lambdas need C++14, so we must use arg_type here.
-      using arg_type =
-        with_local_access_function_argument_type<
-          decltype (readWrite (*X_0).on (memSpace))>;
-      withLocalAccess
-        ([=] (const arg_type& X_lcl) {
-           Kokkos::parallel_for
-             ("transform",
-              range_type (execSpace, 0, X_lcl.extent (0)),
-              KOKKOS_LAMBDA (const LO i) {
-               X_lcl(i) = f (X_lcl(i));
-             });
-         }, readWrite (*X_0).on (memSpace));
-    }
-    else if (! X.isConstantStride ()) {
-      const size_t numVecs = X.getNumVectors ();
-      for (size_t j = 0; j < numVecs; ++j) {
-        auto X_j = X.getVectorNonConst (j);
-        // Generic lambdas need C++14, so we must use arg_type here.
-        using arg_type =
-          with_local_access_function_argument_type<
-            decltype (readWrite (*X_j).on (memSpace))>;
-        withLocalAccess
-          ([=] (const arg_type& X_j_lcl) {
-             Kokkos::parallel_for
-               ("transform",
-                range_type (execSpace, 0, X_j_lcl.extent (0)),
-                KOKKOS_LAMBDA (const LO i) {
-                 X_j_lcl(i) = f (X_j_lcl(i));
-               });
-           }, readWrite (*X_j).on (memSpace));
-      }
-    }
-    else {
-      // Generic lambdas need C++14, so we must use arg_type here.
-      using arg_type =
-        with_local_access_function_argument_type<
-          decltype (readWrite (X).on (memSpace))>;
-      withLocalAccess
-        ([=] (const arg_type& X_lcl) {
-           Kokkos::parallel_for
-             ("transform",
-              range_type (execSpace, 0, X_lcl.extent (0)),
-              KOKKOS_LAMBDA (const LO i) {
-               const LO numVecs = X_lcl.extent (1);
-               for (LO j = 0; j < numVecs; ++j) {
-                 X_lcl(i,j) = f (X_lcl(i,j));
-               }
-             });
-         }, readWrite (X).on (memSpace));
-    }
+    using impl_type =
+      Impl::Transform<ExecutionSpace, MV, UserFunctionType>;
+    impl_type::transform ("transform(execSpace,MV,f)", execSpace, X, f);
   }
 
   /// \brief Overload of transform (see above) that runs on X's
@@ -1199,14 +1277,17 @@ namespace Tpetra {
   /// \param f [in] Function to apply entrywise to X (could have
   ///   different signatures; see above).
   template<class SC, class LO, class GO, class NT,
-           class UnaryFunction>
+           class UserFunctionType>
   void
   transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UnaryFunction f)
+             UserFunctionType f)
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using execution_space = typename MV::device_type::execution_space;
-    transform (execution_space (), X, f);
+    using impl_type =
+      Impl::Transform<execution_space, MV, UserFunctionType>;
+    execution_space execSpace;
+    impl_type::transform ("transform(MV,f)", execSpace, X, f);
   }
 
 } // namespace Tpetra
@@ -1278,7 +1359,8 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
-      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+      // static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
       TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
     }
@@ -1289,7 +1371,8 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
-      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+      //static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
       TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
     }
@@ -1306,7 +1389,13 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+      // Errors look like this:
+      //
+      // error: ‘__T0’ has not been declared
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
     }
@@ -1318,7 +1407,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_wo2 = X_lcl_wo;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_wo)::Rank == 2, "Rank is not 2");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_wo.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_wo.extent (1)) == numVecs );
     }
@@ -1329,7 +1421,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_wo2 = X_lcl_wo;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_wo)::Rank == 2, "Rank is not 2");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_wo.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_wo.extent (1)) == numVecs );
     }
@@ -1341,7 +1436,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_rw2 = X_lcl_rw;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_rw)::Rank == 2, "Rank is not 2");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_rw.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_rw.extent (1)) == numVecs );
     }
@@ -1352,7 +1450,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_rw2 = X_lcl_rw;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_rw)::Rank == 2, "Rank is not 2");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_rw.extent (0)) == numLocal );
       TEST_ASSERT( size_t (X_lcl_rw.extent (1)) == numVecs );
     }
@@ -1364,7 +1465,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
     }
     {
@@ -1374,7 +1478,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
     }
 
@@ -1385,7 +1492,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_1d_wo2 = X_lcl_1d_wo;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_1d_wo)::Rank == 1, "Rank is not 1");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_1d_wo.extent (0)) == numLocal );
     }
     {
@@ -1395,7 +1505,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_1d_wo2 = X_lcl_1d_wo;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_1d_wo)::Rank == 1, "Rank is not 1");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_1d_wo.extent (0)) == numLocal );
     }
 
@@ -1406,7 +1519,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
     }
 
@@ -1420,7 +1536,10 @@ namespace { // (anonymous)
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
                    Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
+      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
+#ifndef KOKKOS_ENABLE_CUDA
       static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
+#endif // KOKKOS_ENABLE_CUDA
       TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
     }
 
@@ -1493,9 +1612,15 @@ namespace { // (anonymous)
 
   TEUCHOS_UNIT_TEST( VectorHarness, Transform )
   {
+    using Tpetra::transform;
     using Kokkos::ALL;
-    constexpr bool debug = true;
+    using std::endl;
+    using device_execution_space =
+      typename multivec_type::device_type::execution_space;
     using LO = typename multivec_type::local_ordinal_type;
+    constexpr bool debug = true;
+    int lclSuccess = 0;
+    int gblSuccess = 0;
 
     RCP<Teuchos::FancyOStream> outPtr = debug ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
@@ -1518,63 +1643,161 @@ namespace { // (anonymous)
     multivec_type X (map, numVecs);
     TEST_EQUALITY( X.getNumVectors (), numVecs );
 
-    // Test overload of transform that runs on X's default execution
-    // space, and whose function takes (SC, LO, LO) arguments.
-    // Exercise it for a MultiVector with multiple columns.
-    using Tpetra::transform;
-    transform (X, [] (const double X_ij, const LO i, const LO j) {
-        return X_ij + double (i+1.0) + double (j+1.0);
+    out << "Test transform(MultiVector, double(double))" << endl;
+    transform (X, KOKKOS_LAMBDA (const double /* X_ij */) {
+        return double (418.0);
       });
-    transform (Kokkos::DefaultHostExecutionSpace (),
-               X, [] (const double X_ij, const LO i, const LO j) {
-        return X_ij + double (i+1.0) + double (j+1.0);
-      });
-    transform (X, [] (const double X_ij, const LO i, const LO j) {
-        return X_ij + double (i+1.0) + double (j+1.0);
-      });
-    transform (Kokkos::DefaultHostExecutionSpace (),
-               X, [] (const double X_ij, const LO i, const LO j) {
-        return X_ij + double (i+1.0) + double (j+1.0);
-      });
-
     {
-      X.sync<Kokkos::HostSpace> ();
-      auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
-      bool ok = true;
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
         for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-          if (X_lcl(i,j) != 4.0 * (double (i+1.0) + double(j+1.0))) {
-            ok = false;
-          }
-        }
-      }
-      TEST_ASSERT( ok );
-    }
-
-    X.sync<vec_type::device_type::memory_space> ();
-    // Exercise overload of transform that runs on X's default
-    // execution space, and whose function takes (SC, LO) arguments.
-    // Exercise it for a MultiVector with multiple columns.
-    transform (X, [] (const double X_ij, const LO i) {
-        return X_ij + double (i+1.0);
-      });
-
-    {
-      X.sync<Kokkos::HostSpace> ();
-      auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
-      bool ok = true;
-      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
-        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-          const double expectedVal = double (i+1.0) +
-            4.0 * (double (i+1.0) + double (j+1.0));
+          const double expectedVal = 418.0;
           if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << endl;
             ok = false;
           }
         }
+        TEST_ASSERT( ok );
       }
-      TEST_ASSERT( ok );
     }
-    X.sync<vec_type::device_type::memory_space> ();
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "Test transform(DefaultHostExecutionSpace, MultiVector, "
+      "double(double))" << endl;
+    transform (Kokkos::DefaultHostExecutionSpace (),
+               X, KOKKOS_LAMBDA (const double /* X_ij */) {
+        return double (777.0);
+      });
+    {
+      //X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 777.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << std::endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "Test transform(device_execution_space (), "
+      "MultiVector, double(double))" << endl;
+    transform (device_execution_space (), X,
+               KOKKOS_LAMBDA (const double /* X_ij */) {
+        return double (666.0);
+      });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 666.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << std::endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "Test transform(MultiVector, double(double,LO))" << endl;
+    transform (X, KOKKOS_LAMBDA (double /* X_ij */, LO /* i */) {
+        return double (93.0);
+      });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 93.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << std::endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "Test transform(MultiVector, double(double,LO,LO))" << endl;
+    transform (X, KOKKOS_LAMBDA (const double /* X_ij */,
+                                 const LO /* i */,
+                                 const LO /* j */) {
+        return double (777.0);
+      });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 777.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << std::endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
 
     myOut << "Create a Vector, and make sure that "
       "it has exactly one vector (column)" << endl;
@@ -1584,22 +1807,43 @@ namespace { // (anonymous)
     // Exercise overload of transform that runs on X's default
     // execution space, and whose function takes (SC, LO, LO)
     // arguments.  Exercise it for a Vector.
-    transform (vec, [] (const double X_ij, const LO i, const LO j) {
+    transform (vec, KOKKOS_LAMBDA (const double X_ij, const LO i, const LO j) {
         return X_ij + double (i+1.0) + double (j+1.0);
       });
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    // Exercise overload of transform that runs on X's default
+    // execution space, and whose function takes (SC, LO)
+    // arguments.  Exercise it for a Vector.
+    transform (vec, KOKKOS_LAMBDA (const double X_ij, const LO i) {
+        return X_ij + double (i+1.0);
+      });
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
 
     // Exercise overload of transform that runs on X's default
     // execution space, and whose function takes (SC) arguments.
     // Exercise it for a Vector.
-    transform (vec, [] (const double /* X_ij */) {
+    transform (vec, KOKKOS_LAMBDA (const double /* X_ij */) {
         return 42.0;
       });
 
     {
-      vec.sync<Kokkos::HostSpace> ();
-      auto vec_lcl =
-        subview (vec.getLocalView<Kokkos::HostSpace> (),
-                 ALL (), 0);
+      vec.sync_host ();
+      auto vec_lcl = subview (vec.getLocalViewHost (), ALL (), 0);
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         if (vec_lcl(i) != 42.0) {
@@ -1609,24 +1853,35 @@ namespace { // (anonymous)
       TEST_ASSERT( ok );
     }
 
-    vec.sync<vec_type::device_type::memory_space> ();
-    transform (vec, [] (const double X_ij) {
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    transform (vec, KOKKOS_LAMBDA (const double X_ij) {
         return X_ij + 1.0;
       });
 
     {
-      vec.sync<Kokkos::HostSpace> ();
-      auto vec_lcl =
-        subview (vec.getLocalView<Kokkos::HostSpace> (),
-                 ALL (), 0);
+      vec.sync_host ();
+      auto vec_lcl = subview (vec.getLocalViewHost (), ALL (), 0);
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         if (vec_lcl(i) != 43.0) {
+          out << "vec_lcl(" << i << ") = " << vec_lcl(i) << " != 43.0"
+              << std::endl;
           ok = false;
         }
       }
       TEST_ASSERT( ok );
     }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
   TEUCHOS_UNIT_TEST( VectorHarness, WithLocalAccess )
