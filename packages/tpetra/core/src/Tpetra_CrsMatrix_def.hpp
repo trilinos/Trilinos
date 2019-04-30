@@ -799,12 +799,15 @@ namespace Tpetra {
     return getCrsGraphRef ().getComm ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNode () const {
     return getCrsGraphRef ().getNode ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   ProfileType

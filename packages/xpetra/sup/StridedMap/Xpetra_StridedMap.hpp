@@ -687,8 +687,10 @@ namespace Xpetra {
     //! Get the Comm object for this Map.
     Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { return map_->getComm(); }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get the Node object for this Map.
     Teuchos::RCP<Node>  getNode() const { return map_->getNode(); }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     RCP<const Map> removeEmptyProcesses  () const { return map_->removeEmptyProcesses(); }
     RCP<const Map> replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return map_->replaceCommWithSubset(newComm); }

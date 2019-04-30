@@ -2010,13 +2010,16 @@ namespace Tpetra {
     return comm_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNode () const {
     // Node instances don't do anything any more, but sometimes it
     // helps for them to be nonnull.
     return Teuchos::rcp (new Node);
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::checkIsDist() const {
