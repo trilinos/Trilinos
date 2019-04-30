@@ -106,12 +106,10 @@ namespace Xpetra {
     //@{
 
     //! Sets all vector entries to zero.
-    TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true)
-      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,1,zeroOut);
+    TpetraVector(const Teuchos::RCP<const Map> &map, bool zeroOut=true);
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
-      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (map,A,map->getNodeNumElements(),1);
+    TpetraVector(const Teuchos::RCP<const Map> &map, const Teuchos::ArrayView< const Scalar > &A);
 
     //! Destructor.
     virtual ~TpetraVector();
@@ -174,7 +172,7 @@ namespace Xpetra {
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (vec);
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec);
 
     //! Get the underlying Tpetra multivector
     RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getTpetra_Vector() const;

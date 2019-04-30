@@ -52,7 +52,8 @@
 #include "Xpetra_TpetraImport.hpp"
 #include "Xpetra_TpetraExport.hpp"
 
-#include "Xpetra_TpetraMultiVector_decl.hpp"
+#include "Xpetra_TpetraMultiVector.hpp"
+#include "Xpetra_TpetraVector_decl.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
@@ -69,7 +70,7 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos
 { }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraVector::TpetraVector()
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraVector()
 { }
 
 
@@ -110,7 +111,7 @@ std::string TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() 
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description"); return getTpetra_Vector()->description(); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
 { XPETRA_MONITOR("TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe"); getTpetra_Vector()->describe(out, verbLevel); }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -125,22 +126,36 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> (vec)
 { }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_Vector() const
 { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
-typename dual_view_type::t_host_um TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getHostLocalView () const
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host_um TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getHostLocalView () const {
       return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getHostLocalView();
     }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename dual_view_type::t_dev_um TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDeviceLocalView() const
+typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev_um TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDeviceLocalView() const {
       return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getDeviceLocalView();
     }
 
+#if 0
+ template<class TargetDeviceType>
+    typename Kokkos::Impl::if_c<
+      Kokkos::Impl::is_same<
+        typename dual_view_type::t_dev_um::execution_space::memory_space,
+        typename TargetDeviceType::memory_space>::value,
+        typename dual_view_type::t_dev_um,
+        typename dual_view_type::t_host_um>::type
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalView () const
+ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalView () const {
       return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>();
     }
+#endif
+
+#endif
 
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -461,6 +476,6 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalView () const
 #endif
 
 #endif // HAVE_XPETRA_EPETRA
-
+} //namespace Xpetra
 
 #endif
