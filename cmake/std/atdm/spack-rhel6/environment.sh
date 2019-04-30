@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on a SEMS NFS mounted RHEL6 for ATMD builds of Trilinos
+# Set up env using spack build tpls on RHEL6 for ATMD builds of Trilinos
 #
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
@@ -21,8 +21,9 @@ else
   return
 fi
 
-echo "Using SEMS RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using SPACK RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
+export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
 
 # Get ATDM_CONFIG_NUM_CORES_ON_MACHINE for this machine
@@ -64,8 +65,7 @@ else
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-    #module load sems-gcc/6.1.0
-    #module load gcc-4.4.7/spack-gcc/7.2.0
+    module load gcc-7.2.0/spack-binutils/2.31.1
     module load gcc-7.2.0/spack-gcc/7.2.0
     export OMPI_CXX=`which g++`
 
@@ -76,8 +76,10 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
 #    export LAPACK_ROOT=/usr/lib64/atlas
     export OMPI_CC=`which gcc`
     export OMPI_FC=`which gfortran`
-    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
-    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+#    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
+#    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
+    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib64;-llapack"
+    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib64;-lblas"
 else
     echo
     echo "***"
@@ -93,6 +95,11 @@ module load gcc-7.2.0/spack-parallel-netcdf/1.11.0
 module load gcc-7.2.0/spack-superlu/4.3
 module load gcc-7.2.0/spack-hdf5/1.8.12
 module load gcc-7.2.0/spack-zlib/1.2.11
+
+module load gcc-7.2.0/spack-metis/5.1.0
+module load gcc-7.2.0/spack-parmetis/4.0.3
+module load gcc-7.2.0/spack-cgns/3.3.1
+module load gcc-7.2.0/spack-superlu-dist/6.1.0
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so
@@ -110,10 +117,33 @@ echo NETCDF_ROOT=${NETCDF_ROOT}
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;${ZLIB_ROOT}/lib/libz.a;-ldl"
 echo ATDM_CONFIG_HDF5_LIBS=$ATDM_CONFIG_HDF5_LIBS
 
-export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${NETCDF_ROOT}/lib/libnetcdf.a;${PARALLEL_NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
 
+export ATDM_CONFIG_METIS_LIBS="${METIS_ROOT}/lib/libmetis.so"
+export ATDM_CONFIG_PARMETIS_LIBS="${METIS_ROOT}/lib/libmetis.so;${PARMETIS_ROOT}/lib/libparmetis.so"
+#export ATDM_CONFIG_PNETCDF_LIBS=
+export ATDM_CONFIG_CGNS_LIBS="-L${CGNS_ROOT}/lib/libcgns.a;-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+
+#export METIS_LIBRARY_DIRS=${METIS_ROOT}/lib
+#export METIS_INCLUDE_DIRS=${METIS_ROOT}/include
+
+export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.${ATDM_CONFIG_TPL_LIB_EXT};${BOOST_ROOT}/lib/libboost_system.${ATDM_CONFIG_TPL_LIB_EXT};${NETCDF_ROOT}/lib/libnetcdf.a;${PARALLEL_NETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
 # NOTE: SEMS does not provide the correct *.so files for NetCDF so we can't
 # use them in a shared lib build :-(
+
+export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.so;${BINUTILS_ROOT}/lib64/libiberty.a"
+# NOTE: Above, we have to explicitly set the libs to use libbdf.so instead of
+# libbdf.a because the former works and the latter does not and TriBITS is set
+# up to only find static libs by default!
+unset BINUTILS_ROOT
+
+# SuperLUDist
+if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
+  # Set the default which is correct for all of the new TPL builds
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLU_DIST_ROOT}/include
+  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLU_DIST_ROOT}/lib/libsuperlu_dist.so
+fi
+
 
 # Set MPI wrappers
 export MPICC=`which mpicc`
