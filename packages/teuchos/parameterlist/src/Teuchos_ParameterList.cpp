@@ -540,7 +540,8 @@ void ParameterList::modifyParameterList(ParameterList & valid_pl,
 
 
 void ParameterList::reconcileParameterList(ParameterList & valid_pl,
-    const bool left_to_right){
+    const bool left_to_right)
+{
   // We do a breadth-first traversal of `valid_pl` and store references to all of the sublists
   // in `valid_pl` in a deque with a matching deque for `this`.
   std::deque<std::reference_wrapper<ParameterList>> refs, valid_refs, tmp, valid_tmp;

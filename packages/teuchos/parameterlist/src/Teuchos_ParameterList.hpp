@@ -1016,7 +1016,8 @@ ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntr
 
 template<typename T>
 void ParameterList::recursivelySetValidator(
-    RCP<const ParameterEntryValidator> const& validator, int const depth){
+    RCP<const ParameterEntryValidator> const& validator, int const depth)
+{
   ConstIterator itr;
   for (itr = this->begin(); itr != this->end(); ++itr){
     const std::string &entry_name = itr->first;

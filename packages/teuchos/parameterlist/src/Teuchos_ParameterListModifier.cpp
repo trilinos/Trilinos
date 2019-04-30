@@ -56,14 +56,16 @@ ParameterListModifier::~ParameterListModifier()
 {}
 
 
-void ParameterListModifier::printDoc(std::string const& docString, std::ostream &out) const{
+void ParameterListModifier::printDoc(std::string const& docString, std::ostream &out) const
+{
   StrUtils::printLines(out,"# ",docString);
   out << "#  Modifier Used: " << name_ << std::endl;
 }
 
 
 Array<std::string> ParameterListModifier::findMatchingBaseNames(const ParameterList &pl,
-    const std::string &base_name, const bool &find_parameters, const bool &find_sublists) const{
+    const std::string &base_name, const bool &find_parameters, const bool &find_sublists) const
+{
   Array<std::string> matches(0);
   ParameterList::ConstIterator itr;
   for (itr = pl.begin(); itr != pl.end(); ++itr) {
@@ -143,11 +145,10 @@ int ParameterListModifier::expandSublistsUsingBaseName(
   bool delete_base_name = true;
   if (valid_pl.isSublist(base_name)){
     if (pl.isSublist(base_name)){
-      if (!allow_base_name){
-        throw std::logic_error("Sublist can't have the same name as the parameter template name without `allow_base_name=true`.");
-      } else{
-        delete_base_name = false;
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION(!allow_base_name, std::logic_error,
+          "Sublist can't have the same name as the parameter template name "
+          "without `allow_base_name=true`.");
+      delete_base_name = false;
     }
     Array<std::string> matches = findMatchingBaseNames(pl, base_name, false, true);
     replacements = matches.length();
@@ -162,8 +163,9 @@ int ParameterListModifier::expandSublistsUsingBaseName(
 }
 
 
-int ParameterListModifier::setDefaultsInSublists(const std::string &param_name, ParameterList &pl,
-    const Array<std::string> &sublist_names) const{
+int ParameterListModifier::setDefaultsInSublists(const std::string &param_name,
+    ParameterList &pl, const Array<std::string> &sublist_names) const
+{
   int num_defaults = 0;
   if (pl.isParameter(param_name)){
     for (const std::string &sublist_name : sublist_names){
@@ -182,17 +184,16 @@ int ParameterListModifier::setDefaultsInSublists(const std::string &param_name, 
 
 
 template<typename T>
-bool ParameterListModifier::replaceScalarParameterWithArray(const std::string &param_name, const std::string &new_name,
-    ParameterList &pl, const bool &throw_if_new_name_exists) const{
+bool ParameterListModifier::replaceScalarParameterWithArray(const std::string &param_name,
+    const std::string &new_name, ParameterList &pl, const bool &throw_if_new_name_exists) const
+{
   bool param_exists = false;
   if (pl.isParameter(param_name)){
     param_exists = true;
-    if (!pl.isType<T>(param_name)){
-      throw std::logic_error("The parameter " + new_name + " is not of type " + typeid(T).name());
-    }
-    if ((pl.isParameter(new_name) || pl.isSublist(new_name)) && throw_if_new_name_exists){
-      throw std::logic_error("The parameter " + new_name + " already exists in this parameter list.");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(!pl.isType<T>(param_name), std::logic_error,
+        "The parameter " << new_name << " is not of type " << typeid(T).name());
+    TEUCHOS_TEST_FOR_EXCEPTION((pl.isParameter(new_name) || pl.isSublist(new_name)) && throw_if_new_name_exists,
+        std::logic_error, "The parameter " << new_name << " already exists in this parameter list.");
     Array<T> params = tuple<T>(pl.get<T>(param_name));
     pl.set(new_name, params);
     pl.remove(param_name);

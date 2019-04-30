@@ -85,9 +85,8 @@ public:
   void reconcile(Teuchos::ParameterList &pl) const
   {
     // If A and B are less than 0.0 then throw an error
-    if (pl.get<double>("A") < 0.0 && pl.get<double>("B") < 0.0){
-      throw std::logic_error("Parameters A and B can't both be less than 0.0");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(pl.get<double>("A") < 0.0 && pl.get<double>("B") < 0.0,
+        std::logic_error, "Parameters A and B can't both be less than 0.0");
   }
 };
 
@@ -106,9 +105,8 @@ public:
   {
     // If E and F are less than 10 then throw an error
     const int max_CD = 10;
-    if (pl.get<int>("C") > max_CD && pl.get<int>("D") > max_CD){
-      throw std::logic_error("Parameters C and D can't both be greater than 10");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(pl.get<int>("C") > max_CD && pl.get<int>("D") > max_CD,
+        std::logic_error, "Parameters C and D can't both be greater than 10")
   }
 };
 
