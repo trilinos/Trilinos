@@ -801,12 +801,9 @@ namespace Tpetra {
 
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
-        // Create with DynamicProfile, so that the fillComplete() can
-        // do first-touch reallocation (a NUMA (Non-Uniform Memory
-        // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
           rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
-                                       DynamicProfile));
+                                       StaticProfile));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -894,12 +891,9 @@ namespace Tpetra {
 
         // Construct the CrsMatrix, using the row map, with the
         // constructor specifying the number of nonzeros for each row.
-        // Create with DynamicProfile, so that the fillComplete() can
-        // do first-touch reallocation (a NUMA (Non-Uniform Memory
-        // Access) optimization on multicore CPUs).
         RCP<sparse_matrix_type> A =
-          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow (),
-                                       DynamicProfile, constructorParams));
+          rcp (new sparse_matrix_type (pRowMap, myNumEntriesPerRow,
+                                       StaticProfile, constructorParams));
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
@@ -958,14 +952,12 @@ namespace Tpetra {
         typedef global_ordinal_type GO;
 
         // Construct the CrsMatrix.
-        //
-        // Create with DynamicProfile, so that the fillComplete() can
-        // do first-touch reallocation.
+
         RCP<sparse_matrix_type> A; // the matrix to return.
         if (colMap.is_null ()) { // the user didn't provide a column Map
-          A = rcp (new sparse_matrix_type (rowMap, myNumEntriesPerRow, DynamicProfile));
+          A = rcp (new sparse_matrix_type (rowMap, myNumEntriesPerRow, StaticProfile));
         } else { // the user provided a column Map
-          A = rcp (new sparse_matrix_type (rowMap, colMap, myNumEntriesPerRow, DynamicProfile));
+          A = rcp (new sparse_matrix_type (rowMap, colMap, myNumEntriesPerRow, StaticProfile));
         }
 
         // List of the global indices of my rows.
@@ -1549,8 +1541,36 @@ namespace Tpetra {
         }
 
         // Create the graph where the root owns EVERYTHING
+	std::map<global_ordinal_type, size_t> numEntriesPerRow_map;
+	if (myRank == rootRank) {
+	  const auto& entries = pAdder()->getAdder()->getEntries();
+	  // This will count duplicates, but it's better than dense.
+	  // An even better approach would use a classic algorithm, 
+	  // likely in Saad's old textbook, for converting COO (entries)
+	  // to CSR (the local part of the sparse matrix data structure).
+	  for (const auto& entry : entries) {
+	    const global_ordinal_type gblRow = entry.rowIndex () + indexBase;
+	    ++numEntriesPerRow_map[gblRow];
+	  } 
+	}
+
+	Teuchos::Array<size_t> numEntriesPerRow (proc0Map->getNodeNumElements ());
+	for (const auto& ent : numEntriesPerRow_map) {
+	  const local_ordinal_type lclRow = proc0Map->getLocalElement (ent.first);
+	  numEntriesPerRow[lclRow] = ent.second;
+	}
+	// Free anything we don't need before allocating the graph.
+	// Swapping with an empty data structure is the standard idiom
+	// for freeing memory used by Standard Library containers.
+	// (Just resizing to 0 doesn't promise to free memory.)
+	{
+	  std::map<global_ordinal_type, size_t> empty_map;
+	  std::swap (numEntriesPerRow_map, empty_map);
+	}
+	    
         RCP<sparse_graph_type> proc0Graph =
-            rcp(new sparse_graph_type(proc0Map,0,DynamicProfile,constructorParams));
+	  rcp(new sparse_graph_type(proc0Map,numEntriesPerRow (),
+				    StaticProfile,constructorParams));
         if(myRank == rootRank) {
           typedef Teuchos::MatrixMarket::Raw::GraphElement<global_ordinal_type> element_type;
 
@@ -1577,7 +1597,7 @@ namespace Tpetra {
               rcp(new map_type(dims[0],0,pComm,GloballyDistributed));
 
           // Create the graph with that distribution too
-          distGraph = rcp(new sparse_graph_type(distMap,colMap,0,DynamicProfile,constructorParams));
+          distGraph = rcp(new sparse_graph_type(distMap,colMap,0,StaticProfile,constructorParams));
 
           // Create an importer/exporter/vandelay to redistribute the graph
           typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
@@ -1587,7 +1607,7 @@ namespace Tpetra {
           distGraph->doImport(*proc0Graph,importer,INSERT);
         }
         else {
-          distGraph = rcp(new sparse_graph_type(rowMap,colMap,0,DynamicProfile,constructorParams));
+          distGraph = rcp(new sparse_graph_type(rowMap,colMap,0,StaticProfile,constructorParams));
 
           // Create an importer/exporter/vandelay to redistribute the graph
           typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;

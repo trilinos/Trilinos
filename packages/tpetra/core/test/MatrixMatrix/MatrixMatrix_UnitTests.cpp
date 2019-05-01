@@ -862,7 +862,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
 
-
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
        ++it) {
@@ -1072,20 +1071,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
 
-      B = Reader<Matrix_t >::readSparseFile(B_file, comm, false);
+      B = Reader<Matrix_t >::readSparseFile(B_file, comm, true, false, false);
+      //declare E with enough entries to receive A + B
+      size_t n = 0;
+      for (size_t i = 0; i < B->getNodeNumRows(); i++) {
+	if (n < B->getNumEntriesInLocalRow(i))
+	  n = B->getNumEntriesInLocalRow(i);
+      }
+      n += A->getNodeMaxNumRowEntries();
+
+      RCP<const map_type> rm = B->getRowMap();
+      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
+      auto one = Teuchos::ScalarTraits<MT>::one();
+      Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 
       if (! BT) {
         if (verbose)
           newOut << "Running 2-argument add test for "
                  << currentSystem.name() << endl;
 
-        results = add_into_test(A,B,AT,C,comm);
+        results = add_into_test(A,E,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
         newOut << "Add Into Test Results: " << endl;
         newOut << "\tCorrect Norm: " << results.correctNorm << endl;
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
+      newOut << "Add tests complete" << endl;
     }
     else if (op == "RAP") {
       if (verbose)
