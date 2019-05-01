@@ -1643,7 +1643,7 @@ namespace { // (anonymous)
     multivec_type X (map, numVecs);
     TEST_EQUALITY( X.getNumVectors (), numVecs );
 
-    out << "Test transform(MultiVector, double(double))" << endl;
+    out << "Test transform(MV, double(double)): Set entries to 418" << endl;
     transform (X, KOKKOS_LAMBDA (const double /* X_ij */) {
         return double (418.0);
       });
@@ -1673,8 +1673,8 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(DefaultHostExecutionSpace, MultiVector, "
-      "double(double))" << endl;
+    out << "Test transform(DefaultHostExecutionSpace, MV, "
+      "double(double)): Set entries to 777" << endl;
     transform (Kokkos::DefaultHostExecutionSpace (),
                X, KOKKOS_LAMBDA (const double /* X_ij */) {
         return double (777.0);
@@ -1705,12 +1705,15 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(device_execution_space (), "
-      "MultiVector, double(double))" << endl;
-    transform (device_execution_space (), X,
-               KOKKOS_LAMBDA (const double /* X_ij */) {
-        return double (666.0);
-      });
+    out << "X.sync_device(); X.putScalar(666.0);" << endl;
+    X.sync_device ();
+    X.putScalar (666.0);
+    // out << "Test transform(device_execution_space (), "
+    //   "MultiVector, double(double))" << endl;
+    // transform (device_execution_space (), X,
+    //            KOKKOS_LAMBDA (const double /* X_ij */) {
+    //     return double (666.0);
+    //   });
     {
       X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
@@ -1737,7 +1740,70 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(MultiVector, double(double,LO))" << endl;
+    out << "Test transform(DefaultHostExecutionSpace, MV, "
+      "double(double)): Set entries to 44" << endl;
+    transform (Kokkos::DefaultHostExecutionSpace (),
+               X, KOKKOS_LAMBDA (const double /* X_ij */) {
+        return double (44.0);
+      });
+    {
+      //X.sync_host (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 44.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << std::endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "Test transform(MV, double(double)): Set entries to 31" << endl;
+    //Kokkos::fence (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
+    transform (X, KOKKOS_LAMBDA (const double /* X_ij */) {
+        return double (31.0);
+      });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << std::endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 31.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "Test transform(MV, double(double,LO)): Set entries to 93" << endl;
     transform (X, KOKKOS_LAMBDA (double /* X_ij */, LO /* i */) {
         return double (93.0);
       });
