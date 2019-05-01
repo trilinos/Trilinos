@@ -45,9 +45,10 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HS
     export OMP_PROC_BIND=false
     unset OMP_PLACES
     export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
-    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=12
-    # HSW nodes only have 32 cores so let's be a little conservative and not
-    # use all 32/2 = 16 cores.
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+    # HSW nodes have 32 cores but currently running with just `ctest -j4`
+    # seems to give the fastest wall-clock time, at least for the Panzer test
+    # suite (see ATDV-131).
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL"  ]; then
     module use /projects/EMPIRE/mutrino/tpls/knl/modulefiles
     export SLURM_TASKS_PER_NODE=16
@@ -55,9 +56,10 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "
     export OMP_PROC_BIND=false
     unset OMP_PLACES
     export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
-    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=24
-    # KNL nodes have 64 codes but let's be a little conservative and not us
-    # all of the 64/2 = 32 cores.
+    export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+    # HSW nodes have 64 cores but currently running with just `ctest -j4`
+    # seems to give the fastest wall-clock time, at least for the Panzer test
+    # suite (see ATDV-131).
 else
     echo
     echo "***"
