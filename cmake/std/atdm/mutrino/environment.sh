@@ -104,7 +104,7 @@ export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 #
 # Usage:
 #
-#   atdm_run_script_on_comput_node <script_to_run> <output_file> \
+#   atdm_run_script_on_compute_node <script_to_run> <output_file> \
 #     [<timeout>] [<account>]
 #
 # If <timeout> and/or <account> are not given, then defaults are provided that
@@ -112,8 +112,8 @@ export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 #
 # In this case, sbatch is used to run the script but it also sends ouptut to
 # STDOUT in real-time while it is running in addition to writing to the
-# <outout_file>.  The job name for the sbatch script is taken from the env var
-# 'ATDM_CONFIG_BUILD_NAME'.  This works for local builds since ATDM_CONFIG_BUILD_NAME.
+# <oupout_file>.  The job name for the sbatch job is taken from the env var
+# 'ATDM_CONFIG_BUILD_NAME'.  This even works for local builds.
 #
 # Note that you can pass in the script to run with arguments such as with
 # "<some-script> <arg1> <arg2>" and it will work.  But note that this has to
