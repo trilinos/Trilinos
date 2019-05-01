@@ -1529,6 +1529,42 @@ Array<T> getArrayFromStringParameter(
 
 
 /*! \relates ParameterList
+ * \brief Replace a parameter with an array containing the parameter.
+ *
+ * \param paramName [in] The name of the parameter to be placed in an array.
+ *
+ * \param newName [in] The name of the new parameter containing the old
+ * parameter in an array.
+ *
+ * \param pl [in,out] The parameter list \a pl containing a \a paramName.
+ *
+ * \returns Returns <tt>true</tt> if the parameter \a paramName exists in \a pl.
+ */
+template<typename T>
+bool replaceParameterWithArray(const std::string &paramName, const std::string &newName,
+    ParameterList &pl)
+{
+  bool param_exists = false;
+  bool overwrite = false;
+  if (paramName == newName){
+    overwrite = true;
+  }
+  if (pl.isParameter(paramName)){
+    param_exists = true;
+    TEUCHOS_TEST_FOR_EXCEPTION(!pl.isType<T>(paramName), std::logic_error,
+        "The parameter " << paramName << " is not of type " << typeid(T).name());
+    TEUCHOS_TEST_FOR_EXCEPTION(pl.isParameter(newName) && !overwrite,
+        std::logic_error, "The parameter " << newName << " already exists in this "
+        "parameter list.");
+    Array<T> params = tuple<T>(pl.get<T>(paramName));
+    pl.remove(paramName);
+    pl.set(newName, params);
+  }
+  return param_exists;
+}
+
+
+/*! \relates ParameterList
   \brief Return a RCP to a sublist in another RCP-ed parameter list.
 */
 inline

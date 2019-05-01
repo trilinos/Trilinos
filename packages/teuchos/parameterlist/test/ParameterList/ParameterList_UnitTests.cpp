@@ -851,6 +851,26 @@ TEUCHOS_UNIT_TEST( ParameterList, getIntegralValue_int )
 }
 
 
+TEUCHOS_UNIT_TEST( ParameterList, replaceScalarParameterWithArray ) {
+  ParameterList pl = ParameterList("Parameter List with Scalar Parameter");
+  const int a_val = 2, b_val = 3;
+  pl.set("A", a_val);
+  pl.set("B", b_val);
+  replaceParameterWithArray<int>("A", "A array", pl);
+  replaceParameterWithArray<int>("B", "B", pl);
+  ParameterList expected_pl = ParameterList("Parameter List with Array Parameter");
+  Array<int> a_array = tuple<int>(a_val), b_array = tuple<int>(b_val);
+  expected_pl.set("A array", a_array);
+  expected_pl.set("B", b_array);
+  TEST_ASSERT(haveSameValuesSorted(expected_pl, pl, true));
+  // Throw an error when trying to overwrite a parameter that already exists but
+  // doesn't have the same name.
+  pl.set("C", 1);
+  TEST_THROW(replaceParameterWithArray<int>("C", "B", pl), std::logic_error);
+  pl.print();
+}
+
+
 TEUCHOS_UNIT_TEST( ParameterList, simpleModifierModifyReconcile )
 {
   RCP<SimpleModifier> modifier = rcp(new SimpleModifier());

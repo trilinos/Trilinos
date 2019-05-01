@@ -205,24 +205,6 @@ public:
       ParameterList &valid_pl, const bool &allow_base_name = true) const;
 
 
-  /** \brief Create an array parameter from a scalar parameter
-   *
-   *  \param param_name [in] The parameter name of a scalar
-   *
-   *  \param new_name [in] The new parameter name of the array containing the scalar
-   *
-   *  \param pl [in,out] Allow the parameter list \a pl to contain a parameter with the same name
-   *    as base_name.
-   *
-   *  \param throw_if_new_name_exists [in] Throw an error if the new name already exists in \a pl
-   *
-   *  This currently works with string, integer, and float scalars.
-   */
-  template<typename T>
-  bool replaceScalarParameterWithArray(const std::string &param_name, const std::string &new_name,
-      ParameterList &pl, const bool &throw_if_new_name_exists = true) const;
-
-
 protected:
   std::string name_ = "ANONYMOUS";
 

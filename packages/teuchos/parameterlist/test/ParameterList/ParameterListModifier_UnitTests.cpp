@@ -184,23 +184,6 @@ TEUCHOS_UNIT_TEST( ParameterListModifier, setDefaultsInSublists ) {
 }
 
 
-TEUCHOS_UNIT_TEST( ParameterListModifier, replaceScalarParameterWithArray ) {
-  RCP<EmptyModifier> empty_modifier = rcp(new EmptyModifier());
-  ParameterList pl = ParameterList("Parameter List with Scalar Parameter");
-  const int a_val = 2;
-  pl.set("A", a_val);
-  pl.set("B", 3);
-  empty_modifier->replaceScalarParameterWithArray<int>("A", "A's", pl, true);
-  ParameterList expected_pl = ParameterList("Parameter List with Array Parameter");
-  Array<int> a_array = tuple<int>(a_val);
-  expected_pl.set("A's", a_array);
-  expected_pl.set("B", 3);
-  TEST_ASSERT(haveSameValuesSorted(expected_pl, pl, true));
-  // Throw an error when trying to overwrite a parameter that already exists
-  TEST_THROW(empty_modifier->replaceScalarParameterWithArray<int>("B", "B", pl, true), std::logic_error);
-}
-
-
 } // namespace Teuchos
 
 

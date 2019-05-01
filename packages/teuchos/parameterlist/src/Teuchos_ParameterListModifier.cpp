@@ -183,32 +183,4 @@ int ParameterListModifier::setDefaultsInSublists(const std::string &param_name,
 }
 
 
-template<typename T>
-bool ParameterListModifier::replaceScalarParameterWithArray(const std::string &param_name,
-    const std::string &new_name, ParameterList &pl, const bool &throw_if_new_name_exists) const
-{
-  bool param_exists = false;
-  if (pl.isParameter(param_name)){
-    param_exists = true;
-    TEUCHOS_TEST_FOR_EXCEPTION(!pl.isType<T>(param_name), std::logic_error,
-        "The parameter " << new_name << " is not of type " << typeid(T).name());
-    TEUCHOS_TEST_FOR_EXCEPTION((pl.isParameter(new_name) || pl.isSublist(new_name)) && throw_if_new_name_exists,
-        std::logic_error, "The parameter " << new_name << " already exists in this parameter list.");
-    Array<T> params = tuple<T>(pl.get<T>(param_name));
-    pl.set(new_name, params);
-    pl.remove(param_name);
-  }
-  return param_exists;
-}
-
-// Instantiation of template member function for `replaceScalarParameterWithArray`
-// We usually only convert scalar strings, integers, and floats to arrays
-template bool ParameterListModifier::replaceScalarParameterWithArray<std::string>(const std::string&, const std::string&,
-    ParameterList&, const bool&) const;
-template bool ParameterListModifier::replaceScalarParameterWithArray<int>(const std::string&, const std::string&,
-    ParameterList&, const bool&) const;
-template bool ParameterListModifier::replaceScalarParameterWithArray<double>(const std::string&, const std::string&,
-    ParameterList&, const bool&) const;
-
-
 } // namespace Teuchos
