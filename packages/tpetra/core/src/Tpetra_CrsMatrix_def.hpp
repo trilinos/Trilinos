@@ -140,7 +140,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              size_t maxNumEntriesPerRow,
-             ProfileType pftype,
+             const ProfileType pftype,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (pftype == StaticProfile ?
@@ -1108,7 +1108,7 @@ namespace Tpetra {
       (! graph.indicesAreAllocated (), std::runtime_error,
        "Graph indices must be allocated before values.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph.getProfileType () != DynamicProfile, std::runtime_error,
+      (graph.getProfileType () == StaticProfile, std::runtime_error,
        "Graph indices must be allocated in a dynamic profile.");
 
     const LO lclNumRows = graph.getNodeNumRows ();
@@ -1329,7 +1329,7 @@ namespace Tpetra {
 
     typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
 
-    if (getProfileType () == DynamicProfile) {
+    if (getProfileType () != StaticProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
       //
       // DynamicProfile means that the matrix's column indices and
@@ -1781,7 +1781,7 @@ namespace Tpetra {
 
     typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
 
-    if (getProfileType() == DynamicProfile) {
+    if (getProfileType() != StaticProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
       //
       // DynamicProfile means that the matrix's values are currently
@@ -3989,7 +3989,7 @@ namespace Tpetra {
           }
         }
       }
-      else if (staticGraph_->getProfileType () == DynamicProfile) {
+      else if (staticGraph_->getProfileType () != StaticProfile) {
         for (size_t row = 0; row < nlrs; ++row) {
           const size_type numEnt = getNumEntriesInLocalRow (row);
           Teuchos::ArrayView<impl_scalar_type> rowVals = values2D_[row] ();
@@ -4030,7 +4030,7 @@ namespace Tpetra {
         // modified.
         Kokkos::deep_copy (k_values1D_, theAlpha);
       }
-      else if (profType == DynamicProfile) {
+      else if (profType != StaticProfile) {
         for (size_t row = 0; row < nlrs; ++row) {
           std::fill (values2D_[row].begin (), values2D_[row].end (), theAlpha);
         }
@@ -6314,7 +6314,7 @@ namespace Tpetra {
       std::logic_error, err);
     // if matrix/graph are dynamic profile, then 1D allocation should not be present
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getProfileType() == DynamicProfile && k_values1D_.extent (0) > 0,
+      getProfileType() != StaticProfile && k_values1D_.extent (0) > 0,
       std::logic_error, err);
     // if values are allocated and they are non-zero in number, then
     // one of the allocations should be present
@@ -8306,12 +8306,14 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
       } else {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
                                       constructorSublist));
       }
+#endif
     }
 
 #ifdef HAVE_TPETRA_DEBUG
