@@ -3,7 +3,7 @@
 #CrsGraphFactory
 #Export
 #ExportFactory
-Import
+#Import
 #ImportFactory
 #Map
 #MapFactory
@@ -15,5 +15,5 @@ Import
 ##TpetraBlockMap
 #TpetraCrsGraph
 #TpetraExport
-#TpetraImport
+TpetraImport
 #TpetraMap
