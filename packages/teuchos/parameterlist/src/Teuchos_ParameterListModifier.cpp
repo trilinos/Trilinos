@@ -164,7 +164,8 @@ int ParameterListModifier::expandSublistsUsingBaseName(
 
 
 int ParameterListModifier::setDefaultsInSublists(const std::string &param_name,
-    ParameterList &pl, const Array<std::string> &sublist_names) const
+    ParameterList &pl, const Array<std::string> &sublist_names,
+    const bool remove_param) const
 {
   int num_defaults = 0;
   if (pl.isParameter(param_name)){
@@ -177,7 +178,9 @@ int ParameterListModifier::setDefaultsInSublists(const std::string &param_name,
         }
       }
     }
-    pl.remove(param_name);
+    if (remove_param){
+      pl.remove(param_name);
+    }
   }
   return num_defaults;
 }

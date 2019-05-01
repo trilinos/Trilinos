@@ -1536,7 +1536,7 @@ Array<T> getArrayFromStringParameter(
  * \param newName [in] The name of the new parameter containing the old
  * parameter in an array.
  *
- * \param pl [in,out] The parameter list \a pl containing a \a paramName.
+ * \param pl [in,out] The parameter list \a pl containing \a paramName.
  *
  * \returns Returns <tt>true</tt> if the parameter \a paramName exists in \a pl.
  */

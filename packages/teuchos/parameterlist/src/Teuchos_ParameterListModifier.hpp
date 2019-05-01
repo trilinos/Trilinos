@@ -108,101 +108,112 @@ public:
 
   /** \brief Find the parameters and/or sublists with matching base names.
    *
-   * \param pl [in] Modified parameter list to search.
+   * \param paramList [in] Modified parameter list to search.
    *
-   * \param find_parameters [out] Search through parameters
+   * \param findParameters [out] Search through parameters
    *
-   * \param find_sublists [out] Search through sublists (not recursive)
+   * \param findSublists [out] Search through sublists (not recursive)
    *
    * This convenience function makes it easy to search through the current level of
    * a given parameter list and find all parameters and/or sublists that begin with a
    * given name.
    */
-  Array<std::string> findMatchingBaseNames(const ParameterList &pl,
-      const std::string &base_name, const bool &find_parameters = true,
-      const bool &find_sublists = true) const;
+  Array<std::string> findMatchingBaseNames(const ParameterList &paramList,
+      const std::string &baseName, const bool &findParameters = true,
+      const bool &findSublists = true) const;
 
   /** \brief Modify a parameter list and/or the valid parameter list being used to validate
    * it and throw std::exception (with a great error message) if modification fails.
    *
-   * \param  pl
+   * \param  paramList
    *            [in] The parameter list that needs to be validated
-   * \param  valid_pl
+   * \param  validParamList
    *            [in] The parameter list being used as a template for validation.
    *
    * This function is usually called before the validation step begins in order to create optional
    * parameters and/or sublists.
    */
-  virtual void modify(ParameterList &pl, ParameterList &valid_pl) const {};
+  virtual void modify(ParameterList &paramList, ParameterList &validParamList) const {};
 
 
   /** \brief Reconcile a parameter list and/or the valid parameter list being used to validate
    * it and throw std::exception (with a great error message) if reconciliation fails.
    *
-   * \param  pl
+   * \param  paramList
    *            [in,out] The parameter list that needs to be validated
-   * \param  valid_pl
+   * \param  validParamList
    *            [in,out] The parameter list being used as a template for validation.
    *
    * This function is usually called after the validation step begins in order to check that
    * dependencies between multiple parameters are satisfied.
    */
-  virtual void reconcile(ParameterList &pl) const {};
+  virtual void reconcile(ParameterList &paramList) const {};
 
 
   /** \brief Create parameters in the valid parameter list using a template parameter from the valid
    *  parameter list and the names of parameters in the list being validated.
    *
-   *  \param parameter_template_name [in] The name of the parameter template in \a valid_pl
+   *  \param parameterTemplateName [in] The name of the parameter template in \a valid_pl
    *
-   *  \param pl [in] The parameter list that needs to be validated
+   *  \param paramList [in] The parameter list that needs to be validated
    *
-   *  \param valid_pl [in,out] The parameter list that is being used as a template for validation
+   *  \param validParamList [in,out] The parameter list that is being used as a template for validation
    *
-   *  \param exclude_parameters [in] An optional list of parameter names to exclude
+   *  \param excludeParameters [in] An optional list of parameter names to exclude
    *
    */
-  int expandParameters(const std::string &parameter_template_name, ParameterList &pl,
-      ParameterList &valid_pl,
-      const Array<std::string> &exclude_parameters=Array<std::string>()) const;
+  int expandParameters(const std::string &paramTemplateName, ParameterList &paramList,
+      ParameterList &validParamList,
+      const Array<std::string> &excludeParameters=Array<std::string>()) const;
 
 
   /** \brief Create sublists in the valid parameter list using a template parameter from the valid
    *  parameter list and the names of sublists in the list being validated.
    *
-   *  \param sublist_template_name [in] The name of the sublist template in \a valid_pl
+   *  \param sublistTemplateName [in] The name of the sublist template in \a valid_pl
    *
-   *  \param pl [in] The parameter list that needs to be validated
+   *  \param paramList [in] The parameter list that needs to be validated
    *
-   *  \param valid_pl [in,out] The parameter list that is being used as a template for validation
+   *  \param validParamList [in,out] The parameter list that is being used as a template for validation
    *
-   *  \param exclude_sublists [in] An optional list of sublist names to exclude
+   *  \param excludeSublists [in] An optional list of sublist names to exclude
    *
    */
-  int expandSublists(const std::string &sublist_template_name, ParameterList &pl,
-      ParameterList &valid_pl,
-      const Array<std::string> &exclude_sublists=Array<std::string>()) const;
+  int expandSublists(const std::string &sublistTemplateName, ParameterList &paramList,
+      ParameterList &validParamList,
+      const Array<std::string> &excludeSublists=Array<std::string>()) const;
 
 
-  int setDefaultsInSublists(const std::string &param_name, ParameterList &pl,
-      const Array<std::string> &sublist_names) const;
+  /** \brief Copy a parameter into desired sublists.
+   *
+   * \param paramName [in] The name of the parameter to be copied.
+   *
+   * \param paramList [in,out] The parameter list with \a paramName.
+   *
+   * \param sublistNames [in] The names of any sublists in \a paramList to set the defaults in
+   * using parameter \a paramName.
+   *
+   * \param removeParam [in] Remove \a paramName from \a paramList after defaults are set in sublists.
+   */
+  int setDefaultsInSublists(const std::string &paramName, ParameterList &paramList,
+      const Array<std::string> &sublistNames, const bool removeParam = true) const;
 
 
   /** \brief Create sublists in the valid parameter list using a base name and the corresponding sublists
    *  in the parameter list being validated.
    *
-   *  \param base_name [in] The root name of the sublists to look for and create
+   *  \param baseName [in] The root name of the sublists to look for and create
    *
-   *  \param pl [in] The parameter list that needs to be validated
+   *  \param paramList [in] The parameter list that needs to be validated
    *
-   *  \param valid_pl [in,out] The parameter list that is being used as a template for validation
+   *  \param validParamList [in,out] The parameter list that is being used as a template for validation
    *
-   *  \param allow_base_name [in] Allow the parameter list \a pl to contain a parameter with the same name
+   *  \param allowBaseName [in] Allow the parameter list \a pl to contain a parameter with the same name
    *    as base_name.
    *
    */
-  int expandSublistsUsingBaseName(const std::string &base_name, ParameterList &pl,
-      ParameterList &valid_pl, const bool &allow_base_name = true) const;
+  int expandSublistsUsingBaseName(const std::string &baseName, ParameterList &paramList,
+      ParameterList &validParamList, const bool &allowBaseName = true) const;
 
 
 protected:
