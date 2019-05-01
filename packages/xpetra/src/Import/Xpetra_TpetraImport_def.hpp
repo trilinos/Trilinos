@@ -9,6 +9,8 @@
 #include "Xpetra_TpetraMap.hpp"
 #include "Tpetra_Import.hpp"
 
+namespace Xpetra {
+
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target):import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target))))
 {   }
@@ -286,5 +288,6 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
 
 #endif // HAVE_XPETRA_EPETRA
 
+} // Xpetra namespace
 
 #endif
