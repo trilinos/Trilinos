@@ -188,7 +188,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type> & coords,
                             Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             Teuchos::ParameterList & inputList,
                             Teuchos::ParameterList & problemStatistics,
@@ -201,7 +200,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, coords, node_sigma, comm, meshInput, inputList, problemStatistics,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -217,7 +216,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type> & coords,
                             Teuchos::RCP<vector_type>& node_sigma,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
                             const std::string& meshInput,
                             Teuchos::ParameterList & inputList,
                             Teuchos::ParameterList & problemStatistics,
@@ -938,7 +936,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         ++oidx;
       }
     }
-    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm, node));
+    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm));
   }
 
   /**********************************************************************************/
@@ -959,7 +957,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
 
     //Generate overlapped Map for nodes.
-    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm, node));
+    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm));
 
     // Build Tpetra Export from overlapped to owned Map.
     exporter = rcp (new export_type (overlappedMapG, globalMapG));
@@ -1551,7 +1549,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     RCP<const map_type> ColMap = gl_StiffMatrix->getColMap ();
     RCP<const map_type> globalMap =
       rcp (new map_type (gl_StiffMatrix->getGlobalNumCols (), 0, comm,
-                         Tpetra::GloballyDistributed, node));
+                         Tpetra::GloballyDistributed));
 
     // Create the exporter from this process' column Map to the global
     // 1-1 column map. (???)

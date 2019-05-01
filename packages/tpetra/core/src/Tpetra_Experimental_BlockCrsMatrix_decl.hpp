@@ -1169,8 +1169,10 @@ public:
   //! The communicator over which this matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! The Kokkos Node instance.
-  virtual Teuchos::RCP<Node> getNode() const;
+  virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode() const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The global number of columns of this matrix.
   virtual global_size_t getGlobalNumCols() const;

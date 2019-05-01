@@ -60,7 +60,6 @@ namespace Stokhos {
                                  Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >
   create_cijk_crs_graph(const CijkType& cijk,
                         const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                        const Teuchos::RCP<Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& /*node*/,
                         const size_t matrix_pce_size) {
     using Teuchos::RCP;
     using Teuchos::arrayView;
@@ -149,10 +148,9 @@ namespace Stokhos {
 
     // Build Cijk graph if necessary
     if (cijk_graph == Teuchos::null)
-      cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal>(
+      cijk_graph = create_cijk_crs_graph<LocalOrdinal,GlobalOrdinal,Device>(
         cijk,
         flat_domain_map->getComm(),
-        flat_domain_map->getNode(),
         matrix_pce_size);
 
     // Build flattened graph that is the Kronecker product of the given
