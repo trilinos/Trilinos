@@ -86,5 +86,5 @@ void exdate(char *string, long int len)
   t->tm_year += 1900;
 
   sprintf(Temp, "%04d%02d%02d", t->tm_year, t->tm_mon + 1, t->tm_mday);
-  copy_string(string, Temp, STRLEN);
+  copy_string(string, Temp, STRLEN + 1);
 }

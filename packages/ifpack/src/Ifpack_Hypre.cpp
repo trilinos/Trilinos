@@ -252,6 +252,13 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solve
 } //SetParameter() - int* function pointer
 
 //==============================================================================
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int**), int** parameter){
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
+} //SetParameter() - int** function pointer
+
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
   if(chooser == Solver){
     SolverType_ = solver;

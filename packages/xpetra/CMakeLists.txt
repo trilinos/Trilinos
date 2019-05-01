@@ -18,6 +18,22 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+# Deperecation stuff
+SET (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE
+  ${PACKAGE_NAME_UC}_ENABLE_DEPRECATED_CODE
+  "Whether Xpetra enables deprecated code (that is, anything marked with the XPETRA_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
+  ${${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
+IF (${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE)
+  MESSAGE(STATUS "Xpetra: Enabling deprecated code")
+ELSE ()
+  MESSAGE(STATUS "Xpetra: Disabling deprecated code")
+ENDIF ()
+
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
@@ -50,7 +66,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra)
   IF(Trilinos_NO_64BIT_GLOBAL_INDICES)
     SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
   ELSE()
-    IF(Teuchos_ENABLE_LONG_LONG_INT AND Tpetra_INST_INT_LONG_LONG)
+    IF(Tpetra_INST_INT_LONG_LONG)
       SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT OFF)
     ELSE()
       SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
@@ -83,7 +99,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES
   ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT} )
 
 IF(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT AND (NOT ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES))
-  MESSAGE(FATAL_ERROR "There are no 64 bit Epetra classes available possibly because they are disabled or Teuchos_ENABLE_LONG_LONG_INT is OFF or long long support is not present in Tpetra but user requested Xpetra use them by setting ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES OFF.")
+  MESSAGE(FATAL_ERROR "There are no 64 bit Epetra classes available possibly because they are disabled or long long support is not present in Tpetra but user requested Xpetra use them by setting ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES OFF.")
 ENDIF()
 
 #
@@ -92,27 +108,22 @@ ENDIF()
 # Teuchos, and at least one of Epetra or Tpetra must also support
 # LocalOrdinal = int and GlobalOrdinal = long long.
 #
-ASSERT_DEFINED (Teuchos_ENABLE_LONG_LONG_INT)
-IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
-  # If Teuchos doesn't have support for long long, we won't get anywhere.
-  GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
-ELSE ()
-  # Teuchos supports long long.  How about Epetra or Tpetra?
-  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    # Does Tpetra provide LocalOrdinal = int and GlobalOrdinal = long long?
-    ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
-    GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
-  ELSE () # Tpetra NOT enabled
-    IF (${PACKAGE_NAME}_ENABLE_Epetra)
-      # Does Epetra provide LocalOrdinal = int and GlobalOrdinal = long long?
-      IF (${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES)
-        GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
-      ELSE ()
-        GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ON)
-      ENDIF ()
-    ELSE () # Neither Epetra nor Tpetra are enabled
+
+# Check whether Epetra or Tpetra support long long.
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  # Does Tpetra provide LocalOrdinal = int and GlobalOrdinal = long long?
+  ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+  GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
+ELSE () # Tpetra NOT enabled
+  IF (${PACKAGE_NAME}_ENABLE_Epetra)
+    # Does Epetra provide LocalOrdinal = int and GlobalOrdinal = long long?
+    IF (${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES)
       GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+    ELSE ()
+      GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG ON)
     ENDIF ()
+   ELSE () # Neither Epetra nor Tpetra are enabled
+    GLOBAL_SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
   ENDIF ()
 ENDIF ()
 

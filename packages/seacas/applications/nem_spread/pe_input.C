@@ -37,7 +37,7 @@
 /*          ExodusII command file.                                          */
 /*--------------------------------------------------------------------------*/
 
-#include "copy_string.h"
+#include "copy_string_cpp.h"
 #include "nem_spread.h"
 #include "ps_pario_const.h" // for PIO_Info, Parallel_IO, etc
 #include "rf_allo.h"        // for array_alloc
@@ -77,7 +77,7 @@ int read_mesh_file_name(const char *filename)
         if (strlen(ExoFile) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(ExoFile, cptr, MAX_FNL);
+          copy_string(ExoFile, cptr);
           break;
         }
       }
@@ -129,7 +129,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(ExoFile) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(ExoFile, cptr, MAX_FNL);
+          copy_string(ExoFile, cptr);
         }
       }
       /****** The input NemesisI load balance file name ******/
@@ -137,7 +137,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(Exo_LB_File) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(Exo_LB_File, cptr, MAX_FNL);
+          copy_string(Exo_LB_File, cptr);
         }
       }
       /****** The scalar results ExodusII file name ******/
@@ -145,7 +145,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(Exo_Res_File) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(Exo_Res_File, cptr, MAX_FNL);
+          copy_string(Exo_Res_File, cptr);
         }
       }
       /****** The parallel results ExodusII file name ******/
@@ -153,7 +153,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
         if (strlen(Output_File_Base_Name) == 0) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(Output_File_Base_Name, cptr, MAX_FNL);
+          copy_string(Output_File_Base_Name, cptr);
         }
       }
       /****** The Number of Processors ******/
@@ -174,7 +174,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
       else if (token_compare(cptr, "file extension for spread files")) {
         cptr = strtok(nullptr, "\t=");
         strip_string(cptr, " \t\n");
-        copy_string(PIO_Info.Exo_Extension, cptr, MAX_FNL);
+        copy_string(PIO_Info.Exo_Extension, cptr);
       }
 
       /****** Is There a Scalar Mesh File to Use ******/
@@ -517,7 +517,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               " \"root\"");
               return 0;
             }
-            copy_string(PIO_Info.Par_Dsk_Root, cptr2, MAX_FNL);
+            copy_string(PIO_Info.Par_Dsk_Root, cptr2);
             PIO_Info.Par_Dsk_Root[MAX_FNL - 1] = '\0';
           }
           if (strstr(cptr, "subdir")) {
@@ -532,7 +532,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               " \"subdir\"");
               return 0;
             }
-            copy_string(PIO_Info.Par_Dsk_SubDirec, cptr2, MAX_FNL);
+            copy_string(PIO_Info.Par_Dsk_SubDirec, cptr2);
             PIO_Info.Par_Dsk_SubDirec[MAX_FNL - 1] = '\0';
             if (PIO_Info.Par_Dsk_SubDirec[strlen(PIO_Info.Par_Dsk_SubDirec) - 1] != '/') {
               strcat(PIO_Info.Par_Dsk_SubDirec, "/");
@@ -549,7 +549,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
   if (strlen(Output_File_Base_Name) == 0 && strlen(Exo_LB_File) != 0) {
     // User did not specify a base name.  Use the basenmae of the
     // Exo_LB_File instead.
-    copy_string(Output_File_Base_Name, Exo_LB_File, MAX_FNL);
+    copy_string(Output_File_Base_Name, Exo_LB_File);
 
     // If there is an extension, strip it off...
     char *cPtr = strrchr(Output_File_Base_Name, '.');

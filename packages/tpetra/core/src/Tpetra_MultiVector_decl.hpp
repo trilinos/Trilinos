@@ -76,6 +76,7 @@ namespace Teuchos {
 
 namespace Tpetra {
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
     ///
@@ -112,6 +113,7 @@ namespace Tpetra {
              const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
     };
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Copy the contents of the MultiVector \c src into \c dst.
   /// \relatesalso MultiVector
@@ -425,9 +427,8 @@ namespace Tpetra {
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
-    /// \brief This class' first template parameter; the type of
-    ///   each entry in the MultiVector.
-    typedef Scalar scalar_type;
+    /// \brief The type of each entry in the MultiVector.
+    using scalar_type = Scalar;
     /// \brief The type used internally in place of \c Scalar.
     ///
     /// Some \c Scalar types might not work with Kokkos on all
@@ -443,28 +444,27 @@ namespace Tpetra {
     /// if you ask for a Kokkos::View or Kokkos::DualView of the
     /// MultiVector's data, its entries have type \c impl_scalar_type,
     /// not \c scalar_type.
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    //! This class' second template parameter; the type of local indices.
-    typedef LocalOrdinal local_ordinal_type;
-    //! This class' third template parameter; the type of global indices.
-    typedef GlobalOrdinal global_ordinal_type;
-    //! This class' fourth template parameter; the Kokkos Node type.
-    typedef Node node_type;
+    using impl_scalar_type =
+      typename Kokkos::Details::ArithTraits<Scalar>::val_type;
 
-    //! The Kokkos device type.
-    typedef typename Node::device_type device_type;
+    //! The type of the Map specialization used by this class.
+    using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
+    //! The type of local indices that this class uses.
+    using local_ordinal_type = typename map_type::local_ordinal_type;
+    //! The type of global indices that this class uses.
+    using global_ordinal_type = typename map_type::global_ordinal_type;
+    //! This class' preferred Kokkos device type.
+    using device_type = typename map_type::device_type;
+    //! Legacy thing that you should not use any more.
+    using node_type = typename map_type::node_type;
 
-  private:
-    //! The type of the base class of this class.
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
-
-  public:
     /// \brief Type of an inner ("dot") product result.
     ///
     /// This is usually the same as <tt>impl_scalar_type</tt>, but may
     /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
     /// quantification type from the Stokhos package.
-    typedef typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type dot_type;
+    using dot_type =
+      typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type;
 
     /// \brief Type of a norm result.
     ///
@@ -472,15 +472,13 @@ namespace Tpetra {
     /// (absolute value) of <tt>impl_scalar_type</tt>, but may differ if
     /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
     /// type from the Stokhos package.
-    typedef typename Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type mag_type;
+    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
 
     /// \brief Type of the (new) Kokkos execution space.
     ///
     /// The execution space implements parallel operations, like
-    /// parallel_for, parallel_reduce, and parallel_scan.  It also has
-    /// a default memory space, in which the Tpetra object's data
-    /// live.
-    typedef typename Node::execution_space execution_space;
+    /// parallel_for, parallel_reduce, and parallel_scan.
+    using execution_space = typename device_type::execution_space;
 
     /// \brief Kokkos::DualView specialization used by this class.
     ///
@@ -504,11 +502,9 @@ namespace Tpetra {
     /// even if the user-specified DeviceType is Kokkos::Serial.  That
     /// is why we go through the trouble of asking for the
     /// execution_space's execution space.
-    typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutLeft,
-      typename execution_space::execution_space> dual_view_type;
-
-    //! The type of the Map specialization used by this class.
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using dual_view_type = Kokkos::DualView<impl_scalar_type**,
+                                            Kokkos::LayoutLeft,
+                                            execution_space>;
 
     //@}
     //! @name Constructors and destructor
@@ -537,8 +533,6 @@ namespace Tpetra {
     /// copyOrView = Teuchos::Copy will make the resulting MultiVector
     /// a deep copy of the input MultiVector.
     ///
-    /// \warning The case where copyOrView = Teuchos::Copy constructor
-    ///   has been DEPRECATED and may be removed soon.
     MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
                  const Teuchos::DataAccess copyOrView);
 
@@ -843,9 +837,11 @@ namespace Tpetra {
     /// \warning We prefer that you use Tpetra::deep_copy (see below)
     ///   rather than this method.  This method will go away at some
     ///   point.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class Node2>
-    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
+    Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >  TPETRA_DEPRECATED
     clone (const Teuchos::RCP<Node2>& node2) const;
+#endif
 
     //! Swap contents of \c mv with contents of \c *this.
     void swap (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mv);
@@ -1789,9 +1785,9 @@ namespace Tpetra {
             const Scalar& gamma);
 
     /// \brief Compute the one-norm of each vector (column), storing
-    ///   the result in a device view.
+    ///   the result in a host view.
     ///
-    /// \param norms [out] Device View with getNumVectors() entries.
+    /// \param norms [out] Host View with getNumVectors() entries.
     ///
     /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
@@ -1799,22 +1795,21 @@ namespace Tpetra {
     /// The one-norm of a vector is the sum of the magnitudes of the
     /// vector's entries.  On exit, norms(j) is the one-norm of column
     /// j of this MultiVector.
-    ///
-    /// We use Kokkos::Details::InnerProductSpaceTraits to define
-    /// "magnitude."  See the KokkosKernels package, and that class'
-    /// documentation in particular, for details.  This matters only
-    /// for "interesting" Scalar types, such as one might find in the
-    /// Stokhos package.
+    void
+    norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
+
     template<class ViewType>
       typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
                               std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
     norm1 (const ViewType& norms) const {
-      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
-      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
-      this->normImpl (h_norms, NORM_ONE);
-      Kokkos::deep_copy(norms,h_norms);
+      // FIXME (mfh 11 Apr 2019) The enable_ifs make it useless for
+      // this method to be templated.  (It only exists in case
+      // HostSpace = device_type::memory_space.)
+      using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
+      host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
+      this->norm1 (h_norms);
+      Kokkos::deep_copy (norms, h_norms);
     }
-    void norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1881,9 +1876,9 @@ namespace Tpetra {
     }
 
     /// \brief Compute the two-norm of each vector (column), storing
-    ///   the result in a device view.
+    ///   the result in a host View.
     ///
-    /// \param norms [out] Device View with getNumVectors() entries.
+    /// \param norms [out] Host View with getNumVectors() entries.
     ///
     /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
@@ -1892,22 +1887,21 @@ namespace Tpetra {
     /// square root of the sum of squares of the magnitudes of the
     /// vector's entries.  On exit, norms(k) is the two-norm of column
     /// k of this MultiVector.
-    ///
-    /// We use Kokkos::Details::InnerProductSpaceTraits to define
-    /// "magnitude."  See the KokkosKernels package, and that class'
-    /// documentation in particular, for details.  This matters only
-    /// for "interesting" Scalar types, such as one might find in the
-    /// Stokhos package.
+    void
+    norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
+
     template<class ViewType>
       typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
                               std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
     norm2 (const ViewType& norms) const {
-      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
-      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
-      this->normImpl (h_norms, NORM_TWO);
-      Kokkos::deep_copy(norms,h_norms);
+      // FIXME (mfh 11 Apr 2019) The enable_ifs make it useless for
+      // this method to be templated.  (It only exists in case
+      // HostSpace = device_type::memory_space.)
+      using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
+      host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
+      this->norm2 (h_norms);
+      Kokkos::deep_copy (norms, h_norms);
     }
-    void norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1972,30 +1966,28 @@ namespace Tpetra {
     }
 
     /// \brief Compute the infinity-norm of each vector (column),
-    ///   storing the result in a device view.
+    ///   storing the result in a host View.
     ///
     /// The infinity-norm of a vector is the maximum of the magnitudes
     /// of the vector's entries.  On exit, norms(j) is the
     /// infinity-norm of column j of this MultiVector.
-    ///
-    /// We use Kokkos::Details::InnerProductSpaceTraits to define
-    /// "magnitude."  See the KokkosKernels package, and that class'
-    /// documentation in particular, for details.  This matters only
-    /// for "interesting" Scalar types, such as one might find in the
-    /// Stokhos package.
+    void normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
+
     template<class ViewType>
       typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
                               std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
     normInf (const ViewType& norms) const {
-      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
-      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
-      this->normImpl (h_norms, NORM_INF);
-      Kokkos::deep_copy(norms,h_norms);
+      // FIXME (mfh 11 Apr 2019) The enable_ifs make it useless for
+      // this method to be templated.  (It only exists in case
+      // HostSpace = device_type::memory_space.)
+      using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
+      host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
+      this->normInf (h_norms);
+      Kokkos::deep_copy (norms, h_norms);
     }
-    void normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
-    /// \brief Compute the two-norm of each vector (column), storing
-    ///   the result in a device view.
+    /// \brief Compute the infinity-norm of each vector (column),
+    ///   storing the result in a device view.
     ///
     /// See the above normInf() method for documentation.
     ///
@@ -2302,6 +2294,11 @@ namespace Tpetra {
     ///
     bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const;
 
+  private:
+    //! The type of the base class of this class.
+    using base_type = DistObject<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type>;
+
   protected:
     template <class DS, class DL, class DG, class DN,
               class SS, class SL, class SG, class SN>
@@ -2365,32 +2362,6 @@ namespace Tpetra {
     template<class SC, class LO, class GO, class NT>
     friend ::Teuchos::ArrayView<const size_t> getMultiVectorWhichVectors (const ::Tpetra::MultiVector<SC, LO, GO, NT>& X);
 
-    //! \name Generic implementation of various norms
-    //@{
-
-    //! Input argument for normImpl() (which see).
-    enum EWhichNorm {
-      NORM_ONE, //<! Use the one-norm
-      NORM_TWO, //<! Use the two-norm
-      NORM_INF  //<! Use the infinity-norm
-    };
-
-    /// \brief Compute the norm of each vector (column), storing the
-    ///   result in a device View.
-    ///
-    /// This method consolidates all common code between the
-    /// infinity-norm, 1-norm, and 2-norm calculations.  On exit,
-    /// norms(j) is the norm (of the selected type) of column j of
-    /// this MultiVector.
-    void
-    normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
-              const EWhichNorm whichNorm) const;
-
-    //@}
-    //! \name Implementation of various useful kernel utilities
-    //@{
-
-
     //@}
     //! @name Misc. implementation details
     //@{
@@ -2453,6 +2424,16 @@ namespace Tpetra {
     //! @name Implementation of Tpetra::DistObject
     //@{
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    using buffer_device_type =
+      typename DistObject<scalar_type,
+                          local_ordinal_type,
+                          global_ordinal_type,
+                          node_type>::buffer_device_type;
+
     /// \brief Whether data redistribution between \c sourceObj and this object is legal.
     ///
     /// This method is called in DistObject::doTransfer() to check
@@ -2463,37 +2444,54 @@ namespace Tpetra {
     //! Number of packets to send per LID
     virtual size_t constantNumberOfPackets () const;
 
-    //! Whether this class implements the old or new interface of DistObject.
-    virtual bool useNewInterface () { return true; }
-
-    /// \typedef buffer_device_type
-    /// \brief Kokkos::Device specialization for communication buffers.
-    ///
-    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
-    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal,
-                                Node>::buffer_device_type buffer_device_type;
+    virtual void
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermuteNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    copyAndPermute
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& sourceObj,
+     const size_t numSameIDs,
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
 
     virtual void
-    copyAndPermuteNew (const SrcDistObject& sourceObj,
-                       const size_t numSameIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepareNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    packAndPrepare
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const SrcDistObject& sourceObj,
+     const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& exportLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type>& exports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     size_t& constantNumPackets,
+     Distributor& /* distor */);
 
     virtual void
-    packAndPrepareNew (const SrcDistObject& sourceObj,
-                       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                       Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
-                       Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
-                       size_t& constantNumPackets,
-                       Distributor& /* distor */);
-
-    virtual void
-    unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, buffer_device_type>& importLIDs,
-                         Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
-                         Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
-                         const size_t constantNumPackets,
-                         Distributor& /* distor */,
-                         const CombineMode CM);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombineNew
+#else // TPETRA_ENABLE_DEPRECATED_CODE
+    unpackAndCombine
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    (const Kokkos::DualView<
+       const local_ordinal_type*,
+       buffer_device_type>& importLIDs,
+     Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type> imports,
+     Kokkos::DualView<
+       size_t*,
+       buffer_device_type> /* numPacketsPerLID */,
+     const size_t constantNumPackets,
+     Distributor& /* distor */,
+     const CombineMode CM);
     //@}
   }; // class MultiVector
 
@@ -2504,11 +2502,14 @@ namespace Tpetra {
     return X.whichVectors_ ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   namespace Details {
-
     template<class DstMultiVectorType,
              class SrcMultiVectorType>
-    Teuchos::RCP<typename MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::dst_mv_type>
+    Teuchos::RCP<
+      typename MultiVectorCloner<
+        DstMultiVectorType,
+        SrcMultiVectorType>::dst_mv_type>
     MultiVectorCloner<DstMultiVectorType, SrcMultiVectorType>::
     clone (const src_mv_type& X,
            const Teuchos::RCP<typename dst_mv_type::node_type>& node2)
@@ -2533,8 +2534,8 @@ namespace Tpetra {
       ::Tpetra::deep_copy (*Y, X);
       return Y ;
     }
-
   } // namespace Details
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Specialization of deep_copy for MultiVector objects with
   ///   the same template parameters.

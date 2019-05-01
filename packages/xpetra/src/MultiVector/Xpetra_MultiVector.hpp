@@ -181,7 +181,33 @@ namespace Xpetra {
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
     virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta)= 0;
 
-    //! Element-wise multiply of a Vector A with a MultiVector B.
+    /*!
+    \brief Multiply a Vector A elementwise by a MultiVector B.
+
+    Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
+    where <tt>@</tt> denotes element-wise multiplication.  In
+    pseudocode, if C denotes <tt>*this</tt> MultiVector:
+    \code
+    C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+    \endcode
+    for all rows i and columns j of C.
+
+    B must have the same dimensions as <tt>*this</tt>, while A
+    must have the same number of rows but a single column.
+
+    We do not require that A, B, and <tt>*this</tt> have
+    compatible Maps, as long as the number of rows in A, B, and
+    <tt>*this</tt> on each process is the same.  For example, one
+    or more of these vectors might have a locally replicated Map,
+    or a Map with a local communicator (<tt>MPI_COMM_SELF</tt>).
+    This case may occur in block relaxation algorithms when
+    applying a diagonal scaling.
+
+    \param[in] scalarAB Scaling factor applied to result of elementwise multiplication of A and B
+    \param[in] A Vector A to be element-wise multiplied with B
+    \param[in] B MultiVector B to be element-wise multiplied with A
+    \param[in] scalarThis Scaling factor for existing values in <tt>*this<\tt> MultiVector C
+    */
     virtual void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis)= 0;
 
     //@}
@@ -197,7 +223,7 @@ namespace Xpetra {
 
     //! Global number of rows in the multivector.
     virtual global_size_t getGlobalLength() const = 0;
-   
+
     // \brief Checks to see if the local length, number of vectors and size of Scalar type match
     virtual bool isSameSize(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & vec) const =0;
 
@@ -212,7 +238,7 @@ namespace Xpetra {
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
-    virtual void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) = 0;    
+    virtual void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) = 0;
 
     //@}
 
@@ -223,6 +249,7 @@ namespace Xpetra {
     virtual void setSeed(unsigned int seed)= 0;
 
 
+    //! Set multi-vector values to random numbers.
     virtual void randomize(bool bUseXpetraImplementation = false)= 0;
 
     //! Set multi-vector values to random numbers. XPetra implementation

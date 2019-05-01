@@ -215,12 +215,14 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
       } else {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
                                       constructorSublist));
       }
+#endif
     }
 
 #ifdef HAVE_TPETRA_DEBUG

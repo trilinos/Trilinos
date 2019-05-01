@@ -632,9 +632,9 @@ public:
   RCP<CrsMatrix> getCrsMatrix() const {  return matrixData_; }
 
   //@}
-
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
   template<class Node2>
-  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+  RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tMatrix =
         Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(matrixData_);
@@ -647,6 +647,7 @@ public:
     return Teuchos::null;
 #endif
   }
+#endif
 
 private:
 
@@ -677,12 +678,12 @@ private:
   // See also CrsMatrixWrap::updateDefaultView()
   mutable bool finalDefaultView_;
 
-
+  // The underlying matrix object
   RCP<CrsMatrix> matrixData_;
 
-}; //class Matrix
+}; // class CrsMatrixWrap
 
-} //namespace Xpetra
+} // namespace Xpetra
 
 #define XPETRA_CRSMATRIXWRAP_SHORT
 #endif //XPETRA_CRSMATRIXWRAP_DECL_HPP

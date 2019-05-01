@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
-// 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -57,8 +57,8 @@ using Teuchos::rcp;
 #include "shylu_errorBDDC.hpp"
 
 namespace bddc {
-  
-template <class LO, class GO> 
+
+template <class LO, class GO>
   class DofManager
 {
 public:
@@ -74,7 +74,7 @@ public:
   DofManager()
   {
   }
-   
+
   ~DofManager()
   {
   }
@@ -91,25 +91,25 @@ public:
   {
     Tpetra::global_size_t IGO =
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    RCP<const Map> nodeMap = 
-      rcp( new Map(IGO, 
-		   Teuchos::ArrayView<const GO>(nodeGlobalIDs, numNodes), 
-		   0, Comm));
+    RCP<const Map> nodeMap =
+      rcp( new Map(IGO,
+                   Teuchos::ArrayView<const GO>(nodeGlobalIDs, numNodes),
+                   0, Comm));
     RCP<const Map> nodeMap1to1;
     if (nodeGlobalIDs1to1 == nullptr) {
       nodeMap1to1 = Tpetra::createOneToOne<LO,GO>(nodeMap);
     }
     else {
-      nodeMap1to1 = 
-	rcp( new Map(IGO, Teuchos::ArrayView<const GO>(*nodeGlobalIDs1to1), 
-		     0, Comm) );
+      nodeMap1to1 =
+        rcp( new Map(IGO, Teuchos::ArrayView<const GO>(*nodeGlobalIDs1to1),
+                     0, Comm) );
     }
-    // The rows and columns of the graph nodeGraphSubdomain are node global IDs 
+    // The rows and columns of the graph nodeGraphSubdomain are node global IDs
     // and local degrees of freedom (dofs), respectively, prior to assembly.
     RCP<CrsGraph> nodeGraphSubdomain;
-    determineNodalDofGraph(numNodes, nodeBegin, localDofs, Comm, nodeMap, 
-			   nodeMap1to1, nodeGraphSubdomain);
-    // The graph nodeGraph1to1 is the counterpart of graph nodeGraphSubdomain, 
+    determineNodalDofGraph(numNodes, nodeBegin, localDofs, Comm, nodeMap,
+                           nodeMap1to1, nodeGraphSubdomain);
+    // The graph nodeGraph1to1 is the counterpart of graph nodeGraphSubdomain,
     // but with uniquely owned rows. Note: it is assumed that the local dofs
     // for each node are identical across all processors
     RCP<CrsGraph> nodeGraph1to1 = rcp( new CrsGraph(nodeMap1to1, 0) );
@@ -131,7 +131,7 @@ public:
       Values.resize(Indices.size());
       for (LO j=0; j<Indices.size(); j++) Values[j] = baseGID++;
       nodeMatrix1to1.replaceLocalValues
-	(i, Indices, Teuchos::ArrayView<GO>(Values));
+        (i, Indices, Teuchos::ArrayView<GO>(Values));
     }
     nodeMatrix1to1.fillComplete(domainMap, nodeMap1to1);
     CrsMatrixGO nodeMatrix(nodeMap, 0);
@@ -143,26 +143,26 @@ public:
   }
 
   static void determineNodeMatrices(LO numNodes,
-				    const GO* nodeGlobalIDs,
-				    const LO* nodeBegin,
-				    const LO* localDofs,
-				    RCP<const Teuchos::Comm<int> > & Comm,
-				    RCP<CrsMatrixGO> & nodeMatrix,
-				    RCP<CrsMatrixGO> & nodeMatrix1to1)
+                                    const GO* nodeGlobalIDs,
+                                    const LO* nodeBegin,
+                                    const LO* localDofs,
+                                    RCP<const Teuchos::Comm<int> > & Comm,
+                                    RCP<CrsMatrixGO> & nodeMatrix,
+                                    RCP<CrsMatrixGO> & nodeMatrix1to1)
   {
     Tpetra::global_size_t IGO =
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    RCP<const Map> nodeMap = 
-      rcp( new Map(IGO, 
-		   Teuchos::ArrayView<const GO>(nodeGlobalIDs, numNodes), 
-		   0, Comm));
+    RCP<const Map> nodeMap =
+      rcp( new Map(IGO,
+                   Teuchos::ArrayView<const GO>(nodeGlobalIDs, numNodes),
+                   0, Comm));
     RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO>(nodeMap);
-    // The rows and columns of the graph nodeGraphSubdomain are node global IDs 
+    // The rows and columns of the graph nodeGraphSubdomain are node global IDs
     // and local degrees of freedom (dofs), respectively, prior to assembly.
     RCP<CrsGraph> nodeGraphSubdomain;
-    determineNodalDofGraph(numNodes, nodeBegin, localDofs, Comm, nodeMap, 
-			   nodeMap1to1, nodeGraphSubdomain);
-    // The graph nodeGraph1to1 is the counterpart of graph nodeGraphSubdomain, 
+    determineNodalDofGraph(numNodes, nodeBegin, localDofs, Comm, nodeMap,
+                           nodeMap1to1, nodeGraphSubdomain);
+    // The graph nodeGraph1to1 is the counterpart of graph nodeGraphSubdomain,
     // but with uniquely owned rows. Note: it is assumed that the local dofs
     // for each node are identical across all processors
     RCP<CrsGraph> nodeGraph1to1 = rcp( new CrsGraph(nodeMap1to1, 0) );
@@ -184,7 +184,7 @@ public:
       Values.resize(Indices.size());
       for (LO j=0; j<Indices.size(); j++) Values[j] = baseGID++;
       nodeMatrix1to1->replaceLocalValues
-	(i, Indices, Teuchos::ArrayView<GO>(Values));
+        (i, Indices, Teuchos::ArrayView<GO>(Values));
     }
     nodeMatrix1to1->fillComplete(domainMap, nodeMap1to1);
     nodeMatrix = rcp( new CrsMatrixGO(nodeMap, 0) );
@@ -194,7 +194,7 @@ public:
   }
 
   static void determineNodalDofGraph
-    (const LO numNode, 
+    (const LO numNode,
      const LO* nodeBegin,
      const LO* localDofs,
      RCP<const Teuchos::Comm<int> > & Comm,
@@ -210,17 +210,17 @@ public:
     std::vector<GO> uniqueIndicesGO(numDof);
     for (LO i=0; i<numDof; i++) uniqueIndicesGO[i] = localDofs[i];
     determineUniqueIndices(uniqueIndicesGO);
-    RCP<const Map> ColMap = 
+    RCP<const Map> ColMap =
       rcp( new Map(IGO, Teuchos::ArrayView<GO>(uniqueIndicesGO), 0, Comm) );
-    A = rcp( new CrsGraph(NodeMap, ColMap, count) );
+    A = rcp( new CrsGraph(NodeMap, ColMap, count()) );
     std::vector<LO> localDofsIndex(numDof);
     for (LO i=0; i<numDof; i++) {
       localDofsIndex[i] = ColMap->getLocalElement(localDofs[i]);
     }
     for (LO i=0; i<numNode; i++) {
       if (count[i] > 0) {
-	A->insertLocalIndices
-	  (i, Teuchos::ArrayView<LO>(&localDofsIndex[nodeBegin[i]], count[i]));
+        A->insertLocalIndices
+          (i, Teuchos::ArrayView<LO>(&localDofsIndex[nodeBegin[i]], count[i]));
       }
     }
     RCP<const Map> ColMap1to1 = Tpetra::createOneToOne<LO,GO>(ColMap);
@@ -228,7 +228,7 @@ public:
   }
 
   static void extractDofMap(CrsMatrixGO & A,
-			    RCP<const Map> dofMap)
+                            RCP<const Map> dofMap)
   {
     Tpetra::global_size_t IGO =
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -241,15 +241,15 @@ public:
     for (size_t i=0; i<A.getNodeNumRows(); i++) {
       A.getLocalRowView(i, Indices, Values);
       for (LO j=0; j<Indices.size(); j++) {
-	globalIDs[numDof++] = Values[j];
+        globalIDs[numDof++] = Values[j];
       }
     }
-    dofMap = 
+    dofMap =
       rcp( new Map(IGO, Teuchos::ArrayView<GO>(globalIDs), 0, Comm) );
   }
 
-  static void determineUniqueIndices(const std::vector<GO> & indices, 
-				     std::vector<GO> & uniqueIndices)
+  static void determineUniqueIndices(const std::vector<GO> & indices,
+                                     std::vector<GO> & uniqueIndices)
   {
     uniqueIndices = indices;
     std::sort(uniqueIndices.begin(), uniqueIndices.end());
@@ -269,4 +269,4 @@ public:
 } // namespace bddc
 
 #endif // BDDC_DOFMANAGER_H
-  
+

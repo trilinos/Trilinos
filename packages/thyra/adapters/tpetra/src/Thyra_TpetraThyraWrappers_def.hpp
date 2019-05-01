@@ -78,7 +78,6 @@ Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >
 getOrCreateLocallyReplicatedTpetraVectorSpace(
   const RCP<const VectorSpaceBase<Scalar> > space,
   const RCP<const Teuchos::Comm<int> > &tpetraComm,
-  const RCP<Node> &tpetraNode,
   const int numCols
   )
 {
@@ -98,6 +97,22 @@ getOrCreateLocallyReplicatedTpetraVectorSpace(
   return tpetraSpace;
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TPETRA_DEPRECATED
+Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >
+getOrCreateLocallyReplicatedTpetraVectorSpace(
+  const RCP<const VectorSpaceBase<Scalar> > space,
+  const RCP<const Teuchos::Comm<int> > &tpetraComm,
+  const RCP<Node> &/* tpetraNode */,
+  const int numCols
+  )
+{
+  return getOrCreateLocallyReplicatedTpetraVectorSpace
+                    <Scalar, LocalOrdinal, GlobalOrdinal, Node>
+                    (space, tpetraComm, numCols);
+}
+#endif
 
 } // namespace Thyra
 
@@ -152,7 +167,9 @@ Thyra::createMultiVector(
     getOrCreateTpetraVectorSpace(rangeSpace, tpetraMultiVector_in->getMap()),
     getOrCreateLocallyReplicatedTpetraVectorSpace<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
       domainSpace, tpetraMultiVector_in->getMap()->getComm(),
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       tpetraMultiVector_in->getMap()->getNode(),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       tpetraMultiVector_in->getNumVectors()
       ),
     tpetraMultiVector_in
@@ -172,7 +189,9 @@ Thyra::createConstMultiVector(
     getOrCreateTpetraVectorSpace(rangeSpace, tpetraMultiVector_in->getMap()),
     getOrCreateLocallyReplicatedTpetraVectorSpace<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
       domainSpace, tpetraMultiVector_in->getMap()->getComm(),
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       tpetraMultiVector_in->getMap()->getNode(),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       tpetraMultiVector_in->getNumVectors()
       ),
     tpetraMultiVector_in

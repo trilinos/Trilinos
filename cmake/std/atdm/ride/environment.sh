@@ -17,8 +17,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
     export ATDM_CONFIG_COMPILER=GNU-7.2.0
   elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
     export ATDM_CONFIG_COMPILER=GNU-7.2.0
-  elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.4.0" ]] ; then
-    export ATDM_CONFIG_COMPILER=GNU-7.4.0
   else
     echo
     echo "***"
@@ -26,7 +24,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
     echo "*** Only GNU compilers supported on this system are:"
     echo "***   gnu (defaults to gnu-7.2.0)"
     echo "***   gnu-7.2.0 (default)"
-    echo "***   gnu-7.4.0"
     echo "***"
     return
   fi
@@ -37,10 +34,14 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
     export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
   elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
     export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
-  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
-  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0_GNU-7.4.0" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
   else
     echo
     echo "***"
@@ -49,8 +50,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
     echo "***   cuda (defaults to cuda-9.2-gnu-7.2.0)"
     echo "***   cuda-9.2 (defaults to cuda-9.2-gnu-7.2.0)"
     echo "***   cuda-9.2-gnu-7.2.0 (default)"
-    echo "***   cuda-10.0 (defaults to cuda-10.0-gnu-7.7.0)"
-    echo "***   cuda-10.0-gnu-7.4.0"
+    echo "***   cuda-10.1 (defaults to cuda-10.1-gnu-7.2.0)"
+    echo "***   cuda-10.1-gnu-7.2.0"
     echo "***"
     return
   fi
@@ -79,7 +80,10 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
     return
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
-  if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=Power8,Pascal60
+    export ATDM_CONFIG_QUEUE=dev  # ToDo: Update once ready for production!
+  elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power8,Kepler37
     export ATDM_CONFIG_QUEUE=rhel7F
   elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "Power8" ]] ; then
@@ -131,10 +135,20 @@ export ATDM_CONFIG_USE_NINJA=ON
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
   [[ "${ATDM_CONFIG_CUDA_RDC}" == "ON" ]] ; then
-  export ATDM_CONFIG_BUILD_COUNT=32
-  export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
-  # When CUDA+RDC is enabled, using all 64 cores to build and link results in
-  # build errors as described in #4502.
+  # When CUDA+RDC is enabled, it uses more RAM building with more build
+  # processes crashes nodes on 'white' and 'ride (see #4502)
+  if [[ "${ATDM_CONFIG_PT_PACKAGES}" == "ON" ]] ; then
+    # Building with all PT packages crashes nodes on 'white' and 'ride' for
+    # the same parallel levels that work for just the ATDM packages below.
+    # See ATDV-155.
+    export ATDM_CONFIG_BUILD_COUNT=20
+    export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=10
+  else
+    # We seem to be able to use more build processes when just ATDM packages
+    # are enabled.
+    export ATDM_CONFIG_BUILD_COUNT=32
+    export ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT=16
+  fi
 else
   export ATDM_CONFIG_BUILD_COUNT=64
 fi
@@ -160,16 +174,6 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ] ; then
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
-elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.4.0" ] ; then
-
-  # Load the modules and set up env
-  module load devpack/20181218/openmpi/3.1.3/gcc/7.4.0/cuda/10.0.130
-  export OMPI_CXX=`which g++`
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
-  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
-
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
 
   module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
@@ -189,9 +193,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
   # ABove avoids timeouts due to not running on separate GPUs (see #2446)
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0_GNU-7.4.0" ]] ; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] ; then
 
-  module load devpack/20181218/openmpi/3.1.3/gcc/7.4.0/cuda/10.0.130
+  module load devpack/20190404/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"

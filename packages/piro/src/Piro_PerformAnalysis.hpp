@@ -50,7 +50,9 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #ifndef OPTIPACK_HIDE_DEPRECATED_CODE
+#ifdef HAVE_PIRO_OPTIPACK
 #include "OptiPack_Config.h"
+#endif
 #endif 
 
 namespace Piro {
@@ -93,13 +95,18 @@ namespace Piro {
   //! \brief Performs analysis of a solved model using Optipack.
   //! \details Requires that the OptiPack package is available.
   //! \ingroup Piro_Thyra_analysis_driver_grp
-  int OPTIPACK_DEPRECATED PerformOptiPackAnalysis(
+  int 
+#ifdef HAVE_PIRO_OPTIPACK
+  // Spew deprecation warnings only if Piro user has requested OptiPack.
+  OPTIPACK_DEPRECATED 
+#endif
+  PerformOptiPackAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& optipackParams,
      Teuchos::ParameterList& globipackParams,
      Teuchos::RCP< Thyra::VectorBase<double> >& p
      );
-#endif
+#endif 
 
   //! \brief Performs analysis of a solved model using ROL.
   //! \details Requires that the ROL package is available.

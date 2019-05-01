@@ -119,8 +119,10 @@ namespace Tpetra {
     //! The communicator over which this matrix is distributed.
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! The Kokkos Node instance.
-    virtual Teuchos::RCP<Node> getNode() const = 0;
+    virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode() const = 0;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! The Map that describes the distribution of rows over processes.
     virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;

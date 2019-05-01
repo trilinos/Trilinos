@@ -167,7 +167,7 @@ def main():
             #plt.legend(loc=1, prop={'size': 10})
             plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=3,fancybox=True,shadow=True, prop={'size': 10})
             plt.grid()
-            jac_evaluator_timings_filename = "jac_evalautor_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+            jac_evaluator_timings_filename = "jac_evaluator_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
             fig.savefig(jac_evaluator_timings_filename)
             
         fig = plt.figure(3)
@@ -190,7 +190,7 @@ def main():
         plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=3,fancybox=True,shadow=True, prop={'size': 10})
         #plt.axis([0,2000,1.0e-4,0.1])
         plt.grid()
-        res_evaluator_timings_filename = "res_evalautor_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+        res_evaluator_timings_filename = "res_evaluator_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
         fig.savefig(res_evaluator_timings_filename)
 
         #print dir(plt)

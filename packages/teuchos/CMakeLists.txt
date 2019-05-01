@@ -170,28 +170,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_FLOAT and
 # ${PACKAGE_NAME}_ENABLE_COMPLEX_DOUBLE.  See Trilinos GitHub #362.
 
-set(TEUCHOS_LONG_LONG_DESC
-  "This option is DEPRECATED. Teuchos will ignore this option. Teuchos requires C++11, and long long comes with C++11, so you will always get long long. If you want to change the set of global ordinal types that Tpetra enables, set a Tpetra option, not a Teuchos option.")
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
-  HAVE_TEUCHOS_LONG_LONG_INT
-  ${TEUCHOS_LONG_LONG_DESC}
-  ON
-  )
-IF(NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
-  MESSAGE(WARNING
-      "${PACKAGE_NAME}_ENABLE_LONG_LONG_INT=\
-       ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT}.\
-       ${TEUCHOS_LONG_LONG_DESC}")
-ENDIF()
-
-IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
-  # Can only provide __int64 support if it will not clash with
-  # long long int (see Trilinos bug 5801).
-  INCLUDE(CheckFor__int64)
-  CHECK_FOR___INT64(HAVE_TEUCHOS___INT64)
-ENDIF()
-
 # Check whether the C++ compiler can compile __attribute__((constructor)).
 INCLUDE(CheckCXXAttributeConstructorCompiles)
 CHECK_CXX_ATTRIBUTE_CONSTRUCTOR_COMPILES(HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR)

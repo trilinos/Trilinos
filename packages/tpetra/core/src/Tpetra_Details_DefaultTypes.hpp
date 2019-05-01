@@ -74,7 +74,6 @@ namespace DefaultTypes {
   /// \typedef global_ordinal_type
   /// \brief Default value of GlobalOrdinal template parameter.
 #if defined(TPETRA_ENABLE_DEPRECATED_CODE)
-    // NEW style picks `int` for Global Ordinal as the first choice.
     #if defined(HAVE_TPETRA_INST_INT_INT)
         typedef int global_ordinal_type;
     #elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
@@ -89,7 +88,6 @@ namespace DefaultTypes {
         #error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
     #endif
 #else  // TPETRA_ENABLE_DEPRECATED_CODE IS NOT DEFINED
-    // NEW style picks `long long` for Global Ordinal as the first choice.
     #if defined(HAVE_TPETRA_INST_INT_LONG_LONG)
         typedef long long global_ordinal_type;
     #elif defined(HAVE_TPETRA_INST_INT_INT)

@@ -2,6 +2,7 @@
 
 TRIBITS_PACKAGE(OptiPack)
 
+
 # OptiPack package is deprecated April 2019; to be removed May 2019
 MESSAGE(WARNING "***** WARNING:  Package OptiPack is deprecated in April 2019; it will be removed in May 2019 *****")
 

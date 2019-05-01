@@ -105,7 +105,8 @@ Piro::PerformAnalysis(
   }
 #ifdef HAVE_PIRO_TRIKOTA
   else if (analysis=="Dakota") {
-    *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl; 
+    *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
+
     status = Piro::PerformDakotaAnalysis(piroModel,
                          analysisParams.sublist("Dakota"), result);
 
@@ -152,7 +153,7 @@ Piro::PerformAnalysis(
       *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
            << "       Valid analysis types are: Solve, Dakota, MOOCHO, "
 #ifndef OPTIPACK_HIDE_DEPRECATED_CODE
-           << "OptiPack, "
+           << "OptiPack, " 
 #endif
            << "ROL\n" << endl;
     status = 0; // Should not fail tests
@@ -264,7 +265,10 @@ Piro::PerformDakotaAnalysis(
 
 #ifndef OPTIPACK_HIDE_DEPRECATED_CODE
 int
+#ifdef HAVE_PIRO_OPTIPACK
+// Spew deprecation warnings only if Piro user has requested OptiPack.
 OPTIPACK_DEPRECATED
+#endif
 Piro::PerformOptiPackAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& optipackParams,
@@ -319,7 +323,7 @@ Piro::PerformOptiPackAnalysis(
  return 0;  // should not fail tests
 #endif
 }
-#endif  // OPTIPACK_HIDE_DEPRECATED_CODE
+#endif // !OPTIPACK_HIDE_DEPRECATED_CODE
 
 int
 Piro::PerformROLAnalysis(

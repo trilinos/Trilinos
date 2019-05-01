@@ -47,6 +47,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_BlockVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
@@ -1610,7 +1611,7 @@ namespace {
     RCP<graph_type> graph;
     try {
       out << "Create empty graph with nonoverlapping mesh row Map" << endl;
-      graph = rcp (new graph_type (meshRowMapPtr, 0, Tpetra::DynamicProfile));
+      graph = rcp (new graph_type (meshRowMapPtr, 0, Tpetra::StaticProfile));
 
       out << "Create Export from overlap to nonoverlap mesh row Map" << endl;
       theExport = rcp (new export_type (overlapMeshRowMapPtr, meshRowMapPtr));

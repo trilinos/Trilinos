@@ -614,13 +614,13 @@ char *getline_int(char *prompt)
             }
             break;
           case 'k': /* up */
-            copy_string(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_prev(), GL_BUF_SIZE);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
             break;
           case 'j': /* down */
-            copy_string(gl_buf, hist_next(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_next(), GL_BUF_SIZE);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -786,7 +786,7 @@ char *getline_int(char *prompt)
         gl_redraw(); /* ^L */
         break;
       case '\016': /* ^N */
-        copy_string(gl_buf, hist_next(), GL_BUF_SIZE - 1);
+        copy_string(gl_buf, hist_next(), GL_BUF_SIZE);
         if (gl_in_hook)
           gl_in_hook(gl_buf);
         gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -795,7 +795,7 @@ char *getline_int(char *prompt)
         gl_overwrite = !gl_overwrite; /* ^O */
         break;
       case '\020': /* ^P */
-        copy_string(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
+        copy_string(gl_buf, hist_prev(), GL_BUF_SIZE);
         if (gl_in_hook)
           gl_in_hook(gl_buf);
         gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -820,13 +820,13 @@ char *getline_int(char *prompt)
         if (c == '[') {
           switch (c = gl_getc()) {
           case 'A': /* up */
-            copy_string(gl_buf, hist_prev(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_prev(), GL_BUF_SIZE);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
             break;
           case 'B': /* down */
-            copy_string(gl_buf, hist_next(), GL_BUF_SIZE - 1);
+            copy_string(gl_buf, hist_next(), GL_BUF_SIZE);
             if (gl_in_hook)
               gl_in_hook(gl_buf);
             gl_fixup(gl_prompt, 0, GL_BUF_SIZE);
@@ -1028,7 +1028,7 @@ static void gl_kill(int pos)
 /* delete from pos to the end of line */
 {
   if (pos < gl_cnt) {
-    copy_string(gl_killbuf, gl_buf + pos, GL_BUF_SIZE - 1);
+    copy_string(gl_killbuf, gl_buf + pos, GL_BUF_SIZE);
     gl_buf[pos] = '\0';
     gl_fixup(gl_prompt, pos, pos);
   }
@@ -1460,7 +1460,7 @@ static void search_addchar(int c)
       gl_buf[0] = 0;
       hist_pos  = hist_last;
     }
-    copy_string(gl_buf, hist_buf[hist_pos], GL_BUF_SIZE - 1);
+    copy_string(gl_buf, hist_buf[hist_pos], GL_BUF_SIZE);
   }
   if ((loc = strstr(gl_buf, search_string)) != 0) {
     gl_fixup(search_prompt, 0, loc - gl_buf);
@@ -1510,7 +1510,7 @@ static void search_back(int new_search)
         found = 1;
       }
       else if ((loc = strstr(p, search_string)) != 0) {
-        copy_string(gl_buf, p, GL_BUF_SIZE - 1);
+        copy_string(gl_buf, p, GL_BUF_SIZE);
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
           search_last = hist_pos;
@@ -1545,7 +1545,7 @@ static void search_forw(int new_search)
         found = 1;
       }
       else if ((loc = strstr(p, search_string)) != 0) {
-        copy_string(gl_buf, p, GL_BUF_SIZE - 1);
+        copy_string(gl_buf, p, GL_BUF_SIZE);
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
           search_last = hist_pos;

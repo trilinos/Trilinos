@@ -340,15 +340,20 @@ namespace Tpetra {
      *
      * \param comm [in] Communicator over which to distribute the
      *   indices.
-     *
-     * \param node [in/out] (OPTIONAL; default usually suffices)
-     *   Kokkos Node instance.
      */
     Map (const global_size_t numGlobalElements,
          const global_ordinal_type indexBase,
-         const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-         const LocalGlobal lg=GloballyDistributed,
-         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+         const LocalGlobal lg=GloballyDistributed);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    Map (const global_size_t numGlobalElements,
+         const global_ordinal_type indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+         const LocalGlobal lg,
+         const Teuchos::RCP<Node> &node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /** \brief Constructor with contiguous, possibly nonuniform
      *    distribution.
@@ -384,15 +389,20 @@ namespace Tpetra {
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
-     *
-     * \param node [in/out] (OPTIONAL; default usually suffices)
-     *   Kokkos Node instance.
      */
     Map (const global_size_t numGlobalElements,
          const size_t numLocalElements,
          const global_ordinal_type indexBase,
-         const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED 
+    Map (const global_size_t numGlobalElements,
+         const size_t numLocalElements,
+         const global_ordinal_type indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+         const Teuchos::RCP<Node> &node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /** \brief Constructor with arbitrary (possibly noncontiguous
      *   and/or nonuniform and/or overlapping) distribution, taking
@@ -526,15 +536,20 @@ namespace Tpetra {
      * \param comm [in] Communicator over which to distribute the
      *   indices.  This constructor must be called as a collective
      *   over this communicator.
-     *
-     * \param node [in/out] (OPTIONAL; default usually suffices)
-     *   Kokkos Node instance.
      */
     Map (const global_size_t numGlobalElements,
          const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
          const GlobalOrdinal indexBase,
+         const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
+    Map (const global_size_t numGlobalElements,
+         const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
+         const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-         const Teuchos::RCP<Node>& node = Teuchos::rcp (new Node));
+         const Teuchos::RCP<Node>& node);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Default constructor (that does nothing).
     ///
@@ -968,8 +983,10 @@ namespace Tpetra {
     //! Get this Map's communicator, as a Teuchos::Comm.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get this Map's Node object.
-    Teuchos::RCP<Node> getNode () const;
+    TPETRA_DEPRECATED Teuchos::RCP<Node> getNode () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //@}
     //! Implementation of \c Teuchos::Describable
@@ -1008,9 +1025,11 @@ namespace Tpetra {
     //@{
 
     //! Create a shallow copy of this Map, with a different Node type.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class NodeOut>
-    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > TPETRA_DEPRECATED
     clone (const Teuchos::RCP<NodeOut>& nodeOut) const;
+#endif
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -1520,7 +1539,7 @@ namespace Tpetra {
   namespace Details {
 
     template<class OutMapType, class InMapType>
-    OutMapType
+    OutMapType TPETRA_DEPRECATED
     MapCloner<OutMapType, InMapType>::
     clone (const InMapType& mapIn,
            const Teuchos::RCP<out_node_type>& /* nodeOut */)
@@ -1605,9 +1624,10 @@ namespace Tpetra {
   } // namespace Details
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > TPETRA_DEPRECATED
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   clone (const Teuchos::RCP<NodeOut>& nodeOut) const
   {
@@ -1617,6 +1637,7 @@ namespace Tpetra {
     // Copy constructor does a shallow copy.
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
+#endif
 
 } // namespace Tpetra
 

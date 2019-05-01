@@ -85,13 +85,26 @@ namespace Tpetra {
     Tpetra::Details::initializeKokkos ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (const global_size_t numGlobalElements,
+       const global_ordinal_type indexBase,
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+       const LocalGlobal lOrG,
+       const Teuchos::RCP<Node> &/* node */) :
+    Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements, indexBase,
+                                              comm, lOrG)
+ {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (const global_size_t numGlobalElements,
        const global_ordinal_type indexBase,
-       const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-       const LocalGlobal lOrG,
-       const Teuchos::RCP<Node>& /* node */) :
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+       const LocalGlobal lOrG) :
     comm_ (comm),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -238,13 +251,27 @@ namespace Tpetra {
     //setupDirectory ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (const global_size_t numGlobalElements,
+       const size_t numLocalElements,
+       const global_ordinal_type indexBase,
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+       const Teuchos::RCP<Node> &/* node */) :
+    Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements,
+                                              numLocalElements,
+                                              indexBase, comm)
+  {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (const global_size_t numGlobalElements,
        const size_t numLocalElements,
        const global_ordinal_type indexBase,
-       const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-       const Teuchos::RCP<Node>& /* node */) :
+       const Teuchos::RCP<const Teuchos::Comm<int> > &comm) :
     comm_ (comm),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -727,6 +754,7 @@ namespace Tpetra {
     initWithNonownedHostIndexList (numGlobalElements, inds, indexBase, comm);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (const global_size_t numGlobalElements,
@@ -734,6 +762,17 @@ namespace Tpetra {
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<Node>& /* node */) :
+    Map<LocalOrdinal,GlobalOrdinal,Node>::Map(numGlobalElements, entryList,
+                                              indexBase, comm)
+  {}
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (const global_size_t numGlobalElements,
+       const Teuchos::ArrayView<const GlobalOrdinal>& entryList,
+       const GlobalOrdinal indexBase,
+       const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
@@ -1971,13 +2010,16 @@ namespace Tpetra {
     return comm_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::RCP<Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNode () const {
     // Node instances don't do anything any more, but sometimes it
     // helps for them to be nonnull.
     return Teuchos::rcp (new Node);
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::checkIsDist() const {

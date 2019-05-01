@@ -206,7 +206,7 @@ namespace {
     TEST_ASSERT( gblSuccess == 1 );
   }
 
-  ////
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Cloner, LO, GO, Scalar , Node )
   {
     typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -241,6 +241,7 @@ namespace {
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
@@ -4793,10 +4794,9 @@ namespace {
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+#define UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonMemberConstructors, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Cloner            , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstLDA       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstAA        , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyConst         , LO, GO, SCALAR, NODE ) \
@@ -4830,6 +4830,15 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Cloner            , LO, GO, SCALAR, NODE ) \
+    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
+#else
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
+#endif
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;

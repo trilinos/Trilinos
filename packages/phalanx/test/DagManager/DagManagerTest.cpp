@@ -270,7 +270,7 @@ TEUCHOS_UNIT_TEST(dag, missing_req_field)
 }
 
 // *************************************************
-// Catch missing evalautor in subtree 
+// Catch missing evaluator in subtree 
 // *************************************************
 TEUCHOS_UNIT_TEST(dag, missing_evaluator)
 {
@@ -489,7 +489,7 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
 
 // *************************************************
 // Test for a field that has both an "evaluated" evaluator and
-// "contributed" evalautors.
+// "contributed" evaluators.
 // *************************************************
 TEUCHOS_UNIT_TEST(dag, contrib_and_eval_B)
 {

@@ -353,7 +353,9 @@ LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 ###############################################
 SET(SOURCES ${MUELU_ETI_CPP_SOURCES_SLGN})
 APPEND_GLOB(SOURCES */*.cpp)
+LIST(REMOVE_ITEM SOURCES ${DIR}/Graph/MueLu_LinkedList.cpp)
 SET(SOURCES_LGN ${MUELU_ETI_CPP_SOURCES_LGN})
+APPEND_GLOB(SOURCES_LGN ${DIR}/Graph/MueLu_LinkedList.cpp)
 
 #APPEND_GLOB(SOURCES ${MUELU_ETI_CPP_SOURCES})  # append ETI cpp sources (if any)
 
@@ -460,16 +462,18 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  muelu
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  )
-
-TRIBITS_ADD_LIBRARY(
   muelu_lgn
   HEADERS ${HEADERS}
   SOURCES ${SOURCES_LGN}
   )
+
+TRIBITS_ADD_LIBRARY(
+  muelu
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  DEPLIBS muelu_lgn
+  )
+
 
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
