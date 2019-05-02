@@ -34,16 +34,10 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # include the function XPETRA_PROCESS_ETI_TEMPLATE
   include(${CMAKE_CURRENT_SOURCE_DIR}/../src/Utils/ExplicitInstantiation/xpetra-process-eti-template.cmake)
 
-  #FIXME
-  #ninja: warning: multiple rules generate
-  #/scratch/jhu/trilinos/Trilinos/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl. builds
-  #involving this target will not be correct; continuing anyway [-w dupbuild=warn]
-
-
   # generate the cpp files and record the file names
   XPETRA_PROCESS_ETI_TEMPLATE(
     "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
+    ${Trilinos_SOURCE_DIR}/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_SC_LO_GO_NO_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_SC_LO_GO_NO_SRC})
@@ -61,10 +55,10 @@ ENDIF() # if XPETRA_ENABLE_EXPLICIT_INSTANTIATION
 
 SET(HEADERS "")
 APPEND_GLOB(HEADERS */*.hpp)
-APPEND_GLOB(HEADERS */*.cpp) #JHU 25-Apr-2019 FIXME is this correct?
+APPEND_GLOB(SOURCES */*.cpp)
 
 # FIXME JHU is this still needed?
-SET(SOURCE mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
+APPEND_GLOB(SOURCES mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 
 # Create the .hpp file in BUILD/packages/xpetra/sup
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Matrix NOSIERRABJAM)

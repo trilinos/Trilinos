@@ -39,7 +39,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   XPETRA_PROCESS_ETI_TEMPLATE(
     "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
-    Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
+    ${Trilinos_SOURCE_DIR}/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_SC_LO_GO_NO_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_SC_LO_GO_NO_SRC})
@@ -50,7 +50,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   XPETRA_PROCESS_ETI_TEMPLATE(
     "${XPETRA_MULTIVECTOR_ETI_CLASSES}"
-    Utils/ExplicitInstantiation/Xpetra_ETI_MULTIVECTOR.tmpl
+    ${Trilinos_SOURCE_DIR}/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_MULTIVECTOR.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_MULTIVECTOR_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_MULTIVECTOR_SRC})
