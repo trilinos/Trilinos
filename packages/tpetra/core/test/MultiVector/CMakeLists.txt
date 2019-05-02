@@ -17,9 +17,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Harness
+  WithLocalAccess
   SOURCES
-    Harness
+    WithLocalAccess
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
