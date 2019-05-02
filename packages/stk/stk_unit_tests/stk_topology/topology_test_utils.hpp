@@ -322,12 +322,15 @@ inline void check_permutation_nodes(stk::topology topology, std::vector<std::vec
   }
 }
 
+constexpr unsigned MAX_NODES_PER_ELEM = 100;
+
 template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_side_nodes_ngp(stk::topology topology, unsigned gold_side_node_ordinals[][MAX_NODES])
 {
-  constexpr unsigned MAX_NODES_PER_ELEM = 100;
   stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
+
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -348,8 +351,9 @@ template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_edge_nodes_ngp(stk::topology topology, unsigned gold_edge_node_ordinals[][MAX_NODES])
 {
-  constexpr unsigned MAX_NODES_PER_ELEM = 100;
   stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
+
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
@@ -369,8 +373,9 @@ template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_face_nodes_ngp(stk::topology topology, unsigned gold_face_node_ordinals[][MAX_NODES])
 {
-  constexpr unsigned MAX_NODES_PER_ELEM = 100;
   stk::mesh::Entity allElemNodes[MAX_NODES_PER_ELEM];
+  NGP_EXPECT_TRUE(topology.num_nodes() < MAX_NODES_PER_ELEM);
+
   for (unsigned nodeOrdinal = 0; nodeOrdinal < topology.num_nodes(); ++nodeOrdinal) {
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
