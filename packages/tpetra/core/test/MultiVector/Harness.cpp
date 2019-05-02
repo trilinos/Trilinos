@@ -58,7 +58,7 @@ namespace Tpetra {
   // Generic classes needed to implement withLocalAccess
   ////////////////////////////////////////////////////////////
 
-  namespace Impl {
+  namespace Details {
     /// \brief Access intent.
     enum class AccessMode {
       ReadOnly,
@@ -183,7 +183,7 @@ namespace Tpetra {
     public:
       using type = typename gnlo::nonowning_local_object_type;
     };
-  } // namespace Impl
+  } // namespace Details
 
   /// \brief Type of the local object, that is an argument to the
   ///   function the user gives to withLocalAccess.
@@ -201,7 +201,7 @@ namespace Tpetra {
   /// the corresponding local object type.
   template<class LocalAccessType>
   using with_local_access_function_argument_type =
-    typename Impl::LocalAccessFunctionArgument<LocalAccessType>::type;
+    typename Details::LocalAccessFunctionArgument<LocalAccessType>::type;
 
   //////////////////////////////////////////////////////////////////////
   // Users call readOnly, writeOnly, and readWrite, in order to declare
@@ -212,43 +212,47 @@ namespace Tpetra {
   ///   local data in read-only mode, in the object's default memory
   ///   space.
   template<class GlobalObjectType>
-  Impl::LocalAccess<GlobalObjectType,
-                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    Impl::AccessMode::ReadOnly>
+  Details::LocalAccess<
+    GlobalObjectType,
+    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
+    Details::AccessMode::ReadOnly>
   readOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
   ///   local data in read-only mode (overload for const
   ///   GlobalObjectType), in the object's default memory space.
   template<class GlobalObjectType>
-  Impl::LocalAccess<GlobalObjectType,
-                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    Impl::AccessMode::ReadOnly>
+  Details::LocalAccess<
+    GlobalObjectType,
+    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
+    Details::AccessMode::ReadOnly>
   readOnly (const GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
   ///   local data in write-only mode, in the object's default memory
   ///   space.
   template<class GlobalObjectType>
-  Impl::LocalAccess<GlobalObjectType,
-                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    Impl::AccessMode::WriteOnly>
+  Details::LocalAccess<
+    GlobalObjectType,
+    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
+    Details::AccessMode::WriteOnly>
   writeOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
   ///   local data in read-and-write mode, in the object's default
   ///   memory space.
   template<class GlobalObjectType>
-  Impl::LocalAccess<GlobalObjectType,
-                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-                    Impl::AccessMode::ReadWrite>
+  Details::LocalAccess<
+    GlobalObjectType,
+    typename Details::DefaultMemorySpace<GlobalObjectType>::type,
+    Details::AccessMode::ReadWrite>
   readWrite (GlobalObjectType&);
 
   ////////////////////////////////////////////////////////////
   // LocalAccess struct
   ////////////////////////////////////////////////////////////
 
-  namespace Impl {
+  namespace Details {
     /// \brief Declaration of access intent for a global object.
     ///
     /// Users aren't supposed to make instances of this class.  They
@@ -353,62 +357,70 @@ namespace Tpetra {
       // friends, because they are the only ways that users are supposed
       // to construct LocalAccess instances.
       template<class GOT> friend
-      LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
                   AccessMode::ReadOnly> readOnly (GOT&);
       template<class GOT> friend
-      LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
                   AccessMode::ReadOnly> readOnly (const GOT&);
       template<class GOT> friend
-      LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
                   AccessMode::WriteOnly> writeOnly (GOT&);
       template<class GOT> friend
-      LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
+      LocalAccess<GOT, typename Details::DefaultMemorySpace<GOT>::type,
                   AccessMode::ReadWrite> readWrite (GOT&);
     };
-  } // namespace Impl
+  } // namespace Details
 
   ////////////////////////////////////////////////////////////
   // Implementations of readOnly, writeOnly, and readWrite
   ////////////////////////////////////////////////////////////
 
   template<class GOT>
-  Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    Impl::AccessMode::ReadOnly>
+  Details::LocalAccess<
+    GOT,
+    typename Details::DefaultMemorySpace<GOT>::type,
+    Details::AccessMode::ReadOnly>
   readOnly (GOT& G)
   {
-    return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
+    return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
   }
 
   template<class GOT>
-  Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    Impl::AccessMode::ReadOnly>
+  Details::LocalAccess<
+    GOT,
+    typename Details::DefaultMemorySpace<GOT>::type,
+    Details::AccessMode::ReadOnly>
   readOnly (const GOT& G)
   {
     GOT& G_nc = const_cast<GOT&> (G);
-    return {G_nc, Impl::DefaultMemorySpace<GOT>::space (G_nc), true};
+    return {G_nc, Details::DefaultMemorySpace<GOT>::space (G_nc), true};
   }
 
   template<class GOT>
-  Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    Impl::AccessMode::WriteOnly>
+  Details::LocalAccess<
+    GOT,
+    typename Details::DefaultMemorySpace<GOT>::type,
+    Details::AccessMode::WriteOnly>
   writeOnly (GOT& G)
   {
-    return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
+    return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
   }
 
   template<class GOT>
-  Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type,
-                    Impl::AccessMode::ReadWrite>
+  Details::LocalAccess<
+    GOT,
+    typename Details::DefaultMemorySpace<GOT>::type,
+    Details::AccessMode::ReadWrite>
   readWrite (GOT& G)
   {
-    return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
+    return {G, Details::DefaultMemorySpace<GOT>::space (G), true};
   }
 
   ////////////////////////////////////////////////////////////
   // Implementation of withLocalAccess
   ////////////////////////////////////////////////////////////
 
-  namespace Impl {
+  namespace Details {
 
     /////////////////////////////////////////////////////////////////
     // Use std::tuple as a compile-time list (Greenspun's 10th Rule)
@@ -487,11 +499,11 @@ namespace Tpetra {
     template<class ... LocalAccessTypes>
     struct WithLocalAccess {
       using current_user_function_type =
-        typename Impl::ArgsToFunction<LocalAccessTypes...>::type;
+        typename Details::ArgsToFunction<LocalAccessTypes...>::type;
 
       static void
       withLocalAccess (LocalAccessTypes...,
-                       typename Impl::ArgsToFunction<LocalAccessTypes...>::type);
+                       typename Details::ArgsToFunction<LocalAccessTypes...>::type);
     };
 
     /// \brief Specialization of withLocalAccess that implements the
@@ -500,7 +512,7 @@ namespace Tpetra {
     template<>
     struct WithLocalAccess<> {
       using current_user_function_type =
-        typename Impl::ArgsToFunction<>::type;
+        typename Details::ArgsToFunction<>::type;
 
       static void
       withLocalAccess (current_user_function_type userFunction)
@@ -518,7 +530,7 @@ namespace Tpetra {
     template<class FirstLocalAccessType, class ... Rest>
     struct WithLocalAccess<FirstLocalAccessType, Rest...> {
       using current_user_function_type =
-        typename Impl::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
+        typename Details::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
 
       static void
       withLocalAccess (FirstLocalAccessType first,
@@ -590,7 +602,7 @@ namespace Tpetra {
         typename MemorySpace::memory_space,
         typename ExecutionSpace::memory_space>::type;
 
-  } // namespace Impl
+  } // namespace Details
 
   ////////////////////////////////////////////////////////////
   // withLocalAccess function declaration and definition
@@ -606,10 +618,11 @@ namespace Tpetra {
   // article on "parameter pack."
   template<class ... LocalAccessTypes>
   void
-  withLocalAccess (typename Impl::ArgsToFunction<LocalAccessTypes...>::type userFunction,
-                   LocalAccessTypes... localAccesses)
+  withLocalAccess
+    (typename Details::ArgsToFunction<LocalAccessTypes...>::type userFunction,
+     LocalAccessTypes... localAccesses)
   {
-    using impl_type = Impl::WithLocalAccess<LocalAccessTypes...>;
+    using impl_type = Details::WithLocalAccess<LocalAccessTypes...>;
     impl_type::withLocalAccess (localAccesses..., userFunction);
   }
 
@@ -617,7 +630,7 @@ namespace Tpetra {
   // Specializations for Tpetra::MultiVector
   ////////////////////////////////////////////////////////////
 
-  namespace Impl {
+  namespace Details {
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
@@ -670,7 +683,7 @@ namespace Tpetra {
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          if (access_mode == Impl::AccessMode::WriteOnly) {
+          if (access_mode == Details::AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
@@ -685,7 +698,7 @@ namespace Tpetra {
           if (LA.G_.template need_sync<execution_space> ()) {
             LA.G_.template sync<execution_space> ();
           }
-          if (access_mode != Impl::AccessMode::ReadOnly) {
+          if (access_mode != Details::AccessMode::ReadOnly) {
             LA.G_.template modify<execution_space> ();
           }
 
@@ -703,7 +716,7 @@ namespace Tpetra {
     // Specialization of GetMasterLocalObject for Tpetra::Vector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
-             const Impl::AccessMode am>
+             const Details::AccessMode am>
     struct GetMasterLocalObject<
       LocalAccess<
         Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> > {
@@ -752,7 +765,7 @@ namespace Tpetra {
       get (local_access_type LA)
       {
         if (LA.isValid ()) {
-          if (access_mode == Impl::AccessMode::WriteOnly) {
+          if (access_mode == Details::AccessMode::WriteOnly) {
             LA.G_.clear_sync_state ();
           }
 
@@ -767,7 +780,7 @@ namespace Tpetra {
           if (LA.G_.template need_sync<execution_space> ()) {
             LA.G_.template sync<execution_space> ();
           }
-          if (access_mode != Impl::AccessMode::ReadOnly) {
+          if (access_mode != Details::AccessMode::ReadOnly) {
             LA.G_.template modify<execution_space> ();
           }
 
@@ -1062,7 +1075,7 @@ namespace Tpetra {
         using MV = TpetraMultiVectorType;
         using preferred_memory_space =
           typename MV::device_type::memory_space;
-        using memory_space = Impl::transform_memory_space<
+        using memory_space = Details::transform_memory_space<
           ExecutionSpace, preferred_memory_space>;
         using LO = typename MV::local_ordinal_type;
         using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
@@ -1092,7 +1105,7 @@ namespace Tpetra {
             withLocalAccess
               ([=] (const arg_type& X_j_lcl) {
                 auto loopBody =
-                  Impl::makeVectorLoopBody (X_j_lcl, f, LO (1));
+                  Details::makeVectorLoopBody (X_j_lcl, f, LO (1));
                 Kokkos::parallel_for
                   ("Tpetra::transform(Vector)",
                    range_type (execSpace, 0, X_j_lcl.extent (0)),
@@ -1109,7 +1122,7 @@ namespace Tpetra {
             ([=] (const arg_type& X_lcl) {
               const LO numCols = static_cast<LO> (X_lcl.extent (1));
               auto loopBody =
-                Impl::makeMultiVectorLoopBody (X_lcl, f, numCols);
+                Details::makeMultiVectorLoopBody (X_lcl, f, numCols);
 
               if (verbose) {
                 std::ostringstream os;
@@ -1128,7 +1141,7 @@ namespace Tpetra {
         }
       }
     };
-  } // namespace Impl
+  } // namespace Details
 
   /// \brief Apply a function entrywise to each entry of a
   ///   Tpetra::MultiVector.
@@ -1162,7 +1175,7 @@ namespace Tpetra {
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using impl_type =
-      Impl::Transform<ExecutionSpace, MV, UserFunctionType>;
+      Details::Transform<ExecutionSpace, MV, UserFunctionType>;
     impl_type::transform ("transform(execSpace,MV,f)", execSpace, X, f);
   }
 
@@ -1181,7 +1194,7 @@ namespace Tpetra {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using execution_space = typename MV::device_type::execution_space;
     using impl_type =
-      Impl::Transform<execution_space, MV, UserFunctionType>;
+      Details::Transform<execution_space, MV, UserFunctionType>;
     execution_space execSpace;
     impl_type::transform ("transform(MV,f)", execSpace, X, f);
   }
@@ -1209,19 +1222,19 @@ namespace { // (anonymous)
 
   TEUCHOS_UNIT_TEST( VectorHarness, GetLocalObject )
   {
-    using Tpetra::Impl::getMasterLocalObject;
-    using Tpetra::Impl::getNonowningLocalObject;
+    using Tpetra::Details::getMasterLocalObject;
+    using Tpetra::Details::getNonowningLocalObject;
     using Tpetra::readOnly;
     using Tpetra::readWrite;
     using Tpetra::writeOnly;
-    constexpr bool debug = true;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
 
     RCP<Teuchos::FancyOStream> outPtr = debug ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test Tpetra::Impl::{getMasterLocalObject, "
+    myOut << "Test Tpetra::Details::{getMasterLocalObject, "
       "getNonowningLocalObject} for MultiVector and Vector" << endl;
     Teuchos::OSTab tab0 (myOut);
 
@@ -1434,7 +1447,7 @@ namespace { // (anonymous)
     using device_execution_space =
       typename multivec_type::device_type::execution_space;
     using LO = typename multivec_type::local_ordinal_type;
-    constexpr bool debug = true;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
     int lclSuccess = 0;
     int gblSuccess = 0;
 
@@ -1768,9 +1781,8 @@ namespace { // (anonymous)
 
   TEUCHOS_UNIT_TEST( VectorHarness, WithLocalAccess )
   {
-    //using Kokkos::ALL;
-    constexpr bool debug = true;
     using LO = typename multivec_type::local_ordinal_type;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
 
     RCP<Teuchos::FancyOStream> outPtr = debug ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
