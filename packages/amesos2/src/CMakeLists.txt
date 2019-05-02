@@ -388,7 +388,6 @@ IF (${PACKAGE_NAME}_ENABLE_MUMPS)
 ENDIF()
 
 
-IF (Tpetra_INST_INT_INT)
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_SET(HEADERS
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp
@@ -412,7 +411,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     Amesos2_EpetraCrsMatrix_MatrixAdapter.cpp
     Amesos2_EpetraMultiVecAdapter.cpp
     )
-ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_TrilinosSS)

@@ -162,7 +162,7 @@ namespace {
   //   RCP<const Comm<int> > comm = getDefaultComm();
   //   const global_size_t numGlobal = comm->getSize();
   //   RCP<const Map<LO,GO> > map = rcp(new Map<LO,GO>(numGlobal,0,comm) );
-  //   RCP<const CrsGraph<LO,GO> > graph = rcp(new CrsGraph<LO,GO>(map,0,Tpetra::DynamicProfile) );
+  //   RCP<const CrsGraph<LO,GO> > graph = rcp(new CrsGraph<LO,GO>(map,0,Tpetra::StaticProfile) );
   //   TEST_EQUALITY_CONST( graph != null, true );
   //   // All procs fail if any proc fails
   //   int globalSuccess_int = -1;

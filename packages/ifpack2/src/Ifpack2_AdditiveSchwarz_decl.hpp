@@ -811,6 +811,8 @@ private:
   int NumIterations_;
   //! True if and only if the initial guess is zero.
   bool ZeroStartingSolution_;
+  //! Damping for inner update, if used
+  scalar_type UpdateDamping_;
 
   //! The total number of successful calls to initialize().
   int NumInitialize_;

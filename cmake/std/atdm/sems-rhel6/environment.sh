@@ -195,4 +195,16 @@ export MPIF90=`which mpif90`
 
 export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
+#
+# Set up default install-related stuff
+#
+
+export ATDM_CONFIG_WORKSPACE_BASE_DEFAULT=/home/atdm-devops-admin/jenkins
+export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/home/atdm-devops-admin/trilinos_installs
+export ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT=/home/atdm-devops-admin/tools/run-as-atdm-devops-admin
+
+#
+# Done!
+#
+
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

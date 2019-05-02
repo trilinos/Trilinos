@@ -93,6 +93,9 @@ namespace MueLuTests {
 
     std::string xmlFileName = "UserData/test.xml";
     Teuchos::RCP<Teuchos::ParameterList> inParamList = Teuchos::getParametersFromXmlFile(xmlFileName);
+    if(lib == Xpetra::UseEpetra) {
+      inParamList->sublist("Hierarchy").set("use kokkos refactor", false);
+    }
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
 

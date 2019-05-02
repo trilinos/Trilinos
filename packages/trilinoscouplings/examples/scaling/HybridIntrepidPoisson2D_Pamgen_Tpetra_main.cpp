@@ -122,7 +122,6 @@ main (int argc, char *argv[])
 
     // Get the default communicator and Kokkos Node instance
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<Node> node = Teuchos::null;
 
     // Did the user specify --help at the command line to print help
     // with command-line arguments?
@@ -266,7 +265,7 @@ main (int argc, char *argv[])
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
         makeMatrixAndRightHandSide (A, B, X_exact, X, coordsArray, lNodesPerDim,
-                                    comm, node, meshInput, out, err, verbose, debug);
+                                    comm, meshInput, out, err, verbose, debug);
       }
 
       // Optionally dump the matrix and/or its row Map to files.

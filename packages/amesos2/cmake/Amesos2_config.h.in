@@ -54,9 +54,6 @@
  * Config Options *
  ******************/
 
-/* define if new form of std::count is supported */
-#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
-
 /* Define if want to build amesos2-debug */
 #cmakedefine HAVE_AMESOS2_DEBUG
 
