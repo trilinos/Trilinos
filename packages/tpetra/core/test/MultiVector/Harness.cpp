@@ -507,7 +507,7 @@ namespace Tpetra {
              class UserFunctionType>
     struct ForEach {
       static void
-      for_each (const char debugLabel[],
+      for_each (const char kernelLabel[],
                 ExecutionSpace execSpace,
                 TpetraMultiVectorType& X,
                 UserFunctionType f)
@@ -527,7 +527,7 @@ namespace Tpetra {
         if (verbose) {
           std::ostringstream os;
           os << "Proc " << myRank << ": Tpetra::for_each:" << endl
-             << " debugLabel: " << debugLabel << endl
+             << " kernelLabel: " << kernelLabel << endl
              << " ExecutionSpace: "
              << TypeNameTraits<ExecutionSpace>::name () << endl
              << " memory_space: "
@@ -549,7 +549,7 @@ namespace Tpetra {
                 auto loopBody =
                   Details::makeVectorLoopBody (X_j_lcl, f, LO (1));
                 Kokkos::parallel_for
-                  ("Tpetra::for_each(Vector)",
+                  (kernelLabel,
                    range_type (execSpace, 0, X_j_lcl.extent (0)),
                    loopBody);
               }, readWrite (*X_j).on (memSpace));
@@ -565,20 +565,10 @@ namespace Tpetra {
               const LO numCols = static_cast<LO> (X_lcl.extent (1));
               auto loopBody =
                 Details::makeMultiVectorLoopBody (X_lcl, f, numCols);
-
-              if (verbose) {
-                std::ostringstream os;
-                os << "Proc " << myRank << ": Contiguous MV case: X_lcl: "
-                   << X_lcl.extent (0) << " x "
-                   << X_lcl.extent (1) << endl;
-                std::cerr << os.str ();
-              }
-
               Kokkos::parallel_for
-                ("Tpetra::for_each(MultiVector)",
+                (kernelLabel,
                  range_type (execSpace, 0, X_lcl.extent (0)),
                  loopBody);
-
             }, readWrite (X).on (memSpace));
         }
       }
@@ -610,6 +600,7 @@ namespace Tpetra {
   /// Otherwise, <tt>scalar_type</tt> and <tt>impl_scalar_type</tt>
   /// are the same.
   ///
+  /// \param kernellabel [in] Kernel label for Kokkos Profiling.
   /// \param execSpace [in] Kokkos execution space on which to run.
   /// \param X [in/out] MultiVector or Vector to modify.
   /// \param f [in] Function to apply to each entry of X.
@@ -617,26 +608,29 @@ namespace Tpetra {
            class UserFunctionType,
            class ExecutionSpace>
   void
-  for_each (ExecutionSpace execSpace,
+  for_each (const char kernelLabel[],
+            ExecutionSpace execSpace,
             Tpetra::MultiVector<SC, LO, GO, NT>& X,
             UserFunctionType f)
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using impl_type =
       Details::ForEach<ExecutionSpace, MV, UserFunctionType>;
-    impl_type::for_each ("for_each(execSpace,MV,f)", execSpace, X, f);
+    impl_type::for_each (kernelLabel, execSpace, X, f);
   }
 
   /// \brief Overload of for_each (see above) that runs on X's
   ///   default Kokkos execution space.
   ///
+  /// \param kernellabel [in] Kernel label for Kokkos Profiling.
   /// \param X [in/out] MultiVector to modify.
   /// \param f [in] Function to apply entrywise to X (could have
   ///   different signatures; see above).
   template<class SC, class LO, class GO, class NT,
            class UserFunctionType>
   void
-  for_each (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  for_each (const char kernelLabel[],
+            Tpetra::MultiVector<SC, LO, GO, NT>& X,
             UserFunctionType f)
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
@@ -644,7 +638,7 @@ namespace Tpetra {
     using impl_type =
       Details::ForEach<execution_space, MV, UserFunctionType>;
     execution_space execSpace;
-    impl_type::for_each ("for_each(MV,f)", execSpace, X, f);
+    impl_type::for_each (kernelLabel, execSpace, X, f);
   }
 
 } // namespace Tpetra
@@ -921,7 +915,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( X.getNumVectors (), numVecs );
 
     out << "Test for_each(MV, void(double&)): Set entries to 418" << endl;
-    for_each (X, KOKKOS_LAMBDA (double& X_ij) {
+    for_each ("X_ij=418", X, KOKKOS_LAMBDA (double& X_ij) {
         X_ij = 418.0;
       });
     {
@@ -952,7 +946,7 @@ namespace { // (anonymous)
 
     out << "Test for_each(DefaultHostExecutionSpace, MV, "
       "void(double&)): Set entries to 777" << endl;
-    for_each (Kokkos::DefaultHostExecutionSpace (), X,
+    for_each ("X_ij=777", Kokkos::DefaultHostExecutionSpace (), X,
               KOKKOS_LAMBDA (double& X_ij) {
                 X_ij = 777.0;
               });
@@ -987,7 +981,7 @@ namespace { // (anonymous)
     X.putScalar (666.0);
     // out << "Test for_each(device_execution_space (), "
     //   "MultiVector, void(double&))" << endl;
-    // for_each (device_execution_space (), X,
+    // for_each ("X_ij=666", device_execution_space (), X,
     //           KOKKOS_LAMBDA (double& X_ij) {
     //     X_ij = 666.0;
     //   });
@@ -1019,7 +1013,7 @@ namespace { // (anonymous)
 
     out << "Test for_each(DefaultHostExecutionSpace, MV, "
       "void(double&)): Set entries to 44" << endl;
-    for_each (Kokkos::DefaultHostExecutionSpace (), X,
+    for_each ("X_ij=44", Kokkos::DefaultHostExecutionSpace (), X,
               KOKKOS_LAMBDA (double& X_ij) {
                 X_ij = 44.0;
               });
@@ -1051,7 +1045,7 @@ namespace { // (anonymous)
 
     out << "Test for_each(MV, void(double&)): Set entries to 31" << endl;
     //Kokkos::fence (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
-    for_each (X, KOKKOS_LAMBDA (double& X_ij) {
+    for_each ("X_ij=31", X, KOKKOS_LAMBDA (double& X_ij) {
         X_ij = 31.0;
       });
     {
@@ -1081,7 +1075,7 @@ namespace { // (anonymous)
     }
 
     out << "Test for_each(MV, void(double&,LO)): Set entries to 93" << endl;
-    for_each (X, KOKKOS_LAMBDA (double& X_ij, LO /* i */) {
+    for_each ("X_ij=93", X, KOKKOS_LAMBDA (double& X_ij, LO /* i */) {
         X_ij = 93.0;
       });
     {
@@ -1111,7 +1105,7 @@ namespace { // (anonymous)
     }
 
     out << "Test for_each(MV, void(double&,LO,LO))" << endl;
-    for_each (X, KOKKOS_LAMBDA (double& X_ij,
+    for_each ("X_ij=777", X, KOKKOS_LAMBDA (double& X_ij,
                                 const LO /* i */,
                                 const LO /* j */) {
                 X_ij = 777.0;
@@ -1150,9 +1144,10 @@ namespace { // (anonymous)
     // Exercise overload of for_each that runs on X's default
     // execution space, and whose function takes (scalar&, LO, LO)
     // arguments.  Exercise it for a Vector.
-    for_each (vec, KOKKOS_LAMBDA (double& X_ij, const LO i, const LO j) {
-        X_ij += double (i+1.0) + double (j+1.0);
-      });
+    for_each ("X_ij+=(i+1)+(j+1)", vec,
+        KOKKOS_LAMBDA (double& X_ij, const LO i, const LO j) {
+          X_ij += double (i+1.0) + double (j+1.0);
+        });
 
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1165,7 +1160,7 @@ namespace { // (anonymous)
     // Exercise overload of for_each that runs on X's default
     // execution space, and whose function takes (scalar&, LO)
     // arguments.  Exercise it for a Vector.
-    for_each (vec, KOKKOS_LAMBDA (double& X_ij, const LO i) {
+    for_each ("X_ij+=i+1", vec, KOKKOS_LAMBDA (double& X_ij, const LO i) {
         X_ij += double (i+1.0);
       });
 
@@ -1180,7 +1175,7 @@ namespace { // (anonymous)
     // Exercise overload of for_each that runs on X's default
     // execution space, and whose function takes (scalar&).
     // Exercise it for a Vector.
-    for_each (vec, KOKKOS_LAMBDA (double& X_ij) {
+    for_each ("X_ij=42", vec, KOKKOS_LAMBDA (double& X_ij) {
         X_ij = 42.0;
       });
 
@@ -1204,7 +1199,7 @@ namespace { // (anonymous)
       return;
     }
 
-    for_each (vec, KOKKOS_LAMBDA (double& X_ij) {
+    for_each ("X_ij+=1", vec, KOKKOS_LAMBDA (double& X_ij) {
         X_ij += 1.0;
       });
 
