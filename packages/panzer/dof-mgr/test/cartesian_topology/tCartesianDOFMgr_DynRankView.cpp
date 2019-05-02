@@ -73,7 +73,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
+using Triplet = CartesianConnManager::Triplet<panzer::Ordinal64>;
 
 template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
@@ -85,7 +85,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 }
 
 std::string getElementBlock(const Triplet & element,
-                                    const CartesianConnManager<int,Ordinal64> & connManager)
+                            const CartesianConnManager & connManager)
                                     
 {
   int localElmtId = connManager.computeLocalElementIndex(element); 
@@ -94,8 +94,8 @@ std::string getElementBlock(const Triplet & element,
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
 {
-  typedef CartesianConnManager<int,Ordinal64> CCM;
-  typedef panzer::DOFManager<int,Ordinal64> DOFManager;
+  using CCM = CartesianConnManager;
+  using DOFManager = panzer::DOFManager<int,Ordinal64>;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI

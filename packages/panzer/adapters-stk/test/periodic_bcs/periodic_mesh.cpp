@@ -106,30 +106,30 @@ namespace panzer {
     // test basic bc construction functionality
     {
        std::string matcher, bndry1, bndry2;
-   
+
        parser.buildMatcher_Tokenize("x-coord left;right",matcher,bndry1,bndry2);
        TEST_EQUALITY(matcher,"x-coord"); TEST_EQUALITY(bndry1,"left"); TEST_EQUALITY(bndry2,"right");
-   
+
        parser.buildMatcher_Tokenize("x-edge left;right",matcher,bndry1,bndry2);
        TEST_EQUALITY(matcher,"x-edge"); TEST_EQUALITY(bndry1,"left"); TEST_EQUALITY(bndry2,"right");
-   
+
        parser.buildMatcher_Tokenize("y-coord beg ; what ",matcher,bndry1,bndry2);
        TEST_EQUALITY(matcher,"y-coord"); TEST_EQUALITY(bndry1,"beg"); TEST_EQUALITY(bndry2,"what");
-    
+
        parser.buildMatcher_Tokenize("y-edge beg ; what ",matcher,bndry1,bndry2);
        TEST_EQUALITY(matcher,"y-edge"); TEST_EQUALITY(bndry1,"beg"); TEST_EQUALITY(bndry2,"what");
-    
+
        RCP<const panzer_stk::PeriodicBC_MatcherBase> matcher_obj;
-    
+
        matcher_obj = parser.buildMatcher("x-coord left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(matcher_obj));
-   
+
        matcher_obj = parser.buildMatcher("xy-coord left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<PlaneMatcher> >(matcher_obj));
 
        matcher_obj = parser.buildMatcher("(xy)z-quarter-coord left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<QuarterPlaneMatcher> >(matcher_obj));
-   
+
        matcher_obj = parser.buildMatcher("x-edge left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<QuarterPlaneMatcher> >(matcher_obj));
 
@@ -141,16 +141,16 @@ namespace panzer {
 
        matcher_obj = parser.buildMatcher("x-coord 1e-8: left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(matcher_obj));
-   
+
        matcher_obj = parser.buildMatcher("xy-edge 1e-8: left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(matcher_obj));
-   
+
        matcher_obj = parser.buildMatcher("x-coord 1e-8, relative: left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(matcher_obj));
-   
+
        matcher_obj = parser.buildMatcher("xy-edge 1e-8, relative: left;right");
        TEST_NOTHROW(rcp_dynamic_cast<const PeriodicBC_Matcher<CoordMatcher> >(matcher_obj));
-   
+
        TEST_THROW(parser.buildMatcher("dog-coord left;right"),std::logic_error);
 
        TEST_THROW(parser.buildMatcher("dog-edge left;right"),std::logic_error);
@@ -167,7 +167,7 @@ namespace panzer {
     // test parameter list based construction
     {
        RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("top_list"));
-       
+
        pl->set("Count",8);
        pl->set("Periodic Condition 1","y-coord left;right");
        pl->set("Periodic Condition 2","x-coord top;bottom");
@@ -232,7 +232,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -256,22 +256,22 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn1 = connMngr->getConnectivity(1);
 
     if(myRank==0) {
        TEST_EQUALITY(conn0[0],4); // this is periodic
        TEST_EQUALITY(conn0[1],1);
        TEST_EQUALITY(conn0[2],6);
        TEST_EQUALITY(conn0[3],9); // this is periodic
-   
+
        TEST_EQUALITY(conn1[0],2);
        TEST_EQUALITY(conn1[1],3);
        TEST_EQUALITY(conn1[2],8);
@@ -282,7 +282,7 @@ namespace panzer {
        TEST_EQUALITY(conn0[1],2);
        TEST_EQUALITY(conn0[2],7);
        TEST_EQUALITY(conn0[3],6);
-   
+
        TEST_EQUALITY(conn1[0],3);
        TEST_EQUALITY(conn1[1],4);
        TEST_EQUALITY(conn1[2],9);
@@ -298,7 +298,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -322,15 +322,15 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn3 = connMngr->getConnectivity(3);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn3 = connMngr->getConnectivity(3);
 
     // test that the left-most edge has the same number as the right-most edge
     if(myRank==0) {
@@ -345,7 +345,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -368,22 +368,22 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn1 = connMngr->getConnectivity(1);
 
     if(myRank==0) {
        TEST_EQUALITY(conn0[0],0);
        TEST_EQUALITY(conn0[1],1);
        TEST_EQUALITY(conn0[2],1);
        TEST_EQUALITY(conn0[3],0);
-   
+
        TEST_EQUALITY(conn1[0],2);
        TEST_EQUALITY(conn1[1],3);
        TEST_EQUALITY(conn1[2],3);
@@ -394,7 +394,7 @@ namespace panzer {
        TEST_EQUALITY(conn0[1],2);
        TEST_EQUALITY(conn0[2],2);
        TEST_EQUALITY(conn0[3],1);
-   
+
        TEST_EQUALITY(conn1[0],3);
        TEST_EQUALITY(conn1[1],4);
        TEST_EQUALITY(conn1[2],4);
@@ -410,7 +410,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -433,15 +433,15 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn1 = connMngr->getConnectivity(1);
 
     // test that top edge has same number as bottom edge for each element
     if(myRank==0) {
@@ -459,7 +459,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -485,22 +485,22 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn1 = connMngr->getConnectivity(1);
 
     if(myRank==0) {
        TEST_EQUALITY(conn0[0],4); // from left/right periodicity
        TEST_EQUALITY(conn0[1],1);
        TEST_EQUALITY(conn0[2],1);
        TEST_EQUALITY(conn0[3],4); // from left/right periodicity
-   
+
        TEST_EQUALITY(conn1[0],2);
        TEST_EQUALITY(conn1[1],3);
        TEST_EQUALITY(conn1[2],3);
@@ -511,7 +511,7 @@ namespace panzer {
        TEST_EQUALITY(conn0[1],2);
        TEST_EQUALITY(conn0[2],2);
        TEST_EQUALITY(conn0[3],1);
-   
+
        TEST_EQUALITY(conn1[0],3);
        TEST_EQUALITY(conn1[1],4);
        TEST_EQUALITY(conn1[2],4);
@@ -526,7 +526,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -552,16 +552,16 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
-    const int * conn3 = connMngr->getConnectivity(3);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn1 = connMngr->getConnectivity(1);
+    const auto * conn3 = connMngr->getConnectivity(3);
 
     if(myRank==0) {
        TEST_EQUALITY(conn0[3],conn3[1]); // from left/right periodicity
@@ -579,7 +579,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::SquareQuadMeshFactory mesh_factory;
 
@@ -603,22 +603,22 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
-    const int * conn0 = connMngr->getConnectivity(0);
-    const int * conn1 = connMngr->getConnectivity(1);
+    const auto * conn0 = connMngr->getConnectivity(0);
+    const auto * conn1 = connMngr->getConnectivity(1);
 
     if(myRank==0) {
        TEST_EQUALITY(conn0[0],0); // from left/right periodicity
        TEST_EQUALITY(conn0[1],1);
        TEST_EQUALITY(conn0[2],1);
        TEST_EQUALITY(conn0[3],0); // from left/right periodicity
-   
+
        TEST_EQUALITY(conn1[0],2);
        TEST_EQUALITY(conn1[1],3);
        TEST_EQUALITY(conn1[2],3);
@@ -629,7 +629,7 @@ namespace panzer {
        TEST_EQUALITY(conn0[1],2);
        TEST_EQUALITY(conn0[2],2);
        TEST_EQUALITY(conn0[3],1);
-   
+
        TEST_EQUALITY(conn1[0],3);
        TEST_EQUALITY(conn1[1],0);
        TEST_EQUALITY(conn1[2],0);
@@ -644,7 +644,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::CubeHexMeshFactory mesh_factory;
 
@@ -673,18 +673,18 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
     if(myRank==0) {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
 
        TEST_EQUALITY(conn0[0],2);
        TEST_EQUALITY(conn0[1],1);
@@ -723,10 +723,10 @@ namespace panzer {
        TEST_EQUALITY(conn3[7],2);
     }
     else {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
 
        TEST_EQUALITY(conn0[0],1);
        TEST_EQUALITY(conn0[1],2);
@@ -773,7 +773,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::CubeHexMeshFactory mesh_factory;
 
@@ -801,18 +801,18 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
     if(myRank==0) {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
 
        // top/bottom matching
        TEST_EQUALITY(conn0[0],conn2[2]);
@@ -835,10 +835,10 @@ namespace panzer {
        TEST_EQUALITY(conn2[3],conn3[7]);
     }
     else {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
 
        // top/bottom matching
        TEST_EQUALITY(conn0[0],conn2[2]);
@@ -868,7 +868,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::CubeHexMeshFactory mesh_factory;
 
@@ -896,18 +896,18 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
     if(myRank==0) {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
 
        // top/bottom matching
        TEST_EQUALITY(conn0[0],conn2[2]);
@@ -922,10 +922,10 @@ namespace panzer {
        TEST_EQUALITY(conn2[5],conn3[4]);
     }
     else {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(6));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(4));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(8));
 
        // top/bottom matching
        TEST_EQUALITY(conn0[0],conn2[2]);
@@ -947,7 +947,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    int myRank = Comm.MyPID(); 
+    int myRank = Comm.MyPID();
 
     panzer_stk::CubeHexMeshFactory mesh_factory;
 
@@ -973,18 +973,18 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
     connMngr->buildConnectivity(*fp);
 
     if(myRank==0) {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
-       const int * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
-       const int * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(1));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(5));
+       const auto * conn2 = connMngr->getConnectivity(mesh->elementLocalId(3));
+       const auto * conn3 = connMngr->getConnectivity(mesh->elementLocalId(7));
 
        TEST_EQUALITY(conn0[0],0);
        TEST_EQUALITY(conn0[1],9);
@@ -1023,8 +1023,8 @@ namespace panzer {
        TEST_EQUALITY(conn3[7],24);
     }
     else {
-       const int * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
-       const int * conn1 = connMngr->getConnectivity(mesh->elementLocalId(4));
+       const auto * conn0 = connMngr->getConnectivity(mesh->elementLocalId(2));
+       const auto * conn1 = connMngr->getConnectivity(mesh->elementLocalId(4));
 
        TEST_EQUALITY(conn0[0],9);
        TEST_EQUALITY(conn0[1],18);
@@ -1053,7 +1053,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    //int myRank = Comm.MyPID(); 
+    //int myRank = Comm.MyPID();
 
     // panzer::pauseToAttach();
 
@@ -1090,8 +1090,8 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
@@ -1104,7 +1104,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    //int myRank = Comm.MyPID(); 
+    //int myRank = Comm.MyPID();
 
     // panzer::pauseToAttach();
 
@@ -1141,8 +1141,8 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::exec_space,double,double> >();
@@ -1155,7 +1155,7 @@ namespace panzer {
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     TEUCHOS_ASSERT(Comm.NumProc()==2);
-    //int myRank = Comm.MyPID(); 
+    //int myRank = Comm.MyPID();
 
     // panzer::pauseToAttach();
 
@@ -1192,8 +1192,8 @@ namespace panzer {
 
     // connection manager
     /////////////////////////////////////////////
-    Teuchos::RCP<panzer::ConnManager<int,int> > connMngr 
-          = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    Teuchos::RCP<panzer::ConnManager> connMngr
+          = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     RCP<const panzer::FieldPattern> fp
          = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double> >();
@@ -1325,7 +1325,7 @@ namespace panzer {
 
     {
        panzer_stk::CoordMatcher matcher(1);
-       Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> pMatch 
+       Teuchos::RCP<const panzer_stk::PeriodicBC_MatcherBase> pMatch
              = panzer_stk::buildPeriodicBC_Matcher("left","right",matcher);
 
        RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds = pMatch->getMatchedPair(*mesh);
@@ -1333,7 +1333,7 @@ namespace panzer {
        // for testing purposes!
        RCP<std::vector<std::size_t> > locallyRequiredIds = panzer_stk::periodic_helpers::getLocalSideIds(*mesh,"left");
 
-       TEST_EQUALITY(globallyMatchedIds->size(),locallyRequiredIds->size()); 
+       TEST_EQUALITY(globallyMatchedIds->size(),locallyRequiredIds->size());
 
        // match top & bottom sides
        for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
