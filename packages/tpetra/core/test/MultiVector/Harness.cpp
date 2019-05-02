@@ -79,7 +79,7 @@ namespace Tpetra {
     // constant stride and multiple columns.
     template<class ViewType,
              class InnerLoopBodyType,
-             class IndexType>
+             class LocalIndexType>
     struct MultiVectorOuterForEachLoopBody {
       static_assert (static_cast<int> (ViewType::Rank) == 2,
                      "ViewType must be a rank-2 Kokkos::View.");
@@ -88,11 +88,11 @@ namespace Tpetra {
         X_lcl_ (X_lcl), f_ (f)
       {}
       KOKKOS_INLINE_FUNCTION void
-      operator () (const IndexType i) const
+      operator () (const LocalIndexType i) const
       {
-        const IndexType numCols =
-          static_cast<IndexType> (X_lcl_.extent (1));
-        for (IndexType j = 0; j < numCols; ++j) {
+        const LocalIndexType numCols =
+          static_cast<LocalIndexType> (X_lcl_.extent (1));
+        for (LocalIndexType j = 0; j < numCols; ++j) {
           f_ (X_lcl_(i,j), i, j);
         }
       };
@@ -106,7 +106,7 @@ namespace Tpetra {
     // nonconstant stride or only a single column).
     template<class ViewType,
              class InnerLoopBodyType,
-             class IndexType>
+             class LocalIndexType>
     struct VectorOuterForEachLoopBody {
       static_assert (static_cast<int> (ViewType::Rank) == 1,
                      "ViewType must be a rank-1 Kokkos::View.");
@@ -115,16 +115,16 @@ namespace Tpetra {
         X_lcl_ (X_lcl), f_ (f)
       {}
       KOKKOS_INLINE_FUNCTION void
-      operator () (const IndexType i) const
+      operator () (const LocalIndexType i) const
       {
-        f_ (X_lcl_(i), i, IndexType (0));
+        f_ (X_lcl_(i), i, LocalIndexType (0));
       };
       ViewType X_lcl_;
       InnerLoopBodyType f_;
     };
 
-    // Distinguish between functions that take (scalar, index, index),
-    // (scalar, index), and (scalar).
+    // Distinguish between functions that take (scalar&, index,
+    // index), (scalar&, index), and (scalar&).
     enum class EMultiVectorForEachFuncArgs {
       SCALAR,
       SCALAR_ROWINDEX,
@@ -132,48 +132,63 @@ namespace Tpetra {
       ERROR
     };
 
-    template<class FunctionType, class ReturnType, class IndexType>
+    template<class UserFunctionType,
+             class ImplScalarType,
+             class LocalIndexType>
     constexpr bool
     isScalarIndexIndexFunction ()
     {
+      using UFT = UserFunctionType;
+      using IST = ImplScalarType;
+      using LIT = LocalIndexType;
       using func_type_1 =
-        std::function<void (ReturnType&, const IndexType, const IndexType)>;
-      using func_type_2 =
-        std::function<void (ReturnType&, IndexType, IndexType)>;
+        std::function<void (IST&, const LIT, const LIT)>;
+      using func_type_2 = std::function<void (IST&, LIT, LIT)>;
 
-      return std::is_convertible<FunctionType, func_type_1>::value ||
-        std::is_convertible<FunctionType, func_type_2>::value;
+      return std::is_convertible<UFT, func_type_1>::value ||
+        std::is_convertible<UFT, func_type_2>::value;
     }
 
-    template<class FunctionType, class ReturnType, class IndexType>
+    template<class UserFunctionType,
+             class ImplScalarType,
+             class LocalIndexType>
     constexpr bool
     isScalarIndexFunction ()
     {
-      using func_type_1 = std::function<void (ReturnType&, const IndexType)>;
-      using func_type_2 = std::function<void (ReturnType&, IndexType)>;
+      using UFT = UserFunctionType;
+      using IST = ImplScalarType;
+      using LIT = LocalIndexType;
+      using func_type_1 = std::function<void (IST&, const LIT)>;
+      using func_type_2 = std::function<void (IST&, LIT)>;
 
-      return std::is_convertible<FunctionType, func_type_1>::value ||
-        std::is_convertible<FunctionType, func_type_2>::value;
+      return std::is_convertible<UFT, func_type_1>::value ||
+        std::is_convertible<UFT, func_type_2>::value;
     }
 
-    template<class FunctionType, class ReturnType>
+    template<class UserFunctionType, class ImplScalarType>
     constexpr bool
     isScalarFunction ()
     {
-      using func_type_1 = std::function<void (ReturnType&)>;
+      using func_type_1 = std::function<void (ImplScalarType&)>;
 
-      return std::is_convertible<FunctionType, func_type_1>::value;
+      return std::is_convertible<UserFunctionType, func_type_1>::value;
     }
 
-    template<class FunctionType, class ReturnType, class IndexType>
+    template<class UserFunctionType,
+             class ImplScalarType,
+             class LocalIndexType>
     constexpr EMultiVectorForEachFuncArgs
     getMultiVectorForEachFuncArgs ()
     {
-      return isScalarIndexIndexFunction<FunctionType, ReturnType, IndexType> () ?
+      using UFT = UserFunctionType;
+      using IST = ImplScalarType;
+      using LIT = LocalIndexType;
+
+      return isScalarIndexIndexFunction<UFT, IST, LIT> () ?
         EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX_COLINDEX :
-        (isScalarIndexFunction<FunctionType, ReturnType, IndexType> () ?
+        (isScalarIndexFunction<UFT, IST, LIT> () ?
          EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX :
-         (isScalarFunction<FunctionType, ReturnType> () ?
+         (isScalarFunction<UFT, IST> () ?
           EMultiVectorForEachFuncArgs::SCALAR :
           EMultiVectorForEachFuncArgs::ERROR));
     }
@@ -181,8 +196,9 @@ namespace Tpetra {
     // Functor that MultiVectorOuterForEachLoopBody or
     // VectorOuterForEachLoopBody uses.  This functor in turn wraps
     // the user's function given to for_each.  We have different cases
-    // for whether the user's function takes (scalar&, row index,
-    // column index), (scalar&, row index), or (scalar&).
+    // for whether the user's function takes (scalar&, local row
+    // index, local column index), (scalar&, local row index), or
+    // (scalar&).
     //
     // The point of MultiVectorInnerForEachLoopBody is so that
     // Tpetra::for_each only needs one implementation, but can work
@@ -190,30 +206,30 @@ namespace Tpetra {
     // row index, local column index), (scalar&, local row index), and
     // (scalar&).
     template<class UserFunctionType,
-             class ReturnType,
-             class IndexType,
+             class ImplScalarType,
+             class LocalIndexType,
              const EMultiVectorForEachFuncArgs argsType =
                getMultiVectorForEachFuncArgs<UserFunctionType,
-                                             ReturnType,
-                                             IndexType> ()>
+                                             ImplScalarType,
+                                             LocalIndexType> ()>
     struct MultiVectorInnerForEachLoopBody {
       static_assert (argsType != EMultiVectorForEachFuncArgs::ERROR,
                      "Please report this bug to the Tpetra developers.");
     };
 
     template<class UserFunctionType,
-             class ReturnType,
-             class IndexType>
+             class ImplScalarType,
+             class LocalIndexType>
     struct MultiVectorInnerForEachLoopBody<
-      UserFunctionType, ReturnType, IndexType,
+      UserFunctionType, ImplScalarType, LocalIndexType,
       EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX_COLINDEX>
     {
       MultiVectorInnerForEachLoopBody (UserFunctionType f) :
         f_ (f) {}
       KOKKOS_INLINE_FUNCTION void
-      operator () (ReturnType& x_ij,
-                   const IndexType i,
-                   const IndexType j) const
+      operator () (ImplScalarType& x_ij,
+                   const LocalIndexType i,
+                   const LocalIndexType j) const
       {
         f_ (x_ij, i, j);
       };
@@ -221,18 +237,18 @@ namespace Tpetra {
     };
 
     template<class UserFunctionType,
-             class ReturnType,
-             class IndexType>
+             class ImplScalarType,
+             class LocalIndexType>
     struct MultiVectorInnerForEachLoopBody<
-      UserFunctionType, ReturnType, IndexType,
+      UserFunctionType, ImplScalarType, LocalIndexType,
       EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX>
     {
       MultiVectorInnerForEachLoopBody (UserFunctionType f) :
         f_ (f) {}
       KOKKOS_INLINE_FUNCTION void
-      operator () (ReturnType& x_ij,
-                   const IndexType i,
-                   const IndexType /* j */) const
+      operator () (ImplScalarType& x_ij,
+                   const LocalIndexType i,
+                   const LocalIndexType /* j */) const
       {
         f_ (x_ij, i);
       };
@@ -240,18 +256,18 @@ namespace Tpetra {
     };
 
     template<class UserFunctionType,
-             class ReturnType,
-             class IndexType>
+             class ImplScalarType,
+             class LocalIndexType>
     struct MultiVectorInnerForEachLoopBody<
-      UserFunctionType, ReturnType, IndexType,
+      UserFunctionType, ImplScalarType, LocalIndexType,
       EMultiVectorForEachFuncArgs::SCALAR>
     {
       MultiVectorInnerForEachLoopBody (UserFunctionType f) :
         f_ (f) {}
       KOKKOS_INLINE_FUNCTION void
-      operator () (ReturnType& x_ij,
-                   const IndexType /* i */,
-                   const IndexType /* j */) const
+      operator () (ImplScalarType& x_ij,
+                   const LocalIndexType /* i */,
+                   const LocalIndexType /* j */) const
       {
         f_ (x_ij);
       };
@@ -265,49 +281,49 @@ namespace Tpetra {
 
     template<class ViewType,
              class UserFunctionType,
-             class IndexType>
+             class LocalIndexType>
     MultiVectorOuterForEachLoopBody<
       ViewType,
       MultiVectorInnerForEachLoopBody<
         UserFunctionType,
         typename ViewType::non_const_value_type,
-        IndexType>,
-      IndexType>
+        LocalIndexType>,
+      LocalIndexType>
     makeMultiVectorForEachLoopBody (const ViewType& X_lcl,
                                     UserFunctionType f,
-                                    const IndexType /* numCols */)
+                                    const LocalIndexType /* numCols */)
     {
       using return_type = typename ViewType::non_const_value_type;
       using inner_loop_body_type =
         MultiVectorInnerForEachLoopBody<
-          UserFunctionType, return_type, IndexType>;
+          UserFunctionType, return_type, LocalIndexType>;
       using outer_loop_body_type =
         MultiVectorOuterForEachLoopBody<
-          ViewType, inner_loop_body_type, IndexType>;
+          ViewType, inner_loop_body_type, LocalIndexType>;
       return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
     }
 
     template<class ViewType,
              class UserFunctionType,
-             class IndexType>
+             class LocalIndexType>
     VectorOuterForEachLoopBody<
       ViewType,
       MultiVectorInnerForEachLoopBody<
         UserFunctionType,
         typename ViewType::non_const_value_type,
-        IndexType>,
-      IndexType>
+        LocalIndexType>,
+      LocalIndexType>
     makeVectorForEachLoopBody (const ViewType& X_lcl,
                                UserFunctionType f,
-                               const IndexType /* numCols */)
+                               const LocalIndexType /* numCols */)
     {
       using return_type = typename ViewType::non_const_value_type;
       using inner_loop_body_type =
         MultiVectorInnerForEachLoopBody<
-          UserFunctionType, return_type, IndexType>;
+          UserFunctionType, return_type, LocalIndexType>;
       using outer_loop_body_type =
         VectorOuterForEachLoopBody<
-          ViewType, inner_loop_body_type, IndexType>;
+          ViewType, inner_loop_body_type, LocalIndexType>;
       return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
     }
 
