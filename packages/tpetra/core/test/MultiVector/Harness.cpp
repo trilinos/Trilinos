@@ -618,146 +618,6 @@ namespace Tpetra {
   ////////////////////////////////////////////////////////////
 
   namespace Impl {
-    template<class SC, class LO, class GO, class NT,
-             class MemorySpace>
-    using multivector_nonconst_nonowning_local_object_type =
-      typename std::conditional<
-        std::is_same<typename MemorySpace::memory_space,
-                     Kokkos::HostSpace>::value,
-        typename Tpetra::MultiVector<SC, LO, GO,
-                                     NT>::dual_view_type::t_host,
-        typename Tpetra::MultiVector<SC, LO, GO,
-                                     NT>::dual_view_type::t_dev>::type;
-
-    template<class SC, class LO, class GO, class NT,
-             class MemorySpace>
-    using multivector_const_nonowning_local_object_type =
-      typename multivector_nonconst_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace>::const_type;
-
-    template<class SC, class LO, class GO, class NT,
-             class MemorySpace,
-             const AccessMode am>
-    using multivector_nonowning_local_object_type =
-      typename std::conditional<
-        am == AccessMode::ReadOnly,
-        multivector_const_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace>,
-        multivector_nonconst_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace> >::type;
-
-    // Return a nonowning rank-2 Kokkos::View of the
-    // Tpetra::MultiVector's local data.
-    template<class SC, class LO, class GO, class NT,
-             class MemorySpace,
-             const AccessMode access_mode>
-    multivector_nonowning_local_object_type<SC, LO, GO, NT,
-                                            MemorySpace,
-                                            access_mode>
-    getLocalMultiVector (LocalAccess<
-                           Tpetra::MultiVector<SC, LO, GO, NT>,
-                           MemorySpace,
-                           access_mode> LA)
-    {
-      // Use the execution space when calling sync etc., to avoid
-      // confusion between CudaSpace and CudaUVMSpace that could result
-      // in sync'ing the wrong way.
-      using execution_space = typename MemorySpace::execution_space;
-      using memory_space = typename MemorySpace::memory_space;
-      using ret_type =
-        multivector_nonowning_local_object_type<SC, LO, GO, NT,
-                                                memory_space,
-                                                access_mode>;
-      if (! LA.isValid ()) {
-        return ret_type (); // "null" Kokkos::View
-      }
-
-      if (access_mode == AccessMode::WriteOnly) {
-        LA.G_.clear_sync_state ();
-      }
-      else {
-        if (LA.G_.template need_sync<execution_space> ()) {
-          LA.G_.template sync<execution_space> ();
-        }
-      }
-
-      if (access_mode != AccessMode::ReadWrite) {
-        LA.G_.template modify<execution_space> ();
-      }
-
-      // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
-      // semantics, e.g., for a memory space for which the
-      // Tpetra::MultiVector does not store data.  In that case, we
-      // would need some kind of object whose destructor copies back,
-      // and it would need to have the whole DualView, not just the
-      // View on one side.  Watch out for copy elision.  The object
-      // could just be std::unique_ptr and could handle copy-back via
-      // custom deleter.
-
-      // this converts to const if applicable
-      return ret_type (LA.G_.template getLocalView<execution_space> ());
-    }
-
-    // Overload of getLocalVector for Tpetra::MultiVector.  Return a
-    // nonowning rank-1 Kokkos::View of the Tpetra::MultiVector's 0th
-    // column's local data.
-    template<class SC, class LO, class GO, class NT,
-             class MemorySpace,
-             const AccessMode access_mode>
-    auto
-    getLocalVector (LocalAccess<
-                      Tpetra::MultiVector<SC, LO, GO, NT>,
-                      MemorySpace,
-                      access_mode> LA,
-                    const int whichColumn = 0)
-      -> decltype (Kokkos::subview (getLocalMultiVector (LA),
-                                    Kokkos::ALL (),
-                                    whichColumn))
-    {
-      using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-      using local_access_type =
-        LocalAccess<MV, MemorySpace, access_mode>;
-      using ret_type =
-        decltype (Kokkos::subview (getLocalMultiVector (LA),
-                                   Kokkos::ALL (), 0));
-
-      // Don't call getVectorNonConst if not valid, since it could throw.
-      if (! LA.isValid ()) {
-        return ret_type ();
-      }
-      Teuchos::RCP<MV> X_wc = LA.G_.getVectorNonConst (whichColumn);
-      auto X_wc_lcl =
-        getLocalMultiVector (local_access_type (*X_wc, LA.space_,
-                                                LA.valid_));
-      return Kokkos::subview (X_wc_lcl, Kokkos::ALL (), 0);
-    }
-
-    // Overload of getLocalVector for Tpetra::Vector.  Return a
-    // nonowning rank-1 Kokkos::View of the Tpetra::Vector's local
-    // data.
-    template<class SC, class LO, class GO, class NT,
-             class MemorySpace,
-             const AccessMode access_mode>
-    auto
-    getLocalVector (LocalAccess<
-                      Tpetra::Vector<SC, LO, GO, NT>,
-                      MemorySpace,
-                      access_mode> LA,
-                    const int whichColumn = 0)
-      -> decltype (getLocalVector (LocalAccess<
-                                     Tpetra::MultiVector<SC, LO, GO, NT>,
-                                     MemorySpace,
-                                     access_mode> (LA.G_,
-                                                   LA.space_,
-                                                   LA.valid_),
-                                   whichColumn))
-    {
-      using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-      using local_access_type =
-        LocalAccess<MV, MemorySpace, access_mode>;
-      return getLocalVector (local_access_type (LA.G_,
-                                                LA.space_,
-                                                LA.valid_),
-                             whichColumn);
-    }
-
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
              class MemorySpace,
@@ -775,7 +635,7 @@ namespace Tpetra {
       static constexpr AccessMode access_mode =
         local_access_type::access_mode;
       using non_const_value_type =
-        typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type;
+        typename global_object_type::impl_scalar_type;
       using value_type = typename std::conditional<
           access_mode == AccessMode::ReadOnly,
           const non_const_value_type,
@@ -788,10 +648,20 @@ namespace Tpetra {
       // std::unique_ptr's destructor "copy back."  This is why
       // master_local_object_type is a std::unique_ptr<view_type>, not
       // just a view_type.
+      //
+      // mfh 01 May 2019: For now, we avoid allocation and copy back,
+      // by using only the Views available in the MV's DualView.
+      using dual_view_type = typename global_object_type::dual_view_type;
+      static constexpr bool is_host =
+        std::is_same<memory_space, Kokkos::HostSpace>::value;
+      using result_device_type = typename std::conditional<
+        is_host,
+        typename dual_view_type::t_host::device_type,
+        typename dual_view_type::t_dev::device_type>::type;
       using view_type = Kokkos::View<
         value_type**,
-        typename global_object_type::dual_view_type::t_dev::array_layout,
-        MemorySpace>;
+        typename dual_view_type::t_dev::array_layout,
+        result_device_type>;
 
     public:
       using master_local_object_type = std::unique_ptr<view_type>;
@@ -804,15 +674,23 @@ namespace Tpetra {
             LA.G_.clear_sync_state ();
           }
 
-          if (LA.G_.template need_sync<memory_space> ()) {
-            LA.G_.template sync<memory_space> ();
+          // The various templated methods want an execution space
+          // rather than a memory space.  Otherwise, DualView of
+          // CudaUVMSpace complains that HostSpace is not one of its
+          // two memory spaces.  (Both the device and the host Views
+          // of a DualView of CudaUVMSpace have memory_space =
+          // CudaUVMSpace.)
+          using execution_space = typename memory_space::execution_space;
+
+          if (LA.G_.template need_sync<execution_space> ()) {
+            LA.G_.template sync<execution_space> ();
           }
           if (access_mode != Impl::AccessMode::ReadOnly) {
-            LA.G_.template modify<memory_space> ();
+            LA.G_.template modify<execution_space> ();
           }
 
           // See note about "copy back" above.
-          auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
+          auto G_lcl_2d = LA.G_.template getLocalView<execution_space> ();
           // This converts the View to const if applicable.
           return std::unique_ptr<view_type> (new view_type (G_lcl_2d));
         }
@@ -836,7 +714,7 @@ namespace Tpetra {
       using global_object_type =
         typename local_access_type::global_object_type;
       using memory_space = typename local_access_type::memory_space;
-      static constexpr Impl::AccessMode access_mode =
+      static constexpr AccessMode access_mode =
         local_access_type::access_mode;
       using non_const_value_type =
         typename global_object_type::impl_scalar_type;
@@ -852,10 +730,20 @@ namespace Tpetra {
       // std::unique_ptr's destructor "copy back."  This is why
       // master_local_object_type is a std::unique_ptr<view_type>, not
       // just a view_type.
+      //
+      // mfh 01 May 2019: For now, we avoid allocation and copy back,
+      // by using only the Views available in the MV's DualView.
+      using dual_view_type = typename global_object_type::dual_view_type;
+      static constexpr bool is_host =
+        std::is_same<memory_space, Kokkos::HostSpace>::value;
+      using result_device_type = typename std::conditional<
+        is_host,
+        typename dual_view_type::t_host::device_type,
+        typename dual_view_type::t_dev::device_type>::type;
       using view_type = Kokkos::View<
         value_type*,
-        typename global_object_type::dual_view_type::t_dev::array_layout,
-        MemorySpace>;
+        typename dual_view_type::t_dev::array_layout,
+        result_device_type>;
 
     public:
       using master_local_object_type = std::unique_ptr<view_type>;
@@ -868,15 +756,23 @@ namespace Tpetra {
             LA.G_.clear_sync_state ();
           }
 
-          if (LA.G_.template need_sync<memory_space> ()) {
-            LA.G_.template sync<memory_space> ();
+          // The various templated methods want an execution space
+          // rather than a memory space.  Otherwise, DualView of
+          // CudaUVMSpace complains that HostSpace is not one of its
+          // two memory spaces.  (Both the device and the host Views
+          // of a DualView of CudaUVMSpace have memory_space =
+          // CudaUVMSpace.)
+          using execution_space = typename memory_space::execution_space;
+
+          if (LA.G_.template need_sync<execution_space> ()) {
+            LA.G_.template sync<execution_space> ();
           }
           if (access_mode != Impl::AccessMode::ReadOnly) {
-            LA.G_.template modify<memory_space> ();
+            LA.G_.template modify<execution_space> ();
           }
 
           // See note about "copy back" above.
-          auto G_lcl_2d = LA.G_.template getLocalView<memory_space> ();
+          auto G_lcl_2d = LA.G_.template getLocalView<execution_space> ();
           auto G_lcl_1d = Kokkos::subview (G_lcl_2d, Kokkos::ALL (), 0);
           // This converts the View to const if applicable.
           return std::unique_ptr<view_type> (new view_type (G_lcl_1d));
@@ -1311,10 +1207,8 @@ namespace { // (anonymous)
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST( VectorHarness, GetVector )
+  TEUCHOS_UNIT_TEST( VectorHarness, GetLocalObject )
   {
-    using Tpetra::Impl::getLocalMultiVector;
-    using Tpetra::Impl::getLocalVector;
     using Tpetra::Impl::getMasterLocalObject;
     using Tpetra::Impl::getNonowningLocalObject;
     using Tpetra::readOnly;
@@ -1327,8 +1221,8 @@ namespace { // (anonymous)
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test Tpetra::Impl::{getLocalMultiVector, "
-      "getLocalVector}" << endl;
+    myOut << "Test Tpetra::Impl::{getMasterLocalObject, "
+      "getNonowningLocalObject} for MultiVector and Vector" << endl;
     Teuchos::OSTab tab0 (myOut);
 
     myOut << "Create a Map" << endl;
@@ -1351,20 +1245,6 @@ namespace { // (anonymous)
 
     // Test read-only nonowning MultiVector access.
     {
-      auto X_lcl_ro = getLocalMultiVector (readOnly (mvec));
-      // Make sure X_lcl_ro can be assigned to the type we expect it
-      // to be.  It doesn't have to be that type, it just has to be
-      // assignable to that type.
-      Kokkos::View<const double**,
-                   Kokkos::LayoutLeft,
-                   multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
-      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
-      // static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
-      TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
-      TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
-    }
-    {
       auto X_lcl_ro_owning = getMasterLocalObject (readOnly (mvec));
       auto X_lcl_ro = getNonowningLocalObject (X_lcl_ro_owning);
       Kokkos::View<const double**,
@@ -1380,8 +1260,8 @@ namespace { // (anonymous)
     // Test whether read-only access works with a const MultiVector&.
     {
       using MV = multivec_type;
-      auto X_lcl_ro =
-        getLocalMultiVector (readOnly (const_cast<const MV&> (mvec)));
+      auto X_lcl_ro_owning = getMasterLocalObject (readOnly (mvec));
+      auto X_lcl_ro = getNonowningLocalObject (X_lcl_ro_owning);
       // Make sure X_lcl_ro can be assigned to the type we expect it to
       // be.  It doesn't have to be that type, it just has to be
       // assignable to that type.
@@ -1402,19 +1282,6 @@ namespace { // (anonymous)
 
     // Test write-only nonowning MultiVector access.
     {
-      auto X_lcl_wo = getLocalMultiVector (writeOnly (mvec));
-      Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_wo2 = X_lcl_wo;
-      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
-#ifndef KOKKOS_ENABLE_CUDA
-      static_assert (decltype (X_lcl_wo)::Rank == 2, "Rank is not 2");
-#endif // KOKKOS_ENABLE_CUDA
-      TEST_ASSERT( size_t (X_lcl_wo.extent (0)) == numLocal );
-      TEST_ASSERT( size_t (X_lcl_wo.extent (1)) == numVecs );
-    }
-    {
       auto X_lcl_wo_owning = getMasterLocalObject (writeOnly (mvec));
       auto X_lcl_wo = getNonowningLocalObject (X_lcl_wo_owning);
       Kokkos::View<double**,
@@ -1430,19 +1297,6 @@ namespace { // (anonymous)
     }
 
     // Test read-write nonowning MultiVector access.
-    {
-      auto X_lcl_rw = getLocalMultiVector (readWrite (mvec));
-      Kokkos::View<double**,
-                   Kokkos::LayoutLeft,
-                   multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_rw2 = X_lcl_rw;
-      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
-#ifndef KOKKOS_ENABLE_CUDA
-      static_assert (decltype (X_lcl_rw)::Rank == 2, "Rank is not 2");
-#endif // KOKKOS_ENABLE_CUDA
-      TEST_ASSERT( size_t (X_lcl_rw.extent (0)) == numLocal );
-      TEST_ASSERT( size_t (X_lcl_rw.extent (1)) == numVecs );
-    }
     {
       auto X_lcl_rw_owning = getMasterLocalObject (readWrite (mvec));
       auto X_lcl_rw = getNonowningLocalObject (X_lcl_rw_owning);
@@ -1460,18 +1314,6 @@ namespace { // (anonymous)
 
     // Test read-write nonowning Vector access.
     {
-      auto X_lcl_1d_ro = getLocalVector (readOnly (vec));
-      Kokkos::View<const double*,
-                   Kokkos::LayoutLeft,
-                   multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
-      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
-#ifndef KOKKOS_ENABLE_CUDA
-      static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
-#endif // KOKKOS_ENABLE_CUDA
-      TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
-    }
-    {
       auto X_lcl_1d_ro_owning = getMasterLocalObject (readOnly (vec));
       auto X_lcl_1d_ro = getNonowningLocalObject (X_lcl_1d_ro_owning);
       Kokkos::View<const double*,
@@ -1486,18 +1328,6 @@ namespace { // (anonymous)
     }
 
     // Test write-only nonowning Vector access.
-    {
-      auto X_lcl_1d_wo = getLocalVector (writeOnly (vec));
-      Kokkos::View<double*,
-                   Kokkos::LayoutLeft,
-                   multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_1d_wo2 = X_lcl_1d_wo;
-      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
-#ifndef KOKKOS_ENABLE_CUDA
-      static_assert (decltype (X_lcl_1d_wo)::Rank == 1, "Rank is not 1");
-#endif // KOKKOS_ENABLE_CUDA
-      TEST_ASSERT( size_t (X_lcl_1d_wo.extent (0)) == numLocal );
-    }
     {
       auto X_lcl_1d_wo_owning = getMasterLocalObject (writeOnly (vec));
       auto X_lcl_1d_wo = getNonowningLocalObject (X_lcl_1d_wo_owning);
@@ -1514,24 +1344,8 @@ namespace { // (anonymous)
 
     // Test read-write nonowning Vector access.
     {
-      auto X_lcl_1d_wr = getLocalVector (readWrite (vec));
-      Kokkos::View<double*,
-                   Kokkos::LayoutLeft,
-                   multivec_type::device_type,
-                   Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
-      // mfh 30 Apr 2019: Commented out due to possible NVCC bug.
-#ifndef KOKKOS_ENABLE_CUDA
-      static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
-#endif // KOKKOS_ENABLE_CUDA
-      TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
-    }
-
-    // Make sure that getLocalVector of a specific column works.
-    {
-      const int whichColumn = 2;
-      TEST_ASSERT( size_t (whichColumn) < numVecs );
-      TEST_ASSERT( size_t (whichColumn) < mvec.getNumVectors () );
-      auto X_lcl_1d_wr = getLocalVector (readWrite (mvec), whichColumn);
+      auto X_lcl_1d_wr_owning = getMasterLocalObject (readWrite (vec));
+      auto X_lcl_1d_wr = getNonowningLocalObject (X_lcl_1d_wr_owning);
       Kokkos::View<double*,
                    Kokkos::LayoutLeft,
                    multivec_type::device_type,
@@ -1544,7 +1358,7 @@ namespace { // (anonymous)
     }
 
     //
-    // Examples of using the result of getLocalVector in
+    // Examples of using the result of getNonowningLocalObject in
     // Kokkos::parallel_for kernels.
     //
 
@@ -1554,15 +1368,16 @@ namespace { // (anonymous)
       using LO = vec_type::local_ordinal_type;
       using range_type = Kokkos::RangePolicy<execution_space, LO>;
 
-      auto X_lcl_1d_wo =
-        getLocalVector (writeOnly (vec).on (memory_space ()));
+      auto X_lcl_1d_wo_owning =
+        getMasterLocalObject (writeOnly (vec).on (memory_space ()));
+      auto X_lcl_1d_wo = getNonowningLocalObject (X_lcl_1d_wo_owning);
       static_assert
         (std::is_same<
            decltype (X_lcl_1d_wo)::device_type::execution_space,
            vec_type::dual_view_type::t_dev::execution_space>::value,
          "Wrong execution space");
       Kokkos::parallel_for (
-        "Device kernel for write-only getLocalVector",
+        "Device kernel for write-only Tpetra::Vector",
         range_type (0, LO (numLocal)),
         KOKKOS_LAMBDA (const LO lclRow) {
           X_lcl_1d_wo(lclRow) = 42.0;
@@ -1575,8 +1390,9 @@ namespace { // (anonymous)
       using LO = vec_type::local_ordinal_type;
       using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
 
-      auto X_lcl_1d_wo =
-        getLocalVector (writeOnly (vec).on (Kokkos::HostSpace ()));
+      auto X_lcl_1d_wo_owning =
+        getMasterLocalObject (writeOnly (vec).on (Kokkos::HostSpace ()));
+      auto X_lcl_1d_wo = getNonowningLocalObject (X_lcl_1d_wo_owning);
       static_assert
         (std::is_same<
            decltype (X_lcl_1d_wo)::device_type::execution_space,
@@ -1584,7 +1400,7 @@ namespace { // (anonymous)
          "Wrong execution space");
       // test with some not-device function
       Kokkos::parallel_for (
-        "Host kernel for write-only getLocalVector",
+        "Host kernel for write-only Tpetra::Vector",
         range_type (0, LO (numLocal)),
         [=] (const LO lclRow) {
           std::pair<double, double> p {3.0, 4.0};
