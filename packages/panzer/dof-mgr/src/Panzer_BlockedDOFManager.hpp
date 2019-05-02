@@ -81,7 +81,7 @@ public:
      * objects. This is equivalent to calling the default constructor and
      * then "setConnManager" routine.
      */
-   BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   BlockedDOFManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm);
 
    ////////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +263,7 @@ public:
      * \param[in] connMngr Connection manager to use.
      * \param[in] mpiComm  Communicator to use.
      */
-   void setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   void setConnManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm);
 
 
    /** Get the FieldPattern describing the geometry used for this problem.
@@ -280,7 +280,7 @@ public:
      *
      * \returns Old connection manager.
      */
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > resetIndices(); // ?
+   Teuchos::RCP<ConnManager> resetIndices(); // ?
 
    /** \brief Add a field to the DOF manager.
      *
@@ -345,16 +345,13 @@ public:
 
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const
+   Teuchos::RCP<const ConnManager> getConnManager() const
    { return connMngr_; }
 
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager()
+   Teuchos::RCP<ConnManager> getConnManager()
    { return connMngr_; }
-
-   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
-   { return getConnManager(); }
 
    /** build the global unknown numberings
      *   1. this builds the pattens
@@ -484,7 +481,7 @@ protected:
 
    /** Build a new indexer. The concrete type is specified internally by this object (FEI version standard)
      */
-   Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,
+   Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,
                                                                                     MPI_Comm mpiComm) const;
 
    /** Do appropriate casting below and set orientations for a particular indexer. (handles FEI versus standard DOFManager)
@@ -525,7 +522,7 @@ protected:
 
 
    // computes connectivity
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_;
+   Teuchos::RCP<ConnManager> connMngr_;
 
    //! \defgroup MapFunctions Mapping objects
    //@{

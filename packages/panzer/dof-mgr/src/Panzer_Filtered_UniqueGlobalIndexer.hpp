@@ -239,8 +239,8 @@ public:
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const 
    { return base_->getElementBlockGIDCount(blockIndex); }
 
-   virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
-   { return base_->getConnManagerBase(); }
+   virtual Teuchos::RCP<const ConnManager> getConnManager() const
+   { return base_->getConnManager(); }
 
 private:
 

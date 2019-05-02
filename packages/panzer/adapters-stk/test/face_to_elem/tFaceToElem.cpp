@@ -138,8 +138,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_face_tet)
   mesh_factory->setParameterList(mesh_pl);
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
@@ -159,8 +159,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_face_hex)
   mesh_factory->setParameterList(mesh_pl);
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
@@ -180,8 +180,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_face_quad)
   mesh_factory->setParameterList(mesh_pl);
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
@@ -201,8 +201,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_face_tri)
   mesh_factory->setParameterList(mesh_pl);
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+    conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
@@ -223,8 +223,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_build_workset)
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
@@ -244,8 +244,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
@@ -289,8 +289,8 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tri_normals)
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
-  const Teuchos::RCP<panzer::ConnManager<int,int> >
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+  const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
   FaceToElems rel(conn_manager);
 
