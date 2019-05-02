@@ -591,21 +591,6 @@ namespace Tpetra {
            });
       }
     };
-
-    // Implementation detail of transform (see below).  Given a Kokkos
-    // execution space on which the user wants to run the transform,
-    // and a memory space in which the MultiVector's data live,
-    // determine the memory space that transform should use in its
-    // withLocalAccess call.
-    template<class ExecutionSpace, class MemorySpace>
-    using transform_memory_space =
-      typename std::conditional<
-        Kokkos::SpaceAccessibility<
-          ExecutionSpace,
-          typename MemorySpace::memory_space>::accessible,
-        typename MemorySpace::memory_space,
-        typename ExecutionSpace::memory_space>::type;
-
   } // namespace Details
 
   ////////////////////////////////////////////////////////////

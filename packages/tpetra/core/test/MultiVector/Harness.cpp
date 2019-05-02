@@ -256,10 +256,24 @@ namespace Tpetra {
     };
 
     ////////////////////////////////////////////////////////////
-    // Implementation details of transform
+    // Implementation details of for_each
     ////////////////////////////////////////////////////////////
 
-    // transform uses this for the loop body of a parallel_for or
+    // Implementation detail of for_each (see below).  Given a Kokkos
+    // execution space on which the user wants to run the for_each,
+    // and a memory space in which the MultiVector's data live,
+    // determine the memory space that for_each should use in its
+    // withLocalAccess call.
+    template<class ExecutionSpace, class MemorySpace>
+    using for_each_memory_space =
+      typename std::conditional<
+        Kokkos::SpaceAccessibility<
+          ExecutionSpace,
+          typename MemorySpace::memory_space>::accessible,
+        typename MemorySpace::memory_space,
+        typename ExecutionSpace::memory_space>::type;
+
+    // for_each uses this for the loop body of a parallel_for or
     // parallel_reduce over the rows of a Tpetra::MultiVector with
     // constant stride and multiple columns.
     template<class ViewType,
@@ -274,14 +288,14 @@ namespace Tpetra {
       KOKKOS_INLINE_FUNCTION void operator () (const IndexType i) const {
         const IndexType numCols = static_cast<IndexType> (X_lcl_.extent (1));
         for (IndexType j = 0; j < numCols; ++j) {
-          X_lcl_(i,j) = f_ (X_lcl_(i,j), i, j);
+          f_ (X_lcl_(i,j), i, j);
         }
       };
       ViewType X_lcl_;
       InnerLoopBodyType f_;
     };
 
-    // transform uses this for the loop body of a parallel_for or
+    // for_each uses this for the loop body of a parallel_for or
     // parallel_reduce over the rows of a Tpetra::Vector (or each
     // column of a Tpetra::MultiVector, if the Tpetra::MultiVector has
     // nonconstant stride or only a single column).
@@ -295,7 +309,7 @@ namespace Tpetra {
         X_lcl_ (X_lcl), f_ (f)
       {}
       KOKKOS_INLINE_FUNCTION void operator () (const IndexType i) const {
-        X_lcl_(i) = f_ (X_lcl_(i), i, IndexType (0));
+        f_ (X_lcl_(i), i, IndexType (0));
       };
       ViewType X_lcl_;
       InnerLoopBodyType f_;
@@ -303,7 +317,7 @@ namespace Tpetra {
 
     // Distinguish between functions that take (scalar, index, index),
     // (scalar, index), and (scalar).
-    enum class EMultiVectorTransformFuncArgs {
+    enum class EMultiVectorForEachFuncArgs {
       SCALAR,
       SCALAR_ROWINDEX,
       SCALAR_ROWINDEX_COLINDEX,
@@ -315,9 +329,9 @@ namespace Tpetra {
     isScalarIndexIndexFunction ()
     {
       using func_type_1 =
-        std::function<ReturnType (const ReturnType&, const IndexType, const IndexType)>;
+        std::function<void (ReturnType&, const IndexType, const IndexType)>;
       using func_type_2 =
-        std::function<ReturnType (ReturnType, IndexType, IndexType)>;
+        std::function<void (ReturnType&, IndexType, IndexType)>;
 
       return std::is_convertible<FunctionType, func_type_1>::value ||
         std::is_convertible<FunctionType, func_type_2>::value;
@@ -327,10 +341,8 @@ namespace Tpetra {
     constexpr bool
     isScalarIndexFunction ()
     {
-      using func_type_1 =
-        std::function<ReturnType (const ReturnType&, const IndexType)>;
-      using func_type_2 =
-        std::function<ReturnType (ReturnType, IndexType)>;
+      using func_type_1 = std::function<void (ReturnType&, const IndexType)>;
+      using func_type_2 = std::function<void (ReturnType&, IndexType)>;
 
       return std::is_convertible<FunctionType, func_type_1>::value ||
         std::is_convertible<FunctionType, func_type_2>::value;
@@ -340,42 +352,43 @@ namespace Tpetra {
     constexpr bool
     isScalarFunction ()
     {
-      using func_type_1 =
-        std::function<ReturnType (const ReturnType&)>;
-      using func_type_2 =
-        std::function<ReturnType (ReturnType)>;
+      using func_type_1 = std::function<void (ReturnType&)>;
 
-      return std::is_convertible<FunctionType, func_type_1>::value ||
-        std::is_convertible<FunctionType, func_type_2>::value;
+      return std::is_convertible<FunctionType, func_type_1>::value;
     }
 
     template<class FunctionType, class ReturnType, class IndexType>
-    constexpr EMultiVectorTransformFuncArgs
-    getMultiVectorTransformFuncArgs ()
+    constexpr EMultiVectorForEachFuncArgs
+    getMultiVectorForEachFuncArgs ()
     {
       return isScalarIndexIndexFunction<FunctionType, ReturnType, IndexType> () ?
-        EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX_COLINDEX :
+        EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX_COLINDEX :
         (isScalarIndexFunction<FunctionType, ReturnType, IndexType> () ?
-         EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX :
+         EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX :
          (isScalarFunction<FunctionType, ReturnType> () ?
-          EMultiVectorTransformFuncArgs::SCALAR :
-          EMultiVectorTransformFuncArgs::ERROR));
+          EMultiVectorForEachFuncArgs::SCALAR :
+          EMultiVectorForEachFuncArgs::ERROR));
     }
 
     // Functor that MultiVectorOuterLoopBody or VectorOuterLoopBody
     // uses.  This functor in turn wraps the user's function given to
-    // transform.  We have different cases for whether the user's
-    // function takes (scalar, row index, column index), (scalar, row
-    // index), or (scalar).
+    // for_each.  We have different cases for whether the user's
+    // function takes (scalar&, row index, column index), (scalar&,
+    // row index), or (scalar&).
+    //
+    // The point of InnerLoopBody is so that Tpetra::for_each only
+    // needs one implementation, but can work with three different
+    // kinds of user functions: (scalar&, local row index, local
+    // column index), (scalar&, local row index), and (scalar&).
     template<class UserFunctionType,
              class ReturnType,
              class IndexType,
-             const EMultiVectorTransformFuncArgs argsType =
-               getMultiVectorTransformFuncArgs<UserFunctionType,
-                                               ReturnType,
-                                               IndexType> ()>
+             const EMultiVectorForEachFuncArgs argsType =
+               getMultiVectorForEachFuncArgs<UserFunctionType,
+                                             ReturnType,
+                                             IndexType> ()>
     struct InnerLoopBody {
-      static_assert (argsType != EMultiVectorTransformFuncArgs::ERROR,
+      static_assert (argsType != EMultiVectorForEachFuncArgs::ERROR,
                      "Please report this bug to the Tpetra developers.");
     };
 
@@ -384,16 +397,16 @@ namespace Tpetra {
              class IndexType>
     struct InnerLoopBody<
       UserFunctionType, ReturnType, IndexType,
-      EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX_COLINDEX>
+      EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX_COLINDEX>
     {
       InnerLoopBody (UserFunctionType f) : f_ (f) {}
 
-      KOKKOS_INLINE_FUNCTION ReturnType
-      operator () (const ReturnType& x_ij,
+      KOKKOS_INLINE_FUNCTION void
+      operator () (ReturnType& x_ij,
                    const IndexType i,
                    const IndexType j) const
       {
-        return f_ (x_ij, i, j);
+        f_ (x_ij, i, j);
       };
 
       UserFunctionType f_;
@@ -404,16 +417,16 @@ namespace Tpetra {
              class IndexType>
     struct InnerLoopBody<
       UserFunctionType, ReturnType, IndexType,
-      EMultiVectorTransformFuncArgs::SCALAR_ROWINDEX>
+      EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX>
     {
       InnerLoopBody (UserFunctionType f) : f_ (f) {}
 
-      KOKKOS_INLINE_FUNCTION ReturnType
-      operator () (const ReturnType& x_ij,
+      KOKKOS_INLINE_FUNCTION void
+      operator () (ReturnType& x_ij,
                    const IndexType i,
                    const IndexType /* j */) const
       {
-        return f_ (x_ij, i);
+        f_ (x_ij, i);
       };
 
       UserFunctionType f_;
@@ -424,22 +437,22 @@ namespace Tpetra {
              class IndexType>
     struct InnerLoopBody<
       UserFunctionType, ReturnType, IndexType,
-      EMultiVectorTransformFuncArgs::SCALAR>
+      EMultiVectorForEachFuncArgs::SCALAR>
     {
       InnerLoopBody (UserFunctionType f) : f_ (f) {}
 
-      KOKKOS_INLINE_FUNCTION ReturnType
-      operator () (const ReturnType& x_ij,
+      KOKKOS_INLINE_FUNCTION void
+      operator () (ReturnType& x_ij,
                    const IndexType /* i */,
                    const IndexType /* j */) const
       {
-        return f_ (x_ij);
+        f_ (x_ij);
       };
 
       UserFunctionType f_;
     };
 
-    // The implementation of transform uses the result of
+    // The implementation of for_each uses the result of
     // makeMultiVectorLoopBody or makeVectorLoopBody as the functor in
     // a parallel_for over the local rows of the
     // Tpetra::(Multi)Vector.
@@ -488,23 +501,23 @@ namespace Tpetra {
       return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
     }
 
-    // Implementation of transform (see below).
+    // Implementation of for_each (see below).
     template<class ExecutionSpace,
              class TpetraMultiVectorType,
              class UserFunctionType>
-    struct Transform {
+    struct ForEach {
       static void
-      transform (const char debugLabel[],
-                 ExecutionSpace execSpace,
-                 TpetraMultiVectorType& X,
-                 UserFunctionType f)
+      for_each (const char debugLabel[],
+                ExecutionSpace execSpace,
+                TpetraMultiVectorType& X,
+                UserFunctionType f)
       {
         using Teuchos::TypeNameTraits;
         using std::endl;
         using MV = TpetraMultiVectorType;
         using preferred_memory_space =
           typename MV::device_type::memory_space;
-        using memory_space = Details::transform_memory_space<
+        using memory_space = Details::for_each_memory_space<
           ExecutionSpace, preferred_memory_space>;
         using LO = typename MV::local_ordinal_type;
         using range_type = Kokkos::RangePolicy<ExecutionSpace, LO>;
@@ -513,7 +526,7 @@ namespace Tpetra {
         const bool verbose = ::Tpetra::Details::Behavior::verbose ();
         if (verbose) {
           std::ostringstream os;
-          os << "Proc " << myRank << ": Tpetra::transform:" << endl
+          os << "Proc " << myRank << ": Tpetra::for_each:" << endl
              << " debugLabel: " << debugLabel << endl
              << " ExecutionSpace: "
              << TypeNameTraits<ExecutionSpace>::name () << endl
@@ -536,7 +549,7 @@ namespace Tpetra {
                 auto loopBody =
                   Details::makeVectorLoopBody (X_j_lcl, f, LO (1));
                 Kokkos::parallel_for
-                  ("Tpetra::transform(Vector)",
+                  ("Tpetra::for_each(Vector)",
                    range_type (execSpace, 0, X_j_lcl.extent (0)),
                    loopBody);
               }, readWrite (*X_j).on (memSpace));
@@ -562,7 +575,7 @@ namespace Tpetra {
               }
 
               Kokkos::parallel_for
-                ("Tpetra::transform(MultiVector)",
+                ("Tpetra::for_each(MultiVector)",
                  range_type (execSpace, 0, X_lcl.extent (0)),
                  loopBody);
 
@@ -573,42 +586,48 @@ namespace Tpetra {
   } // namespace Details
 
   /// \brief Apply a function entrywise to each entry of a
-  ///   Tpetra::MultiVector.
+  ///   Tpetra::MultiVector or Tpetra::Vector, analogously to
+  ///   std::for_each.
   ///
-  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
-  /// has one of the following forms:
-  ///
+  /// The function f may have any of the following forms:
   /// <ul>
-  /// <li> Takes the current entry as <tt>impl_scalar_type</tt>, the
-  ///   local row index as LO, and the local column index as LO, and
-  ///   returns <tt>impl_scalar_type</tt>; </li>
+  /// <li> Takes the current entry in read-write fashion as
+  ///   <tt>impl_scalar_type&</tt>, the local row index as LO, and the
+  ///   local column index as LO; </li>
   ///
-  /// <li> Takes the current entry as <tt>impl_scalar_type</tt> and
-  ///   the local row index as LO, and returns
-  ///   <tt>impl_scalar_type</tt>; </li>
+  /// <li> Takes the current entry in read-write fashion as
+  ///   <tt>impl_scalar_type</tt> and the local row index as LO; or
+  ///   </li>
   ///
-  /// <li> Takes the current entry as <tt>impl_scalar_type</tt>, and
-  ///   returns <tt>impl_scalar_type</tt>; </li>
+  /// <li> Takes the current entry in read-write fashion as
+  ///   <tt>impl_scalar_type</tt>. </li>
   /// </ul>
   ///
+  /// <tt>impl_scalar_type</tt> is a public typedef in
+  /// Tpetra::MultiVector and Tpetra::Vector.  When
+  /// <tt>scalar_type</tt> is <tt>std::complex<T></tt>, then
+  /// <tt>impl_scalar_type</tt> is <tt>Kokkos::complex<T></tt>.
+  /// Otherwise, <tt>scalar_type</tt> and <tt>impl_scalar_type</tt>
+  /// are the same.
+  ///
   /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] MultiVector to modify.
+  /// \param X [in/out] MultiVector or Vector to modify.
   /// \param f [in] Function to apply to each entry of X.
   template<class SC, class LO, class GO, class NT,
            class UserFunctionType,
            class ExecutionSpace>
   void
-  transform (ExecutionSpace execSpace,
-             Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UserFunctionType f)
+  for_each (ExecutionSpace execSpace,
+            Tpetra::MultiVector<SC, LO, GO, NT>& X,
+            UserFunctionType f)
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using impl_type =
-      Details::Transform<ExecutionSpace, MV, UserFunctionType>;
-    impl_type::transform ("transform(execSpace,MV,f)", execSpace, X, f);
+      Details::ForEach<ExecutionSpace, MV, UserFunctionType>;
+    impl_type::for_each ("for_each(execSpace,MV,f)", execSpace, X, f);
   }
 
-  /// \brief Overload of transform (see above) that runs on X's
+  /// \brief Overload of for_each (see above) that runs on X's
   ///   default Kokkos execution space.
   ///
   /// \param X [in/out] MultiVector to modify.
@@ -617,15 +636,15 @@ namespace Tpetra {
   template<class SC, class LO, class GO, class NT,
            class UserFunctionType>
   void
-  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-             UserFunctionType f)
+  for_each (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+            UserFunctionType f)
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using execution_space = typename MV::device_type::execution_space;
     using impl_type =
-      Details::Transform<execution_space, MV, UserFunctionType>;
+      Details::ForEach<execution_space, MV, UserFunctionType>;
     execution_space execSpace;
-    impl_type::transform ("transform(MV,f)", execSpace, X, f);
+    impl_type::for_each ("for_each(MV,f)", execSpace, X, f);
   }
 
 } // namespace Tpetra
@@ -868,9 +887,9 @@ namespace { // (anonymous)
     TEST_ASSERT( gblSuccess == 1 );
   }
 
-  TEUCHOS_UNIT_TEST( VectorHarness, Transform )
+  TEUCHOS_UNIT_TEST( VectorHarness, ForEach )
   {
-    using Tpetra::transform;
+    using Tpetra::for_each;
     using Kokkos::ALL;
     using std::endl;
     using device_execution_space =
@@ -885,7 +904,7 @@ namespace { // (anonymous)
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test Harness::transform" << endl;
+    myOut << "Test Tpetra::for_each" << endl;
     Teuchos::OSTab tab0 (myOut);
 
     myOut << "Create a Map" << endl;
@@ -901,9 +920,9 @@ namespace { // (anonymous)
     multivec_type X (map, numVecs);
     TEST_EQUALITY( X.getNumVectors (), numVecs );
 
-    out << "Test transform(MV, double(double)): Set entries to 418" << endl;
-    transform (X, KOKKOS_LAMBDA (const double /* X_ij */) {
-        return double (418.0);
+    out << "Test for_each(MV, void(double&)): Set entries to 418" << endl;
+    for_each (X, KOKKOS_LAMBDA (double& X_ij) {
+        X_ij = 418.0;
       });
     {
       X.sync_host ();
@@ -931,12 +950,12 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(DefaultHostExecutionSpace, MV, "
-      "double(double)): Set entries to 777" << endl;
-    transform (Kokkos::DefaultHostExecutionSpace (),
-               X, KOKKOS_LAMBDA (const double /* X_ij */) {
-        return double (777.0);
-      });
+    out << "Test for_each(DefaultHostExecutionSpace, MV, "
+      "void(double&)): Set entries to 777" << endl;
+    for_each (Kokkos::DefaultHostExecutionSpace (), X,
+              KOKKOS_LAMBDA (double& X_ij) {
+                X_ij = 777.0;
+              });
     {
       //X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
@@ -966,11 +985,11 @@ namespace { // (anonymous)
     out << "X.sync_device(); X.putScalar(666.0);" << endl;
     X.sync_device ();
     X.putScalar (666.0);
-    // out << "Test transform(device_execution_space (), "
-    //   "MultiVector, double(double))" << endl;
-    // transform (device_execution_space (), X,
-    //            KOKKOS_LAMBDA (const double /* X_ij */) {
-    //     return double (666.0);
+    // out << "Test for_each(device_execution_space (), "
+    //   "MultiVector, void(double&))" << endl;
+    // for_each (device_execution_space (), X,
+    //           KOKKOS_LAMBDA (double& X_ij) {
+    //     X_ij = 666.0;
     //   });
     {
       X.sync_host ();
@@ -998,12 +1017,12 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(DefaultHostExecutionSpace, MV, "
-      "double(double)): Set entries to 44" << endl;
-    transform (Kokkos::DefaultHostExecutionSpace (),
-               X, KOKKOS_LAMBDA (const double /* X_ij */) {
-        return double (44.0);
-      });
+    out << "Test for_each(DefaultHostExecutionSpace, MV, "
+      "void(double&)): Set entries to 44" << endl;
+    for_each (Kokkos::DefaultHostExecutionSpace (), X,
+              KOKKOS_LAMBDA (double& X_ij) {
+                X_ij = 44.0;
+              });
     {
       //X.sync_host (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
       auto X_lcl = X.getLocalViewHost ();
@@ -1030,10 +1049,10 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(MV, double(double)): Set entries to 31" << endl;
+    out << "Test for_each(MV, void(double&)): Set entries to 31" << endl;
     //Kokkos::fence (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
-    transform (X, KOKKOS_LAMBDA (const double /* X_ij */) {
-        return double (31.0);
+    for_each (X, KOKKOS_LAMBDA (double& X_ij) {
+        X_ij = 31.0;
       });
     {
       X.sync_host ();
@@ -1061,9 +1080,9 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(MV, double(double,LO)): Set entries to 93" << endl;
-    transform (X, KOKKOS_LAMBDA (double /* X_ij */, LO /* i */) {
-        return double (93.0);
+    out << "Test for_each(MV, void(double&,LO)): Set entries to 93" << endl;
+    for_each (X, KOKKOS_LAMBDA (double& X_ij, LO /* i */) {
+        X_ij = 93.0;
       });
     {
       X.sync_host ();
@@ -1091,12 +1110,12 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "Test transform(MultiVector, double(double,LO,LO))" << endl;
-    transform (X, KOKKOS_LAMBDA (const double /* X_ij */,
-                                 const LO /* i */,
-                                 const LO /* j */) {
-        return double (777.0);
-      });
+    out << "Test for_each(MV, void(double&,LO,LO))" << endl;
+    for_each (X, KOKKOS_LAMBDA (double& X_ij,
+                                const LO /* i */,
+                                const LO /* j */) {
+                X_ij = 777.0;
+              });
     {
       X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
@@ -1128,11 +1147,11 @@ namespace { // (anonymous)
     vec_type vec (map);
     TEST_EQUALITY_CONST(vec.getNumVectors (), size_t (1));
 
-    // Exercise overload of transform that runs on X's default
-    // execution space, and whose function takes (SC, LO, LO)
+    // Exercise overload of for_each that runs on X's default
+    // execution space, and whose function takes (scalar&, LO, LO)
     // arguments.  Exercise it for a Vector.
-    transform (vec, KOKKOS_LAMBDA (const double X_ij, const LO i, const LO j) {
-        return X_ij + double (i+1.0) + double (j+1.0);
+    for_each (vec, KOKKOS_LAMBDA (double& X_ij, const LO i, const LO j) {
+        X_ij += double (i+1.0) + double (j+1.0);
       });
 
     lclSuccess = success ? 1 : 0;
@@ -1143,11 +1162,11 @@ namespace { // (anonymous)
       return;
     }
 
-    // Exercise overload of transform that runs on X's default
-    // execution space, and whose function takes (SC, LO)
+    // Exercise overload of for_each that runs on X's default
+    // execution space, and whose function takes (scalar&, LO)
     // arguments.  Exercise it for a Vector.
-    transform (vec, KOKKOS_LAMBDA (const double X_ij, const LO i) {
-        return X_ij + double (i+1.0);
+    for_each (vec, KOKKOS_LAMBDA (double& X_ij, const LO i) {
+        X_ij += double (i+1.0);
       });
 
     lclSuccess = success ? 1 : 0;
@@ -1158,11 +1177,11 @@ namespace { // (anonymous)
       return;
     }
 
-    // Exercise overload of transform that runs on X's default
-    // execution space, and whose function takes (SC) arguments.
+    // Exercise overload of for_each that runs on X's default
+    // execution space, and whose function takes (scalar&).
     // Exercise it for a Vector.
-    transform (vec, KOKKOS_LAMBDA (const double /* X_ij */) {
-        return 42.0;
+    for_each (vec, KOKKOS_LAMBDA (double& X_ij) {
+        X_ij = 42.0;
       });
 
     {
@@ -1185,8 +1204,8 @@ namespace { // (anonymous)
       return;
     }
 
-    transform (vec, KOKKOS_LAMBDA (const double X_ij) {
-        return X_ij + 1.0;
+    for_each (vec, KOKKOS_LAMBDA (double& X_ij) {
+        X_ij += 1.0;
       });
 
     {
