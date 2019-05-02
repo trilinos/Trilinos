@@ -279,14 +279,18 @@ namespace Tpetra {
     template<class ViewType,
              class InnerLoopBodyType,
              class IndexType>
-    struct MultiVectorOuterLoopBody {
+    struct MultiVectorOuterForEachLoopBody {
       static_assert (static_cast<int> (ViewType::Rank) == 2,
                      "ViewType must be a rank-2 Kokkos::View.");
-      MultiVectorOuterLoopBody (const ViewType& X_lcl, InnerLoopBodyType f) :
+      MultiVectorOuterForEachLoopBody (const ViewType& X_lcl,
+                                       InnerLoopBodyType f) :
         X_lcl_ (X_lcl), f_ (f)
       {}
-      KOKKOS_INLINE_FUNCTION void operator () (const IndexType i) const {
-        const IndexType numCols = static_cast<IndexType> (X_lcl_.extent (1));
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const IndexType i) const
+      {
+        const IndexType numCols =
+          static_cast<IndexType> (X_lcl_.extent (1));
         for (IndexType j = 0; j < numCols; ++j) {
           f_ (X_lcl_(i,j), i, j);
         }
@@ -302,13 +306,16 @@ namespace Tpetra {
     template<class ViewType,
              class InnerLoopBodyType,
              class IndexType>
-    struct VectorOuterLoopBody {
+    struct VectorOuterForEachLoopBody {
       static_assert (static_cast<int> (ViewType::Rank) == 1,
                      "ViewType must be a rank-1 Kokkos::View.");
-      VectorOuterLoopBody (const ViewType& X_lcl, InnerLoopBodyType f) :
+      VectorOuterForEachLoopBody (const ViewType& X_lcl,
+                                  InnerLoopBodyType f) :
         X_lcl_ (X_lcl), f_ (f)
       {}
-      KOKKOS_INLINE_FUNCTION void operator () (const IndexType i) const {
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const IndexType i) const
+      {
         f_ (X_lcl_(i), i, IndexType (0));
       };
       ViewType X_lcl_;
@@ -370,16 +377,17 @@ namespace Tpetra {
           EMultiVectorForEachFuncArgs::ERROR));
     }
 
-    // Functor that MultiVectorOuterLoopBody or VectorOuterLoopBody
-    // uses.  This functor in turn wraps the user's function given to
-    // for_each.  We have different cases for whether the user's
-    // function takes (scalar&, row index, column index), (scalar&,
-    // row index), or (scalar&).
+    // Functor that MultiVectorOuterForEachLoopBody or
+    // VectorOuterForEachLoopBody uses.  This functor in turn wraps
+    // the user's function given to for_each.  We have different cases
+    // for whether the user's function takes (scalar&, row index,
+    // column index), (scalar&, row index), or (scalar&).
     //
-    // The point of InnerLoopBody is so that Tpetra::for_each only
-    // needs one implementation, but can work with three different
-    // kinds of user functions: (scalar&, local row index, local
-    // column index), (scalar&, local row index), and (scalar&).
+    // The point of MultiVectorInnerForEachLoopBody is so that
+    // Tpetra::for_each only needs one implementation, but can work
+    // with three different kinds of user functions: (scalar&, local
+    // row index, local column index), (scalar&, local row index), and
+    // (scalar&).
     template<class UserFunctionType,
              class ReturnType,
              class IndexType,
@@ -387,7 +395,7 @@ namespace Tpetra {
                getMultiVectorForEachFuncArgs<UserFunctionType,
                                              ReturnType,
                                              IndexType> ()>
-    struct InnerLoopBody {
+    struct MultiVectorInnerForEachLoopBody {
       static_assert (argsType != EMultiVectorForEachFuncArgs::ERROR,
                      "Please report this bug to the Tpetra developers.");
     };
@@ -395,12 +403,12 @@ namespace Tpetra {
     template<class UserFunctionType,
              class ReturnType,
              class IndexType>
-    struct InnerLoopBody<
+    struct MultiVectorInnerForEachLoopBody<
       UserFunctionType, ReturnType, IndexType,
       EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX_COLINDEX>
     {
-      InnerLoopBody (UserFunctionType f) : f_ (f) {}
-
+      MultiVectorInnerForEachLoopBody (UserFunctionType f) :
+        f_ (f) {}
       KOKKOS_INLINE_FUNCTION void
       operator () (ReturnType& x_ij,
                    const IndexType i,
@@ -408,19 +416,18 @@ namespace Tpetra {
       {
         f_ (x_ij, i, j);
       };
-
       UserFunctionType f_;
     };
 
     template<class UserFunctionType,
              class ReturnType,
              class IndexType>
-    struct InnerLoopBody<
+    struct MultiVectorInnerForEachLoopBody<
       UserFunctionType, ReturnType, IndexType,
       EMultiVectorForEachFuncArgs::SCALAR_ROWINDEX>
     {
-      InnerLoopBody (UserFunctionType f) : f_ (f) {}
-
+      MultiVectorInnerForEachLoopBody (UserFunctionType f) :
+        f_ (f) {}
       KOKKOS_INLINE_FUNCTION void
       operator () (ReturnType& x_ij,
                    const IndexType i,
@@ -428,19 +435,18 @@ namespace Tpetra {
       {
         f_ (x_ij, i);
       };
-
       UserFunctionType f_;
     };
 
     template<class UserFunctionType,
              class ReturnType,
              class IndexType>
-    struct InnerLoopBody<
+    struct MultiVectorInnerForEachLoopBody<
       UserFunctionType, ReturnType, IndexType,
       EMultiVectorForEachFuncArgs::SCALAR>
     {
-      InnerLoopBody (UserFunctionType f) : f_ (f) {}
-
+      MultiVectorInnerForEachLoopBody (UserFunctionType f) :
+        f_ (f) {}
       KOKKOS_INLINE_FUNCTION void
       operator () (ReturnType& x_ij,
                    const IndexType /* i */,
@@ -448,56 +454,59 @@ namespace Tpetra {
       {
         f_ (x_ij);
       };
-
       UserFunctionType f_;
     };
 
     // The implementation of for_each uses the result of
-    // makeMultiVectorLoopBody or makeVectorLoopBody as the functor in
-    // a parallel_for over the local rows of the
+    // makeMultiVectorForEachLoopBody or makeVectorForEachLoopBody as
+    // the functor in a parallel_for over the local rows of the
     // Tpetra::(Multi)Vector.
 
     template<class ViewType,
              class UserFunctionType,
              class IndexType>
-    MultiVectorOuterLoopBody<
+    MultiVectorOuterForEachLoopBody<
       ViewType,
-      InnerLoopBody<
+      MultiVectorInnerForEachLoopBody<
         UserFunctionType,
         typename ViewType::non_const_value_type,
         IndexType>,
       IndexType>
-    makeMultiVectorLoopBody (const ViewType& X_lcl,
-                             UserFunctionType f,
-                             const IndexType /* numCols */)
+    makeMultiVectorForEachLoopBody (const ViewType& X_lcl,
+                                    UserFunctionType f,
+                                    const IndexType /* numCols */)
     {
       using return_type = typename ViewType::non_const_value_type;
       using inner_loop_body_type =
-        InnerLoopBody<UserFunctionType, return_type, IndexType>;
+        MultiVectorInnerForEachLoopBody<
+          UserFunctionType, return_type, IndexType>;
       using outer_loop_body_type =
-        MultiVectorOuterLoopBody<ViewType, inner_loop_body_type, IndexType>;
+        MultiVectorOuterForEachLoopBody<
+          ViewType, inner_loop_body_type, IndexType>;
       return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
     }
 
     template<class ViewType,
              class UserFunctionType,
              class IndexType>
-    VectorOuterLoopBody<
+    VectorOuterForEachLoopBody<
       ViewType,
-      InnerLoopBody<
+      MultiVectorInnerForEachLoopBody<
         UserFunctionType,
         typename ViewType::non_const_value_type,
         IndexType>,
       IndexType>
-    makeVectorLoopBody (const ViewType& X_lcl,
-                        UserFunctionType f,
-                        const IndexType /* numCols */)
+    makeVectorForEachLoopBody (const ViewType& X_lcl,
+                               UserFunctionType f,
+                               const IndexType /* numCols */)
     {
       using return_type = typename ViewType::non_const_value_type;
       using inner_loop_body_type =
-        InnerLoopBody<UserFunctionType, return_type, IndexType>;
+        MultiVectorInnerForEachLoopBody<
+          UserFunctionType, return_type, IndexType>;
       using outer_loop_body_type =
-        VectorOuterLoopBody<ViewType, inner_loop_body_type, IndexType>;
+        VectorOuterForEachLoopBody<
+          ViewType, inner_loop_body_type, IndexType>;
       return outer_loop_body_type (X_lcl, inner_loop_body_type (f));
     }
 
@@ -547,7 +556,7 @@ namespace Tpetra {
             withLocalAccess
               ([=] (const arg_type& X_j_lcl) {
                 auto loopBody =
-                  Details::makeVectorLoopBody (X_j_lcl, f, LO (1));
+                  Details::makeVectorForEachLoopBody (X_j_lcl, f, LO (1));
                 Kokkos::parallel_for
                   (kernelLabel,
                    range_type (execSpace, 0, X_j_lcl.extent (0)),
@@ -564,7 +573,7 @@ namespace Tpetra {
             ([=] (const arg_type& X_lcl) {
               const LO numCols = static_cast<LO> (X_lcl.extent (1));
               auto loopBody =
-                Details::makeMultiVectorLoopBody (X_lcl, f, numCols);
+                Details::makeMultiVectorForEachLoopBody (X_lcl, f, numCols);
               Kokkos::parallel_for
                 (kernelLabel,
                  range_type (execSpace, 0, X_lcl.extent (0)),
@@ -604,6 +613,10 @@ namespace Tpetra {
   /// \param execSpace [in] Kokkos execution space on which to run.
   /// \param X [in/out] MultiVector or Vector to modify.
   /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// There is no overload without a kernel label.  You WILL label
+  /// your kernels.  If you bother to use Kokkos, that means you care
+  /// about performance, so we need to be able to measure it.
   template<class SC, class LO, class GO, class NT,
            class UserFunctionType,
            class ExecutionSpace>
@@ -626,6 +639,10 @@ namespace Tpetra {
   /// \param X [in/out] MultiVector to modify.
   /// \param f [in] Function to apply entrywise to X (could have
   ///   different signatures; see above).
+  ///
+  /// There is no overload without a kernel label.  You WILL label
+  /// your kernels.  If you bother to use Kokkos, that means you care
+  /// about performance, so we need to be able to measure it.
   template<class SC, class LO, class GO, class NT,
            class UserFunctionType>
   void
