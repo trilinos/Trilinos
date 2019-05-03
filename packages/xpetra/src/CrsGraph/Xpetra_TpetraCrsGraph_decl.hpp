@@ -120,8 +120,64 @@ namespace Xpetra {
                    const typename local_graph_type::entries_type::non_const_type& columnIndices,
                    const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null);
 
-    /// \brief Constructor specifying column Map and a local (sorted)    ///   graph, which the resulting CrsGraph views.;
+    /// \brief Constructor specifying column, domain and range maps, and a
+    ///   local (sorted) graph, which the resulting CrsGraph views.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param domainMap [in] The graph's domain Map. MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
+    ///   whose local row indices come from the specified row Map, and
+    ///   whose local column indices come from the specified column
+    ///   Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    TpetraCrsGraph(const local_graph_type& lclGraph,
+                   const Teuchos::RCP<const map_type>& rowMap,
+                   const Teuchos::RCP<const map_type>& colMap,
+                   const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+                   const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    /// \brief Constructor specifying column Map and a local (sorted)
+    ///   graph, which the resulting CrsGraph views.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
+    ///   whose local row indices come from the specified row Map, and
+    ///   whose local column indices come from the specified column
+    ///   Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    TpetraCrsGraph(const Teuchos::RCP<const map_type>& rowMap,
+                   const Teuchos::RCP<const map_type>& colMap,
+                   const local_graph_type& lclGraph,
+                   const Teuchos::RCP<Teuchos::ParameterList>& params);
+
 #endif
+
+    //! Destructor.
+    virtual ~TpetraCrsGraph();
 
     //! @name Insertion/Removal Methods
     //@{
@@ -290,7 +346,7 @@ namespace Xpetra {
     //@{
 
     //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
-    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph) : graph_(graph);
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph);
 
     //! Get the underlying Tpetra graph
     RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsGraph() const;

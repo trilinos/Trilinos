@@ -45,36 +45,50 @@
 // @HEADER
 #ifndef XPETRA_TPETRACRSGRAPH_DEF_HPP
 #define XPETRA_TPETRACRSGRAPH_DEF_HPP
+#include "Xpetra_TpetraConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
+
+#include "Tpetra_CrsGraph.hpp"
+
+#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_TpetraCrsGraph_decl.hpp"
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_TpetraMap.hpp"
+#include "Xpetra_TpetraImport.hpp"
+#include "Xpetra_TpetraExport.hpp"
+
+
 namespace Xpetra {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const RCP< ParameterList > &params)
 : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), maxNumEntriesPerRow, toTpetra(pftype), params))) {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const RCP< ParameterList > &params)
 : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype, const RCP< ParameterList > &params)
 : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, toTpetra(pftype), params))) {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype, const RCP< ParameterList > &params)
 : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc(), toTpetra(pftype), params))) {  }
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 TpetraCrsGraph(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
-                   const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
-                   const typename local_graph_type::row_map_type& rowPointers,
-                   const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                   const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-: graph_(Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(toTpetra(rowMap), toTpetra(colMap), rowPointers, columnIndices, plist))) {  }
-
+               const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+               const typename local_graph_type::row_map_type& rowPointers,
+               const typename local_graph_type::entries_type::non_const_type& columnIndices,
+               const Teuchos::RCP< Teuchos::ParameterList > &plist)
+  : graph_(Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(toTpetra(rowMap), toTpetra(colMap), rowPointers, columnIndices, plist))) {  }
+  
+  
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 TpetraCrsGraph(const Teuchos::RCP<const map_type>& rowMap,
@@ -82,6 +96,16 @@ TpetraCrsGraph(const Teuchos::RCP<const map_type>& rowMap,
                const local_graph_type& lclGraph,
                const Teuchos::RCP<Teuchos::ParameterList>& params)
   : graph_(Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(toTpetra(rowMap), toTpetra(colMap), lclGraph, params))) {  }
+  
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+TpetraCrsGraph(const local_graph_type& lclGraph,
+               const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
+               const Teuchos::RCP<const map_type>& domainMap,
+               const Teuchos::RCP<const map_type>& rangeMap,
+               const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : graph_(Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(lclGraph, toTpetra(rowMap), toTpetra(colMap), toTpetra(domainMap), toTpetra(rangeMap), params))) {  }
 #endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -100,11 +124,11 @@ void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::removeLocalIndices(LocalOr
 { XPETRA_MONITOR("TpetraCrsGraph::removeLocalIndices"); graph_->removeLocalIndices(localRow); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null)
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params)
 { XPETRA_MONITOR("TpetraCrsGraph::fillComplete"); graph_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), params); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const RCP< ParameterList > &params=null)
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const RCP< ParameterList > &params)
 { XPETRA_MONITOR("TpetraCrsGraph::fillComplete"); graph_->fillComplete(params); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -214,16 +238,16 @@ void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalRowView(GlobalOrd
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const
 { XPETRA_MONITOR("TpetraCrsGraph::getLocalRowView"); graph_->getLocalRowView(LocalRow, indices); }
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-local_graph_type TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalGraph () const
-      return getTpetra_CrsGraph()->getLocalGraph();
-    }
+typename Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalGraph () const {
+  return getTpetra_CrsGraph()->getLocalGraph();
+}
 #endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::computeGlobalConstants()
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::computeGlobalConstants() {
       // mfh 07 May 2018: See GitHub Issue #2565.
       constexpr bool computeLocalTriangularConstants = true;
       graph_->computeGlobalConstants(computeLocalTriangularConstants);
@@ -234,7 +258,7 @@ std::string TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::description() const
 { XPETRA_MONITOR("TpetraCrsGraph::description"); return graph_->description(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
 { XPETRA_MONITOR("TpetraCrsGraph::describe"); graph_->describe(out, verbLevel); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -246,47 +270,51 @@ Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraCrsGraph<Lo
 { XPETRA_MONITOR("TpetraCrsGraph::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(graph_->getMap()) ); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)
-      XPETRA_MONITOR("TpetraCrsGraph::doImport");
-
-      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, source, tSource, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tSource.getTpetra_CrsGraph();
-      //graph_->doImport(toTpetraCrsGraph(source), *tImporter.getTpetra_Import(), toTpetra(CM));
-
-      graph_->doImport(*v, toTpetra(importer), toTpetra(CM));
-    }
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM)
-      XPETRA_MONITOR("TpetraCrsGraph::doExport");
-
-      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, dest, tDest, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tDest.getTpetra_CrsGraph();
-      graph_->doExport(*v, toTpetra(importer), toTpetra(CM));
-
-    }
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                                               const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM){
+  XPETRA_MONITOR("TpetraCrsGraph::doImport");
+  
+  XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, source, tSource, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+  RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tSource.getTpetra_CrsGraph();
+  //graph_->doImport(toTpetraCrsGraph(source), *tImporter.getTpetra_Import(), toTpetra(CM));
+  
+  graph_->doImport(*v, toTpetra(importer), toTpetra(CM));
+}
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM)
-      XPETRA_MONITOR("TpetraCrsGraph::doImport");
-
-      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, source, tSource, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tSource.getTpetra_CrsGraph();
-
-      graph_->doImport(*v, toTpetra(exporter), toTpetra(CM));
-
-    }
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                                               const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+  XPETRA_MONITOR("TpetraCrsGraph::doExport");
+  
+  XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, dest, tDest, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+  RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tDest.getTpetra_CrsGraph();
+  graph_->doExport(*v, toTpetra(importer), toTpetra(CM));
+  
+}
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM)
-      XPETRA_MONITOR("TpetraCrsGraph::doExport");
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                                                               const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM){
+  XPETRA_MONITOR("TpetraCrsGraph::doImport");
+  
+  XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, source, tSource, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+  RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tSource.getTpetra_CrsGraph();
+  
+  graph_->doImport(*v, toTpetra(exporter), toTpetra(CM));
+  
+}
 
-      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, dest, tDest, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tDest.getTpetra_CrsGraph();
-
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                                                               const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+  XPETRA_MONITOR("TpetraCrsGraph::doExport");
+  
+  XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, dest, tDest, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+  RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > v = tDest.getTpetra_CrsGraph();
+  
       graph_->doExport(*v, toTpetra(exporter), toTpetra(CM));
-
-    }
+      
+}
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph) : graph_(graph)
@@ -295,25 +323,6 @@ TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const Teuchos::R
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getTpetra_CrsGraph() const
 { return graph_; }
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-GlobalOrdinal,<LocalOrdinal,GlobalOrdinal,Node>::toXpetra (RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > graph)  { //TODO
-    // typedef TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> TpetraCrsGraphClass;
-    // XPETRA_RCP_DYNAMIC_CAST(const TpetraCrsGraphClass, graph, tGraph, "toTpetra");
-    if (graph.is_null ()) {
-      return Teuchos::null;
-    }
-    RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > tGraph =
-      Teuchos::rcp_const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > (graph);
-    return rcp (new Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> (tGraph));
-  }
-
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-GlobalOrdinal,<LocalOrdinal,GlobalOrdinal,Node>::toTpetra (const RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > &graph)  {
-    typedef TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> TpetraCrsGraphClass;
-    XPETRA_RCP_DYNAMIC_CAST(const TpetraCrsGraphClass, graph, tpetraCrsGraph, "toTpetra");
-    return tpetraCrsGraph->getTpetra_CrsGraph ();
-  }
 
 
 #ifdef HAVE_XPETRA_EPETRA
