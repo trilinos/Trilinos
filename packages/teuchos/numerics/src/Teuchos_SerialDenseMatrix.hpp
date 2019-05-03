@@ -1078,6 +1078,7 @@ void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(
 #ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 /// \brief Print the given SerialDenseMatrix to the given output stream.
 template<typename OrdinalType, typename ScalarType>
+TEUCHOS_DEPRECATED
 std::ostream& operator<< (std::ostream& os, const Teuchos::SerialDenseMatrix<OrdinalType, ScalarType>& obj)
 {
   obj.print (os);

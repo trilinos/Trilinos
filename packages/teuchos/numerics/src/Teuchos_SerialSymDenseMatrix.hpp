@@ -1178,6 +1178,7 @@ void SerialSymDenseMatrix<OrdinalType, ScalarType>::copyUPLOMat(
 #ifndef TEUCHOS_HIDE_DEPRECATED_CODE
 /// \brief Print the given SerialSymDenseMatrix to the given output stream.
 template<typename OrdinalType, typename ScalarType>
+TEUCHOS_DEPRECATED
 std::ostream& operator<< (std::ostream& os, const Teuchos::SerialSymDenseMatrix<OrdinalType, ScalarType>& obj)
 {
   obj.print (os);

@@ -578,13 +578,17 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
           // 2. confirm that U is a unit vector
           Teuchos::SerialDenseMatrix<int,ScalarType> uotuo(1,1);
           MVT::MvTransMv( one, *U_, *U_, uotuo );
-          std::cout << "<U, U> = " << uotuo << std::endl;
+          std::cout << "<U, U> = ";
+          uotuo.print(std::cout); 
+          std::cout << std::endl;
           // 3. print alpha =  <V, A'U>
           std::cout << "alpha = "  << alpha[0] << std::endl;
           // 4. compute < AV, U> which ought to be alpha
           Teuchos::SerialDenseMatrix<int,ScalarType> utav(1,1);
           MVT::MvTransMv( one, *AV, *U_, utav );
-          std::cout << "<AV, U> = alpha = " << utav << std::endl;
+          std::cout << "<AV, U> = alpha = ";
+          utav.print(std::cout); 
+          std::cout << std::endl;
         }
 
       MVT::MvAddMv( one, *AV, -alpha[0], *U_, *U_ ); // uNew := Av - uOld alphaOld
