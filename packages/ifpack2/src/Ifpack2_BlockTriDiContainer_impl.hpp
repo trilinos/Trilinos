@@ -2088,19 +2088,6 @@ namespace KB = KokkosBatched::Experimental;
 	const local_ordinal_type per_team_scratch = internal_vector_scratch_type_3d_view::
 	  shmem_size(blocksize, blocksize, vector_loop_size);
 
-#if defined(KOKKOS_ENABLE_CUDA)
-        // when tpetra memory space is uvm, prefetch them to device or host accordingly
-        if (std::is_same<typename impl_type::node_memory_space,Kokkos::CudaUVMSpace>::value) {
-          if (std::is_same<execution_space,Kokkos::Cuda>::value) {
-            CUDA_SAFE_CALL(cudaMemPrefetchAsync(A_rowptr.data(), A_rowptr.span()*sizeof(a_rowptr_value_type), 0));
-            CUDA_SAFE_CALL(cudaMemPrefetchAsync(A_values.data(), A_values.span()*sizeof(impl_scalar_type   ), 0));
-          } else {
-            CUDA_SAFE_CALL(cudaMemPrefetchAsync(A_rowptr.data(), A_rowptr.span()*sizeof(a_rowptr_value_type), cudaCpuDeviceId));
-            CUDA_SAFE_CALL(cudaMemPrefetchAsync(A_values.data(), A_values.span()*sizeof(impl_scalar_type   ), cudaCpuDeviceId));
-          }
-        }
-#endif
-
 	Kokkos::TeamPolicy<execution_space,ExtractAndFactorizeTag>
 	  policy(packptr.extent(0)-1, team_size, vector_loop_size); 
 #if defined(KOKKOS_ENABLE_DEPRECATED_CODE)
