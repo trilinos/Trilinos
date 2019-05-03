@@ -15,5 +15,5 @@
 ##TpetraBlockMap
 #TpetraCrsGraph
 #TpetraExport
-#TpetraImport
+TpetraImport
 #TpetraMap
