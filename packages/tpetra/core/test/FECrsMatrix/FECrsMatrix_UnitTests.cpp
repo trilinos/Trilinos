@@ -1,4 +1,3 @@
-
 /*
 // @HEADER
 // ***********************************************************************
@@ -357,7 +356,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
       GO gid_j = k_e2n(i, j);
       for(size_t k=0; k<k_e2n.extent(1); k++) {
         GO gid_k = k_e2n(i, k);
-        mat1.sumIntoGlobalValues(gid_j,1,&kokkosValues(j,k),&gid_k);
+        mat1.sumIntoGlobalValues(gid_j,1,kokkosValues(j,k),&gid_k);
       }
     }
   });
