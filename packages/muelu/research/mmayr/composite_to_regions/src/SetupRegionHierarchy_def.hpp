@@ -944,6 +944,20 @@ void MakeCoarseLevelMaps(const int maxRegPerProc, const int numLevels,
   }
 } // MakeCoarseLevelMaps
 
+/* Reconstruct coarse-level maps (assuming fully structured grids)
+ *
+ * We know the regional map on the coarse levels since they are just the
+ * row maps of the coarse level operators. Though, we need to re-construct
+ * the quasiRegional and composite maps ourselves.
+ *
+ * We ultimately are only interested in the composite map on the coarsest level.
+ * Intermediate levels are dealt with along the way, because we go through all
+ * levels recursively.
+ *
+ * Assumptions:
+ * - fully structured grid
+ * - only on region per proc and group
+ */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeCoarseLevelMaps2(const int maxRegPerGID,
                           Teuchos::ArrayView<LocalOrdinal>  compositeToRegionLIDsFinest,
@@ -956,8 +970,6 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
                           Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters) {
 
 #include "Xpetra_UseShortNames.hpp"
-  // We have a coarse grid in region format and we want to get the associated composite grid.
-  // We need to decompose that process into multiple smaller tasks.
 
   using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
