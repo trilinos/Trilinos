@@ -222,6 +222,12 @@ namespace Tpetra {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
                                       constructorSublist));
       }
+#else
+      TEUCHOS_TEST_FOR_EXCEPTION(!A_rowMap->isSameAs (*B_rowMap),
+				 std::invalid_argument,
+				 "Tpetra::RowMatrix::add: The row maps must be the same for statically "
+				 "allocated matrices in order to be sure that there is sufficient space "
+				 "to do the addition");
 #endif
     }
 
