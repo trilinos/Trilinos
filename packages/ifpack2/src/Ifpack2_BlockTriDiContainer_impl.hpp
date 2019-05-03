@@ -103,7 +103,7 @@
 //#define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_MEMORY_FOR_MPI
 
 // if defined, all views are allocated on cuda space intead of cuda uvm space
-// #define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_SPACE
+#define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_SPACE
 
 namespace Ifpack2 {
 
