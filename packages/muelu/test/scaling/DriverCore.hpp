@@ -65,9 +65,23 @@
 #include <BelosPseudoBlockCGSolMgr.hpp>
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#include <MueLu_TpetraOperator.hpp>
+namespace BelosTpetra {
+namespace Impl {
+  extern void register_Cg (const bool verbose);
+  extern void register_CgPipeline (const bool verbose);
+  extern void register_CgSingleReduce (const bool verbose);
+  extern void register_Gmres (const bool verbose);
+  extern void register_GmresS (const bool verbose);
+  extern void register_GmresSstep (const bool verbose);
+  extern void register_GmresSingleReduce (const bool verbose);
+} // namespace Impl
+} // namespace BelosTpetra
 #endif
+
 #ifdef HAVE_MUELU_EPETRA
 #include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
 #endif
@@ -317,15 +331,6 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
         belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
       }
 
-      // Construct a Belos LinearProblem object
-      RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-      if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
-
-      bool set = belosProblem->setProblem();
-      if (set == false) {
-        throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
-      }
-
       // Belos parameter list
       RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
       belosList->set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
@@ -336,17 +341,73 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,N
       if (!scaleResidualHist)
         belosList->set("Implicit Residual Scaling", "None");
 
-      // Create an iterative solver manager
-      Belos::SolverFactory<SC, MV, OP> solverFactory;
-      RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
-      solver->setProblem(belosProblem);
-
-      // Perform solve
+      int numIts;
       Belos::ReturnType ret = Belos::Unconverged;
-      ret = solver->solve();
+
+#if defined(HAVE_MUELU_TPETRA)
+      constexpr bool verbose = false;
+      BelosTpetra::Impl::register_Cg (verbose);
+      BelosTpetra::Impl::register_CgPipeline (verbose);
+      BelosTpetra::Impl::register_CgSingleReduce (verbose);
+      BelosTpetra::Impl::register_Gmres (verbose);
+      BelosTpetra::Impl::register_GmresS (verbose);
+      BelosTpetra::Impl::register_GmresSstep (verbose);
+      BelosTpetra::Impl::register_GmresSingleReduce (verbose);
+
+      try {
+
+        TEUCHOS_TEST_FOR_EXCEPTION(lib!=Xpetra::UseTpetra, std::invalid_argument, "Need to use Tpetra backend in order to call a Belos Tpetra solver.");
+
+        using tMV = Tpetra::MultiVector<SC, LO, GO, NO>;
+        using tOP = Tpetra::Operator<SC, LO, GO, NO>;
+
+        Teuchos::RCP<tOP> belosPrecTpetra = rcp(new MueLu::TpetraOperator<SC,LO,GO,NO>(H));
+
+        // Construct a Belos LinearProblem object
+        RCP<Belos::LinearProblem<SC, tMV, tOP> > belosProblem = rcp(new Belos::LinearProblem<SC, tMV, tOP>(Atpetra, Xtpetra, Btpetra));
+        if(solvePreconditioned) belosProblem->setRightPrec(belosPrecTpetra);
+
+        bool set = belosProblem->setProblem();
+        if (set == false) {
+          throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+        }
+
+        // Create an iterative solver manager
+        Belos::SolverFactory<SC, tMV, tOP> solverFactory;
+        RCP< Belos::SolverManager<SC, tMV, tOP> > solver = solverFactory.create(belosType, belosList);
+        solver->setProblem(belosProblem);
+
+        // Perform solve
+        ret = solver->solve();
+        numIts = solver->getNumIters();
+
+      } catch (std::invalid_argument)
+#endif
+      {
+
+        // Construct a Belos LinearProblem object
+        RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+        if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
+
+        bool set = belosProblem->setProblem();
+        if (set == false) {
+          throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+        }
+
+        // Create an iterative solver manager
+        Belos::SolverFactory<SC, MV, OP> solverFactory;
+        RCP< Belos::SolverManager<SC, MV, OP> > solver = solverFactory.create(belosType, belosList);
+        solver->setProblem(belosProblem);
+
+        // Perform solve
+        ret = solver->solve();
+        numIts = solver->getNumIters();
+
+      }
 
       // Get the number of iterations for this solve.
-      out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+      out << "Number of iterations performed for this solve: " << numIts << std::endl;
+
       // Check convergence
       if (ret != Belos::Converged)
         out << std::endl << "ERROR:  Belos did not converge! " << std::endl;

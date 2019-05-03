@@ -259,6 +259,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
       TRIBITS_ADD_TEST(
         Driver
+        NAME "DriverTpetraSingleReduceCG"
+        ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\""
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
         NAME "DriverTpetraYaml"
         ARGS "--linAlgebra=Tpetra --yaml=scaling.yaml"
         NUM_MPI_PROCS 4

@@ -44,6 +44,7 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
