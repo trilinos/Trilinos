@@ -104,8 +104,10 @@ public:
   //! Returns the communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! Returns the underlying node.
-  virtual Teuchos::RCP<Node> getNode() const;
+  virtual TPETRA_DEPRECATED Teuchos::RCP<Node> getNode() const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Returns the Map that describes the row distribution in this matrix.
   virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;

@@ -233,6 +233,7 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   FilterSingletons_ (false),
   NumIterations_(1),
   ZeroStartingSolution_(true),
+  UpdateDamping_(Teuchos::ScalarTraits<scalar_type>::one()),
   NumInitialize_ (0),
   NumCompute_ (0),
   NumApply_ (0),
@@ -259,6 +260,7 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   FilterSingletons_ (false),
   NumIterations_(1),
   ZeroStartingSolution_(true),
+  UpdateDamping_(Teuchos::ScalarTraits<scalar_type>::one()),
   NumInitialize_ (0),
   NumCompute_ (0),
   NumApply_ (0),
@@ -714,7 +716,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       }
 #endif // HAVE_IFPACK2_DEBUG
 
-      Y.update(STS::one(), *C, STS::one());
+      Y.update(UpdateDamping_, *C, STS::one());
 
 #ifdef HAVE_IFPACK2_DEBUG
       {
@@ -966,6 +968,9 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // singletons should help for PDE problems with Dirichlet BCs.
   FilterSingletons_ = plist->get ("schwarz: filter singletons", FilterSingletons_);
 
+  // Allow for damped Schwarz updates
+  UpdateDamping_ = Teuchos::as<scalar_type>(plist->get("schwarz: update damping",UpdateDamping_));
+
   // If the inner solver doesn't exist yet, don't create it.
   // initialize() creates it.
   //
@@ -1041,6 +1046,7 @@ getValidParameters () const
     const bool filterSingletons     = false;
     const int  numIterations        = 1;
     const bool zeroStartingSolution = true;
+    const double updateDamping      = 1;
     ParameterList reorderingSublist;
     reorderingSublist.set ("order_method", std::string ("rcm"));
 
@@ -1056,6 +1062,7 @@ getValidParameters () const
     plist->set ("schwarz: filter singletons", filterSingletons);
     plist->set ("schwarz: num iterations", numIterations);
     plist->set ("schwarz: zero starting solution", zeroStartingSolution);
+    plist->set ("schwarz: update damping", updateDamping);
 
     // FIXME (mfh 18 Nov 2013) Get valid parameters from inner solver.
     //        JJH The inner solver should handle its own validation.

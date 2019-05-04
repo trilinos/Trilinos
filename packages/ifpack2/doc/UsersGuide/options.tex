@@ -666,7 +666,11 @@ The following parameters are used in the Schwarz method:
     {Currently has no effect.}
 \cccc{schwarz: compute condest}
     {Currently has no effect. For backwards compatibility only.}
-
+\ccc{schwarz: update damping}
+    {double}
+    {1.0}
+    {The amount by which to damp the updates from the Schwarz solve
+      (1.0 is no damping).}
 \section{Hiptmair}
 
 \ifpacktwo{} implements Hiptmair algorithm of~\cite{Hiptmair1997}. The method

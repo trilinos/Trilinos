@@ -365,8 +365,8 @@ where
 
 ## Parallel build and test processes
 
-By defualt, each system's `<system_name>/environment.sh` script automatically
-sets the parallel build and test jobs by seeing:
+By default, each system's `<system_name>/environment.sh` script automatically
+selects the parallel build and test jobs by setting the env vars:
 
 * `ATDM_CONFIG_BUILD_COUNT`: Number of default parallel build jobs passed to
   `ninja -j ${ATDM_CONFIG_BUILD_COUNT}`
@@ -379,7 +379,8 @@ sets the parallel build and test jobs by seeing:
 
 * `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: Number passed to `ctest -j ${ATDM_CONFIG_CTEST_PARALLEL_LEVEL}`
 
-These values can be overridden by setting the env vars:
+These values can be overridden by setting the following env vars before runnning
+`source cmake/std/atdm/load-env.sh <build-name>`:
 
 * `ATDM_CONFIG_BUILD_COUNT_OVERRIDE`
 * `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT_OVERRIDE`

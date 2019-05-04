@@ -16,48 +16,9 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 # src
 #
 
-############################################################################################
-FUNCTION(XPETRA_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
-  SET(SRCS "")
-  FOREACH(CLASS ${ETI_CLASSES})
-    # find spearator of class name and (optional) conditions
-    string(FIND ${CLASS} "-" DASHPOS)
-    IF ('${DASHPOS}' STREQUAL '-1')
-      string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
-      #MESSAGE("New class name = ${CLASS_NAME}")
-      set (CONDITION_NAME "")
-      set (CONDITION_NAME_END "")      
-    ELSE()
-      string(SUBSTRING ${CLASS} 0 ${DASHPOS} CLASS_NAME)
-      #MESSAGE("New class name = ${CLASS_NAME}")
-      string(SUBSTRING ${CLASS} ${DASHPOS} -1 CONDITION_NAME)
-      string(REPLACE "[" "(" CONDITION_NAME ${CONDITION_NAME})
-      string(REPLACE "]" ")" CONDITION_NAME ${CONDITION_NAME})
-      string(REPLACE "." " " CONDITION_NAME ${CONDITION_NAME})
-      string(REPLACE "-" "" CONDITION_NAME ${CONDITION_NAME})
-      string(REPLACE "?" "#" CONDITION_NAME ${CONDITION_NAME})
-      string(STRIP CONDITION_NAME ${CONDITION_NAME})
-      #MESSAGE("New condition name = ${CONDITION_NAME}")
-      set (CONDITION_NAME_END "#endif")
-    ENDIF()
-    
-    string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS_NAME}")
-    string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
-    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
-    
-    # the following generates one cpp file for all instantiations and 
-    # enabled configurations
-    CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
-    #MESSAGE("Configure file ${FINAL_FILE_NAME} using template ${TEMPLATE_FILE}")
-    SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
-    
-  ENDFOREACH()
-  SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
-ENDFUNCTION(XPETRA_PROCESS_ETI_TEMPLATE)
-
 ##
 ## XPETRA_ETI_CPP_SOURCES collects all filenames of the Xpetra ETI *.cpp files
-## These are later added to the gloabl list of source files (SOURCES)
+## These are later added to the global list of source files (SOURCES)
 ##
 SET(SOURCES "")
 SET(XPETRA_ETI_CPP_SOURCES "")
@@ -67,15 +28,28 @@ SET(XPETRA_ETI_CPP_SOURCES "")
 ##
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
-  ## XPETRA_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
+  ## XPETRA_(Something)_ETI_CLASSES is a list of all class names which ETI 
   ## *.cpp files have to be generated for.
   ##
+
+  # include the function XPETRA_PROCESS_ETI_TEMPLATE
+  include(Utils/ExplicitInstantiation/xpetra-process-eti-template.cmake)
+
+  GLOBAL_SET(XPETRA_LO_GO_NO_ETI_CLASSES  )
+  INCLUDE(Utils/ExplicitInstantiation/ETI_LO_GO_NO_classes.cmake)
+  XPETRA_PROCESS_ETI_TEMPLATE(
+    "${XPETRA_LO_GO_NO_ETI_CLASSES}"
+    ${Trilinos_SOURCE_DIR}/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_LO_GO_NO.tmpl
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    Xpetra_ETI_LO_GO_NO_SRC)
+  LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_LO_GO_NO_SRC})
+
+
   GLOBAL_SET(XPETRA_SC_LO_GO_NO_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_SC_LO_GO_NO_classes.cmake)
-
   XPETRA_PROCESS_ETI_TEMPLATE(
     "${XPETRA_SC_LO_GO_NO_ETI_CLASSES}"
-    Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
+    ${Trilinos_SOURCE_DIR}/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_SC_LO_GO_NO.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_SC_LO_GO_NO_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_SC_LO_GO_NO_SRC})
@@ -83,10 +57,9 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
   GLOBAL_SET(XPETRA_MULTIVECTOR_ETI_CLASSES  )
   INCLUDE(Utils/ExplicitInstantiation/ETI_MULTIVECTOR_classes.cmake)
-
   XPETRA_PROCESS_ETI_TEMPLATE(
     "${XPETRA_MULTIVECTOR_ETI_CLASSES}"
-    Utils/ExplicitInstantiation/Xpetra_ETI_MULTIVECTOR.tmpl
+    ${Trilinos_SOURCE_DIR}/packages/xpetra/src/Utils/ExplicitInstantiation/Xpetra_ETI_MULTIVECTOR.tmpl
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     Xpetra_ETI_MULTIVECTOR_SRC)
   LIST(APPEND XPETRA_ETI_CPP_SOURCES ${Xpetra_ETI_MULTIVECTOR_SRC})
@@ -127,8 +100,12 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     )
 ENDIF()
 
+# Create the .hpp file in BUILD/packages/xpetra/src
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/MultiVector NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Vector NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Import NOSIERRABJAM)
 
 #SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 

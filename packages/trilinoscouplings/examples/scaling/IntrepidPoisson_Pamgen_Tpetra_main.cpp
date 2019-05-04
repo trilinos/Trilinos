@@ -122,7 +122,6 @@ main (int argc, char *argv[])
     Teuchos::oblackholestream blackHole;
     Tpetra::ScopeGuard mpiSession (&argc, &argv);
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<Node> node; // OK to be null; just needed for type deduction; eventually remove this
 
     const int myRank = comm->getRank ();
     //const int numProcs = comm->getSize ();
@@ -268,7 +267,7 @@ main (int argc, char *argv[])
       RCP<multivector_type> coords;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
-        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, node, meshInput, inputList, problemStatistics,
+        makeMatrixAndRightHandSide (A, B, X_exact, X, coords, node_sigma, comm, meshInput, inputList, problemStatistics,
                                     out, err, verbose, debug);
       }
 

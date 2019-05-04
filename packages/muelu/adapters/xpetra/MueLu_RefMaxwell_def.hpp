@@ -265,6 +265,7 @@ namespace MueLu {
     // build nullspace if necessary
     if(Nullspace_ != null) {
       // no need to do anything - nullspace is built
+      TEUCHOS_ASSERT(Nullspace_->getMap()->isCompatible(*(SM_Matrix_->getRowMap())));
     }
     else if(Nullspace_ == null && Coords_ != null) {
       // normalize coordinates

@@ -1242,9 +1242,16 @@ private:
   //@}
 
 private:
+  //! The underlying actual matrix object
   RCP<Epetra_CrsMatrix> mtx_;
 
-  bool isFillResumed_; //< For Epetra, fillResume() is a fictive operation but we need to keep track of it. This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
+  /*!
+  \brief Flag to keep track of fill status
+
+  For Epetra, fillResume() is a fictitious operation but we need to keep track of it.
+  This boolean is true only is resumeFill() have been called and fillComplete() have not been called afterward.
+  */
+  bool isFillResumed_;
 
 }; // EpetraCrsMatrixT class
 
