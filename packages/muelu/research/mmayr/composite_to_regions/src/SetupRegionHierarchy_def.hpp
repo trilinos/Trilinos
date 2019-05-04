@@ -973,9 +973,8 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
 
   using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
-  const GO GO_INV = Teuchos::OrdinalTraits<GO>::invalid();
-
   RCP<const Teuchos::Comm<int> > comm = regProlong[1][0]->getRowMap()->getComm();
+  const GO GO_INV = Teuchos::OrdinalTraits<GO>::invalid();
   const int numLevels = regProlong.size();
 
   Teuchos::Array<LO> coarseCompositeToRegionLIDs;
@@ -1002,7 +1001,7 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
       }
     }
 
-    // We want to communicate the coarse GIDs associated with each fine points.
+    // We gather the coarse GIDs associated with each fine point in the local composite mesh part.
     RCP<Xpetra::Vector<MT,LO,GO,NO> > coarseCompositeGIDs
       = Xpetra::VectorFactory<MT,LO,GO,NO>::Build(regRowImporters[currentLevel - 1][0]->getSourceMap(), false);
     Teuchos::ArrayRCP<MT> coarseCompositeGIDsData = coarseCompositeGIDs->getDataNonConst(0);
@@ -1013,9 +1012,15 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
       regProlong[currentLevel][0]->getLocalRowView(compositeToRegionLIDs[compositeNodeIdx],
                                                    coarseRegionLID,
                                                    dummyData);
-      coarseCompositeGIDsData[compositeNodeIdx] = regProlong[currentLevel][0]->getColMap()->getGlobalElement(coarseRegionLID[0]);
+      if(coarseRegionLID.size() == 1) {
+        coarseCompositeGIDsData[compositeNodeIdx] = regProlong[currentLevel][0]->getColMap()->getGlobalElement(coarseRegionLID[0]);
+      } else {
+        coarseCompositeGIDsData[compositeNodeIdx] = -1;
+      }
     }
 
+    // We communicate the above GIDs to their duplicate so that we can replace GIDs of the region
+    // column map and form the quasiregion column map.
     std::vector<RCP<Xpetra::Vector<MT, LO, GO, NO> > > coarseQuasiregionGIDs(1), coarseRegionGIDs(1);
     compositeToRegional(coarseCompositeGIDs,
                         coarseQuasiregionGIDs,
@@ -1045,7 +1050,9 @@ void MakeCoarseLevelMaps2(const int maxRegPerGID,
     for(size_t regionIdx = 0; regionIdx < numCoarseRegionNodes; ++regionIdx) {
       const GO initialValue = coarseQuasiregRowMapData[regionIdx];
       for(size_t duplicateIdx = 0; duplicateIdx < numFineDuplicateNodes; ++duplicateIdx) {
-        if((initialValue == fineRegionDuplicateCoarseLIDs[duplicateIdx]) && (fineRegionDuplicateCoarseGIDs[duplicateIdx] < coarseQuasiregRowMapData[regionIdx])){
+        if((initialValue == fineRegionDuplicateCoarseLIDs[duplicateIdx]) &&
+           (fineRegionDuplicateCoarseGIDs[duplicateIdx] < coarseQuasiregRowMapData[regionIdx]) &&
+           (-1 < fineRegionDuplicateCoarseGIDs[duplicateIdx])){
           coarseQuasiregRowMapData[regionIdx] = fineRegionDuplicateCoarseGIDs[duplicateIdx];
         }
       }
