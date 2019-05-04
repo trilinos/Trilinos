@@ -303,12 +303,9 @@ struct BlockTriDiContainerTester {
             if (nits < num_sweeps) {
               const auto n0 = T_bare_advanced->getNorms0();
               const auto nf = T_bare_advanced->getNormsFinal();
-              bool ok = true;
-              Magnitude r = 0;
-              for (int i = 0; i < nvec; ++i) {
-                r = nf[i] / n0[i];
-                if (r > tol) { ok = false; break; }
-              }
+
+              const Magnitude r = nf/n0;
+              const bool ok = r <= tol;
               if ( ! ok)
                 TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, norm) " << details << " r " << r);
               else
@@ -341,10 +338,11 @@ struct BlockTriDiContainerTester {
               T_bare_advanced->applyInverseJacobi(*B, *X, input);
               // Check if X agrees with the manually computed X_true.
               rd = bcmm::reldif(*X, X_true);
-              if (rd > 1e1*std::numeric_limits<Magnitude>::epsilon())
-                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details);
+              const auto eps = 1e1*std::numeric_limits<Magnitude>::epsilon();
+              if (rd > eps)
+                TEST_BR_BTDC_FAIL("FAIL: test_BR_BTDC (A = D + R, damping factor) " << details << " rd = " << rd << " eps = " << eps);
               else
-                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details);
+                TEST_BR_BTDC_SUCCESS("SUCCESS: test_BR_BTDC (A = D + R, damping factor) " << details << " rd = " << rd << " eps = " << eps);
             }
           }
         }

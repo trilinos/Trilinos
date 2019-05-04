@@ -116,6 +116,11 @@
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#include <Amesos2_config.h>
+#include <Amesos2.hpp>
+#endif
+
 // Region MG headers
 #include "SetupRegionHierarchy_def.hpp"
 
@@ -1169,6 +1174,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // create region coordinates vector
   regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(revisedRowMapPerGrp[0],
                                                                                numDimensions);
+  using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   /* Stuff for multi-level algorithm
    *
@@ -1190,6 +1197,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<std::vector<RCP<Import> > > regRowImporters; // regional row importers on each level
   Array<std::vector<RCP<Vector> > > regInterfaceScalings; // regional interface scaling factors on each level
   Teuchos::RCP<Matrix> coarseCompOp = Teuchos::null;
+  RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector> > coarseCompositeDirectSolver = Teuchos::null;
 
 
   // Create multigrid hierarchy
@@ -1219,7 +1227,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         regInterfaceScalings,
                         coarseCompOp,
                         maxRegPerGID,
-                        compositeToRegionLIDs());
+                        compositeToRegionLIDs(),
+                        coarseCompositeDirectSolver);
 
 
   comm->barrier();
@@ -1326,7 +1335,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB,
              regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-             regInterfaceScalings, coarseCompOp);
+             regInterfaceScalings, coarseCompOp, coarseCompositeDirectSolver);
     }
   }
 
