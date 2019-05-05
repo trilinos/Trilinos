@@ -18,7 +18,7 @@
       <Parameter name="factory"                                   type="string" value="StructuredAggregationFactory"/>
       <Parameter name="aggregation: coupling"                     type="string" value="uncoupled"/>
       <Parameter name="aggregation: output type"                  type="string" value="CrsGraph"/>
-      <Parameter name="aggregation: coarsening order"             type="int"    value="0"/>
+      <Parameter name="aggregation: coarsening order"             type="int"    value="1"/>
       <Parameter name="aggregation: coarsening rate"              type="string" value="{2}"/>
       <Parameter name="Graph"                                     type="string" value="myCoalesceDropFact"/>
     </ParameterList>
@@ -32,7 +32,7 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="GeometricInterpolationPFactory"/>
       <Parameter name="interp: build coarse coordinates"    type="bool"   value="true"/>
-      <Parameter name="interp: interpolation order"         type="int"    value="0"/>
+      <Parameter name="interp: interpolation order"         type="int"    value="1"/>
       <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesFineMap"            type="string" value="myAggregationFact"/>
       <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
