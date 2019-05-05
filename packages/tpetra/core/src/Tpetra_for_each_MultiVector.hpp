@@ -44,8 +44,8 @@
 #ifndef TPETRA_FOR_EACH_MULTIVECTOR_HPP
 #define TPETRA_FOR_EACH_MULTIVECTOR_HPP
 
-#include "Tpetra_withLocalAccess_MultiVector.hpp"
 #include "Tpetra_for_each.hpp"
+#include "Tpetra_withLocalAccess_MultiVector.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_Comm.hpp"
@@ -435,7 +435,12 @@ namespace Tpetra {
       }
     };
 
-    //! Implementation of Tpetra::for_each for Tpetra::Vector.
+    /// \brief Implementation of Tpetra::for_each for Tpetra::Vector.
+    ///
+    /// Even though Tpetra::Vector is a subclass of
+    /// Tpetra::MultiVector, this needs to exist, since partial
+    /// specializations don't recognize subclasses of their
+    /// specialized template arguments.
     template<class ExecutionSpace,
              class SC, class LO, class GO, class NT,
              class UserFunctionType>

@@ -41,52 +41,54 @@
 // @HEADER
 */
 
-#ifndef TPETRA_FOR_EACH_HPP
-#define TPETRA_FOR_EACH_HPP
+#ifndef TPETRA_TRANSFORM_HPP
+#define TPETRA_TRANSFORM_HPP
 
 #include "TpetraCore_config.h"
-#include <type_traits>
 
-/// \file Tpetra_for_each.hpp
-/// \brief Declaration and definition of Tpetra::for_each;
+/// \file Tpetra_transform.hpp
+/// \brief Declaration and definition of Tpetra::transform;
 ///   declaration of helper classes for users to specialize.
 
 namespace Tpetra {
 
-  /// \brief Apply a function entrywise to each local entry of a
-  ///   Tpetra global data structure, analogously to std::for_each.
-  ///
-  /// Generically, the function f takes the current entry by nonconst
-  /// reference, in read-write fashion.  Overloads for specific Tpetra
-  /// data structures may permit functions that take other arguments.
+  /// \brief For each local entry input_i of input, assign f(input_i)
+  ///   to the corresponding local entry output_i of output,
+  ///   analogously to std::transform.
   ///
   /// \param kernelLabel [in] Kernel label for Kokkos Profiling.
   /// \param execSpace [in] Kokkos execution space on which to run.
-  /// \param X [in/out] Tpetra global data structure to modify.
-  /// \param f [in] Function to apply to each entry of X.
+  /// \param input [in] Tpetra global data structure to read.
+  /// \param output [out] Tpetra global data structure to write.
+  /// \param f [in] Entrywise function that takes an input object's
+  ///   entry by const reference, and returns a value assignable to an
+  ///   entry of the output object.
   ///
   /// There is no overload without a kernel label.  You WILL label
   /// your kernels.  If you bother to use Kokkos, that means you care
   /// about performance, so we need to be able to measure it.
   ///
   /// To implement this for new GlobalDataStructure types, specialize
-  /// Details::ForEach (see below).
+  /// Details::Transform (see below).
   template<class ExecutionSpace,
            class GlobalDataStructure,
-           class UserFunctionType>
+           class UnaryFunctionType>
   void
-  for_each (const char kernelLabel[],
-            ExecutionSpace execSpace,
-            GlobalDataStructure& X,
-            UserFunctionType f);
+  transform (const char kernelLabel[],
+             ExecutionSpace execSpace,
+             GlobalDataStructure& input,
+             GlobalDataStructure& output,
+             UnaryFunctionType f);
 
-  /// \brief Overload of for_each (see above) that runs on X's
-  ///   default Kokkos execution space.
+  /// \brief Overload of transform (see above) that runs on the output
+  ///   object's default Kokkos execution space.
   ///
   /// \param kernelLabel [in] Kernel label for Kokkos Profiling.
-  /// \param X [in/out] Tpetra global data structure to modify.
-  /// \param f [in] Function to apply entrywise to X (could have
-  ///   different signatures; see above).
+  /// \param input [in] Tpetra global data structure to read.
+  /// \param output [out] Tpetra global data structure to write.
+  /// \param f [in] Entrywise function that takes an input object's
+  ///   entry by const reference, and returns a value assignable to an
+  ///   entry of the output object.
   ///
   /// There is no overload without a kernel label.  You WILL label
   /// your kernels.  If you bother to use Kokkos, that means you care
@@ -95,65 +97,68 @@ namespace Tpetra {
   /// To implement this for new GlobalDataStructure types, specialize
   /// Details::ForEach (see below).
   template<class GlobalDataStructure,
-           class UserFunctionType>
+           class UnaryFunctionType>
   void
-  for_each (const char kernelLabel[],
-            GlobalDataStructure& X,
-            UserFunctionType f);
+  transform (const char kernelLabel[],
+             GlobalDataStructure& input,
+             GlobalDataStructure& output,
+             UnaryFunctionType f);
 
   namespace Details {
 
-    /// \brief Specialize this class to implement Tpetra::for_each for
-    ///   specific GlobalDataStructure types.
+    /// \brief Specialize this class to implement Tpetra::transform
+    ///   for specific GlobalDataStructure types.
     template<class ExecutionSpace,
-             class GlobalDataStructure,
-             class UserFunctionType>
-    struct ForEach {
+             class GlobalDataStructure>
+    struct Transform {
+      template<class UnaryFunctionType>
       static void
-      for_each (const char kernelLabel[],
-                ExecutionSpace execSpace,
-                GlobalDataStructure& X,
-                UserFunctionType f);
+      transform (const char kernelLabel[],
+                 ExecutionSpace execSpace,
+                 GlobalDataStructure& input,
+                 GlobalDataStructure& output,
+                 UnaryFunctionType f);
     };
 
   } // namespace Details
 
   template<class ExecutionSpace,
            class GlobalDataStructure,
-           class UserFunctionType>
+           class UnaryFunctionType>
   void
-  for_each (const char kernelLabel[],
-            ExecutionSpace execSpace,
-            GlobalDataStructure& X,
-            UserFunctionType f)
+  transform (const char kernelLabel[],
+             ExecutionSpace execSpace,
+             GlobalDataStructure& input,
+             GlobalDataStructure& output,
+             UnaryFunctionType f)
   {
-    using impl_type = Details::ForEach<
-      ExecutionSpace,
-      typename std::remove_const<GlobalDataStructure>::type,
-      UserFunctionType>;
+    using impl_type =
+      Details::Transform<ExecutionSpace, GlobalDataStructure>;
+    using UFT = UnaryFunctionType;
 
-    impl_type::for_each (kernelLabel, execSpace, X, f);
+    impl_type::template transform<UFT> (kernelLabel, execSpace,
+                                        input, output, f);
   }
 
   template<class GlobalDataStructure,
-           class UserFunctionType>
+           class UnaryFunctionType>
   void
-  for_each (const char kernelLabel[],
-            GlobalDataStructure& X,
-            UserFunctionType f)
+  transform (const char kernelLabel[],
+             GlobalDataStructure& input,
+             GlobalDataStructure& output,
+             UnaryFunctionType f)
   {
     using execution_space =
       typename GlobalDataStructure::device_type::execution_space;
-    using impl_type = Details::ForEach<
-      execution_space,
-      typename std::remove_const<GlobalDataStructure>::type,
-      UserFunctionType>;
+    using impl_type =
+      Details::Transform<execution_space, GlobalDataStructure>;
+    using UFT = UnaryFunctionType;
 
     execution_space execSpace;
-    impl_type::for_each (kernelLabel, execSpace, X, f);
+    impl_type::template transform<UFT> (kernelLabel, execSpace,
+                                        input, output, f);
   }
 
 } // namespace Tpetra
 
-#endif // TPETRA_FOR_EACH_HPP
-
+#endif // TPETRA_TRANSFORM_HPP
