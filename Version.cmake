@@ -59,10 +59,10 @@
 # for release mode and set the version.
 #
 
-SET(Trilinos_VERSION 12.13)
+SET(Trilinos_VERSION 12.17)
 SET(Trilinos_MAJOR_VERSION 12)
-SET(Trilinos_MAJOR_MINOR_VERSION 121300)
-SET(Trilinos_VERSION_STRING "12.13 (Dev)")
+SET(Trilinos_MAJOR_MINOR_VERSION 121700)
+SET(Trilinos_VERSION_STRING "12.17 (Dev)")
 SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT ON) # Change to 'OFF' for a release
 
 # Used by testing scripts and should not be used elsewhere
