@@ -146,6 +146,14 @@ namespace Tpetra {
     /// <li> <tt>nonowning_local_object_type get(const MasterLocalObjectType&)</tt>
     ///      static method </li>
     /// </ul>
+    ///
+    /// \note To Tpetra developers: It may make sense to change this
+    ///   class to take both the LocalAccess specialization (given to
+    ///   GetMasterLocalObject) and the master local object type.
+    ///   That would disambiguate between different global object
+    ///   types that happen to have the same master local object type
+    ///   (but that might want different behavior or even different
+    ///   types for their nonowning local objects).
     template<class MasterLocalObjectType>
     struct GetNonowningLocalObject {};
 
@@ -537,9 +545,9 @@ namespace Tpetra {
         typename Details::ArgsToFunction<FirstLocalAccessType, Rest...>::type;
 
       static void
-      withLocalAccess (FirstLocalAccessType first,
-                       Rest... rest,
-                       current_user_function_type userFunction)
+      withLocalAccess (current_user_function_type userFunction,
+                       FirstLocalAccessType first,
+                       Rest... rest)
       {
         // The "master" local object is the scope guard for local
         // data.  Its constructor may allocate temporary storage, copy
@@ -585,10 +593,10 @@ namespace Tpetra {
         //    });
 
         WithLocalAccess<Rest...>::withLocalAccess
-          (rest...,
-           [=] (ArgsToFunction<Rest>... args) {
+          ([=] (typename Rest::function_argument_type... args) {
              userFunction (first_lcl_view, args...);
-           });
+           },
+           rest...);
       }
     };
   } // namespace Details
@@ -636,7 +644,7 @@ namespace Tpetra {
      LocalAccessTypes... localAccesses)
   {
     using impl_type = Details::WithLocalAccess<LocalAccessTypes...>;
-    impl_type::withLocalAccess (localAccesses..., userFunction);
+    impl_type::withLocalAccess (userFunction, localAccesses...);
   }
 
 } // namespace Tpetra
