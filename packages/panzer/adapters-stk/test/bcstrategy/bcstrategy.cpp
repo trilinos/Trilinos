@@ -91,11 +91,11 @@ namespace panzer {
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name,
 		  strategy, p);
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs;
-  
+
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
     user_app::BCFactory my_factory;
@@ -109,7 +109,7 @@ namespace panzer {
     using std::cout;
     using std::endl;
     using Teuchos::RCP;
-  
+
     // pause_to_attach();
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -117,7 +117,7 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",1);
     pl->set("Y Elements",1);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
@@ -141,11 +141,11 @@ namespace panzer {
 
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-      
+
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       const int default_integration_order = 1;
-      
+
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
 				 ipb,
@@ -164,21 +164,21 @@ namespace panzer {
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
+    for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
- 
+
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
@@ -186,7 +186,7 @@ namespace panzer {
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
- 
+
     // Add in the application specific closure model factory
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     user_app::MyModelFactory_TemplateBuilder cm_builder;
@@ -206,7 +206,7 @@ namespace panzer {
     panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
 
-    RCP<panzer::EpetraLinearObjContainer> eGhosted 
+    RCP<panzer::EpetraLinearObjContainer> eGhosted
        = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildGhostedLinearObjContainer());
     RCP<panzer::EpetraLinearObjContainer> eGlobal
        = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildLinearObjContainer());
@@ -258,7 +258,7 @@ namespace panzer {
 	}
       }
     }
-    
+
     jac->Print(std::cout);
 
   }
@@ -287,10 +287,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType dirichlet = BCT_Dirichlet;
@@ -301,10 +301,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType dirichlet = BCT_Dirichlet;
@@ -315,10 +315,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }  
+    }
     {
       std::size_t bc_id = 3;
       panzer::BCType dirichlet = BCT_Dirichlet;
@@ -329,7 +329,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }

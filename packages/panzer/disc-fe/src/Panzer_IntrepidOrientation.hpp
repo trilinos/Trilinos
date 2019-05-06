@@ -52,69 +52,9 @@
 
 namespace panzer {
 
-  template <typename LocalOrdinal,typename GlobalOrdinal>
   void
   buildIntrepidOrientation(std::vector<Intrepid2::Orientation> & orientation,  
-                           panzer::ConnManager<LocalOrdinal,GlobalOrdinal> & connMgr) {
-    //const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> > globalIndexer) {
-    using Teuchos::rcp_dynamic_cast;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    orientation.clear();
-
-    // Cast connMgr with template types
-    //const auto connMgrBase = globalIndexer->getConnManagerBase();
-    //const auto connMgr = rcp_dynamic_cast<ConnManager<LocalOrdinal,GlobalOrdinal> >(connMgrBase->noConnectivityClone());
-    
-    //TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
-    //                           "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
-    
-    // Retrive element blocks and its meta data
-    const int numElementBlocks = connMgr.numElementBlocks();
-
-    std::vector<std::string> elementBlockIds;
-    std::vector<shards::CellTopology> elementBlockTopologies;
-    
-    connMgr.getElementBlockIds(elementBlockIds);
-    connMgr.getElementBlockTopologies(elementBlockTopologies);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(numElementBlocks <= 0 &&
-                               numElementBlocks != static_cast<int>(elementBlockIds.size()) &&
-                               numElementBlocks != static_cast<int>(elementBlockTopologies.size()),
-                               std::logic_error,
-                               "panzer::buildIntrepidOrientation: Number of element blocks does not match to element block meta data");
-    
-    // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
-    const auto cellTopo = elementBlockTopologies.at(0);
-    const int numVertexPerCell = cellTopo.getVertexCount();
-    
-    const auto fp = NodalFieldPattern(cellTopo);
-    connMgr.buildConnectivity(fp);
-
-    // Count and pre-alloc orientations
-    int total_elems = 0;
-    for (int i=0;i<numElementBlocks;++i) {
-      total_elems += connMgr.getElementBlock(elementBlockIds.at(i)).size();
-    }
-    
-    orientation.resize(total_elems);
-    // Loop over element blocks
-    for (int i=0;i<numElementBlocks;++i) {
-      // get elements in a block
-      const auto &elementBlock = connMgr.getElementBlock(elementBlockIds.at(i));
-      
-      const int numElementsPerBlock = elementBlock.size();
-
-      // construct orientation information
-      for (int c=0;c<numElementsPerBlock;++c) {
-        const int localCellId = elementBlock.at(c);
-        Kokkos::View<const GlobalOrdinal*, Kokkos::DefaultHostExecutionSpace>
-          nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
-        orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
-      }
-    }
-  }
+                           panzer::ConnManager & connMgr);
 
   /** Build an orientation container from a global indexer and a field.
    * Underneath this does several dynamic casts to determine the type of UniqueGlobalIndexer

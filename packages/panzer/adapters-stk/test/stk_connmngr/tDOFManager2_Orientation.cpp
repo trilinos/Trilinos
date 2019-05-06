@@ -74,7 +74,7 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -86,7 +86,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 }
 
 template <typename Intrepid2Type>
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations)
    RCP<const panzer::FieldPattern> patternDIV
          = buildFieldPattern<Intrepid2::Basis_HDIV_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
    // build global (or serial communicator)
    dofManager->setOrientationsRequired(true);
@@ -265,7 +265,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations2)
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);
@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST(tDOFManager_Orientation, buildTest_quad_edge_orientations_fail
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);

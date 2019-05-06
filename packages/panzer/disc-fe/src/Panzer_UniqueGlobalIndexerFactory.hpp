@@ -63,7 +63,7 @@ namespace panzer {
   * index types.  The use case for this is the block assembly
   * functionality.
   */
-template <typename LO,typename GO,typename CONN_LO,typename CONN_GO>
+template <typename LO,typename GO>
 class UniqueGlobalIndexerFactory {
 public:
 
@@ -87,7 +87,7 @@ public:
    virtual Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > 
    buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > & mpiComm,
                             const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
-                            const Teuchos::RCP<ConnManager<CONN_LO,CONN_GO> > & connMngr,
+                            const Teuchos::RCP<ConnManager> & connMngr,
                             const std::string & fieldOrder="") const = 0;
 };
 

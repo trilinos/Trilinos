@@ -102,17 +102,17 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-  
+
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",1);
     pl->set("X Elements",20);
     pl->set("Y Elements",20);
-    
+
     panzer_stk::SquareQuadMeshFactory mesh_factory;
     mesh_factory.setParameterList(pl);
     //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer_stk::STK_Interface> mesh = 
+    RCP<panzer_stk::STK_Interface> mesh =
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -121,7 +121,7 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb =
       Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
@@ -138,9 +138,9 @@ namespace panzer {
 
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-      
+
       int default_integration_order = 1;
-      
+
       bool build_transient_support = false;
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
@@ -181,35 +181,35 @@ namespace panzer {
 
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
+    for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
-      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
- 
+
     // Add in the application specific closure model factory
     user_app::MyModelFactory_TemplateBuilder cm_builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -233,22 +233,22 @@ namespace panzer {
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Steady-State_", physicsBlocks);
 
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
-      Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
-    
+      Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory);
+
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
 
-    RCP<panzer::ModelEvaluator_Epetra> ep_me = 
+    RCP<panzer::ModelEvaluator_Epetra> ep_me =
       Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names,p_values, gd, false));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
     Teuchos::updateParametersFromXmlFile("solver_nox.xml", piro_params.ptr());
-    
+
     // Build stratimikos solver
     std::string& solver = piro_params->get("Piro Solver","NOX");
     RCP<Teuchos::ParameterList> stratParams;
-    
+
     if (solver=="NOX" || solver=="LOCA") {
       stratParams = Teuchos::rcp(&(piro_params->sublist("NOX").sublist("Direction").
 				   sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
@@ -256,16 +256,16 @@ namespace panzer {
     else if (solver=="Rythmos") {
       stratParams = Teuchos::rcp(&(piro_params->sublist("Rythmos").sublist("Stratimikos")),false);
     }
-    
+
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(stratParams);
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
       createLinearSolveStrategy(linearSolverBuilder);
 
     // Build Thyra Model Evluator
-    RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
+    RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me =
       Thyra::epetraModelEvaluator(ep_me,lowsFactory);
-    
+
     RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
     if (solver=="NOX") {
       piro = rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
@@ -277,7 +277,7 @@ namespace panzer {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error: Unknown Piro Solver : " << solver);
     }
-    
+
     Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
 
     // Set output arguments to evalModel call
@@ -287,7 +287,7 @@ namespace panzer {
     //RCP<Thyra::MultiVectorBase<double> > dgdp =
     //Thyra::createMembers(*thyra_me->get_x_space(),numParams);
     //if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
-    
+
     // Solution vector is returned as extra respons vector
     RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyra_me->get_x_space());
     outArgs.set_g(0,gx);
@@ -310,7 +310,7 @@ namespace panzer {
     // Test solution values on left, middle, and right side of mesh.
     // Note that this is based on the exact 20x20 test mesh on 4
     // processes.  It will fail on more or less processes due to
-    // global node re-numbering.  
+    // global node re-numbering.
 
     //RPP (2011.12.21): disabling the checks on solution values below.
     // It looks like the global id assignment in fei now has a random
@@ -322,31 +322,31 @@ namespace panzer {
       Teuchos::RCP<const Teuchos::Comm<Teuchos::Ordinal> > comm = Teuchos::DefaultComm<Teuchos::Ordinal>::getComm();
 
       if (Teuchos::size(*comm) == 4) {
-	
+
 	const int gid_left = 0;
 	const int gid_middle = 225;
 	const int gid_right = 340;
 	const int lid_left = solution->Map().LID(gid_left);
 	const int lid_middle = solution->Map().LID(gid_middle);
 	const int lid_right = solution->Map().LID(gid_right);
-	
+
 	//solution->Print(std::cout);
-	
+
 	if (lid_left != -1) {
 	  double left_value = (*solution)[lid_left];
 	  TEST_FLOATING_EQUALITY(left_value, 1.0, 1.0e-7);
 	}
-	
+
 	if (lid_middle != -1) {
 	  double middle_value = (*solution)[lid_middle];
 	  TEST_FLOATING_EQUALITY(middle_value, 1.625, 1.0e-7);
 	}
-	
+
 	if (lid_right != -1) {
 	  double right_value = (*solution)[lid_right];
 	  TEST_FLOATING_EQUALITY(right_value, 2.0, 1.0e-7);
 	}
-	
+
 	int globalSuccess_int = -1;
 	Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
 	TEST_EQUALITY_CONST( globalSuccess_int, 0 );
@@ -374,7 +374,7 @@ namespace panzer {
       ep_me->evalModel(in_args, out_args);
       //Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(J)->Print(std::cout);
     }
-    
+
   }
 
   // *****************************************************************
@@ -390,11 +390,11 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",20);
     pl->set("Y Elements",20);
-    
+
     panzer_stk::SquareQuadMeshFactory mesh_factory;
     mesh_factory.setParameterList(pl);
     //RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<panzer_stk::STK_Interface> mesh = 
+    RCP<panzer_stk::STK_Interface> mesh =
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
     RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
@@ -402,12 +402,12 @@ namespace panzer {
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
-    
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb =
       Teuchos::rcp(new panzer::FieldManagerBuilder);
 
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-       
+
     // build physics blocks
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
@@ -420,9 +420,9 @@ namespace panzer {
 
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-      
+
       int default_integration_order = 1;
-      
+
       bool build_transient_support = true;
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
@@ -460,41 +460,41 @@ namespace panzer {
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
-   mesh->setupExodusFile("transient.exo"); 
-   
+   mesh->setupExodusFile("transient.exo");
+
     // build worksets
     //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
+    for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
+    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
-      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
- 
+
     // Add in the application specific closure model factory
-    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
+    Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory =
       Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
     user_app::MyModelFactory_TemplateBuilder cm_builder;
     (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
@@ -517,22 +517,22 @@ namespace panzer {
     fmb->writeVolumeGraphvizDependencyFiles("Panzer_Transient_", physicsBlocks);
 
     Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
-      Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
-    
+      Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory);
+
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
 
-    RCP<panzer::ModelEvaluator_Epetra> ep_me = 
+    RCP<panzer::ModelEvaluator_Epetra> ep_me =
       Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof, p_names,p_values, gd, true));
 
     // Get solver params from input file
     RCP<Teuchos::ParameterList> piro_params = rcp(new Teuchos::ParameterList("Piro Parameters"));
     Teuchos::updateParametersFromXmlFile("solver_rythmos.xml", piro_params.ptr());
-    
+
     // Build stratimikos solver
     std::string& solver = piro_params->get("Piro Solver","NOX");
     RCP<Teuchos::ParameterList> stratParams;
-    
+
     if (solver=="NOX" || solver=="LOCA") {
       stratParams = Teuchos::rcp(&(piro_params->sublist("NOX").sublist("Direction").
 				   sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")),false);
@@ -540,22 +540,22 @@ namespace panzer {
     else if (solver=="Rythmos") {
       stratParams = Teuchos::rcp(&(piro_params->sublist("Rythmos").sublist("Stratimikos")),false);
     }
-    
+
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(stratParams);
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
       createLinearSolveStrategy(linearSolverBuilder);
 
     // Build Thyra Model Evluator
-    RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
+    RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me =
       Thyra::epetraModelEvaluator(ep_me,lowsFactory);
-    
+
     RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
     if (solver=="NOX") {
       piro = rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
     }
     else if (solver=="Rythmos") {
-      RCP<user_app::RythmosObserver_Epetra> observer = 
+      RCP<user_app::RythmosObserver_Epetra> observer =
 	Teuchos::rcp(new user_app::RythmosObserver_Epetra(mesh, dofManager, ep_lof));
       piro = rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me, observer));
     }
@@ -563,13 +563,13 @@ namespace panzer {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 			 "Error: Unknown Piro Solver : " << solver);
     }
-    
+
     Thyra::ModelEvaluatorBase::InArgs<double> inArgs = piro->createInArgs();
 
     // Set output arguments to evalModel call
     Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = piro->createOutArgs();
     assert(outArgs.Ng() == 1); // Number of *vectors* of responses
-    
+
     // Solution vector is returned as extra respons vector
     RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*thyra_me->get_x_space());
     outArgs.set_g(0,gx);
@@ -587,7 +587,7 @@ namespace panzer {
     ghosted_solution.Import(*solution,*importer,Insert);
 
     panzer_stk::write_solution_data(*dofManager,*mesh,ghosted_solution);
-    
+
   }
 
   // *****************************************************************
@@ -627,10 +627,10 @@ namespace panzer {
       double value = 1.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -641,10 +641,10 @@ namespace panzer {
       double value = 2.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -655,10 +655,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       //bcs.push_back(bc);
-    }   
+    }
   }
-  
+
 }

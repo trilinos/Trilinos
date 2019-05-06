@@ -65,7 +65,7 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager()
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm)
    : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false), useDOFManagerFEI_(true), useTieBreak_(false)
 {
    setConnManager(connMngr,mpiComm);
@@ -479,7 +479,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
   * \param[in] mpiComm  Communicator to use.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager> & connMngr,MPI_Comm mpiComm)
 {
    communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
 
@@ -500,9 +500,9 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuch
   * \returns Old connection manager.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
+Teuchos::RCP<ConnManager> BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::resetIndices()
 {
-   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr = connMngr_;
+   Teuchos::RCP<ConnManager> connMngr = connMngr_;
 
    connMngr_ = Teuchos::null;
    ownedGIDHashTable_.clear(); 
@@ -676,7 +676,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields(bool buildS
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > 
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::
-buildNewIndexer(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connManager,MPI_Comm mpiComm) const
+buildNewIndexer(const Teuchos::RCP<ConnManager> & connManager,MPI_Comm mpiComm) const
 {
   Teuchos::RCP<panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = Teuchos::rcp(new panzer::DOFManager<LocalOrdinalT,GlobalOrdinalT>);
   dofManager->enableTieBreak(useTieBreak_);
@@ -896,7 +896,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
   using Teuchos::rcp_dynamic_cast;
 
   RCP<const FieldPattern> refGeomPattern;
-  RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > refConnManager = getConnManager();
+  RCP<ConnManager> refConnManager = getConnManager();
 
   // verify the pre-conditions:
   //   1. all the UGIs are of type DOFManager
@@ -914,7 +914,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
                                "panzer::BlockedDOFManager::buildGlobalUnknowns: UGI at index " << 0 <<
                                " is not of DOFManager type!");
 
-    RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connManager = refDofManager->getConnManager();
+    RCP<const ConnManager> connManager = refDofManager->getConnManager();
     TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=connManager,std::runtime_error,
                                "panzer::BlockedDOFManager::buildGlobalUnknowns: connection manager for UGI " << 0 <<
                                " does not match the reference connection manager");
@@ -930,7 +930,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
                                  " is not of DOFManager type!");
 
       RCP<const FieldPattern> geomPattern = dofManager->getGeometricFieldPattern();
-      RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > testConnManager = dofManager->getConnManager();
+      RCP<const ConnManager> testConnManager = dofManager->getConnManager();
 
       TEUCHOS_TEST_FOR_EXCEPTION(!refGeomPattern->equals(*geomPattern),std::runtime_error,
                                  "panzer::BlockedDOFManager::buildGlobalUnknowns: geometric pattern for UGI " << i <<

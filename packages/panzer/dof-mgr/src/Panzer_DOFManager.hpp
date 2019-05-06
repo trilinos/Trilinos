@@ -78,16 +78,13 @@ public:
     * objects. This is equivalent to calling the default constructor and
     * then "setConnManager(...)" routine.
     */
-  DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+  DOFManager(const Teuchos::RCP<ConnManager> & connMngr, MPI_Comm mpiComm);
 
   //! Adds a Connection Manager that will be associated with this DOFManager.
-  void setConnManager(const Teuchos::RCP<ConnManager<LO,GO> > & connMngr, MPI_Comm mpiComm);
+  void setConnManager(const Teuchos::RCP<ConnManager> & connMngr, MPI_Comm mpiComm);
 
-  Teuchos::RCP<ConnManager<LO,GO> > getConnManager() const
+  Teuchos::RCP<const ConnManager> getConnManager() const
   { return connMngr_; }
-
-  virtual Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > getConnManagerBase() const
-  { return getConnManager(); }
 
   /** \brief Add a field to the DOF manager.
     *
@@ -99,7 +96,7 @@ public:
     * \param[in] pattern Pattern defining the basis function to be used
     * \param[in] type Type of the Field (CG/DG) for generating GIDs
     *
-    * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+    * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code>
     *       or <code>registerFields</code>.
     */
   int addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern,
@@ -116,7 +113,7 @@ public:
     * \param[in] pattern Pattern defining the basis function to be used
     * \param[in] type Type of the Field (CG/DG) for generating GIDs
     *
-    * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+    * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code>
     *       or <code>registerFields</code>.
     */
   int addField(const std::string & blockID, const std::string & str,
@@ -228,7 +225,7 @@ public:
 
   //! builds the global unknowns array
   void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
-  
+
   int getFieldNum(const std::string & string) const;
 
   Teuchos::RCP<Teuchos::Comm<int> > getComm() const
@@ -239,7 +236,7 @@ public:
 
   void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
   { connMngr_->getElementBlockIds(elementBlockIds); }
-  
+
   bool fieldInBlock(const std::string & field, const std::string & block) const;
 
   const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const;
@@ -258,7 +255,7 @@ public:
     * \param[in] subcellDim
     * \param[in] subcellId
     */
-  const std::pair<std::vector<int>,std::vector<int> > & 
+  const std::pair<std::vector<int>,std::vector<int> > &
   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum, int subcellDim,int subcellId) const;
 
   //! Get the owned element block
@@ -296,7 +293,7 @@ public:
     *
     * \returns Old connection manager.
     */
-  Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > resetIndices();
+  Teuchos::RCP<ConnManager> resetIndices();
 
   /** \brief How any GIDs are associate with a particular element block
     *
@@ -320,10 +317,10 @@ public:
   void printFieldInformation(std::ostream & os) const;
 
   /** Turn on/off the use of a tie break object in the
-    * createOneToOne algorithm. Turning this one gives 
+    * createOneToOne algorithm. Turning this one gives
     * better load balancing.
     */
-  void enableTieBreak(bool enable)   
+  void enableTieBreak(bool enable)
   { useTieBreak_ = enable; }
 
   /** Turn on/off the use of neighbor elements in the construction of the
@@ -331,11 +328,11 @@ public:
     * elements, and you will be able to call getElement(G/L)IDs for elements in
     * the one ring of this processor.
     */
-  void useNeighbors(bool flag)   
+  void useNeighbors(bool flag)
   { useNeighbors_ = flag; }
 
   // These functions are primarily for testing purposes
-  // they are not intended to be useful otherwise (thus they are not 
+  // they are not intended to be useful otherwise (thus they are not
   // documented in the Doxygen style
 
   // Return the number of elemnts as measured by the count of GID arrays.
@@ -362,12 +359,12 @@ protected:
     */
   class ElementBlockAccess {
     bool useOwned_;
-    Teuchos::RCP<const ConnManager<LO,GO> > connMngr_;
+    Teuchos::RCP<const ConnManager> connMngr_;
   public:
-    ElementBlockAccess(bool owned,const Teuchos::RCP<const ConnManager<LO,GO> > & connMngr) 
+    ElementBlockAccess(bool owned,const Teuchos::RCP<const ConnManager> & connMngr)
       : useOwned_(owned), connMngr_(connMngr) {}
-    
-    const std::vector<LO> & getElementBlock(const std::string & eBlock) const 
+
+    const std::vector<LO> & getElementBlock(const std::string & eBlock) const
     {
       if(useOwned_==true)
         return connMngr_->getElementBlock(eBlock);
@@ -381,7 +378,7 @@ protected:
     * GIDs. (this is steps 1 and 2)
     */
   Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
-  buildOverlapMapFromElements(const ElementBlockAccess & access) const; 
+  buildOverlapMapFromElements(const ElementBlockAccess & access) const;
 
   /** Build a tagged multivector (as defined in GUN paper) to use in global unknown numbering algorithm.
     * Note that this is non-const. It does modify the <code>elementBlockGIDCount</code> member variable.
@@ -389,7 +386,7 @@ protected:
   Teuchos::RCP<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> >
   buildTaggedMultiVector(const ElementBlockAccess & access);
 
-  /** Build global unknowns using the algorithm in the Global Unknowns Numbering paper (GUN). This  
+  /** Build global unknowns using the algorithm in the Global Unknowns Numbering paper (GUN). This
     * returns a non-overlapped multi-vector with the unique global IDs as owned by this processor. The input
     * tagged overlapped multi-vector (<code>overlap_mv</code>) is overwritten with the global IDs. Note
     * fields on geometric entities that are not assigned a global ID are given an entry of -1.
@@ -404,8 +401,8 @@ protected:
                                 const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
                                 const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
   void buildLocalIdsFromOwnedAndGhostedElements();
-  
-  Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
+
+  Teuchos::RCP<ConnManager> connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
 
   //Please note: AID=absolute ID. This is an attempt to remember that
@@ -414,7 +411,7 @@ protected:
   std::vector<FieldType> fieldTypes_; // FieldType for a Field Pattern. Use AID to access just like fieldPatterns_.
   std::map<std::string,int> fieldNameToAID_;
 
-  std::vector<std::string> blockOrder_; // To be got from the ConnManager.
+  std::vector<std::string> blockOrder_; // Get this from the ConnManager.
   std::map<std::string,int> blockNameToID_; // I'm not sure the above vector is needed, this might suffice.
   std::vector<std::vector<int> > blockToAssociatedFP_; // each sub-vector is associated by
   // a block, with ordering given in blockOrder_. ints refer to the order in fieldPatterns_;
