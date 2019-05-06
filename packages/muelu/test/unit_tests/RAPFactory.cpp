@@ -422,7 +422,7 @@ namespace MueLuTests {
 
     RAPFactory rap;
     Teuchos::ParameterList rapList = *(rap.GetValidParameterList());
-    Teuchos::Array<double> relativeFloor(1);  relativeFloor[0] = one;
+    Teuchos::Array<double> relativeFloor(1);  relativeFloor[0] = TST::one;
     rapList.set("rap: relative diagoanl floor", relativeFloor);
     rap.SetParameterList(rapList);
     coarseLevel.Request("A", &rap);
