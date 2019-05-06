@@ -98,7 +98,7 @@ module load gcc-7.2.0/spack-zlib/1.2.11
 
 module load gcc-7.2.0/spack-metis/5.1.0
 module load gcc-7.2.0/spack-parmetis/4.0.3
-module load gcc-7.2.0/spack-cgns/3.3.1
+module load gcc-7.2.0/spack-cgns/snl-atdm
 module load gcc-7.2.0/spack-superlu-dist/6.1.0
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
@@ -122,7 +122,7 @@ export PNETCDF_ROOT=${PARALLEL_NETCDF_ROOT}
 export ATDM_CONFIG_METIS_LIBS="${METIS_ROOT}/lib/libmetis.so"
 export ATDM_CONFIG_PARMETIS_LIBS="${METIS_ROOT}/lib/libmetis.so;${PARMETIS_ROOT}/lib/libparmetis.so"
 #export ATDM_CONFIG_PNETCDF_LIBS=
-export ATDM_CONFIG_CGNS_LIBS="-L${CGNS_ROOT}/lib/libcgns.a;-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+export ATDM_CONFIG_CGNS_LIBS="${CGNS_ROOT}/lib/libcgns.a;-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
 #export METIS_LIBRARY_DIRS=${METIS_ROOT}/lib
 #export METIS_INCLUDE_DIRS=${METIS_ROOT}/include
