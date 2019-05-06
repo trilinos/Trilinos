@@ -69,7 +69,7 @@ namespace { // (anonymous)
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST( VectorHarness, UnaryTransform )
+  TEUCHOS_UNIT_TEST( VectorHarness, UnaryTransformMV )
   {
     using Tpetra::transform;
     using Kokkos::ALL;
@@ -86,7 +86,7 @@ namespace { // (anonymous)
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test Tpetra::transform (unary)" << endl;
+    myOut << "Test Tpetra::transform (unary) with MultiVectors" << endl;
     Teuchos::OSTab tab0 (myOut);
 
     myOut << "Create a Map" << endl;
@@ -223,6 +223,155 @@ namespace { // (anonymous)
         }
         TEST_ASSERT( ok );
       }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+  }
+
+
+  TEUCHOS_UNIT_TEST( VectorHarness, UnaryTransformV )
+  {
+    using Tpetra::transform;
+    using Kokkos::ALL;
+    using std::endl;
+    using device_execution_space =
+      typename multivec_type::device_type::execution_space;
+    using LO = typename multivec_type::local_ordinal_type;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    int lclSuccess = 0;
+    int gblSuccess = 0;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test Tpetra::transform (unary) with Vectors" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create a Map" << endl;
+    auto comm = getDefaultComm ();
+    const auto INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocal = 13;
+    const GO indexBase = 0;
+    auto map = rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Create Vectors" << endl;
+    vec_type X (map);
+    vec_type Y (map);
+
+    out << "Set entries of X and Y" << endl;
+    constexpr double flagValue = -1.0;
+    X.putScalar (flagValue);
+    Y.putScalar (666.0);
+
+    out << "transform on default execution space: -1 -> (666+1=667)" << endl;
+    transform ("-1 -> (666+1=667)", Y, X,
+               KOKKOS_LAMBDA (const double& X_i) { return X_i + 1.0; });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      bool ok = true;
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+        const double expectedVal = 667.0;
+        if (X_lcl(i,0) != expectedVal) {
+          out << "X_lcl(" << i << ") = " << X_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    Y.putScalar (418.0);
+    out << "transform on default host execution space: 418 -> 419" << endl;
+
+    transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
+               KOKKOS_LAMBDA (const double& X_i) { return X_i + 1.0; });
+    {
+      // no promise that Y was actually sync'd to host, merely that Y
+      // could be accessed from the host execution space
+      Y.sync_host ();
+
+      auto Y_lcl = Y.getLocalViewHost ();
+      bool ok = true;
+      for (LO i = 0; i < LO (Y.getLocalLength ()); ++i) {
+        const double expectedVal = 418.0;
+        if (Y_lcl(i,0) != expectedVal) {
+          out << "Y_lcl(" << i << ") = " << Y_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
+
+      //X.sync_host (); // should not be needed here
+
+      auto X_lcl = X.getLocalViewHost ();
+      ok = true;
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+        const double expectedVal = 419.0;
+        if (X_lcl(i,0) != expectedVal) {
+          out << "X_lcl(" << i << ") = " << X_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    out << "transform on MultiVector's execution space: 418 -> 777" << endl;
+    transform ("419 -> 777", device_execution_space (), Y, X,
+               KOKKOS_LAMBDA (const double& X_i) { return X_i + 359.0; });
+    {
+      Y.sync_host ();
+      auto Y_lcl = Y.getLocalViewHost ();
+
+      bool ok = true;
+      for (LO i = 0; i < LO (Y.getLocalLength ()); ++i) {
+        const double expectedVal = 418.0;
+        if (Y_lcl(i,0) != expectedVal) {
+          out << "Y_lcl(" << i << ") = " << Y_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
+
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      ok = true;
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+        const double expectedVal = 777.0;
+        if (X_lcl(i,0) != expectedVal) {
+          out << "X_lcl(" << i << ") = " << X_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
     }
 
     lclSuccess = success ? 1 : 0;
