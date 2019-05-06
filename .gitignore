@@ -153,3 +153,6 @@ rsync.*
 # Eclipse IDE
 .project
 .settings/
+
+# pycharm ide
+.idea
