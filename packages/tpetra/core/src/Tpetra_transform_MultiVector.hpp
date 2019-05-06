@@ -186,15 +186,14 @@ namespace Tpetra {
         using input_view_type =
           with_local_access_function_argument_type<
             decltype (readOnly (input).on (memSpace))>;
-        // Lambda needs to be mutable, else it makes output const.        
+        // Lambda needs to be mutable, else it makes output const.
         withLocalAccess
           ([=] (const input_view_type& input_lcl) mutable {
              using output_scalar_ref_type = IST&;
              using loop_body_type = VectorUnaryTransformLoopBody<
                input_view_type, IST&, UnaryFunctionType, LO>;
-             loop_body_type g (input_lcl, f);
 
-             using vec_type = ::Tpetra::Vector<SC, LO, GO, NT>;
+             loop_body_type g (input_lcl, f);
              ::Tpetra::for_each (kernelLabel, execSpace, output, g);
            }, readOnly (input).on (memSpace));
       }
@@ -240,6 +239,7 @@ namespace Tpetra {
       }
 
     public:
+      // Implementation of unary Transform on
       template<class UnaryFunctionType>
       static void
       transform (const char kernelLabel[],
@@ -299,6 +299,233 @@ namespace Tpetra {
           }
         }
       }
+
+      // Implementation of binary transform on MultiVectors.
+      template<class BinaryFunctionType>
+      static void
+      transform (const char kernelLabel[],
+                 ExecutionSpace execSpace,
+                 ::Tpetra::MultiVector<SC, LO, GO, NT>& input1,
+                 ::Tpetra::MultiVector<SC, LO, GO, NT>& input2,
+                 ::Tpetra::MultiVector<SC, LO, GO, NT>& output,
+                 BinaryFunctionType f)
+      {
+        using Teuchos::TypeNameTraits;
+        using std::endl;
+        const char prefix[] = "Tpetra::transform (binary): ";
+
+        const int myRank = output.getMap ()->getComm ()->getRank ();
+        const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+        if (verbose) {
+          std::ostringstream os;
+          os << "Proc " << myRank << ": " << prefix << endl
+             << " Tpetra::MultiVector<" << TypeNameTraits<SC>::name ()
+             << ", " << TypeNameTraits<LO>::name () << ", "
+             << TypeNameTraits<GO>::name () << ", "
+             << TypeNameTraits<NT>::name () << ">" << endl
+             << " kernelLabel: " << kernelLabel << endl
+             << " ExecutionSpace: "
+             << TypeNameTraits<ExecutionSpace>::name () << endl;
+          std::cerr << os.str ();
+        }
+
+        const size_t numVecs = output.getNumVectors ();
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (input1.getNumVectors () != numVecs, std::invalid_argument,
+           prefix << "input1.getNumVectors() = " << input1.getNumVectors ()
+           << " != output.getNumVectors() = " << numVecs << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (input2.getNumVectors () != numVecs, std::invalid_argument,
+           prefix << "input2.getNumVectors() = " << input2.getNumVectors ()
+           << " != output.getNumVectors() = " << numVecs << ".");
+
+        const bool constStride = output.isConstantStride () &&
+          input1.isConstantStride () && input2.isConstantStride ();
+        memory_space memSpace;
+
+        if (numVecs == size_t (1) || ! constStride) { // operate on Vectors
+          for (size_t j = 0; j < numVecs; ++j) {
+            auto output_j = output.getVectorNonConst (j);
+            auto input1_j = input1.getVectorNonConst (j);
+            auto input2_j = input2.getVectorNonConst (j);
+
+            // Generic lambdas need C++14, so we need typedefs here.
+            using input1_view_type =
+              with_local_access_function_argument_type<
+                decltype (readOnly (*input1_j).on (memSpace))>;
+            using input2_view_type =
+              with_local_access_function_argument_type<
+                decltype (readOnly (*input2_j).on (memSpace))>;
+
+            // Check for aliasing here, since it's possible for only
+            // some columns of input & output to alias.  Aliasing is a
+            // correctness issue (e.g., for sync'ing).
+            const bool outin1same = sameObject (*output_j, *input1_j);
+            const bool outin2same = sameObject (*output_j, *input2_j);
+            // Don't double-view input1.
+            const bool in1in2same = sameObject (*input1_j, *input2_j);
+            const bool allsame = outin1same && outin2same; // by transitivity
+
+            // If input1 or input2 is the same as output, then we can
+            // rely on Tpetra::for_each accessing output as readWrite.
+            // If either input1 or input2 differs from output, we can
+            // use withLocalAccess with readOnly to access it.  The
+            // ensuing lambda needs to be mutable, else it makes
+            // output const.
+
+            if (allsame) {
+              ::Tpetra::for_each
+                (kernelLabel, execSpace, *output_j,
+                 KOKKOS_LAMBDA (IST& out_i) {
+                  out_i = f (out_i, out_i);
+                });
+            }
+            else if (outin1same) {
+              withLocalAccess
+                ([=] (const input2_view_type& input2_lcl) mutable {
+                   ::Tpetra::for_each
+                       (kernelLabel, execSpace, *output_j,
+                        KOKKOS_LAMBDA (IST& out, const LO i) {
+                         out = f (out, input2_lcl(i));
+                       });
+                 }, readOnly (*input2_j).on (memSpace));
+            }
+            else if (outin2same) {
+              withLocalAccess
+                ([=] (const input1_view_type& input1_lcl) mutable {
+                   ::Tpetra::for_each
+                       (kernelLabel, execSpace, *output_j,
+                        KOKKOS_LAMBDA (IST& out, const LO i) {
+                         out = f (input1_lcl(i), out);
+                       });
+                 }, readOnly (*input1_j).on (memSpace));
+            }
+            else if (in1in2same) {
+              withLocalAccess
+                ([=] (const input1_view_type& input1_lcl) mutable {
+                   ::Tpetra::for_each
+                    (kernelLabel, execSpace, *output_j,
+                     KOKKOS_LAMBDA (IST& out, const LO i) {
+                      out = f (input1_lcl(i), input1_lcl(i));
+                    });
+                 }, readOnly (*input1_j).on (memSpace));
+            }
+            else {
+              withLocalAccess
+                ([=] (const input1_view_type& input1_lcl) mutable {
+                   withLocalAccess
+                     ([=] (const input2_view_type& input2_lcl) mutable {
+                        ::Tpetra::for_each
+                         (kernelLabel, execSpace, *output_j,
+                          KOKKOS_LAMBDA (IST& out, const LO i) {
+                           out = f (input1_lcl(i), input2_lcl(i));
+                         });
+                      }, readOnly (*input2_j).on (memSpace));
+                 }, readOnly (*input1_j).on (memSpace));
+              
+              // withLocalAccess
+              //   ([=] (const input1_view_type& input1_lcl,
+              //         const input2_view_type& input2_lcl) mutable {
+              //      ::Tpetra::for_each
+              //       (kernelLabel, execSpace, *output_j,
+              //        KOKKOS_LAMBDA (IST& out, const LO i) {
+              //         out = f (input1_lcl(i), input2_lcl(i));
+              //       });
+              //    },
+              //    readOnly (*input1_j).on (memSpace),
+              //    readOnly (*input2_j).on (memSpace));
+            }
+          }
+        }
+        else { // operate on MultiVectors
+          // Generic lambdas need C++14, so we need typedefs here.
+          using input1_view_type =
+            with_local_access_function_argument_type<
+              decltype (readOnly (input1).on (memSpace))>;
+          using input2_view_type =
+            with_local_access_function_argument_type<
+              decltype (readOnly (input2).on (memSpace))>;
+
+          // Check for aliasing here, since it's possible for only
+          // some columns of input & output to alias.  Aliasing is a
+          // correctness issue (e.g., for sync'ing).
+          const bool outin1same = sameObject (output, input1);
+          const bool outin2same = sameObject (output, input2);
+          // Don't double-view input1.
+          const bool in1in2same = sameObject (input1, input2);
+          const bool allsame = outin1same && outin2same; // by transitivity
+
+          // If input1 or input2 is the same as output, then we can
+          // rely on Tpetra::for_each accessing output as readWrite.
+          // If either input1 or input2 differs from output, we can
+          // use withLocalAccess with readOnly to access it.  The
+          // ensuing lambda needs to be mutable, else it makes output
+          // const.
+
+          if (allsame) {
+            ::Tpetra::for_each
+              (kernelLabel, execSpace, output,
+               KOKKOS_LAMBDA (IST& X_ij) {
+                X_ij = f (X_ij, X_ij);
+              });
+          }
+          else if (outin1same) {
+            withLocalAccess
+              ([=] (const input2_view_type& input2_lcl) mutable {
+                 ::Tpetra::for_each
+                  (kernelLabel, execSpace, output,
+                   KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
+                    out = f (out, input2_lcl(i, j));
+                  });
+               }, readOnly (input2).on (memSpace));
+          }
+          else if (outin2same) {
+            withLocalAccess
+              ([=] (const input1_view_type& input1_lcl) mutable {
+                 ::Tpetra::for_each
+                  (kernelLabel, execSpace, output,
+                   KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
+                    out = f (input1_lcl(i, j), out);
+                  });
+               }, readOnly (input1).on (memSpace));
+          }
+          else if (in1in2same) {
+            withLocalAccess
+              ([=] (const input1_view_type& input1_lcl) mutable {
+                 ::Tpetra::for_each
+                  (kernelLabel, execSpace, output,
+                   KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
+                    out = f (input1_lcl(i, j), input1_lcl(i, j));
+                  });
+               }, readOnly (input1).on (memSpace));
+          }
+          else {
+            withLocalAccess
+              ([=] (const input1_view_type& input1_lcl) mutable {
+                 withLocalAccess
+                   ([=] (const input2_view_type& input2_lcl) mutable {
+                      ::Tpetra::for_each
+                       (kernelLabel, execSpace, output,
+                        KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
+                         out = f (input1_lcl(i, j), input2_lcl(i, j));
+                       });
+                    }, readOnly (input2).on (memSpace));
+               }, readOnly (input1).on (memSpace));
+            
+            // withLocalAccess
+            //   ([=] (const input1_view_type& input1_lcl,
+            //         const input2_view_type& input2_lcl) mutable {
+            //           ::Tpetra::for_each
+            //            (kernelLabel, execSpace, output,
+            //             KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
+            //              out = f (input1_lcl(i, j), input2_lcl(i, j));
+            //            });
+            //    },
+            //    readOnly (input1).on (memSpace),
+            //    readOnly (input2).on (memSpace));
+          }
+        }
+      }
     };
 
     /// \brief Implementation of Tpetra::transform for Tpetra::Vector.
@@ -312,6 +539,7 @@ namespace Tpetra {
     struct Transform<ExecutionSpace,
                      ::Tpetra::Vector<SC, LO, GO, NT> >
     {
+      // Implementation of unary transform on Vectors.
       template<class UnaryFunctionType>
       static void
       transform (const char kernelLabel[],
@@ -326,6 +554,24 @@ namespace Tpetra {
 
         impl_type::template transform<UFT> (kernelLabel, execSpace,
                                             input, output, f);
+      }
+
+      // Implementation of binary transform on Vectors.
+      template<class BinaryFunctionType>
+      static void
+      transform (const char kernelLabel[],
+                 ExecutionSpace execSpace,
+                 ::Tpetra::Vector<SC, LO, GO, NT>& input1,
+                 ::Tpetra::Vector<SC, LO, GO, NT>& input2,
+                 ::Tpetra::Vector<SC, LO, GO, NT>& output,
+                 BinaryFunctionType f)
+      {
+        using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
+        using impl_type = Transform<ExecutionSpace, MV>;
+        using BFT = BinaryFunctionType;
+
+        impl_type::template transform<BFT> (kernelLabel, execSpace,
+                                            input1, input2, output, f);
       }
     };
 

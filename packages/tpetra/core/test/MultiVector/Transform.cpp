@@ -69,7 +69,7 @@ namespace { // (anonymous)
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST( VectorHarness, Transform )
+  TEUCHOS_UNIT_TEST( VectorHarness, UnaryTransform )
   {
     using Tpetra::transform;
     using Kokkos::ALL;
@@ -86,7 +86,7 @@ namespace { // (anonymous)
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test Tpetra::transform" << endl;
+    myOut << "Test Tpetra::transform (unary)" << endl;
     Teuchos::OSTab tab0 (myOut);
 
     myOut << "Create a Map" << endl;
@@ -233,6 +233,119 @@ namespace { // (anonymous)
       return;
     }
   }
+
+  TEUCHOS_UNIT_TEST( VectorHarness, BinaryTransform )
+  {
+    using Tpetra::transform;
+    using Kokkos::ALL;
+    using std::endl;
+    using device_execution_space =
+      typename multivec_type::device_type::execution_space;
+    using LO = typename multivec_type::local_ordinal_type;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    int lclSuccess = 0;
+    int gblSuccess = 0;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test Tpetra::transform (binary)" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create a Map" << endl;
+    auto comm = getDefaultComm ();
+    const auto INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocal = 13;
+    const size_t numVecs  = 3;
+    const GO indexBase = 0;
+    auto map = rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Create MultiVectors" << endl;
+    multivec_type X (map, numVecs);
+    TEST_EQUALITY( X.getNumVectors (), numVecs );
+    multivec_type Y (map, numVecs);
+    TEST_EQUALITY( Y.getNumVectors (), numVecs );
+    multivec_type Z (map, numVecs);
+    TEST_EQUALITY( Z.getNumVectors (), numVecs );
+
+    out << "Set entries of MultiVectors" << endl;
+    constexpr double flagValue = -1.0;
+    X.putScalar (flagValue);
+    Y.putScalar (111.0);
+    Z.putScalar (666.0);
+
+    out << "transform on device execution space: X = 111+666" << endl;
+    transform ("X=Y+Z (111+666)",
+               device_execution_space (),
+               Y, Z, X,
+               KOKKOS_LAMBDA (const double& Y_ij,
+                              const double& Z_ij) { return Y_ij + Z_ij; });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 777.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    // Run on host, so that Y and Z are sync'd to host.
+    Tpetra::for_each ("Y=222", Kokkos::DefaultHostExecutionSpace (), Y,
+                      KOKKOS_LAMBDA (double& Y_ij) { Y_ij = 222.0; });
+    Tpetra::for_each ("Z=333", Kokkos::DefaultHostExecutionSpace (), Z,
+                      KOKKOS_LAMBDA (double& Z_ij) { Z_ij = 333.0; });
+
+    out << "transform on default host execution space: X = 222+333" << endl;
+    transform ("X=Y+Z (222+333)",
+               Kokkos::DefaultHostExecutionSpace (),
+               Y, Z, X,
+               KOKKOS_LAMBDA (const double& Y_ij,
+                              const double& Z_ij) { return Y_ij + Z_ij; });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        out << "Column " << j << endl;
+        bool ok = true;
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = 555.0;
+          if (X_lcl(i,j) != expectedVal) {
+            out << "X_lcl(" << i << "," << j << ") = " << X_lcl(i,j)
+                << " != " << expectedVal << endl;
+            ok = false;
+          }
+        }
+        TEST_ASSERT( ok );
+      }
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+  }  
 
 } // namespace (anonymous)
 

@@ -111,6 +111,7 @@ namespace Tpetra {
     template<class ExecutionSpace,
              class GlobalDataStructure>
     struct Transform {
+      //! Unary transform: output_i = f(input_i).
       template<class UnaryFunctionType>
       static void
       transform (const char kernelLabel[],
@@ -118,10 +119,22 @@ namespace Tpetra {
                  GlobalDataStructure& input,
                  GlobalDataStructure& output,
                  UnaryFunctionType f);
+
+      //! Binary transform: output_i = f(input1_i, input2_i).
+      template<class BinaryFunctionType>
+      static void
+      transform (const char kernelLabel[],
+                 ExecutionSpace execSpace,
+                 GlobalDataStructure& input1,
+                 GlobalDataStructure& input2,
+                 GlobalDataStructure& output,
+                 BinaryFunctionType f);
     };
 
   } // namespace Details
 
+  /// \brief Unary transform on the given execution space instance
+  ///   execSpace: output_i = f(input_i).
   template<class ExecutionSpace,
            class GlobalDataStructure,
            class UnaryFunctionType>
@@ -140,6 +153,8 @@ namespace Tpetra {
                                         input, output, f);
   }
 
+  /// \brief Unary transform on output's default execution space:
+  ///   output_i = f(input_i).
   template<class GlobalDataStructure,
            class UnaryFunctionType>
   void
@@ -157,6 +172,27 @@ namespace Tpetra {
     execution_space execSpace;
     impl_type::template transform<UFT> (kernelLabel, execSpace,
                                         input, output, f);
+  }
+
+  /// \brief Binary transform on the given execution space execSpace:
+  ///   output_i = f(input1_i, input2_i).
+  template<class ExecutionSpace,
+           class GlobalDataStructure,
+           class BinaryFunctionType>
+  void
+  transform (const char kernelLabel[],
+             ExecutionSpace execSpace,
+             GlobalDataStructure& input1,
+             GlobalDataStructure& input2,
+             GlobalDataStructure& output,
+             BinaryFunctionType f)
+  {
+    using impl_type =
+      Details::Transform<ExecutionSpace, GlobalDataStructure>;
+    using BFT = BinaryFunctionType;
+
+    impl_type::template transform<BFT> (kernelLabel, execSpace,
+                                        input1, input2, output, f);
   }
 
 } // namespace Tpetra
