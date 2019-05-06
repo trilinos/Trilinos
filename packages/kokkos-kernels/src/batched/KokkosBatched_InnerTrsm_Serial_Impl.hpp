@@ -226,9 +226,9 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     int
     InnerTrsmLeftLowerUnitDiag<1>::
-    serial_invoke(const ValueType *__restrict__ A,
-		  const int n,
-		  /**/  ValueType *__restrict__ B) {
+    serial_invoke(const ValueType *__restrict__ /* A */,
+		  const int /* n */,
+		  /**/  ValueType *__restrict__ /* B */) {
       return 0;
     }
 
@@ -960,9 +960,9 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     int
     InnerTrsmLeftUpperUnitDiag<1>::
-    serial_invoke(const ValueType *__restrict__ A,
-		  const int n,
-		  /**/  ValueType *__restrict__ B) {
+    serial_invoke(const ValueType *__restrict__ /* A */,
+		  const int /* n */,
+		  /**/  ValueType *__restrict__ /* B */) {
       return 0;
     }
 
