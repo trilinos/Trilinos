@@ -146,7 +146,7 @@ namespace { // (anonymous)
       // no promise that Y was actually sync'd to host, merely that Y
       // could be accessed from the host execution space
       Y.sync_host ();
-      
+
       auto Y_lcl = Y.getLocalViewHost ();
       for (LO j = 0; j < LO (Y.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
@@ -161,9 +161,9 @@ namespace { // (anonymous)
         }
         TEST_ASSERT( ok );
       }
-      
+
       //X.sync_host (); // should not be needed here
-      
+
       auto X_lcl = X.getLocalViewHost ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
@@ -207,7 +207,7 @@ namespace { // (anonymous)
         }
         TEST_ASSERT( ok );
       }
-      
+
       X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
@@ -234,7 +234,7 @@ namespace { // (anonymous)
     }
   }
 
-  TEUCHOS_UNIT_TEST( VectorHarness, BinaryTransform )
+  TEUCHOS_UNIT_TEST( VectorHarness, BinaryTransformMV )
   {
     using Tpetra::transform;
     using Kokkos::ALL;
@@ -251,7 +251,7 @@ namespace { // (anonymous)
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test Tpetra::transform (binary)" << endl;
+    myOut << "Test Tpetra::transform (binary) with MultiVectors" << endl;
     Teuchos::OSTab tab0 (myOut);
 
     myOut << "Create a Map" << endl;
@@ -345,7 +345,112 @@ namespace { // (anonymous)
       out << "Returning early" << endl;
       return;
     }
-  }  
+  }
+
+  TEUCHOS_UNIT_TEST( VectorHarness, BinaryTransformV )
+  {
+    using Tpetra::transform;
+    using Kokkos::ALL;
+    using std::endl;
+    using device_execution_space =
+      typename multivec_type::device_type::execution_space;
+    using LO = typename multivec_type::local_ordinal_type;
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    int lclSuccess = 0;
+    int gblSuccess = 0;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test Tpetra::transform (binary) with Vectors" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create a Map" << endl;
+    auto comm = getDefaultComm ();
+    const auto INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocal = 13;
+    const GO indexBase = 0;
+    auto map = rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Create Vectors" << endl;
+    vec_type X (map);
+    vec_type Y (map);
+    vec_type Z (map);
+
+    out << "Set entries of Vectors" << endl;
+    constexpr double flagValue = -1.0;
+    X.putScalar (flagValue);
+    Y.putScalar (111.0);
+    Z.putScalar (666.0);
+
+    out << "transform on device execution space: X = 111+666" << endl;
+    transform ("X=Y+Z (111+666)",
+               device_execution_space (),
+               Y, Z, X,
+               KOKKOS_LAMBDA (const double& Y_i,
+                              const double& Z_i) { return Y_i + Z_i; });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+
+      bool ok = true;
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+        const double expectedVal = 777.0;
+        if (X_lcl(i,0) != expectedVal) {
+          out << "X_lcl(" << i << ") = " << X_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+
+    // Run on host, so that Y and Z are sync'd to host.
+    Tpetra::for_each ("Y=222", Kokkos::DefaultHostExecutionSpace (), Y,
+                      KOKKOS_LAMBDA (double& Y_i) { Y_i = 222.0; });
+    Tpetra::for_each ("Z=333", Kokkos::DefaultHostExecutionSpace (), Z,
+                      KOKKOS_LAMBDA (double& Z_i) { Z_i = 333.0; });
+
+    out << "transform on default host execution space: X = 222+333" << endl;
+    transform ("X=Y+Z (222+333)",
+               Kokkos::DefaultHostExecutionSpace (),
+               Y, Z, X,
+               KOKKOS_LAMBDA (const double& Y_i,
+                              const double& Z_i) { return Y_i + Z_i; });
+    {
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
+
+      bool ok = true;
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+        const double expectedVal = 555.0;
+        if (X_lcl(i,0) != expectedVal) {
+          out << "X_lcl(" << i << ") = " << X_lcl(i,0)
+              << " != " << expectedVal << endl;
+          ok = false;
+        }
+      }
+      TEST_ASSERT( ok );
+    }
+
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      out << "Returning early" << endl;
+      return;
+    }
+  }
 
 } // namespace (anonymous)
 
