@@ -287,9 +287,7 @@ TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::TpetraMap(const Teuchos::RCP<const T
 : map_(map) { }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-UnderlyingLib lib() { return UseTpetra; }
-//! Get the library used by this TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::object (Tpetra or Epetra?)    UnderlyingLib lib() const { return UseTpetra; }
-//! Get the library used by this object (Tpetra or Epetra?)    UnderlyingLib lib() const { return UseTpetra; }    UnderlyingLib lib() const { return UseTpetra; }
+UnderlyingLib TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::lib() const { return UseTpetra; }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getTpetra_Map() const
@@ -300,7 +298,8 @@ RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraMap<LocalOrd
 #ifdef HAVE_XPETRA_TPETRA
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
+//local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
+typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
 {
     return map_->getLocalMap();
 }
