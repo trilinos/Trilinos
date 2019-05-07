@@ -44,7 +44,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HS
     export OMP_NUM_THREADS=2
     export OMP_PROC_BIND=false
     unset OMP_PLACES
-    export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
+    export ATDM_CONFIG_MPI_POST_FLAGS="--cpus-per-task=$OMP_NUM_THREADS"
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
     # HSW nodes have 32 cores but currently running with just `ctest -j4`
     # seems to give the fastest wall-clock time, at least for the Panzer test
@@ -55,7 +55,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" == "
     export OMP_NUM_THREADS=2
     export OMP_PROC_BIND=false
     unset OMP_PLACES
-    export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;--cpus-per-task=$OMP_NUM_THREADS"
+    export ATDM_CONFIG_MPI_POST_FLAGS="--cpus-per-task=$OMP_NUM_THREADS"
     export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
     # HSW nodes have 64 cores but currently running with just `ctest -j4`
     # seems to give the fastest wall-clock time, at least for the Panzer test
@@ -165,7 +165,7 @@ function atdm_run_script_on_compute_node {
   touch $output_file
 
   if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ] ; then
-    ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache --hint=multithread"
+    ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache"
   elif [ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ] ; then
     ATDM_CONFIG_SBATCH_EXTRA_ARGS=
   else
