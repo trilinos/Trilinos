@@ -45,7 +45,16 @@
 // @HEADER
 #ifndef XPETRA_TPETRAMAP_DEF_HPP
 #define XPETRA_TPETRAMAP_DEF_HPP
+
+#include "Xpetra_TpetraMap_decl.hpp"
+
+
+
 namespace Xpetra {
+
+
+//! @name Constructor/Destructor Methods
+//@{
 
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -67,7 +76,7 @@ namespace Xpetra {
     TpetraMap (global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               LocalGlobal lg=GloballyDistributed)
+               LocalGlobal lg)
       : map_ (Teuchos::rcp (new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > (numGlobalElements,
                                                                                   indexBase, comm,
                                                                                   toTpetra(lg))))
@@ -147,8 +156,10 @@ namespace Xpetra {
 #endif
 #endif
 
-    //! Destructor.
-    ~TpetraMap() {  }
+//! Destructor.
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::~TpetraMap() 
+{  }
 
     //@}
 
@@ -247,24 +258,28 @@ std::string TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::description() const
 { XPETRA_MONITOR("TpetraMap::description"); return map_->description(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+void TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
 { XPETRA_MONITOR("TpetraMap::describe"); map_->describe(out, verbLevel); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::removeEmptyProcesses () const
-      return toXpetra(map_->removeEmptyProcesses());
-    }
+{
+    return toXpetra(map_->removeEmptyProcesses());
+}
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const
-      return toXpetra(map_->replaceCommWithSubset(newComm));
-    }
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+{
+    return toXpetra(map_->replaceCommWithSubset(newComm));
+}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+template<class Node2>
 RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
-      return toXpetraNonConst(map_->clone(node2));
-    }
+{
+    return toXpetraNonConst(map_->clone(node2));
+}
 #endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -272,19 +287,23 @@ TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::TpetraMap(const Teuchos::RCP<const T
 : map_(map) { }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+UnderlyingLib lib() { return UseTpetra; }
 //! Get the library used by this TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::object (Tpetra or Epetra?)    UnderlyingLib lib() const { return UseTpetra; }
-    //! Get the library used by this object (Tpetra or Epetra?)    UnderlyingLib lib() const { return UseTpetra; }    UnderlyingLib lib() const { return UseTpetra; }
+//! Get the library used by this object (Tpetra or Epetra?)    UnderlyingLib lib() const { return UseTpetra; }    UnderlyingLib lib() const { return UseTpetra; }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getTpetra_Map() const
 { return map_; }
+
+
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
-      return map_->getLocalMap();
-    }
+local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
+{
+    return map_->getLocalMap();
+}
 #endif
 #endif
 
@@ -297,7 +316,7 @@ local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraMap<int, int, EpetraNode>
-    : public virtual Map<int,int,EpetraNode> {
+    : public Map<int,int,EpetraNode> {
 
   public:
     typedef int GlobalOrdinal;
@@ -511,7 +530,7 @@ local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraMap<int, long long, EpetraNode>
-    : public virtual Map<int,long long,EpetraNode> {
+    : public Map<int,long long,EpetraNode> {
 
   public:
     typedef long long GlobalOrdinal;
@@ -729,5 +748,5 @@ bool operator!= (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1,
   return !map1.isSameAs(map2);
 }
 
-#endif // XPETRA_TPETRAMAP_HPP
+#endif // XPETRA_TPETRAMAP_DEF_HPP
 

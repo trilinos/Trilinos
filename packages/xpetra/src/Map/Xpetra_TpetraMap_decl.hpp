@@ -63,12 +63,13 @@ namespace Xpetra {
             class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
             class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraMap
-    : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
+    : public Map<LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
 
     //! @name Constructors and destructor
     //@{
+
 
     //! Constructor with Tpetra-defined contiguous uniform distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -79,10 +80,13 @@ namespace Xpetra {
                LocalGlobal lg,
                const Teuchos::RCP< Node > & /* node */);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+
     TpetraMap (global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed);
+
 
     //! Constructor with a user-defined contiguous distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -94,10 +98,12 @@ namespace Xpetra {
                const Teuchos::RCP< Node > & /* node */);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+
     TpetraMap (global_size_t numGlobalElements,
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -109,10 +115,12 @@ namespace Xpetra {
                const Teuchos::RCP< Node > & /* node */);
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+
     TpetraMap (global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
@@ -123,6 +131,10 @@ namespace Xpetra {
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 #endif
 #endif
+
+    //! Destructor
+    ~TpetraMap();
+
 
     //! @name Attributes
     //@{
@@ -232,7 +244,8 @@ namespace Xpetra {
     //! TpetraMap constructor to wrap a Tpetra::Map object
     TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map);
 
-    //! Get the library used by this object (Tpetra or Epetra?)    UnderlyingLib lib() const { return UseTpetra; };
+    //! Get the library used by this object (Tpetra or Epetra?)    
+    UnderlyingLib lib() const;
 
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const;
