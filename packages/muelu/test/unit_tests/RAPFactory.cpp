@@ -52,7 +52,7 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_MultiVectorFactory.hpp>
-//#include <Xpetra_IO.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_Utilities.hpp"
 #include "MueLu_RAPFactory.hpp"
@@ -422,8 +422,8 @@ namespace MueLuTests {
 
     RAPFactory rap;
     Teuchos::ParameterList rapList = *(rap.GetValidParameterList());
-    Teuchos::Array<double> relativeFloor(1);  relativeFloor[0] = TST::one;
-    rapList.set("rap: relative diagoanl floor", relativeFloor);
+    Teuchos::Array<double> relativeFloor(1);  relativeFloor[0] = 0.5;
+    rapList.set("rap: relative diagonal floor", relativeFloor);
     rap.SetParameterList(rapList);
     coarseLevel.Request("A", &rap);
 
@@ -435,6 +435,9 @@ namespace MueLuTests {
     RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R");
 
     RCP<Matrix> coarseOp = coarseLevel.Get< RCP<Matrix> >("A", &rap);
+    std::string filename = "Ac.dat";
+    Xpetra::IO<SC,LO,GO,NO>::Write(filename,*coarseOp);
+
     //The diagonal repair should result in a single nonzero entry with scalar value one in local row 0,
     //There should be no repeated column indices.
     Teuchos::ArrayView<const LocalOrdinal> indices;
