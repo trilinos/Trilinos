@@ -73,7 +73,7 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -85,7 +85,7 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 }
 
 template <typename Intrepid2Type>
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -227,7 +227,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
@@ -319,7 +319,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, ghosted_owned_indices)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
    // build DOF manager
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager->addField("u",patternC1);
@@ -403,7 +403,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
    // build DOF manager
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager_fluids = rcp(new panzer::DOFManager<int,int>());
    dofManager_fluids->setConnManager(connManager,MPI_COMM_WORLD);
    dofManager_fluids->addField("ux",patternC2);
@@ -467,8 +467,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
 
    TEUCHOS_ASSERT(numProcs==2);
    // build DOF manager
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,2,1);
-   RCP<const panzer_stk::STKConnManager<int> > stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager<int> >(connManager);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,2,1);
+   RCP<const panzer_stk::STKConnManager> stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager>(connManager);
    RCP<const panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
    meshDB->print(out);
 
@@ -532,7 +532,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);
@@ -657,7 +657,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);
@@ -737,7 +737,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
    RCP<const panzer::FieldPattern> patternI1 
          = buildFieldPattern<Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);
@@ -772,7 +772,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_q2q1)
    RCP<const panzer::FieldPattern> patternC2 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,2,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -932,7 +932,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_nabors)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,4,2,1,1);
+   RCP<panzer::ConnManager> connManager = buildQuadMesh(Comm,4,2,1,1);
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
    RCP<panzer::DOFManager<int,int> > dofManager_noNeighbors =
     rcp(new panzer::DOFManager<int,int>());

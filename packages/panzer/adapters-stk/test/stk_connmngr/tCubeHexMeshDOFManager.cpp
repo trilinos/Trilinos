@@ -84,7 +84,7 @@ Teuchos::RCP<panzer_stk::STK_Interface> buildHexMesh(stk::ParallelMachine comm,i
 
    panzer_stk::CubeHexMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
-   
+
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
    mesh->writeToExodus("whatish.exo");
    return mesh;
@@ -115,12 +115,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    TEUCHOS_ASSERT(numProcs<=2);
 
    // build a geometric pattern from a single basis
-   RCP<const panzer::FieldPattern> patternC1 
+   RCP<const panzer::FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double> >();
 
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
-   RCP<panzer::ConnManager<int,int> > connManager 
-         = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   RCP<panzer::ConnManager> connManager
+         = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
       TEST_EQUALITY(gids[3],30); TEST_EQUALITY(gids[4],31);  TEST_EQUALITY(gids[5],32);
       TEST_EQUALITY(gids[6],39); TEST_EQUALITY(gids[7],40);  TEST_EQUALITY(gids[8],41);
       TEST_EQUALITY(gids[9],36); TEST_EQUALITY(gids[10],37); TEST_EQUALITY(gids[11],38);
-   
+
       // element 6
       dofManager->getElementGIDs(mesh->elementLocalId(5),gids_v);
 
@@ -181,22 +181,22 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    }
    else if(myRank==0) {
       // element 7
-      const int * gids = connManager->getConnectivity(mesh->elementLocalId(7));
+      const auto * gids = connManager->getConnectivity(mesh->elementLocalId(7));
       TEST_EQUALITY(connManager->getConnectivitySize(mesh->elementLocalId(7)),8);
 
-      TEST_EQUALITY(gids[0],12); TEST_EQUALITY(gids[1],13);  
+      TEST_EQUALITY(gids[0],12); TEST_EQUALITY(gids[1],13);
       TEST_EQUALITY(gids[2],16); TEST_EQUALITY(gids[3],15);
-      TEST_EQUALITY(gids[4],21); TEST_EQUALITY(gids[5],22);  
+      TEST_EQUALITY(gids[4],21); TEST_EQUALITY(gids[5],22);
       TEST_EQUALITY(gids[6],25); TEST_EQUALITY(gids[7],24);
    }
    else if(myRank==1) {
       // element 2
-      const int * gids = connManager->getConnectivity(mesh->elementLocalId(2));
+      const auto * gids = connManager->getConnectivity(mesh->elementLocalId(2));
       TEST_EQUALITY(connManager->getConnectivitySize(mesh->elementLocalId(2)),8);
 
-      TEST_EQUALITY(gids[0],1); TEST_EQUALITY(gids[1],2);  
+      TEST_EQUALITY(gids[0],1); TEST_EQUALITY(gids[1],2);
       TEST_EQUALITY(gids[2],5); TEST_EQUALITY(gids[3],4);
-      TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);  
+      TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);
       TEST_EQUALITY(gids[6],14); TEST_EQUALITY(gids[7],13);
    }
 
@@ -238,11 +238,11 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
    TEUCHOS_ASSERT(numProcs==2);
 
    // build a geometric pattern from a single basis
-   RCP<const panzer::FieldPattern> patternI1 
+   RCP<const panzer::FieldPattern> patternI1
          = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double> >();
 
-   RCP<panzer::ConnManager<int,int> > connManager = 
-       Teuchos::rcp(new panzer_stk::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));
+   RCP<panzer::ConnManager> connManager =
+       Teuchos::rcp(new panzer_stk::STKConnManager(buildHexMesh(Comm,2,2,2,1,1,1)));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);

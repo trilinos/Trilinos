@@ -48,7 +48,7 @@ name.  (Therefore, the Jenkins `JOB_NAME` is the same as the CDash build name
 for all of these Trilinos ATDM builds.)  It also other CMake and CTest options
 that are pulled out of the environment set by the
 `cmake/std/atdm/<system_name>/environment.sh` script.  (See `$ENV{<varName>}`
-to see what variables are pulled out of the env.)
+to see what variables are pulled out of the environment.)
 
 This directory contains a CTest -S driver script:
 
@@ -235,7 +235,7 @@ If things look good after all of that testing, then the builds are ready to be
 set up as Jenkins (or GitLab CI or cron, etc.) jobs.
 
 NOTE: When one is running on a loaded/shared machine and therefore needs to
-use less processes to build and test, one can use the env vars
+use less processes to build and test, one can use the environment variables
 `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE` and use them as, for example:
 
@@ -279,7 +279,7 @@ The following (bash) environment variables determine the behavior of the ATDM
   workspace directory under which the subdir `SRC_AND_BUILD` is created and
   used (and the scripts 'cd' into that workspace).  This directory
   `<workspace-base>` must be owned and be writable by the
-  `wg-run-as-atdmin-devops` group and must be given the sticky group bit
+  `wg-run-as-atdm-devops` group and must be given the sticky group bit
   `chmod g+s <workspace-base>` so that the 'jenkins' account can create files
   and directories under this directory.  If not set, then `WORKSPACE` (set by
   the Jenkins job) is used as the base working directory. (If
@@ -311,7 +311,7 @@ The following (bash) environment variables determine the behavior of the ATDM
   `${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}`.)
 
 * `ATDM_CONFIG_USE_JENKINS_INSTALL_DEFAULTS=[0|1]`: Set to '1' to use the
-  defaults for the above three vars (i.e. this sets the env vars
+  defaults for the above three variables (i.e. this sets the environment variables
   `ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT=1`,
   `ATDM_CONFIG_USE_INSTALL_PBP_RUNNER_DEFAULT=1`,
   `ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=1`).
@@ -456,7 +456,7 @@ The variable `ATDM_HOSTNAME` (set to exported variable
 so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
 is important for the CDash 'next' and 'previous' relationships to work.  (But
 for `CTEST_TEST_TYPE=Experimental` builds, the real `hostname` is used which
-is stored in the exported env variable `ATDM_CONFIG_REAL_HOSTNAME`.  This
+is stored in the exported environment variable `ATDM_CONFIG_REAL_HOSTNAME`.  This
 ensures that queries with `cdash/queryTests.php` don't accidentally pick up
 tests from "Experimental" builds.)
 

@@ -216,7 +216,7 @@ public:
 
    /** Not needed, so return null.
      */
-   virtual Teuchos::RCP<const ConnManagerBase<short> > getConnManagerBase() const
+   virtual Teuchos::RCP<const ConnManager> getConnManager() const
    { return Teuchos::null; }
 
 private:

@@ -339,7 +339,7 @@ int main(int argc,char * argv[])
 
    // build the connection manager
    if(!useTpetra) {
-     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+     const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
      panzer::DOFManagerFactory<int,int> globalIndexerFactory;
      RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
@@ -350,8 +350,8 @@ int main(int argc,char * argv[])
      linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager_int));
    }
    else {
-     const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager
-         = Teuchos::rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+     const Teuchos::RCP<panzer::ConnManager> conn_manager
+         = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
      panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
      RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long

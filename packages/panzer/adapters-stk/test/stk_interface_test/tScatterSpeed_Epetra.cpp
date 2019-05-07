@@ -56,7 +56,7 @@ void newAssembly(Teuchos::FancyOStream &out);
 size_t setUp1(RCP<Map> &rowmap,
            RCP<Map> &colmap,
            RCP<panzer::DOFManager<int,int> > &my_dofM,
-           RCP<panzer::ConnManager<int,int> > &conn);
+           RCP<panzer::ConnManager> &conn);
 
 //I'm not entirely sure on this yet.
 void fillMeUp1(std::vector<std::vector<int> > &gids,
@@ -106,7 +106,7 @@ void newAssembly(Teuchos::FancyOStream& /* out */)
   RCP<panzer::DOFManager<int,int> > my_dofM;
   RCP<Map> rowmap;
   RCP<Map> colmap;
-  RCP<panzer::ConnManager<int,int> > conn;
+  RCP<panzer::ConnManager> conn;
 
   const std::vector<int> & myElements=conn->getElementBlock("eblock-0_0_0");
 
@@ -147,7 +147,7 @@ void newAssembly(Teuchos::FancyOStream& /* out */)
 size_t setUp1(RCP<Map> &rowmap,
            RCP<Map> &colmap,
            RCP<panzer::DOFManager<int,int> > &my_dofM,
-           RCP<panzer::ConnManager<int,int> > &conn)
+           RCP<panzer::ConnManager> &conn)
 {
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
   pl->set("X Blocks",xblocks);
@@ -161,7 +161,7 @@ size_t setUp1(RCP<Map> &rowmap,
   factory.setParameterList(pl);
   RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-  conn = rcp(new panzer_stk::STKConnManager<int>(mesh));
+  conn = rcp(new panzer_stk::STKConnManager(mesh));
 
   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
   RCP<const panzer::FieldPattern> pressure_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis1));

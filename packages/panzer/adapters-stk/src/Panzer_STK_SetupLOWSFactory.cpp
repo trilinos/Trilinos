@@ -51,7 +51,7 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory<int>(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk::STKConnManager<int> > & stkConn_manager,
+                   const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -69,7 +69,7 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory<panzer::Ordinal64>(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk::STKConnManager<panzer::Ordinal64> > & stkConn_manager,
+                   const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -86,7 +86,7 @@ namespace panzer_stk {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
+                   const Teuchos::RCP<panzer::ConnManager> & conn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -105,31 +105,35 @@ namespace panzer_stk {
       reqHandler_local = Teuchos::rcp(new Teko::RequestHandler);
     #endif
 
+    auto stk_conn_manager = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager>(conn_manager,true);
+
 #ifndef PANZER_ORDINAL64_IS_INT
-    Teuchos::RCP<panzer_stk::STKConnManager<panzer::Ordinal64> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager<panzer::Ordinal64> >(conn_manager);
-    if(long_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,spatialDim,mpi_comm,strat_params,
-                              #ifdef PANZER_HAVE_TEKO
-                              reqHandler_local,
-                              #endif
-                              writeCoordinates,
-                              writeTopo,
-                              auxGlobalIndexer,
-                              useCoordinates
-                              );
+    auto globalOrdinalIsOrdinal64 = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64>>(globalIndexer);
+    auto globalOrdinalIsOrdinal64_BLOCKED = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,std::pair<int,panzer::Ordinal64>>>(globalIndexer);
+    if(nonnull(globalOrdinalIsOrdinal64) or nonnull(globalOrdinalIsOrdinal64_BLOCKED))
+      return buildLOWSFactory<panzer::Ordinal64>(blockedAssembly,globalIndexer,stk_conn_manager,spatialDim,mpi_comm,strat_params,
+#ifdef PANZER_HAVE_TEKO
+                                                 reqHandler_local,
+#endif
+                                                 writeCoordinates,
+                                                 writeTopo,
+                                                 auxGlobalIndexer,
+                                                 useCoordinates
+                                                 );
 #endif
 
-    Teuchos::RCP<panzer_stk::STKConnManager<int> > int_conn = Teuchos::rcp_dynamic_cast<panzer_stk::STKConnManager<int> >(conn_manager);
-    if(int_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,spatialDim,mpi_comm,strat_params,
-                              #ifdef PANZER_HAVE_TEKO
-                              reqHandler_local,
-                              #endif
-                              writeCoordinates,
-                              writeTopo,
-                              auxGlobalIndexer,
-                              useCoordinates
-                              );
+    auto globalOrdinalIsInt = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,int>>(globalIndexer);
+    auto globalOrdinalIsInt_BLOCKED = Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,std::pair<int,int>>>(globalIndexer);
+    if(nonnull(globalOrdinalIsInt) or nonnull(globalOrdinalIsInt_BLOCKED))
+      return buildLOWSFactory<int>(blockedAssembly,globalIndexer,stk_conn_manager,spatialDim,mpi_comm,strat_params,
+#ifdef PANZER_HAVE_TEKO
+                                   reqHandler_local,
+#endif
+                                   writeCoordinates,
+                                   writeTopo,
+                                   auxGlobalIndexer,
+                                   useCoordinates
+                                   );
 
     // should never reach this
     TEUCHOS_ASSERT(false);
