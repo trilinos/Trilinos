@@ -71,7 +71,6 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -164,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     //----------------------------------------------------------------------
     // put in diagonal, locally
     //----------------------------------------------------------------------
-    Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3,DynamicProfile);
+    Tpetra::CrsMatrix<Scalar,LO,GO,Node> matrix(rmap,cmap,3);
     for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
       matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
     }

@@ -957,7 +957,7 @@ namespace { // (anonymous)
       expectedColumnMapFromNonoverlappingCrsMatrix<map_type> (comm);
 
     if (false) {
-      out << "Target matrix is {DynamicProfile, globally indexed}" << endl;
+      out << "Target matrix is {globally indexed}" << endl;
       Teuchos::OSTab tab2 (out);
 
       out << "Create target matrix (A_nonoverlapping)" << endl;
@@ -1003,14 +1003,21 @@ namespace { // (anonymous)
     }
 
     using Tpetra::ProfileType;
-    using Tpetra::DynamicProfile;
-    using Tpetra::StaticProfile;
-    for (ProfileType profileType : {DynamicProfile, StaticProfile}) {
+    const ProfileType profileTypes[] = {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      Tpetra::DynamicProfile,
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+      Tpetra::StaticProfile
+    };
+
+    for (ProfileType profileType : profileTypes) {
       out << ">>> Target matrix is {";
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (profileType == Tpetra::DynamicProfile) {
         out << "DynamicProfile";
       }
-      else {
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+      if (profileType == Tpetra::StaticProfile) {
         out << "StaticProfile";
       }
       out << ", locally indexed}" << endl;
@@ -1219,5 +1226,3 @@ namespace { // (anonymous)
 #endif // HAVE_TPETRA_INST_INT_LONG_LONG
 
 } // namespace (anonymous)
-
-

@@ -64,7 +64,9 @@ namespace {
     return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::DynamicProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -303,8 +305,11 @@ namespace {
         params->set ("compute local triangular constants", true);
       }
 
-      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, DynamicProfile);
+      // create graph (used to be DynamicProfile, before that was
+      // deprecated), fill-complete without inserting (and therefore,
+      // without allocating)
+      GRPH graph (map, 3);
+
       for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
         graph.insertGlobalIndices (i, tuple<GO> (i));
       }
@@ -443,9 +448,19 @@ namespace {
       }
 
       for (int T=0; T<4; ++T) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+#else
+        ProfileType pftype = StaticProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
         params->set("Optimize Storage",((T & 2) == 2));
-        GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+        GRAPH trigraph(rmap,cmap, ginds.size(), pftype);
+#else
+        GRAPH trigraph(rmap,cmap, ginds.size());
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
         Array<GO> GCopy(4); Array<LO> LCopy(4);
         ArrayView<const GO> GView;
         ArrayView<const LO> LView;
@@ -837,7 +852,13 @@ namespace {
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
 
     for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      ProfileType pftype = ( (T & 1) == 1 ) ?
+        StaticProfile : DynamicProfile;
+#else
+      ProfileType pftype = StaticProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
@@ -937,10 +958,17 @@ namespace {
       }
       Teuchos::OSTab tab1 (out);
 
-      for (ProfileType pftype : {StaticProfile, DynamicProfile}) {
+      const ProfileType profileTypes[] = {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+        DynamicProfile,
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+        StaticProfile
+      };
+
+      for (ProfileType pftype : profileTypes) {
         out << "ProfileType: "
-            << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
-            << endl;
+            << (pftype == StaticProfile ? "StaticProfile" :
+                "DynamicProfile") << endl;
         Teuchos::OSTab tab2 (out);
         for (bool optimizeStorage : {false, true}) {
           out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
@@ -1043,7 +1071,7 @@ namespace {
             ArrayView<const GO> myrow_gbl;
             ngraph.getGlobalRowView (myrowind, myrow_gbl);
             TEST_EQUALITY_CONST( myrow_gbl.size(),
-                                ( numProcs == 1 && pftype == DynamicProfile ? 3 : 1 ));
+                                ( numProcs == 1 && pftype == StaticProfile ? 1 : 3 ));
 
             // after globalAssemble(), storage should be maxed out
             out << "Calling globalAssemble()" << endl;

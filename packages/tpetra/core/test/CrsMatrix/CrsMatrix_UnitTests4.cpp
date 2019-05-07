@@ -143,7 +143,9 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::DynamicProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -366,7 +368,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       MAT matrix(map,map,0,DynamicProfile);
+#else
+      MAT matrix(map,map,1);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -401,7 +407,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       MAT matrix(map,map,0,DynamicProfile);
+#else
+      MAT matrix(map,map,2); // just in case insert doesn't merge
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -610,7 +620,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, DynamicProfile);
+#else
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
     A.fillComplete (map, map);
 

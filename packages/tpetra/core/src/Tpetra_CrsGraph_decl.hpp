@@ -2568,21 +2568,30 @@ namespace Tpetra {
   /// \brief Nonmember function to create an empty CrsGraph given a
   ///   row Map and the max number of entries allowed locally per row.
   ///
-  /// \return A dynamically allocated (DynamicProfile) graph with
-  ///   specified number of nonzeros per row (defaults to zero).
+  /// \return A graph with a specified maximum number of nonzeros per
+  ///   row (defaults to zero, which is generally not useful).
   /// \relatesalso CrsGraph
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
-  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
-                  size_t maxNumEntriesPerRow = 0,
-                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,
+                    GlobalOrdinal, Node> >& map,
+                  const size_t maxNumEntriesPerRow = 0,
+                  const Teuchos::RCP<Teuchos::ParameterList>& params =
+                    Teuchos::null)
   {
     using Teuchos::rcp;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+    using graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    const ProfileType profileType = DynamicProfile;
+#else
+    const ProfileType profileType = StaticProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    return rcp (new graph_type (map, maxNumEntriesPerRow,
+                                profileType, params));
   }
 
-  /// \brief Nonmember CrsGraph constructor that fuses Import and fillComplete().
+  /// \brief Nonmember CrsGraph constructor that fuses Import and
+  ///   fillComplete().
   /// \relatesalso CrsGraph
   /// \tparam CrsGraphType A specialization of CrsGraph.
   ///

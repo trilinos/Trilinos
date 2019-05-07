@@ -97,15 +97,25 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (INV, myGblRowInds (), indexBase, comm));
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     Tpetra::ProfileType profileTypes[] = { Tpetra::DynamicProfile, Tpetra::StaticProfile };
+#else
+    Tpetra::ProfileType profileTypes[] = { Tpetra::StaticProfile };
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     bool insertLocalEntryValues[] = { true, false };
 
     // Test both dynamic and static profile.
     for (Tpetra::ProfileType profileType : profileTypes) {
 
-      out << "ProfileType: "
-          << ((profileType == Tpetra::DynamicProfile) ? "Dynamic" : "Static")
+      out << "ProfileType: ";
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      out << ((profileType == Tpetra::DynamicProfile) ?
+              "Dynamic" :
+              "Static")
           << "Profile" << endl;
+#else
+      out << "StaticProfile" << endl;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       Teuchos::OSTab tab2 (out);
 
       // Test both with no local entries before globalAssemble(), and

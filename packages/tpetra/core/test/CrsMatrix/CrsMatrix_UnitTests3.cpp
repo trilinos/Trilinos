@@ -141,7 +141,9 @@ namespace {
   using Tpetra::createCrsMatrix;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::DynamicProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
@@ -223,8 +225,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
-      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,DynamicProfile);
+      // create matrix, fill-complete without inserting (and therefore, without allocating)
+      MAT matrix(map,1);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
@@ -236,6 +238,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
@@ -244,6 +247,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   }
 
   ////
@@ -282,7 +286,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
+#else
+      ProfileType pftype = StaticProfile;
+#endif //TPETRA_ENABLE_DEPRECATED_CODE
+
       params->set("Optimize Storage",((T & 2) == 2));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
@@ -416,7 +425,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // call fillComplete()
     out << "Call fillComplete on the matrix" << endl;
-    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TEST_ASSERT( A.getProfileType() == DynamicProfile );
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
     A.fillComplete (lclmap, rowmap);
     A.describe (out, VERB_LOW);
 

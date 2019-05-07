@@ -93,11 +93,6 @@ namespace {
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
-  using Tpetra::OptimizeOption;
-  using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
 
   TEUCHOS_STATIC_SETUP()

@@ -48,7 +48,9 @@
 
 namespace { // (anonymous)
   using Tpetra::TestingUtilities::getDefaultComm;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::DynamicProfile;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Teuchos::arcp;
@@ -137,12 +139,14 @@ namespace { // (anonymous)
       GRAPH graph(map,1,StaticProfile);
       graph.fillComplete();
     }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // create dynamic-profile graph, fill-complete without inserting
       // (and therefore, without allocating)
       GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete();
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
@@ -456,7 +460,12 @@ namespace { // (anonymous)
     RCP<const map_type> map = rcp (new map_type (INVALID, 1, 0, comm));
     RCP<ParameterList> params = parameterList();
     {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       GRAPH graph(map,map,0,DynamicProfile);
+#else
+      GRAPH graph(map,map,1,StaticProfile);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
       TEST_EQUALITY_CONST( graph.isFillActive(),   true );
       TEST_EQUALITY_CONST( graph.isFillComplete(), false );
       graph.insertLocalIndices( 0, tuple<LO>(0) );
@@ -471,7 +480,12 @@ namespace { // (anonymous)
       TEST_THROW( graph.fillComplete(),                        std::runtime_error );
     }
     {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       GRAPH graph(map,map,0,DynamicProfile);
+#else
+      GRAPH graph(map,map,1,StaticProfile);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
       TEST_EQUALITY_CONST( graph.isFillActive(),   true );
       TEST_EQUALITY_CONST( graph.isFillComplete(), false );
       graph.insertLocalIndices( 0, tuple<LO>(0) );
@@ -681,4 +695,3 @@ namespace { // (anonymous)
     TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_AND_RELEASE )
 
 } // namespace (anonymous)
-
