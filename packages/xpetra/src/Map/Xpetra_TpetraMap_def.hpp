@@ -307,6 +307,7 @@ local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
     //! @name Constructors and destructor
     //@{
 
+
     //! Constructor with Tpetra-defined contiguous uniform distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
@@ -318,12 +319,15 @@ local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
      : TpetraMap(numGlobalElements, indexBase, comm, lg)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+
     TpetraMap (global_size_t numGlobalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
+
 
     //! Constructor with a user-defined contiguous distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -336,12 +340,15 @@ local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
       : TpetraMap(numGlobalElements, numLocalElements, indexBase, comm)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+
     TpetraMap (global_size_t numGlobalElements,
                size_t numLocalElements,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
+
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -354,12 +361,15 @@ local_map_type TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalMap () const
       : TpetraMap(numGlobalElements, elementList, indexBase, comm)
     {}
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+
     TpetraMap (global_size_t numGlobalElements,
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMap<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
+
 
     //! Destructor.
     ~TpetraMap() {  }
