@@ -63,7 +63,7 @@ namespace Xpetra {
             class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
             class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraMap
-    : public Map<LocalOrdinal,GlobalOrdinal,Node> {
+    : public virtual Map<LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
 
