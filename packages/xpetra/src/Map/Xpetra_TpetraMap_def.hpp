@@ -316,7 +316,7 @@ local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () cons
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraMap<int, int, EpetraNode>
-    : public Map<int,int,EpetraNode> {
+    : public virtual Map<int,int,EpetraNode> {
 
   public:
     typedef int GlobalOrdinal;
@@ -530,7 +530,7 @@ local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () cons
   // specialization for Tpetra Map on EpetraNode and GO=int
   template <>
   class TpetraMap<int, long long, EpetraNode>
-    : public Map<int,long long,EpetraNode> {
+    : public virtual Map<int,long long,EpetraNode> {
 
   public:
     typedef long long GlobalOrdinal;
