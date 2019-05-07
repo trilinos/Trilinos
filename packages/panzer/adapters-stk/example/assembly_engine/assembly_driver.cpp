@@ -219,8 +219,8 @@ int main(int argc,char * argv[])
  
    out << "BUILD CONN MANAGER" << std::endl;
    // build the connection manager 
-   const Teuchos::RCP<panzer::ConnManager<int,int> > 
-     conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+   const Teuchos::RCP<panzer::ConnManager> conn_manager =
+     Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
    panzer::DOFManagerFactory<int,int> globalIndexerFactory;
    RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 

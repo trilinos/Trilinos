@@ -71,7 +71,7 @@ public:
 
   AlgorithmA();
 
-  // Overridden from ParameterListAccpetor
+  // Overridden from ParameterListAcceptor
 
   void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 

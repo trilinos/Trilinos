@@ -60,7 +60,7 @@
 
 namespace panzer_stk {
 
-template <typename GO> class STKConnManager;
+class STKConnManager;
 
 /** Implements an interface used by the Teko request handler mechanism.
   * This particular class is usesd most frequently with an ML preconditioner that
@@ -69,7 +69,7 @@ template <typename GO> class STKConnManager;
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node=panzer::TpetraNodeType>
 class ParameterListCallbackBlocked : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
-  ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > & connManager, 
+  ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
                         const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & blkDofs,
                         const Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > & auxBlkDofs=Teuchos::null);
 
@@ -120,14 +120,14 @@ private:
   Teuchos::RCP<const panzer::Intrepid2FieldPattern> getFieldPattern(const std::string & fieldName, const bool useAux = false) const;
 
   // Generally used members
-  Teuchos::RCP<const panzer_stk::STKConnManager<GlobalOrdinalT> > connManager_;
+  Teuchos::RCP<const panzer_stk::STKConnManager> connManager_;
   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > blocked_ugi_;
   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > aux_blocked_ugi_;
 
   std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns_;
 
   // look up by field name (field name to coordinates
-  
+
   std::map<std::string,std::vector<double> > xcoords_;
   std::map<std::string,std::vector<double> > ycoords_;
   std::map<std::string,std::vector<double> > zcoords_;
@@ -139,7 +139,7 @@ private:
   Teuchos::RCP<Epetra_MultiVector> coordsVecEp_;
 
   bool returnTpetraObjects_;
-   
+
 };
 
 }
