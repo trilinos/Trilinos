@@ -223,7 +223,8 @@ namespace Tpetra {
                                       constructorSublist));
       }
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION(!A_rowMap->isSameAs (*B_rowMap),
+      // true: !A_rowMap->isSameAs (*B_rowMap)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
 				 std::invalid_argument,
 				 "Tpetra::RowMatrix::add: The row maps must be the same for statically "
 				 "allocated matrices in order to be sure that there is sufficient space "
