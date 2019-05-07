@@ -286,8 +286,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
     // merge/shrink
     vals2.resize(new_num_entries);
     vals_rand.resize(new_num_entries);
-    for (size_type i=0; i<new_num_entries; i++) vals2[i] = 2.*vals[i];
-    TEST_COMPARE_FLOATING_ARRAYS(vals2, vals_rand, 1.e-12);
+
+    using mag_type = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+    for (size_type i=0; i<new_num_entries; i++) {
+      vals2[i] = mag_type (2.0) * vals[i];
+    }
+    // FIXME (mfh 06 May 2019) I didn't pick this tolerance.
+    // It should be a function of scalar_type.
+    TEST_COMPARE_FLOATING_ARRAYS(vals2, vals_rand, mag_type (1.e-12));
 
     //
     // Sort the GIDs w/o values
