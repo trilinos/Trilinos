@@ -61,6 +61,8 @@
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
+#include "Xpetra_IO.hpp"
+
 #ifdef HAVE_XPETRA_TPETRA
 #include <Tpetra_RowMatrixTransposer.hpp>
 #endif
@@ -542,7 +544,7 @@ public:
   **/
 
   static void RelativeDiagonalBoost(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
-                                    const Teuchos::ArrayView<const double> & relativeThreshold)
+                                    const Teuchos::ArrayView<const double> & relativeThreshold, Teuchos::FancyOStream &fos)
   {
     Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("RelativeDiagonalBoost"));
 
@@ -558,20 +560,21 @@ public:
     RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diag);
     Teuchos::ArrayRCP< const Scalar > dataVal = diag->getData(0);
-    size_t N = diag->getLocalLength();
+    size_t N = A->getRowMap()->getNodeNumElements();
 
     // Compute the diagonal maxes for each PDE
     std::vector<MT> l_diagMax(numPDEs), g_diagMax(numPDEs);
     for(size_t i=0; i<N; i++) {
+      int pde = (int) (i % numPDEs);
       if((int)i < numPDEs) 
-        l_diagMax[i] = TST::magnitude(dataVal[i]);
+        l_diagMax[pde] = TST::magnitude(dataVal[i]);
       else
-        l_diagMax[i] = std::max(l_diagMax[i],TST::magnitude(dataVal[i]));
+        l_diagMax[pde] = std::max(l_diagMax[pde],TST::magnitude(dataVal[i]));
     }
     Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_MAX, numPDEs, l_diagMax.data(), g_diagMax.data() );
 
     // Apply the diagonal maxes via matrix-matrix addition
-    RCP<Matrix> boostMatrix = MatrixFactory::Build(A->getRowMap(), 1);
+    RCP<Matrix> boostMatrix = MatrixFactory::Build(A->getRowMap(),1);
     Teuchos::Array<GlobalOrdinal> index(1);
     Teuchos::Array<Scalar> value(1);
     for (size_t i = 0; i<N; i++) {
@@ -579,14 +582,23 @@ public:
       int pde = (int) (i % numPDEs);
       index[0] = GRID;
       if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde]) 
-        value[0] = relativeThreshold[pde] * g_diagMax[pde];
+        value[0] = relativeThreshold[pde] * g_diagMax[pde] - TST::magnitude(dataVal[i]);
       else
         value[0] =zero;
       boostMatrix->insertGlobalValues(GRID,index(),value());      
-      boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
     }
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*boostMatrix,false,one,*A,one);
+    boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
 
+    
+    Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("boost.mat",*boostMatrix);
+
+    // FIXME: We really need an add that lets you "add into"
+    RCP<Matrix> newA;
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*A,false,one, *boostMatrix,false,one,newA,fos);
+    if (A->IsView("stridedMaps"))
+      newA->CreateView("stridedMaps", A);
+    A = newA;
+    A->fillComplete();
   }
 
 };
