@@ -53,6 +53,7 @@ ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(USE_OPENMP OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(USE_PTHREADS OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(USE_CUDA OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(CUDA_RDC OFF)
+ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(FPIC OFF)
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(COMPLEX OFF)
 
 SET(ATDM_INST_SERIAL OFF)
@@ -176,8 +177,16 @@ ATDM_SET_CACHE(BUILD_SHARED_LIBS "${ATDM_SHARED_LIBS}" CACHE BOOL)
 ATDM_SET_CACHE(CMAKE_BUILD_TYPE "${ATDM_CMAKE_BUILD_TYPE}" CACHE STRING)
 
 SET(EXTRA_EXTRA_CXX_FLAGS)
+# RDC
 IF (ATDM_USE_CUDA AND ATDM_CUDA_RDC)
-  SET(EXTRA_EXTRA_CXX_FLAGS " --remove-duplicate-link-files")
+  SET(EXTRA_EXTRA_CXX_FLAGS "${EXTRA_EXTRA_CXX_FLAGS} --remove-duplicate-link-files")
+  # To get around defect in TriBITS where it will add duplicate libs if a
+  # downstream package add dependencies on both a subpackage and its parent
+  # package.
+ENDIF()
+# FPIC
+IF (ATDM_FPIC)
+  SET(EXTRA_EXTRA_CXX_FLAGS "${EXTRA_EXTRA_CXX_FLAGS} -fPIC")
   # To get around defect in TriBITS where it will add duplicate libs if a
   # downstream package add dependencies on both a subpackage and its parent
   # package.

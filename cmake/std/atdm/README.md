@@ -86,9 +86,9 @@ build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<complex>`](#complex),
-[`<shared_static>`](#shared_static), [`<release_debug>`](#release_debug), and
-[`<pt>`](#pt), are described below.
+[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<fpic>`](#fpic),
+[`<complex>`](#complex), [`<shared_static>`](#shared_static),
+[`<release_debug>`](#release_debug), and [`<pt>`](#pt), are described below.
 
 <a name="system_name"/>
 
@@ -183,6 +183,13 @@ builds (does nothing in non-CUDA builds):
 
 NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
 `--remove-duplicate-link-files` as well.
+
+<a name="fpic"/>
+
+**`<fpic>`:** The following `<build-name>` keyword will result in `-fPIC`
+being added to `CMAKE_CXX_FLAGS`:
+
+* `fpic`: Add `-fPIC` to `CMAKE_CXX_FLAGS`
 
 <a name="complex"/>
 
