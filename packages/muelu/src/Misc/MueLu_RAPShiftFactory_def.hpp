@@ -181,7 +181,7 @@ namespace MueLu {
       }
 
       Teuchos::ArrayView<const double> doubleShifts;
-      Teuchos::Array<double> myshifts;
+      Teuchos::ArrayRCP<double> myshifts;
       if(pL.isParameter("rap: shift array") && pL.get<Teuchos::Array<double> >("rap: shift array").size() > 0 ) {
         // Do we have an array of shifts?  If so, we set doubleShifts_
         doubleShifts = pL.get<Teuchos::Array<double> >("rap: shift array")();
@@ -225,7 +225,7 @@ namespace MueLu {
           Set(coarseLevel,"cfl-based shift array",myshifts);
         }
         else {
-          Teuchos::Array<double> myshifs = Get<Teuchos::Array<double> > (fineLevel,"cfl-based shift array");
+          myshifts = Get<Teuchos::ArrayRCP<double> > (fineLevel,"cfl-based shift array");
           doubleShifts = myshifts();
           Set(coarseLevel,"cfl-based shift array",myshifts);
           // NOTE: If we're not on level zero, then we should have a shift array
