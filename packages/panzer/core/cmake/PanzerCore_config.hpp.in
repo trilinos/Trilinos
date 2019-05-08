@@ -23,6 +23,9 @@ namespace panzer {
   typedef int Ordinal64;
 #endif
 typedef int index_t;
+
+  using GlobalOrdinal2 = panzer::Ordinal64;
+  using LocalOrdinal2 = int;
 }
 
 @PANZER_TEUCHOS_TIME_MONITOR_DECLARATIONS@
