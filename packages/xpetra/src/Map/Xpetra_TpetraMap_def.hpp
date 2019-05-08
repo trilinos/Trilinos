@@ -276,7 +276,8 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TpetraMap<LocalOrdinal,Global
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 template<class Node2>
-RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
+RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
+TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
 {
     return toXpetraNonConst(map_->clone(node2));
 }
@@ -298,7 +299,6 @@ RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > TpetraMap<LocalOrd
 #ifdef HAVE_XPETRA_TPETRA
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-//local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
 typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::getLocalMap () const
 {
     return map_->getLocalMap();
@@ -490,8 +490,13 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return Teuchos::null; }
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    template<class LocalOrdinal, class GlobalOrdinal, class Node>
     template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
+    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const 
+    { 
+      return Teuchos::null; 
+    }
 #endif
     //@}
 
@@ -694,8 +699,13 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const { return Teuchos::null; }
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    template<class LocalOrdinal, class GlobalOrdinal, class Node>
     template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
+    TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const 
+    { 
+        return Teuchos::null; 
+    }
 #endif
     //@}
 
