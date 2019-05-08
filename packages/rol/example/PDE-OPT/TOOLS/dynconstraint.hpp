@@ -1283,9 +1283,32 @@ public:
     return pde_;
   }
 
-  void update(const ROL::Vector<Real>    &uo,
-              const ROL::Vector<Real>    &un,
-              const ROL::Vector<Real>    &z,
+  void update_uo(const ROL::Vector<Real>    &uo,
+                 const ROL::TimeStamp<Real> &ts) {
+    isResAssembled_    = false;
+    isJuoAssembled_    = (isJuoZero_    ? isJuoAssembled_    : false);
+    isJunAssembled_    = (isJunZero_    ? isJunAssembled_    : false);
+    isJzfAssembled_    = (isJzfZero_    ? isJzfAssembled_    : false);
+    isJzpAssembled_    = (isJzpZero_    ? isJzpAssembled_    : false);
+    isHuo_uoAssembled_ = (isHuo_uoZero_ ? isHuo_uoAssembled_ : false);
+    isHuo_zfAssembled_ = (isHuo_zfZero_ ? isHuo_zfAssembled_ : false);
+    isHuo_zpAssembled_ = (isHuo_zpZero_ ? isHuo_zpAssembled_ : false);
+    isHzf_uoAssembled_ = (isHzf_uoZero_ ? isHzf_uoAssembled_ : false);
+    isHzp_uoAssembled_ = (isHzp_uoZero_ ? isHzp_uoAssembled_ : false);
+    isHun_unAssembled_ = (isHun_unZero_ ? isHun_unAssembled_ : false);
+    isHuo_unAssembled_ = (isHuo_unZero_ ? isHuo_unAssembled_ : false);
+    isHun_uoAssembled_ = (isHun_uoZero_ ? isHun_uoAssembled_ : false);
+    isHun_zfAssembled_ = (isHun_zfZero_ ? isHun_zfAssembled_ : false);
+    isHun_zpAssembled_ = (isHun_zpZero_ ? isHun_zpAssembled_ : false);
+    isHzf_unAssembled_ = (isHzf_unZero_ ? isHzf_unAssembled_ : false);
+    isHzp_unAssembled_ = (isHzp_unZero_ ? isHzp_unAssembled_ : false);
+    isHzf_zfAssembled_ = (isHzf_zfZero_ ? isHzf_zfAssembled_ : false);
+    isHzf_zpAssembled_ = (isHzf_zpZero_ ? isHzf_zpAssembled_ : false);
+    isHzp_zfAssembled_ = (isHzp_zfZero_ ? isHzp_zfAssembled_ : false);
+    isHzp_zpAssembled_ = (isHzp_zpZero_ ? isHzp_zpAssembled_ : false);
+  }
+
+  void update(const ROL::Vector<Real>    &un,
               const ROL::TimeStamp<Real> &ts) {
     isResAssembled_    = false;
     isJuoAssembled_    = (isJuoZero_    ? isJuoAssembled_    : false);
@@ -1308,6 +1331,40 @@ public:
     isHzf_zpAssembled_ = (isHzf_zpZero_ ? isHzf_zpAssembled_ : false);
     isHzp_zfAssembled_ = (isHzp_zfZero_ ? isHzp_zfAssembled_ : false);
     isHzp_zpAssembled_ = (isHzp_zpZero_ ? isHzp_zpAssembled_ : false);
+  }
+
+  void update_z(const ROL::Vector<Real>    &z,
+                const ROL::TimeStamp<Real> &ts) {
+    isResAssembled_    = false;
+    isJuoAssembled_    = (isJuoZero_    ? isJuoAssembled_    : false);
+    isJunAssembled_    = (isJunZero_    ? isJunAssembled_    : false);
+    isJzfAssembled_    = (isJzfZero_    ? isJzfAssembled_    : false);
+    isJzpAssembled_    = (isJzpZero_    ? isJzpAssembled_    : false);
+    isHuo_uoAssembled_ = (isHuo_uoZero_ ? isHuo_uoAssembled_ : false);
+    isHuo_zfAssembled_ = (isHuo_zfZero_ ? isHuo_zfAssembled_ : false);
+    isHuo_zpAssembled_ = (isHuo_zpZero_ ? isHuo_zpAssembled_ : false);
+    isHzf_uoAssembled_ = (isHzf_uoZero_ ? isHzf_uoAssembled_ : false);
+    isHzp_uoAssembled_ = (isHzp_uoZero_ ? isHzp_uoAssembled_ : false);
+    isHun_unAssembled_ = (isHun_unZero_ ? isHun_unAssembled_ : false);
+    isHuo_unAssembled_ = (isHuo_unZero_ ? isHuo_unAssembled_ : false);
+    isHun_uoAssembled_ = (isHun_uoZero_ ? isHun_uoAssembled_ : false);
+    isHun_zfAssembled_ = (isHun_zfZero_ ? isHun_zfAssembled_ : false);
+    isHun_zpAssembled_ = (isHun_zpZero_ ? isHun_zpAssembled_ : false);
+    isHzf_unAssembled_ = (isHzf_unZero_ ? isHzf_unAssembled_ : false);
+    isHzp_unAssembled_ = (isHzp_unZero_ ? isHzp_unAssembled_ : false);
+    isHzf_zfAssembled_ = (isHzf_zfZero_ ? isHzf_zfAssembled_ : false);
+    isHzf_zpAssembled_ = (isHzf_zpZero_ ? isHzf_zpAssembled_ : false);
+    isHzp_zfAssembled_ = (isHzp_zfZero_ ? isHzp_zfAssembled_ : false);
+    isHzp_zpAssembled_ = (isHzp_zpZero_ ? isHzp_zpAssembled_ : false);
+  }
+
+  void update(const ROL::Vector<Real>    &uo,
+              const ROL::Vector<Real>    &un,
+              const ROL::Vector<Real>    &z,
+              const ROL::TimeStamp<Real> &ts) {
+    update_uo(uo,ts);
+    update_un(un,ts);
+    update_z(z,ts);
   }
 
   void value(ROL::Vector<Real>    &c,
