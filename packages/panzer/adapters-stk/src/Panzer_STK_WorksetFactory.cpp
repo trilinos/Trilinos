@@ -90,7 +90,7 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
 
   if(worksetDesc.requiresPartitioning()){
     if(mesh_info_ == Teuchos::null){
-      auto mesh_info = Teuchos::rcp(new panzer::LocalMeshInfo<int,panzer::Ordinal64>());
+      auto mesh_info = Teuchos::rcp(new panzer::LocalMeshInfo);
       panzer_stk::generateLocalMeshInfo(*mesh_,*mesh_info);
       mesh_info_ = mesh_info;
     }
