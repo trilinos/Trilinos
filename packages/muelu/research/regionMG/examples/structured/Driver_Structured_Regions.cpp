@@ -1269,8 +1269,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     std::vector<RCP<Vector> > quasiRegB(maxRegPerProc);
     std::vector<RCP<Vector> > regB(maxRegPerProc);
-    compositeToRegional(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
-                        revisedRowMapPerGrp, rowImportPerGrp);
+    compositeToRegionalWithInterfaceScaling(B, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+                        revisedRowMapPerGrp, rowImportPerGrp, regInterfaceScalings[0]);
 
     //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
 

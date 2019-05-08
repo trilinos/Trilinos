@@ -146,6 +146,49 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
   return;
 }
 
+/*! \brief Transform composite vector to regional layout and apply interface scaling
+ *
+ *  1. Transfer data from composite to regional using compositeToRegional()
+ *  2. Scale the interface values by 1/N with N being the number of adjacent regions
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void compositeToRegionalWithInterfaceScaling(
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
+    std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
+    std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regVecs, ///< Vector in regional layout [in/out]
+    const int maxRegPerProc, ///< max number of regions per proc [in]
+    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp, ///< row maps in region layout [in]
+    const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp, ///< revised row maps in region layout [in]
+    const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp, ///< row importer in region layout [in]
+    std::vector<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& interfaceScaling ///< number of adjacent regions per node
+)
+{
+#include "Xpetra_UseShortNames.hpp"
+
+  using STS = Teuchos::ScalarTraits<SC>;
+  const Scalar zero = STS::zero();
+  const Scalar one = STS::one();
+
+  // Do the actual data transfer
+  compositeToRegional(compVec, quasiRegVecs, regVecs, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+  // Scaling of interface values
+  for (int j = 0; j < maxRegPerProc; j++) {
+    TEUCHOS_ASSERT(!interfaceScaling[j].is_null());
+
+    // Compute inverse factors, which are later to be used for scaling
+    RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(interfaceScaling[j]->getMap());
+    inverseInterfaceScaling->reciprocal(*interfaceScaling[j]);
+
+    // Do the actual scaling
+    RCP<Vector> tmpResult = VectorFactory::Build(regVecs[j]->getMap());
+    tmpResult->elementWiseMultiply(one, *regVecs[j], *inverseInterfaceScaling, zero);
+    regVecs[j]->update(one, *tmpResult, zero);
+  }
+
+  return;
+}
+
 /*! \brief Transform regional vector to composite layout
  *
  *  Starting from a \c Epetra_Vector in regional layout, we
