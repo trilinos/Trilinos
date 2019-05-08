@@ -468,8 +468,10 @@ public:
     minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
     if ( cscale_*algo_state.cnorm < feasTolerance_ ) {
       l.axpy(state->searchSize*cscale_,(state->constraintVec)->dual());
-      optTolerance_  = std::max(oem2*outerOptTolerance_,
-                       optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
+      if ( algo_->getState()->statusFlag == EXITSTATUS_CONVERGED ) {
+        optTolerance_  = std::max(oem2*outerOptTolerance_,
+                         optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
+      }
       feasTolerance_ = std::max(oem2*outerFeasTolerance_,
                        feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
       // Update Algorithm State
