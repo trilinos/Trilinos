@@ -18,6 +18,7 @@
 #   ATDM_CONFIG_USE_CUDA
 #   ATDM_CONFIG_USE_PTHREADS
 #   ATDM_CONFIG_CUDA_RDC
+#   ATDM_CONFIG_FPIC
 #   ATDM_CONFIG_COMPLEX
 #   ATDM_CONFIG_SHARED_LIBS
 #   ATDM_CONFIG_PT_PACKAGES
@@ -53,7 +54,7 @@ fi
 ATDM_UTILS_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_UTILS_SCRIPT_DIR}/..`
 
-echo "Setting compiler and build options for buld name '${ATDM_CONFIG_BUILD_NAME}'"
+echo "Setting compiler and build options for build-name '${ATDM_CONFIG_BUILD_NAME}'"
 
 # Set the defaults
 export ATDM_CONFIG_COMPILER=DEFAULT
@@ -247,6 +248,13 @@ if [[ $ATDM_CONFIG_BUILD_NAME == *"-no-rdc"* ]] \
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"-rdc"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"_rdc"* ]]; then
   export ATDM_CONFIG_CUDA_RDC=ON
+fi
+
+# Use -fPIC or not
+export ATDM_CONFIG_FPIC=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"-fpic"* ]] \
+  || [[ $ATDM_CONFIG_BUILD_NAME == *"_fpic"* ]]; then
+  export ATDM_CONFIG_FPIC=ON
 fi
 
 # Enable complex (double) data-types or not

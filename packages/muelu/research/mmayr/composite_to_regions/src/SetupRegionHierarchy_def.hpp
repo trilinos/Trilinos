@@ -1715,9 +1715,19 @@ void vCycle(const int l, ///< ID of current level
 
   /* Solve!
    *
+   * Calling solve() on the coarseSolver sould just do a triangular solve, since symbolic
+   * and numeric factorization are supposed to have happened during hierarchy setup.
+   * Here, we just check if they're done and print message if not.
+   *
    * We don't have to change the map of tX and tB since we have configured the Amesos2 solver
    * during its construction to work with non-continous maps.
    */
+  if (not coarseSolver->getStatus().symbolicFactorizationDone())
+    *fos << "Symbolic factorization should have been done during hierarchy setup, "
+        "but actually is missing. Anyway ... just do it right now." << std::endl;
+  if (not coarseSolver->getStatus().numericFactorizationDone())
+    *fos << "Numeric factorization should have been done during hierarchy setup, "
+        "but actually is missing. Anyway ... just do it right now." << std::endl;
   coarseSolver->solve(tX.ptr(), tB.ptr());
 
   // Transform back to region format
