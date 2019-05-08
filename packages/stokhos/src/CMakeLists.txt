@@ -808,20 +808,22 @@ IF (Stokhos_ENABLE_Sacado)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
         PROCESS_ENSEMBLE_ETI(
           "${Stokhos_ETI_Ensemble_Sizes}"
-          "${TPETRA_ETI_CLASSES}"
-          "sacado/kokkos/vector/tpetra"
-          "Tpetra"
-          TRUE
-          "${STOKHOS_DEPLIBS}"
-          DEPLIBS_OUT)
-        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
-       PROCESS_ENSEMBLE_ETI(
-          "${Stokhos_ETI_Ensemble_Sizes}"
           "${TPETRA_SD_ETI_CLASSES}"
           "sacado/kokkos/vector/tpetra"
           "Tpetra_SD"
           TRUE
           "${STOKHOS_DEPLIBS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        # Tpetra depends on Tpetra_SD
+        SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
+        PROCESS_ENSEMBLE_ETI(
+          "${Stokhos_ETI_Ensemble_Sizes}"
+          "${TPETRA_ETI_CLASSES}"
+          "sacado/kokkos/vector/tpetra"
+          "Tpetra"
+          TRUE
+          "${STOKHOS_TPETRA_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
         # TpetraExt depends on Tpetra
@@ -847,21 +849,23 @@ IF (Stokhos_ENABLE_Sacado)
           CrsMatrix
           )
         PROCESS_PCE_ETI(
-          "${TPETRA_ETI_CLASSES}"
-          "${EXTRA_TPETRA_ETI_CLASSES}"
-          "sacado/kokkos/pce/tpetra"
-          "Tpetra"
-          TRUE
-          "${STOKHOS_DEPLIBS}"
-          DEPLIBS_OUT)
-        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
-        PROCESS_PCE_ETI(
           "${TPETRA_SD_ETI_CLASSES}"
           ""
           "sacado/kokkos/pce/tpetra"
           "Tpetra_SD"
           TRUE
           "${STOKHOS_DEPLIBS}"
+          DEPLIBS_OUT)
+        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        # Tpetra depends on Tpetra_SD
+        SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
+        PROCESS_PCE_ETI(
+          "${TPETRA_ETI_CLASSES}"
+          "${EXTRA_TPETRA_ETI_CLASSES}"
+          "sacado/kokkos/pce/tpetra"
+          "Tpetra"
+          TRUE
+          "${STOKHOS_TPETRA_DEPS}"
           DEPLIBS_OUT)
         LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
         # TpetraExt depends on Tpetra
