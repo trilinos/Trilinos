@@ -1366,7 +1366,8 @@ public:
                           const Vector<Real> & u, 
                           const Vector<Real> & z,
                           Real & tol,
-                          int level=0) 
+                          int level=0,
+                          bool approx=true)
    {
      using PartitionedVector = PartitionedVector<Real>;
 
@@ -1437,7 +1438,11 @@ public:
      temp_u->axpy(1.0,*input_u);
  
      // t_v = -J * t_u + f_v
-     applyJacobian_1_leveled_approx(*temp_v,*temp_u,u,z,tol,level);
+     if(not approx)
+       applyJacobian_1_leveled(*temp_v,*temp_u,u,z,tol,level);
+     else
+       applyJacobian_1_leveled_approx(*temp_v,*temp_u,u,z,tol,level);
+
      temp_v->scale(-1.0);
      temp_v->axpy(1.0,*input_v);
 
@@ -1458,7 +1463,7 @@ public:
 
      // o_z = inv(S)*t_z
      output_z->zero();
-     applyLocalReducedInverseHessian(*output_z,*temp_z,u,z,tol,level);
+     applyLocalReducedInverseHessian(*output_z,*temp_z,u,z,tol,level,approx);
      
      // o_v = inv(P)*(t_v-K*o_z)
      {
@@ -1473,7 +1478,10 @@ public:
      }
 
      // o_u = t_u - J'*o_v
-     applyAdjointJacobian_1_leveled_approx(*output_u,*output_v,u,z,tol,level); 
+     if(not approx)
+       applyAdjointJacobian_1_leveled(*output_u,*output_v,u,z,tol,level); 
+     else
+       applyAdjointJacobian_1_leveled_approx(*output_u,*output_v,u,z,tol,level); 
      output_u->scale(-1.0);
      output_u->axpy(1.0,*temp_u);
 
@@ -1489,7 +1497,8 @@ public:
                                  const Vector<Real> & u, 
                                  const Vector<Real> & z,
                                  Real & tol,
-                                 int level) 
+                                 int level,
+                                 bool approx) 
    {
      auto temp_k = u.clone();
      auto temp_schur = u.clone();
@@ -1497,12 +1506,21 @@ public:
      // K*x
      applyJacobian_2_leveled(*temp_k,x,u,z,tol,level);
 
-     // inv(J)*K*x
-     invertTimeStepJacobian(*temp_schur,*temp_k, u,z,tol,level);
+     if(not approx) {
+       // inv(J)*K*x
+       applyInverseJacobian_1_leveled(*temp_schur,*temp_k, u,z,tol,level);
 
-     // inv(J')*inv(J)*K*x
-     invertAdjointTimeStepJacobian(*temp_k,*temp_schur,u,z,tol,level);
-     
+       // inv(J')*inv(J)*K*x
+       applyInverseAdjointJacobian_1_leveled(*temp_k,*temp_schur,u,z,tol,level);
+     }
+     else {
+       // inv(J)*K*x
+       invertTimeStepJacobian(*temp_schur,*temp_k, u,z,tol,level);
+
+       // inv(J')*inv(J)*K*x
+       invertAdjointTimeStepJacobian(*temp_k,*temp_schur,u,z,tol,level);
+     }
+
      // K'*inv(J')*inv(J)*K*x
      applyAdjointJacobian_2_leveled(y,*temp_k,u,z,tol,level);
 
@@ -1520,7 +1538,8 @@ public:
                                         const Vector<Real> & z,
                                         Real & tol,
                                         int level,
-                                        bool skipInitialMatVec=true)  // if x==0, no need
+                                        bool skipInitialMatVec=true,  // if x==0, no need
+                                        bool approx=true) 
    {
      const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
      int timeRank = pint_u.communicators().getTimeRank();
@@ -1555,7 +1574,7 @@ public:
        r->set(b);
      }
      else {
-       applyLocalReducedHessian(*r,x,u,z,tol,level);
+       applyLocalReducedHessian(*r,x,u,z,tol,level,approx);
        r->axpy(-1.0,b);
        r->scale(-1.0);
      }
@@ -1564,14 +1583,14 @@ public:
      Real rold = r->dot(*r);
      Real rorg = rold;
 
-     // if(timeRank==0)
-     //   std::cout << "START CG = " << std::sqrt(rorg) << std::endl;
+     if(timeRank==0)
+       std::cout << "START CG = " << std::sqrt(rorg) << std::endl;
 
      p->set(*r);
      
      int iters = numCGIter_;
      for(int i=0;i<iters;i++) {
-       applyLocalReducedHessian(*Ap,*p,u,z,tol,level);
+       applyLocalReducedHessian(*Ap,*p,u,z,tol,level,approx);
 
        Real pAp = Ap->dot(*p);
        Real alpha = rold / pAp;
@@ -1579,15 +1598,15 @@ public:
        x.axpy(alpha,*p);
 
        // exist early
-       if(i==iters-1)
-         break;
+       // if(i==iters-1)
+       //   break;
 
        r->axpy(-alpha,*Ap);
 
        Real rnew = r->dot(*r);
 
-       // if(timeRank==0)
-       //   std::cout << "CG Residual " << i << " = " << std::sqrt(rnew / rorg)  << std::endl;
+       if(timeRank==0)
+         std::cout << "CG Residual " << i << " = " << std::sqrt(rnew / rorg)  << std::endl;
 
        p->scale(rnew/rold);
        p->axpy(1.0,*r);
@@ -1595,8 +1614,8 @@ public:
        rold = rnew;
      }
 
-     // if(timeRank==0)
-     //   std::cout << "CG Residual Reduction  = " << std::sqrt(rold / rorg)  << std::endl;
+     if(timeRank==0)
+       std::cout << "CG Residual Reduction  = " << std::sqrt(rold / rorg)  << std::endl;
    }
    
 
@@ -1662,8 +1681,10 @@ public:
        }
      }
 
-     if(recordResidualReductions_)
+     if(recordResidualReductions_) {
+       std::cout << "RES-Norm " <<  residual->norm()/res_norm << std::endl;
        return residual->norm()/res_norm;
+     }
 
      return -1.0;
    }
@@ -1750,7 +1771,10 @@ public:
          residual->scale(-1.0);
          residual->axpy(1.0,b);
 
-         applyWathenInverse(*dx,*residual,u,z,tol,approxSmoother,level); 
+         if(numCGIter_==0)
+           applyWathenInverse(*dx,*residual,u,z,tol,approxSmoother,level); 
+         else
+           applyLocalInverse(*dx,*residual,u,z,tol,level,approxSmoother); 
          x.axpy(relax,*dx);
        }
 
