@@ -181,9 +181,7 @@ void compositeToRegionalWithInterfaceScaling(
     inverseInterfaceScaling->reciprocal(*interfaceScaling[j]);
 
     // Do the actual scaling
-    RCP<Vector> tmpResult = VectorFactory::Build(regVecs[j]->getMap());
-    tmpResult->elementWiseMultiply(one, *regVecs[j], *inverseInterfaceScaling, zero);
-    regVecs[j]->update(one, *tmpResult, zero);
+    regVecs[j]->elementWiseMultiply(one, *regVecs[j], *inverseInterfaceScaling, zero);
   }
 
   return;
