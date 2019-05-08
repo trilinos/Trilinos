@@ -49,6 +49,8 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <random>
+#include <chrono>
 
 
 namespace ROL {
@@ -140,6 +142,28 @@ public:
     return std::sqrt(x);
   } 
 }; // class Power
+
+
+// Generate a normally distributed random number
+// with mean mu and standard deviation sigma
+template<class Real> 
+class NormalRandom : public UnaryFunction<Real> {
+private:
+  Ptr<std::mt19937_64>  gen_;
+  Ptr<std::normal_distribution<Real>> dist_;
+
+public:
+  NormalRandom(const Real &mu = 0.0, const Real &sigma = 1.0) {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    gen_  = makePtr<std::mt19937_64>(seed);
+    dist_ = makePtr<std::normal_distribution<Real>>(mu,sigma);
+  }
+
+  Real apply( const Real &x ) const {
+    return (*dist_)(*gen_);
+  }
+}; // class NormalRandom
+
 
 // Generate a uniformly distributed random number
 // between lower and upper

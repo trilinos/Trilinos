@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(nrow, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
 
-    ROL::Sketch<RealT> sketch(x,ncol,rank);
+    ROL::Sketch<RealT> sketch(x,ncol,rank,ROL::ROL_EPSILON<RealT>());
     bool flag = sketch.test(testrank,*outStream,2);
     errorFlag += (flag ? 0 : 1);
   }
