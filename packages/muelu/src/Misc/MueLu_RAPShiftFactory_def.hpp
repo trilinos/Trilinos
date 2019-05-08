@@ -82,6 +82,7 @@ namespace MueLu {
     SET_VALID_ENTRY("rap: cfl array");
     SET_VALID_ENTRY("rap: shift diagonal M");
     SET_VALID_ENTRY("rap: shift low storage");
+    SET_VALID_ENTRY("rap: relative diagonal floor");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -337,6 +338,11 @@ namespace MueLu {
 	Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, Teuchos::ScalarTraits<Scalar>::one(), *Mc, false, shift, Ac, GetOStream(Statistics2));
 	Ac->fillComplete();
       }
+
+      Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+      if(relativeFloor.size() > 0) 
+        Xpetra::MatrixUtils<SC,LO,GO,NO>::RelativeDiagonalBoost(Ac, relativeFloor,GetOStream(Statistics2));
+   
 
       bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
       bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
