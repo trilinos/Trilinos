@@ -136,7 +136,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # Tpetra and Epetra need to match GO types
     IF(${PACKAGE_NAME}_ENABLE_Tpetra)
       IF(NOT Tpetra_INST_INT_INT)
-        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requres that you enable Tpetra_INST_INT_INT")
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 32-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_INT")
       ENDIF()
     ENDIF()
 
@@ -148,7 +148,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # Tpetra and Epetra need to match GO types
     IF(${PACKAGE_NAME}_ENABLE_Tpetra)
       IF(NOT Tpetra_INST_INT_LONG_LONG)
-        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 64-bit global indices are enabled, Xpetra requres that you enable Tpetra_INST_INT_LONG_LONG")
+        MESSAGE(FATAL_ERROR "If Xpetra Epetra support is enabled and Epetra 64-bit global indices are enabled, Xpetra requires that you enable Tpetra_INST_INT_LONG_LONG")
       ENDIF()
     ENDIF()
 
