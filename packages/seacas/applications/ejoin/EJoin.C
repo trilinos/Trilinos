@@ -252,7 +252,8 @@ int main(int argc, char *argv[])
       }
 
       // Generate a name for the region based on the part number...
-      std::string name = "p" + std::to_string(p + 1);
+      std::string prefix = interface.block_prefix();
+      std::string name   = prefix + std::to_string(p + 1);
       // NOTE: region owns database pointer at this time...
       part_mesh[p] = new Ioss::Region(dbi[p], name);
 
@@ -1298,9 +1299,8 @@ namespace {
         continue;
       }
 
-      if (field_name != "ids" &&
-          (prefix.length() == 0 ||
-           std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
+      if (field_name != "ids" && (prefix.empty() || std::strncmp(prefix.c_str(), field_name.c_str(),
+                                                                 prefix.length()) == 0)) {
         if (oge->field_exists(field_name)) {
           transfer_field_data_internal(ige, oge, field_name);
         }
@@ -1486,7 +1486,7 @@ namespace {
     // whose names begin with the prefix
     for (const auto &field_name : fields) {
       if (field_name != "ids" && !oge->field_exists(field_name) &&
-          (prefix.length() == 0 ||
+          (prefix.empty() ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
         // If the field does not already exist, add it to the output node block
         Ioss::Field field = ige->get_field(field_name);

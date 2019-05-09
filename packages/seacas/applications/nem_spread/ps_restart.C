@@ -44,7 +44,6 @@
 #include <cstddef>       // for size_t
 #include <cstdio>        // for fprintf, stderr, nullptr, etc
 #include <cstdlib>       // for exit, free, malloc
-#include <cstring>       // for strrchr, memset, etc
 #include <string>
 #include <unistd.h> // for sysconf, _SC_OPEN_MAX
 #include <vector>   // for vector
@@ -94,8 +93,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
   /* Open the ExodusII file */
   cpu_ws   = io_ws;
   int mode = EX_READ | int64api;
-  if ((exoid = ex_open(Exo_Res_File, mode, &cpu_ws, &io_ws, &vers)) < 0) {
-    fprintf(stderr, "%s: Could not open file %s for restart info\n", yo, Exo_Res_File);
+  if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
+    fprintf(stderr, "%s: Could not open file %s for restart info\n", yo, Exo_Res_File.c_str());
     exit(1);
   }
 
@@ -107,7 +106,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
    * in the results file are the same as the mesh parameters in the
    * mesh file.
    */
-  if (strcmp(ExoFile, Exo_Res_File) != 0) {
+  if (ExoFile != Exo_Res_File) {
     if (!compare_mesh_param(exoid)) {
       fprintf(stderr,
               "%s: Mesh parameters in mesh and result files"
@@ -187,8 +186,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   {
     cpu_ws   = io_ws;
     int mode = EX_READ | int64api;
-    if ((exoid = ex_open(Exo_Res_File, mode, &cpu_ws, &io_ws, &vers)) < 0) {
-      fprintf(stderr, "%s: Could not open file %s for restart info\n", yo, Exo_Res_File);
+    if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
+      fprintf(stderr, "%s: Could not open file %s for restart info\n", yo, Exo_Res_File.c_str());
       exit(1);
     }
   }
@@ -393,18 +392,19 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   }
 
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(Output_File_Base_Name, '/') != nullptr) {
+  size_t found = Output_File_Base_Name.find_last_of('/');
+  if (found != std::string::npos) {
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    cTemp = strrchr(Output_File_Base_Name, '/') + 1;
+    cTemp = Output_File_Base_Name.substr(found + 1);
   }
   else {
     /* No separator; this is already just the basename... */
     cTemp = Output_File_Base_Name;
   }
 
-  if (strlen(PIO_Info.Exo_Extension) == 0) {
+  if (PIO_Info.Exo_Extension.empty()) {
     cTemp += ".par";
   }
   else {
@@ -415,8 +415,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   if (open_file_count > Proc_Info[5]) {
     printf("All output files opened simultaneously.\n");
     for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
-      std::string Parallel_File_Name =
-          gen_par_filename(cTemp.c_str(), Proc_Ids[iproc], Proc_Info[0]);
+      std::string Parallel_File_Name = gen_par_filename(cTemp, Proc_Ids[iproc], Proc_Info[0]);
 
       /* Open the parallel Exodus II file for writing */
       cpu_ws   = io_ws;
@@ -452,8 +451,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
 
       if (open_file_count < Proc_Info[5]) {
-        std::string Parallel_File_Name =
-            gen_par_filename(cTemp.c_str(), Proc_Ids[iproc], Proc_Info[0]);
+        std::string Parallel_File_Name = gen_par_filename(cTemp, Proc_Ids[iproc], Proc_Info[0]);
 
         /* Open the parallel Exodus II file for writing */
         cpu_ws   = io_ws;
@@ -549,8 +547,8 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
       if (Restart_Info.Time_Idx[cnt] > ret_int) {
         fprintf(stderr, "%s: Requested time index, %d, out of range.\n", yo,
                 Restart_Info.Time_Idx[cnt]);
-        fprintf(stderr, "%s: Valid time indices in %s are from 1 to %d.\n", yo, Exo_Res_File,
-                ret_int);
+        fprintf(stderr, "%s: Valid time indices in %s are from 1 to %d.\n", yo,
+                Exo_Res_File.c_str(), ret_int);
         return -1;
       }
     }

@@ -306,7 +306,7 @@ int Excn::Internals::put_metadata(const Mesh<INT> &mesh, const CommunicationMeta
   char errmsg[MAX_ERR_LENGTH];
 
   // define some attributes...
-  int status = nc_put_att_text(exodusFilePtr, NC_GLOBAL, ATT_TITLE, strlen(mesh.title.c_str()) + 1,
+  int status = nc_put_att_text(exodusFilePtr, NC_GLOBAL, ATT_TITLE, mesh.title.length() + 1,
                                mesh.title.c_str());
   if (status != NC_NOERR) {
     sprintf(errmsg, "Error: failed to define title attribute to file id %d", exodusFilePtr);

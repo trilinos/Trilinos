@@ -1269,7 +1269,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1285,7 +1285,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1301,7 +1301,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1317,7 +1317,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1333,7 +1333,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;
@@ -1433,7 +1433,7 @@ void SystemInterface::Parse_Command_File()
           copy_string(line, xline);
         }
         else {
-          strcpy(line, "");
+          copy_string(line, "");
         }
 
         continue;

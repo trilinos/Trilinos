@@ -37,7 +37,6 @@
 #include "exodusII_int.h"
 #include <stdio.h>  // for fprintf, stderr, fflush
 #include <stdlib.h> // for exit
-#include <string.h> // for strcpy
 
 /*!
 \fn{void ex_err_fn(exoid, const char *module_name, const char *message, int err_num)}

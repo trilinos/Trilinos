@@ -51,7 +51,6 @@
 #include <cstddef>             // for size_t
 #include <cstdio>              // for printf, fprintf, stderr
 #include <cstdlib>             // for exit, free
-#include <cstring>             // for strrchr, strlen
 #include <iostream>            // for operator<<, cerr, ostream, etc
 #include <string>              // for string
 #include <vector>              // for vector
@@ -211,8 +210,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   double      start_time      = 0.0;
   int         max_name_length = 0;
 
-  char cTemp[512];
-
   /* Allocate some memory for each processor read by this processor */
   globals.Proc_Num_Elem_Blk  = (int *)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(int));
   globals.Proc_Num_Node_Sets = (int *)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(int));
@@ -308,9 +305,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   {
     cpu_ws     = io_ws;
     int mode   = EX_READ | int64api;
-    mesh_exoid = ex_open(ExoFile, mode, &cpu_ws, &io_ws, &version);
+    mesh_exoid = ex_open(ExoFile.c_str(), mode, &cpu_ws, &io_ws, &version);
     if (mesh_exoid < 0) {
-      fprintf(stderr, "%sExodus returned error opening mesh file, %s\n", yo, ExoFile);
+      fprintf(stderr, "%sExodus returned error opening mesh file, %s\n", yo, ExoFile.c_str());
       exit(1);
     }
   }
@@ -559,24 +556,25 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   /* Generate the parallel exodus file name */
   /* See if any '/' in the name.  IF present, isolate the basename of the file */
-  if (strrchr(Output_File_Base_Name, '/') != nullptr) {
+  std::string cTemp;
 
+  size_t found = Output_File_Base_Name.find_last_of('/');
+  if (found != std::string::npos) {
     /* There is a path separator.  Get the portion after the
      * separator
      */
-    copy_string(cTemp, strrchr(Output_File_Base_Name, '/') + 1);
+    cTemp = Output_File_Base_Name.substr(found + 1);
   }
   else {
-
     /* No separator; this is already just the basename... */
-    copy_string(cTemp, Output_File_Base_Name);
+    cTemp = Output_File_Base_Name;
   }
 
-  if (strlen(PIO_Info.Exo_Extension) == 0) {
-    add_fname_ext(cTemp, ".par");
+  if (PIO_Info.Exo_Extension.empty()) {
+    cTemp += ".par";
   }
   else {
-    add_fname_ext(cTemp, PIO_Info.Exo_Extension);
+    cTemp += PIO_Info.Exo_Extension;
   }
 
   /* Check sizes to see if need to store using 64-bit on the database */

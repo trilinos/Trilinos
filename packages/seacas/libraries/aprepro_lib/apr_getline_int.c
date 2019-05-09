@@ -1330,7 +1330,7 @@ static char *hist_save(char *p)
   }
   else {
     if ((s = (char *)malloc(len + 1)) != 0) {
-      strcpy(s, p);
+      copy_string(s, p, len + 1);
     }
   }
   if (s == 0)
@@ -1816,7 +1816,7 @@ void gl_set_home_dir(const char *homedir)
       len         = strlen(homedrive) + strlen(homepath) + 1;
       gl_home_dir = (char *)malloc(len);
       if (gl_home_dir != NULL) {
-        strcpy(gl_home_dir, homedrive);
+        copy_string(gl_home_dir, homedrive, len);
         strcat(gl_home_dir, homepath);
         return;
       }

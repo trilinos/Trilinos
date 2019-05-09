@@ -299,11 +299,15 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   }
 
   // Parse remaining options as directory paths.
-  if (option_index < argc - 1) {
-    inputFile_  = argv[option_index++];
+  if (option_index < argc) {
+    inputFile_ = argv[option_index++];
+  }
+
+  if (option_index < argc && !noOutput_) {
     outputFile_ = argv[option_index];
   }
-  else {
+
+  if (inputFile_.empty() || (!noOutput_ && outputFile_.empty())) {
     std::cerr << "\nERROR: input and output filename not specified\n\n";
     return false;
   }

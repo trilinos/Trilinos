@@ -35,10 +35,10 @@
 
 #include "ps_pario_const.h" // for Parallel_IO, PIO_Info
 #include "rf_allo.h"        // for array_alloc
-#include "rf_io_const.h"    // for Debug_Flag, MAX_FNL
+#include "rf_io_const.h"    // for Debug_Flag
 #include <cstdio>           // for sprintf, fprintf, printf, etc
 #include <cstdlib>          // for exit
-#include <cstring>          // for strcat, strcpy, strlen, etc
+#include <cstring>          // for strlen, etc
 #include <sstream>
 #include <string>
 
@@ -50,7 +50,6 @@
   pdisk_stage_end()          void        load_mesh        (pe_exoII_io.c)
   gen_par_filename()         void        load_lb_info     (rf_load_lb_info.c)
                                          load_mesh        (pe_exoII_io.c)
-          add_fname_ext()    void        gen_par_filename (pe_util.c)
 
 ******************************************************************************/
 /*****************************************************************************/
@@ -105,7 +104,7 @@ void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int /*proc*/, i
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-std::string gen_par_filename(const char *scalar_fname, int proc_for, int nprocs)
+std::string gen_par_filename(const std::string &scalar_fname, int proc_for, int nprocs)
 /*----------------------------------------------------------------------------
  *
  *      Author(s):     Gary Hennigan (1421)
@@ -214,30 +213,4 @@ std::string gen_par_filename(const char *scalar_fname, int proc_for, int nprocs)
   }
 
   return par_filename;
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-void add_fname_ext(char *cOrigFile, const char *cExt)
-/*
- *     This function adds the extension input to the function as
- *     the variable cExt. The function overwrites the original file
- *     name. Any existing extension is retained. "test.e" becomes "test.e.new"
- *
- *     Note that it is assumed enough memory is allocate for the original
- *     string to handle it's new extension.
- */
-{
-  int iExtLen = strlen(cExt);
-
-  char *cPtr = cOrigFile;
-  cPtr += strlen(cOrigFile);
-
-  int i1 = 0;
-  for (; i1 < iExtLen; i1++) {
-    cPtr[i1] = cExt[i1];
-  }
-  cPtr[i1] = '\0';
 }

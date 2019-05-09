@@ -197,6 +197,9 @@ void IOShell::Interface::enroll_options()
   options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
                   "put transient data for each timestep in separate file (EXPERMENTAL)", nullptr);
 
+  options_.enroll("reverse", Ioss::GetLongOption::NoValue,
+                  "define CGNS zones in reverse order. Used for testing (TEST)", nullptr);
+
   options_.enroll(
       "split_times", Ioss::GetLongOption::MandatoryValue,
       "If non-zero, then put <$val> timesteps in each file. Then close file and start new file.",
@@ -326,17 +329,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     exit(0);
   }
 
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints_64_bit = true;
-  }
-
-  if (options_.retrieve("32-bit") != nullptr) {
-    ints_32_bit = true;
-  }
-
-  if (options_.retrieve("float") != nullptr) {
-    reals_32_bit = true;
-  }
+  ints_64_bit  = (options_.retrieve("64-bit") != nullptr);
+  ints_32_bit  = (options_.retrieve("32-bit") != nullptr);
+  reals_32_bit = (options_.retrieve("float") != nullptr);
 
   if (options_.retrieve("netcdf4") != nullptr) {
     netcdf4 = true;
@@ -348,9 +343,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     netcdf4 = false;
   }
 
-  if (options_.retrieve("shuffle") != nullptr) {
-    shuffle = true;
-  }
+  shuffle = (options_.retrieve("shuffle") != nullptr);
 
   {
     const char *temp = options_.retrieve("compress");
@@ -426,45 +419,18 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     decomp_method = "EXTERNAL";
   }
 
-  if (options_.retrieve("minimize_open_files") != nullptr) {
-    minimize_open_files = true;
-  }
-
-  if (options_.retrieve("debug") != nullptr) {
-    debug = true;
-  }
-
-  if (options_.retrieve("file_per_state") != nullptr) {
-    file_per_state = true;
-  }
-
-  if (options_.retrieve("quiet") != nullptr) {
-    quiet = true;
-  }
-
-  if (options_.retrieve("statistics") != nullptr) {
-    statistics = true;
-  }
-
-  if (options_.retrieve("memory_statistics") != nullptr) {
-    memory_statistics = true;
-  }
-
-  if (options_.retrieve("memory_read") != nullptr) {
-    in_memory_read = true;
-  }
-
-  if (options_.retrieve("memory_write") != nullptr) {
-    in_memory_write = true;
-  }
-
-  if (options_.retrieve("native_variable_names") != nullptr) {
-    lower_case_variable_names = false;
-  }
-
-  if (options_.retrieve("delete_timesteps") != nullptr) {
-    delete_timesteps = true;
-  }
+  minimize_open_files       = (options_.retrieve("minimize_open_files") != nullptr);
+  debug                     = (options_.retrieve("debug") != nullptr);
+  file_per_state            = (options_.retrieve("file_per_state") != nullptr);
+  reverse                   = (options_.retrieve("reverse") != nullptr);
+  quiet                     = (options_.retrieve("quiet") != nullptr);
+  statistics                = (options_.retrieve("statistics") != nullptr);
+  memory_statistics         = (options_.retrieve("memory_statistics") != nullptr);
+  in_memory_read            = (options_.retrieve("memory_read") != nullptr);
+  in_memory_write           = (options_.retrieve("memory_write") != nullptr);
+  delete_timesteps          = (options_.retrieve("delete_timesteps") != nullptr);
+  lower_case_variable_names = (options_.retrieve("native_variable_names") == nullptr);
+  disable_field_recognition = (options_.retrieve("disable_field_recognition") != nullptr);
 
   {
     const char *temp = options_.retrieve("in_type");
@@ -501,10 +467,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     if (temp != nullptr) {
       fieldSuffixSeparator = temp[0];
     }
-  }
-
-  if (options_.retrieve("disable_field_recognition") != nullptr) {
-    disable_field_recognition = true;
   }
 
   {

@@ -45,9 +45,10 @@
 #include <cfloat>  // for FLT_MAX
 #include <climits> // for INT_MAX
 #include <cmath>   /* Needed for ZPINCH_assign */
+#include <copy_string_cpp.h>
 #include <cstdio>  // for printf, nullptr, fprintf, etc
 #include <cstdlib> // for malloc, free, realloc, exit, etc
-#include <cstring> // for strcat, strcpy
+#include <cstring> // for strcat
 
 #include "chaco.h"    // for input_assign, interface
 #include "elb.h"      // for LB_Description<INT>, etc
@@ -1853,7 +1854,7 @@ namespace {
                   sprintf(cmesg, "Element 1: " ST_ZU "", (ecnt + 1));
                   Gen_Error(0, cmesg);
                   nnodes = get_elem_info(NNODES, etype);
-                  strcpy(cmesg, "connect table:");
+                  copy_string(cmesg, "connect table:");
                   for (int i = 0; i < nnodes; i++) {
                     sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[ecnt][i] + 1));
                     strcat(cmesg, tmpstr);
@@ -1861,7 +1862,7 @@ namespace {
                   Gen_Error(0, cmesg);
                   sprintf(cmesg, "side id: " ST_ZU "", static_cast<size_t>(nscnt + 1));
                   Gen_Error(0, cmesg);
-                  strcpy(cmesg, "side nodes:");
+                  copy_string(cmesg, "side nodes:");
                   for (int i = 0; i < side_cnt; i++) {
                     sprintf(tmpstr, " " ST_ZU "", (size_t)(side_nodes[i] + 1));
                     strcat(cmesg, tmpstr);
@@ -1870,7 +1871,7 @@ namespace {
                   sprintf(cmesg, "Element 2: " ST_ZU "", (size_t)(elem + 1));
                   Gen_Error(0, cmesg);
                   nnodes = get_elem_info(NNODES, etype2);
-                  strcpy(cmesg, "connect table:");
+                  copy_string(cmesg, "connect table:");
                   for (int i = 0; i < nnodes; i++) {
                     sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[elem][i] + 1));
                     strcat(cmesg, tmpstr);

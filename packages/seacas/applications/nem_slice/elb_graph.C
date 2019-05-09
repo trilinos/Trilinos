@@ -39,6 +39,7 @@
  *	find_surnd_elems()
  *	find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include "copy_string_cpp.h"
 #include "elb.h"        // for Problem_Description, etc
 #include "elb_elem.h"   // for get_elem_info, NNODES, etc
 #include "elb_err.h"    // for Gen_Error
@@ -49,7 +50,7 @@
 #include <cstddef>    // for size_t
 #include <cstdio>     // for sprintf, printf
 #include <cstdlib>    // for free, malloc
-#include <cstring>    // for strcat, strcpy
+#include <cstring>    // for strcat
 #include <iostream>   // for operator<<, basic_ostream, etc
 #include <sstream>
 #include <vector> // for vector
@@ -652,7 +653,7 @@ namespace {
                           sprintf(cmesg, "Element 1: " ST_ZU "", (ecnt + 1));
                           Gen_Error(0, cmesg);
                           nnodes = get_elem_info(NNODES, etype);
-                          strcpy(cmesg, "connect table:");
+                          copy_string(cmesg, "connect table:");
                           for (int ii = 0; ii < nnodes; ii++) {
                             sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[ecnt][ii] + 1));
                             strcat(cmesg, tmpstr);
@@ -660,7 +661,7 @@ namespace {
                           Gen_Error(0, cmesg);
                           sprintf(cmesg, "side id: %d", (nscnt + 1));
                           Gen_Error(0, cmesg);
-                          strcpy(cmesg, "side nodes:");
+                          copy_string(cmesg, "side nodes:");
                           for (int ii = 0; ii < side_cnt; ii++) {
                             sprintf(tmpstr, " " ST_ZU "", (size_t)(side_nodes[ii] + 1));
                             strcat(cmesg, tmpstr);
@@ -669,7 +670,7 @@ namespace {
                           sprintf(cmesg, "Element 2: " ST_ZU "", (entry + 1));
                           Gen_Error(0, cmesg);
                           nnodes = get_elem_info(NNODES, etype2);
-                          strcpy(cmesg, "connect table:");
+                          copy_string(cmesg, "connect table:");
                           for (int ii = 0; ii < nnodes; ii++) {
                             sprintf(tmpstr, " " ST_ZU "", (size_t)(mesh->connect[entry][ii] + 1));
                             strcat(cmesg, tmpstr);

@@ -37,7 +37,7 @@
 
 #define NO_NETCDF_2
 #include "EP_ObjectType.h"
-#include <cstring>
+#include <copy_string_cpp.h>
 #include <exodusII.h>
 #include <iostream>
 #include <string>
@@ -89,7 +89,7 @@ namespace Excn {
         : name_(""), id(0), elementCount(0), nodesPerElement(0), attributeCount(0), offset_(0),
           position_(0)
     {
-      strcpy(elType, "");
+      copy_string(elType, "");
     }
 
     Block(const Block &other)
@@ -97,7 +97,7 @@ namespace Excn {
           nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
           offset_(other.offset_), position_(other.position_)
     {
-      strcpy(elType, other.elType);
+      copy_string(elType, other.elType);
     }
 
     ~Block() = default;
@@ -116,7 +116,7 @@ namespace Excn {
 
     Block &operator=(const Block &other)
     {
-      strcpy(elType, other.elType);
+      copy_string(elType, other.elType);
       name_           = other.name_;
       id              = other.id;
       elementCount    = other.elementCount;

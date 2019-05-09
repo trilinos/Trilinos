@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <copy_string_cpp.h>
 #include <cstddef> // for size_t
 #include <cstdio>  // for printf, nullptr, sprintf
 #include <cstdlib> // for malloc, free, calloc
@@ -198,7 +199,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     ex_close(exoid);
     return 0;
   }
-  strcpy(mesh->title, exo.title);
+  copy_string(mesh->title, exo.title);
   mesh->num_dims      = exo.num_dim;
   mesh->num_nodes     = exo.num_nodes;
   mesh->num_elems     = exo.num_elem;

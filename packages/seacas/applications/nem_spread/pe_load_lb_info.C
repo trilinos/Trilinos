@@ -36,6 +36,7 @@
 #include <cstddef> // for size_t
 #include <cstdio>  // for printf, fprintf, stderr, etc
 #include <cstdlib> // for exit, malloc
+#include <string>
 
 #include "exodusII.h"   // for ex_inquire, ex_opts, etc
 #include "globals.h"    // for ELEM_COMM_MAP, etc
@@ -111,12 +112,12 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
 
   /* Open the Load Balance exoII file for reading */
 
-  printf("EXODUS II load-balance file: %s\n", Exo_LB_File);
+  printf("EXODUS II load-balance file: %s\n", Exo_LB_File.c_str());
   cpu_ws     = io_ws;
   int mode   = EX_READ | int64api;
   int iio_ws = 0; // Don't interfere with exodus files; this is the nemesis file.
-  if ((lb_exoid = ex_open(Exo_LB_File, mode, &cpu_ws, &iio_ws, &version)) == -1) {
-    fprintf(stderr, "%sERROR: Couldn\'t open lb file, %s\n", yo, Exo_LB_File);
+  if ((lb_exoid = ex_open(Exo_LB_File.c_str(), mode, &cpu_ws, &iio_ws, &version)) == -1) {
+    fprintf(stderr, "%sERROR: Couldn\'t open lb file, %s\n", yo, Exo_LB_File.c_str());
     exit(1);
   }
 

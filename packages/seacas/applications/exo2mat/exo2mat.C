@@ -53,7 +53,7 @@
 */
 
 #include <algorithm>
-#include <cstring> // for strcat, strlen, strcpy, etc
+#include <cstring> // for strlen, etc
 #include <iostream>
 #include <numeric>
 #include <vector>
@@ -64,7 +64,7 @@
 #include <cassert>      // for assert
 #include <cstddef>      // for size_t
 #include <cstdio>       // for fprintf, printf, sprintf, etc
-#include <cstdlib>      // for free, calloc, exit, malloc
+#include <cstdlib>      // for free, calloc, exit
 #if MATIO_VERSION < 151
 #error "MatIO Version 1.5.1 or greater is required"
 #endif
@@ -78,8 +78,8 @@ static bool   debug    = false;
 
 static const char *qainfo[] = {
     "exo2mat",
-    "2018/12/05",
-    "4.05",
+    "2019/04/25",
+    "4.06",
 };
 
 std::string time_stamp(const std::string &format)
@@ -947,8 +947,10 @@ void del_arg(int *argc, char *argv[], int j)
 /**********************************************************************/
 int main(int argc, char *argv[])
 {
-  char *oname = nullptr, *dot = nullptr, *filename = nullptr;
-  char  str[32];
+  std::string oname{};
+  std::string filename{};
+
+  char str[32];
 
   const char *ext = EXT;
 
@@ -1008,8 +1010,7 @@ int main(int argc, char *argv[])
     if (strcmp(argv[j], "-o") == 0) { /* specify output file name */
       del_arg(&argc, argv, j);
       if (argv[j] != nullptr) {
-        oname = reinterpret_cast<char *>(calloc(std::strlen(argv[j]) + 10, sizeof(char)));
-        strcpy(oname, argv[j]);
+        oname = argv[j];
         del_arg(&argc, argv, j);
         std::cout << "output file: " << oname << "\n";
       }
@@ -1039,21 +1040,20 @@ int main(int argc, char *argv[])
   if (textfile != 0) {
     ext = ".m";
   }
-  if (oname == nullptr) {
-    filename = reinterpret_cast<char *>(malloc(std::strlen(argv[1]) + 10));
-    strcpy(filename, argv[1]);
-    dot = strrchr(filename, '.');
-    if (dot != nullptr) {
-      *dot = '\0';
+  if (oname.empty()) {
+    filename   = argv[1];
+    size_t pos = filename.find_last_of('.');
+    if (pos != std::string::npos) {
+      filename = filename.substr(0, pos);
     }
-    strcat(filename, ext);
+    filename += std::string(ext);
   }
   else {
     filename = oname;
   }
 
   if (textfile != 0) {
-    m_file = fopen(filename, "w");
+    m_file = fopen(filename.c_str(), "w");
     if (m_file == nullptr) {
       std::cerr << "ERROR: Unable to open " << filename << "\n";
       exit(1);
@@ -1061,10 +1061,10 @@ int main(int argc, char *argv[])
   }
   else {
     if (mat_version == 50) {
-      mat_file = Mat_CreateVer(filename, nullptr, MAT_FT_MAT5);
+      mat_file = Mat_CreateVer(filename.c_str(), nullptr, MAT_FT_MAT5);
     }
     else if (mat_version == 73) {
-      mat_file = Mat_CreateVer(filename, nullptr, MAT_FT_MAT73);
+      mat_file = Mat_CreateVer(filename.c_str(), nullptr, MAT_FT_MAT73);
     }
 
     if (mat_file == nullptr) {
@@ -1347,7 +1347,6 @@ int main(int argc, char *argv[])
   else {
     Mat_Close(mat_file);
   }
-  free(filename);
   free(line);
 
   delete_exodus_names(str2, nstr2);

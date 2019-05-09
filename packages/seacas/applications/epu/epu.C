@@ -38,6 +38,7 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <copy_string_cpp.h>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -2224,10 +2225,12 @@ namespace {
         if (found) {
           std::cerr << "\nWARNING: Variable 'processor_id' already exists on database.\n"
                     << "         Adding 'processor_id_epu' instead.\n\n";
-          strcpy(input_name_list[num_input_vars - 1], "processor_id_epu");
+          copy_string(input_name_list[num_input_vars - 1], "processor_id_epu",
+                      ExodusFile::max_name_length() + 1);
         }
         else {
-          strcpy(input_name_list[num_input_vars - 1], "processor_id");
+          copy_string(input_name_list[num_input_vars - 1], "processor_id",
+                      ExodusFile::max_name_length() + 1);
         }
       }
 
@@ -2238,7 +2241,8 @@ namespace {
       size_t maxlen = 0;
       for (int i = 0; i < num_input_vars; i++) {
         if (vars.index_[i] > 0) {
-          strcpy(output_name_list[vars.index_[i] - 1], input_name_list[i]);
+          copy_string(output_name_list[vars.index_[i] - 1], input_name_list[i],
+                      ExodusFile::max_name_length() + 1);
           if (strlen(input_name_list[i]) > maxlen) {
             maxlen = strlen(input_name_list[i]);
           }

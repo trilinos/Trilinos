@@ -47,6 +47,7 @@
 #include <cgnslib.h>
 #include <cstddef>
 #include <ctime>
+#include <fmt/ostream.h>
 #include <fstream>
 #include <iostream>
 #include <numeric>
@@ -449,7 +450,7 @@ namespace Iocgns {
 
 #if IOSS_DEBUG_OUTPUT
     if (myProcessor == 0) {
-      std::cout << "CGNS DatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n";
+      fmt::print("CGNS DatabaseIO using {}-bit integers\n", CG_SIZEOF_SIZE);
     }
 #endif
     if (!is_input()) {
@@ -535,7 +536,7 @@ namespace Iocgns {
       }
 
       if (mode == CG_MODE_MODIFY) {
-	Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel);
+        Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel, false);
       }
 #if 0
       // This isn't currently working since CGNS currently has chunking
@@ -606,17 +607,13 @@ namespace Iocgns {
       }
       if (status != CG_OK) {
         if (ok_count != 0 || util().parallel_size() <= 2) {
-          std::ostringstream msg;
-          msg << "[" << myProcessor << "] CGNS Error: '" << cg_get_error() << "'\n";
-          std::cerr << msg.str();
+          fmt::print(std::cerr, "[{}] CGNS Error: '{}'\n", myProcessor, cg_get_error());
         }
         else {
           // Since error on all processors, assume the same error on all and only print
           // the error from processor 0.
           if (myProcessor == 0) {
-            std::ostringstream msg;
-            msg << "CGNS Error: '" << cg_get_error() << "'\n";
-            std::cerr << msg.str();
+            fmt::print(std::cerr, "CGNS Error: '{}'\n", cg_get_error());
           }
         }
       }
@@ -763,9 +760,8 @@ namespace Iocgns {
           set_block_offset(bbeg, bend, blocks, proc_block_map);
 
 #if IOSS_DEBUG_OUTPUT
-          std::cerr << "Range of blocks for " << b.name << " is " << i << " to " << j - 1
-                    << " Global I,J,K = " << b.glob_range[0] << " " << b.glob_range[1] << " "
-                    << b.glob_range[2] << "\n";
+          fmt::print(std::cerr, "Range of blocks for {} is {} to {} Global I,J,K = {} {} {}\n",
+                     b.name, i, j - 1, b.glob_range[0], b.glob_range[1], b.glob_range[2]);
 #endif
           // All processors need to know about it...
           for (int p = 0; p < proc_count; p++) {
@@ -807,12 +803,10 @@ namespace Iocgns {
 
 #if IOSS_DEBUG_OUTPUT
       for (const auto &b : resolved_blocks) {
-        std::cerr << b.name << " " << b.proc << " " << b.local_zone << " "
-                  << " (" << b.range[0] << " " << b.range[1] << " " << b.range[2] << ") ("
-                  << b.glob_range[0] << " " << b.glob_range[1] << " " << b.glob_range[2] << ") ("
-                  << b.offset[0] << " " << b.offset[1] << " " << b.offset[2] << ") [" << b.face_adj
-                  << "]"
-                  << "\n";
+        fmt::print(std::cerr, "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name, b.proc,
+                   b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
+                   b.glob_range[1], b.glob_range[2], b.offset[0], b.offset[1], b.offset[2],
+                   b.face_adj);
       }
 #endif
 
@@ -1166,8 +1160,7 @@ namespace Iocgns {
         if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
           num_shared += npnts;
 #if IOSS_DEBUG_OUTPUT
-          std::cout << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
-                    << "\n";
+          fmt::print("Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
 #endif
           std::vector<cgsize_t> points(npnts);
           std::vector<cgsize_t> donors(npnts);
@@ -1230,9 +1223,8 @@ namespace Iocgns {
         num_elem -= num_entity;
         std::string element_topo = Utils::map_cgns_to_topology_type(e_type);
 #if IOSS_DEBUG_OUTPUT
-        std::cout << "Added block " << zone_name << ": CGNS topology = '"
-                  << cg_ElementTypeName(e_type) << "', IOSS topology = '" << element_topo
-                  << "' with " << num_entity << " elements\n";
+        fmt::print("Added block {}: CGNS topology = '{}', IOSS topology = '{}' with {} elements\n",
+                   zone_name, cg_ElementTypeName(e_type), element_topo, num_entity);
 #endif
         eblock = new Ioss::ElementBlock(this, zone_name, element_topo, num_entity);
         eblock->property_add(Ioss::Property("base", base));
@@ -1257,13 +1249,11 @@ namespace Iocgns {
         Ioss::SideSet *sset = get_region()->get_sideset(section_name);
 
         if (sset != nullptr) {
-          std::string block_name(zone_name);
-          block_name += "/";
-          block_name += section_name;
-          std::string face_topo = Utils::map_cgns_to_topology_type(e_type);
+          std::string block_name = fmt::format("{}/{}", zone_name, section_name);
+          std::string face_topo  = Utils::map_cgns_to_topology_type(e_type);
 #if IOSS_DEBUG_OUTPUT
-          std::cout << "Added sideset " << block_name << " of topo " << face_topo << " with "
-                    << num_entity << " faces\n";
+          fmt::print("Added sideset {} of topo '{}' with {} faces\n", block_name, face_topo,
+                     num_entity);
 #endif
           std::string parent_topo = eblock == nullptr ? "unknown" : eblock->topology()->name();
           auto sblk = new Ioss::SideBlock(this, block_name, face_topo, parent_topo, num_entity);
@@ -1434,10 +1424,8 @@ namespace Iocgns {
 
         // If point_list non_empty, then output this adjacency node...
         if (!point_list.empty()) {
-          int         gc_idx = 0;
-          std::string name   = (*I)->name();
-          name += "_to_";
-          name += (*J)->name();
+          int         gc_idx  = 0;
+          std::string name    = fmt::format("{}_to_{}", (*I)->name(), (*J)->name());
           const auto &d1_name = (*J)->name();
           CGCHECKM(cg_conn_write(get_file_pointer(), base, zone, name.c_str(), CG_Vertex,
                                  CG_Abutting1to1, CG_PointList, point_list.size(),
@@ -1445,9 +1433,7 @@ namespace Iocgns {
                                  CG_PointListDonor, CG_DataTypeNull, point_list_donor.size(),
                                  TOPTR(point_list_donor), &gc_idx));
 
-          name = (*J)->name();
-          name += "_to_";
-          name += (*I)->name();
+          name                = fmt::format("{}_to_{}", (*J)->name(), (*I)->name());
           const auto &d2_name = (*I)->name();
 
           CGCHECKM(cg_conn_write(get_file_pointer(), base, dzone, name.c_str(), CG_Vertex,
@@ -2640,8 +2626,9 @@ namespace Iocgns {
       else if (field.get_name() == "distribution_factors") {
         static bool warning_output = false;
         if (!warning_output) {
-          std::cerr << "IOSS: WARNING: For CGNS output, the sideset distribution factors are not "
-                       "output.\n";
+          fmt::print(
+              std::cerr,
+              "IOSS: WARNING: For CGNS output, the sideset distribution factors are not output.\n");
           warning_output = true;
         }
         return 0;

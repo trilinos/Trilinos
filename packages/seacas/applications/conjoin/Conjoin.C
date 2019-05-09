@@ -1820,13 +1820,15 @@ namespace {
         if (vars.type() == EX_ELEM_BLOCK) {
           status = si.element_status_variable();
           if (status != "NONE") {
-            strcpy(input_name_list[num_vars - 1], status.c_str());
+            copy_string(input_name_list[num_vars - 1], status,
+                        Excn::ExodusFile::max_name_length() + 1);
           }
         }
         else if (vars.type() == EX_NODAL) {
           status = si.nodal_status_variable();
           if (status != "NONE") {
-            strcpy(input_name_list[num_vars - 1], status.c_str());
+            copy_string(input_name_list[num_vars - 1], status,
+                        Excn::ExodusFile::max_name_length() + 1);
           }
         }
       }
@@ -1837,7 +1839,8 @@ namespace {
       size_t maxlen = 0;
       for (int i = 0; i < num_vars; i++) {
         if (vars.index_[i] > 0) {
-          strcpy(output_name_list[vars.index_[i] - 1], input_name_list[i]);
+          copy_string(output_name_list[vars.index_[i] - 1], input_name_list[i],
+                      Excn::ExodusFile::max_name_length() + 1);
           if (strlen(input_name_list[i]) > maxlen) {
             maxlen = strlen(input_name_list[i]);
           }

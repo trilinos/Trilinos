@@ -606,7 +606,7 @@ static void xactivate(anything **surf_list)
   surf_states[new_state].cgi_inited = CNO;
   surf_states[new_state].this_index = new_state; /* save for dealloc */
   /* -- for batch devices */
-  strcpy(surf_states[new_state].filename, DEFAULT_OUTFILE_NAME);
+  copy_string(surf_states[new_state].filename, DEFAULT_OUTFILE_NAME, 100);
   surf_states[new_state].file_d = -1;
 
   /* set surface state_list pointer to point to this state list */
@@ -1068,7 +1068,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
       /* this function must be called before CI */
       /* ...error message if not?? check for legal file name?? */
       if (cur_state->cgi_inited != CYES) {
-        strcpy(cur_state->filename, data);
+        copy_string(cur_state->filename, data, 100);
       }
 
       break;
@@ -5346,7 +5346,7 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
   }
 
   /* copy filename to symbol */
-  strcpy(symbol, cur_state->filename);
+  copy_string(symbol, cur_state->filename, 1024);
 
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);

@@ -45,7 +45,7 @@
 #include <cstddef>          // for size_t
 #include <cstdio>           // for fprintf, printf, nullptr, etc
 #include <cstdlib>          // for exit, free, malloc
-#include <cstring>          // for strcpy, strlen, memset, etc
+#include <cstring>          // for strlen, memset, etc
 #include <ctime>            // for asctime, localtime, time, etc
 #include <vector>           // for vector
 template <typename INT> struct ELEM_COMM_MAP;
@@ -482,10 +482,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     qa_date[strlen(qa_date) - 1] = '\0';
   }
   if (globals.Num_QA_Recs > 0) {
-    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name, MAX_STR_LENGTH + 1);
-    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers, MAX_STR_LENGTH + 1);
-    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date, MAX_STR_LENGTH + 1);
-    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time, MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date,
+                MAX_STR_LENGTH + 1);
+    copy_string(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time,
+                MAX_STR_LENGTH + 1);
 
     /* Output QA records to screen */
     if (Debug_Flag >= 4) {

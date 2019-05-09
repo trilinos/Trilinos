@@ -35,9 +35,10 @@
 #include "nem_spread.h"     // for NemSpread
 #include "ps_pario_const.h" // for PIO_Info, Parallel_IO
 #include "rf_io_const.h"    // for ExoFile, Exo_LB_File, etc
-#include <cstdio>           // for fprintf, stderr
-#include <cstring>          // for strlen, strcpy
-#include <exodusII.h>       // for ex_close, ex_open, EX_READ
+#include <copy_string_cpp.h>
+#include <cstdio>     // for fprintf, stderr
+#include <cstring>    // for strlen
+#include <exodusII.h> // for ex_close, ex_open, EX_READ
 
 template int NemSpread<double, int>::check_inp(void);
 template int NemSpread<float, int>::check_inp(void);
@@ -55,21 +56,21 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
   /*                 Check the input and output files                          */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /* check if the Mesh file was specified */
-  if (strlen(ExoFile) <= 0) {
+  if (ExoFile.empty()) {
     fprintf(stderr, "%s: fatal - must specify input FEM file.\n", yo);
     return 0;
   }
 
   /* check for the existence of a readable FEM file */
   int mode = EX_READ | int64api;
-  if ((exid = ex_open(ExoFile, mode, &icpu_ws, &iio_ws, &vers)) < 0) {
-    fprintf(stderr, "%s: fatal - unable to open input FEM file, %s.\n", yo, ExoFile);
+  if ((exid = ex_open(ExoFile.c_str(), mode, &icpu_ws, &iio_ws, &vers)) < 0) {
+    fprintf(stderr, "%s: fatal - unable to open input FEM file, %s.\n", yo, ExoFile.c_str());
     return 0;
   }
   ex_close(exid);
 
   /* check that there is a load balance file specified */
-  if (strlen(Exo_LB_File) <= 0) {
+  if (Exo_LB_File.empty()) {
     fprintf(stderr, "%s: fatal - must specify input FEM file.\n", yo);
     return 0;
   }
@@ -77,8 +78,8 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
   /* check for the existence of a readable load balance file */
   icpu_ws = 0;
   iio_ws  = 0;
-  if ((exid = ex_open(Exo_LB_File, mode, &icpu_ws, &iio_ws, &vers)) < 0) {
-    fprintf(stderr, "%s: fatal - unable to open load balance file, %s.\n", yo, Exo_LB_File);
+  if ((exid = ex_open(Exo_LB_File.c_str(), mode, &icpu_ws, &iio_ws, &vers)) < 0) {
+    fprintf(stderr, "%s: fatal - unable to open load balance file, %s.\n", yo, Exo_LB_File.c_str());
     return 0;
   }
   ex_close(exid);
@@ -96,8 +97,8 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
 
   /* check to see if there is a separate restart file */
   if (Restart_Info.Flag > 0) {
-    if (strlen(Exo_Res_File) <= 0) {
-      strcpy(Exo_Res_File, ExoFile); /* if not use the input FEM file */
+    if (Exo_Res_File.empty()) {
+      Exo_Res_File = ExoFile; /* if not use the input FEM file */
     }
   }
 
@@ -140,12 +141,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
     return 0;
   }
 
-  /* default for nem_spread is to stage the writes */
-  if (strlen(PIO_Info.Staged_Writes) <= 0) {
-    strcpy(PIO_Info.Staged_Writes, "yes");
-  }
-
-  if (strlen(PIO_Info.Par_Dsk_Root) <= 0) {
+  if (PIO_Info.Par_Dsk_Root.empty()) {
     fprintf(stderr,
             "%s: Error - Root directory for parallel files must"
             " be specified.\n",
@@ -153,7 +149,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
     return 0;
   }
 
-  if (strlen(PIO_Info.Par_Dsk_SubDirec) <= 0) {
+  if (PIO_Info.Par_Dsk_SubDirec.empty()) {
     fprintf(stderr,
             "%s: Error - Subdirectory for parallel files must"
             " be specified.\n",

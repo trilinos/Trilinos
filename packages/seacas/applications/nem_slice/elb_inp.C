@@ -40,6 +40,7 @@
  *      read_cmd_file()
  *      check_inp_specs()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+#include "copy_string_cpp.h"
 #include "elb.h"        // for Problem_Description, etc
 #include "elb_err.h"    // for Gen_Error, error_lev
 #include "elb_format.h" // for ST_ZU
@@ -629,7 +630,7 @@ value\n");
       /* allocate string to hold designation */
       if (optarg != nullptr) {
         prob->groups = reinterpret_cast<char *>(malloc(strlen(optarg) + 1));
-        strcpy(prob->groups, optarg);
+        copy_string(prob->groups, optarg, strlen(optarg) + 1);
       }
       break;
 
@@ -704,7 +705,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
   /* Begin parsing the input file */
   while (fgets(inp_line, MAX_INP_LINE, inp_fd)) {
     if (inp_line[0] != '#') {
-      strcpy(inp_copy, inp_line);
+      copy_string(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       cptr = strtok(inp_line, "\t=");
       if (token_compare(cptr, "input exodusii file")) {
@@ -1303,7 +1304,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             cptr2++;
             /* allocate space to hold the group designator */
             problem->groups = reinterpret_cast<char *>(malloc(strlen(cptr2) + 1));
-            strcpy(problem->groups, cptr2);
+            copy_string(problem->groups, cptr2, strlen(cptr2) + 1);
             /* get rid of ending bracket */
             cptr2  = strchr(problem->groups, '}');
             *cptr2 = '\0';
@@ -1603,7 +1604,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   if (weight->exo_filename.length() > 0) {
     /* Check that a variable name and/or index was specified. */
-    if (strlen(weight->exo_varname.c_str()) == 0 && weight->exo_vindx <= 0) {
+    if (weight->exo_varname.empty() && weight->exo_vindx <= 0) {
       Gen_Error(0, "FATAL: must specify an index and/or a name for weighting"
                    " variable");
       return 0;
@@ -1685,7 +1686,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * index. If a variable name AND an index were specified then make
      * sure they match.
      */
-    if (strlen(weight->exo_varname.c_str()) > 0) {
+    if (!weight->exo_varname.empty()) {
       for (cnt = 0; cnt < nvars; cnt++) {
         if (strcmp(var_names[cnt], weight->exo_varname.c_str()) == 0) {
           tmp_vindx = cnt + 1;

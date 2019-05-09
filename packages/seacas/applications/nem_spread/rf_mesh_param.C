@@ -72,7 +72,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   /* Local variables */
 
   const char *yo = "read_mesh_param";
-  char *      exofile;
+  std::string exofile;
   int         exoid, error;
   int         cpu_ws;
   float       version;
@@ -93,9 +93,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   int mode = EX_READ | int64api;
 
   /* Open the EXODUS II mesh file */
-  exoid = ex_open(exofile, mode, &cpu_ws, &io_ws, &version);
+  exoid = ex_open(exofile.c_str(), mode, &cpu_ws, &io_ws, &version);
   if (exoid == -1) {
-    fprintf(stderr, "%s: ERROR opening up the mesh exoII file, %s\n", yo, exofile);
+    fprintf(stderr, "%s: ERROR opening up the mesh exoII file, %s\n", yo, exofile.c_str());
     exit(-1);
   }
 
@@ -114,7 +114,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
   globals.Num_Node_Set = info.num_node_sets;
   globals.Num_Side_Set = info.num_side_sets;
 
-  printf("\nExodus file (%s)\n", exofile);
+  printf("\nExodus file (%s)\n", exofile.c_str());
   printf("\tTitle of file: %s\n", GeomTitle);
   printf("\tDimensionality of problem = %d\n", globals.Num_Dim);
   printf("\tNumber of nodes           = " ST_ZU "\n", globals.Num_Node);

@@ -39,6 +39,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <numeric>
 #include <string>
 #include <tokenize.h>
@@ -97,7 +98,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
       if (do_print && rank == 0) {
-        std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
+        fmt::print(std::cerr, "IOSS: Adding property '{}' with value '{}'\n", prop, value);
       }
       if (all_digit) {
         int int_value = std::stoi(value);
@@ -509,8 +510,8 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
   if (parallel_rank() == 0) {
     auto                          now  = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = now - start;
-    std::cerr << " [" << std::fixed << std::setprecision(2) << diff.count() << "] (" << min / MiB
-              << "M  " << max / MiB << "M  " << avg / MiB << "M)\t" << output << "\n";
+    fmt::print(std::cerr, " [{:.2f}] ({}MiB  {}MiB  {}MiB)\t{}\n", diff.count(), min / MiB,
+               max / MiB, avg / MiB, output);
   }
 }
 

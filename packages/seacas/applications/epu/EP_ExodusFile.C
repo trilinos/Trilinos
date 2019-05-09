@@ -290,7 +290,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     outputFilename_ += "." + output_suffix;
   }
 
-  if ((curdir.length() != 0u) && !Excn::is_path_absolute(outputFilename_)) {
+  if (!curdir.empty() && !Excn::is_path_absolute(outputFilename_)) {
     outputFilename_ = curdir + "/" + outputFilename_;
   }
 

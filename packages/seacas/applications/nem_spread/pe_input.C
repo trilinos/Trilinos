@@ -41,7 +41,7 @@
 #include "nem_spread.h"
 #include "ps_pario_const.h" // for PIO_Info, Parallel_IO, etc
 #include "rf_allo.h"        // for array_alloc
-#include "rf_io_const.h"    // for MAX_INPUT_STR_LN, ExoFile, etc
+#include "rf_io_const.h"    // for ExoFile, etc
 #include "scopeguard.h"
 #include <cstdio>  // for fprintf, nullptr, stderr, etc
 #include <cstdlib> // for exit, realloc
@@ -49,6 +49,8 @@
 #include <rf_allo.h>
 
 #define TLIST_CNT 5
+
+constexpr int MAX_INPUT_STR_LN = 4096; /* maximum string length for read_string()  */
 
 /*****************************************************************************/
 int read_mesh_file_name(const char *filename)
@@ -69,15 +71,15 @@ int read_mesh_file_name(const char *filename)
     /* skip any line that is a comment */
     if ((inp_line[0] != '#') && (inp_line[0] != '\n')) {
 
-      strcpy(inp_copy, inp_line);
+      copy_string(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       char *cptr = strtok(inp_line, "\t=");
       /****** The input ExodusII file name ******/
       if (token_compare(cptr, "input fem file") != 0) {
-        if (strlen(ExoFile) == 0) {
+        if (ExoFile.empty()) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(ExoFile, cptr);
+          ExoFile = std::string(cptr);
           break;
         }
       }
@@ -121,39 +123,39 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
     /* skip any line that is a comment */
     if ((inp_line[0] != '#') && (inp_line[0] != '\n')) {
 
-      strcpy(inp_copy, inp_line);
+      copy_string(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       cptr = strtok(inp_line, "\t=");
       /****** The input ExodusII file name ******/
       if (token_compare(cptr, "input fem file")) {
-        if (strlen(ExoFile) == 0) {
+        if (ExoFile.empty()) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(ExoFile, cptr);
+          ExoFile = std::string(cptr);
         }
       }
       /****** The input NemesisI load balance file name ******/
       else if (token_compare(cptr, "lb file")) {
-        if (strlen(Exo_LB_File) == 0) {
+        if (Exo_LB_File.empty()) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(Exo_LB_File, cptr);
+          Exo_LB_File = std::string(cptr);
         }
       }
       /****** The scalar results ExodusII file name ******/
       else if (token_compare(cptr, "scalar results fem file")) {
-        if (strlen(Exo_Res_File) == 0) {
+        if (Exo_Res_File.empty()) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(Exo_Res_File, cptr);
+          Exo_Res_File = std::string(cptr);
         }
       }
       /****** The parallel results ExodusII file name ******/
       else if (token_compare(cptr, "parallel results file base name")) {
-        if (strlen(Output_File_Base_Name) == 0) {
+        if (Output_File_Base_Name.empty()) {
           cptr = strtok(nullptr, "\t=");
           strip_string(cptr, " \t\n");
-          copy_string(Output_File_Base_Name, cptr);
+          Output_File_Base_Name = std::string(cptr);
         }
       }
       /****** The Number of Processors ******/
@@ -174,7 +176,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
       else if (token_compare(cptr, "file extension for spread files")) {
         cptr = strtok(nullptr, "\t=");
         strip_string(cptr, " \t\n");
-        copy_string(PIO_Info.Exo_Extension, cptr);
+        PIO_Info.Exo_Extension = std::string(cptr);
       }
 
       /****** Is There a Scalar Mesh File to Use ******/
@@ -487,10 +489,10 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
             PIO_Info.NoSubdirectory = 1;
           }
           else if (strstr(cptr, "stage_off")) {
-            strcpy(PIO_Info.Staged_Writes, "no");
+            PIO_Info.Staged_Writes = false;
           }
           else if (strstr(cptr, "stage_on")) {
-            strcpy(PIO_Info.Staged_Writes, "yes");
+            PIO_Info.Staged_Writes = true;
           }
 
           cptr = strtok(nullptr, ",");
@@ -517,8 +519,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               " \"root\"");
               return 0;
             }
-            copy_string(PIO_Info.Par_Dsk_Root, cptr2);
-            PIO_Info.Par_Dsk_Root[MAX_FNL - 1] = '\0';
+            PIO_Info.Par_Dsk_Root = std::string(cptr2);
           }
           if (strstr(cptr, "subdir")) {
             cptr2 = strchr(cptr, '=');
@@ -532,10 +533,9 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
                               " \"subdir\"");
               return 0;
             }
-            copy_string(PIO_Info.Par_Dsk_SubDirec, cptr2);
-            PIO_Info.Par_Dsk_SubDirec[MAX_FNL - 1] = '\0';
-            if (PIO_Info.Par_Dsk_SubDirec[strlen(PIO_Info.Par_Dsk_SubDirec) - 1] != '/') {
-              strcat(PIO_Info.Par_Dsk_SubDirec, "/");
+            PIO_Info.Par_Dsk_SubDirec = std::string(cptr2);
+            if (PIO_Info.Par_Dsk_SubDirec.back() != '/') {
+              PIO_Info.Par_Dsk_SubDirec += '/';
             }
           }
 
@@ -546,15 +546,15 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
     } /* End "if(inp_line[0] != '#')" */
   }   /* End "while(fgets(inp_line, MAX_INPUT_STR_LN, file_cmd))" */
 
-  if (strlen(Output_File_Base_Name) == 0 && strlen(Exo_LB_File) != 0) {
+  if (Output_File_Base_Name.empty() && !Exo_LB_File.empty()) {
     // User did not specify a base name.  Use the basenmae of the
     // Exo_LB_File instead.
-    copy_string(Output_File_Base_Name, Exo_LB_File);
+    Output_File_Base_Name = Exo_LB_File;
 
     // If there is an extension, strip it off...
-    char *cPtr = strrchr(Output_File_Base_Name, '.');
-    if (cPtr != nullptr) {
-      *cPtr = '\0';
+    size_t found = Output_File_Base_Name.find_last_of('.');
+    if (found != std::string::npos) {
+      Output_File_Base_Name = Output_File_Base_Name.substr(0, found);
     }
   }
   return 0;

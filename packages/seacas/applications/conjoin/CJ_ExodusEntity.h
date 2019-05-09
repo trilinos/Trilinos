@@ -33,6 +33,7 @@
 
 #define NO_NETCDF_2
 #include "CJ_ObjectType.h"
+#include <copy_string_cpp.h>
 #include <cstring>
 #include <exodusII.h>
 #include <iostream>
@@ -79,14 +80,14 @@ namespace Excn {
 
   struct Block
   {
-    Block() { std::strcpy(elType, ""); }
+    Block() { copy_string(elType, ""); }
 
     Block(const Block &other)
         : name_(other.name_), id(other.id), elementCount(other.elementCount),
           nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
           offset_(other.offset_), position_(other.position_)
     {
-      std::strcpy(elType, other.elType);
+      copy_string(elType, other.elType);
     }
 
     ~Block() = default;
@@ -113,7 +114,7 @@ namespace Excn {
       attributeNames  = other.attributeNames;
       offset_         = other.offset_;
       position_       = other.position_;
-      std::strcpy(elType, other.elType);
+      copy_string(elType, other.elType);
       name_ = other.name_;
       return *this;
     }

@@ -45,11 +45,11 @@
 #include "ps_pario_const.h" // for Parallel_IO
 #include "rf_allo.h"        // for safe_free
 #include "rf_format.h"
-#include "rf_io.h"  // for ExoFile, Debug_Flag, etc
-#include <cstdint>  // for int64_t
-#include <cstdio>   // for printf, fprintf, stderr, etc
-#include <cstdlib>  // for exit
-#include <cstring>  // for strcpy
+#include "rf_io.h" // for ExoFile, Debug_Flag, etc
+#include <cstdint> // for int64_t
+#include <cstdio>  // for printf, fprintf, stderr, etc
+#include <cstdlib> // for exit
+#include <cstring>
 #include <unistd.h> // for getopt, optarg, optind
 
 #if defined(__STRICT_ANSI__)
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   PIO_Info.NoSubdirectory      = 0;
   PIO_Info.Par_Dsk_Root[0]     = '\0';
   PIO_Info.Par_Dsk_SubDirec[0] = '\0';
-  PIO_Info.Staged_Writes[0]    = '\0';
+  PIO_Info.Staged_Writes       = true;
 
   // Read the ASCII input file and get the name of the mesh file
   // so we can determine the floating point and integer word sizes
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   int   cpu_ws = sizeof(float);
   float version;
 
-  int exoid = ex_open(ExoFile, EX_READ, &cpu_ws, &io_ws, &version);
+  int exoid = ex_open(ExoFile.c_str(), EX_READ, &cpu_ws, &io_ws, &version);
 
   // See if any 64-bit integers stored on database...
   int int64api = 0;
