@@ -129,6 +129,46 @@ namespace Tpetra {
       InnerLoopBodyType g_;
     };
 
+    // CUDA 9.2 doesn't like it when you call lambdas in private or
+    // protected methods (of Transform, in this case).  Thus, I've
+    // broken out Transform::transform_sameObject into a separate
+    // functor and nonmember function.
+    template<class ExecutionSpace,
+             class SC, class LO, class GO, class NT,
+             class UnaryFunctionType>
+    class TransformSameMultiVector {
+    private:
+      using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
+      using IST = typename MV::impl_scalar_type;
+
+    public:
+      TransformSameMultiVector (UnaryFunctionType f) : f_ (f) {}
+
+      KOKKOS_INLINE_FUNCTION void operator() (IST& X_ij) const {
+        // User function has the form IST(const IST&) suitable for
+        // transform, so we have to convert it to a for_each function
+        // of the form void(IST&).
+        X_ij = f_(X_ij);
+      }
+
+    private:
+      UnaryFunctionType f_;
+    };
+
+    template<class ExecutionSpace,
+             class SC, class LO, class GO, class NT,
+             class UnaryFunctionType>
+    void
+    transformSameMultiVector (const char kernelLabel[],
+                              ExecutionSpace execSpace,
+                              ::Tpetra::MultiVector<SC, LO, GO, NT>& output,
+                              UnaryFunctionType f)
+    {
+      using functor_type = TransformSameMultiVector<ExecutionSpace,
+        SC, LO, GO, NT, UnaryFunctionType>;
+      ::Tpetra::for_each (kernelLabel, execSpace, output, functor_type (f));
+    }
+
     /// \brief Implementation of Tpetra::transform for
     ///   Tpetra::MultiVector.
     template<class ExecutionSpace,
@@ -224,20 +264,6 @@ namespace Tpetra {
            }, readOnly (input).on (memSpace));
       }
 
-      template<class UnaryFunctionType>
-      static void
-      transform_sameObject (const char kernelLabel[],
-                            ExecutionSpace execSpace,
-                            ::Tpetra::MultiVector<SC, LO, GO, NT>& output,
-                            UnaryFunctionType f)
-      {
-        // User function has the form IST(const IST&) suitable for
-        // transform, so we have to convert it to a for_each function.
-        ::Tpetra::for_each
-            (kernelLabel, execSpace, output,
-             KOKKOS_LAMBDA (IST& X_ij) { X_ij = f(X_ij); });
-      }
-
     public:
       // Implementation of unary Transform on
       template<class UnaryFunctionType>
@@ -281,7 +307,7 @@ namespace Tpetra {
             // some columns of input & output to alias.  Aliasing is a
             // correctness issue (e.g., for sync'ing).
             if (sameObject (*output_j, *input_j)) {
-              transform_sameObject (kernelLabel, execSpace, *output_j, f);
+              transformSameMultiVector (kernelLabel, execSpace, *output_j, f);
             }
             else {
               transform_vec_notSameObject (kernelLabel, execSpace,
@@ -291,7 +317,7 @@ namespace Tpetra {
         }
         else {
           if (sameObject (output, input)) {
-            transform_sameObject (kernelLabel, execSpace, output, f);
+            transformSameMultiVector (kernelLabel, execSpace, output, f);
           }
           else {
             transform_mv_notSameObject (kernelLabel, execSpace,
@@ -422,7 +448,7 @@ namespace Tpetra {
                          });
                       }, readOnly (*input2_j).on (memSpace));
                  }, readOnly (*input1_j).on (memSpace));
-              
+
               // withLocalAccess
               //   ([=] (const input1_view_type& input1_lcl,
               //         const input2_view_type& input2_lcl) mutable {
@@ -511,7 +537,7 @@ namespace Tpetra {
                        });
                     }, readOnly (input2).on (memSpace));
                }, readOnly (input1).on (memSpace));
-            
+
             // withLocalAccess
             //   ([=] (const input1_view_type& input1_lcl,
             //         const input2_view_type& input2_lcl) mutable {
