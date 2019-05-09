@@ -438,28 +438,16 @@ namespace Tpetra {
             }
             else {
               withLocalAccess
-                ([=] (const input1_view_type& input1_lcl) mutable {
-                   withLocalAccess
-                     ([=] (const input2_view_type& input2_lcl) mutable {
-                        ::Tpetra::for_each
-                         (kernelLabel, execSpace, *output_j,
-                          KOKKOS_LAMBDA (IST& out, const LO i) {
-                           out = f (input1_lcl(i), input2_lcl(i));
-                         });
-                      }, readOnly (*input2_j).on (memSpace));
-                 }, readOnly (*input1_j).on (memSpace));
-
-              // withLocalAccess
-              //   ([=] (const input1_view_type& input1_lcl,
-              //         const input2_view_type& input2_lcl) mutable {
-              //      ::Tpetra::for_each
-              //       (kernelLabel, execSpace, *output_j,
-              //        KOKKOS_LAMBDA (IST& out, const LO i) {
-              //         out = f (input1_lcl(i), input2_lcl(i));
-              //       });
-              //    },
-              //    readOnly (*input1_j).on (memSpace),
-              //    readOnly (*input2_j).on (memSpace));
+                ([=] (const input1_view_type& input1_lcl,
+                      const input2_view_type& input2_lcl) mutable {
+                   ::Tpetra::for_each
+                    (kernelLabel, execSpace, *output_j,
+                     KOKKOS_LAMBDA (IST& out, const LO i) {
+                      out = f (input1_lcl(i), input2_lcl(i));
+                    });
+                 },
+                 readOnly (*input1_j).on (memSpace),
+                 readOnly (*input2_j).on (memSpace));
             }
           }
         }
@@ -527,28 +515,16 @@ namespace Tpetra {
           }
           else {
             withLocalAccess
-              ([=] (const input1_view_type& input1_lcl) mutable {
-                 withLocalAccess
-                   ([=] (const input2_view_type& input2_lcl) mutable {
+              ([=] (const input1_view_type& input1_lcl,
+                    const input2_view_type& input2_lcl) mutable {
                       ::Tpetra::for_each
                        (kernelLabel, execSpace, output,
                         KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
                          out = f (input1_lcl(i, j), input2_lcl(i, j));
                        });
-                    }, readOnly (input2).on (memSpace));
-               }, readOnly (input1).on (memSpace));
-
-            // withLocalAccess
-            //   ([=] (const input1_view_type& input1_lcl,
-            //         const input2_view_type& input2_lcl) mutable {
-            //           ::Tpetra::for_each
-            //            (kernelLabel, execSpace, output,
-            //             KOKKOS_LAMBDA (IST& out, const LO i, const LO j) {
-            //              out = f (input1_lcl(i, j), input2_lcl(i, j));
-            //            });
-            //    },
-            //    readOnly (input1).on (memSpace),
-            //    readOnly (input2).on (memSpace));
+               },
+               readOnly (input1).on (memSpace),
+               readOnly (input2).on (memSpace));
           }
         }
       }
