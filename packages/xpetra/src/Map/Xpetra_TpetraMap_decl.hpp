@@ -59,6 +59,9 @@
 
 namespace Xpetra {
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ const RCP<Map<LocalOrdinal,GlobalOrdinal,Node> > toXpetraNonConst(const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
+
   template <class LocalOrdinal = Map<>::local_ordinal_type,
             class GlobalOrdinal = typename Map<LocalOrdinal>::global_ordinal_type,
             class Node = typename Map<LocalOrdinal, GlobalOrdinal>::node_type>
@@ -233,7 +236,9 @@ namespace Xpetra {
 
 #ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const;
+    RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
+      return toXpetraNonConst(map_->clone(node2));
+    }
 #endif
 
     //@}
@@ -364,6 +369,7 @@ namespace Xpetra {
     }
   } // useTpetra namespace
 
+#define XPETRA_TPETRAMAP_SHORT
 } // Xpetra namespace
 #endif // XPETRA_TPETRAMAP_DECL_HPP
 

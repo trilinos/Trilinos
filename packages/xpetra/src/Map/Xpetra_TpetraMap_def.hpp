@@ -273,16 +273,6 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TpetraMap<LocalOrdinal,Global
     return toXpetra(map_->replaceCommWithSubset(newComm));
 }
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-template<class Node2>
-RCP<Map<LocalOrdinal, GlobalOrdinal, Node2> > XPETRA_DEPRECATED 
-TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::clone(const RCP<Node2> &node2) const
-{
-    return toXpetraNonConst(map_->clone(node2));
-}
-#endif
-
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map)
 : map_(map) { }
