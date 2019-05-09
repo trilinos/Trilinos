@@ -1308,8 +1308,8 @@ public:
     isHzp_zpAssembled_ = (isHzp_zpZero_ ? isHzp_zpAssembled_ : false);
   }
 
-  void update(const ROL::Vector<Real>    &un,
-              const ROL::TimeStamp<Real> &ts) {
+  void update_un(const ROL::Vector<Real>    &un,
+                 const ROL::TimeStamp<Real> &ts) {
     isResAssembled_    = false;
     isJuoAssembled_    = (isJuoZero_    ? isJuoAssembled_    : false);
     isJunAssembled_    = (isJunZero_    ? isJunAssembled_    : false);
