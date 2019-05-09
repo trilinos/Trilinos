@@ -800,21 +800,23 @@ IF (Stokhos_ENABLE_Sacado)
         TripleMatrixMultiply
         )
       SET(TPETRA_SD_ETI_CLASSES
-        Details::normImpl
         )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra/*.hpp)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
-        PROCESS_ENSEMBLE_ETI(
-          "${Stokhos_ETI_Ensemble_Sizes}"
-          "${TPETRA_SD_ETI_CLASSES}"
-          "sacado/kokkos/vector/tpetra"
-          "Tpetra_SD"
-          TRUE
-          "${STOKHOS_DEPLIBS}"
-          DEPLIBS_OUT)
-        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        IF (NOT ("${TPETRA_SD_ETI_CLASSES}" STREQUAL ""))
+          PROCESS_ENSEMBLE_ETI(
+            "${Stokhos_ETI_Ensemble_Sizes}"
+            "${TPETRA_SD_ETI_CLASSES}"
+            "sacado/kokkos/vector/tpetra"
+            "Tpetra_SD"
+            TRUE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+
         # Tpetra depends on Tpetra_SD
         SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
         PROCESS_ENSEMBLE_ETI(
@@ -848,15 +850,18 @@ IF (Stokhos_ENABLE_Sacado)
         SET(EXTRA_TPETRA_ETI_CLASSES
           CrsMatrix
           )
-        PROCESS_PCE_ETI(
-          "${TPETRA_SD_ETI_CLASSES}"
-          ""
-          "sacado/kokkos/pce/tpetra"
-          "Tpetra_SD"
-          TRUE
-          "${STOKHOS_DEPLIBS}"
-          DEPLIBS_OUT)
-        LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        IF (NOT ("${TPETRA_SD_ETI_CLASSES}" STREQUAL ""))
+          PROCESS_PCE_ETI(
+            "${TPETRA_SD_ETI_CLASSES}"
+            ""
+            "sacado/kokkos/pce/tpetra"
+            "Tpetra_SD"
+            TRUE
+            "${STOKHOS_DEPLIBS}"
+            DEPLIBS_OUT)
+          LIST(APPEND STOKHOS_TPETRA_DEPLIBS ${DEPLIBS_OUT})
+        ENDIF()
+
         # Tpetra depends on Tpetra_SD
         SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
         PROCESS_PCE_ETI(
