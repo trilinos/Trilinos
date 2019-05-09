@@ -166,15 +166,11 @@ namespace { // (anonymous)
       return;
     }
 
-    out << "X.sync_device(); X.putScalar(666.0);" << endl;
-    X.sync_device ();
-    X.putScalar (666.0);
-    // out << "Test for_each(device_execution_space (), "
-    //   "MultiVector, void(double&))" << endl;
-    // for_each ("X_ij=666", device_execution_space (), X,
-    //           KOKKOS_LAMBDA (double& X_ij) {
-    //     X_ij = 666.0;
-    //   });
+    out << "Test for_each(device_execution_space(),MV): Set values to 666" << endl;
+    for_each ("X_ij=666", device_execution_space (), X,
+              KOKKOS_LAMBDA (double& X_ij) {
+        X_ij = 666.0;
+      });
     {
       X.sync_host ();
       auto X_lcl = X.getLocalViewHost ();
