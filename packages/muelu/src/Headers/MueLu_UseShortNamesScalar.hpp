@@ -119,6 +119,9 @@ typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRF
 #ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_SHORT
 typedef MueLu::GeometricInterpolationPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory;
 #endif
+#ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
+typedef MueLu::GeometricInterpolationPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> GeometricInterpolationPFactory_kokkos;
+#endif
 #ifdef MUELU_GMRESSOLVER_SHORT
 typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
 #endif
@@ -346,6 +349,9 @@ typedef MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZoltanInt
 #endif
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
+#endif
+#ifdef MUELU_NODEPARTITIONINTERFACE_SHORT
+typedef MueLu::NodePartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> NodePartitionInterface;
 #endif
 #ifdef MUELU_ADAPTIVESAMLPARAMETERLISTINTERPRETER_SHORT
 typedef MueLu::AdaptiveSaMLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> AdaptiveSaMLParameterListInterpreter;

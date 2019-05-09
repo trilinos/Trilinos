@@ -61,11 +61,13 @@ PureBasis(const std::string & basis_type,
 }
 
 panzer::PureBasis::
-PureBasis(const std::string & basis_type,const int basis_order,const CellData & cell_data) :
-  topology_(cell_data.getCellTopology()),
-  num_cells_(cell_data.numCells())
+PureBasis(const std::string & in_basis_type,
+          const int in_basis_order,
+          const CellData & in_cell_data) :
+  topology_(in_cell_data.getCellTopology()),
+  num_cells_(in_cell_data.numCells())
 {
-  initialize(basis_type,basis_order);
+  initialize(in_basis_type,in_basis_order);
 }
 
 panzer::PureBasis::

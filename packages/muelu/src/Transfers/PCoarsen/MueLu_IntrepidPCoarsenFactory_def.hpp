@@ -713,7 +713,7 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
 
 /*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &/* coarseLevel */) const {
     Input(fineLevel, "A");
     Input(fineLevel, "pcoarsen: element to node map");
     Input(fineLevel, "Nullspace");

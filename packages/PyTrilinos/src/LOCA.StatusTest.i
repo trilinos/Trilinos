@@ -47,7 +47,7 @@
 PyTrilinos.LOCA.StatusTest is the python interface to namespace *** of
 the Trilinos continuation algorithm package LOCA:
 
-    http://trilinos.sandia.gov/packages/nox
+    https://trilinos.org/docs/dev/packages/nox/doc/html/index.html
 
 The purpose of LOCA.StatusTest is to provide status checkers.  The
 python version of LOCA.StatusTest supports the following classes:

@@ -163,17 +163,16 @@ class AggregateGenerator {
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
       level.Set("A", A);
-      level.Set("gNodesPerDim", gNodesPerDir);
-      level.Set("lNodesPerDim", lNodesPerDir);
+      level.Set("numDimensions", numDimensions);
+      level.Set("gNodesPerDim",  gNodesPerDir);
+      level.Set("lNodesPerDim",  lNodesPerDir);
       level.Set("aggregation: mesh data", meshData);
 
       // Setup aggregation factory (use default factory for graph)
       RCP<StructuredAggregationFactory> aggFact = rcp(new StructuredAggregationFactory());
       aggFact->SetFactory("Graph", dropFact);
-      aggFact->SetParameter("aggregation: coupling", Teuchos::ParameterEntry(coupling));
+      aggFact->SetParameter("aggregation: mode", Teuchos::ParameterEntry(coupling));
       aggFact->SetParameter("aggregation: mesh layout", Teuchos::ParameterEntry(meshLayout));
-      aggFact->SetParameter("aggregation: number of spatial dimensions",
-                            Teuchos::ParameterEntry(numDimensions));
       aggFact->SetParameter("aggregation: coarsening order", Teuchos::ParameterEntry(0));
       aggFact->SetParameter("aggregation: coarsening rate",
                             Teuchos::ParameterEntry(std::string("{3}")));
@@ -240,6 +239,7 @@ class AggregateGenerator {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
+      level.Set("numDimensions", numDimensions);
       level.Set("gNodesPerDim", gNodesPerDir);
       level.Set("lNodesPerDim", lNodesPerDir);
       level.Set("aggregation: mesh data", meshData);
@@ -255,9 +255,8 @@ class AggregateGenerator {
       RCP<HybridAggregationFactory> aggFact = rcp(new HybridAggregationFactory());
       aggFact->SetFactory("Graph", dropFact);
       // Structured
-      aggFact->SetParameter("aggregation: coupling",                     Teuchos::ParameterEntry(coupling));
+      aggFact->SetParameter("aggregation: mode",                         Teuchos::ParameterEntry(coupling));
       aggFact->SetParameter("aggregation: mesh layout",                  Teuchos::ParameterEntry(meshLayout));
-      aggFact->SetParameter("aggregation: number of spatial dimensions", Teuchos::ParameterEntry(numDimensions));
       aggFact->SetParameter("aggregation: coarsening order",             Teuchos::ParameterEntry(0));
       aggFact->SetParameter("aggregation: coarsening rate",              Teuchos::ParameterEntry(std::string("{3}")));
       // Uncoupled
@@ -658,8 +657,6 @@ class AggregateGenerator {
 
     // Get MPI parameters
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    LO numRanks = comm->getSize();
-    LO myRank   = comm->getRank();
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
 
@@ -677,7 +674,6 @@ class AggregateGenerator {
 
     RCP<AmalgamationInfo> amalgInfo;
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeInterfaceAggregates(A, amalgInfo,nodeOnInterface);
-    GO numAggs = aggregates->GetNumAggregates();
 
 
     // Check to see if specified nodes are root nodes
@@ -699,7 +695,6 @@ class AggregateGenerator {
 
     // Get MPI parameters
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    LO numRanks = comm->getSize();
     LO myRank   = comm->getRank();
 
     // Set global geometric data
@@ -753,7 +748,6 @@ class AggregateGenerator {
     // Get MPI parameter
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     LO numRanks = comm->getSize();
-    LO myRank   = comm->getRank();
 
     // Set global geometric data
     const bool coupled = true;

@@ -100,7 +100,7 @@ Ioss::ElementTopology *Ioss::ElementTopology::factory(const std::string &type, b
 
   if (iter == registry().end()) {
     std::string base1 = "super";
-    if (ltype.find(base1) == 0) {
+    if (ltype.compare(0, 5, base1) == 0) {
       // A super element can have a varying number of nodes.  Create
       // an IO element type for this super element. The node count
       // should be encoded in the 'type' as 'super42' for a 42-node
@@ -246,7 +246,7 @@ int Ioss::ElementTopology::number_boundaries() const
       return number_faces() + number_edges();
     }
     if (parametric_dimension() == 1) {
-      return number_edges();
+      return 2; // For bar/beam/... boundary is nodes; for ShellLine it is edges
     }
   }
   else {
@@ -258,69 +258,81 @@ int Ioss::ElementTopology::number_boundaries() const
   return 0;
 }
 
-Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int edge_number) const
+Ioss::IntVector Ioss::ElementTopology::boundary_connectivity(int bnd_number) const
 {
   if (parametric_dimension() == 3 && spatial_dimension() == 3) {
-    return face_connectivity(edge_number);
+    return face_connectivity(bnd_number);
   }
 
   if (parametric_dimension() == 2 && spatial_dimension() == 2) {
-    return edge_connectivity(edge_number);
+    return edge_connectivity(bnd_number);
   }
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
       // A shell has faces and edges in its boundary...
-      if (edge_number > number_faces()) {
-        return edge_connectivity(edge_number - number_faces());
+      if (bnd_number > number_faces()) {
+        return edge_connectivity(bnd_number - number_faces());
       }
-      return face_connectivity(edge_number);
+      return face_connectivity(bnd_number);
     }
     if (parametric_dimension() == 1) {
-      return edge_connectivity(edge_number);
+      if (number_edges() > 1) {
+        return edge_connectivity(bnd_number);
+      }
+      else {
+        // Spring-type element -- has node as boundary.
+        return Ioss::IntVector{bnd_number - 1};
+      }
     }
   }
   else {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
-      return edge_connectivity(edge_number);
+      return edge_connectivity(bnd_number);
     }
   }
   return Ioss::IntVector();
 }
 
-Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int face_number) const
+Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int bnd_number) const
 {
   if (parametric_dimension() == 3 && spatial_dimension() == 3) {
-    return face_type(face_number);
+    return face_type(bnd_number);
   }
 
   if (parametric_dimension() == 2 && spatial_dimension() == 2) {
-    return edge_type(face_number);
+    return edge_type(bnd_number);
   }
 
   if (is_element()) {
     if (parametric_dimension() == 2) {
       // A shell has faces and edges in its boundary...
-      if (face_number == 0) {
+      if (bnd_number == 0) {
         return nullptr;
       }
 
       assert(spatial_dimension() == 3);
-      if (face_number > number_faces()) {
-        return edge_type(face_number - number_faces());
+      if (bnd_number > number_faces()) {
+        return edge_type(bnd_number - number_faces());
       }
-      return face_type(face_number);
+      return face_type(bnd_number);
     }
     if (parametric_dimension() == 1) {
-      return edge_type(face_number);
+      if (number_edges() > 1) {
+        return edge_type(bnd_number);
+      }
+      else {
+        // Spring-type element -- has node as boundary.
+        return Ioss::ElementTopology::factory("node");
+      }
     }
   }
   else {
     if (parametric_dimension() == 2) {
       assert(spatial_dimension() == 3);
-      return edge_type(face_number);
+      return edge_type(bnd_number);
     }
   }
   return nullptr;

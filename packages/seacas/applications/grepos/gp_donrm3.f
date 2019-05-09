@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,7 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C     1 - 12x15  2 - 26x21  3 - 37x32  4 - 48x43
 C       - 14x12    - 23x26    - 34x37    - 41x48
 C       - 15x14    - 21x23    - 32x34    - 43x41
-C        
+C
 C     5 - 51x56  6 - 62x67  7 - 73x78  8 - 84x85
 C       - 58x51    - 65x62    - 76x73    - 87x84
 C       - 56x58    - 67x65    - 78x76    - 85x87
@@ -63,7 +63,7 @@ C=======================================================================
             nodes(link(ilnk, iel)) = 1
  20      continue
  30   continue
-      
+
       do 60 iel = 1, numel
          do 50 iseg=1,nlink
             XI = x( link(ISEG,iel) )
@@ -94,11 +94,11 @@ C
  40         continue
  50      continue
  60   continue
-      
+
 C
       do 70 inod = 1, numnp
          if (nodes(inod) .ne. 0) then
-            if ( abs(cosin(1, inod)) .gt. tol .or. 
+            if ( abs(cosin(1, inod)) .gt. tol .or.
      $           abs(cosin(2, inod)) .gt. tol .or.
      $           abs(cosin(3, inod)) .gt. tol) then
                nodes(inod) = -1
@@ -106,6 +106,6 @@ C
             end if
          end if
  70   continue
-      
+
       RETURN
       END

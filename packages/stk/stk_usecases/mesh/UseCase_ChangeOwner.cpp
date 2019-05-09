@@ -245,7 +245,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   VectorField * coordinates_field =
-    & put_field(
+    & put_field_on_mesh(
         fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         fem_meta_data.universal_part() ,
         3,
@@ -386,7 +386,7 @@ bool test_change_owner_2( stk::ParallelMachine pm )
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   VectorField * coordinates_field =
-    & put_field(
+    & put_field_on_mesh(
         fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         fem_meta_data.universal_part() ,
         3,
@@ -507,7 +507,7 @@ bool test_change_owner_3( stk::ParallelMachine pm )
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
   VectorField * coordinates_field =
-    & put_field(
+    & put_field_on_mesh(
         fem_meta_data.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates"),
         fem_meta_data.universal_part() ,
         3,

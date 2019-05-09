@@ -190,6 +190,8 @@ class FadFadOpsUnitTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testTimesLR);
   CPPUNIT_TEST(testDivideLR);
 
+  CPPUNIT_TEST(testPowConstB);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -319,6 +321,82 @@ public:
     aa_dfad = aa_dfad / b_dfad;
     aa_fad = aa_fad / b_fad;
     COMPARE_NESTED_FADS(aa_dfad, aa_fad);
+  }
+
+  // Check various corner cases for pow()
+  void testPowConstB() {
+    FadFadType a, b, c, cc;
+
+    // Constant b
+    a = a_dfad;
+    b = 3.456;
+    c = pow(a, b);
+    ScalarType f = pow(a.val().val(), b.val().val());
+    ScalarType fp = b.val().val()*pow(a.val().val(),b.val().val()-1);
+    ScalarType fpp = b.val().val()*(b.val().val()-1)*pow(a.val().val(),b.val().val()-2);
+    cc = FadFadType(n1,FadType(n2,f));
+    for (int i=0; i<n2; ++i)
+      cc.val().fastAccessDx(i) = fp*a.val().dx(i);
+    for (int i=0; i<n1; ++i) {
+      cc.fastAccessDx(i) = FadType(n2,fp*a.dx(i).val());
+      for (int j=0; j<n2; ++j)
+        cc.fastAccessDx(i).fastAccessDx(j) = fpp*a.dx(i).val()*a.val().dx(j) + fp*a.dx(i).dx(j);
+    }
+    COMPARE_NESTED_FADS(c, cc);
+
+    // Constant scalar b
+    c = pow(a, b.val());
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val().val());
+    COMPARE_NESTED_FADS(c, cc);
+
+    // Constant b == 0
+    b = 0.0;
+    c = pow(a, b);
+    cc.val() = FadType(n2,1.0);
+    for (int i=0; i<n1; ++i)
+      cc.fastAccessDx(i) = FadType(n2,0.0);
+    COMPARE_NESTED_FADS(c, cc);
+
+    // Constant scalar b == 0
+    c = pow(a, b.val());
+    cc.val() = FadType(n2,1.0);
+    for (int i=0; i<n1; ++i)
+      cc.fastAccessDx(i) = FadType(n2,0.0);
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val().val());
+    COMPARE_NESTED_FADS(c, cc);
+
+    // a == 0 and constant b
+    a.val() = 0.0;
+    b = 3.456;
+    c = pow(a, b);
+    cc.val() = 0.0;
+    for (int i=0; i<n1; ++i)
+      cc.fastAccessDx(i) = 0.0;
+    COMPARE_NESTED_FADS(c, cc);
+
+    // a == 0 and constant scalar b
+    c = pow(a, b.val());
+    for (int i=0; i<n1; ++i)
+      cc.fastAccessDx(i) = 0.0;
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val().val());
+    COMPARE_NESTED_FADS(c, cc);
+
+    // a == 0 and b == 0
+    b = 0.0;
+    c = pow(a, b);
+    cc.val() = 1.0;
+    for (int i=0; i<n1; ++i)
+      cc.fastAccessDx(i) = 0.0;
+    COMPARE_NESTED_FADS(c, cc);
+
+    // a == 0 and scalar b == 0
+    c = pow(a, b.val());
+    COMPARE_NESTED_FADS(c, cc);
+    c = pow(a, b.val().val());
+    COMPARE_NESTED_FADS(c, cc);
   }
 
 protected:

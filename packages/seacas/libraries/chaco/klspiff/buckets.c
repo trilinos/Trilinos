@@ -97,7 +97,7 @@ void bucketsorts(struct vtx_data **graph,       /* graph data structure */
 
   /* Randomize the order of the vertices */
 
-  if ((KL_UNDO_LIST && list_length == nvtxs) || !KL_UNDO_LIST) {
+  if (list_length == nvtxs || !KL_UNDO_LIST) {
     bsptr       = bspace;
     list_length = nvtxs;
     if (parity) {

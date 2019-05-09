@@ -73,9 +73,9 @@ namespace Iogn {
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
     assert(tokens.size() == 3);
-    numX = std::stoi(tokens[0]);
-    numY = std::stoi(tokens[1]);
-    numZ = std::stoi(tokens[2]);
+    numX = std::stoull(tokens[0]);
+    numY = std::stoull(tokens[1]);
+    numZ = std::stoull(tokens[2]);
 
     if (numX <= 0 || numY <= 0 || numZ <= 0) {
       if (myProcessor == 0) {
@@ -300,7 +300,7 @@ namespace Iogn {
         Ioss::Int64Vector Zs;
         numZ = 0;
         for (size_t j = 0; j < processorCount; j++) {
-          Zs.push_back(std::stoi(tokens[j]));
+          Zs.push_back(std::stoull(tokens[j]));
           numZ += Zs[j];
         }
         myNumZ   = Zs[myProcessor];
@@ -336,7 +336,7 @@ namespace Iogn {
       }
 
       else if (option[0] == "times") {
-        timestepCount = std::stoi(option[1]);
+        timestepCount = std::stoull(option[1]);
       }
 
       else if (option[0] == "tets") {
@@ -349,7 +349,7 @@ namespace Iogn {
         assert(tokens.size() % 2 == 0);
         for (size_t ir = 0; ir < tokens.size();) {
           std::string type  = tokens[ir++];
-          int         count = std::stoi(tokens[ir++]);
+          int         count = std::stoull(tokens[ir++]);
           set_variable_count(type, count);
         }
         if (timestepCount == 0) {
@@ -400,8 +400,8 @@ namespace Iogn {
                 << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
                 << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
                 << "\tBlock Count           = " << std::setw(9) << block_count() << "\n"
-                << "\tNodeset Count         = " << std::setw(9) << nodeset_count() << "\n"
-                << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n"
+                << "\tNodeSet Count         = " << std::setw(9) << nodeset_count() << "\n"
+                << "\tSideSet Count         = " << std::setw(9) << sideset_count() << "\n\n"
                 << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
       if (doRotation) {
         std::cerr << "\tRotation Matrix: \n\t" << std::scientific;
@@ -998,14 +998,12 @@ namespace Iogn {
     y.reserve(count);
     z.reserve(count);
 
-    int64_t k = 0;
     for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
       for (size_t i = 0; i < numY + 1; i++) {
         for (size_t j = 0; j < numX + 1; j++) {
           x.push_back(sclX * static_cast<double>(j) + offX);
           y.push_back(sclY * static_cast<double>(i) + offY);
           z.push_back(sclZ * static_cast<double>(m) + offZ);
-          ++k;
         }
       }
     }

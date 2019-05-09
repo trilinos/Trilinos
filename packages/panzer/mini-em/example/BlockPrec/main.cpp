@@ -456,8 +456,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // build DOF Managers and linear object factories
 
     // build the connection manager
-    const Teuchos::RCP<panzer::ConnManager<LocalOrdinal,GlobalOrdinal> >
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<GlobalOrdinal>(mesh));
+    const Teuchos::RCP<panzer::ConnManager>
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     // blocked degree of freedom manager
     panzer::BlockedDOFManagerFactory<LocalOrdinal,GlobalOrdinal> globalIndexerFactory;
@@ -491,7 +491,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData, matrix_output)));
     Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal> > callback =
       rcp(new panzer_stk::ParameterListCallbackBlocked<LocalOrdinal,GlobalOrdinal>(
-                                                                                   rcp_dynamic_cast<panzer_stk::STKConnManager<GlobalOrdinal> >(conn_manager,true),
+                                                                                   rcp_dynamic_cast<panzer_stk::STKConnManager>(conn_manager,true),
                                                                                    rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(dofManager,true),
                                                                                    rcp_dynamic_cast<panzer::BlockedDOFManager<LocalOrdinal,GlobalOrdinal> >(auxDofManager,true)));
     req_handler->addRequestCallback(callback);
@@ -694,6 +694,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
   // Output timer data
   if (use_stacked_timer) {
+    stacked_timer->stop("Mini-EM");
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
@@ -787,8 +788,8 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
         mesh->addCellField(fieldItr->first,pb->elementBlockID());
       else if(basis->getElementSpace()==panzer::PureBasis::HCURL ||
           basis->getElementSpace()==panzer::PureBasis::HDIV    ) {
-        for(int i=0;i<basis->dimension();i++)
-          mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+        for(int dim=0;dim<basis->dimension();++dim)
+          mesh->addCellField(fieldItr->first+dimenStr[dim],pb->elementBlockID());
       }
     }
 

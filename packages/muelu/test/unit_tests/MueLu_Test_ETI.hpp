@@ -54,6 +54,15 @@
 
 #include "MueLu_TestHelpers_Common.hpp"
 
+// need this to have the ETI defined macros
+#if defined(HAVE_MUELU_EXPLICIT_INSTANTIATION)
+#include <MueLu_ExplicitInstantiation.hpp>
+#endif 
+
+#if defined(HAVE_MUELU_TPETRA)
+#include <TpetraCore_config.h>
+#endif
+
 #ifndef MUELU_AUTOMATIC_TEST_ETI_NAME
 #error "The macro MUELU_AUTOMATIC_TEST_ETI_NAME was not defined"
 #endif
@@ -156,7 +165,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #  endif
-        throw RuntimeError("Found no suitable instantiation");
+        throw RuntimeError("Found no suitable Default instantiation");
 #endif
       } else if (node == "serial") {
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -188,7 +197,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #    endif
-        throw RuntimeError("Found no suitable instantiation");
+        throw RuntimeError("Found no suitable Serial instantiation");
 #  endif
 #else
         throw RuntimeError("Serial node type is disabled");
@@ -225,7 +234,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #    endif
-        throw RuntimeError("Found no suitable instantiation");
+        throw RuntimeError("Found no suitable OpenMP instantiation");
 #  endif
 #else
         throw RuntimeError("OpenMP node type is disabled");
@@ -260,7 +269,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #    endif
-        throw RuntimeError("Found no suitable instantiation");
+        throw RuntimeError("Found no suitable Cuda instantiation");
 #  endif
 #else
         throw RuntimeError("CUDA node type is disabled");

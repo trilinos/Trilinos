@@ -40,7 +40,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 {
   using Teuchos::RCP;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
-  RCP<Stepper<Scalar> > stepper = sf->createStepper(model, stepperType);
+  RCP<Stepper<Scalar> > stepper = sf->createStepper(stepperType, model);
 
   this->setTempusParameterList(Teuchos::null);
   this->setStepperWStepper(stepper);
@@ -83,7 +83,7 @@ void IntegratorBasic<Scalar>::setStepper(
     std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
     RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createStepper(model, stepperPL);
+    stepper_ = sf->createStepper(stepperPL, model);
   } else {
     stepper_->setModel(model);
   }
@@ -103,7 +103,7 @@ void IntegratorBasic<Scalar>::setStepper(
     std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
     RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createStepper(models, stepperPL);
+    stepper_ = sf->createStepper(stepperPL, models);
   } else {
     stepper_->createSubSteppers(models);
   }
@@ -127,7 +127,7 @@ void IntegratorBasic<Scalar>::setStepperWStepper(
 /// This resets the SolutionHistory and sets the first SolutionState as the IC.
 template<class Scalar>
 void IntegratorBasic<Scalar>::
-setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
+initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -161,12 +161,15 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
     // Use state as IC
     solutionHistory_->addState(state);
   }
+
+  // Get IC from the application model via the stepper and ensure consistency.
+  stepper_->setInitialConditions(solutionHistory_);
 }
 
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0)
@@ -195,7 +198,8 @@ setInitialState(Scalar t0,
     x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
 
   // Set SolutionState MetaData from TimeStepControl
-  newState->setTime    (timeStepControl_->getInitTime());
+  //newState->setTime    (timeStepControl_->getInitTime());
+  newState->setTime    (t0);
   newState->setIndex   (timeStepControl_->getInitIndex());
   newState->setTimeStep(timeStepControl_->getInitTimeStep());
   int order = timeStepControl_->getInitOrder();
@@ -207,6 +211,9 @@ setInitialState(Scalar t0,
   newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
   solutionHistory_->addState(newState);
+
+  // Get IC from the application model via the stepper and ensure consistency.
+  stepper_->setInitialConditions(solutionHistory_);
 }
 
 
@@ -219,7 +226,7 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
 
   if (sh == Teuchos::null) {
     // Create default SolutionHistory, otherwise keep current history.
-    if (solutionHistory_ == Teuchos::null) setInitialState();
+    if (solutionHistory_ == Teuchos::null) initializeSolutionHistory();
   } else {
 
     TEUCHOS_TEST_FOR_EXCEPTION( sh->getNumStates() < 1,
@@ -310,6 +317,9 @@ void IntegratorBasic<Scalar>::initialize()
   this->parseScreenOutput();
   this->setSolutionHistory();
   this->setObserver();
+
+  // Set initial conditions, make them consistent, and set stepper memory.
+  stepper_->setInitialConditions(solutionHistory_);
 
   // Ensure TimeStepControl orders match the Stepper orders.
   if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())
@@ -488,6 +498,11 @@ void IntegratorBasic<Scalar>::startTimeStep()
     wsmd->setOutputScreen(false);
   else
     wsmd->setOutputScreen(true);
+
+  const int initial = timeStepControl_->getInitIndex();
+  const int interval = integratorPL_->get<int>("Screen Output Index Interval");
+  if ( (wsmd->getIStep() - initial) % interval == 0)
+    wsmd->setOutputScreen(true);
 }
 
 
@@ -540,8 +555,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
       <<std::setw(11)<<std::setprecision(3)<<wsmd->getDt()
       << "  STEP FAILURE!! - ";
     if (wsmd->getSolutionStatus() == Status::FAILED) {
-      *out << "Solution Status = "
-           << toString(solutionHistory_->getWorkingState()->getSolutionStatus())
+      *out << "Solution Status = " << toString(wsmd->getSolutionStatus())
            << std::endl;
     } else if ((timeStepControl_->getStepType() == "Constant") and
                (wsmd->getDt() != timeStepControl_->getInitTimeStep())) {
@@ -601,18 +615,11 @@ void IntegratorBasic<Scalar>::parseScreenOutput()
     pos = str.find_first_of(delimiters, lastPos);
   }
 
-  int outputScreenIndexInterval =
-    integratorPL_->get<int>("Screen Output Index Interval", 1000000);
-  int outputScreen_i   = timeStepControl_->getInitIndex();
-  const int finalIStep = timeStepControl_->getFinalIndex();
-  while (outputScreen_i <= finalIStep) {
-    outputScreenIndices_.push_back(outputScreen_i);
-    outputScreen_i += outputScreenIndexInterval;
-  }
-
-  // order output indices
+  // order output indices and remove duplicates.
   std::sort(outputScreenIndices_.begin(),outputScreenIndices_.end());
-
+  outputScreenIndices_.erase(std::unique(outputScreenIndices_.begin(),
+                                         outputScreenIndices_.end()   ),
+                                         outputScreenIndices_.end()     );
   return;
 }
 

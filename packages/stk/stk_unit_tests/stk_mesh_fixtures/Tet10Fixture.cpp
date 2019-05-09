@@ -88,7 +88,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
               , size_t ny
               , size_t nz
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -101,7 +101,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),
@@ -124,7 +124,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
               , size_t nz
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(3),
     m_nx(nx),
@@ -137,7 +137,7 @@ Tet10Fixture::Tet10Fixture(   MetaData& meta
 #ifdef SIERRA_MIGRATION
                 , false
 #endif
-                , connectivity_map)
+                )
                ),
     m_meta(*m_meta_p),
     m_bulk_data(*m_bulk_p),

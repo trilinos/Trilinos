@@ -80,6 +80,7 @@ namespace {
     return ret;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   // Get an instance of the given Kokkos Node type.
   //
   // \warning This function is NOT reentrant, and therefore NOT thread safe.
@@ -88,6 +89,7 @@ namespace {
     Teuchos::ParameterList pl;
     return Teuchos::rcp (new Node (pl));
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   // Test getVector() / getVectorNonConst()
   // More specifically, this test verifies that the newly created vector will remain valid after the disappearance of the references to the multivector in user code.

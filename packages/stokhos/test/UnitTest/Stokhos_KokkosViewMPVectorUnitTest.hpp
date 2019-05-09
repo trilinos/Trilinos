@@ -44,6 +44,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Ensemble_Sizes.hpp"
 
 // For computing DeviceConfig
 #include "Kokkos_Core.hpp"
@@ -168,8 +169,7 @@ struct ApplyView<DataType,NoLayout,ExecutionSpace> {
 //
 
 const int global_num_rows = 11;
-const int global_num_cols = 8;  // Currently must be a multiple of 8 based on
-                                // alignment assumptions for SFS
+const int global_num_cols = STOKHOS_DEFAULT_ENSEMBLE_SIZE;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Size, Storage, Layout )
 {

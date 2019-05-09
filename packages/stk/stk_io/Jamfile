@@ -47,9 +47,11 @@ project votd
   : requirements
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
+    <define>STK_HIDE_DEPRECATED_CODE
     <include>$(stk_io-root-inc)
   : usage-requirements
     <include>$(stk_io-root-inc)
+    <define>STK_HIDE_DEPRECATED_CODE
   : build-dir $(stk_io-builddir)
   ;
 
@@ -164,6 +166,11 @@ lib stk_io
     # builds only and will not be present for developer builds.
         <file>$(stk_io-root)/lib/libstk_io.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 
 lib stk_io_util
@@ -184,6 +191,11 @@ lib stk_io_util
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
        <file>$(stk_io-root)/lib/libstk_io_util.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
   ;
 

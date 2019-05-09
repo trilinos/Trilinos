@@ -71,15 +71,17 @@ namespace {
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator) : communicator_(the_communicator) {}
 
-void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &properties,
-                                                     bool                   do_print)
+void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &properties)
 {
+  static bool do_print = true; // Print the first time called
+
   std::string env_props;
   if (get_environment("IOSS_PROPERTIES", env_props, parallel_size() > 1)) {
     // env_props string should be of the form
     // "PROP1=VALUE1:PROP2=VALUE2:..."
     std::vector<std::string> prop_val = tokenize(env_props, ":");
 
+    int rank = parallel_rank();
     for (auto &elem : prop_val) {
       std::vector<std::string> property = tokenize(elem, "=");
       if (property.size() != 2) {
@@ -94,7 +96,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       std::string up_value  = Utils::uppercase(value);
       bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
-      if (do_print) {
+      if (do_print && rank == 0) {
         std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
       }
       if (all_digit) {
@@ -112,6 +114,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       }
     }
   }
+  do_print = false;
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
@@ -135,8 +138,8 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &
     if (string_length > 0) {
       broadcast_string.resize(string_length + 1);
       if (rank == 0) {
-        std::strncpy(TOPTR(broadcast_string), result_string,
-                     static_cast<size_t>(string_length) + 1);
+        Ioss::Utils::copy_string(TOPTR(broadcast_string), result_string,
+                                 static_cast<size_t>(string_length) + 1);
       }
       MPI_Bcast(TOPTR(broadcast_string), string_length + 1, MPI_CHAR, 0, communicator_);
       value = std::string(TOPTR(broadcast_string));
@@ -412,57 +415,17 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
   return minmax;
 }
 
-template void Ioss::ParallelUtils::global_array_minmax(unsigned long *, unsigned long,
-                                                       MinMax) const;
-
-template <typename T>
-void Ioss::ParallelUtils::global_array_minmax(T *local_minmax, size_t count,
-                                              Ioss::ParallelUtils::MinMax which) const
-{
-#ifdef SEACAS_HAVE_MPI
-  if (parallel_size() > 1 && count > 0) {
-    if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
-      std::ostringstream errmsg;
-      errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();
-      IOSS_ERROR(errmsg);
-    }
-
-    std::vector<T> maxout(count);
-    MPI_Op         oper = which_reduction(which);
-
-    const int success = MPI_Allreduce((void *)local_minmax, maxout.data(), static_cast<int>(count),
-                                      mpi_type(T()), oper, communicator_);
-    if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      errmsg << "Ioss::ParallelUtils::global_array_minmax - MPI_Allreduce failed";
-      IOSS_ERROR(errmsg);
-    }
-    // Now copy back into passed in array...
-    for (size_t i = 0; i < count; i++) {
-      local_minmax[i] = maxout[i];
-    }
-  }
-#endif
-}
-
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<char> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<int> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<int64_t> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<double> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<unsigned long> &, MinMax) const;
-
-template <typename T>
-void Ioss::ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
-{
-  if (!local_minmax.empty()) {
-    global_array_minmax(local_minmax.data(), local_minmax.size(), which);
-  }
-}
-
+/// \relates Ioss::ParallelUtils::gather
+template void Ioss::ParallelUtils::gather(double, std::vector<double> &) const;
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
+/// \relates Ioss::ParallelUtils::all_gather
 template void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
@@ -551,8 +514,10 @@ void Ioss::ParallelUtils::progress(const std::string &output) const
   }
 }
 
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(std::vector<int> &my_values,
                                           std::vector<int> &result) const;
+/// \relates Ioss::ParallelUtils::gather
 template void Ioss::ParallelUtils::gather(std::vector<int64_t> &my_values,
                                           std::vector<int64_t> &result) const;
 template <typename T>
@@ -580,9 +545,11 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
 #endif
 }
 
+/// \relates Ioss::ParallelUtils::gather
 template int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                          std::vector<int> &my_values,
                                          std::vector<int> &result) const;
+/// \relates Ioss::ParallelUtils::gather
 template int Ioss::ParallelUtils::gather(int num_vals, int size_per_val,
                                          std::vector<char> &my_values,
                                          std::vector<char> &result) const;

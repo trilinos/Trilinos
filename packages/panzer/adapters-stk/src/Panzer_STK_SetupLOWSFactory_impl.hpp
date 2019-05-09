@@ -164,7 +164,7 @@ namespace {
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
   buildLOWSFactory(bool blockedAssembly,
                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk::STKConnManager<GO> > & stkConn_manager,
+                   const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
@@ -393,7 +393,6 @@ namespace {
           const std::vector<RCP<panzer::UniqueGlobalIndexer<int,GO> > > & dofVec
              = blkDofs->getFieldDOFManagers();
           for(std::size_t i=0;i<dofVec.size();i++) {
-            std::string fieldName;
 
             // add in the coordinate parameter list callback handler
             TEUCHOS_ASSERT(determineCoordinateField(*dofVec[i],fieldName));
@@ -458,10 +457,10 @@ namespace {
 
                 // fill appropriate coords vector
                 Teuchos::ArrayRCP<double> dest = coords->getDataNonConst(d);
-                for(std::size_t i=0;i<coords->getLocalLength();i++) {
-                  if (d == 0) dest[i] = xcoords[i];
-                  if (d == 1) dest[i] = ycoords[i];
-                  if (d == 2) dest[i] = zcoords[i];
+                for(std::size_t j=0;j<coords->getLocalLength();++j) {
+                  if (d == 0) dest[j] = xcoords[j];
+                  if (d == 1) dest[j] = ycoords[j];
+                  if (d == 2) dest[j] = zcoords[j];
                 }
               }
 

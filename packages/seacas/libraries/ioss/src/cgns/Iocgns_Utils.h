@@ -86,6 +86,8 @@ namespace Iocgns {
     static void cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                            int processor);
 
+    static void update_db_zone_property(int cgns_file_ptr, const Ioss::Region *region,
+					int myProcessor, bool is_parallel);
     static int  get_db_zone(const Ioss::EntityBlock *block);
     static void set_field_index(const Ioss::Field &field, size_t index, CG_GridLocation_t location);
     static bool is_cell_field(const Ioss::Field &field);
@@ -175,15 +177,15 @@ namespace Iocgns {
       }
     }
 
-    static void          write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
-                                                      int *vertex_solution_index,
-                                                      int *cell_center_solution_index, bool is_parallel_io);
-    static int           find_solution_index(int cgns_file_ptr, int base, int zone, int step,
-                                             CG_GridLocation_t location);
-    static CG_ZoneType_t check_zone_type(int cgns_file_ptr);
-    static size_t        common_write_meta_data(int file_ptr, const Ioss::Region &region,
-                                                std::vector<size_t> &zone_offset, bool is_parallel);
-    static size_t        resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
+    static void write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
+                                             int *vertex_solution_index,
+                                             int *cell_center_solution_index, bool is_parallel_io);
+    static int  find_solution_index(int cgns_file_ptr, int base, int zone, int step,
+                                    CG_GridLocation_t location);
+    static Ioss::MeshType check_mesh_type(int cgns_file_ptr);
+    static size_t         common_write_meta_data(int file_ptr, const Ioss::Region &region,
+                                                 std::vector<size_t> &zone_offset, bool is_parallel);
+    static size_t         resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
     static std::vector<std::vector<std::pair<size_t, size_t>>>
     resolve_processor_shared_nodes(Ioss::Region &region, int my_processor);
 
@@ -210,6 +212,7 @@ namespace Iocgns {
                             double load_balance, int proc_rank, int proc_count);
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
                                         std::vector<size_t> &                      work_vector);
+    static void   show_config();
   };
 } // namespace Iocgns
 

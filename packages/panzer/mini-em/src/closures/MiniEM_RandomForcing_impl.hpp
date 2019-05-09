@@ -15,7 +15,9 @@ template <typename EvalT,typename Traits>
 RandomForcing<EvalT,Traits>::RandomForcing(const std::string & name,
                                            const panzer::IntegrationRule & ir,
                                            const panzer::FieldLayoutLibrary & fl,
-                                           const unsigned int & seed)
+                                           const unsigned int & seed,
+                                           const double & rangeMin,
+                                           const double & rangeMax)
 {
   using Teuchos::RCP;
 
@@ -34,6 +36,8 @@ RandomForcing<EvalT,Traits>::RandomForcing(const std::string & name,
   std::string n = "Random Forcing";
   this->setName(n);
   std::srand(seed);
+  rangeShift_ = rangeMin;
+  rangeMult_ = rangeMax-rangeMin;
 }
 
 //**********************************************************************
@@ -51,9 +55,9 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
         // const ScalarT& z = coords(cell,point,2);
-        current(cell,point,0) = double(std::rand())/double(RAND_MAX);
-        current(cell,point,1) = double(std::rand())/double(RAND_MAX);
-        current(cell,point,2) = double(std::rand())/double(RAND_MAX);
+        current(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current(cell,point,2) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
       }
     }
   } else {
@@ -61,8 +65,8 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
       for (int point = 0; point < current.extent_int(1); ++point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
-        current(cell,point,0) = double(std::rand())/double(RAND_MAX);
-        current(cell,point,1) = double(std::rand())/double(RAND_MAX);
+        current(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
       }
     }
   }

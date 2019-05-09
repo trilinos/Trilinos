@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,7 +33,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C=======================================================================
       PROGRAM GREPOS
 C=======================================================================
-C     
+C
 C     --*** GREPOS *** (GREPOS) GENESIS Positioning Program
 C     --   Written by Greg Sjaardema - revised 03/07/89
 C     --   Modified from GEN3D
@@ -59,7 +59,7 @@ C     --
 C     --External software used:
 C     --  SUPES package (dynamic memory, free-field reader, FORTRAN extensions)
 C     --  ExodusII library
-C     --  NetCDF library (with modified parameters)      
+C     --  NetCDF library (with modified parameters)
 C     --
 C     --Documentation:
 C     --   none
@@ -82,7 +82,7 @@ C     --   none
       include 'gp_deform.blk'
       include 'gp_attrot.blk'
       INCLUDE 'argparse.inc'
-      
+
       CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX
       CHARACTER*80 SCRSTR
 
@@ -106,7 +106,7 @@ C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
       EQUIVALENCE (A(1), IA(1))
       EQUIVALENCE (A(1), LA(1))
       CHARACTER*1 C(1)
-      
+
 C     --A - the dynamic numeric memory base array
 
       INCLUDE 'gp_qainfo.blk'
@@ -159,12 +159,22 @@ C ... Parse options...
 C     --Open the input database and read the initial variables
       NDBIN = 9
       NDBOUT = 10
-      
+
       CMPSIZ = 0
       IOWS   = 0
 
       FILIN  = ' '
       CALL get_argument(narg-1,FILIN, LNAM)
+
+      FILOUT = ' '
+      CALL get_argument(narg,FILOUT, LFIL)
+
+      if (filin .eq. filout) then
+         CALL PRTERR ('FATAL',
+     $        'Input and Output filename are the same. Not allowed')
+         goto 60
+      endif
+
       NDBIN = exopen(filin(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//FILIN(:LNAM)//'" does not exist.'
@@ -193,17 +203,17 @@ C     --Open the input database and read the initial variables
       if (name_len .eq. 0) then
         if (namlen < 32) namlen = 32
         if (namlen .gt. mxname) then
-          namlen = mxname 
+          namlen = mxname
           maxnam = mxname
         else
           maxnam = namlen
         end if
       else
 C ... Use user-specified length
-        namlen = name_len 
+        namlen = name_len
         maxnam = name_len
       end if
-      
+
       call exmxnm(ndbin, namlen, ierr)
 
 C     --Reserve memory for the input information
@@ -268,22 +278,20 @@ C     --Read information from the database and close file
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &     A(1), IA(1), KLINK, KATRIB, C(KBKTYP),
      *     numatt, *60)
-      
+
       call CHKTOP(NELBLK, C(KBKTYP), COMTOP)
       call getnam(NDBIN, 1, nelblk, C(KNAMEB))
 
 C ... Save original element block ids in case the user changes them
 C     Needed when reading/writing element variables.
-      do i=1,nelblk
-        ia(kidelb2-1+i) = ia(kidelb-1+i)
-      end do
+      call cpyid(nelblk, ia(kidelb), ia(kidelb2))
 
 C ... Attribute names...
       call mcrsrv('NAMATT', KNAMATT, maxnam*NUMATT)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
       call getattnam(ndbin, nelblk, ia(kidelb), ia(knatr), c(knamatt))
-      
+
       if (numnps .gt. 0) then
          call exgcns(ndbin, ia(kidns), ia(knnns), ia(kndnps),
      &    ia(kixnns), ia(kixdns), ia(kltnns), a(kfacns), ierr)
@@ -295,7 +303,7 @@ C ... Attribute names...
      &    ia(kltsnc), kfacss, a, allone, lessdf, *50)
         call getnam(NDBIN, 3, numess, C(KNAMSS))
       end if
-      
+
       EXODUS = .TRUE.
       call exinq(ndbin, EXQA,   nqarec, rdum, cdum, ierr)
       call exinq(ndbin, EXINFO, ninfo,  rdum, cdum, ierr)
@@ -311,7 +319,7 @@ C     ... Wrapper to get strings the right length
 C     ... Wrapper to get info record the right length
          call exginw(ndbin, c(kinfo), ierr)
       end if
-      
+
 C     --Read the database time steps
 c     determine how many time steps are stored
       call exinq (ndbin, EXTIMS, NSTEPS, rdum, cdum, ierr)
@@ -321,7 +329,7 @@ c     determine how many time steps are stored
 
 c     read time values at all time steps
       if (nsteps .gt. 0) then
-         call exgatm (ndbin, a(ktimes), ierr)      
+         call exgatm (ndbin, a(ktimes), ierr)
       end if
 
       exodus = (nsteps .gt. 0)
@@ -348,11 +356,11 @@ c     read time values at all time steps
         knsvok = 0
         kssvok = 0
         knames = 0
-        
+
       END IF
-      
+
       CALL DBPINI ('NTISV', NDBIN, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
-     &     NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL, 
+     &     NUMNPS, LNPSNL, LNPSDF, NUMESS, LESSEL,
      &     LESSDF, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS, FILIN)
 
 C     --Read in runtime parameters
@@ -373,13 +381,13 @@ C     --Reserve memory for offsets
       END IF
 
 C     -- Reserve memory for node equiv (equiv node X with Y handled in command)
-      
+
       call mdrsrv ('IXNP', KIXNP, NUMNP)
 
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
 
-C     .. ISATRB is TRUE if the model contains attributes      
+C     .. ISATRB is TRUE if the model contains attributes
       CALL MDFIND('ATRIB', KATRIB, KALEN)
       ISATRB = (KALEN .NE. 0)
 
@@ -388,7 +396,7 @@ C     .. Allocate memory for attribute scaling
       CALL MDRSRV('ATRSCL', KATRSC, 2*IATCNT)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
 C     .. Set up status arrays for user manipulation of element blocks and sets
 
       CALL MDRSRV ('IELBST', KIELBS, NELBLK)
@@ -411,7 +419,7 @@ C     .. Set up status arrays for element to nodal variable conversion
         moff = eoff + (nvarel * maxnam)
         soff = moff + (nvarns * maxnam)
 
-      CALL COMAND (NDBIN, EXECUT, 
+      CALL COMAND (NDBIN, EXECUT,
      &     IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &     IA(KIDNS),  IA(KNNNS), IA(KNDNPS),IA(KIXNNS),IA(KIXDNS),
      $     IA(KLTNNS), A(KFACNS),
@@ -441,8 +449,8 @@ C     ... Snap
      *         nelblk, ia(kidelb), ia(knelb), ia(knlnk))
            else
               call move(ndbin, a, ia, i, a(kxn), a(kyn), a(kzn), ndim,
-     *         numnp, numel, numess, ia(kidss), ia(kness), ia(kixess), 
-     *         ia(kltess), 
+     *         numnp, numel, numess, ia(kidss), ia(kness), ia(kixess),
+     *         ia(kltess),
      *         nelblk, ia(kidelb), ia(knelb), ia(knlnk), ia(klink),
      *         ia(issblk), ia(iscrnp), ia(iscrep))
            end if
@@ -462,7 +470,7 @@ C     ... Warp
      *           iwarp, nrmwrp, wrpdis)
          end if
       end if
-      
+
 C     --Get the new positions for the elements and nodes
       IF (XMIRR * YMIRR * ZMIRR .LT. 0.0) THEN
          CALL DBMIRR (1, NELBLK, IA(KIDELB), IA(KNELB), IA(KNLNK),
@@ -471,9 +479,9 @@ C     --Get the new positions for the elements and nodes
          CALL MDRSRV ('iblock', kiblock, nelblk)
          call chkss(nelblk, ia(knelb), ia(kiblock))
 
-         CALL MIRSS (IA(KIDSS), IA(KNESS), 
+         CALL MIRSS (IA(KIDSS), IA(KNESS),
      *        IA(KIXESS), IA(KLTESS),
-     *        IA(KLTSSS), 
+     *        IA(KLTSSS),
      *        IA(KIBLOCK), c(kbktyp), ALLONE, COMTOP)
 
          call mddel('iblock')
@@ -528,8 +536,8 @@ C     -- MODBLK = 3 if block randomize
 
 C     -- MODBLK = 4 if nodeset randomize
       IF (MODBLK .EQ. 4) THEN
-         CALL EXPXYZN (A(KXN), A(KYN), A(KZN), 
-     &        A(KXEXPL), A(KYEXPL), A(KZEXPL), 
+         CALL EXPXYZN (A(KXN), A(KYN), A(KZN),
+     &        A(KXEXPL), A(KYEXPL), A(KZEXPL),
      &        NUMNPS, IA(KIDNS), IA(KNNNS), IA(KIXNNS), IA(KLTNNS),
      &        NUMNP, NDIM, MODBLK)
       END IF
@@ -556,7 +564,7 @@ C     ... Deform
         call mdrsrv('DISPZ', kdispz, numnp)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
-        
+
         call deform(a(kxn), a(kyn), a(kzn), numnp, ndim,
      *    a(kdispx), a(kdispy), a(kdispz), ndbin, idefst)
 
@@ -580,14 +588,14 @@ C     ... Scale the attributes
          call mdrsrv ('COSIN', ICOSIN, numnp * ndim)
          call mdrsrv ('NODES', inodes, numnp)
          call mdrsrv ('ISBND', iisbnd, numnp)
-         
+
          call dobnd (a(kxn), a(kyn), a(kzn), ia(knelb), ia(knlnk),
      &        ia(kidelb), ia(klink), a(icosin), ia(inodes), ia(iisbnd),
      &        numnp, ndim, nelblk)
          call mddel('COSIN')
          call mdrsrv('XSCR', ixscr, numnp)
          call mdrsrv('YSCR', iyscr, numnp)
-         if (ndim .eq. 3) then 
+         if (ndim .eq. 3) then
             call mdrsrv('ZSCR', izscr, numnp)
          else
             izscr = 1
@@ -602,9 +610,9 @@ C     ... Incremental execution mode (re-enter COMAND routine)
 C     ... NOTE: the code from 'CALL COMAND' to here can be reexecuted.
 C     if MDRSRV or MDDEL is called, make sure it can be run
 C     multiple times.
-      
+
       if (execut) go to 25
-      
+
 C ... Calculate centroid if requested...
       if (centrd) then
         if (exodus) then
@@ -618,7 +626,7 @@ C ... Calculate centroid if requested...
 
          call centroid(a(kxn), a(kyn), a(kzn),
      *     a(kcent), a(kcent+numel), a(kcent+2*numel), nelblk,
-     *     ia(knelb), ia(knlnk), ia(klink), ndim)     
+     *     ia(knelb), ia(knlnk), ia(klink), ndim)
        end if
 
 C     ... See if node equivalencing specified
@@ -643,7 +651,7 @@ C     ... See if node equivalencing specified
         end if
         write (*,*) 'Equivalencing ', nmatch, ' nodes'
         DELNP = (NMATCH .NE. 0)
-        
+
       end if
 C     --"Munch" the element blocks
 
@@ -651,17 +659,17 @@ C     ... Save old counts that are needed for writing timesteps
       numel0  = numel
       nelblk0 = nelblk
       numnp0  = numnp
-      
+
 C     --location of original numelb, isevok arrays
       kidelb0 = kidelb2
       knelb0  = knelb
       kievok0 = kievok
-      
+
       I = INTCNT (0, IA(KIELBS), NELBLK)
       RENEL = (I .LT. NELBLK)
       NUMEL1 = NUMEL
 
-      
+
       if (renel .or. delnp) then
         CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
         if (exodus) then
@@ -677,7 +685,7 @@ C     ... Map from new var to old for mapping variables.
 
       IF (RENEL) THEN
 C     ... Reserve space for original NUMELB and ISEVOK arrays and copy
-C     old array contents into new (Only needed if EXODUS)       
+C     old array contents into new (Only needed if EXODUS)
          IF (EXODUS) THEN
             CALL MDRSRV ('NUMELB0', KNELB0, NELBLK0)
             CALL MDRSRV ('IDELB0',  KIDELB0, NELBLK0)
@@ -689,7 +697,7 @@ C     old array contents into new (Only needed if EXODUS)
             CALL CPYINT (NELBLK0, IA(KIDELB2), IA(KIDELB0))
             CALL CPYINT (LIEVOK,  LA(KIEVOK), LA(KIEVOK0))
          END IF
-         
+
          CALL MDRSRV ('IXEL', KIXEL, NUMEL)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
@@ -715,9 +723,9 @@ C     ... NUMEL changed in this block (if elements deleted)
      &        c(kbktyp), c(knmsc), LLINK, LATRIB, c(knamatt),
      *        c(knameb))
 
-C     ... Fix up the truth table if the element block count changes... 
+C     ... Fix up the truth table if the element block count changes...
          if (exodus .and. nvarel .gt. 0 .and. nelblk .ne. nelblk0) then
-            call muntt(nelblk0, nelblk, nvarel, 
+            call muntt(nelblk0, nelblk, nvarel,
      $           la(kievok0), la(kievok), ia(kielbs))
          end if
 
@@ -727,8 +735,8 @@ C     ... Fix up the truth table if the element block count changes...
          CALL MDDEL ('JNELB')
          CALL MDDEL ('ISCR')
          CALL MCDEL ('NAMSCR')
-         CALL MDLONG('LINK',  KLINK,  LLINK) 
-         CALL MDLONG('ATRIB', KATRIB, LATRIB) 
+         CALL MDLONG('LINK',  KLINK,  LLINK)
+         CALL MDLONG('ATRIB', KATRIB, LATRIB)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
       END IF
@@ -824,7 +832,7 @@ C     --"Munch" the nodal point sets
       KNNNS0  = KNNNS
       LNPSNL0 = LNPSNL
       KNSVOK0 = KNSVOK
-      
+
       IF ((I .LT. NUMNPS) .OR. DELNP) THEN
          CALL MDRSRV ('LTNNPO', KLTNNO, LNPSNL)
          CALL MDRSRV ('FACNPO', KFACNO, LNPSNL)
@@ -860,15 +868,15 @@ C     --Squeeze the nodal point sets
      *       C(KNAMNP))
          END IF
 
-C     ... Fix up the truth table if the nodeset count changes... 
+C     ... Fix up the truth table if the nodeset count changes...
          if (exodus .and. nvarns .gt. 0 .and. numnps .ne. numnps0) then
            CALL MDFIND ('ISNSVOK',  IDUM, LNSVOK)
            CALL MDRSRV ('ISNSVOK0', KNSVOK0, LNSVOK)
            CALL MDSTAT (NERR, MEM)
            IF (NERR .GT. 0) GOTO 40
            CALL CPYINT (LNSVOK,  IA(KNSVOK), IA(KNSVOK0))
-         
-           call muntt(numnps0, numnps, nvarns, 
+
+           call muntt(numnps0, numnps, nvarns,
      $       ia(knsvok0), ia(knsvok), ia(kinpss))
 
 C ... check that the nodesets that are retained contain the same number
@@ -929,7 +937,7 @@ C     --"Munch" the element side sets
      &     IA(KLTESS), IA(KLTSSS), A(KFACSS),
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
      &     IA(KNESO), IA(KNDS0), IA(KISCR), C(KNMSC), C(KNAMSS))
-         
+
 
          CALL MDDEL ('LTEESO')
          CALL MDDEL ('LTSSO')
@@ -946,13 +954,13 @@ C     --"Munch" the element side sets
 C     --Squeeze the element side sets
 
          IF (DELEL) THEN
-            CALL ZMESS (NUMESS, ia(kiesss), LESSEL, LESSDF, 
+            CALL ZMESS (NUMESS, ia(kiesss), LESSEL, LESSDF,
      &       IA(KIDSS), IA(KNESS), IA(KNDSS), IA(KIXESS),
      *       IA(KIXDSS), IA(KLTESS), IA(KLTSSS), IA(KLTSNC), A(KFACSS),
      *       C(KNAMSS))
          END IF
 
-C     ... Fix up the truth table if the sideset count changes... 
+C     ... Fix up the truth table if the sideset count changes...
          if (exodus .and. nvarss .gt. 0 .and. numess .ne. numess0) then
             CALL MDFIND ('ISSSVOK',  IDUM,    LSSVOK)
             CALL MDRSRV ('ISSSVOK0', KSSVOK0, LSSVOK)
@@ -960,7 +968,7 @@ C     ... Fix up the truth table if the sideset count changes...
             IF (NERR .GT. 0) GOTO 40
             call cpyint(lssvok, ia(kssvok),ia(kssvok0))
 
-            call muntt(numess0, numess, nvarss, 
+            call muntt(numess0, numess, nvarss,
      $           ia(kssvok0), ia(kssvok), ia(kiesss))
 
 C ... check that the sidesets that are retained contain the same number
@@ -1005,9 +1013,7 @@ C     can only map sideset variables if the sidesets are the same...
      &     xmin, xmax, ymin, ymax, zmin, zmax)
 
 C     --Open the output database
-      
-      FILOUT = ' '
-      CALL get_argument(narg,FILOUT, LFIL)
+
       CMPSIZ = 0
       IOWS   = iowdsz()
       MODE = EXCLOB
@@ -1061,16 +1067,16 @@ C     --Write the node sets
           call expcns (ndbout, ia(kidns), ia(knnns), ia(kndnps),
      &      ia(kixnns), ia(kixdns), ia(kltnns), a(kfacns), ierr)
         else
-C ... This strangness is due to bug in gfortran compiler 
+C ... This strangness is due to bug in gfortran compiler
 C     which was optimizing out the setting of ia(kidns) and ia(indnps).
 C     since they are the same as ia(knnns) and ia(kixnns), just use
-C     those values.  Bug is in gfortran-4.8 up to 5.0?          
+C     those values.  Bug is in gfortran-4.8 up to 5.0?
           call expcns (ndbout, ia(kidns), ia(knnns), ia(knnns),
      &      ia(kixnns), ia(kixnns), ia(kltnns), a(kfacns), ierr)
         end if
         call putnam(NDBOUT, 2, numnps, C(KNAMNP))
       end if
-      
+
 C     --Write the side sets
       if (numess .gt. 0) then
          call putss(ndbout, numess, ia(kidss), ia(kness), ia(kndss),
@@ -1105,7 +1111,7 @@ C ... See if writing the CENTROID field to the database...
           ixev = 1
         end if
       end if
-      
+
 C     --Write the database names
       if (inod2el .gt. 0) then
         call dbonam(ndbout, ndim, c(knamco),
@@ -1114,7 +1120,7 @@ C     --Write the database names
         call mcrsrv('TNAME', KTNAM, maxnam*(nvarel+inod2el))
         call eltznam(c(ktnam), c(knames), ixnv, nvarnp,
      *    ia(kinod2el), ixev, nvarel)
-        call dbonam(ndbout, 0, c(knamco), 
+        call dbonam(ndbout, 0, c(knamco),
      &    0, ixgv, 0, ixnv, nvarel+inod2el, 1,
      *    0, ixnsv, 0, ixssv, c(ktnam))
         call mcdel('TNAME')
@@ -1135,7 +1141,7 @@ C     ... Truth Table.
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
       end if
-      
+
       if (nvarns .gt. 0) then
         CALL MDRSRV ('ITMP', ktmp, NUMNPS * NVARNS)
         CALL MDSTAT (NERR, MEM)
@@ -1145,7 +1151,7 @@ C     ... Truth Table.
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
       end if
-      
+
       if (nvarss .gt. 0) then
         CALL MDRSRV ('ITMP', ktmp, NUMESS * NVARSS)
         CALL MDSTAT (NERR, MEM)
@@ -1155,18 +1161,18 @@ C     ... Truth Table.
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
       end if
-      
+
       if (centrd .and. .not. exodus) then
         istep = 1
         time = 0.0
         CALL DBOSTE (NDBOUT, ISTEP,
      &    NVARGL, NVARNP, NUMNP, NVAREL, 0, NELBLK,
-     &    IA(KNELB), LA(KIEVOK), IA(KIDELB), 
+     &    IA(KNELB), LA(KIEVOK), IA(KIDELB),
      *    NVARNS, NUMNPS, IA(KNNNS), IA(KNSVOK), IA(KIDNS),
      *    NVARSS, NUMESS, IA(KNESS), IA(KSSVOK), IA(KIDSS),
      *    TIME, A(KVARGL), A(KVARNP), A(KCENT), A(KVARNS), A(KVARSS),
      $    A(1))
-        
+
         call mddel('CENTROID')
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
@@ -1188,13 +1194,14 @@ C     --Read the database time steps
       END IF
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
-      
+
       WRITE (*, *)
       WRITE (*, *)
-      
+
 C ... NOTE: VARNP and VAREL are treated as doubly-dimensioned arrays
 C           dimensioned as (NUMEL, NVAREL)
       iostep = 0
+
       do 110 istep = 1, nsteps
         if (ia(kitims+istep-1) .eq. 0) then
           iostep = iostep + 1
@@ -1206,12 +1213,12 @@ C           dimensioned as (NUMEL, NVAREL)
      *      NVARSS, NUMESS0, IA(KNESS0), IA(KSSVOK0), IA(KIDSS0),
      &      TIME,
      *      A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS), *120)
-           
+
            if (istep .eq. idefst) then
 C ... The model was deformed at this step, zero out the displacements
 C     at this step (Technically, should also subtract off this steps
 C     displacements from every other step, but that isn't supported yet...
-C     Assumes that displacements are the first 'ndim' nodal variables.             
+C     Assumes that displacements are the first 'ndim' nodal variables.
              do i=1, ndim*numnp
                a(kvarnp+i-1) = 0.0
              end do
@@ -1237,7 +1244,7 @@ C     Assumes that displacements are the first 'ndim' nodal variables.
               end if
               if (nvarel .gt. 0) then
 C     ... Pass in the NEW element block parameters (number elements/block),
-C     number element blocks, and truth table.              
+C     number element blocks, and truth table.
                  CALL MAPEV(NUMEL0, NUMEL, NVAREL, IA(KMAPL),
      &                A(KVAREL), A(KVARSC))
               end if
@@ -1254,22 +1261,28 @@ C     number element blocks, and truth table.
      $          IA(KNELB), LA(KIEVOK), IA(KIDELB),
      $          NVARNS, NUMNPS0, IA(KNNNS0), IA(KNSVOK0), IA(KIDNS0),
      $          NVARSS, NUMESS0, IA(KNESS0), IA(KSSVOK0), IA(KIDSS0),
-     $          TIME, 
+     $          TIME,
      $          A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS),
      $          A(KELMTZ))
-           
+
            WRITE (*, 10000) IOSTEP, TIME
 10000      FORMAT (' ', I8, ' time steps processed.  Time = ',1PE10.3)
         end if
  110  continue
-      
+
  120  CONTINUE
       WRITE (SCRSTR, '(I9)', IOSTAT=K) IOSTEP
       CALL SQZSTR (SCRSTR, LSTR)
       WRITE (*, 10010) SCRSTR(:LSTR)
 10010 FORMAT (/, 4X, A,
      &     ' time steps have been written to the output database')
-      
+
+      CALL MDDEL ('VARGL')
+      CALL MDDEL ('VARNP')
+      CALL MDDEL ('VAREL')
+      CALL MDDEL ('VARNS')
+      CALL MDDEL ('VARSS')
+
       GO TO 50
  40   CONTINUE
       CALL MEMERR
@@ -1321,7 +1334,7 @@ C     number element blocks, and truth table.
       character*1 type
       logical IEVOK(nblk,nvar)
       INTEGER ITMP(NVAR+iextra,nblk)
-      
+
       do 20 i=1, nvar
         do 10 ielb = 1, nblk
           if (ievok(ielb,i)) then
@@ -1331,7 +1344,7 @@ C     number element blocks, and truth table.
           end if
  10     continue
  20   continue
-      
+
       do i=1, iextra
         do ielb = 1, nblk
           itmp(i+nvar, ielb) = 1
@@ -1344,18 +1357,18 @@ C     number element blocks, and truth table.
       else if (type .eq. 'S') then
         call expsstt(ndbout, nblk, nvar+iextra, itmp, ierr)
       end if
-      return 
+      return
       end
 
       subroutine centnam(names, isevok, nelblk, nvarel, ndim)
       include 'gp_namlen.blk'
       character*(maxnam) names(*)
       integer isevok(nelblk, nvarel)
-      
+
       names(1)(:maxnam) = 'centroid_x'
       if (ndim .ge. 2) names(2)(:maxnam) = 'centroid_y'
       if (ndim .eq. 3) names(3)(:maxnam) = 'centroid_z'
-      
+
       do 20 i=1, nelblk
         do 10 j=1, nvarel
           isevok(i,j) = 1
@@ -1403,7 +1416,7 @@ C   This is currently used in the sideset mirroring code
       integer nelblk
       character*(MXSTLN) blktyp(nelblk)
       character*(MXSTLN) comtop
-      
+
       comtop = blktyp(1)(:3)
       do 10 i=2, nelblk
          if (blktyp(i)(:3) .ne. comtop(:3)) then
@@ -1420,22 +1433,31 @@ C   This is currently used in the sideset mirroring code
       character*(maxnam) nameco(*)
       CALL INISTR (NDIM, ' ', nameco)
       call exgcon (ndb, nameco, ierr)
-      return 
+      return
       end
 
       subroutine getnam(ndb, itype, isiz, names)
       include 'gp_namlen.blk'
       character*(maxnam) names(*)
-      
+
       call exgnams(ndb, itype, isiz, names, ierr)
-      return 
+      return
       end
 
       subroutine putnam(ndb, itype, isiz, names)
       include 'gp_namlen.blk'
       character*(maxnam) names(*)
-      
+
       call expnams(ndb, itype, isiz, names, ierr)
-      return 
+      return
       end
 
+      subroutine cpyid(nelblk, idin, idout)
+      integer idin(nelblk)
+      integer idout(nelblk)
+
+      do i=1, nelblk
+        idout(i) = idin(i)
+      end do
+      return
+      end

@@ -42,9 +42,6 @@
 #include <stk_topology/topology_detail/meta_functions.hpp>
 #include <stk_topology/topology_detail/equivalent_helper.hpp>
 
-#include <boost/mpl/for_each.hpp>
-#include <boost/mpl/assert.hpp>
-
 namespace stk {
 
 //******************************************************************************
@@ -77,13 +74,6 @@ struct topology::topology_type
   static const unsigned num_permutations           = data::num_permutations;
   static const unsigned num_positive_permutations  = data::num_positive_permutations;
 
-  typedef typename data::spatial_dimension_vector                        spatial_dimension_vector;
-  typedef typename data::face_topology_vector                            face_topology_vector;
-  typedef typename data::edge_node_ordinals_vector                       edge_node_ordinals_vector;
-  typedef typename data::face_node_ordinals_vector                       face_node_ordinals_vector;
-  typedef typename data::permutation_node_ordinals_vector                permutation_node_ordinals_vector;
-
-
 
   //***************************************************************************
   //static member functions
@@ -98,9 +88,9 @@ struct topology::topology_type
   {
     switch(spatial_dimension)
     {
-    case 1: return topology_detail::defined_on_spatial_dimension_< type, 1>::value;
-    case 2: return topology_detail::defined_on_spatial_dimension_< type, 2>::value;
-    case 3: return topology_detail::defined_on_spatial_dimension_< type, 3>::value;
+    case 1: return topology_detail::defined_on_spatial_dimension_<data, 1>();
+    case 2: return topology_detail::defined_on_spatial_dimension_<data, 2>();
+    case 3: return topology_detail::defined_on_spatial_dimension_<data, 3>();
     default: break;
     }
     return false;
@@ -112,12 +102,12 @@ struct topology::topology_type
   {
     switch (face_ordinal)
     {
-      case 0:  return topology_detail::face_topology_<type,0 >::value;
-      case 1:  return topology_detail::face_topology_<type,1 >::value;
-      case 2:  return topology_detail::face_topology_<type,2 >::value;
-      case 3:  return topology_detail::face_topology_<type,3 >::value;
-      case 4:  return topology_detail::face_topology_<type,4 >::value;
-      case 5:  return topology_detail::face_topology_<type,5 >::value;
+      case 0:  return topology_detail::face_topology_<data, 0>();
+      case 1:  return topology_detail::face_topology_<data, 1>();
+      case 2:  return topology_detail::face_topology_<data, 2>();
+      case 3:  return topology_detail::face_topology_<data, 3>();
+      case 4:  return topology_detail::face_topology_<data, 4>();
+      case 5:  return topology_detail::face_topology_<data, 5>();
       default: break;
     }
 
@@ -126,24 +116,25 @@ struct topology::topology_type
 
   /// node ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
+  STK_FUNCTION
   static void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
     switch (edge_ordinal)
     {
-      case 0:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,0 >::type >( f ); break;
-      case 1:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,1 >::type >( f ); break;
-      case 2:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,2 >::type >( f ); break;
-      case 3:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,3 >::type >( f ); break;
-      case 4:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,4 >::type >( f ); break;
-      case 5:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,5 >::type >( f ); break;
-      case 6:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,6 >::type >( f ); break;
-      case 7:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,7 >::type >( f ); break;
-      case 8:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,8 >::type >( f ); break;
-      case 9:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,9 >::type >( f ); break;
-      case 10: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,10>::type >( f ); break;
-      case 11: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,11>::type >( f ); break;
+      case 0:  topology_detail::edge_node_ordinals_<data, 0 >(f); break;
+      case 1:  topology_detail::edge_node_ordinals_<data, 1 >(f); break;
+      case 2:  topology_detail::edge_node_ordinals_<data, 2 >(f); break;
+      case 3:  topology_detail::edge_node_ordinals_<data, 3 >(f); break;
+      case 4:  topology_detail::edge_node_ordinals_<data, 4 >(f); break;
+      case 5:  topology_detail::edge_node_ordinals_<data, 5 >(f); break;
+      case 6:  topology_detail::edge_node_ordinals_<data, 6 >(f); break;
+      case 7:  topology_detail::edge_node_ordinals_<data, 7 >(f); break;
+      case 8:  topology_detail::edge_node_ordinals_<data, 8 >(f); break;
+      case 9:  topology_detail::edge_node_ordinals_<data, 9 >(f); break;
+      case 10: topology_detail::edge_node_ordinals_<data, 10>(f); break;
+      case 11: topology_detail::edge_node_ordinals_<data, 11>(f); break;
       default: break;
     }
 
@@ -152,18 +143,19 @@ struct topology::topology_type
 
   /// the node ordinals that make up the given face
   template <typename OrdinalOutputIterator>
+  STK_FUNCTION
   static void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
     switch (face_ordinal)
     {
-      case 0:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,0 >::type >( f ); break;
-      case 1:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,1 >::type >( f ); break;
-      case 2:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,2 >::type >( f ); break;
-      case 3:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,3 >::type >( f ); break;
-      case 4:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,4 >::type >( f ); break;
-      case 5:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,5 >::type >( f ); break;
+      case 0:  topology_detail::face_node_ordinals_<data, 0>(f); break;
+      case 1:  topology_detail::face_node_ordinals_<data, 1>(f); break;
+      case 2:  topology_detail::face_node_ordinals_<data, 2>(f); break;
+      case 3:  topology_detail::face_node_ordinals_<data, 3>(f); break;
+      case 4:  topology_detail::face_node_ordinals_<data, 4>(f); break;
+      case 5:  topology_detail::face_node_ordinals_<data, 5>(f); break;
       default: break;
     }
 
@@ -172,36 +164,37 @@ struct topology::topology_type
 
   /// the node ordinals of the topology in the given permutation order
   template <typename OrdinalOutputIterator>
+  STK_FUNCTION
   static void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
     switch (permutation_ordinal)
     {
-      case 0:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,0 >::type >( f ); break;
-      case 1:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,1 >::type >( f ); break;
-      case 2:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,2 >::type >( f ); break;
-      case 3:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,3 >::type >( f ); break;
-      case 4:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,4 >::type >( f ); break;
-      case 5:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,5 >::type >( f ); break;
-      case 6:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,6 >::type >( f ); break;
-      case 7:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,7 >::type >( f ); break;
-      case 8:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,8 >::type >( f ); break;
-      case 9:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,9 >::type >( f ); break;
-      case 10: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,10>::type >( f ); break;
-      case 11: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,11>::type >( f ); break;
-      case 12: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,12>::type >( f ); break;
-      case 13: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,13>::type >( f ); break;
-      case 14: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,14>::type >( f ); break;
-      case 15: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,15>::type >( f ); break;
-      case 16: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,16>::type >( f ); break;
-      case 17: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,17>::type >( f ); break;
-      case 18: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,18>::type >( f ); break;
-      case 19: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,19>::type >( f ); break;
-      case 20: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,20>::type >( f ); break;
-      case 21: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,21>::type >( f ); break;
-      case 22: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,22>::type >( f ); break;
-      case 23: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,23>::type >( f ); break;
+      case 0:  topology_detail::permutation_node_ordinals_<data, 0 >(f); break;
+      case 1:  topology_detail::permutation_node_ordinals_<data, 1 >(f); break;
+      case 2:  topology_detail::permutation_node_ordinals_<data, 2 >(f); break;
+      case 3:  topology_detail::permutation_node_ordinals_<data, 3 >(f); break;
+      case 4:  topology_detail::permutation_node_ordinals_<data, 4 >(f); break;
+      case 5:  topology_detail::permutation_node_ordinals_<data, 5 >(f); break;
+      case 6:  topology_detail::permutation_node_ordinals_<data, 6 >(f); break;
+      case 7:  topology_detail::permutation_node_ordinals_<data, 7 >(f); break;
+      case 8:  topology_detail::permutation_node_ordinals_<data, 8 >(f); break;
+      case 9:  topology_detail::permutation_node_ordinals_<data, 9 >(f); break;
+      case 10: topology_detail::permutation_node_ordinals_<data, 10>(f); break;
+      case 11: topology_detail::permutation_node_ordinals_<data, 11>(f); break;
+      case 12: topology_detail::permutation_node_ordinals_<data, 12>(f); break;
+      case 13: topology_detail::permutation_node_ordinals_<data, 13>(f); break;
+      case 14: topology_detail::permutation_node_ordinals_<data, 14>(f); break;
+      case 15: topology_detail::permutation_node_ordinals_<data, 15>(f); break;
+      case 16: topology_detail::permutation_node_ordinals_<data, 16>(f); break;
+      case 17: topology_detail::permutation_node_ordinals_<data, 17>(f); break;
+      case 18: topology_detail::permutation_node_ordinals_<data, 18>(f); break;
+      case 19: topology_detail::permutation_node_ordinals_<data, 19>(f); break;
+      case 20: topology_detail::permutation_node_ordinals_<data, 20>(f); break;
+      case 21: topology_detail::permutation_node_ordinals_<data, 21>(f); break;
+      case 22: topology_detail::permutation_node_ordinals_<data, 22>(f); break;
+      case 23: topology_detail::permutation_node_ordinals_<data, 23>(f); break;
       default: break;
     }
 
@@ -210,24 +203,25 @@ struct topology::topology_type
 
   /// node that make up the given edge
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_FUNCTION
   static void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes)
   {
-    topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
+    topology_detail::fill_node_container<NodeArray, NodeOutputIterator> f(nodes, output_nodes);
 
     switch (edge_ordinal)
     {
-      case 0:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,0 >::type >( f ); break;
-      case 1:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,1 >::type >( f ); break;
-      case 2:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,2 >::type >( f ); break;
-      case 3:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,3 >::type >( f ); break;
-      case 4:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,4 >::type >( f ); break;
-      case 5:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,5 >::type >( f ); break;
-      case 6:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,6 >::type >( f ); break;
-      case 7:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,7 >::type >( f ); break;
-      case 8:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,8 >::type >( f ); break;
-      case 9:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,9 >::type >( f ); break;
-      case 10: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,10>::type >( f ); break;
-      case 11: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,11>::type >( f ); break;
+      case 0:  topology_detail::edge_node_ordinals_<data, 0 >(f); break;
+      case 1:  topology_detail::edge_node_ordinals_<data, 1 >(f); break;
+      case 2:  topology_detail::edge_node_ordinals_<data, 2 >(f); break;
+      case 3:  topology_detail::edge_node_ordinals_<data, 3 >(f); break;
+      case 4:  topology_detail::edge_node_ordinals_<data, 4 >(f); break;
+      case 5:  topology_detail::edge_node_ordinals_<data, 5 >(f); break;
+      case 6:  topology_detail::edge_node_ordinals_<data, 6 >(f); break;
+      case 7:  topology_detail::edge_node_ordinals_<data, 7 >(f); break;
+      case 8:  topology_detail::edge_node_ordinals_<data, 8 >(f); break;
+      case 9:  topology_detail::edge_node_ordinals_<data, 9 >(f); break;
+      case 10: topology_detail::edge_node_ordinals_<data, 10>(f); break;
+      case 11: topology_detail::edge_node_ordinals_<data, 11>(f); break;
       default: break;
     }
 
@@ -236,18 +230,19 @@ struct topology::topology_type
 
   /// node that make up the given face
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_FUNCTION
   static void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes)
   {
-    topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
+    topology_detail::fill_node_container<NodeArray, NodeOutputIterator> f(nodes, output_nodes);
 
     switch (face_ordinal)
     {
-      case 0:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,0 >::type >( f ); break;
-      case 1:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,1 >::type >( f ); break;
-      case 2:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,2 >::type >( f ); break;
-      case 3:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,3 >::type >( f ); break;
-      case 4:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,4 >::type >( f ); break;
-      case 5:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,5 >::type >( f ); break;
+      case 0:  topology_detail::face_node_ordinals_<data, 0>(f); break;
+      case 1:  topology_detail::face_node_ordinals_<data, 1>(f); break;
+      case 2:  topology_detail::face_node_ordinals_<data, 2>(f); break;
+      case 3:  topology_detail::face_node_ordinals_<data, 3>(f); break;
+      case 4:  topology_detail::face_node_ordinals_<data, 4>(f); break;
+      case 5:  topology_detail::face_node_ordinals_<data, 5>(f); break;
       default: break;
     }
 
@@ -256,36 +251,37 @@ struct topology::topology_type
 
   /// node that make up the given permutation
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_FUNCTION
   static void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
     switch (permutation_ordinal)
     {
-      case 0:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,0 >::type >( f ); break;
-      case 1:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,1 >::type >( f ); break;
-      case 2:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,2 >::type >( f ); break;
-      case 3:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,3 >::type >( f ); break;
-      case 4:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,4 >::type >( f ); break;
-      case 5:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,5 >::type >( f ); break;
-      case 6:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,6 >::type >( f ); break;
-      case 7:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,7 >::type >( f ); break;
-      case 8:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,8 >::type >( f ); break;
-      case 9:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,9 >::type >( f ); break;
-      case 10: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,10>::type >( f ); break;
-      case 11: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,11>::type >( f ); break;
-      case 12: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,12>::type >( f ); break;
-      case 13: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,13>::type >( f ); break;
-      case 14: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,14>::type >( f ); break;
-      case 15: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,15>::type >( f ); break;
-      case 16: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,16>::type >( f ); break;
-      case 17: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,17>::type >( f ); break;
-      case 18: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,18>::type >( f ); break;
-      case 19: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,19>::type >( f ); break;
-      case 20: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,20>::type >( f ); break;
-      case 21: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,21>::type >( f ); break;
-      case 22: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,22>::type >( f ); break;
-      case 23: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,23>::type >( f ); break;
+      case 0:  topology_detail::permutation_node_ordinals_<data, 0 >(f); break;
+      case 1:  topology_detail::permutation_node_ordinals_<data, 1 >(f); break;
+      case 2:  topology_detail::permutation_node_ordinals_<data, 2 >(f); break;
+      case 3:  topology_detail::permutation_node_ordinals_<data, 3 >(f); break;
+      case 4:  topology_detail::permutation_node_ordinals_<data, 4 >(f); break;
+      case 5:  topology_detail::permutation_node_ordinals_<data, 5 >(f); break;
+      case 6:  topology_detail::permutation_node_ordinals_<data, 6 >(f); break;
+      case 7:  topology_detail::permutation_node_ordinals_<data, 7 >(f); break;
+      case 8:  topology_detail::permutation_node_ordinals_<data, 8 >(f); break;
+      case 9:  topology_detail::permutation_node_ordinals_<data, 9 >(f); break;
+      case 10: topology_detail::permutation_node_ordinals_<data, 10>(f); break;
+      case 11: topology_detail::permutation_node_ordinals_<data, 11>(f); break;
+      case 12: topology_detail::permutation_node_ordinals_<data, 12>(f); break;
+      case 13: topology_detail::permutation_node_ordinals_<data, 13>(f); break;
+      case 14: topology_detail::permutation_node_ordinals_<data, 14>(f); break;
+      case 15: topology_detail::permutation_node_ordinals_<data, 15>(f); break;
+      case 16: topology_detail::permutation_node_ordinals_<data, 16>(f); break;
+      case 17: topology_detail::permutation_node_ordinals_<data, 17>(f); break;
+      case 18: topology_detail::permutation_node_ordinals_<data, 18>(f); break;
+      case 19: topology_detail::permutation_node_ordinals_<data, 19>(f); break;
+      case 20: topology_detail::permutation_node_ordinals_<data, 20>(f); break;
+      case 21: topology_detail::permutation_node_ordinals_<data, 21>(f); break;
+      case 22: topology_detail::permutation_node_ordinals_<data, 22>(f); break;
+      case 23: topology_detail::permutation_node_ordinals_<data, 23>(f); break;
       default: break;
     }
 
@@ -294,6 +290,7 @@ struct topology::topology_type
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
+  STK_FUNCTION
   static void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals)
   {
     switch(sub_rank)
@@ -307,43 +304,16 @@ struct topology::topology_type
 
   /// fill the output nodes with the nodes that make up the given sub topology
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_FUNCTION
   static void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes)
   {
     switch(sub_rank)
     {
-    case NODE_RANK: *output_nodes = nodes[sub_ordinal];                    break;
-    case EDGE_RANK: edge_node_ordinals(nodes, sub_ordinal, output_nodes);  break;
-    case FACE_RANK: face_node_ordinals(nodes, sub_ordinal, output_nodes);  break;
+    case NODE_RANK: *output_nodes = nodes[sub_ordinal];            break;
+    case EDGE_RANK: edge_nodes(nodes, sub_ordinal, output_nodes);  break;
+    case FACE_RANK: face_nodes(nodes, sub_ordinal, output_nodes);  break;
     default: break;
     }
-  }
-
-  /// how many 'sub topologies' does this topology have
-  static unsigned num_sub_topology(unsigned sub_rank)
-  {
-    switch(sub_rank)
-    {
-    case NODE_RANK: return num_vertices;
-    case EDGE_RANK: return num_edges;
-    case FACE_RANK: return num_faces;
-    default: break;
-    }
-    return 0;
-
-  }
-
-
-  /// what is the topology of the given sub topology
-  static topology sub_topology(unsigned sub_rank, unsigned sub_ordinal = 0)
-  {
-    switch(sub_rank)
-    {
-    case NODE_RANK: return NODE;
-    case EDGE_RANK: return edge_topology;
-    case FACE_RANK: return face_topology(sub_ordinal);
-    default: break;
-    }
-    return INVALID_TOPOLOGY;
   }
 
   /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
@@ -354,48 +324,32 @@ struct topology::topology_type
     return topology_detail::equivalent_helper(type(),a,b,a[0]);
   }
 
+  /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
+  /// return a struct containing a bool and permutation number from a to b
+  template <typename NodeArrayA, typename NodeArrayB>
+  STK_FUNCTION
+  static EquivalentPermutation is_equivalent(const NodeArrayA & a, const NodeArrayB & b)
+  {
+    return topology_detail::is_equivalent_helper(type(), a, b, a[0]);
+  }
+
   template <typename NodeArray>
+  STK_FUNCTION
   static unsigned lexicographical_smallest_permutation( const NodeArray & nodes, bool only_positive_permutations = false)
   {
     return topology_detail::lexicographical_smallest_permutation_helper( type(), nodes, only_positive_permutations, nodes[0]);
   }
 
   template <typename NodeArray>
+  STK_FUNCTION
   static unsigned lexicographical_smallest_permutation_preserve_polarity( const NodeArray & nodes, const NodeArray & element_nodes)
   {
     return topology_detail::lexicographical_smallest_permutation_preserve_polarity_helper( type(), nodes, element_nodes, nodes[0]);
   }
 
+  STK_FUNCTION
   operator topology_t() const
   { return Topology; }
-
-  /// fill the output ordinals with the ordinals that make up the given side topology
-  template <typename OrdinalOutputIterator>
-  static void side_node_ordinals(unsigned side_ordinal, OrdinalOutputIterator output_ordinals)
-  {
-    sub_topology_node_ordinals( side_rank, side_ordinal, output_ordinals);
-  }
-
-  /// fill the output nodes with the nodes that make up the given side topology
-  /// input 'nodes' is expected to be of length num_nodes.
-  template <typename NodeArray, typename NodeOutputIterator>
-  static void side_nodes(const NodeArray & nodes, unsigned side_ordinal, NodeOutputIterator output_nodes)
-  {
-    sub_topology_nodes( nodes, side_rank, side_ordinal, output_nodes);
-  }
-
-  /// how many 'side topologies' does this topology have
-  static unsigned num_sides()
-  {
-    return num_sub_topology(side_rank);
-  }
-
-
-  /// what is the topology of the given side topology
-  static topology side_topology(unsigned side_ordinal = 0)
-  {
-    return sub_topology(side_rank, side_ordinal);
-  }
 
 };
 

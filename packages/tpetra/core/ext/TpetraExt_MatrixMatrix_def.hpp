@@ -374,10 +374,14 @@ void Jacobi(Scalar omega,
       int mm_optimization_core_count=0;
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount ());
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
       auto & ip1slist = importParams1->sublist("matrixmatrix: kernel params",false);
       ip1slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       ip1slist.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+      ip1slist.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
   }
 
   //Now import any needed remote rows and populate the Aview struct.
@@ -399,9 +403,13 @@ void Jacobi(Scalar omega,
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       int mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount () );
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
+      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
       auto & ip2slist = importParams2->sublist("matrixmatrix: kernel params",false);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       ip2slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       ip2slist.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+      ip2slist.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
   }
 
   MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
@@ -479,9 +487,6 @@ void Add(
     prefix << "ERROR, input matrix B must not have static graph!");
   TEUCHOS_TEST_FOR_EXCEPTION(B.isLocallyIndexed() , std::runtime_error,
     prefix << "ERROR, input matrix B must not be locally indexed!");
-  TEUCHOS_TEST_FOR_EXCEPTION(B.getProfileType()!=DynamicProfile, std::runtime_error,
-    prefix << "ERROR, input matrix B must have a dynamic profile!");
-
 
   RCP<const crs_matrix_type> Aprime = null;
   if (transposeA) {
@@ -1272,7 +1277,7 @@ addUnsorted(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
@@ -1344,7 +1349,7 @@ convertToGlobalAndAdd(
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
   const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
   GO minGlobalCol,
-  GO numGlobalCols,
+  GO /* numGlobalCols */,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
   typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
@@ -1502,11 +1507,15 @@ void mult_AT_B_newmatrix(
       importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       auto & sip1 = importParams1->sublist("matrixmatrix: kernel params",false);
       sip1.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       sip1.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+      sip1.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
   }
 
   MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label,importParams1);
@@ -1516,11 +1525,15 @@ void mult_AT_B_newmatrix(
       importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck",false);
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       auto & sip2 = importParams2->sublist("matrixmatrix: kernel params",false);
       sip2.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       sip2.set("isMatrixMatrix_TransferAndFillComplete",isMM);
+      sip2.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
   }
 
   if(B.getRowMap()->isSameAs(*Atrans->getColMap())){
@@ -1563,12 +1576,18 @@ void mult_AT_B_newmatrix(
     if(!params.is_null()) {
         Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
         Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-        int foundcount = params_sublist.get("MM_TAFC_OptimizationCoreCount",3000);
-        labelList_subList.set("MM_TAFC_OptimizationCoreCount",foundcount,"Core Count above which the optimized neighbor discovery is used");
+        int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
+        mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+        labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
+        bool isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
+        bool overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck",false);
 
-        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
+        labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM,
                       "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
         labelList.set("compute global constants",params->get("compute global constants",true));
+        labelList.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
     }
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
@@ -1588,8 +1607,8 @@ void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label,
-  const Teuchos::RCP<Teuchos::ParameterList>& params)
+  const std::string& /* label */,
+  const Teuchos::RCP<Teuchos::ParameterList>& /* params */)
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -2073,9 +2092,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   // ML; for the non-threaded case, ML found it faster to spend less
   // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
-  lno_view_t Crowptr("Crowptr",m+1);
-  lno_nnz_view_t Ccolind("Ccolind",CSR_alloc);
-  scalar_view_t Cvals("Cvals",CSR_alloc);
+  lno_view_t Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+  lno_nnz_view_t Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+  scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
 
   // mfh 27 Sep 2016: The c_status array is an implementation detail
   // of the local sparse matrix-matrix multiply routine.
@@ -2322,14 +2341,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
                                                                                                const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#else
+  (void)label;
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -2711,9 +2732,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   // ML; for the non-threaded case, ML found it faster to spend less
   // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
-  lno_view_t Crowptr("Crowptr",m+1);
-  lno_nnz_view_t Ccolind("Ccolind",CSR_alloc);
-  scalar_view_t Cvals("Cvals",CSR_alloc);
+  lno_view_t Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+  lno_nnz_view_t Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+  scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
   size_t CSR_ip = 0, OLD_ip = 0;
 
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
@@ -2972,14 +2993,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
                                                                                                const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > /* Cimport */,
                                                                                                const std::string& label,
-                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#else
+  (void)label;
 #endif
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -3276,22 +3299,24 @@ void import_and_extract_views(
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
     auto & labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
-                  "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
-    labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
-                  "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
 
-    int mm_optimization_core_count=2999; // ~3000 for serrano    
+    bool isMM = true;
+    bool overrideAllreduce = false;
+    int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
     // Minor speedup tweak - avoid computing the global constants
     Teuchos::ParameterList params_sublist;
     if(!params.is_null()) {
         labelList.set("compute global constants", params->get("compute global constants",false));
         params_sublist = params->sublist("matrixmatrix: kernel params",false);
         mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
+        isMM = params_sublist.get("isMatrixMatrix_TransferAndFillComplete",false);
+        overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck",false);
     }
+    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",isMM);
     labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+    labelList_subList.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
     
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
@@ -3360,6 +3385,7 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     KCRS Iks;
     if(Ik!=0) Iks = *Ik;
     size_t merge_numrows =  Ak.numCols();
+    // The last entry of this at least, need to be initialized
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID =Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
@@ -3384,8 +3410,8 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
 
     // Allocate nnz
     size_t merge_nnz = ::Tpetra::Details::getEntryOnHost(Mrowptr,merge_numrows);
-    lno_nnz_view_t Mcolind("Mcolind",merge_nnz);
-    scalar_view_t Mvalues("Mvals",merge_nnz);
+    lno_nnz_view_t Mcolind(Kokkos::ViewAllocateWithoutInitializing("Mcolind"),merge_nnz);
+    scalar_view_t Mvalues(Kokkos::ViewAllocateWithoutInitializing("Mvals"),merge_nnz);
 
     // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;

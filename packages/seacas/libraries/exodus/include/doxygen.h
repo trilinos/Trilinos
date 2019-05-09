@@ -198,6 +198,7 @@ specification are:
 | EX_IDS_INT64_API   | mesh entity ids
 | EX_BULK_INT64_API  | bulk data
 | EX_ALL_INT64_API   | (the above 3 or'd together)
+| EX_INQ_INT64_API   | integers passed to/from ex_inquire()
 
 The constants that end with `_DB` specify that that particular integer
 data is stored on the database as 64-bit integers; the constants that
@@ -215,23 +216,23 @@ The three types of integer data whose storage can be specified are
 - entity ids which are the ids of element, face, edge, and node sets
    and blocks; and map ids (`EX_IDS_INT64_`)
 
-The function `ex_int64_status(exoid)` is used to determine the integer
+The function ex_int64_status()(exoid) is used to determine the integer
 storage types being used for the EXODUS database 'exoid'.  It returns
 an integer which can be and'ed with the above flags to determine
 either the storage type or function parameter type.
 
 For example, if
-(`EX_MAPS_INT64_DB & ex_int64_status(exoid)`) is true, then map data is
+`(EX_MAPS_INT64_DB & ex_int64_status(exoid))` is true, then map data is
 being stored as 64-bit integers for that database.
 
 It is not possible to determine the integer data size on a database
 without opening the database via an ex_open() call. However, the
 integer size specification for API functions can be changed at any
-time via the `ex_set_int64_status(exoid, mode)` function. The mode is
+time via the ex_set_int64_status()(exoid, mode) function. The mode is
 one or more of `EX_MAPS_INT64_API`, `EX_IDS_INT64_API`, or
 `EX_BULK_INT64_API`, or'd together.  Any exodus function calls after
 that point will use the specified integer size. Note that a call to
-`ex_set_int64_status(exoid, mode)` overrides any previous setting for
+ex_set_int64_status()(exoid, mode) overrides any previous setting for
 the integer sizes used in the API.  The ex_create() function is the
 only way to specify the integer sizes specification for database
 integers.
@@ -340,13 +341,11 @@ element attributes, node sets, side sets, and object properties.
 
 @example ../test/CreateEdgeFace.c
 @example ../test/ExoIICTests.cxx
-@example ../test/MakeTestData.c
 @example ../test/ReadEdgeFace.c
 @example ../test/create_mesh.c
-@example ../test/oned.c
+@example ../test/testwt-oned.c
 @example ../test/rd_wt_mesh.c
 @example ../test/test-empty.c
-@example ../test/test.exo_c
 @example ../test/test_nemesis.c
 @example ../test/test_ts_errval.c
 @example ../test/test_ts_files.c

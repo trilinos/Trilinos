@@ -5,7 +5,7 @@
 
 
 /*****************************************************************************/
-int im_ne_get_init_global_l(int   neid, 		  /* NemesisI file ID */
+int im_ne_get_init_global_l(int   /* neid */, 		  /* NemesisI file ID */
 			  long long  *num_nodes_g,	  /* Number of global FEM nodes */
 			  long long  *num_elems_g,	  /* Number of global FEM elements */
 			  long long  *num_elem_blks_g, /* Number of global elem blocks */
@@ -26,7 +26,7 @@ int im_ne_get_init_global_l(int   neid, 		  /* NemesisI file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_init_info_l(int   neid,		/* NemesisI file ID */
+int im_ne_get_init_info_l(int   /* neid */,		/* NemesisI file ID */
 			long long  *num_proc,	/* Number of processors */
 			long long  *num_proc_in_f,	/* Number of procs in this file */
 			char *ftype)
@@ -42,7 +42,7 @@ int im_ne_get_init_info_l(int   neid,		/* NemesisI file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_eb_info_global_l(int neid,		/* NemesisI file ID                 */
+int im_ne_get_eb_info_global_l(int /* neid */,		/* NemesisI file ID                 */
 			     long long *el_blk_ids,	/* Vector of global element IDs     */
 			     long long *el_blk_cnts	/* Vector of global element counts  */
 			     )
@@ -61,7 +61,7 @@ int im_ne_get_eb_info_global_l(int neid,		/* NemesisI file ID                 */
 }
 
 /*****************************************************************************/
-int im_ne_get_loadbal_param_l(int   neid, 	/* NetCDF/Exodus file ID */
+int im_ne_get_loadbal_param_l(int   /* neid */, 	/* NetCDF/Exodus file ID */
 			    long long  *num_int_nodes,  /* Number of internal FEM nodes */
 			    long long  *num_bor_nodes,  /* Number of border FEM nodes */
 			    long long  *num_ext_nodes,  /* Number of external FEM nodes */
@@ -69,7 +69,7 @@ int im_ne_get_loadbal_param_l(int   neid, 	/* NetCDF/Exodus file ID */
 			    long long  *num_bor_elems,  /* Number of border FEM elems */
 			    long long  *num_node_cmaps, /* Number of nodal comm maps */
 			    long long  *num_elem_cmaps, /* Number of elemental comm maps */
-			    long long   processor         /* Processor ID */
+			    long long   /* processor */         /* Processor ID */
 			    )
 /*****************************************************************************/
 {
@@ -89,10 +89,10 @@ int im_ne_get_loadbal_param_l(int   neid, 	/* NetCDF/Exodus file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_elem_map_l(int   neid,		/* NetCDF/Exodus file ID */
+int im_ne_get_elem_map_l(int   /* neid */,		/* NetCDF/Exodus file ID */
 		       long long  *elem_mapi,	/* Internal element IDs */
 		       long long  *elem_mapb,	/* Border element IDs */
-		       long long   processor		/* Processor ID */
+		       long long   /* processor */		/* Processor ID */
 		       )
 /*****************************************************************************/
 {
@@ -112,11 +112,11 @@ int im_ne_get_elem_map_l(int   neid,		/* NetCDF/Exodus file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_node_map_l(int   neid,		/* NetCDF/Exodus file ID */
+int im_ne_get_node_map_l(int   /* neid */,		/* NetCDF/Exodus file ID */
 		       long long  *node_mapi,	/* Internal FEM node IDs */
 		       long long  *node_mapb,	/* Border FEM node IDs */
 		       long long  *node_mape,	/* External FEM node IDs */
-		       long long   processor		/* Processor IDs */
+		       long long   /* processor */		/* Processor IDs */
 		       )
 /*****************************************************************************/
 {
@@ -139,12 +139,12 @@ int im_ne_get_node_map_l(int   neid,		/* NetCDF/Exodus file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_cmap_params_l(int neid,                  /* NetCDF/Exodus file ID */
+int im_ne_get_cmap_params_l(int /* neid */,                  /* NetCDF/Exodus file ID */
 			  long long *node_cmap_ids,        /* Nodal comm. map IDs */
 			  long long *node_cmap_node_cnts,  /* Number of nodes in each map */
 			  long long *elem_cmap_ids,        /* Elemental comm. map IDs */
 			  long long *elem_cmap_elem_cnts,  /* Number of elems in each map */
-			  long long  processor             /* This processor ID */
+			  long long  /* processor */             /* This processor ID */
 			  )
 /*****************************************************************************/
 {
@@ -173,11 +173,11 @@ int im_ne_get_cmap_params_l(int neid,                  /* NetCDF/Exodus file ID 
 }
 
 /*****************************************************************************/
-int im_ne_get_node_cmap_l(int  neid,             /* NetCDF/Exodus file ID */
+int im_ne_get_node_cmap_l(int  /* neid */,             /* NetCDF/Exodus file ID */
 			long long  map_id,           /* Map ID */
 			long long *node_ids,         /* FEM node IDs */
 			long long *proc_ids,         /* Processor IDs */
-			long long  processor         /* This processor ID */
+			long long  /* processor */         /* This processor ID */
 			)
 /*****************************************************************************/
 {
@@ -207,12 +207,12 @@ int im_ne_get_node_cmap_l(int  neid,             /* NetCDF/Exodus file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_elem_cmap_l(int  neid,     /* NetCDF/Exodus file ID */
+int im_ne_get_elem_cmap_l(int  /* neid */,     /* NetCDF/Exodus file ID */
 			long long  map_id,   /* Elemental comm map ID */
 			long long *elem_ids, /* Element IDs */
 			long long *side_ids, /* Element side IDs */
 			long long *proc_ids, /* Processor IDs */
-			long long  processor /* This processor ID */
+			long long  /* processor */ /* This processor ID */
 			)
 /*****************************************************************************/
 {
@@ -244,7 +244,7 @@ int im_ne_get_elem_cmap_l(int  neid,     /* NetCDF/Exodus file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_ns_param_global_l(int neid,	     /* NetCDF/Exodus file ID */
+int im_ne_get_ns_param_global_l(int /* neid */,	     /* NetCDF/Exodus file ID */
 			      long long *ns_ids_glob,     /* Global IDs of node sets */
 			      long long *ns_n_cnt_glob,   /* Count of nodes in node sets */
 			      long long *ns_df_cnt_glob   /* Count of dist. factors in ns */
@@ -268,7 +268,7 @@ int im_ne_get_ns_param_global_l(int neid,	     /* NetCDF/Exodus file ID */
 }
 
 /*****************************************************************************/
-int im_ne_get_ss_param_global_l(int neid,	    /* NetCDF/Exodus file ID */
+int im_ne_get_ss_param_global_l(int /* neid */,	    /* NetCDF/Exodus file ID */
 			      long long *ss_ids_glob,    /* Global side-set IDs */
 			      long long *ss_s_cnt_glob,  /* Global side count */
 			      long long *ss_df_cnt_glob  /* Global dist. factor count */
@@ -294,7 +294,7 @@ int im_ne_get_ss_param_global_l(int neid,	    /* NetCDF/Exodus file ID */
 
 
 /*****************************************************************************/
-int im_ne_get_global_ijk_l(int neid,
+int im_ne_get_global_ijk_l(int /* neid */,
                 long long *global_ijk)
 /*****************************************************************************/
 {
@@ -308,7 +308,7 @@ int im_ne_get_global_ijk_l(int neid,
 }
 
 /*****************************************************************************/
-int im_ne_get_num_ijk_l(int neid,
+int im_ne_get_num_ijk_l(int /* neid */,
                 long long *num_ijk)
 /*****************************************************************************/
 {
@@ -322,7 +322,7 @@ int im_ne_get_num_ijk_l(int neid,
 }
 
 /*****************************************************************************/
-int im_ne_get_local_num_ijk_l(int neid,
+int im_ne_get_local_num_ijk_l(int /* neid */,
                 long long *local_num_ijk)
 /*****************************************************************************/
 {

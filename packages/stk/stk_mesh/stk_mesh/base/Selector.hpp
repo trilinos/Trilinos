@@ -39,6 +39,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert
 #include <vector>                       // for vector, operator!=, etc
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }
@@ -440,6 +441,9 @@ Selector selectField( const FieldBase& field );
 /** \brief Is lhs a subset of rhs, only works for simple selectors (parts and unions)
  */
 bool is_subset(Selector const& lhs, Selector const& rhs);
+bool is_subset(Selector const& lhs, Selector const& rhs, PartVector& scratchLhs, PartVector& scratchRhs);
+bool is_subset(const PartVector& lhsParts, const PartVector& rhsParts);
+bool is_subset(const OrdinalVector& lhsParts, const OrdinalVector& rhsParts);
 
 /** \} */
 

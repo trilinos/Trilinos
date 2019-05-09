@@ -29,14 +29,26 @@ namespace Tempus {
  *  for the explicit case.
  *
  *  Newmark is second order accurate if \f$\gamma =  0.5\f$; otherwise it
- * is first order
- *  accurate.  Some additional properties about the Newmark Beta scheme
- *  can be found <a
- * href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
+ *  is first order accurate.  Some additional properties about the Newmark
+ *  Beta scheme can be found
+ *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
+ *
+ *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  Newmark implicit D-Form method.
  */
 template <class Scalar>
 class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scalar> {
  public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperNewmarkImplicitDForm();
+
   /// Constructor
   StepperNewmarkImplicitDForm(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
@@ -48,19 +60,19 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel);
 
   virtual void setObserver(
-    Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+    Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
   /// Initialize during construction and after changing input parameters.
   virtual void
   initialize();
 
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions (
+    const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}
+
   /// Take the specified timestep, dt, and return true if successful.
   virtual void
   takeStep(const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory);
-
-  /// Pass initial guess to Newton solver  
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
 
   /// Get a default (initial) StepperState
   virtual Teuchos::RCP<Tempus::StepperState<Scalar>>
@@ -86,7 +98,17 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
     {return isExplicit() and isImplicit();}
   virtual bool isOneStepMethod()   const {return true;}
   virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+  virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
+
+  /// Return W_xDotxDot_coeff = d(xDotDot)/d(x).
+  virtual Scalar getW_xDotDot_coeff (const Scalar dt) const
+    { return Scalar(1.0)/(beta_*dt*dt); }
+  /// Return alpha = d(xDot)/d(x).
+  virtual Scalar getAlpha(const Scalar dt) const { return gamma_/(beta_*dt); }
+  /// Return beta  = d(x)/d(x).
+  virtual Scalar getBeta (const Scalar ) const { return Scalar(1.0); }
 
   /// \name ParameterList methods
   //@{
@@ -137,11 +159,7 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
       Thyra::VectorBase<Scalar>& a, const Thyra::VectorBase<Scalar>& dPred,
       const Thyra::VectorBase<Scalar>& d, const Scalar dt) const;
 
- private:
-  /// Default Constructor -- not allowed
-  StepperNewmarkImplicitDForm();
-
- private:
+ protected:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
@@ -149,9 +167,8 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   Scalar beta_;
   Scalar gamma_;
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
-
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+
 };
 }  // namespace Tempus
 

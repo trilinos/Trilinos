@@ -106,7 +106,12 @@ module load sems-git/2.10.1
 module load sems-cmake/3.12.2
 module load sems-ninja_fortran/1.8.2
 
-if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
+if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
+  # We just need to be super conservative by default when using a GPU.  If
+  # users want to use more MPI processes, then can override this with
+  # ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE.
+elif [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
   # NOTE: With hyper-threading enabled, you can run as many threads as there
@@ -144,12 +149,17 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
   module load sems-intel/17.0.1
+  module load atdm-env
+  module load atdm-mkl/18.0.5
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SEMS_INTEL_ROOT/mkl/lib/intel64/
   export ATDM_CONFIG_LAPACK_LIBS="-mkl"
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
   module load sems-gcc/7.2.0
   module load sems-cuda/9.2
@@ -179,7 +189,32 @@ module load sems-netcdf/4.4.1/exo_parallel
 module load sems-hdf5/1.8.12/parallel
 module load sems-zlib/1.2.8/base
 module load sems-boost/1.59.0/base
+module unload sems-python/2.7.9 
 module load sems-superlu/4.3/base
+
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
+  [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] && \
+  [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
+  export ATDM_CONFIG_USE_NINJA=OFF
+  export ATDM_CONFIG_CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS=OFF
+fi
+# NOTE: The reason for the above logic is that 'nvcc' can't handle *.rsp
+# response files that CMake switches to when the command-lines become too long
+# and there is no way to turn off the usage of response files with the CMake
+# Ninja generator as of CMake 3.14.0.  The problem is that when CUDA and
+# complex are enabled and shared libs are used, 'nvcc' is used to create the
+# kokkoskernels shared lib which has a ton of object files which triggers
+# internal CMake logic to condense these down into a single kokkoskernels.rsp
+# file that it passes to 'nvcc' to create the kokkoskernels library.  When the
+# CMake-generated *.rsp file is passed to 'nvcc', it does not know how to
+# process it and it gives the error "No input files specified".  The
+# workaround is to switch to the CMake Makefile generator which allows and
+# turning off the usage of response files for the list of object files (and
+# 'nvcc' seems to be able to handle this long command-line in this case).
+# Note that we don't yet need to switch to use the CMake Makefile generator
+# for 'static' builds since 'ar' is used to create the kokkoskernels lib which
+# does not seem to have a problem with the creation of this lib.  (See
+# TRIL-255 and TRIL-264.)
 
 if [[ "${ATDM_CONFIG_SHARED_LIBS}" == "ON" ]] ; then
   ATDM_CONFIG_TPL_LIB_EXT=so

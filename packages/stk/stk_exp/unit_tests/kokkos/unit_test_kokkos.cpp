@@ -11,9 +11,9 @@
 
 namespace {
 
-#if defined(KOKKOS_HAVE_PTHREAD)
+#if defined(KOKKOS_ENABLE_PTHREAD)
 #define KOKKOS_THREAD_DEVICE Kokkos::Threads
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif defined(KOKKOS_ENABLE_OPENMP)
 #define KOKKOS_THREAD_DEVICE Kokkos::OpenMP
 #else
 #define KOKKOS_THREAD_DEVICE Kokkos::Serial
@@ -43,7 +43,7 @@ protected:
 
     KOKKOS_THREAD_DEVICE::initialize( num_threads );
 
-#if defined(KOKKOS_HAVE_OPENMP) || defined(KOKKOS_HAVE_PTHREAD)
+#if defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_PTHREAD)
     std::cout << "Kokkos thread device 'print_configuration' output:\n";
     KOKKOS_THREAD_DEVICE::print_configuration(std::cout, true);
 #endif

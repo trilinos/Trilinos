@@ -204,6 +204,21 @@ int main(int argc, char* argv[])
     if (verbose) std::cout<< "unsuccessful" <<std::endl;
     numberFailedTests++;
   }
+  //  Create a swap testing matrix
+  SDMatrix CCC2swap( 3 );
+  CCC2swap.random();
+  SDMatrix copyCCC2(CCC2);
+  SDMatrix copyCCC2swap(CCC2swap);
+  if (verbose) std::cout <<  "swap() -- swap the values and attributes of two symmetric matrices -- ";
+  CCC2swap.swap(CCC2);
+  bool op_result = ( (CCC2swap == copyCCC2) && (CCC2 == copyCCC2swap) );
+  if (verbose)
+    std::cout << (op_result ? "successful" : "failed" )<<std::endl;
+  if( !op_result )
+    numberFailedTests++;
+  // Swap back using other matrix and allow downstream testing to proceed as if without swapping
+  CCC2.swap(CCC2swap);
+
   //  Create a view into a submatrix of CCC
   SDMatrix CCCview( Teuchos::View, CCC, 3 );
   SDMatrix CCCtest1( 2 );

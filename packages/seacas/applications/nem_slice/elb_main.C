@@ -366,8 +366,8 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
     mesh.coords = nullptr;
   }
 
-  mesh.elem_type = (E_Type *)array_alloc(1, mesh.num_elems, sizeof(E_Type));
-  mesh.connect   = (INT **)array_alloc(2, mesh.num_elems, mesh.max_np_elem, sizeof(INT));
+  mesh.elem_type = static_cast<E_Type *>(array_alloc(1, mesh.num_elems, sizeof(E_Type)));
+  mesh.connect = static_cast<INT **>(array_alloc(2, mesh.num_elems, mesh.max_np_elem, sizeof(INT)));
   if (!(mesh.elem_type) || !(mesh.connect)) {
     Gen_Error(0, "fatal: insufficient memory");
     error_report();
@@ -422,7 +422,7 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
 
 #ifdef PRINT_VERT
   for (size_t cnt = 0; cnt < problem.num_vertices; cnt++)
-    printf("element = %i, proc = %i\n", cnt, lb.vertex2proc[cnt]);
+    printf("element = %lu, proc = %i\n", cnt, lb.vertex2proc[cnt]);
 #endif
 
   /*

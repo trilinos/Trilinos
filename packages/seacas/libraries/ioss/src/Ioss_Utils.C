@@ -70,7 +70,6 @@
 
 // For copy_database...
 namespace {
-  size_t MAX(size_t a, size_t b) { return b ^ ((a ^ b) & -static_cast<int>(a > b)); }
   size_t max_field_size = 0;
 
   struct DataPool
@@ -109,32 +108,32 @@ namespace {
 #endif
   };
 
-  void show_step(int istep, double time, bool verbose, int rank);
+  void show_step(int istep, double time, const Ioss::MeshCopyOptions &options, int rank);
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, DataPool &pool,
-                          bool debug, bool verbose, int rank);
-  void transfer_structuredblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                                 bool verbose, int rank);
-  void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                              bool verbose, int rank);
-  void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                           bool verbose, int rank);
-  void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                           bool verbose, int rank);
-  void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank);
-  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank);
-  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank);
-  void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank);
-  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank);
-  void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank);
-  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                                  bool verbose, int rank);
+                          const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_structuredblocks(Ioss::Region &region, Ioss::Region &output_region,
+                                 const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region,
+                              const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region,
+                           const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region,
+                           const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank);
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region,
+                                  const Ioss::MeshCopyOptions &options, int rank);
 
   template <typename T>
   void transfer_fields(const std::vector<T *> &entities, Ioss::Region &output_region,
@@ -164,8 +163,6 @@ namespace {
   void set_owned_node_count(Ioss::Region &region, int my_processor, INT dummy);
 
   ////////////////////////////////////////////////////////////////////////
-  inline int to_lower(int c) { return std::tolower(c); }
-  inline int to_upper(int c) { return std::toupper(c); }
 
   bool is_separator(const char separator, const char value) { return separator == value; }
 
@@ -192,8 +189,8 @@ namespace {
   // 'separator' characters in a row, then the first is used to split
   // and the subsequent 'separator' characters are put as leading
   // characters of the next token.
-  // __this___is_a_string__for_tokens will split to 6 tokens:
-  // __this __is a string _for tokens
+  // `__this___is_a_string__for_tokens` will split to 6 tokens:
+  // `__this` `__is` `a` `string` `_for` `tokens`
   void field_tokenize(const std::string &str, const char separator,
                       std::vector<std::string> &tokens)
   {
@@ -244,6 +241,8 @@ void Ioss::Utils::time_and_date(char *time_string, char *date_string, size_t len
   struct tm *local_time    = localtime(&calendar_time);
 
   strftime(time_string, length, "%H:%M:%S", local_time);
+  time_string[8] = '\0';
+
   if (length == 8) {
     const char *fmt = "%y/%m/%d";
     strftime(date_string, length, fmt, local_time);
@@ -253,7 +252,6 @@ void Ioss::Utils::time_and_date(char *time_string, char *date_string, size_t len
     strftime(date_string, length, "%Y/%m/%d", local_time);
     date_string[10] = '\0';
   }
-  time_string[8] = '\0';
 }
 
 void Ioss::Utils::check_non_null(void *ptr, const char *type, const std::string &name,
@@ -434,14 +432,6 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
     type = "super" + std::to_string(nodes_per_element);
   }
   return type;
-}
-
-/* \brief Throw a runtime exception with message "I/O abort".
- */
-void Ioss::Utils::abort()
-{
-  std::ostringstream errmsg("I/O abort");
-  IOSS_ERROR(errmsg);
 }
 
 /** \brief Get a filename relative to the specified working directory (if any)
@@ -1235,7 +1225,7 @@ int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
  */
 std::string Ioss::Utils::uppercase(std::string name)
 {
-  std::transform(name.begin(), name.end(), name.begin(), to_upper);
+  std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::toupper(c); });
   return name;
 }
 
@@ -1246,7 +1236,7 @@ std::string Ioss::Utils::uppercase(std::string name)
  */
 std::string Ioss::Utils::lowercase(std::string name)
 {
-  std::transform(name.begin(), name.end(), name.begin(), to_lower);
+  std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::tolower(c); });
   return name;
 }
 
@@ -1454,8 +1444,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
   if (name.length() <= maxlen) {
     // If name fits without kluging, then just use name as it is
     // without adding on the hash...
-    std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
-    return new_str;
+    return lowercase(new_str);
   }
   // Know that the name is too long, try to shorten. Need room for
   // hash now.
@@ -1481,8 +1470,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
   std::string hash_string = two_letter_hash(name.c_str());
   new_str += std::string(".");
   new_str += hash_string;
-  std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
-  return new_str;
+  return lowercase(new_str);
 }
 
 /** \brief Create a nominal mesh for use in history databases.
@@ -1525,6 +1513,16 @@ void Ioss::Utils::generate_history_mesh(Ioss::Region *region)
   }
 }
 
+// Safer than Ioss::Utils::copy_string -- guarantees null termination
+void Ioss::Utils::copy_string(char *dest, char const *source, size_t elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+}
+
 namespace {
   const int tab64[64] = {63, 0,  58, 1,  59, 47, 53, 2,  60, 39, 48, 27, 54, 33, 42, 3,
                          61, 51, 37, 40, 49, 18, 28, 20, 55, 30, 34, 11, 43, 14, 22, 4,
@@ -1550,8 +1548,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
 {
   DataPool data_pool;
 
-  bool              memory_stats = options.memory_statistics;
-  Ioss::DatabaseIO *dbi          = region.get_database();
+  Ioss::DatabaseIO *dbi = region.get_database();
 
   int rank = dbi->util().parallel_rank();
 
@@ -1562,9 +1559,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "DEFINING MODEL ... \n";
     }
-    if (memory_stats) {
-      dbi->util().progress("DEFINING MODEL");
-    }
+    dbi->progress("DEFINING MODEL");
     if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
       if (options.verbose && rank == 0) {
         std::cerr << "ERROR: Could not put output region into define model state\n";
@@ -1576,7 +1571,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     transfer_properties(&region, &output_region);
     transfer_qa_info(region, output_region);
 
-    transfer_nodeblock(region, output_region, data_pool, options.debug, options.verbose, rank);
+    transfer_nodeblock(region, output_region, data_pool, options, rank);
 
 #ifdef SEACAS_HAVE_MPI
     // This also assumes that the node order and count is the same for input
@@ -1589,29 +1584,28 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     }
 #endif
 
-    transfer_edgeblocks(region, output_region, options.debug, options.verbose, rank);
-    transfer_faceblocks(region, output_region, options.debug, options.verbose, rank);
-    transfer_elementblocks(region, output_region, options.debug, options.verbose, rank);
-    transfer_structuredblocks(region, output_region, options.debug, options.verbose, rank);
+    transfer_edgeblocks(region, output_region, options, rank);
+    transfer_faceblocks(region, output_region, options, rank);
+    transfer_elementblocks(region, output_region, options, rank);
+    transfer_structuredblocks(region, output_region, options, rank);
 
-    transfer_nodesets(region, output_region, options.debug, options.verbose, rank);
-    transfer_edgesets(region, output_region, options.debug, options.verbose, rank);
-    transfer_facesets(region, output_region, options.debug, options.verbose, rank);
-    transfer_elemsets(region, output_region, options.debug, options.verbose, rank);
+    transfer_nodesets(region, output_region, options, rank);
+    transfer_edgesets(region, output_region, options, rank);
+    transfer_facesets(region, output_region, options, rank);
+    transfer_elemsets(region, output_region, options, rank);
 
-    transfer_sidesets(region, output_region, options.debug, options.verbose, rank);
-    transfer_commsets(region, output_region, options.debug, options.verbose, rank);
+    transfer_sidesets(region, output_region, options, rank);
+    transfer_commsets(region, output_region, options, rank);
 
-    transfer_coordinate_frames(region, output_region, options.debug, options.verbose, rank);
+    transfer_coordinate_frames(region, output_region, options, rank);
 
     if (options.debug && rank == 0) {
       std::cerr << "END STATE_DEFINE_MODEL... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("END STATE_DEFINE_MODEL");
-    }
+    dbi->progress("END STATE_DEFINE_MODEL");
 
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
+    dbi->progress("output_region.end_mode(Ioss::STATE_DEFINE_MODEL) finished");
 
     if (options.verbose && rank == 0) {
       std::cerr << "Maximum Field size = " << max_field_size << " bytes.\n";
@@ -1620,12 +1614,11 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.verbose && rank == 0) {
       std::cerr << "Resize finished...\n";
     }
+
     if (options.debug && rank == 0) {
       std::cerr << "TRANSFERRING MESH FIELD DATA ... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("TRANSFERRING MESH FIELD DATA ... ");
-    }
+    dbi->progress("TRANSFERRING MESH FIELD DATA ... ");
 
     // Model defined, now fill in the model data...
     output_region.begin_mode(Ioss::STATE_MODEL);
@@ -1736,27 +1729,23 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "END STATE_MODEL... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("END STATE_MODEL... ");
-    }
+    dbi->progress("END STATE_MODEL... ");
     output_region.end_mode(Ioss::STATE_MODEL);
 
     if (options.delete_timesteps) {
       Ioss::Utils::clear(data_pool.data);
       return;
     }
-  } // appending
+  } // !appending
 
   if (options.debug && rank == 0) {
     std::cerr << "DEFINING TRANSIENT FIELDS ... " << '\n';
   }
-  if (memory_stats) {
-    dbi->util().progress("DEFINING TRANSIENT FIELDS ... ");
-  }
+  dbi->progress("DEFINING TRANSIENT FIELDS ... ");
 
   if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
     if (options.verbose && rank == 0) {
-      std::cerr << "\n Number of time steps on database     =" << std::setw(12)
+      std::cerr << "\n Number of time steps on database     =" << std::setw(14)
                 << region.get_property("state_count").get_int() << "\n\n";
     }
 
@@ -1816,18 +1805,14 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     if (options.debug && rank == 0) {
       std::cerr << "END STATE_DEFINE_TRANSIENT... " << '\n';
     }
-    if (memory_stats) {
-      dbi->util().progress("END STATE_DEFINE_TRANSIENT... ");
-    }
+    dbi->progress("END STATE_DEFINE_TRANSIENT... ");
     output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
   }
 
   if (options.debug && rank == 0) {
     std::cerr << "TRANSFERRING TRANSIENT FIELDS ... " << '\n';
   }
-  if (memory_stats) {
-    dbi->util().progress("TRANSFERRING TRANSIENT FIELDS... ");
-  }
+  dbi->progress("TRANSFERRING TRANSIENT FIELDS... ");
 
   output_region.begin_mode(Ioss::STATE_TRANSIENT);
   // Get the timesteps from the input database.  Step through them
@@ -1845,7 +1830,7 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
     }
 
     int ostep = output_region.add_state(time);
-    show_step(istep, time, options.verbose, rank);
+    show_step(istep, time, options, rank);
 
     output_region.begin_state(ostep);
     region.begin_state(istep);
@@ -1917,32 +1902,27 @@ void Ioss::Utils::copy_database(Ioss::Region &region, Ioss::Region &output_regio
   if (options.debug && rank == 0) {
     std::cerr << "END STATE_TRANSIENT... " << '\n';
   }
-  if (memory_stats) {
-    dbi->util().progress("END STATE_TRANSIENT ... ");
-  }
+  dbi->progress("END STATE_TRANSIENT ... ");
+
   output_region.end_mode(Ioss::STATE_TRANSIENT);
   Ioss::Utils::clear(data_pool.data);
 }
 
 namespace {
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, DataPool &pool,
-                          bool debug, bool verbose, int rank)
+                          const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &nbs = region.get_node_blocks();
-    size_t      id  = 1;
     for (const auto &inb : nbs) {
       const std::string &name = inb->name();
-      if (debug && rank == 0) {
+      if (options.debug && rank == 0) {
         std::cerr << name << ", ";
       }
       size_t num_nodes = inb->entity_count();
       size_t degree    = inb->get_property("component_degree").get_int();
-      if (verbose && rank == 0) {
-        std::cerr << " Number of  Coordinates per Node        =" << std::setw(12) << degree << "\n";
-      }
-      if (verbose && rank == 0) {
-        std::cerr << " Number of             Nodes            =" << std::setw(12) << num_nodes
-                  << "\n";
+      if (options.verbose && rank == 0) {
+        std::cerr << " Number of  Coordinates per Node =" << std::setw(14) << degree << "\n";
+        std::cerr << " Number of                 Nodes =" << std::setw(14) << num_nodes << "\n";
       }
       auto nb = new Ioss::NodeBlock(output_region.get_database(), name, num_nodes, degree);
       output_region.add(nb);
@@ -1969,9 +1949,8 @@ namespace {
 
       transfer_fields(inb, nb, Ioss::Field::MESH);
       transfer_fields(inb, nb, Ioss::Field::ATTRIBUTE);
-      ++id;
     }
-    if (debug && rank == 0) {
+    if (options.debug && rank == 0) {
       std::cerr << '\n';
     }
   }
@@ -2014,14 +1993,14 @@ namespace {
   }
 
   template <typename T>
-  void transfer_blocks(const std::vector<T *> &blocks, Ioss::Region &output_region, bool debug,
-                       bool verbose, int rank)
+  void transfer_blocks(const std::vector<T *> &blocks, Ioss::Region &output_region,
+                       const Ioss::MeshCopyOptions &options, int rank)
   {
     if (!blocks.empty()) {
       size_t total_entities = 0;
       for (const auto &iblock : blocks) {
         const std::string &name = iblock->name();
-        if (debug && rank == 0) {
+        if (options.debug && rank == 0) {
           std::cerr << name << ", ";
         }
         std::string type  = iblock->get_property("topology_type").get_string();
@@ -2037,26 +2016,29 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::MESH);
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
-      if (verbose && rank == 0) {
-        std::cerr << " Number of " << std::setw(16) << (*blocks.begin())->type_string()
-                  << "s            =" << std::setw(12) << blocks.size() << "\t"
-                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+      if (options.verbose && rank == 0) {
+        std::cerr << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->type_string() << "s =" << std::setw(14) << blocks.size()
+                  << "\n"
+                  << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->contains_string() << "s =" << std::setw(14)
+                  << total_entities << "\n";
       }
-      if (debug && rank == 0) {
+      if (options.debug && rank == 0) {
         std::cerr << '\n';
       }
     }
   }
 
-  void transfer_structuredblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                                 bool verbose, int rank)
+  void transfer_structuredblocks(Ioss::Region &region, Ioss::Region &output_region,
+                                 const Ioss::MeshCopyOptions &options, int rank)
   {
     auto blocks = region.get_structured_blocks();
     if (!blocks.empty()) {
       size_t total_entities = 0;
       for (const auto &iblock : blocks) {
         const std::string &name = iblock->name();
-        if (debug && rank == 0) {
+        if (options.debug && rank == 0) {
           std::cerr << name << ", ";
         }
         size_t count = iblock->entity_count();
@@ -2068,46 +2050,49 @@ namespace {
         transfer_fields(iblock, block, Ioss::Field::MESH);
         transfer_fields(iblock, block, Ioss::Field::ATTRIBUTE);
       }
-      if (verbose && rank == 0) {
-        std::cerr << " Number of " << std::setw(16) << (*blocks.begin())->type_string()
-                  << "s            =" << std::setw(12) << blocks.size() << "\t"
-                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+      if (options.verbose && rank == 0) {
+        std::cerr << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->type_string() << "s =" << std::setw(14) << blocks.size()
+                  << "\n"
+                  << " Number of " << std::right << std::setw(20)
+                  << (*blocks.begin())->contains_string() << "s =" << std::setw(14)
+                  << total_entities << "\n";
       }
-      if (debug && rank == 0) {
+      if (options.debug && rank == 0) {
         std::cerr << '\n';
       }
     }
   }
 
-  void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                              bool verbose, int rank)
+  void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region,
+                              const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &ebs = region.get_element_blocks();
-    transfer_blocks(ebs, output_region, debug, verbose, rank);
+    transfer_blocks(ebs, output_region, options, rank);
   }
 
-  void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                           bool verbose, int rank)
+  void transfer_edgeblocks(Ioss::Region &region, Ioss::Region &output_region,
+                           const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &ebs = region.get_edge_blocks();
-    transfer_blocks(ebs, output_region, debug, verbose, rank);
+    transfer_blocks(ebs, output_region, options, rank);
   }
 
-  void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                           bool verbose, int rank)
+  void transfer_faceblocks(Ioss::Region &region, Ioss::Region &output_region,
+                           const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &ebs = region.get_face_blocks();
-    transfer_blocks(ebs, output_region, debug, verbose, rank);
+    transfer_blocks(ebs, output_region, options, rank);
   }
 
-  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank)
+  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &fss         = region.get_sidesets();
     size_t      total_sides = 0;
     for (const auto &ss : fss) {
       const std::string &name = ss->name();
-      if (debug && rank == 0) {
+      if (options.debug && rank == 0) {
         std::cerr << name << ", ";
       }
 
@@ -2115,7 +2100,7 @@ namespace {
       const auto &fbs  = ss->get_side_blocks();
       for (const auto &fb : fbs) {
         const std::string &fbname = fb->name();
-        if (debug && rank == 0) {
+        if (options.debug && rank == 0) {
           std::cerr << fbname << ", ";
         }
         std::string fbtype   = fb->get_property("topology_type").get_string();
@@ -2141,25 +2126,26 @@ namespace {
       transfer_fields(ss, surf, Ioss::Field::ATTRIBUTE);
       output_region.add(surf);
     }
-    if (verbose && rank == 0) {
-      std::cerr << " Number of          SideSets            =" << std::setw(12) << fss.size()
-                << "\t"
-                << "Number of element sides =" << std::setw(12) << total_sides << "\n";
+    if (options.verbose && rank == 0 && !fss.empty()) {
+      std::cerr << " Number of " << std::right << std::setw(20) << (*fss.begin())->type_string()
+                << "s =" << std::setw(14) << fss.size() << "\n"
+                << " Number of " << std::right << std::setw(20) << (*fss.begin())->contains_string()
+                << "s =" << std::setw(14) << total_sides << "\n";
     }
-    if (debug && rank == 0) {
+    if (options.debug && rank == 0) {
       std::cerr << '\n';
     }
   }
 
   template <typename T>
-  void transfer_sets(const std::vector<T *> &sets, Ioss::Region &output_region, bool debug,
-                     bool verbose, int rank)
+  void transfer_sets(const std::vector<T *> &sets, Ioss::Region &output_region,
+                     const Ioss::MeshCopyOptions &options, int rank)
   {
     if (!sets.empty()) {
       size_t total_entities = 0;
       for (const auto &set : sets) {
         const std::string &name = set->name();
-        if (debug && rank == 0) {
+        if (options.debug && rank == 0) {
           std::cerr << name << ", ";
         }
         size_t count = set->entity_count();
@@ -2171,52 +2157,52 @@ namespace {
         transfer_fields(set, o_set, Ioss::Field::ATTRIBUTE);
       }
 
-      if (verbose && rank == 0) {
-        std::cerr << " Number of " << std::setw(16) << (*sets.begin())->type_string()
-                  << "s            =" << std::setw(12) << sets.size() << "\t"
-                  << "Length of entity list   =" << std::setw(12) << total_entities << "\n";
+      if (options.verbose && rank == 0) {
+        std::cerr << " Number of " << std::right << std::setw(20) << (*sets.begin())->type_string()
+                  << "s            =" << std::setw(14) << sets.size() << "\t"
+                  << "Length of entity list   =" << std::setw(14) << total_entities << "\n";
       }
-      if (debug && rank == 0) {
+      if (options.debug && rank == 0) {
         std::cerr << '\n';
       }
     }
   }
 
-  void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank)
+  void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &nss = region.get_nodesets();
-    transfer_sets(nss, output_region, debug, verbose, rank);
+    transfer_sets(nss, output_region, options, rank);
   }
 
-  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank)
+  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &nss = region.get_edgesets();
-    transfer_sets(nss, output_region, debug, verbose, rank);
+    transfer_sets(nss, output_region, options, rank);
   }
 
-  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank)
+  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &nss = region.get_facesets();
-    transfer_sets(nss, output_region, debug, verbose, rank);
+    transfer_sets(nss, output_region, options, rank);
   }
 
-  void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank)
+  void transfer_elemsets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &nss = region.get_elementsets();
-    transfer_sets(nss, output_region, debug, verbose, rank);
+    transfer_sets(nss, output_region, options, rank);
   }
 
-  void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                         bool verbose, int rank)
+  void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region,
+                         const Ioss::MeshCopyOptions &options, int rank)
   {
     const auto &css = region.get_commsets();
     for (const auto &ics : css) {
       const std::string &name = ics->name();
-      if (debug && rank == 0) {
+      if (options.debug && rank == 0) {
         std::cerr << name << ", ";
       }
       std::string type  = ics->get_property("entity_type").get_string();
@@ -2228,13 +2214,13 @@ namespace {
       transfer_fields(ics, cs, Ioss::Field::ATTRIBUTE);
       transfer_fields(ics, cs, Ioss::Field::COMMUNICATION);
     }
-    if (debug && rank == 0) {
+    if (options.debug && rank == 0) {
       std::cerr << '\n';
     }
   }
 
-  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region, bool debug,
-                                  bool verbose, int rank)
+  void transfer_coordinate_frames(Ioss::Region &region, Ioss::Region &output_region,
+                                  const Ioss::MeshCopyOptions &options, int rank)
   {
     const Ioss::CoordinateFrameContainer &cf = region.get_coordinate_frames();
     for (const auto &frame : cf) {
@@ -2254,7 +2240,9 @@ namespace {
     // whose names begin with the prefix
     for (const auto &field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
-      max_field_size    = MAX(max_field_size, field.get_size());
+      if (field.get_size() > max_field_size) {
+        max_field_size = field.get_size();
+      }
       if (field_name != "ids" && !oge->field_exists(field_name) &&
           (prefix.length() == 0 ||
            std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
@@ -2571,15 +2559,11 @@ namespace {
     }
   }
 
-  void show_step(int istep, double time, bool verbose, int rank)
+  void show_step(int istep, double time, const Ioss::MeshCopyOptions &options, int rank)
   {
-    if (verbose && rank == 0) {
+    if (options.verbose && rank == 0) {
       std::cerr.setf(std::ios::scientific);
-    }
-    if (verbose && rank == 0) {
       std::cerr.setf(std::ios::showpoint);
-    }
-    if (verbose && rank == 0) {
       std::cerr << "\r\tTime step " << std::setw(5) << istep << " at time " << std::setprecision(5)
                 << time;
     }
@@ -2606,7 +2590,7 @@ namespace {
         for (size_t n = 0; n < ids.size(); n++) {
           INT id = ids[n];
           if (my_data[id - 1] == my_processor) {
-            owned++;
+            ++owned;
           }
         }
         ns->property_add(Ioss::Property("locally_owned_count", owned));

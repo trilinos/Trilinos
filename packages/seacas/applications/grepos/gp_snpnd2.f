@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,20 +31,20 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
-      subroutine snpnd2(numnp, ndim, x, y, vnorm, 
+      subroutine snpnd2(numnp, ndim, x, y, vnorm,
      *         neessm, nnessm, ltnesm, toler, delmax)
 C=======================================================================
-      
+
       REAL X(*), Y(*), VNORM(3,*)
       DIMENSION LTNESM(2,*)
-      
+
       REAL SAVEIT(2)
-      LOGICAL FOUND 
+      LOGICAL FOUND
 
 C ... Quiet the compiler...
       saveit(1) = 0.0
       saveit(2) = 0.0
-      
+
       glotol = 0.0
       notmat = 0
       matin  = 0
@@ -58,12 +58,12 @@ C ... Quiet the compiler...
         svmax = -1.0e38
         found = .false.
         if (vnorm(1,inod) .ne. 0.0 .or. vnorm(2,inod) .ne. 0.0) then
-          
+
           numnod = numnod + 1
-          
+
           X0 = X(inod)
           Y0 = Y(inod)
-          
+
           AI = VNORM(1, inod)
           BJ = VNORM(2, inod)
 C ... Node movement (delta) = (xnew-X0)**2 + (ynew-Y0)**2
@@ -71,9 +71,9 @@ C                           = (x0+t*ai-x0)**2 + (y0+t*bj-y0)**2
 C                           = t**2 * (ai**2 + bj**2)
 C    Want delta < delmax  ==> t**2 * (ai**2 + bj**2) < delmax**2
 C                         ==> t**2 < delmax**2 / (ai**2 + bj**2) = tmax
-          
+
           tmax = delmax**2 / (ai**2 + bj**2)
-          
+
           do 110 iseg = 1, neessm
             XI = x(LTNESM(1,ISEG))
             YI = y(LTNESM(1,ISEG))
@@ -102,8 +102,8 @@ C     face. Move the node to the intersection point and get the next node
               else if (t**2 .le. tmax .and.
      *          0.0-toler .le. S .and. S .le. 1.0+toler) then
 C ... If we made it this far, then the intersection point is outside the
-C     face, but inside the tolerance range. 
-C     Save the intersection point in case no intersections within the 
+C     face, but inside the tolerance range.
+C     Save the intersection point in case no intersections within the
 C     face are found.
                 if (S .gt. 1.0) S = 1.0 - S
 C ...           -toler < S < 0.0
@@ -115,14 +115,14 @@ C ...           -toler < S < 0.0
                   SAVEIT(2) = Y0 + T * BJ
                 end if
               else
-C ... The node is outside the tolerance, 
+C ... The node is outside the tolerance,
 C     for this face/node combination. Save the minimum for all face/node comb
                 if (S .lt. 0.0) then
                   S = -S
                 else if (S .gt. 1.0) then
                   S = S - 1.0
                 endif
-                
+
                 pmin = min(S, pmin)
               end if
             end if
@@ -140,7 +140,7 @@ C     for this face/node combination. Save the minimum for all face/node comb
         end if
  120    continue
  130  continue
-      
+
       if (notmat .gt. 0) then
         write (*,10010) notmat, glotol
       end if
@@ -156,4 +156,4 @@ C     for this face/node combination. Save the minimum for all face/node comb
      *       /,'Number of toleranced matches = ',I9 )
       return
       end
-      
+

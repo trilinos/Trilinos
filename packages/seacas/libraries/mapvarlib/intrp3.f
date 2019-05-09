@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,28 +29,28 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
 *DECK,INTRPE
       SUBROUTINE INTRP3 (CNTRA,CNTRB,IELPT,SOLEB,SOLEA,SOLGRA,IDBLK,
      &                   ITT,iblk,TIMES,ISTP,IST,INSUB,ICOMPL,
      &                   XB,YB,ZB,ICONB,DUME)
-C     
+C
 C     ******************************************************************
-C     
+C
 C     SUBROUTINE TO CONTROL INTERPOLATION OF ELEMENT VARIABLES
 C     FROM MESH-A TO MESH-B FOR SCHEME 3, A ELEMENT CENTROID BASED
 C     INTERPOLATION SCHEME. PHYSICAL CONSTRAINTS ARE APPLIED TO
 C     THE INTERPOLATED RESULTS AND THEN THEY ARE WRITTEN TO MESH-C
 C
 C     Called by MAPVAR
-C     
+C
 C     ******************************************************************
 C
 C CNTRA   REAL  Centroidal coords for Mesh-A
 C CNTRB   REAL  Centroidal coords for Mesh-B
-C IELPT   INT   The element in Mesh-A within which the point 
+C IELPT   INT   The element in Mesh-A within which the point
 C               (node in Mesh-B) is found
 C STRPT   REAL  The isoparametric coords of point in IELPT element
 C SOLEB   REAL  Element variables for Mesh-B
@@ -74,23 +74,23 @@ C
       include 'ebbyeb.blk'
       include 'ex2tp.blk'
       include 'tapes.blk'
-C     
+C
       DIMENSION CNTRB(NUMEBB,*), CNTRA(NUMEBA,*), IELPT(*)
       DIMENSION SOLEB(NUMEBB,*), SOLEA(NUMEBA,*)
       DIMENSION SOLGRA(NDIMA,NUMEBA,*)
       DIMENSION ITT(NVAREL,*), ICONB(NELNDB,*)
       DIMENSION XX(27), YY(27), ZZ(27), XB(*), YB(*), ZB(*)
       DIMENSION DUME(*)
-C     
+C
 C     ******************************************************************
-C     
+C
         IROT = 0
         IROTF = 0
         DO 40 IVAR=1,NVAREL
           IF (ITT(IVAR,iblk) .EQ. 0)GO TO 40
 C
 C Initialize SOLEB if first time in subroutine for this element block
-C After first time into subroutine 
+C After first time into subroutine
 C retrieve SOLEB from storage in EXODUS
 C
         IF (INSUB .EQ. 1) THEN
@@ -98,21 +98,21 @@ C
         ELSE
           CALL EXGEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         END IF
-C     
+C
 C Loop on elements in recipient mesh
-C     
+C
         DO 30 I=1,NUMEBB
           IF (IELPT(I) .NE. 0)THEN
-C     
+C
 C Distance in cartesian coordinates between mesh-A and mesh-B centroid
-C     
+C
             XC = CNTRB(I,1) - CNTRA(IELPT(I),1)
             YC = CNTRB(I,2) - CNTRA(IELPT(I),2)
             ZC = 0.
             IF (NDIMB .EQ. 3)ZC = CNTRB(I,3) - CNTRA(IELPT(I),3)
-C     
+C
 C Evaluate interpolation
-C     
+C
             SOLEB(I,IVAR) = SOLEA(IELPT(I),IVAR)
      &                    + SOLGRA(1,IELPT(I),IVAR) * XC
      &                    + SOLGRA(2,IELPT(I),IVAR) * YC
@@ -272,9 +272,9 @@ c
              END IF
 C
 C
-            ELSE IF (IROT .EQ. 9 .AND. IROTF .EQ. 0 .AND. IR11 .NE. 0 
-     &        .AND. IR21 .NE. 0 .AND. IR31 .NE. 0 .AND. IR12 .NE. 0 
-     &        .AND. IR22 .NE. 0 .AND. IR32 .NE. 0 .AND. IR13 .NE. 0 
+            ELSE IF (IROT .EQ. 9 .AND. IROTF .EQ. 0 .AND. IR11 .NE. 0
+     &        .AND. IR21 .NE. 0 .AND. IR31 .NE. 0 .AND. IR12 .NE. 0
+     &        .AND. IR22 .NE. 0 .AND. IR32 .NE. 0 .AND. IR13 .NE. 0
      &        .AND. IR23 .NE. 0 .AND. IR33 .NE. 0)THEN
 C
 C compute magnitude of matrix
@@ -328,6 +328,6 @@ c
      &      'THIS IS ONLY A WARNING',' ',0)
         END IF
 c########################################################################
-C     
+C
       RETURN
       END

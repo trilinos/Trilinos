@@ -101,7 +101,7 @@ namespace panzer
        *                        - compute and contribute (`CONTRIBUTES`), or
        *                        - compute and store (`EVALUATES`).
        *  \param[in] resNames   The names of either the contributed or
-       *                        evaluated fields, depending on `evalStyle`. 
+       *                        evaluated fields, depending on `evalStyle`.
        *                        This `Evaluator` computes either two or three
        *                        fields, depending on the dimensionality of \f$
        *                        \nabla\phi \f$.
@@ -273,10 +273,9 @@ namespace panzer
        *  \brief An `enum` determining the behavior of this `Evaluator`.
        *
        *  This `Evaluator` will compute the result of its integration and then:
-       *  - CONTRIBUTES:                contribute it to a specified residual,
-       *                                not saving anything; or
-       *  - EVALUATES:                  save it under a specified name for
-       *                                future use.
+       *  - CONTRIBUTES:  contribute it to a specified residual, not saving
+       *                  anything; or
+       *  - EVALUATES:    save it under a specified name for future use.
        */
       const panzer::EvaluatorStyle evalStyle_;
 
@@ -309,7 +308,9 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-    Kokkos::View<Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*> kokkosFieldMults_;
+      Kokkos::View<Kokkos::View<const ScalarT**,
+        typename PHX::DevLayout<ScalarT>::type, PHX::Device>*>
+        kokkosFieldMults_;
 
       /**
        *  \brief The number of dimensions associated with the vector.

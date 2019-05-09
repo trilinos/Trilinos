@@ -43,6 +43,22 @@
 
 namespace stk {
 
+struct EquivalentPermutation
+{
+  STK_FUNCTION
+  EquivalentPermutation()
+    : is_equivalent(false),
+      permutation_number(0) {}
+
+  STK_FUNCTION
+  EquivalentPermutation(bool _is_equivalent, unsigned _permutation_number)
+    : is_equivalent(_is_equivalent),
+      permutation_number(_permutation_number) {}
+
+  bool     is_equivalent;
+  unsigned permutation_number;
+};
+
 struct topology
 {
   enum rank_t
@@ -84,6 +100,8 @@ struct topology
     , BEAM_3
     , SHELL_LINE_2
     , SHELL_LINE_3
+    , SPRING_2
+    , SPRING_3
     , TRI_3_2D, TRIANGLE_3_2D = TRI_3_2D
     , TRI_4_2D, TRIANGLE_4_2D = TRI_4_2D
     , TRI_6_2D, TRIANGLE_6_2D = TRI_6_2D
@@ -129,6 +147,10 @@ struct topology
 
   /// get the name of this topology
   std::string name() const;
+
+  /// get the name of this topology
+  STK_FUNCTION
+  const char * char_name() const;
 
   /// does this topology have homogeneous faces
   STK_INLINE_FUNCTION
@@ -197,48 +219,65 @@ struct topology
 
   /// fill the output ordinals with the ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
+  STK_INLINE_FUNCTION
   void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output ordinals with the ordinals that make up the given face
   template <typename OrdinalOutputIterator>
+  STK_INLINE_FUNCTION
   void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output ordinals with the ordinals that make up the given permutation
   template <typename OrdinalOutputIterator>
+  STK_INLINE_FUNCTION
   void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals) const;
 
   /// fill the output nodes with the nodes that make up the given edge
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_INLINE_FUNCTION
   void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given face
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_INLINE_FUNCTION
   void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given permutation
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_INLINE_FUNCTION
   void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes) const;
 
   /// do the two arrays define equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2019-04-04
   template <typename NodeArrayA, typename NodeArrayB>
-  std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & possible_permutation_of_a) const;
+  STK_DEPRECATED std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & possible_permutation_of_a) const;
+#endif
+
+  /// do the two arrays define equivalent entities (same nodes, but maybe a different permutation)
+  /// return a struct containing a bool and permutation number from a to b
+  template <typename NodeArrayA, typename NodeArrayB>
+  STK_INLINE_FUNCTION
+  EquivalentPermutation is_equivalent(const NodeArrayA & a, const NodeArrayB & possible_permutation_of_a) const;
 
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray>
+  STK_INLINE_FUNCTION
   unsigned lexicographical_smallest_permutation(const NodeArray &nodes, bool only_positive_permutations = false) const;
 
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes that preserves polarity
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray>
+  STK_INLINE_FUNCTION
   unsigned lexicographical_smallest_permutation_preserve_polarity(const NodeArray &nodes, const NodeArray &element_nodes) const;
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
+  STK_INLINE_FUNCTION
   void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals) const
   {
     switch(sub_rank)
@@ -253,6 +292,7 @@ struct topology
   /// fill the output nodes with the nodes that make up the given sub topology
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_INLINE_FUNCTION
   void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes) const
   {
     switch(sub_rank)
@@ -297,6 +337,7 @@ struct topology
 
   /// fill the output ordinals with the ordinals that make up the given side topology
   template <typename OrdinalOutputIterator>
+  STK_INLINE_FUNCTION
   void side_node_ordinals(unsigned side_ordinal, OrdinalOutputIterator output_ordinals) const
   {
     sub_topology_node_ordinals( side_rank(), side_ordinal, output_ordinals);
@@ -305,6 +346,7 @@ struct topology
   /// fill the output nodes with the nodes that make up the given side topology
   /// input 'nodes' is expected to be of length num_nodes.
   template <typename NodeArray, typename NodeOutputIterator>
+  STK_INLINE_FUNCTION
   void side_nodes(const NodeArray & nodes, unsigned side_ordinal, NodeOutputIterator output_nodes) const
   {
     sub_topology_nodes( nodes, side_rank(), side_ordinal, output_nodes);
@@ -599,10 +641,10 @@ topology create_superelement_topology(int num_nodes)
 std::ostream & operator<<(std::ostream &out, topology::rank_t r);
 std::ostream & operator<<(std::ostream &out, topology t);
 void verbose_print_topology(std::ostream &out, topology t);
-bool isTriangle (topology topo);
-bool isQuadrilateral (topology topo);
-bool isTetrahedron (topology topo);
-bool isHexahedron (topology topo);
+bool isTriangleElement (topology topo);
+bool isQuadrilateralElement (topology topo);
+bool isTetrahedronElement (topology topo);
+bool isHexahedronElement (topology topo);
 bool is_solid_element(stk::topology t);
 
 } //namespace stk

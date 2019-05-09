@@ -172,7 +172,7 @@ bool select_part_impl(Part const& part, SelectorNode const* root)
   };
 }
 
-bool is_all_union_impl(SelectorNode const* root)
+bool is_all_union_impl(const impl::SelectorNode* root)
 {
   switch(root->m_type) {
   case SelectorNodeType::UNION:
@@ -205,7 +205,7 @@ void gather_parts_impl(PartVector& parts, SelectorNode const* root)
     ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
     break;
   case SelectorNodeType::COMPLEMENT:
-    ThrowRequireMsg(false, "Cannot get_parts from a selector with differences");
+    ThrowRequireMsg(false, "Cannot get_parts from a selector with complements");
     break;
   case SelectorNodeType::FIELD:
     if(root->field() == NULL) {
@@ -516,17 +516,33 @@ Selector selectField( const FieldBase& field )
 
 bool is_subset(Selector const& lhs, Selector const& rhs)
 {
+  PartVector scratchLhs, scratchRhs;
+  return is_subset(lhs, rhs, scratchLhs, scratchRhs);
+}
+
+bool is_subset(Selector const& lhs, Selector const& rhs, PartVector& scratchLhs, PartVector& scratchRhs)
+{
   // If either selector has complements or intersections, it becomes
   // much harder to determine if one is a subset of the other
   if (rhs.is_all_unions() && lhs.is_all_unions()) {
-    PartVector lhs_parts, rhs_parts;
-    rhs.get_parts(rhs_parts);
-    lhs.get_parts(lhs_parts);
-    for (size_t l = 0, le = lhs_parts.size(); l < le; ++l) {
-      Part const& lhs_part = *lhs_parts[l];
+    scratchRhs.clear();
+    scratchLhs.clear();
+    rhs.get_parts(scratchRhs);
+    lhs.get_parts(scratchLhs);
+    return is_subset(scratchLhs, scratchRhs);
+  }
+  else {
+    return false;
+  }
+}
+
+bool is_subset(const PartVector& lhsParts, const PartVector& rhsParts)
+{
+    for (size_t l = 0, le = lhsParts.size(); l < le; ++l) {
+      Part const& lhs_part = *lhsParts[l];
       bool found = false;
-      for (size_t r = 0, re = rhs_parts.size(); !found && r < re; ++r) {
-        Part const& rhs_part = *rhs_parts[r];
+      for (size_t r = 0, re = rhsParts.size(); !found && r < re; ++r) {
+        Part const& rhs_part = *rhsParts[r];
         found = rhs_part.contains(lhs_part);
       }
       if (!found) {
@@ -534,10 +550,18 @@ bool is_subset(Selector const& lhs, Selector const& rhs)
       }
     }
     return true;
-  }
-  else {
-    return false;
-  }
+}
+
+bool is_subset(const OrdinalVector& lhsParts, const OrdinalVector& rhsParts)
+{
+    for (size_t l = 0, le = lhsParts.size(); l < le; ++l) {
+      Ordinal lhs_part = lhsParts[l];
+      bool found = contains_ordinal(rhsParts, lhs_part);
+      if (!found) {
+        return false;
+      }
+    }
+    return true;
 }
 
 } // namespace mesh

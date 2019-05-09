@@ -34,7 +34,9 @@
 #include <type_traits>
 #include <ostream>
 
-#include "Sacado_Fad_Expression.hpp"
+#include "Sacado_Fad_Exp_Expression.hpp"
+#include "Sacado_Fad_Exp_ExpressionTraits.hpp"
+#include "Sacado_Fad_Exp_Ops_Fwd.hpp"
 #include "Sacado_cmath.hpp"
 
 #if defined(HAVE_SACADO_KOKKOSCORE)
@@ -128,6 +130,12 @@ namespace Sacado {                                                      \
   template <typename T, typename E>                                     \
   struct BaseExprType< Fad::Exp::OP< T,E > > {                          \
     typedef typename BaseExprType<T>::type type;                        \
+  };                                                                    \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct IsSimdType< Fad::Exp::OP< T,E > > {                            \
+    static const bool value =                                           \
+      IsSimdType< typename Fad::Exp::OP< T,E >::scalar_type >::value;   \
   };                                                                    \
                                                                         \
 }
@@ -540,6 +548,12 @@ namespace Sacado {                                                      \
                                      base_expr_2>::type type;           \
   };                                                                    \
                                                                         \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct IsSimdType< Fad::Exp::OP< T1, T2, c1, c2, E > > {              \
+    static const bool value =                                           \
+      IsSimdType< typename Fad::Exp::OP< T1, T2, c1, c2, E >::value_type >::value; \
+  };                                                                    \
+                                                                        \
 }
 
 
@@ -621,20 +635,20 @@ FAD_BINARYOP_MACRO(atan2,
                    (c*expr1.dx(i))/ (expr1.val()*expr1.val() + c*c),
                    (-c*expr2.fastAccessDx(i))/ (c*c + expr2.val()*expr2.val()),
                    (c*expr1.fastAccessDx(i))/ (expr1.val()*expr1.val() + c*c))
-FAD_BINARYOP_MACRO(pow,
-                   PowerOp,
-                   using std::pow; using std::log;,
-                   pow(expr1.val(), expr2.val()),
-                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
-                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) ),
-                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val())) ),
-                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
-                   pow(c, expr2.val()),
-                   pow(expr1.val(), c),
-                   if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) ),
-                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) ),
-                   if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) ),
-                   if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c))) )
+// FAD_BINARYOP_MACRO(pow,
+//                    PowerOp,
+//                    using std::pow; using std::log;,
+//                    pow(expr1.val(), expr2.val()),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
+//                    pow(c, expr2.val()),
+//                    pow(expr1.val(), c),
+//                    if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) ),
+//                    if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    ;,
@@ -663,6 +677,472 @@ FAD_BINARYOP_MACRO(min,
                    if_then_else( expr1.val() <= c, expr1.dx(i), value_type(0) ),
                    if_then_else( c <= expr2.val(), value_type(0), expr2.fastAccessDx(i) ),
                    if_then_else( expr1.val() <= c, expr1.fastAccessDx(i), value_type(0) ) )
+
+
+// Special handling for std::pow() to provide specializations of PowerOp for
+// "simd" value types that use if_then_else(). The only reason for not using
+// if_then_else() always is to avoid evaluating the derivative if the value is
+// zero to avoid throwing FPEs.
+namespace Sacado {
+  namespace Fad {
+  namespace Exp {
+
+    template <typename T1, typename T2,
+              bool is_const_T1, bool is_const_T2,
+              typename ExprSpec, bool is_simd >
+    class PowerOp {};
+
+    //
+    // Implementation for simd type using if_then_else()
+    //
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecDefault, true > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecDefault, true > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const T2& expr2_) :
+        expr1(expr1_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        return sz1 > sz2 ? sz1 : sz2;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess() && expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::pow; using std::log;
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        if (sz1 > 0 && sz2 > 0)
+          return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
+        else if (sz1 > 0)
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return if_then_else(expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val())) );
+        else
+          return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::pow; using std::log;
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
+      }
+
+    protected:
+
+      const T1& expr1;
+      const T2& expr2;
+
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecDefault, true >
+      : public Expr< PowerOp< T1, T2, false, true, ExprSpecDefault, true > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const ConstT& c_) :
+        expr1(expr1_), c(c_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr1.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), c);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c)) );
+      }
+
+    protected:
+
+      const T1& expr1;
+      const ConstT& c;
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, true, false, ExprSpecDefault, true >
+      : public Expr< PowerOp< T1, T2, true, false, ExprSpecDefault, true > > {
+    public:
+
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const ConstT& c_, const T2& expr2_) :
+        c(c_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr2.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(c, expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::pow; using std::log;
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) );
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::pow; using std::log;
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) );
+      }
+
+    protected:
+
+      const ConstT& c;
+      const T2& expr2;
+    };
+
+    //
+    // Specialization for scalar types using ternary operator
+    //
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecDefault, false > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecDefault, false > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+                                       value_type_2>::type value_type;
+
+      typedef typename ExprT1::scalar_type scalar_type_1;
+      typedef typename ExprT2::scalar_type scalar_type_2;
+      typedef typename Sacado::Promote<scalar_type_1,
+                                       scalar_type_2>::type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const T2& expr2_) :
+        expr1(expr1_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        return sz1 > sz2 ? sz1 : sz2;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess() && expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::pow; using std::log;
+        const int sz1 = expr1.size(), sz2 = expr2.size();
+        if (sz1 > 0 && sz2 > 0)
+          return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
+        else if (sz1 > 0)
+          // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+          // It seems less accurate and caused convergence problems in some codes
+          return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val()));
+        else
+          return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val()));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::pow; using std::log;
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
+      }
+
+    protected:
+
+      const T1& expr1;
+      const T2& expr2;
+
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecDefault, false >
+      : public Expr< PowerOp< T1, T2, false, true, ExprSpecDefault, false > > {
+    public:
+
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const T1& expr1_, const ConstT& c_) :
+        expr1(expr1_), c(c_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr1.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr1.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), c);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::pow;
+        // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
+        // It seems less accurate and caused convergence problems in some codes
+        return expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c));
+      }
+
+    protected:
+
+      const T1& expr1;
+      const ConstT& c;
+    };
+
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, true, false, ExprSpecDefault, false >
+      : public Expr< PowerOp< T1, T2, true, false, ExprSpecDefault, false > > {
+    public:
+
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
+
+      typedef ExprSpecDefault expr_spec_type;
+
+      KOKKOS_INLINE_FUNCTION
+      PowerOp(const ConstT& c_, const T2& expr2_) :
+        c(c_), expr2(expr2_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      int size() const {
+        return expr2.size();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      bool hasFastAccess() const {
+        return expr2.hasFastAccess();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type val() const {
+        using std::pow;
+        return pow(c, expr2.val());
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type dx(int i) const {
+        using std::pow; using std::log;
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(c)*pow(c,expr2.val()));
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      value_type fastAccessDx(int i) const {
+        using std::pow; using std::log;
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val()));
+      }
+
+    protected:
+
+      const ConstT& c;
+      const T2& expr2;
+    };
+
+    template <typename T1, typename T2>
+    KOKKOS_INLINE_FUNCTION
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_EXPR(PowerOp)
+    pow (const T1& expr1, const T2& expr2)
+    {
+      typedef PowerOp< typename Expr<T1>::derived_type,
+                  typename Expr<T2>::derived_type,
+                  false, false, typename T1::expr_spec_type > expr_t;
+
+      return expr_t(expr1.derived(), expr2.derived());
+    }
+
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    PowerOp< typename T::value_type, typename Expr<T>::derived_type,
+        true, false, typename T::expr_spec_type >
+    pow (const typename T::value_type& c,
+            const Expr<T>& expr)
+    {
+      typedef typename T::value_type ConstT;
+      typedef PowerOp< ConstT, typename Expr<T>::derived_type,
+                  true, false, typename T::expr_spec_type > expr_t;
+
+      return expr_t(c, expr.derived());
+    }
+
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    PowerOp< typename Expr<T>::derived_type, typename T::value_type,
+        false, true, typename T::expr_spec_type >
+    pow (const Expr<T>& expr,
+         const typename T::value_type& c)
+    {
+      typedef typename T::value_type ConstT;
+      typedef PowerOp< typename Expr<T>::derived_type, ConstT,
+              false, true, typename T::expr_spec_type > expr_t;
+
+      return expr_t(expr.derived(), c);
+    }
+
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    SACADO_FAD_EXP_OP_ENABLE_SCALAR_EXPR(PowerOp)
+    pow (const typename T::scalar_type& c,
+         const Expr<T>& expr)
+    {
+      typedef typename T::scalar_type ConstT;
+      typedef PowerOp< ConstT, typename Expr<T>::derived_type,
+                       true, false, typename T::expr_spec_type > expr_t;
+
+      return expr_t(c, expr.derived());
+    }
+
+    template <typename T>
+    KOKKOS_INLINE_FUNCTION
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_SCALAR(PowerOp)
+    pow (const Expr<T>& expr,
+         const typename T::scalar_type& c)
+    {
+      typedef typename T::scalar_type ConstT;
+      typedef PowerOp< typename Expr<T>::derived_type, ConstT,
+                       false, true, typename T::expr_spec_type > expr_t;
+
+      return expr_t(expr.derived(), c);
+    }
+
+    template <typename T1, typename T2, bool c1, bool c2, typename E>
+    struct ExprLevel< PowerOp< T1, T2, c1, c2, E > > {
+      static constexpr unsigned value_1 = ExprLevel<T1>::value;
+      static constexpr unsigned value_2 = ExprLevel<T2>::value;
+      static constexpr unsigned value =
+        value_1 >= value_2 ? value_1 : value_2;
+    };
+
+    template <typename T1, typename T2, bool c1, bool c2, typename E>
+    struct IsFadExpr< PowerOp< T1, T2, c1, c2, E > > {
+      static constexpr unsigned value = true;
+    };
+
+  }
+  }
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct IsExpr< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+    static constexpr bool value = true;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct BaseExprType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename BaseExprType<T1>::type base_expr_1;
+    typedef typename BaseExprType<T2>::type base_expr_2;
+    typedef typename Sacado::Promote<base_expr_1,
+                                     base_expr_2>::type type;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct IsSimdType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+    static const bool value =
+      IsSimdType< typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::value_type >::value;
+  };
+
+}
 
 //--------------------------if_then_else operator -----------------------
 // Can't use the above macros because it is a ternary operator (sort of).

@@ -21,6 +21,7 @@ void assign_value_to_field(stk::mesh::BulkData &bulk, Field ngpField, double val
     {
         ngpField.get(entity, 0) = value;
     });
+    ngpField.modify_on_device();
 }
 void assign_value_to_statedfield(stk::mesh::BulkData &bulk, ngp::ConvenientMultistateField<double> ngpStatedField, double value)
 {
@@ -29,6 +30,7 @@ void assign_value_to_statedfield(stk::mesh::BulkData &bulk, ngp::ConvenientMulti
     {
         ngpStatedField.get_new(entity, 0) = value;
     });
+    ngpStatedField.modify_on_device();
 }
 
 namespace {
@@ -76,7 +78,8 @@ protected:
         stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
 
         stk::mesh::FieldBase * fieldOfState = stkField->field_state(static_cast<stk::mesh::FieldState>(stateCount));
-        ngpField.copy_device_to_host(get_bulk(), *fieldOfState);
+
+        ngpField.sync_to_host();  // TODO: Check on the device instead
 
         for(stk::mesh::Entity elem : elems)
             EXPECT_EQ(expectedValue, *static_cast<double*>(stk::mesh::field_data(*fieldOfState, elem)));
@@ -184,7 +187,7 @@ TEST_F(StatedFields, updateFromHostStkField)
 
     const double new_value = 999;
     stk::mesh::field_fill(new_value, *stkField);
-    ngpField.copy_host_to_device(*bulkData, *stkField);
+    ngpField.modify_on_host();
     test_field_has_value(ngpField, 0, new_value);
 }
 } //namespace

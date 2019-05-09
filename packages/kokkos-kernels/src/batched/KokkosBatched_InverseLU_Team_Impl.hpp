@@ -5,8 +5,8 @@
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Trsm_Decl.hpp"
-#include "KokkosBatched_Trsm_Team_Impl.hpp"
+#include "KokkosBatched_SolveLU_Decl.hpp"
+#include "KokkosBatched_SolveLU_Team_Impl.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -43,9 +43,8 @@ namespace KokkosBatched {
         });
 
         //First, compute L inverse by solving the system L*Linv = I for Linv
-        TeamTrsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Unblocked>::invoke(member, one, A, B);
         //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
-        TeamTrsm<MemberType,Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Unblocked>::invoke(member, one, A, B);
+        TeamSolveLU<MemberType,Algo::SolveLU::Unblocked,Trans::NoTranspose>::invoke(member, A, B);
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,A.extent(0)*A.extent(1)),[&](const int &tid) {
             int i = tid/A.extent(1);
@@ -82,9 +81,8 @@ namespace KokkosBatched {
         });
 
         //First, compute L inverse by solving the system L*Linv = I for Linv
-        TeamTrsm<MemberType,Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Blocked>::invoke(member, one, A, B);
         //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
-        TeamTrsm<MemberType,Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Blocked>::invoke(member, one, A, B);
+        TeamSolveLU<MemberType,Algo::SolveLU::Blocked,Trans::NoTranspose>::invoke(member, A, B);
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,A.extent(0)*A.extent(1)),[&](const int &tid) {
             int i = tid/A.extent(1);

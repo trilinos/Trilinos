@@ -345,7 +345,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     // Implicit form residual df/dx_dot^T*y_dot + df/dx^T*y using the second
     // scalar argument to apply() to change the explicit term above
-    RCP<const Thyra::VectorBase<Scalar> > x_dot;
     RCP<const DPV> prod_x_dot;
     if (me_inArgs.supports(MEB::IN_ARG_x_dot)) {
       RCP<const Thyra::VectorBase<Scalar> > x_dot = inArgs.get_x_dot();

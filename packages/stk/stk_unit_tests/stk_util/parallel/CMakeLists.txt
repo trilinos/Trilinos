@@ -40,6 +40,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     util_parallel_UnitTest
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NUM_MPI_PROCS 1-6
     )

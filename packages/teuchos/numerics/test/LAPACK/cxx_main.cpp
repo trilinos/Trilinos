@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
   // Create some common typedefs
   typedef Teuchos::ScalarTraits<double> STS;
-  typedef Teuchos::ScalarTraits<double>::magnitudeType MagnitudeType;
+  typedef STS::magnitudeType MagnitudeType;
   typedef Teuchos::ScalarTraits<MagnitudeType> STM;
 
   Teuchos::LAPACK<int,double> L;
@@ -89,8 +89,8 @@ int main(int argc, char* argv[])
         if (verbose && i==3) std::cout << "passed!" << std::endl;
       } else {
         if (verbose) std::cout << "FAILED" << std::endl;
-        numberFailedTests++;	
-	break;
+        numberFailedTests++;
+        break;
       }
     }
 
@@ -128,13 +128,13 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }
   else
-  { 
+  {
     for (int i=0; i<n_potrf; i++)
     {
-      if ( diag_a[i*n_potrf + i] == (i+1) ) 
+      if ( diag_a[i*n_potrf + i] == (i+1) )
       {
         if (verbose && i==(n_potrf-1)) std::cout << "passed!" << std::endl;
-      } 
+      }
       else
       {
         if (verbose) std::cout << "FAILED" << std::endl;
@@ -145,11 +145,11 @@ int main(int argc, char* argv[])
   }
 
   if (verbose) std::cout << "POCON test ... ";
-  
+
   double anorm = (n_potrf*n_potrf), rcond;
   std::vector<double> work(3*n_potrf);
   std::vector<int> iwork(n_potrf);
-  
+
   L.POCON(char_U, n_potrf, &diag_a[0], n_potrf, anorm, &rcond, &work[0], &iwork[0], &info);
   if (info != 0 || (rcond != 1.0/anorm))
   {
@@ -157,13 +157,13 @@ int main(int argc, char* argv[])
     if (verbose) std::cout << "FAILED" << std::endl;
   }
   else
-  { 
+  {
     if (verbose) std::cout << "passed!" << std::endl;
-  } 
+  }
 
   if (verbose) std::cout << "POTRI test ... ";
-  std::vector<double> diag_a_trtri(diag_a); // Save a copy for TRTRI test 
-   
+  std::vector<double> diag_a_trtri(diag_a); // Save a copy for TRTRI test
+
   L.POTRI(char_U, n_potrf, &diag_a[0], n_potrf, &info);
 
   if (info != 0 || (diag_a[n_potrf+1] != 1.0/4.0))
@@ -172,20 +172,20 @@ int main(int argc, char* argv[])
     if (verbose) std::cout << "FAILED" << std::endl;
   }
   else
-  { 
+  {
     if (verbose) std::cout << "passed!" << std::endl;
-  } 
- 
+  }
+
   if (verbose) std::cout << "TRTRI test ... ";
-  
+
   int n_trtri = n_potrf;
   L.TRTRI( char_U, char_N, n_trtri, &diag_a_trtri[0], n_trtri, &info );
   for (int i=0; i<n_trtri; i++)
   {
-    if ( diag_a_trtri[i*n_trtri + i] == 1.0/(i+1) ) 
+    if ( diag_a_trtri[i*n_trtri + i] == 1.0/(i+1) )
     {
       if (verbose && i==(n_trtri-1)) std::cout << "passed!" << std::endl;
-    } 
+    }
     else
     {
       if (verbose) std::cout << "FAILED" << std::endl;
@@ -211,8 +211,10 @@ int main(int argc, char* argv[])
   }
 
 #endif
- 
+
   if (verbose) std::cout << "STEQR test ... ";
+
+#ifndef TEUCHOSNUMERICS_DISABLE_STEQR_TEST
 
   const int n_steqr = 10;
   std::vector<MagnitudeType> diagonal(n_steqr);
@@ -233,8 +235,8 @@ int main(int argc, char* argv[])
   if (info != 0)
   {
     if (verbose)  std::cout << "STEQR: compute symmetric tridiagonal eigenvalues: "
-		  << "LAPACK's _STEQR failed with info = "
-		  << info;
+                  << "LAPACK's _STEQR failed with info = "
+                  << info;
 
       numberFailedTests++;
   }
@@ -247,12 +249,18 @@ int main(int argc, char* argv[])
   if ((fabs(lambda_min-exp_lambda_min)<1e-12) && (fabs(lambda_max-exp_lambda_max)<1e-12))
   {
     if (verbose) std::cout << "passed!" << std::endl;
-  } 
-  else 
+  }
+  else
   {
     if (verbose) std::cout << "FAILED" << std::endl;
     numberFailedTests++;
   }
+
+#else // TEUCHOSNUMERICS_DISABLE_STEQR_TEST
+
+  if (verbose) std::cout << "SKIPPED!\n";
+
+#endif // TEUCHOSNUMERICS_DISABLE_STEQR_TEST
 
   if(numberFailedTests > 0)
     {

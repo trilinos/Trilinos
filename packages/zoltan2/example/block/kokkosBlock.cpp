@@ -129,7 +129,7 @@ int main(int narg, char *arg[]) {
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
+  Zoltan2::PartitioningProblem<inputAdapter_t> *problem =
       new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
 
   ///////////////////////////////////////////////////////////////////////
@@ -144,7 +144,7 @@ int main(int narg, char *arg[]) {
   Kokkos::View<globalId_t *> ids;
   ia.getIDsKokkosView(ids);
 
-  Kokkos::View<int*> partCounts("partCounts", nprocs, 0);
+  Kokkos::View<int*> partCounts("partCounts", nprocs);
 
   Kokkos::View<int*> globalPartCounts("globalPartCounts", nprocs);
 
@@ -155,7 +155,7 @@ int main(int narg, char *arg[]) {
     partCounts(pp)++;
   }
 
-  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, nprocs,
       &partCounts(0), &globalPartCounts(0));
 
   if (rank == 0) {

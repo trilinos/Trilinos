@@ -39,6 +39,7 @@
 #include "elb_err.h"  // for Gen_Error, error_lev
 #include "elb_output.h"
 #include "elb_util.h" // for gds_qsort, qsort2, in_list, etc
+#include "scopeguard.h"
 #include <cstddef>    // for size_t, nullptr
 #include <cstdio>     // for printf, sprintf, fprintf, etc
 #include <cstdlib>    // for free, malloc, realloc
@@ -262,7 +263,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     }
   }
   else { /* Elemental load balance */
-    if (((problem->num_vertices) - (sphere->num)) > 0) {
+    if (problem->num_vertices > sphere->num) {
       /* need to check and make sure that there really are comm maps */
       for (int cnt = 0; cnt < machine->num_procs; cnt++) {
         if (!lb->bor_nodes[cnt].empty()) {
@@ -534,17 +535,11 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   }
   ON_BLOCK_EXIT(ex_close, exid_inp);
 
-  char **elem_type = (char **)array_alloc(2, mesh->num_el_blks, MAX_STR_LENGTH + 1, sizeof(char));
-  if (!elem_type) {
-    Gen_Error(0, "fatal: insufficient memory");
-    return 0;
-  }
-  ON_BLOCK_EXIT(free, elem_type);
-
-  std::vector<INT> el_blk_ids(mesh->num_el_blks);
-  std::vector<INT> el_cnt_blk(mesh->num_el_blks);
-  std::vector<INT> node_pel_blk(mesh->num_el_blks);
-  std::vector<INT> nattr_el_blk(mesh->num_el_blks);
+  std::vector<std::string> elem_type(mesh->num_el_blks);
+  std::vector<INT>         el_blk_ids(mesh->num_el_blks);
+  std::vector<INT>         el_cnt_blk(mesh->num_el_blks);
+  std::vector<INT>         node_pel_blk(mesh->num_el_blks);
+  std::vector<INT>         nattr_el_blk(mesh->num_el_blks);
 
   if (ex_get_ids(exid_inp, EX_ELEM_BLOCK, el_blk_ids.data()) < 0) {
     Gen_Error(0, "fatal: unable to get element block IDs");
@@ -564,15 +559,16 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
    * nodal/element results will be used.
    */
   for (size_t ecnt = 0; ecnt < mesh->num_el_blks; ecnt++) {
-    if (ex_get_block(exid_inp, EX_ELEM_BLOCK, el_blk_ids[ecnt], elem_type[ecnt], &el_cnt_blk[ecnt],
+    char type[MAX_STR_LENGTH + 1];
+    if (ex_get_block(exid_inp, EX_ELEM_BLOCK, el_blk_ids[ecnt], type, &el_cnt_blk[ecnt],
                      &node_pel_blk[ecnt], nullptr, nullptr, &nattr_el_blk[ecnt]) < 0) {
       Gen_Error(0, "fatal: unable to get element block parameters");
       return 0;
     }
-
+    elem_type[ecnt] = type;
     nsize += el_cnt_blk[ecnt] * node_pel_blk[ecnt];
 
-    if (strcmp(elem_type[0], elem_type[ecnt]) == 0) {
+    if (elem_type[0] == elem_type[ecnt]) {
       if (node_pel_blk[0] != node_pel_blk[ecnt]) {
         acc_vis = ELB_FALSE;
       }
@@ -668,8 +664,8 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
        * element.
        */
       int ecnt = (vis_el_blk_ptr[bcnt + 1] - vis_el_blk_ptr[bcnt]) / node_pel_blk[0];
-      if (ex_put_block(exid_vis, EX_ELEM_BLOCK, bcnt + 1, elem_type[0], ecnt, node_pel_blk[0], 0, 0,
-                       0) < 0) {
+      if (ex_put_block(exid_vis, EX_ELEM_BLOCK, bcnt + 1, elem_type[0].c_str(), ecnt,
+                       node_pel_blk[0], 0, 0, 0) < 0) {
         Gen_Error(0, "fatal: unable to output element block params");
         return 0;
       }

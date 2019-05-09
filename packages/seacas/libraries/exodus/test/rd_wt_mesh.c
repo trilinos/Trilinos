@@ -37,11 +37,7 @@
 #define _LARGEFILE_SOURCE
 #define _LARGE_FILES 1
 
-#if defined(__LIBCATAMOUNT__)
-#include <catamount/dclock.h>
-#endif
-
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
 #include <mpi.h>
 #else
 #include <string.h>
@@ -98,17 +94,11 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 
 double my_timer()
 {
-  double t1 = 0.0;
-
-#if !defined(__LIBCATAMOUNT__)
-#ifdef HAVE_PARALLEL
-  t1 = MPI_Wtime();
+#ifdef PARALLEL_AWARE_EXODUS
+  double t1 = MPI_Wtime();
 #else
-  clock_t ctime = clock();
-  t1            = ctime / (double)CLOCKS_PER_SEC;
-#endif
-#else
-  return dclock();
+  clock_t ctime     = clock();
+  double  t1        = ctime / (double)CLOCKS_PER_SEC;
 #endif
   return t1;
 }
@@ -126,7 +116,7 @@ int main(int argc, char **argv)
   int  loc_num_nodes, loc_num_elems;
   int *loc_connect = NULL;
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Info mpi_info_object = MPI_INFO_NULL; /* Copy of MPI Info object.		*/
 #endif
   int *elem_map    = NULL;
@@ -143,7 +133,7 @@ int main(int argc, char **argv)
   int sleep_time         = 0;
   int files_per_domain   = 1;
   int num_iterations     = DEFAULT_NUM_ITERATIONS;
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   static const char *hints[] = {
       /* List of MPI Info hints that if defined in	*/
       "cb_buffer_size",     /* the environment process 0, will be used to	*/
@@ -163,9 +153,6 @@ int main(int argc, char **argv)
   realtyp *y_coords = NULL;
   realtyp *z_coords = NULL;
   int      ndim;
-#ifdef HAVE_PARALLEL
-  MPI_Info new_mpi_info_object;
-#endif
 
   /*
    *	Initialize Stuff
@@ -177,7 +164,7 @@ int main(int argc, char **argv)
   setlinebuf(stderr);
 #endif
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &num_domains);
@@ -199,18 +186,18 @@ int main(int argc, char **argv)
    *	Broadcast Input
    */
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Bcast(&quit, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
   if (quit) {
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
     MPI_Finalize();
 #endif
     exit(0);
   }
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Bcast(&exodus, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&close_files, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(file_name, MAX_STRING_LEN, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -256,7 +243,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "   Number of Files/Domain\t%8d\n", files_per_domain);
     fprintf(stderr, "   Number of Iterations\t\t%8d\n", num_iterations);
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
     if (mpi_info_object != MPI_INFO_NULL) {
       fprintf(stderr, "   MPI Hint Status\n");
 
@@ -295,7 +282,7 @@ int main(int argc, char **argv)
       free(z_coords);
     }
   }
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Finalize();
 #endif
   return (0);
@@ -528,13 +515,13 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     /* read element and node maps */
     t_tmp1 = my_timer();
 
-    err    = ex_get_id_map(exoid, EX_NODE_MAP, *node_map);
+    ex_get_id_map(exoid, EX_NODE_MAP, *node_map);
     t_tmp2 = my_timer();
     raw_data_vol += sizeof(int) * (*num_nodes);
     raw_read_time += t_tmp2 - t_tmp1;
 
     t_tmp1 = my_timer();
-    err    = ex_get_id_map(exoid, EX_ELEM_MAP, *elem_map);
+    ex_get_id_map(exoid, EX_ELEM_MAP, *elem_map);
     t_tmp2 = my_timer();
     raw_data_vol += sizeof(int) * (*num_elems);
     raw_read_time += t_tmp2 - t_tmp1;
@@ -550,7 +537,6 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     *num_nodal_fields = num_vars;
 
     err = ex_get_variable_param(exoid, EX_GLOBAL, &num_vars);
-
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
@@ -563,10 +549,11 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     }
 
     err = ex_get_variable_param(exoid, EX_ELEM_BLOCK, &num_vars);
-
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
+      if (globals)
+        free(globals);
       return (1);
     }
     *num_element_fields = num_vars;
@@ -676,7 +663,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     cum_raw_read_time += raw_read_time;
   } /* end of for (iter...) */
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&raw_data_vol, &glob_raw_data_vol, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
   glob_raw_data_vol = raw_data_vol;
@@ -698,7 +685,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     file_size = file_status.st_size;
   }
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&file_size, &glob_file_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
   glob_file_size    = file_size;
@@ -780,10 +767,8 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
   char **nvar_name = NULL;
   char **evar_name = NULL;
 
-  int *exoid = NULL;
-  exoid      = malloc(files_per_domain * sizeof(int));
+  int *exoid = malloc(files_per_domain * sizeof(int));
 
-  raw_open_close_time = 0.0;
   for (iter = 0; iter < num_iterations; iter++) {
     if (!close_files) {
       t_tmp1 = my_timer();
@@ -1158,7 +1143,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 
   } /* end of for (iter...) */
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&raw_data_vol, &glob_raw_data_vol, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
   glob_raw_data_vol = raw_data_vol;
@@ -1182,7 +1167,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
     file_size = file_status.st_size * files_per_domain;
   }
 
-#ifdef HAVE_PARALLEL
+#ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&file_size, &glob_file_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
   glob_file_size    = file_size;

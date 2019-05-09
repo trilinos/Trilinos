@@ -90,7 +90,17 @@ StepperNewmarkImplicitDForm<Scalar>::correctAcceleration(
   Thyra::V_StVpStV(Teuchos::ptrFromRef(a), c, d, -c, dPred);
 }
 
-// StepperNewmarkImplicitDForm definitions:
+template <class Scalar>
+StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
+    : out_(Teuchos::VerboseObjectBase::getDefaultOStream()) {
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
+#endif
+
+  this->setParameterList(Teuchos::null);
+  this->modelWarning();
+}
+
 template <class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
@@ -99,13 +109,16 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  using Teuchos::RCP;
-  using Teuchos::ParameterList;
 
-  // Set all the input parameters and call initialize
   this->setParameterList(pList);
-  this->setModel(appModel);
-  this->initialize();
+
+  if (appModel == Teuchos::null) {
+    this->modelWarning();
+  }
+  else {
+    this->setModel(appModel);
+    this->initialize();
+  }
 }
 
 template <class Scalar>
@@ -183,64 +196,6 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     // Update time
     Scalar t = time + dt;
 
-#if 0
-    // Compute initial displacement, velocity and acceleration
-    if (time == solutionHistory->minTime()) {
-
-      RCP<Thyra::VectorBase<Scalar>>
-      d_init = Thyra::createMember(d_old->space());
-
-      RCP<Thyra::VectorBase<Scalar>>
-      v_init = Thyra::createMember(v_old->space());
-
-      RCP<Thyra::VectorBase<Scalar>>
-      a_init = Thyra::createMember(a_old->space());
-
-      Thyra::copy(*a_old, a_init.ptr());
-      Thyra::copy(*v_old, v_init.ptr());
-      Thyra::copy(*d_old, d_init.ptr());
-
-#ifdef DEBUG_OUTPUT
-      Teuchos::Range1D range;
-
-      *out_ << "\n*** d_init ***\n";
-      RTOpPack::ConstSubVectorView<Scalar> div;
-      d_init->acquireDetachedView(range, &div);
-      auto dia = div.values();
-      for (auto i = 0; i < dia.size(); ++i) *out_ << dia[i] << " ";
-      *out_ << "\n*** d_init ***\n";
-
-      *out_ << "\n*** v_init ***\n";
-      RTOpPack::ConstSubVectorView<Scalar> viv;
-      v_init->acquireDetachedView(range, &viv);
-      auto via = viv.values();
-      for (auto i = 0; i < via.size(); ++i) *out_ << via[i] << " ";
-      *out_ << "\n*** v_init ***\n";
-
-      *out_ << "\n*** a_init ***\n";
-      RTOpPack::ConstSubVectorView<Scalar> aiv;
-      a_init->acquireDetachedView(range, &aiv);
-      auto aia = aiv.values();
-      for (auto i = 0; i < aia.size(); ++i) *out_ << aia[i] << " ";
-      *out_ << "\n*** a_init ***\n";
-#endif
-
-      wrapperModel->initializeNewmark(
-          a_init, v_init, d_init, dt, time, beta_, gamma_);
-
-      const Thyra::SolveStatus<Scalar>
-      status = this->solveNonLinear(this->wrapperModel_, *this->solver_, d_init, inArgs_);
-
-      if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED ) {
-        workingState->setSolutionStatus(Status::PASSED);
-      } else {
-        workingState->setSolutionStatus(Status::FAILED);
-      }
-
-      correctAcceleration(*a_old, *d_old, *d_init, dt);
-      Thyra::copy(*d_init, d_old.ptr());
-    }
-#endif
 
 #ifdef DEBUG_OUTPUT
     Teuchos::Range1D range;
@@ -296,15 +251,15 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     // create initial guess in NOX solver
     RCP<Thyra::VectorBase<Scalar>> initial_guess = Thyra::createMember(d_pred->space());
-    if ((time == solutionHistory->minTime()) && (initial_guess_ != Teuchos::null)) {
+    if ((time == solutionHistory->minTime()) && (this->initial_guess_ != Teuchos::null)) {
       //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_
       //Throw an exception if initial_guess is not compatible with solution
-      bool is_compatible = (initial_guess->space())->isCompatible(*initial_guess_->space());
+      bool is_compatible = (initial_guess->space())->isCompatible(*this->initial_guess_->space());
       TEUCHOS_TEST_FOR_EXCEPTION(
           is_compatible != true, std::logic_error,
             "Error in Tempus::NemwarkImplicitDForm takeStep(): user-provided initial guess'!\n"
             << "for Newton is not compatible with solution vector!\n");
-      Thyra::copy(*initial_guess_, initial_guess.ptr());
+      Thyra::copy(*this->initial_guess_, initial_guess.ptr());
     }
     else {
       //Otherwise, set initial guess = diplacement predictor
@@ -312,13 +267,10 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     }
 
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
-    const Thyra::SolveStatus<Scalar> status =
+    const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(initial_guess);
 
-    if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->setSolutionStatus(Status::PASSED);
-    else
-      workingState->setSolutionStatus(Status::FAILED);
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
@@ -387,7 +339,7 @@ template <class Scalar>
 void
 StepperNewmarkImplicitDForm<Scalar>::describe(
     Teuchos::FancyOStream& out,
-    const Teuchos::EVerbosityLevel verbLevel) const {
+    const Teuchos::EVerbosityLevel /* verbLevel */) const {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
@@ -487,10 +439,11 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
 #endif
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", this->description());
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
-      "Name of ParameterList containing the solver specifications.");
+  pl->set<std::string>("Stepper Type", this->description());
+  this->getValidParametersBasic(pl);
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
+    "Name of ParameterList containing the solver specifications.");
 
   return pl;
 }
@@ -502,13 +455,12 @@ StepperNewmarkImplicitDForm<Scalar>::getDefaultParameters() const {
 #endif
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  pl->set<bool>       ("Zero Initial Guess", false);
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 

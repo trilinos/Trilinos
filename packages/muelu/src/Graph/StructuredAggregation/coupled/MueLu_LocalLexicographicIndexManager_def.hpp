@@ -113,8 +113,10 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodesData(const RCP<const Map>fineMap,
-                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs, Array<GO>& ghostedNodeCoarseGIDs) const {
+  getGhostedNodesData(const RCP<const Map>/* fineMap */,
+                      Array<LO>& ghostedNodeCoarseLIDs,
+                      Array<int>& ghostedNodeCoarsePIDs,
+                      Array<GO>& ghostedNodeCoarseGIDs) const {
 
     // First we allocated memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
@@ -198,7 +200,6 @@ namespace MueLu {
     ArrayView<const GO> fineNodeGIDs = fineCoordinatesMap->getNodeElementList();
 
     Array<GO> coarseStartIndices(3);
-    GO tmp;
     for(int dim = 0; dim < 3; ++dim) {
       coarseStartIndices[dim] = this->coarseMeshData[myRankIndex][2*dim + 3];
     }
@@ -393,7 +394,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
+  getFineNodeGlobalTuple(const GO /* myGID */, GO& /* i */, GO& /* j */, GO& /* k */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -422,17 +423,17 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getFineNodeGID(const GO i, const GO j, const GO k, GO& myGID) const {
+  getFineNodeGID(const GO /* i */, const GO /* j */, const GO /* k */, GO& /* myGID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getFineNodeLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getFineNodeLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
+  getCoarseNodeGlobalTuple(const GO /* myGID */, GO& /* i */, GO& /* j */, GO& /* k */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -447,12 +448,12 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeGID(const GO i, const GO j, const GO k, GO& myGID) const {
+  getCoarseNodeGID(const GO /* i */, const GO /* j */, const GO /* k */, GO& /* myGID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getCoarseNodeLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -466,7 +467,7 @@ namespace MueLu {
   getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
     // Assumptions: (i,j,k) is a tuple on the coarse mesh
     //              myLID is the corresponding local ID on the fine mesh
-    const GO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
+    const LO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
     const LO indices[3] = {i, j, k};
 
     myLID = 0;
@@ -484,12 +485,12 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getGhostedNodeFineLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getGhostedNodeCoarseLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
 } //namespace MueLu

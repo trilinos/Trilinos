@@ -54,6 +54,7 @@
 
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
+#include <Xpetra_Parameters.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapExtractor.hpp>
@@ -415,6 +416,78 @@ namespace {
       }
     }
 
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, replaceDiagonal, M, Scalar, LO, GO, Node )
+  {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
+    const Scalar SC_ONE = STS::one();
+    const GO GO_ONE = Teuchos::OrdinalTraits<GO>::one();
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
+    // generate problem
+    GO nEle = Teuchos::as<GO>(2*comm->getSize());
+    const RCP<const Xpetra::Map<LO, GO, Node> > map =
+      Xpetra::MapFactory<LO, GO, Node>::Build(lib, nEle, 2, 0, comm);
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+      Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+    const Scalar rankAsScalar = static_cast<Scalar>(static_cast<MT>(comm->getRank()));
+
+    Teuchos::Array<Scalar> vals = {{SC_ONE, rankAsScalar + SC_ONE, SC_ONE}};
+    for(size_t lclRowIdx = 0; lclRowIdx < 2; ++lclRowIdx) {
+      const GO gblRowIdx = Teuchos::as<GO>(2*comm->getRank() + lclRowIdx);
+      Teuchos::Array<GO> cols = {{gblRowIdx - GO_ONE, gblRowIdx, gblRowIdx + GO_ONE}};
+
+      if((comm->getRank() == 0) && (lclRowIdx == 0)) { // First row of the matrix
+        A->insertGlobalValues(gblRowIdx, cols(1, 2), vals(1, 2));
+      } else if((comm->getRank() == comm->getSize() - 1) && (lclRowIdx == 1)) { // Last row of the matrix
+        A->insertGlobalValues(gblRowIdx, cols(0, 2), vals(0, 2));
+      } else {
+        A->insertGlobalValues(gblRowIdx, cols(), vals());
+      }
+    }
+
+    A->fillComplete();
+    TEST_ASSERT(A->isFillComplete());
+
+    comm->barrier ();
+    {
+      /* Replace the diagonal of the matrix by the ID of the owning MPI rank
+       *
+       * 1. Create map
+       * 2. Create vector with new diagonal values
+       * 3. Replace the diagonal
+       * 4. Test for
+       *    - successful replacement of diagonal values
+       *    - unchanged off-diagonal values (not implemented yet)
+       */
+
+      // Create vector with new diagonal values
+      RCP<Xpetra::Vector<Scalar, LO, GO, Node> > newDiag =
+        Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(A->getRowMap(), true);
+      newDiag->putScalar(rankAsScalar);
+
+      // Replace the diagonal
+      A->replaceDiag(*newDiag);
+
+      // Tests
+      {
+        RCP<Xpetra::Vector<Scalar, LO, GO, Node> > diagCopy =
+          Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(A->getRowMap(), true);
+        A->getLocalDiagCopy(*diagCopy);
+
+        Teuchos::ArrayRCP<const Scalar> diagCopyData = diagCopy->getData(0);
+
+        for (size_t i = 0; i < static_cast<size_t>(diagCopyData.size()); ++i)
+          TEST_EQUALITY_CONST(diagCopyData[i], rankAsScalar);
+      }
+    }
   }
 
 
@@ -1407,9 +1480,12 @@ namespace {
     TEST_EQUALITY(mat->getGlobalMaxNumRowEntries(),3);
     TEST_EQUALITY(mat->getNodeMaxNumRowEntries(),3);
     TEST_EQUALITY(mat->getNodeNumRows(),3);
-    TEST_EQUALITY(mat->getGlobalNumCols(),3*numProcs);
-    TEST_EQUALITY(mat->getGlobalNumRows(),3*numProcs);
-    TEST_EQUALITY(mat->getGlobalNumEntries(),9*numProcs-2);
+    TEST_EQUALITY(static_cast<size_t>(mat->getGlobalNumCols()),
+                  static_cast<size_t>(3*numProcs));
+    TEST_EQUALITY(static_cast<size_t>(mat->getGlobalNumRows()),
+                  static_cast<size_t>(3*numProcs));
+    TEST_EQUALITY(static_cast<size_t>(mat->getGlobalNumEntries()),
+                  static_cast<size_t>(9*numProcs-2));
 
     size_t numLocalRows = mat->getNodeNumRows();
     for(size_t row=0; row<numLocalRows; row++) {
@@ -1418,7 +1494,7 @@ namespace {
       Teuchos::ArrayView<const LO> indices;
       Teuchos::ArrayView<const Scalar> vals;
       mat->getLocalRowView(row, indices, vals);
-      for(size_t col = 0; col< indices.size(); col++) {
+      for(size_t col = 0; col < static_cast<size_t>(indices.size()); col++) {
         if(grid == colMap->getGlobalElement(indices[col])) {
           TEST_EQUALITY(vals[col],2.0);
         } else {
@@ -1454,7 +1530,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, Apply , M##LO##GO##Node , SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, ReplaceGlobalAndLocalValues, M##LO##GO##Node , SC, LO, GO, Node ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, leftScale, M##LO##GO##Node , SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, rightScale, M##LO##GO##Node , SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, rightScale, M##LO##GO##Node , SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, replaceDiagonal, M##LO##GO##Node, SC, LO, GO, Node )
 // for Tpetra tests only
 #define UNIT_TEST_GROUP_ORDINAL_TPETRAONLY( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \

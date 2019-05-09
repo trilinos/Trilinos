@@ -223,7 +223,7 @@ namespace Galeri {
         list.set("mx", mx);
       }
 
-      return Maps::Cartesian1D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, mx);
+      return Maps::Cartesian1D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, mx, list);
 
     } else if (mapType == "Cartesian2D") {
       if (nx == -1 || ny == -1) {
@@ -253,7 +253,7 @@ namespace Galeri {
         list.set("my", my);
       }
 
-      return Maps::Cartesian2D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, mx, my);
+      return Maps::Cartesian2D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, mx, my, list);
 
     } else if (mapType == "Cartesian3D") {
       if (nx == -1 || ny == -1 || nz == -1) {
@@ -318,7 +318,7 @@ namespace Galeri {
                           + ", mz = " + toString(mz));
       }
 
-      return Maps::Cartesian3D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, nz, mx, my, mz);
+      return Maps::Cartesian3D<LocalOrdinal, GlobalOrdinal, Map>(comm, nx, ny, nz, mx, my, mz, list);
 
     } else {
       throw Exception(__FILE__, __LINE__,

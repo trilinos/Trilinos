@@ -157,6 +157,10 @@ class RKButcherTableau :
         pl->set<std::string>("Description", this->getDescription());
         pl->set<std::string>("Stepper Type", this->description());
         pl->set<bool>("Use Embedded", false);
+        pl->set<bool>("Use FSAL", false);
+        pl->set<std::string>("Initial Condition Consistency", "None");
+        pl->set<bool>("Initial Condition Consistency Check", true);
+
         return pl;
       }
     //@}
@@ -471,6 +475,9 @@ class GeneralExplicit_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "Consistent");
+    pl->set<bool>("Initial Condition Consistency Check", true);
 
     // Tableau ParameterList
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
@@ -556,6 +563,9 @@ class BackwardEuler_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -1652,11 +1662,15 @@ class GeneralDIRK_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
 
     // Tableau ParameterList
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    std::string gamma = std::to_string((2.0 - ST::squareroot(2.0))/(2.0));
-    std::string one_gamma = std::to_string(1.0-(2.0-ST::squareroot(2.0))/(2.0));
+    const Scalar one = ST::one();
+    std::string gamma = std::to_string(Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one)));
+    std::string one_gamma = std::to_string(Teuchos::as<Scalar>(one-(2*one-ST::squareroot(2*one))/(2*one)));
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
     tableauPL->set<std::string>("A", gamma + " 0.0; " + one_gamma + " "+gamma);
     tableauPL->set<std::string>("b", one_gamma + " " + gamma);
@@ -1737,6 +1751,9 @@ class SDIRK1Stage1stOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -1844,6 +1861,9 @@ class SDIRK2Stage2ndOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("gamma",gamma_default_,
@@ -1991,6 +2011,9 @@ class SDIRK2Stage3rdOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<bool>("3rd Order A-stable",thirdOrderAStable_default_,
@@ -2110,6 +2133,9 @@ class EDIRK2Stage3rdOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -2367,6 +2393,9 @@ class IRK1StageTheta_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("theta",theta_default_,
@@ -2463,6 +2492,9 @@ class EDIRK2StageTheta_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
     pl->set<double>("theta",theta_default_,
@@ -3222,16 +3254,16 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
     const Scalar zero = ST::zero();
     const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(12*one) );
-    A(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
-    A(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
+    A(0,1) = as<Scalar>( (-one-ST::squareroot(5*one))/(24*one) );
+    A(0,2) = as<Scalar>( (-one+ST::squareroot(5*one))/(24*one) );
     A(0,3) = zero;
     A(1,0) = as<Scalar>( one/(12*one) );
-    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5))/(120*one) );
-    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5))/(120*one) );
+    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5*one))/(120*one) );
+    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5*one))/(120*one) );
     A(1,3) = zero;
     A(2,0) = as<Scalar>( one/(12*one) );
-    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5))/(120*one) );
-    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5))/(120*one) );
+    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5*one))/(120*one) );
+    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5*one))/(120*one) );
     A(2,3) = zero;
     A(3,0) = as<Scalar>( one/(12*one) );
     A(3,1) = as<Scalar>( (11*one-ST::squareroot(5*one))/(24*one) );
@@ -3555,6 +3587,9 @@ class SDIRK5Stage5thOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -3681,6 +3716,9 @@ class SDIRK5Stage4thOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -3778,6 +3816,9 @@ class SDIRK3Stage4thOrder_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 
@@ -3881,6 +3922,9 @@ class SDIRK21_RKBT :
     pl->set<std::string>("Description", this->getDescription());
     pl->set<std::string>("Stepper Type", this->description());
     pl->set<bool>("Use Embedded", false);
+    pl->set<bool>("Use FSAL", false);
+    pl->set<std::string>("Initial Condition Consistency", "None");
+    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<std::string>("Solver Name", "",
       "Name of ParameterList containing the solver specifications.");
 

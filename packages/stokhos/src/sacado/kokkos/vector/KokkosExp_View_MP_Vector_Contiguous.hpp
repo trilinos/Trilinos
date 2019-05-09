@@ -762,7 +762,9 @@ class ViewMapping< Traits , /* View internal mapping */
         std::is_same< typename Traits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    )>::type >
+    )
+    , typename Traits::specialize
+    >::type >
 {
 private:
 
@@ -1001,9 +1003,16 @@ public:
       // Do not introduce padding...
       typedef std::integral_constant< unsigned , 0 >  padding ;
       offset_type offset( padding(), layout );
-      sacado_size_type sacado_size =
+
+      // Always use static dimension if we are static
+      const unsigned static_dim = StokhosStorageStaticDimension;
+      if (static_dim > 0)
+        return handle_type::memory_span( offset.span(), static_dim );
+
+      // Else get size from prescribed layout
+      const size_t sacado_size =
         Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout);
-      return handle_type::memory_span( offset.span(), sacado_size.value );
+      return handle_type::memory_span( offset.span(), sacado_size );
     }
 
   //----------------------------------------
@@ -1136,15 +1145,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has MP::Vector only
     std::is_same< typename SrcTraits::specialize
                 , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcType ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
@@ -1220,15 +1231,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)+1
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcType ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
@@ -1329,15 +1342,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     &&
     // Ranks match
     unsigned(DstTraits::dimension::rank) == unsigned(SrcTraits::dimension::rank)
-    )>::type >
+    )
+    , typename DstTraits::specialize
+    >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcType ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( DstType & dst
@@ -1523,15 +1538,15 @@ public:
   // However, a compatible ViewMapping is acceptable.
   template< class DstTraits >
   KOKKOS_INLINE_FUNCTION
-  static void assign( ViewMapping< DstTraits , void > & dst
-                    , ViewMapping< SrcTraits , void > const & src
+  static void assign( ViewMapping< DstTraits , typename DstTraits::specialize > & dst
+                    , ViewMapping< SrcTraits , typename SrcTraits::specialize > const & src
                     , Arg0 arg0, Args ... args )
     {
       static_assert(
-        ViewMapping< DstTraits , traits_type , void >::is_assignable ,
+        ViewMapping< DstTraits , traits_type , typename DstTraits::specialize >::is_assignable ,
         "Subview destination type must be compatible with subview derived type" );
 
-      typedef ViewMapping< DstTraits , void > DstType ;
+      typedef ViewMapping< DstTraits , typename DstTraits::specialize > DstType ;
       typedef typename DstType::offset_type  dst_offset_type ;
 
       const SubviewExtents< SrcTraits::rank , rank >
@@ -1579,7 +1594,7 @@ public:
   enum { is_assignable = true };
 
   typedef ViewTraits<DataType,P...> src_traits;
-  typedef ViewMapping< src_traits , void >  src_type ;
+  typedef ViewMapping< src_traits , typename src_traits::specialize >  src_type ;
 
   typedef typename src_type::offset_type::dimension_type src_dimension;
   typedef typename src_traits::value_type mp_vector_type;
@@ -1591,7 +1606,7 @@ public:
     ViewDataType< strided_value_type , src_dimension >::type strided_data_type;
   typedef ViewTraits<strided_data_type,P...> dst_traits;
   typedef View<strided_data_type,P...> type;
-  typedef ViewMapping< dst_traits , void >  dst_type ;
+  typedef ViewMapping< dst_traits , typename dst_traits::specialize >  dst_type ;
 
   KOKKOS_INLINE_FUNCTION static
   void assign( dst_type & dst
@@ -1754,15 +1769,17 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFad >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template< class DstType >
   KOKKOS_INLINE_FUNCTION static

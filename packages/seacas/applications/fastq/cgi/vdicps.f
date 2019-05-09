@@ -1,23 +1,23 @@
 C Copyright(C) 2014 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C 
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C 
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
       SUBROUTINE VIINIT(ASPECT,JUSTIF)
 C
@@ -221,7 +221,7 @@ C
       dev(8) = 0.0
       dev(9) = 0.0
       dev(10) = 0.0
-      
+
       dev(11) = 0.0
       dev(12) = 0.0
       dev(13) = 0.0
@@ -243,7 +243,7 @@ C
       dev(28) = 0.0
       dev(29) = 0.0
       dev(30) = 5000.
-      
+
       dev(31) = 750.
       dev(32) = 0.0
       dev(33) = 1.0
@@ -800,12 +800,12 @@ C
       CHARACTER*132 PSTNAM
       INTEGER LENGTH,ISTART,IEND,I
       integer*4 koutff, koutfl
- 
+
       DATA PSTNAM /'vdicps.ps'/
- 
+
       DATA ISTAT /0/
       LENGTH = MIN(LEN(NAME),132)
- 
+
 C Strip off any leading blanks
       ISTART = 0
       DO 10 I=1,LENGTH
@@ -815,7 +815,7 @@ C Strip off any leading blanks
        ENDIF
 10    CONTINUE
 11    CONTINUE
- 
+
 C Strip off trailing blanks
       IEND = 0
       IF(ISTART.GT.0)THEN
@@ -830,7 +830,7 @@ C Strip off trailing blanks
       PSTNAM=NAME(ISTART:IEND)
       RETURN
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
- 
+
       ENTRY PSTOFS(KOUTFL)
       IF(ISTAT.EQ.0) THEN
         OPEN(KOUTFL,FILE=PSTNAM,FORM='FORMATTED',STATUS='UNKNOWN',
@@ -845,7 +845,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
   210 CONTINUE
       RETURN
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
- 
+
       ENTRY PSTCFS(KOUTFF,KK)
       IF(ISTAT.NE.0) THEN
         CLOSE(KOUTFF,ERR=303)
@@ -925,10 +925,10 @@ C     set common variables
       KCPW=0
       KBAUD=0
       KCOMTP=0
- 
+
 C CHECK FOR VALID CLASSIFICATION. Because of output format ignore.
       CALL PSTJOB
- 
+
 C     IF(KSECUR.NE.0) THEN
 C        CALL VBERRH(957,13)
 C     END IF
@@ -2254,7 +2254,7 @@ C                            nothing is left on the stack
 C FLUSH BUFFER
       CALL PSTBUF(0,' ')
 C     write end of data message
-      
+
       WRITE(KPAGE,'(I10)',ERR=345) TOTPAG
       GO TO 349
   345    KPAGE=' ???'
@@ -2609,7 +2609,7 @@ C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       INTEGER ESCPCD,N
       REAL ARGS(*)
- 
+
 C
 C COMPUTER DEPENDENT COMMON VARIABLES AND CONSTANTS.
       include 'vcpstc.blk'
@@ -2853,7 +2853,7 @@ C           (4)=LINE STYLE
 C           (5)=LINE WIDTH
 C           (6)=CHARACTER BOX Y
 C           (7)=CHARACTER BOX X
- 
+
 C SCALE FACTORS FOR NDC TO DC MAPPING. (LXY,HC1)
       REAL XSCALE,YSCALE
       COMMON /VCSCAL/ XSCALE,YSCALE

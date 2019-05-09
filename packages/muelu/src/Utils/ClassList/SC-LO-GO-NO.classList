@@ -37,6 +37,7 @@ FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
 GeometricInterpolationPFactory
+GeometricInterpolationPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 GMRESSolver
 Hierarchy
 HierarchyManager
@@ -89,7 +90,6 @@ SmootherPrototype
 SolverBase
 SteepestDescentSolver
 StructuredAggregationFactory
-#StructuredAggregationFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 StructuredLineDetectionFactory
 SubBlockAFactory
 TekoSmoother - #ifdef HAVE_MUELU_TEKO
@@ -114,3 +114,4 @@ UzawaSmoother
 VisualizationHelpers
 ZoltanInterface - #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+NodePartitionInterface - #if defined(HAVE_MPI)

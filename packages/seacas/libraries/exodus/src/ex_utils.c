@@ -44,6 +44,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,50 +83,74 @@ struct obj_stats *exoII_nm  = 0;
 static char  ret_string[10 * (MAX_VAR_NAME_LENGTH + 1)];
 static char *cur_string = &ret_string[0];
 
+#if NC_HAS_HDF5
+extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
+#endif
+
+#if NC_HAS_PNETCDF
+extern char *ncmpi_inq_libvers();
+#endif
+
 void ex_print_config(void)
 {
-  fprintf(stderr, "\nExodus Configuration Information:\n");
   fprintf(stderr, "\tExodus Version %.2f\n", EX_API_VERS);
-#if defined(HAVE_PARALLEL)
-  fprintf(stderr, "\tExodus Parallel enabled\n");
+#if defined(PARALLEL_AWARE_EXODUS)
+  fprintf(stderr, "\t\tParallel enabled\n");
 #else
-  fprintf(stderr, "\tExodus Parallel NOT enabled\n");
+  fprintf(stderr, "\t\tParallel NOT enabled\n");
 #endif
 #if defined(EXODUS_THREADSAFE)
-  fprintf(stderr, "\tExodus Thread Safe enabled\n");
+  fprintf(stderr, "\t\tThread Safe enabled\n");
 #else
-  fprintf(stderr, "\tExodus Thread Safe NOT enabled\n");
+  fprintf(stderr, "\t\tThread Safe NOT enabled\n");
 #endif
 #if defined(SEACAS_HIDE_DEPRECATED_CODE)
-  fprintf(stderr, "\tExodus Deprecated Functions NOT built\n\n");
+  fprintf(stderr, "\t\tDeprecated Functions NOT built\n\n");
 #else
-  fprintf(stderr, "\tExodus Deprecated Functions Available\n\n");
+  fprintf(stderr, "\t\tDeprecated Functions available\n\n");
 #endif
+#if defined(NC_VERSION)
   fprintf(stderr, "\tNetCDF Version %s\n", NC_VERSION);
-#if NC_HAS_HDF5
-  fprintf(stderr, "\tUsing NetCDF with HDF5 enabled\n");
-#endif
-#if NC_HAS_PNETCDF
-  fprintf(stderr, "\tUsing NetCDF with PnetCDF enabled\n");
-#endif
-#if NC_HAS_PARALLEL
-  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5 and/or PnetCDF\n");
-#endif
-#if NC_HAS_PARALLEL4
-  fprintf(stderr, "\tUsing NetCDF with parallel IO enable via HDF5\n");
+#else
+  fprintf(stderr, "\tNetCDF Version < 4.3.3\n");
 #endif
 #if NC_HAS_CDF5
-  fprintf(stderr, "\tUsing NetCDF with CDF5 support\n");
+  fprintf(stderr, "\t\tCDF5 enabled\n");
+#endif
+#if NC_HAS_HDF5
+  {
+    unsigned major, minor, release;
+    H5get_libversion(&major, &minor, &release);
+    fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
+  }
+#endif
+#if NC_HAS_PARALLEL
+  fprintf(stderr, "\t\tparallel IO enabled via HDF5 and/or PnetCDF\n");
+#endif
+#if NC_HAS_PARALLEL4
+  fprintf(stderr, "\t\tparallel IO enabled via HDF5\n");
+#endif
+#if NC_HAS_PNETCDF
+  {
+    char *libver = ncmpi_inq_libvers();
+    fprintf(stderr, "\t\tparallel IO enabled via PnetCDF (%s)\n", libver);
+  }
 #endif
 #if NC_HAS_ERANGE_FILL
-  fprintf(stderr, "\tUsing NetCDF with ERANGE_FILL support\n");
+  fprintf(stderr, "\t\tERANGE_FILL support\n");
 #endif
 #if NC_RELAX_COORD_BOUND
-  fprintf(stderr, "\tUsing NetCDF with RELAX_COORD_BOUND defined\n");
+  fprintf(stderr, "\t\tRELAX_COORD_BOUND defined\n");
 #endif
 #if defined(NC_HAVE_META_H)
-  fprintf(stderr, "\tUsing NetCDF with NC_HAVE_META_H defined\n\n");
+  fprintf(stderr, "\t\tNC_HAVE_META_H defined\n");
 #endif
+#if defined(NC_HAS_NC2)
+  fprintf(stderr, "\t\tAPI Version 2 support enabled\n");
+#else
+  fprintf(stderr, "\t\tAPI Version 2 support NOT enabled\n");
+#endif
+  fprintf(stderr, "\n");
 }
 
 int ex_check_file_type(const char *path, int *type)
@@ -251,9 +276,8 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
   for (i = 0; i < num_entity; i++) {
     if (names != NULL && *names != NULL && *names[i] != '\0') {
       found_name = 1;
-      strncpy(&int_names[idx], names[i], name_length - 1);
-      int_names[idx + name_length - 1] = '\0';
-      length                           = strlen(names[i]) + 1;
+      ex_copy_string(&int_names[idx], names[i], name_length);
+      length = strlen(names[i]) + 1;
       if (length > name_length) {
         fprintf(stderr,
                 "Warning: The %s %s name '%s' is too long.\n\tIt will "
@@ -1391,7 +1415,7 @@ void ex_iqsort64(int64_t v[], int64_t iv[], int64_t N)
   ex_int_iisort64(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-  fprintf(stderr, "Checking sort of %d values\n", N + 1);
+  fprintf(stderr, "Checking sort of %" PRId64 " values\n", N + 1);
   int i;
   for (i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
@@ -1503,8 +1527,10 @@ void ex_compress_variable(int exoid, int varid, int type)
     int deflate_level = file->compression_level;
     int compress      = 1;
     int shuffle       = file->shuffle;
-    if (!file->is_parallel && deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
-      nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+    if (deflate_level > 0 && file->is_hdf5) {
+      if (type != 3) { /* Do not try to compress character data */
+        nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+      }
     }
 #if defined(PARALLEL_AWARE_EXODUS)
     if (type != 3 && file->is_parallel && file->is_hdf5) {
@@ -1513,6 +1539,20 @@ void ex_compress_variable(int exoid, int varid, int type)
 #endif
   }
 #endif
+}
+
+int ex_leavedef(int exoid, const char *call_rout)
+{
+  char errmsg[MAX_ERR_LENGTH];
+  int  status;
+
+  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+    ex_err_fn(exoid, call_rout, errmsg, status);
+
+    return (EX_FATAL);
+  }
+  return (EX_NOERR);
 }
 
 static int warning_output = 0;
@@ -1531,7 +1571,8 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   int pariomode = 0;
 
   /* Contains a 1 in all bits corresponding to file modes */
-  static unsigned int all_modes = EX_NORMAL_MODEL | EX_64BIT_OFFSET | EX_64BIT_DATA | EX_NETCDF4;
+  /* Do not include EX_64BIT_DATA in this list */
+  static unsigned int all_modes = EX_NORMAL_MODEL | EX_64BIT_OFFSET | EX_NETCDF4 | EX_PNETCDF;
 
   if (run_version != EX_API_VERS_NODOT && warning_output == 0) {
     int run_version_major = run_version / 100;
@@ -1573,6 +1614,12 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   }
 #endif
 
+  /* EX_64_BIT_DATA is 64-bit integer version of EX_PNETCDF.  If
+     EX_64_BIT_DATA and EX_PNETCDF is not set, then set EX_PNETCDF... */
+  if (my_mode & EX_64BIT_DATA) {
+    my_mode |= EX_PNETCDF;
+  }
+
   /* Check that one and only one format mode is specified... */
   {
     unsigned int set_modes = all_modes & my_mode;
@@ -1587,7 +1634,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "EXODUS: ERROR: More than 1 file format "
                  "(EX_NORMAL_MODEL, EX_LARGE_MODEL, EX_64BIT_OFFSET, "
-                 "EX_64BIT_DATA, or EX_NETCDF4)\nwas specified in the "
+                 "or EX_NETCDF4)\nwas specified in the "
                  "mode argument of the ex_create call. Only a single "
                  "format can be specified.\n");
         ex_err(__func__, errmsg, EX_BADPARAM);
@@ -1618,6 +1665,9 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 #if NC_HAS_CDF5
     else if (my_mode & EX_64BIT_DATA) {
       ; /* Do nothing, already set */
+    }
+    else if (my_mode & EX_PNETCDF) {
+      my_mode |= EX_64BIT_DATA;
     }
 #endif
     else {
@@ -1694,11 +1744,16 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     else if (my_mode & EX_PNETCDF) {
       pariomode = NC_PNETCDF;
       /* See if client specified 64-bit or not... */
-      if ((int64_status & EX_ALL_INT64_DB) != 0) {
+      if ((my_mode & EX_64BIT_DATA) || (int64_status & EX_ALL_INT64_DB)) {
         tmp_mode = EX_64BIT_DATA;
       }
       else {
-        tmp_mode = EX_64BIT_OFFSET;
+        if (my_mode & EX_64BIT_DATA) {
+          tmp_mode = EX_64BIT_DATA;
+        }
+        else {
+          tmp_mode = EX_64BIT_OFFSET;
+        }
       }
 #if !NC_HAS_PNETCDF
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -1784,8 +1839,15 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 
   /*
    * set error handling mode to no messages, non-fatal errors
+   * unless specified differently via environment.
    */
-  ex_opts(exoptval); /* call required to set ncopts first time through */
+  {
+    char *option = getenv("EXODUS_VERBOSE");
+    if (option != NULL) {
+      exoptval = EX_VERBOSE;
+    }
+    ex_opts(exoptval); /* call required to set ncopts first time through */
+  }
 
   if (my_mode & EX_CLOBBER) {
     nc_mode |= NC_CLOBBER;
@@ -1807,15 +1869,15 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   return nc_mode | pariomode;
 }
 
-int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_ws, int *io_ws)
+int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws,
+                           int *io_ws)
 {
   int status;
   int old_fill;
   int lio_ws;
-  int filesiz     = 1;
-  int is_hdf5     = 0;
-  int is_pnetcdf  = 0;
-  int is_parallel = 0;
+  int filesiz    = 1;
+  int is_hdf5    = 0;
+  int is_pnetcdf = 0;
 
   float vers;
   char  errmsg[MAX_ERR_LENGTH];
@@ -1855,11 +1917,19 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_w
     is_pnetcdf = 1;
   }
 
-  if (my_mode & EX_MPIPOSIX) {
+  if (my_mode & EX_NETCDF4) {
     is_hdf5 = 1;
   }
 
-  is_parallel = (my_mode & EX_PNETCDF) || (my_mode & EX_MPIPOSIX);
+  /*
+   * NetCDF has deprecated use of MPIIO and MPIPOSIX and instead rely
+   * on explicitly specifying either NetCDF-4 of PNetCDF output. For
+   * backward-compatibility, we map the MPIIO and MPIPOSIX over to
+   * NetCDF4 which is hdf5-based...
+   */
+  if (is_parallel && ((my_mode & EX_MPIIO) || (my_mode & EX_MPIPOSIX))) {
+    is_hdf5 = 1;
+  }
 
   if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, is_parallel, is_hdf5, is_pnetcdf) !=
       EX_NOERR) {
@@ -1934,10 +2004,26 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_w
     }
   }
 
+#if 0
+  /* Testing to see if can eliminate some nc_enddef movement of vars/recs */
+  if ((status = nc__enddef(exoid, 10000, 4, 10000, 4)) != NC_NOERR) {
+#else
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+#endif
+  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
+  ex_err_fn(exoid, __func__, errmsg, status);
+  return (EX_FATAL);
+}
+return EX_NOERR;
+}
+
+/* Safer than strncpy -- guarantees null termination */
+char *ex_copy_string(char *dest, char const *source, size_t elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
   }
-  return EX_NOERR;
+  *d = '\0';
+  return d;
 }

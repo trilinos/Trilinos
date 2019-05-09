@@ -9,6 +9,7 @@
 #include <random>
 #include <string>
 
+#include <cassert>
 #include <limits>
 #include <cmath>
 #include <ctime>
@@ -240,7 +241,16 @@ namespace KokkosBatched {
       struct NonUnit { static const bool use_unit_diag = false; };
     };
 
-    struct Algo {
+    struct Mode {
+      struct Serial {
+        static const char *name() { return "Serial"; }        
+      };
+      struct Team {
+        static const char *name() { return "Team"; }
+      };
+    };
+
+    struct Algo {      
       struct Level3 {
 	struct Unblocked {
 	  static const char* name() { return "Unblocked"; }
@@ -273,7 +283,8 @@ namespace KokkosBatched {
       using Gemm = Level3;
       using Trsm = Level3;
       using LU   = Level3;
-      using InverseLU   = Level3;
+      using InverseLU = Level3;
+      using SolveLU   = Level3;
 
       struct Level2 {
 	struct Unblocked {};
@@ -356,6 +367,201 @@ namespace KokkosBatched {
 
     };
 
+    template<typename ValueType> struct Partition1x2;
+    template<typename ValueType> struct Partition1x3;
+    
+    template<typename ValueType>
+    struct Partition1x2 {      
+      const int as1;
+      ValueType *AL, *AR;
+
+      KOKKOS_INLINE_FUNCTION
+      Partition1x2(const int arg_as1)
+        : as1(arg_as1), AL(NULL), AR(NULL) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithAL(ValueType *A, const int nA, const int nAL) {
+        AL = A; AR = AL+nAL*as1;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithAR(ValueType *A, const int nA, const int nAR) {
+        AL = A; AR = AL+(nA-nAR)*as1;
+      }
+
+      // A0 A1 are merged into AL
+      KOKKOS_INLINE_FUNCTION
+      void mergeToAL(const Partition1x3<ValueType> &part) {
+        AL = part.A0; AR = part.A2;
+      }      
+
+      // A0 A1 are merged into AL
+      KOKKOS_INLINE_FUNCTION
+      void mergeToAR(const Partition1x3<ValueType> &part) {
+        AL = part.A0; AR = part.A1;
+      }      
+    };
+
+    template<typename ValueType>
+    struct Partition1x3 {      
+      const int as1;
+      ValueType *A0, *A1, *A2;
+
+      KOKKOS_INLINE_FUNCTION
+      Partition1x3(const int arg_as1)
+        : as1(arg_as1), A0(NULL), A1(NULL), A2(NULL) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithAL(const Partition1x2<ValueType> &part, const int mA1) {
+        A0 = part.AL; A2 = part.AR; A1 = A2 - mA1*as1;
+      }
+      KOKKOS_INLINE_FUNCTION
+      void partWithAR(const Partition1x2<ValueType> &part, const int mA1) {
+        A0 = part.AL; A1 = part.AR; A2 = A1 + mA1*as1;
+      }
+    };
+
+
+    template<typename ValueType> struct Partition2x1;
+    template<typename ValueType> struct Partition3x1;
+    
+    template<typename ValueType>
+    struct Partition2x1 {      
+      const int as0;
+      ValueType *AT, *AB;
+
+      KOKKOS_INLINE_FUNCTION
+      Partition2x1(const int arg_as0)
+        : as0(arg_as0), AT(NULL), AB(NULL) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithAT(ValueType *A, const int mA, const int mAT) {
+        AT = A;
+        AB = AT+mAT*as0;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithAB(ValueType *A, const int mA, const int mAB) {
+        partWithAT(A, mA, mA-mAB);
+      }
+
+      // A0
+      // A1 is merged into AT
+      KOKKOS_INLINE_FUNCTION
+      void mergeToAT(const Partition3x1<ValueType> &part) {
+        AT = part.A0;
+        AB = part.A2;
+      }      
+
+      KOKKOS_INLINE_FUNCTION
+      void mergeToAB(const Partition3x1<ValueType> &part) {
+        AT = part.A0;
+        AB = part.A1;
+      }      
+    };
+
+    template<typename ValueType>
+    struct Partition3x1 {      
+      const int as0;
+      ValueType *A0,
+        /* */   *A1,
+        /* */   *A2;
+      
+      KOKKOS_INLINE_FUNCTION
+      Partition3x1(const int arg_as0)
+        : as0(arg_as0), 
+          A0(NULL),  
+          A1(NULL),  
+          A2(NULL) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void partWithAB(const Partition2x1<ValueType> &part, const int mA1) {
+        A0 = part.AT;      
+        A1 = part.AB;      
+        A2 = A1 + mA1*as0;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithAT(const Partition2x1<ValueType> &part, const int mA1) {
+        A0 = part.AT;      
+        A1 = part.AB - mA1*as0;
+        A2 = part.AB;
+      }
+    };
+
+    template<typename ValueType> struct Partition2x2;
+    template<typename ValueType> struct Partition3x3;
+
+    template<typename ValueType>
+    struct Partition2x2 {      
+      const int as0, as1;
+      ValueType *ATL, *ATR, *ABL, *ABR;
+
+      KOKKOS_INLINE_FUNCTION
+      Partition2x2(const int arg_as0, const int arg_as1) 
+        : as0(arg_as0), as1(arg_as1), ATL(NULL), ATR(NULL), ABL(NULL), ABR(NULL) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithATL(ValueType *A, 
+                       const int mA, const int nA, 
+                       const int mATL, const int nATL) {
+        ATL = A;            ATR = ATL+nATL*as1; 
+        ABL = ATL+mATL*as0; ABR = ABL+nATL*as1;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithABR(ValueType *A, 
+                       const int mA, const int nA, 
+                       const int mABR, const int nABR) {
+        partWithATL(A, mA, nA, mA-mABR, nA-nABR);
+      }
+
+      // A00 A01
+      // A10 A11 is merged into ATL
+      KOKKOS_INLINE_FUNCTION
+      void mergeToATL(const Partition3x3<ValueType> &part) {
+        ATL = part.A00; ATR = part.A02;
+        ABL = part.A20; ABR = part.A22;
+      }      
+
+      KOKKOS_INLINE_FUNCTION
+      void mergeToABR(const Partition3x3<ValueType> &part) {
+        ATL = part.A00; ATR = part.A01;
+        ABL = part.A10; ABR = part.A11;
+      }      
+    };
+
+    template<typename ValueType>
+    struct Partition3x3 {      
+      const int as0, as1;
+      ValueType *A00, *A01, *A02,
+        /* */   *A10, *A11, *A12,
+        /* */   *A20, *A21, *A22;
+
+      
+      KOKKOS_INLINE_FUNCTION
+      Partition3x3(const int arg_as0, const int arg_as1)
+        : as0(arg_as0), as1(arg_as1), 
+          A00(NULL), A01(NULL), A02(NULL), 
+          A10(NULL), A11(NULL), A12(NULL), 
+          A20(NULL), A21(NULL), A22(NULL) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void partWithABR(const Partition2x2<ValueType> &part, const int mA11, const int nA11) {
+        A00 = part.ATL;            A01 = part.ATR;            A02 = part.ATR + nA11*as1;
+        A10 = part.ABL;            A11 = part.ABR;            A12 = part.ABR + nA11*as1;
+        A20 = part.ABL + mA11*as0; A21 = part.ABR + mA11*as0; A22 = part.ABR + mA11*as0 + nA11*as1;
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void partWithATL(const Partition2x2<ValueType> &part, const int mA11, const int nA11) {
+        A00 = part.ATL;            A01 = part.ATR - nA11*as1;            A02 = part.ATR;
+        A10 = part.ABL - mA11*as0; A11 = part.ABR - mA11*as0 - nA11*as1; A12 = part.ABR - mA11*as0;
+        A20 = part.ABL;            A21 = part.ABR            - nA11*as1; A22 = part.ABR;
+      }
+    };
+    
+    
   }
 }
 

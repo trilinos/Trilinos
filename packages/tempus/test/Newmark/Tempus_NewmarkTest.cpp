@@ -51,7 +51,8 @@ using Tempus::SolutionState;
 #define TEST_SINCOS_EXPLICIT
 #define TEST_HARMONIC_OSCILLATOR_DAMPED_EXPLICIT
 #define TEST_HARMONIC_OSCILLATOR_DAMPED_CTOR
-#define TEST_HARMONIC_OSCILLATOR_DAMPED
+#define TEST_HARMONIC_OSCILLATOR_DAMPED_SECOND_ORDER
+#define TEST_HARMONIC_OSCILLATOR_DAMPED_FIRST_ORDER
 
 
 #ifdef TEST_BALL_PARABOLIC
@@ -102,10 +103,10 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
   RCP<const Thyra::VectorBase<double> > x_exact_plot;
   for (int i=0; i<solutionHistory->getNumStates(); i++) {
     RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-    double time = solutionState->getTime();
+    double time_i = solutionState->getTime();
     RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-    x_exact_plot = model->getExactSolution(time).get_x();
-    ftmp << time << "   "
+    x_exact_plot = model->getExactSolution(time_i).get_x();
+    ftmp << time_i << "   "
          << get_ele(*(x_plot), 0) << "   "
          << get_ele(*(x_exact_plot), 0) << std::endl;
     if (abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0)) > err)
@@ -185,11 +186,11 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
       RCP<Tempus::SolutionHistory<double> > solnHistExact =
         Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time = (*solutionHistory)[i]->getTime();
+        double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
           Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time).get_x(),
-            model->getExactSolution(time).get_x_dot()));
+            model->getExactSolution(time_i).get_x(),
+            model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
@@ -206,13 +207,13 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 
@@ -298,11 +299,11 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
       RCP<Tempus::SolutionHistory<double> > solnHistExact =
         Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time = (*solutionHistory)[i]->getTime();
+        double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
           Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time).get_x(),
-            model->getExactSolution(time).get_x_dot()));
+            model->getExactSolution(time_i).get_x(),
+            model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
@@ -319,13 +320,13 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 
@@ -333,16 +334,16 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
   double xSlope = 0.0;
   double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-  double order = stepper->getOrder();
+  //double order = stepper->getOrder();
   writeOrderError("Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
                   solutionsDot, xDotErrorNorm, xDotSlope);
 
-  TEST_FLOATING_EQUALITY( xSlope,              order, 0.01   );
-  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.617129, 1.0e-4 );
-  TEST_FLOATING_EQUALITY( xDotSlope,           order, 0.01   );
-  TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.270671, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xSlope,           1.060930, 0.01   );
+  TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.508229, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( xDotSlope,        1.019300, 0.01   );
+  TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.172900, 1.0e-4 );
 
   Teuchos::TimeMonitor::summarize();
 }
@@ -450,7 +451,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
 #endif
 
 
-#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED
+#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_SECOND_ORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
 {
@@ -511,11 +512,11 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
       RCP<Tempus::SolutionHistory<double> > solnHistExact =
         Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time = (*solutionHistory)[i]->getTime();
+        double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
           Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time).get_x(),
-            model->getExactSolution(time).get_x_dot()));
+            model->getExactSolution(time_i).get_x(),
+            model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
@@ -532,13 +533,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 
@@ -559,7 +560,9 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
 
   Teuchos::TimeMonitor::summarize();
 }
+#endif
 
+#ifdef TEST_HARMONIC_OSCILLATOR_DAMPED_FIRST_ORDER
 // ************************************************************
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
 {
@@ -620,11 +623,11 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
       RCP<Tempus::SolutionHistory<double> > solnHistExact =
         Teuchos::rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time = (*solutionHistory)[i]->getTime();
+        double time_i = (*solutionHistory)[i]->getTime();
         RCP<Tempus::SolutionState<double> > state =
           Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time).get_x(),
-            model->getExactSolution(time).get_x_dot()));
+            model->getExactSolution(time_i).get_x(),
+            model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
@@ -641,13 +644,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 

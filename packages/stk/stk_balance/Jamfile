@@ -68,6 +68,7 @@ local installed-end-user-files =
 local installed-developer-files = 
   stk_balance_unit_tester
   stk_balance_integration_tester
+  stk_balance_doc_tester
   ;
 
 #
@@ -183,7 +184,14 @@ lib stk_balance_lib
     /sierra/stk_util//stk_util_command_line
   :
     <include>$(stk_balance-root-inc)/stk_balance
-    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a ]
+    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter -Wno-implicit-fallthrough"
+    ]
+
   :
   :
   ;
@@ -205,9 +213,17 @@ lib stk_balance_test_utils
 
 exe stk_balance_unit_tester
   :
-    [ glob
-      $(stk_balance-root)/unit_tests/*.cpp
-      $(stk_balance-root)/doc_tests/*.cpp
+    [ glob $(stk_balance-root)/../stk_unit_tests/stk_balance/*.cpp 
+    ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    stk_balance_test_utils
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe stk_balance_doc_tester
+  :
+    [ glob $(stk_balance-root)/../stk_doc_tests/stk_balance/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils
@@ -217,8 +233,7 @@ exe stk_balance_unit_tester
 
 exe stk_balance_integration_tester
   :
-    [ glob
-      $(stk_balance-root)/integration_tests/*.cpp
+    [ glob $(stk_balance-root)/../stk_integration_tests/stk_balance/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils

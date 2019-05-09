@@ -42,12 +42,13 @@
 #include <EP_ExodusEntity.h> // for Block, Mesh
 #include <EP_Internals.h>    // for Internals, Redefine
 
-#include <algorithm>      // for sort
+#include <algorithm> // for sort
+#include <copy_string_cpp.h>
 #include <cstddef>        // for size_t
 #include <cstdint>        // for int64_t
 #include <cstdio>         // for sprintf
 #include <cstdlib>        // for exit, EXIT_FAILURE
-#include <cstring>        // for strncpy, strlen, memset
+#include <cstring>        // for strlen, memset
 #include <smart_assert.h> // for SMART_ASSERT
 
 #include <iostream> // for operator<<, basic_ostream, etc
@@ -289,8 +290,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
     if (mesh.blockCount > 0) {
       for (int i = 0; i < mesh.blockCount; i++) {
-        std::strncpy(names[i], sorted_blocks[i].name_.c_str(), name_size);
-        names[i][name_size] = 0;
+        copy_string(names[i], sorted_blocks[i].name_, name_size + 1);
       }
       ex_put_names(exodusFilePtr, EX_ELEM_BLOCK, names);
 
@@ -300,8 +300,7 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
           for (int j = 0; j < blocks[i].attributeCount; j++) {
             std::memset(names[j], '\0', name_size + 1);
             if (!blocks[i].attributeNames[j].empty()) {
-              std::strncpy(names[j], blocks[i].attributeNames[j].c_str(), name_size);
-              names[j][name_size] = 0;
+              copy_string(names[j], blocks[i].attributeNames[j], name_size + 1);
             }
           }
           ierr = ex_put_attr_names(exodusFilePtr, EX_ELEM_BLOCK, blocks[i].id, names);
@@ -312,16 +311,14 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
     if (mesh.nodesetCount > 0) {
       for (int i = 0; i < mesh.nodesetCount; i++) {
-        std::strncpy(names[i], nodesets[i].name_.c_str(), name_size);
-        names[i][name_size] = 0;
+        copy_string(names[i], nodesets[i].name_, name_size + 1);
       }
       ex_put_names(exodusFilePtr, EX_NODE_SET, names);
     }
 
     if (mesh.sidesetCount > 0) {
       for (int i = 0; i < mesh.sidesetCount; i++) {
-        std::strncpy(names[i], sidesets[i].name_.c_str(), name_size);
-        names[i][name_size] = 0;
+        copy_string(names[i], sidesets[i].name_, name_size + 1);
       }
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }
@@ -541,18 +538,27 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
   if (mesh.blockCount > 0) {
     status = define_netcdf_vars(exodusFilePtr, "element block", mesh.blockCount, DIM_NUM_EL_BLK,
                                 VAR_STAT_EL_BLK, VAR_ID_EL_BLK, VAR_NAME_EL_BLK);
+    if (status != EX_NOERR) {
+      return EX_FATAL;
+    }
   }
 
   // node set id array:
   if (mesh.nodesetCount > 0) {
     status = define_netcdf_vars(exodusFilePtr, "node set", mesh.nodesetCount, DIM_NUM_NS,
                                 VAR_NS_STAT, VAR_NS_IDS, VAR_NAME_NS);
+    if (status != EX_NOERR) {
+      return EX_FATAL;
+    }
   }
 
   // side set id array:
   if (mesh.sidesetCount > 0) {
     status = define_netcdf_vars(exodusFilePtr, "side set", mesh.sidesetCount, DIM_NUM_SS,
                                 VAR_SS_STAT, VAR_SS_IDS, VAR_NAME_SS);
+    if (status != EX_NOERR) {
+      return EX_FATAL;
+    }
   }
 
   status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality,

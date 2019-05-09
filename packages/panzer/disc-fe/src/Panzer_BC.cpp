@@ -64,7 +64,7 @@ panzer::buildBCs(std::vector<panzer::BC>& bcs,const Teuchos::ParameterList& p, c
   for (ParameterList::ConstIterator bc_pl=p.begin(); bc_pl != p.end(); ++bc_pl,++bc_index) {
     TEUCHOS_TEST_FOR_EXCEPTION( !(bc_pl->second.isList()), std::logic_error,
 				"Error - All objects in the boundary condition sublist must be BC sublists!" );
-    ParameterList& sublist = bc_pl->second.getValue(&sublist);
+    ParameterList& sublist = Teuchos::getValue<Teuchos::ParameterList>(bc_pl->second);
     
     panzer::BC bc(bc_index,sublist,global_data);
     bcs.push_back(bc);

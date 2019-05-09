@@ -45,34 +45,7 @@
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_DECL_HPP_
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-extern "C" void dgemm_( const char* transA, const char* transB,
-                        const int* M, const int* N, const int* K,
-                        const double* alpha,
-                        const double* A, const int* LDA,
-                        const double* B, const int* LDB,
-                        const double* beta,
-                        double* C, const int* LDC);
-extern "C" void sgemm_( const char* transA, const char* transB,
-                        const int* M, const int* N, const int* K,
-                        const float* alpha,
-                        const float* A, const int* LDA,
-                        const float* B, const int* LDB,
-                        const float* beta,
-                        float* C, const int* LDC);
-extern "C" void zgemm_( const char* transA, const char* transB,
-                        const int* M, const int* N, const int* K,
-                        const std::complex<double>* alpha,
-                        const std::complex<double>* A, const int* LDA,
-                        const std::complex<double>* B, const int* LDB,
-                        const std::complex<double>* beta,
-                        std::complex<double>* C, const int* LDC);
-extern "C" void cgemm_( const char* transA, const char* transB,
-                        const int* M, const int* N, const int* K,
-                        const std::complex<float>* alpha,
-                        const std::complex<float>* A, const int* LDA,
-                        const std::complex<float>* B, const int* LDB,
-                        const std::complex<float>* beta,
-                        std::complex<float>* C, const int* LDC);
+#include "KokkosBlas_Host_tpl.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -118,11 +91,25 @@ struct GEMM< \
     const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      dgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      dgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
-    Kokkos::Profiling::popRegion(); \
+    if(!A_is_lr && !B_is_lr && !C_is_lr )                               \
+      HostBlas<double>::gemm                                            \
+        (transA[0],transB[0],                                                 \
+         M,N,K,                                                         \
+         alpha,                                                         \
+         A.data(),LDA,                                                  \
+         B.data(),LDB,                                                  \
+         beta,                                                          \
+         C.data(),LDC);                                                 \
+    if(A_is_lr && B_is_lr && C_is_lr )                                  \
+      HostBlas<double>::gemm                                            \
+        (transB[0],transA[0],                                                 \
+         N,M,K,                                                         \
+         alpha,                                                         \
+         B.data(),LDB,                                                  \
+         A.data(),LDA,                                                  \
+         beta,                                                          \
+         C.data(),LDC);                                                 \
+    Kokkos::Profiling::popRegion();                                     \
   } \
 };
 
@@ -167,10 +154,24 @@ struct GEMM< \
     const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      sgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      sgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
+    if(!A_is_lr && !B_is_lr && !C_is_lr )                              \
+      HostBlas<float>::gemm                                             \
+        (transA[0],transB[0],                                                 \
+         M,N,K,                                                         \
+         alpha,                                                         \
+         A.data(),LDA,                                                  \
+         B.data(),LDB,                                                  \
+         beta,                                                          \
+         C.data(),LDC);                                                 \
+    if(A_is_lr && B_is_lr && C_is_lr )                                  \
+      HostBlas<float>::gemm                                             \
+        (transB[0],transA[0],                                                 \
+         N,M,K,                                                         \
+         alpha,                                                         \
+         B.data(),LDB,                                                  \
+         A.data(),LDA,                                                  \
+         beta,                                                          \
+         C.data(),LDC);                                                 \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -216,16 +217,25 @@ struct GEMM< \
     const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      zgemm_(transA,transB,&M,&N,&K, \
-        reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
-        reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
-        reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      zgemm_(transB,transA,&N,&M,&K, \
-        reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
-        reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
-        reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
+    const std::complex<double> alpha_val = alpha, beta_val = beta;     \
+    if(!A_is_lr && !B_is_lr && !C_is_lr )                              \
+      HostBlas<std::complex<double> >::gemm                             \
+        (transA[0],transB[0],                                                 \
+         M,N,K,                                                         \
+         alpha_val,          \
+         reinterpret_cast<const std::complex<double>*>(A.data()),LDA,   \
+         reinterpret_cast<const std::complex<double>*>(B.data()),LDB,   \
+         beta_val,           \
+         reinterpret_cast<      std::complex<double>*>(C.data()),LDC);  \
+    if(A_is_lr && B_is_lr && C_is_lr )                                  \
+      HostBlas<std::complex<double> >::gemm                              \
+        (transB[0],transA[0],                                                 \
+         N,M,K,                                                         \
+         alpha_val,          \
+         reinterpret_cast<const std::complex<double>*>(B.data()),LDB,   \
+         reinterpret_cast<const std::complex<double>*>(A.data()),LDA,   \
+         beta_val,           \
+         reinterpret_cast<      std::complex<double>*>(C.data()),LDC);  \
     Kokkos::Profiling::popRegion(); \
   } \
 }; \
@@ -271,16 +281,25 @@ struct GEMM< \
     const int BST = B_is_lr?B.stride(0):B.stride(1), LDB = BST == 0 ? 1 : BST; \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
-    if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      cgemm_(transA,transB,&M,&N,&K, \
-        reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
-        reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
-        reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \
-    if(A_is_lr && B_is_lr && C_is_lr ) \
-      cgemm_(transB,transA,&N,&M,&K, \
-        reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
-        reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
-        reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \
+    const std::complex<float> alpha_val = alpha, beta_val = beta;      \
+    if(!A_is_lr && !B_is_lr && !C_is_lr )                              \
+      HostBlas<std::complex<float> >::gemm                             \
+        (transA[0],transB[0],                                                 \
+         M,N,K,                                                         \
+         alpha_val,          \
+         reinterpret_cast<const std::complex<float>*>(A.data()),LDA,   \
+         reinterpret_cast<const std::complex<float>*>(B.data()),LDB,   \
+         beta_val,           \
+         reinterpret_cast<      std::complex<float>*>(C.data()),LDC);  \
+    if(A_is_lr && B_is_lr && C_is_lr )                                  \
+      HostBlas<std::complex<float> >::gemm                              \
+        (transB[0],transA[0],                                                 \
+         N,M,K,                                                         \
+         alpha_val,          \
+         reinterpret_cast<const std::complex<float>*>(B.data()),LDB,   \
+         reinterpret_cast<const std::complex<float>*>(A.data()),LDA,   \
+         beta_val,           \
+         reinterpret_cast<      std::complex<float>*>(C.data()),LDC);  \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -573,20 +592,40 @@ KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::Layout
 KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
+KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_DGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+
 KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_SGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
+KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_ZGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
+
 KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_CGEMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 }
 }

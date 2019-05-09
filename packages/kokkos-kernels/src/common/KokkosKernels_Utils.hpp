@@ -708,14 +708,14 @@ struct LinearInitialization{
 template <typename array_type, typename MyExecSpace>
 void linear_init(typename array_type::value_type num_elements, array_type arr){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0, num_elements), LinearInitialization<array_type>(arr));
+  Kokkos::parallel_for( "KokkosKernels::Common::LinearInit", my_exec_space(0, num_elements), LinearInitialization<array_type>(arr));
 }
 
 
 template <typename forward_array_type, typename MyExecSpace>
 void remove_zeros_in_xadj_vector(typename forward_array_type::value_type num_elements, forward_array_type arr){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan( my_exec_space(0, num_elements), PropogataMaxValstoZeros<forward_array_type>(arr));
+  Kokkos::parallel_scan( "KokkosKernels::Common::RemoveZerosInXadjVector",my_exec_space(0, num_elements), PropogataMaxValstoZeros<forward_array_type>(arr));
 }
 
 
@@ -885,18 +885,18 @@ void create_reverse_map(
         tmp_color_xadj,
         multiply_shift_for_scale,
         division_shift_for_bucket);
-    Kokkos::parallel_for ("KokkosKernels::Impl::ReverseMapScaleInit",my_exec_space (0, num_forward_elements) , rmi);
+    Kokkos::parallel_for ("KokkosKernels::Common::ReverseMapScaleInit",my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
 
 
     inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(tmp_reverse_size + 1, tmp_color_xadj);
     MyExecSpace::fence();
 
-    Kokkos::parallel_for ("KokkosKernels::Impl::StridedCopy",my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
+    Kokkos::parallel_for ("KokkosKernels::Common::StridedCopy",my_exec_space (0, num_reverse_elements + 1) , StridedCopy<reverse_array_type, reverse_array_type>(tmp_color_xadj, reverse_map_xadj, scale_size));
     MyExecSpace::fence();
     Fill_Reverse_Scale_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj,
         multiply_shift_for_scale, division_shift_for_bucket);
-    Kokkos::parallel_for ("KokkosKernels::Impl::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
+    Kokkos::parallel_for ("KokkosKernels::Common::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
   }
   else
@@ -906,7 +906,7 @@ void create_reverse_map(
 
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
 
-    Kokkos::parallel_for ("KokkosKernels::Impl::ReverseMapInit",my_exec_space (0, num_forward_elements) , rmi);
+    Kokkos::parallel_for ("KokkosKernels::Common::ReverseMapInit",my_exec_space (0, num_forward_elements) , rmi);
     MyExecSpace::fence();
     //print_1Dview(reverse_map_xadj);
 
@@ -916,7 +916,7 @@ void create_reverse_map(
     Kokkos::deep_copy (tmp_color_xadj, reverse_map_xadj);
     MyExecSpace::fence();
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm (forward_map, tmp_color_xadj, reverse_map_adj);
-    Kokkos::parallel_for ("KokkosKernels::Impl::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
+    Kokkos::parallel_for ("KokkosKernels::Common::FillReverseMap",my_exec_space (0, num_forward_elements) , frm);
     MyExecSpace::fence();
   }
 }
@@ -953,7 +953,7 @@ void permute_vector(
     ){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  Kokkos::parallel_for("KokkosKernels::Impl::PermuteVector", my_exec_space(0,num_elements),
+  Kokkos::parallel_for("KokkosKernels::Common::PermuteVector", my_exec_space(0,num_elements),
       PermuteVector<value_array_type, out_value_array_type, idx_array_type>(old_vector, new_vector, old_to_new_index_map));
 
 }
@@ -997,7 +997,7 @@ void permute_block_vector(
     ){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
 
-  Kokkos::parallel_for("KokkosKernels::Impl::PermuteVector", my_exec_space(0,num_elements),
+  Kokkos::parallel_for("KokkosKernels::Common::PermuteVector", my_exec_space(0,num_elements),
 		  PermuteBlockVector<value_array_type, out_value_array_type, idx_array_type>(block_size, old_vector, new_vector, old_to_new_index_map));
 
 }
@@ -1152,7 +1152,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(
 #endif
     //std::cout << "max_allowed_team_size:" << max_allowed_team_size << " vs:" << vector_size << " tsm:" << teamSizeMax<< std::endl;
 
-    Kokkos::parallel_for(
+    Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S0",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         fse/*, num_symmetric_edges*/);
     MyExecSpace::fence();
@@ -1211,7 +1211,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(
         teamSizeMax);
 #endif
 
-    Kokkos::parallel_for(
+    Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeAndGetLowerDiagonalEdgeList::S1",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         FSCH);
     MyExecSpace::fence();
@@ -1296,7 +1296,7 @@ void symmetrize_graph_symbolic_hashmap(
         teamSizeMax);
 #endif
 
-    Kokkos::parallel_for(
+    Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeGraphSymbolicHashMap::S0",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         fse/*, num_symmetric_edges*/);
     MyExecSpace::fence();
@@ -1352,7 +1352,7 @@ void symmetrize_graph_symbolic_hashmap(
         teamSizeMax);
 #endif
 
-    Kokkos::parallel_for(
+    Kokkos::parallel_for("KokkosKernels::Common::SymmetrizeGraphSymbolicHashMap::S1",
         team_policy(num_rows_to_symmetrize / teamSizeMax + 1 , teamSizeMax, vector_size),
         FSCH);
     MyExecSpace::fence();
@@ -1391,7 +1391,7 @@ void copy_view(
                 from_vector from, to_vector to){
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for( my_exec_space(0,num_elements), CopyView<from_vector, to_vector>(from, to));
+  Kokkos::parallel_for( "KokkosKernels::Common::CopyView", my_exec_space(0,num_elements), CopyView<from_vector, to_vector>(from, to));
 
 }
 
@@ -1474,7 +1474,7 @@ struct ReduceSumFunctor{
 template <typename view_type , typename MyExecSpace>
 void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &sum_reduction){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
+  Kokkos::parallel_reduce( "KokkosKernels::Common::ViewReduceSum", my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
 }
 
 
@@ -1525,7 +1525,7 @@ void kk_view_reduce_max_row_size(const size_t num_rows,
                 const size_type *rowmap_view_ends,
                 size_type &max_row_size){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_reduce( my_exec_space(0,num_rows),
+  Kokkos::parallel_reduce( "KokkosKernels::Common::ViewReduceMaxRowSize", my_exec_space(0,num_rows),
       ReduceRowSizeFunctor<size_type>(rowmap_view_begins, rowmap_view_ends), max_row_size);
 }
 
@@ -1567,7 +1567,7 @@ struct ReduceMaxRowFunctor{
 template <typename view_type , typename MyExecSpace>
 void view_reduce_maxsizerow(size_t num_rows, view_type rowmap_view, typename view_type::non_const_value_type &max_reduction){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_reduce( my_exec_space(0,num_rows), ReduceMaxRowFunctor<view_type>(rowmap_view), max_reduction);
+  Kokkos::parallel_reduce( "KokkosKernels::Common::ViewReduceMaxSizeRow", my_exec_space(0,num_rows), ReduceMaxRowFunctor<view_type>(rowmap_view), max_reduction);
 }
 
 
@@ -1604,7 +1604,7 @@ template <typename view_type1, typename view_type2, typename MyExecSpace>
 bool isSame(size_t num_elements, view_type1 view1, view_type2 view2){
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   int issame = 1;
-  Kokkos::parallel_reduce( my_exec_space(0,num_elements), IsEqualFunctor<view_type1, view_type2>(view1, view2), issame);
+  Kokkos::parallel_reduce( "KokkosKernels::Common::isSame", my_exec_space(0,num_elements), IsEqualFunctor<view_type1, view_type2>(view1, view2), issame);
   MyExecSpace::fence();
   return issame;
 }
@@ -1772,7 +1772,7 @@ void transpose_matrix(
   int vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
 
   Kokkos::Impl::Timer timer1;
-  Kokkos::parallel_for(  tcp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  Kokkos::parallel_for( "KokkosKernels::Common::TransposeMatrix::S0",  tcp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
   MyExecSpace::fence();
 
   exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
@@ -1781,7 +1781,7 @@ void transpose_matrix(
   MyExecSpace::fence();
 
   timer1.reset();
-  Kokkos::parallel_for(  tfp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  Kokkos::parallel_for( "KokkosKernels::Common::TransposeMatrix::S1",  tfp_t(num_rows / team_row_work_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
   MyExecSpace::fence();
 }
 
@@ -1850,7 +1850,7 @@ void transpose_graph2(
   int vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
 
   Kokkos::Impl::Timer timer1;
-  Kokkos::parallel_for(  tcp_t(num_rows  , Kokkos::AUTO_t(), vector_size), tm);
+  Kokkos::parallel_for( "KokkosKernels::Common::TransposeGraph2::S0",  tcp_t(num_rows  , Kokkos::AUTO_t(), vector_size), tm);
   MyExecSpace::fence();
 
   exclusive_parallel_prefix_sum<out_row_view_t, MyExecSpace>(num_cols+1, t_xadj);
@@ -1859,7 +1859,7 @@ void transpose_graph2(
   MyExecSpace::fence();
 
   timer1.reset();
-  Kokkos::parallel_for(  tfp_t(num_rows , Kokkos::AUTO_t(), vector_size), tm);
+  Kokkos::parallel_for( "KokkosKernels::Common::TransposeGraph::S1",  tfp_t(num_rows , Kokkos::AUTO_t(), vector_size), tm);
   MyExecSpace::fence();
 
 
@@ -1912,7 +1912,7 @@ void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row
   int vector_size = 1;
 
   Kokkos::Impl::Timer timer1;
-  Kokkos::parallel_for(  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
+  Kokkos::parallel_for( "KokkosKernels::Common::InitViewWithScalar",  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
   MyExecSpace::fence();
 }
 

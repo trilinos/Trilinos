@@ -233,7 +233,7 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldData)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
 
         size_t bucketCapacity = 512;
         size_t numNodes = 20;
@@ -258,7 +258,7 @@ TEST(DefaultFieldDataManagerTest, AllocateFieldDataTwoBuckets)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
 
         const size_t bucketCapacity = 512;
         const size_t numNodes = 700;
@@ -286,7 +286,7 @@ TEST(DefaultFieldDataManagerTest, TwoEntitiesTwoBuckets)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
 
         testTwoEntitiesTwoBuckets(bulkData, &fieldDataManager);
     }
@@ -306,7 +306,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldData)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
         size_t numNodes = 20;
         size_t bucketSize = numNodes;
         const size_t extraCapacity = fieldDataManager.get_extra_capacity();
@@ -329,7 +329,7 @@ TEST(ContiguousFieldDataManagerTest, AllocateFieldDataAndReorderBuckets)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
         size_t numNodes = 10000;
         size_t sizeOfStuff = numNodes;
         const size_t extraCapacity = fieldDataManager.get_extra_capacity();
@@ -361,7 +361,7 @@ TEST(ContiguousFieldDataManagerTest, TwoEntitiesTwoBuckets)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
 
         testTwoEntitiesTwoBuckets(bulkData, &fieldDataManager);
     }
@@ -419,7 +419,7 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
 #ifdef SIERRA_MIGRATION
  false,
 #endif
- NULL, &fieldDataManager);
+ &fieldDataManager);
 
         bulkData.deactivate_field_updating();
 

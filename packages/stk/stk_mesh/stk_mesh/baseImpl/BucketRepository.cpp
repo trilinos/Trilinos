@@ -137,16 +137,18 @@ void BucketRepository::internal_custom_sort_bucket_entities(const EntitySorterBa
 
 void BucketRepository::add_entity_with_part_memberships(const stk::mesh::Entity entity,
                                                         const EntityRank arg_entity_rank,
-                                                        const OrdinalVector &parts)
+                                                        const OrdinalVector &parts,
+                                                        OrdinalVector& scratchSpace)
 {
-    Partition *partition = get_or_create_partition(arg_entity_rank, parts);
+    Partition *partition = get_or_create_partition(arg_entity_rank, parts, scratchSpace);
     partition->add(entity);
 }
 
-void BucketRepository::change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts)
+void BucketRepository::change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts,
+                                                     OrdinalVector& scratchSpace)
 {
     Bucket *bucket = meshIndex.bucket;
-    Partition *destinationPartition = get_or_create_partition(bucket->entity_rank(), parts);
+    Partition *destinationPartition = get_or_create_partition(bucket->entity_rank(), parts, scratchSpace);
     Entity entity = get_entity(meshIndex);
     Partition *sourcePartition = bucket->getPartition();
     sourcePartition->move_to(entity, *destinationPartition);
@@ -183,7 +185,8 @@ void BucketRepository::ensure_data_structures_sized()
 
 Partition *BucketRepository::get_or_create_partition(
   const EntityRank arg_entity_rank ,
-  const OrdinalVector &parts)
+  const OrdinalVector &parts,
+  OrdinalVector& keyScratchSpace)
 {
   enum { KEY_TMP_BUFFER_SIZE = 64 };
 
@@ -195,7 +198,7 @@ Partition *BucketRepository::get_or_create_partition(
   std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
 
   const size_t part_count = parts.size();
-  std::vector<unsigned> key(2 + part_count) ;
+  keyScratchSpace.resize(2 + part_count) ;
 
   //----------------------------------
   // Key layout:
@@ -204,27 +207,27 @@ Partition *BucketRepository::get_or_create_partition(
   //
   // for upper bound search use the maximum key for a bucket in the partition.
   const unsigned max = static_cast<unsigned>(-1);
-  key[0] = part_count+1;
-  key[ key[0] ] = max ;
+  keyScratchSpace[0] = part_count+1;
+  keyScratchSpace[ keyScratchSpace[0] ] = max ;
 
   {
-    for ( unsigned i = 0 ; i < part_count ; ++i ) { key[i+1] = parts[i] ; }
+    for ( unsigned i = 0 ; i < part_count ; ++i ) { keyScratchSpace[i+1] = parts[i] ; }
   }
 
   // If the partition is found, the iterator will be right after it, thanks to the
   // trickiness above.
-  const std::vector<Partition *>::iterator ik = lower_bound( partitions , key.data() );
+  const std::vector<Partition *>::iterator ik = lower_bound( partitions , keyScratchSpace.data() );
   const bool partition_exists =
-    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , key.data() );
+    (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , keyScratchSpace.data() );
 
   if (partition_exists)
   {
     return ik[-1];
   }
 
-  key[key[0]] = 0;
+  keyScratchSpace[keyScratchSpace[0]] = 0;
 
-  Partition *partition = new Partition(m_mesh, this, arg_entity_rank, key);
+  Partition *partition = new Partition(m_mesh, this, arg_entity_rank, keyScratchSpace);
   ThrowRequire(partition != NULL);
 
   m_need_sync_from_partitions[arg_entity_rank] = true;
@@ -319,19 +322,13 @@ struct bucket_less_by_first_entity_identifier
 {
     bool operator()(const Bucket* first, const Bucket* second) const
     {
-        if (first->size() == 0)
-        {
-            return true;
-        }
-        else if (second->size() == 0)
-        {
-            return false;
-        }
-        else
+        bool result = false;
+        if ((first->size() > 0) && (second->size() > 0))
         {
             const stk::mesh::BulkData& mesh = first->mesh();
-            return EntityLess(mesh)((*first)[0], (*second)[0]);
-       }
+            result = EntityLess(mesh)((*first)[0], (*second)[0]);
+        }
+        return (first->size() == 0) || result;
     }
 };
 
@@ -448,10 +445,6 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 
 std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
 {
-  if (!m_mesh.in_synchronized_state())
-  {
-    std::vector<Partition *>();
-  }
   std::vector<Partition *> retval;
   std::vector<Partition *> const& bf_vec = m_partitions[rank];
   for (size_t i = 0; i < bf_vec.size(); ++i)

@@ -52,7 +52,7 @@
 #include "netcdf_meta.h"
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER < 1900
 #define PRId64 "I64d"
 #else
 #include <inttypes.h>
@@ -210,6 +210,12 @@ EXODUS_EXPORT int indent;
 #define EX_FUNC_VOID() return
 #endif
 #endif
+
+#define EX_UNUSED(A)                                                                               \
+  do {                                                                                             \
+    (void)(A);                                                                                     \
+  } while (0)
+
 /*
  * This file contains defined constants that are used internally in the
  * EXODUS API.
@@ -846,7 +852,8 @@ int  ex_leavedef(int         exoid,    /* NemesisI file ID         */
  );
 
 int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version);
-int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_ws, int *io_ws);
+int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws,
+                           int *io_ws);
 
 int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
                            struct elem_blk_parm *elem_blk_parm);
@@ -865,6 +872,8 @@ int ne_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
                int64_t *    idx,         /* index variable for variable, length 2 */
                ex_entity_id ne_var_id    /* NetCDF variable ID */
 );
+
+char *ex_copy_string(char *dest, char const *source, size_t elements);
 
 /**
  * For output databases, the maximum length of any entity, variable,

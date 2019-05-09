@@ -480,7 +480,7 @@ void
     c_row_view_t rowmapC_,
     c_lno_nnz_view_t entriesC_,
     c_scalar_nnz_view_t valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space){
+    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tSPEED MODE" << std::endl;
@@ -496,7 +496,7 @@ void
 
   Kokkos::Impl::Timer numeric_speed_timer_with_free;
 
-  if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
     //allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC
     (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.extent(0));
@@ -599,7 +599,7 @@ void
         entriesC_,
         valuesC_,
         m_space,
-        my_exec_space,
+        my_exec_space_,
         team_row_chunk_size);
 
     MyExecSpace::fence();

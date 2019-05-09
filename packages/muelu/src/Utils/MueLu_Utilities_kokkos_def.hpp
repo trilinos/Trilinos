@@ -258,7 +258,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
+  void Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& /* Op */, const Teuchos::ArrayRCP<Scalar>& /* scalingVector */, bool /* doFillComplete */, bool /* doOptimizeStorage */) {
     throw Exceptions::RuntimeError("MyOldScaleMatrix_Epetra: Epetra needs SC=double and LO=GO=int.");
   }
 
@@ -483,7 +483,6 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto localMatrix = A->getLocalMatrix();
@@ -562,7 +561,6 @@ namespace MueLu {
   ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                     Scalar replaceWith) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto localMatrix = A->getLocalMatrix();

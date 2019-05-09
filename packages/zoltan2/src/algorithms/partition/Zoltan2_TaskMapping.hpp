@@ -17,7 +17,7 @@
 #include "Zoltan2_MappingSolution.hpp"
 
 #include "Zoltan2_GraphModel.hpp"
-#include <zoltan_dd.h>
+
 #include <Zoltan2_TPLTraits.hpp>
 
 #include "Teuchos_Comm.hpp"
@@ -28,6 +28,7 @@
 
 //#define gnuPlot
 #include "Zoltan2_XpetraMultiVectorAdapter.hpp"
+#include <Zoltan2_Directory_Impl.hpp>
 
 namespace Teuchos{
 
@@ -279,7 +280,6 @@ void getCoarsenedPartGraph(
   ArrayView<t_input_t> e_wgts;
   graph->getEdgeList(edgeIds, offsets, e_wgts);
 
-
   std::vector<t_scalar_t> edge_weights;
   int numWeightPerEdge = graph->getNumWeightsPerEdge();
 
@@ -296,35 +296,15 @@ void getCoarsenedPartGraph(
 #ifdef HAVE_ZOLTAN2_MPI
   if (comm->getSize() > 1)
   {
-    Zoltan_DD_Struct *dd = NULL;
-
-    MPI_Comm mpicomm = Teuchos::getRawMpiComm(*comm);
-    int size_gnot = Zoltan2::TPL_Traits<ZOLTAN_ID_PTR, t_gno_t>::NUM_ID;
-
+    const bool bUseLocalIDs = false;  // Local IDs not needed
+    typedef Zoltan2_Directory_Simple<t_gno_t,t_lno_t,part_t> directory_t;
     int debug_level = 0;
-    Zoltan_DD_Create(&dd, mpicomm,
-        size_gnot, 0,
-        sizeof(part_t), localNumVertices, debug_level);
-
-    ZOLTAN_ID_PTR ddnotneeded = NULL;  // Local IDs not needed
-    Zoltan_DD_Update(
-        dd,
-        (ZOLTAN_ID_PTR) Ids.getRawPtr(),
-        ddnotneeded,
-        (char *) parts,
-        NULL,
-        int(localNumVertices));
-
-    Zoltan_DD_Find(
-        dd,
-        (ZOLTAN_ID_PTR) edgeIds.getRawPtr(),
-        ddnotneeded,
-        (char *)&(e_parts[0]),
-        NULL,
-        localNumEdges,
-        NULL
-        );
-    Zoltan_DD_Destroy(&dd);
+    const RCP<const Comm<int> > rcp_comm(comm,false);
+    directory_t directory(rcp_comm, bUseLocalIDs, debug_level);
+    directory.update(localNumVertices, &Ids[0], NULL, &parts[0],
+      NULL, directory_t::Update_Mode::Replace);
+    directory.find(localNumEdges, &edgeIds[0], NULL, &e_parts[0],
+      NULL, NULL, false);
   } else
 #endif
   {
@@ -402,19 +382,34 @@ void getCoarsenedPartGraph(
     return;
   }
 
-  RCP<const Teuchos::Comm<int> > tcomm = rcpFromRef(*comm);
-  // KDD 8/8/18:  Ideally, we'd use part_t as the global ordinal in our map
-  //     typedef part_t use_this_gno_t;
-  // But when Tpetra is built without global ordinal = int, part_t will not
-  // link.  And changing part_t would affect backward compatibility.  
-  // So we'll use the Tpetra default here.
-  typedef Tpetra::Map<>::global_ordinal_type use_this_gno_t;
-  typedef Tpetra::Map<part_t, use_this_gno_t> t_map_t;
-  Teuchos::RCP<const t_map_t> map = Teuchos::rcp(new t_map_t(np, 0, tcomm));
-  typedef Tpetra::CrsMatrix<t_scalar_t, part_t, use_this_gno_t> tcrsMatrix_t;
-  Teuchos::RCP<tcrsMatrix_t> tMatrix(new tcrsMatrix_t(map, 0));
+  // struct for directory data - note more extensive comments in
+  // Zoltan2_GraphMetricsUtility.hpp which I didn't want to duplicate
+  // because this is in progress. Similar concept there.
+  struct part_info {
+    part_info() : weight(0) {
+    }
+    const part_info & operator+=(const part_info & src) {
+      this->weight += src.weight;
+      return *this;
+    }
+    bool operator>(const part_info & src) {
+      return (destination_part > src.destination_part);
+    }
+    bool operator==(const part_info & src) {
+      return (destination_part == src.destination_part);
+    }
+    part_t destination_part;
+    scalar_t weight;
+  };
 
-
+  bool bUseLocalIDs = false;
+  const int debug_level = 0;
+  typedef Zoltan2_Directory_Vector<part_t,int,std::vector<part_info>>
+      directory_t;
+  const RCP<const Comm<int> > rcp_comm(comm,false);
+  directory_t directory(rcp_comm, bUseLocalIDs, debug_level);
+  std::vector<part_t> part_data;
+  std::vector<std::vector<part_info>> user_data;
 
   envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Coarsen");
   {
@@ -430,7 +425,7 @@ void getCoarsenedPartGraph(
       part_begins[ap] = i;
     }
 
-    std::vector<use_this_gno_t> part_neighbors(np);
+    std::vector<part_t> part_neighbors(np);
     std::vector<t_scalar_t> part_neighbor_weights(np, 0);
     std::vector<t_scalar_t> part_neighbor_weights_ordered(np);
 
@@ -460,74 +455,98 @@ void getCoarsenedPartGraph(
 
       //now get the part list.
       for (t_lno_t j = 0; j < num_neighbor_parts; ++j){
-        use_this_gno_t neighbor_part = part_neighbors[j];
+        part_t neighbor_part = part_neighbors[j];
         part_neighbor_weights_ordered[j] = part_neighbor_weights[neighbor_part];
         part_neighbor_weights[neighbor_part] = 0;
       }
 
       //insert it to tpetra crsmatrix.
       if (num_neighbor_parts > 0){
-        Teuchos::ArrayView<const use_this_gno_t> destinations(
-            &(part_neighbors[0]), num_neighbor_parts);
-        Teuchos::ArrayView<const t_scalar_t> vals(
-            &(part_neighbor_weights_ordered[0]), num_neighbor_parts);
-        tMatrix->insertGlobalValues(i,destinations, vals);
+        part_data.push_back(i); // TODO: optimize to avoid push_back
+        std::vector<part_info> new_user_data(num_neighbor_parts);
+        for(int q = 0; q < num_neighbor_parts; ++q) {
+          part_info & info = new_user_data[q];
+          info.weight = part_neighbor_weights_ordered[q];
+          info.destination_part = part_neighbors[q];
+        }
+        user_data.push_back(new_user_data); // TODO: optimize to avoid push_back
       }
     }
   }
   envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Coarsen");
-  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE fillComplete");
-  tMatrix->fillComplete();
-  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE fillComplete");
 
+  std::vector<part_t> part_indices(np);
 
-  std::vector<use_this_gno_t> part_indices(np);
+  for (part_t i = 0; i < np; ++i) part_indices[i] = i;
 
-  for (use_this_gno_t i = 0; i < np; ++i) part_indices[i] = i;
+  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE directory update");
+  directory.update(part_data.size(), &part_data[0], NULL, &user_data[0],
+    NULL, directory_t::Update_Mode::AggregateAdd);
+  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE directory update");
 
-  Teuchos::ArrayView<const use_this_gno_t> global_ids(&(part_indices[0]), np);
+  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE directory find");
+  std::vector<std::vector<part_info>> find_user_data(part_indices.size());
+  directory.find(find_user_data.size(), &part_indices[0], NULL,
+    &find_user_data[0], NULL, NULL, false);
+  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE directory find");
 
-  //create a map where all processors own all rows.
-  //so that we do a gatherAll for crsMatrix.
-  Teuchos::RCP<const t_map_t> gatherRowMap(new t_map_t(
-      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-      global_ids, 0, tcomm));
+  // Now reconstruct the output data from the directory find data
+  // This code was designed to reproduce the exact format of the original
+  // setup for g_part_xadj, g_part_adj, and g_part_ew but before making any
+  // further changes I wanted to verify if this formatting should be
+  // preserved or potentially changed further.
 
-  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Import");
-  //create the importer for gatherAll
-  Teuchos::RCP<tcrsMatrix_t> A_gather =
-      Teuchos::rcp(new tcrsMatrix_t(gatherRowMap, 0));
-  typedef Tpetra::Import<typename t_map_t::local_ordinal_type,
-                         typename t_map_t::global_ordinal_type,
-                         typename t_map_t::node_type> import_type;
-  import_type import(map, gatherRowMap);
-  A_gather->doImport(*tMatrix, import, Tpetra::INSERT);
-  A_gather->fillComplete();
-  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Import");
-
-  //create the output part arrays.
-  //all processors owns whole copy.
-  g_part_xadj = ArrayRCP<part_t>(np + 1);
-  g_part_adj = ArrayRCP<part_t>(A_gather->getNodeNumEntries());
-  g_part_ew = ArrayRCP<t_scalar_t>(A_gather->getNodeNumEntries());
-
-  part_t *taskidx = g_part_xadj.getRawPtr();
-  part_t *taskadj = g_part_adj.getRawPtr();
-  t_scalar_t *taskadjwgt = g_part_ew.getRawPtr();
-
-  taskidx[0] = 0;
-
-  envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Import Copy");
-  for (part_t i = 0; i < np; i++) {
-    part_t length = A_gather->getNumEntriesInLocalRow(i);  // Use Global to get same
-    size_t nentries;
-    taskidx[i+1] = taskidx[i] + length;
-    //get the indices
-    Teuchos::ArrayView<part_t> Indices(taskadj + taskidx[i], length);
-    Teuchos::ArrayView<t_scalar_t> Values(taskadjwgt + taskidx[i], length);
-    A_gather->getLocalRowCopy(i, Indices, Values, nentries);
+  // first thing is get the total number of elements
+  int get_total_length = 0;
+  for(size_t n = 0; n < find_user_data.size(); ++n) {
+    get_total_length += find_user_data[n].size();
   }
-  envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Import Copy");
+
+  // setup data space
+  g_part_xadj = ArrayRCP<part_t> (np + 1);
+  g_part_adj = ArrayRCP<part_t> (get_total_length);
+  g_part_ew = ArrayRCP<t_scalar_t> (get_total_length);
+
+  // loop through again and fill to match the original formatting
+  int track_insert_index = 0;
+  for(size_t n = 0; n < find_user_data.size(); ++n) {
+    g_part_xadj[n] = track_insert_index;
+    const std::vector<part_info> & user_data_vector = find_user_data[n];
+    for(size_t q = 0; q < user_data_vector.size(); ++q) {
+      const part_info & info = user_data_vector[q];
+      g_part_adj[track_insert_index] = info.destination_part;
+      g_part_ew[track_insert_index] = info.weight;
+      ++track_insert_index;
+    }
+  }
+  g_part_xadj[np] = get_total_length; // complete the series
+
+  // This is purely for debugging logging and to be deleted
+  // hacky sort here just to make each subset of part destinations ordered
+  // so new and old code will produce identical output for validation. I think
+  // the ordering is arbitrary and no requirement to preserve the old ordering
+  // within each part. This code was written so I could drop it into the
+  // develop branch and validate we were producing identical results at this
+  // step. Would like to discuss this further before continuing.
+  // TODO: Delete all this
+  /*
+  if(comm->getRank() == 0) {
+    for(size_t i = 0; i < (size_t)g_part_xadj.size() - 1; ++i) {
+      part_t b = g_part_xadj[i];
+      part_t e = g_part_xadj[i+1];
+      printf("Results for part %d:\n", (int)i);
+      for(part_t scan_part = 0; scan_part < np; ++scan_part) {
+        for(part_t q = b; q < e; ++q) {
+          if(g_part_adj[q] == scan_part) { // inefficient hack to sort g_part_adj
+            printf( "(%d:%.2f) ", (int)scan_part, (float)g_part_ew[q]);
+          }
+        }
+      }
+      printf("\n");
+    }
+  }
+  */
+
 }
 
 

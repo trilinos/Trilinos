@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -104,7 +104,7 @@ C ... Allocate array for distribution factors
          call mdstat(nerr, mem)
          if (nerr .gt. 0) go to 400
          call inirea(nssur, 1.0, a(kdistf))
-         
+
 C ... Write Front Sidesets
          if (nfro .gt. 0) then
 C ... Fill the side list
@@ -143,7 +143,7 @@ C     following should hold newside = oldside + 2
      &       ltsss3(ixees3(i)), ierr)
         call expssd (ndbout, idess(i), faces3(ixnes3(i)), ierr)
  310  continue
-        
+
       RETURN
 
  400  CONTINUE

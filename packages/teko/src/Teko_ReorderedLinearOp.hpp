@@ -91,6 +91,9 @@ public:
    virtual void implicitApply(const MultiVector & x, MultiVector & y,
               const double alpha = 1.0, const double beta = 0.0) const;
 
+   virtual void describe(Teuchos::FancyOStream &out_arg,
+                         const Teuchos::EVerbosityLevel verbLevel) const;
+
 private:
    VectorSpace range_;
    VectorSpace domain_;

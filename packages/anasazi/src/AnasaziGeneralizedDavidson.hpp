@@ -1279,25 +1279,11 @@ void GeneralizedDavidson<ScalarType,MV,OP>::solveProjectedEigenproblem()
         int sdim;
         int work_size = 3*d_curDim;
         std::vector<ScalarType>  work(work_size);
-        std::vector<MagnitudeType> rwork( d_curDim );
-        std::vector<int> bwork( d_curDim );
-
         int info;
-        int opt_lwork = -1;
 
         Teuchos::LAPACK<int,ScalarType> lapack;
-
         lapack.GEES( vecs, d_curDim, d_S->values(), d_S->stride(), &sdim, &d_alphar[0], &d_alphai[0],
-                     d_Z->values(), d_Z->stride(), &work[0], opt_lwork, &rwork[0], &bwork[0], &info);
-
-        opt_lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
-        if (opt_lwork > work_size)
-        {
-          work_size = opt_lwork;
-          work.resize( work_size );
-        }
-        lapack.GEES( vecs, d_curDim, d_S->values(), d_S->stride(), &sdim, &d_alphar[0], &d_alphai[0],
-                     d_Z->values(), d_Z->stride(), &work[0], work_size, &rwork[0], &bwork[0], &info);
+                     d_Z->values(), d_Z->stride(), &work[0], work_size, 0, 0, &info);
 
         std::fill( d_betar.begin(), d_betar.end(), ST::one() );
 

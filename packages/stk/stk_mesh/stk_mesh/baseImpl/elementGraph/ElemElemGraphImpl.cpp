@@ -83,7 +83,7 @@ void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, 
 
     localElemSideNodes.resize(num_nodes_this_side);
 
-    localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
+    localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.data());
 }
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -327,7 +327,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
     stk::mesh::EntityVector side_nodes;
     fill_element_side_nodes_from_topology(bulkData, element, side_ordinal, side_nodes);
     stk::mesh::EntityVector permuted_side_nodes(side_top.num_nodes());
-    side_top.permutation_nodes(side_nodes, side_permutation, permuted_side_nodes.begin());
+    side_top.permutation_nodes(side_nodes.data(), side_permutation, permuted_side_nodes.data());
     for(size_t i=0;i<permuted_side_nodes.size();++i)
     {
         bulkData.declare_relation(side, permuted_side_nodes[i], i);
@@ -340,6 +340,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 {
     std::vector<SharedEdgeInfo>::const_iterator iter = newlySharedEdges.begin();
     std::vector<SharedEdgeInfo>::const_iterator endIter = newlySharedEdges.end();
+    std::vector<stk::mesh::EntityKey> side_node_entity_keys;
 
     for(; iter!= endIter; ++iter)
     {
@@ -351,7 +352,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         int sharing_proc       = iter->get_remote_processor_rank();
 
         size_t numNodes= iter->m_sharedNodes.size();
-        std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
+        side_node_entity_keys.resize(numNodes);
         for(size_t i=0; i<numNodes; ++i)
         {
             side_node_entity_keys[i] = bulkData.entity_key(iter->m_sharedNodes[i]);
@@ -378,7 +379,10 @@ bool is_local_element(stk::mesh::impl::LocalId elemId)
 void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
                       const stk::mesh::Graph &graph, std::vector<int> &element_side_pairs)
 {
-    std::vector<int> elemSides(maxSidesThisElement, -1);
+    constexpr int MAX_SIDES_PER_ELEM = 12;
+    ThrowRequireMsg(maxSidesThisElement <= MAX_SIDES_PER_ELEM, "STK Error, violated assumption that max sides per element is "<<MAX_SIDES_PER_ELEM<<", trying to use value of " << maxSidesThisElement);
+    int elemSides[MAX_SIDES_PER_ELEM] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
     for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
     {
         const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
@@ -390,7 +394,6 @@ void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
         if (elemSides[sideId] == -1)
             element_side_pairs.push_back(sideId);
 }
-
 
 }}} // end namespaces stk mesh impl
 

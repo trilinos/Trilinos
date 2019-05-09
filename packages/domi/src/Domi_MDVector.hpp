@@ -2050,7 +2050,7 @@ getEpetraMultiVectorView() const
   // but we know the new MDMap is contiguous, so we can calculate it
   // as the product of the new MDMap dimensions (including padding)
   size_type stride = newMdMap->getLocalDim(0,true);
-  for (int axis = 0; axis < newMdMap->numDims(); ++axis)
+  for (int axis = 1; axis < newMdMap->numDims(); ++axis)
     stride *= newMdMap->getLocalDim(axis,true);
   TEUCHOS_TEST_FOR_EXCEPTION(
     stride*numVectors > Teuchos::OrdinalTraits<int>::max(),
@@ -2284,10 +2284,10 @@ getTpetraMultiVectorView() const
   // but we know the new MDMap is contiguous, so we can calculate it
   // as the product of the new MDMap dimensions (including padding)
   size_type stride = newMdMap->getLocalDim(0,true);
-  for (int axis = 0; axis < newMdMap->numDims(); ++axis)
+  for (int axis = 1; axis < newMdMap->numDims(); ++axis)
     stride *= newMdMap->getLocalDim(axis,true);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    stride*numVectors > Teuchos::OrdinalTraits<GlobalOrdinal>::max(),
+    (long long int)(stride*numVectors) > Teuchos::OrdinalTraits<GlobalOrdinal>::max(),
     MapOrdinalError,
     "Buffer size " << stride*numVectors << " is too large for Tpetra "
     "GlobalOrdinal = " << typeid(GlobalOrdinal).name() );

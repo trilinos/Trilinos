@@ -44,7 +44,7 @@
 
 #ifdef HAVE_TPETRA_INST_CUDA
 namespace Tpetra {
-namespace MMdetails { 
+namespace MMdetails {
 
 /*********************************************************************************************************/
 // MMM KernelWrappers for Partial Specialization to CUDA
@@ -65,7 +65,7 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCu
                                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
-  
+
    static inline void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
                                                   const LocalOrdinalViewType & Acol2Brow,
@@ -124,7 +124,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
                                                                                                const LocalOrdinalViewType & Acol2Brow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,          
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -163,7 +163,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 
   // KokkosKernelsHandle
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-       typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+       typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
        typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrices
@@ -202,7 +202,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
   typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
 
-  lno_view_t      row_mapC ("non_const_lnow_row", AnumRows + 1);
+  lno_view_t      row_mapC (Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"), AnumRows + 1);
   lno_nnz_view_t  entriesC;
   scalar_view_t   valuesC;
   KernelHandle kh;
@@ -251,14 +251,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
                                                                                                const LocalOrdinalViewType & targetMapToOrigRow,
                                                                                                const LocalOrdinalViewType & targetMapToImportRow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,          
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
-  typedef Kokkos::Compat::KokkosCudaWrapperNode Node; 
+  typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -383,7 +383,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal, 
+         class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
@@ -392,7 +392,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
                                                                                                const LocalOrdinalViewType & Acol2Brow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -408,7 +408,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   using Teuchos::RCP;
 
   // Options
-  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+  //int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer // unreferenced
   std::string myalg("MSAK");
   if(!params.is_null()) {
     if(params->isParameter("cuda: jacobi algorithm"))
@@ -444,7 +444,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal, 
+         class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
@@ -453,14 +453,14 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
                                                                                                const LocalOrdinalViewType & targetMapToOrigRow,
                                                                                                const LocalOrdinalViewType & targetMapToImportRow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
-  typedef Kokkos::Compat::KokkosCudaWrapperNode Node; 
+  typedef Kokkos::Compat::KokkosCudaWrapperNode Node;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
@@ -595,7 +595,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2= Teuchos::null; 
+  MM2= Teuchos::null;
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
 #endif
 

@@ -179,7 +179,10 @@ evaluate(FillType f,
   u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int i, j, ierr;
+  int i, j;
+#ifdef HAVE_NOX_DEBUG
+  int ierr;
+#endif
   int OverlapNumMyElements = OverlapMap->NumMyElements();
 
   int OverlapMinMyGID;
@@ -259,8 +262,12 @@ evaluate(FillType f,
                 basis.dphide[j]*basis.dphide[i]
                 +factor*basis.phi[j]*
                 basis.phi[i]);
+#ifdef HAVE_NOX_DEBUG
             ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
-            assert(ierr == 0);
+            TEUCHOS_ASSERT(ierr == 0);
+#else
+            A->SumIntoGlobalValues(row, 1, &jac, &column);
+#endif
           }
         }
       }
@@ -284,8 +291,12 @@ evaluate(FillType f,
                 basis.dphide[j]*basis.dphide[i]
                 +2.0*factor*basis.uu*basis.phi[j]*
                 basis.phi[i]);
+#ifdef HAVE_NOX_DEBUG
             ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
             assert(ierr == 0);
+#else
+            A->SumIntoGlobalValues(row, 1, &jac, &column);
+#endif
           }
         }
       }

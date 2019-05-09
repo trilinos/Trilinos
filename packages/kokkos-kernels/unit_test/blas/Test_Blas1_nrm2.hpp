@@ -113,7 +113,7 @@ int test_nrm2() {
   Test::impl_test_nrm2<view_type_a_ll, Device>(0);
   Test::impl_test_nrm2<view_type_a_ll, Device>(13);
   Test::impl_test_nrm2<view_type_a_ll, Device>(1024);
-  Test::impl_test_nrm2<view_type_a_ll, Device>(132231);
+  //Test::impl_test_nrm2<view_type_a_ll, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -121,7 +121,7 @@ int test_nrm2() {
   Test::impl_test_nrm2<view_type_a_lr, Device>(0);
   Test::impl_test_nrm2<view_type_a_lr, Device>(13);
   Test::impl_test_nrm2<view_type_a_lr, Device>(1024);
-  Test::impl_test_nrm2<view_type_a_lr, Device>(132231);
+  //Test::impl_test_nrm2<view_type_a_lr, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -129,7 +129,7 @@ int test_nrm2() {
   Test::impl_test_nrm2<view_type_a_ls, Device>(0);
   Test::impl_test_nrm2<view_type_a_ls, Device>(13);
   Test::impl_test_nrm2<view_type_a_ls, Device>(1024);
-  Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
+  //Test::impl_test_nrm2<view_type_a_ls, Device>(132231);
 #endif
 
   return 1;
@@ -143,7 +143,7 @@ int test_nrm2_mv() {
   Test::impl_test_nrm2_mv<view_type_a_ll, Device>(0,5);
   Test::impl_test_nrm2_mv<view_type_a_ll, Device>(13,5);
   Test::impl_test_nrm2_mv<view_type_a_ll, Device>(1024,5);
-  Test::impl_test_nrm2_mv<view_type_a_ll, Device>(132231,5);
+  //Test::impl_test_nrm2_mv<view_type_a_ll, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -151,7 +151,7 @@ int test_nrm2_mv() {
   Test::impl_test_nrm2_mv<view_type_a_lr, Device>(0,5);
   Test::impl_test_nrm2_mv<view_type_a_lr, Device>(13,5);
   Test::impl_test_nrm2_mv<view_type_a_lr, Device>(1024,5);
-  Test::impl_test_nrm2_mv<view_type_a_lr, Device>(132231,5);
+  //Test::impl_test_nrm2_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -159,7 +159,7 @@ int test_nrm2_mv() {
   Test::impl_test_nrm2_mv<view_type_a_ls, Device>(0,5);
   Test::impl_test_nrm2_mv<view_type_a_ls, Device>(13,5);
   Test::impl_test_nrm2_mv<view_type_a_ls, Device>(1024,5);
-  Test::impl_test_nrm2_mv<view_type_a_ls, Device>(132231,5);
+  //Test::impl_test_nrm2_mv<view_type_a_ls, Device>(132231,5);
 #endif
 
   return 1;
@@ -167,37 +167,53 @@ int test_nrm2_mv() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_float");
     test_nrm2<float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_mv_float ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_mv_float");
     test_nrm2_mv<float,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_double");
     test_nrm2<double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_mv_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_mv_double");
     test_nrm2_mv<double,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_complex_double");
     test_nrm2<Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_mv_complex_double ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_mv_complex_double");
     test_nrm2_mv<Kokkos::complex<double>,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, nrm2_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_int");
     test_nrm2<int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, nrm2_mv_int ) {
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::nrm2_mv_int");
     test_nrm2_mv<int,TestExecSpace> ();
+  Kokkos::Profiling::popRegion();
 }
 #endif
 

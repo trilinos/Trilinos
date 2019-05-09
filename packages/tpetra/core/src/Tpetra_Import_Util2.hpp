@@ -54,6 +54,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_MpiTypeTraits.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
@@ -213,6 +214,9 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     const std::string prefix {" Import_Util2::ReverseND:: "};
     const std::string label ("IU2::Neighbor");
 
+    // There can be no neighbor discovery if you don't have an importer
+    if(MyImporter.is_null()) return;
+
     std::ostringstream errstr;
     bool error = false;
     auto const comm             = MyDomainMap->getComm();
@@ -225,11 +229,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     auto ExportPIDs                 = RowTransfer.getExportPIDs();
     auto ExportLIDs                 = RowTransfer.getExportLIDs();
     auto NumExportLIDs              = RowTransfer.getNumExportIDs();
-
-    TEUCHOS_TEST_FOR_EXCEPTION(MyImporter.is_null(),
-                               std::logic_error,
-                               "Tpetra::reverseNeighborDiscovery "
-                               "Neighbor Discovery Should not be called with null Importer");
 
     Distributor & Distor            = MyImporter->getDistributor();
     const size_t NumRecvs           = Distor.getNumReceives();
@@ -350,8 +349,11 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         rawBreq[mpireq_idx++]=rawRequest;
     }
     Teuchos::Array<MPI_Status> rawBstatus(rawBreq.size());
-    const int err1 = MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
-                                  rawBstatus.getRawPtr());
+#ifdef HAVE_TPETRA_DEBUG
+    const int err1 =
+#endif
+      MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
+                   rawBstatus.getRawPtr());
 
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -383,7 +385,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         offset+=ReverseRecvSizes[i];
         MPI_Irecv(rec_bptr,
                   recv_data_size,
-                  MPI_LONG_LONG_INT,
+                  ::Tpetra::Details::MpiTypeTraits<GO>::getType(rec_bptr[0]),
                   ProcsTo[i],
                   recvData_MPI_Tag,
                   rawComm,
@@ -397,7 +399,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         int sendData_MPI_Tag = mpi_tag_base_*2+MyPID;
         MPI_Isend(send_bptr,
                   send_data_size,
-                  MPI_LONG_LONG_INT,
+                  ::Tpetra::Details::MpiTypeTraits<GO>::getType(send_bptr[0]),
                   ProcsFrom[ii],
                   sendData_MPI_Tag,
                   rawComm,
@@ -405,9 +407,12 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
         rawBreq[mpireq_idx++]=rawSequest;
     }
-    const int err = MPI_Waitall (rawBreq.size(),
-                                 rawBreq.getRawPtr(),
-                                 rawBstatus.getRawPtr());
+#ifdef HAVE_TPETRA_DEBUG
+    const int err =
+#endif
+      MPI_Waitall (rawBreq.size(),
+                   rawBreq.getRawPtr(),
+                   rawBstatus.getRawPtr());
 #ifdef HAVE_TPETRA_DEBUG
     if(err) {
         errstr <<MyPID<< "E3.r reverseNeighborDiscovery Mpi_Waitall error on receive ";
@@ -922,7 +927,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   // Make column Map
   const GST minus_one = Teuchos::OrdinalTraits<GST>::invalid ();
   colMap = rcp (new map_type (minus_one, ColIndices, domainMap.getIndexBase (),
-                              domainMap.getComm (), domainMap.getNode ()));
+                              domainMap.getComm ()));
 
   // Low-cost reindex of the matrix
   for (size_t i = 0; i < numMyRows; ++i) {

@@ -79,10 +79,12 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -90,8 +92,11 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -101,6 +106,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -122,7 +128,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
@@ -204,10 +209,12 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -215,8 +222,11 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -226,6 +236,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -247,7 +258,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = CHEBYSHEV})
@@ -329,10 +339,12 @@ Build (MueLu::CoordinatesTransferFactory_kokkos)
 Transferring coordinates
 write start = -1   [default]
 write end = -1   [default]
+structured aggregation = 0   [default]
 
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
 matrixmatrix: kernel params -> 
@@ -340,8 +352,11 @@ matrixmatrix: kernel params ->
 
 Build (MueLu::RepartitionHeuristicFactory)
 repartition: start level = 1
+repartition: node repartition level = -1   [default]
 repartition: min rows per proc = 2000
 repartition: target rows per proc = 0   [default]
+repartition: min rows per thread = 0   [default]
+repartition: target rows per thread = 0   [default]
 repartition: max imbalance = 1.327
 
 Build (MueLu::Zoltan2Interface)
@@ -351,6 +366,7 @@ repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
 repartition: remap accept partition = 1   [default]
+repartition: node repartition level = -1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
@@ -372,7 +388,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Max coarse size (<= 1000) achieved

@@ -365,7 +365,7 @@ namespace MueLu {
       }
 
       // amount of shared memory
-      size_t team_shmem_size( int team_size ) const {
+      size_t team_shmem_size( int /* team_size */ ) const {
         if (doQRStep) {
           int m = maxAggDofSize;
           int n = fineNS.extent(1);
@@ -403,7 +403,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
 
@@ -431,9 +431,9 @@ namespace MueLu {
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
     auto A             = Get< RCP<Matrix> >           (fineLevel, "A");
     auto aggregates    = Get< RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
@@ -514,7 +514,7 @@ namespace MueLu {
 
                                  auto aggregate = aggGraph.rowConst(i);
 
-                                 double sum = 0.0; // do not use Scalar here (Stokhos)
+                                 typename Teuchos::ScalarTraits<Scalar>::coordinateType sum = 0.0; // do not use Scalar here (Stokhos)
                                  for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
                                    sum += fineCoordsRandomView(aggregate(colID),j);
 
@@ -566,7 +566,6 @@ namespace MueLu {
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
-    typedef typename ATS::magnitudeType Magnitude;
     const SC zero = ATS::zero(), one = ATS::one();
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -955,8 +954,8 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  BuildPcoupled(RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const {
+  BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */, RCP<AmalgamationInfo> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
+                RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */, RCP<MultiVector>& /* coarseNullspace */) const {
     throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");
   }
 

@@ -46,7 +46,7 @@ public:
   //@{
   std::string description() const { return "Tempus::InterpolatorLagrange"; }
   void describe(Teuchos::FancyOStream &out,
-                const Teuchos::EVerbosityLevel verbLevel) const
+                const Teuchos::EVerbosityLevel /* verbLevel */) const
   { out << description() << "::describe" << std::endl; }
   //@}
 

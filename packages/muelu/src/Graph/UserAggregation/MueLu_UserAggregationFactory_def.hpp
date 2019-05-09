@@ -74,7 +74,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const { }
+  void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& /* currentLevel */) const { }
 
   /**
    * The function reads aggregate information from a file.

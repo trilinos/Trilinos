@@ -112,7 +112,7 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
 //-----------------------------------------------------------------------------
 
 bool
-BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vector & vec )
+BroydenOperator::initialize( Teuchos::ParameterList & inNlParams, const Epetra_Vector & vec )
 {
   stepVec  = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
   yieldVec = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
@@ -128,7 +128,7 @@ BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vec
   // user's expectations.  For now we will have to create rcp without
   // ownership.  What happens if a user write their own observer?
   Teuchos::RCP<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").set("Observer", me);
+  inNlParams.sublist("Solver Options").set("Observer", me);
 
   return true;
 }
@@ -144,9 +144,9 @@ const char* BroydenOperator::Label () const
   return label.c_str();
 }
 
-int BroydenOperator::SetUseTranspose(bool UseTranspose)
+int BroydenOperator::SetUseTranspose(bool use_transpose)
 {
-  return crsMatrix->SetUseTranspose(UseTranspose);
+  return crsMatrix->SetUseTranspose(use_transpose);
 }
 
 int BroydenOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -693,7 +693,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
       // Create a map for quick queries
       std::map<int, bool> removeIndTable;
       for( int k = 0; k < numRemoveIndices; ++k )
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
         removeIndTable[ graph.ColMap().GID(removeIndPtr[k]) ] = true;
+#else
+        removeIndTable[ graph.ColMap().GID64(removeIndPtr[k]) ] = true;
+#endif
 
       // Get our matrix column indices for the current row
       int numOrigIndices = 0;
@@ -715,7 +719,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 
         for( int k = 0; k < numOrigIndices; ++k )
         {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
           if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID(indPtr[k]) ) )
+#else
+          if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID64(indPtr[k]) ) )
+#endif
             inds.push_back(k);
         }
 
@@ -748,20 +756,31 @@ void
 BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 {
   double * values    ;
-  int    * indices   ;
   int     numEntries ;
   int     ierr       ;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int    * indices   ;
+#else
+  long long * indices    ;
+  long long   globalRow  ;
+#endif
 
   for( int row = 0; row < mat.NumMyRows(); ++row)
   {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     ierr = mat.ExtractMyRowView(row, numEntries, values, indices);
     ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
+#else
+    globalRow = mat.Map().GID64(row);
+    ierr = mat.ExtractGlobalRowView(globalRow, numEntries, values, indices);
+    ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
+#endif
     if( ierr )
     {
       std::cout << "ERROR (" << ierr << ") : "
-           << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
-           << " - Extract or Replace values error for row --> "
-           << row << std::endl;
+        << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
+        << " - Extract or Replace values error for row --> "
+        << row << std::endl;
       throw "NOX Broyden Operator Error";
     }
   }
@@ -770,6 +789,7 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 //-----------------------------------------------------------------------------
 
 #ifdef HAVE_NOX_DEBUG
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void
 BroydenOperator::outputActiveEntries()
@@ -813,4 +833,5 @@ BroydenOperator::outputActiveEntries()
 
 //-----------------------------------------------------------------------------
 
+#endif
 #endif

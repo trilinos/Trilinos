@@ -48,6 +48,7 @@
 */  
 
 #include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_ParameterListModifier.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_StringIndexedOrderedValueObjectContainer.hpp"
 #include "Teuchos_Assert.hpp"
@@ -172,10 +173,11 @@ public:
   //@{
 
   //! Constructor
-  ParameterList();
+  ParameterList() = default;
 
   //! Constructor that names the entire parameter list.
-  ParameterList(const std::string &name);
+  ParameterList(const std::string &name,
+      RCP<const ParameterListModifier> const& modifier = null);
   
   //! Copy constructor
   ParameterList(const ParameterList& source);
@@ -198,6 +200,10 @@ public:
   /// \note This also replaces the name returned by <tt>this->name()</tt>
   ParameterList& operator= (const ParameterList& source);
   
+  void setModifier(
+      RCP<const ParameterListModifier> const& modifier
+  );
+
   /** Set the parameters in <tt>source</tt>.
    *
    * This function will set the parameters and sublists from
@@ -228,6 +234,35 @@ public:
    */
   ParameterList& disableRecursiveValidation();
   
+  /** Disallow recursive modification when this sublist is used in a modified
+   * parameter list.
+   *
+   * This function should be called when setting a sublist in a modified
+   * parameter list which is broken off to be passed to another object.
+   * The other object should modify its own list.  The parameter list can
+   * still be modified using a direct call to its modify method.
+   */
+  ParameterList& disableRecursiveModification();
+
+  /** Disallow recursive reconciliation when this sublist is used in a
+   * reconciled parameter list.
+   *
+   * This function should be called when setting a sublist in a reconciled
+   * parameter list which is broken off to be passed to another object.
+   * The other object should reconcile its own list.  The parameter list can
+   * still be reconciled using a direct call to its reconcile method.
+   */
+  ParameterList& disableRecursiveReconciliation();
+
+  /** Disallow all recursive modification, validation, and reconciliation when
+   * this sublist is used in a parameter list.
+   *
+   * This function should be called when setting a sublist in a
+   * parameter list which is broken off to be passed to another object.
+   * The other object should handle its own list.
+   */
+  ParameterList& disableRecursiveAll();
+
   /*! \brief Set a parameter whose value has type T.
 
     \param name [in] The parameter's name.
@@ -282,6 +317,15 @@ public:
    * from XML. KL 7 August 2004 
    */
   ParameterList& setEntry(const std::string& name, const ParameterEntry& entry);
+
+  /** \brief Recursively attach a validator to parameters of type T.
+   *
+   * \param depth [in] Determines the number of levels of depth that the validator attachment
+   * will recurse into.
+   */
+  template<typename T>
+  void recursivelySetValidator(RCP<const ParameterEntryValidator> const& validator,
+      int const depth = 1000);
 
   //@}
   //! @name Get Functions 
@@ -435,6 +479,9 @@ public:
    *  it exists. */
   inline RCP<const ParameterEntry> getEntryRCP(const std::string& name) const;
 
+  //! \brief Return the optional modifier object
+  inline RCP<const ParameterListModifier> getModifier() const;
+
   //@}
 
   //! @name Parameter removal functions
@@ -468,8 +515,17 @@ public:
    *  thrown.
    */
   ParameterList& sublist(
-    const std::string& name, bool mustAlreadyExist = false
-    ,const std::string& docString = ""
+    const std::string& name, bool mustAlreadyExist = false,
+    const std::string& docString = ""
+    );
+
+  /*! \brief Creates an empty sublist with an optional \c modifier and returns
+   *  a reference to the sublist \c name.  If a list or parameter with the same
+   *  name already exists then an std::exception is thrown.
+   */
+  ParameterList& sublist(
+    const std::string& name, RCP<const ParameterListModifier> const& modifier,
+    const std::string& docString = ""
     );
   
   /*! \brief Return a const reference to an existing sublist \c name.  If the
@@ -662,6 +718,35 @@ public:
     int const depth = 1000
     );
 
+  /** \brief Modify the valid parameter list prior to validation.
+   *
+   * \param validModifiedParamList [in,out] The parameter list used as a template for validation.
+   *
+   * \param depth [in] Determines the number of levels of depth that the
+   * modification will recurse into.  A value of <tt>depth=0</tt> means that
+   * only the top level parameters and sublists will be checked.  Default:
+   * <tt>depth = large number</tt>.
+   *
+   * We loop over the valid parameter list in this modification routine.  This routine
+   * adds and/or removes fields in the valid parameter list to match the structure of the
+   * parameter list about to be validated.  After completion, both parameter lists should
+   * have the same fields or else an error will be thrown during validation.
+   */
+  void modifyParameterList(ParameterList &validParamList, int const depth = 1000);
+
+  /** \brief Reconcile a parameter list after validation
+   *
+   * \param validParamList [in,out] The parameter list used as a template for validation.
+   *
+   * \param left_to_right [in] Sweep through the parameter list tree from left to right.
+   *
+   * We loop through the valid parameter list in reverse breadth-first order in this reconciliation
+   * routine.  This routine assumes that the reconciliation routine won't create new sublists as it
+   * traverses the parameter list.
+   */
+  void reconcileParameterList(ParameterList &validParamList,
+      const bool left_to_right = true);
+
   //@}
   
 private: // Functions
@@ -691,7 +776,7 @@ private: // Functions
 private: // Data members
 
   //! Name of the (sub)list
-  std::string name_;
+  std::string name_ = "ANONYMOUS";
 
   //! Parameter list
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
@@ -705,8 +790,15 @@ private: // Data members
 //#endif
 
   //! Validate into list or not
-  bool disableRecursiveValidation_;
+  bool disableRecursiveValidation_ = false;
 
+  //! Modify into list or not
+  bool disableRecursiveModification_ = false;
+
+  //! Reconcile into list or not
+  bool disableRecursiveReconciliation_ = false;
+
+  RCP<const ParameterListModifier> modifier_ = null;
 };
 
 
@@ -794,6 +886,19 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
 {
   return !( list1 == list2 );
 }
+
+
+/** \brief Returns true if two parameter lists have the same modifiers.
+ *
+ * Recursively compares the modifiers in two parameter lists for equality.
+ *
+ * \relates ParameterList
+ */
+
+/// Return true if a modified parameter list has the same modifiers as the modified parameter
+/// list being used as input.
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameModifiers (const ParameterList& list1,
+    const ParameterList& list2);
 
 
 /** \brief Returns true if two parameter lists have the same values.
@@ -906,6 +1011,25 @@ ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntr
 {
   params_.setObj(name_in, entry_in);
   return *this;
+}
+
+
+template<typename T>
+void ParameterList::recursivelySetValidator(
+    RCP<const ParameterEntryValidator> const& validator, int const depth)
+{
+  ConstIterator itr;
+  for (itr = this->begin(); itr != this->end(); ++itr){
+    const std::string &entry_name = itr->first;
+    if (this->isSublist(entry_name) && depth > 0){
+      this->sublist(entry_name).recursivelySetValidator<T>(validator, depth - 1);
+    } else{
+      ParameterEntry *theEntry = this->getEntryPtr(entry_name);
+      if (theEntry->isType<T>()){
+        theEntry->setValidator(validator);
+      }
+    }
+  }
 }
 
 
@@ -1062,6 +1186,11 @@ ParameterList::getEntryRCP(const std::string& name_in) const
   }
   return null;
 }
+
+
+inline RCP<const ParameterListModifier>
+ParameterList::getModifier() const
+{ return modifier_; }
 
 
 // Attribute Functions
@@ -1396,6 +1525,42 @@ Array<T> getArrayFromStringParameter(
     "was not equal to the expected size arrayDim = " << arrayDim << "!"
     );
   return a;
+}
+
+
+/*! \relates ParameterList
+ * \brief Replace a parameter with an array containing the parameter.
+ *
+ * \param paramName [in] The name of the parameter to be placed in an array.
+ *
+ * \param newName [in] The name of the new parameter containing the old
+ * parameter in an array.
+ *
+ * \param pl [in,out] The parameter list \a pl containing \a paramName.
+ *
+ * \returns Returns <tt>true</tt> if the parameter \a paramName exists in \a pl.
+ */
+template<typename T>
+bool replaceParameterWithArray(const std::string &paramName, const std::string &newName,
+    ParameterList &pl)
+{
+  bool param_exists = false;
+  bool overwrite = false;
+  if (paramName == newName){
+    overwrite = true;
+  }
+  if (pl.isParameter(paramName)){
+    param_exists = true;
+    TEUCHOS_TEST_FOR_EXCEPTION(!pl.isType<T>(paramName), std::logic_error,
+        "The parameter " << paramName << " is not of type " << typeid(T).name());
+    TEUCHOS_TEST_FOR_EXCEPTION(pl.isParameter(newName) && !overwrite,
+        std::logic_error, "The parameter " << newName << " already exists in this "
+        "parameter list.");
+    Array<T> params = tuple<T>(pl.get<T>(paramName));
+    pl.remove(paramName);
+    pl.set(newName, params);
+  }
+  return param_exists;
 }
 
 

@@ -173,5 +173,10 @@ lib stk_ngp
     # builds only and will not be present for developer builds.
         <file>$(stk_ngp-root)/lib/libstk_ngp.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
   ;
 

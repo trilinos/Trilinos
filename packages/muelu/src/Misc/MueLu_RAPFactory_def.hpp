@@ -79,6 +79,7 @@ namespace MueLu {
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: triple product");
     SET_VALID_ENTRY("rap: fix zero diagonals");
+    SET_VALID_ENTRY("rap: relative diagonal floor");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",                   null, "Prolongator factory");
@@ -132,11 +133,9 @@ namespace MueLu {
 
       if (pL.get<bool>("rap: triple product") == false) {
         // Reuse pattern if available (multiple solve)
-        RCP<ParameterList> APparams;
+        RCP<ParameterList> APparams = rcp(new ParameterList);
         if(pL.isSublist("matrixmatrix: kernel params"))
-          APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-        else
-          APparams= rcp(new ParameterList);
+          APparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
         // By default, we don't need global constants for A*P
         APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
@@ -159,11 +158,9 @@ namespace MueLu {
         }
 
         // Reuse coarse matrix memory if available (multiple solve)
-        RCP<ParameterList> RAPparams;
-        if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-        else RAPparams= rcp(new ParameterList);
-
-
+        RCP<ParameterList> RAPparams = rcp(new ParameterList);
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
         if (coarseLevel.IsAvailable("RAP reuse data", this)) {
           GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
@@ -200,6 +197,12 @@ namespace MueLu {
           Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
                                       doFillComplete, doOptimizeStorage, labelstr+std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
         }
+
+        Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+        if(relativeFloor.size() > 0) {
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::RelativeDiagonalBoost(Ac, relativeFloor,GetOStream(Statistics2));
+        }
+
         bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
         bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
         if (checkAc || repairZeroDiagonals)
@@ -212,6 +215,7 @@ namespace MueLu {
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
+        if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
         APparams->set("graph", AP);
@@ -219,8 +223,9 @@ namespace MueLu {
         RAPparams->set("graph", Ac);
         Set(coarseLevel, "RAP reuse data", RAPparams);
       } else {
-        RCP<ParameterList> RAPparams;
-        RAPparams= rcp(new ParameterList);
+        RCP<ParameterList> RAPparams = rcp(new ParameterList);
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
         // We *always* need global constants for the RAP, but not for the temps
         RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
@@ -248,10 +253,18 @@ namespace MueLu {
                         doOptimizeStorage, labelstr+std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
                         RAPparams);
         }
+      
+        Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+        if(relativeFloor.size() > 0) {
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::RelativeDiagonalBoost(Ac, relativeFloor,GetOStream(Statistics2));
+        }
+
         bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
         bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
         if (checkAc || repairZeroDiagonals)
           Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1));
+
+
 
         if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
@@ -260,6 +273,7 @@ namespace MueLu {
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
+        if(!Ac.is_null()) {std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); Ac->setObjectLabel(oss.str());}
         Set(coarseLevel, "A",         Ac);
 
         // RAPparams->set("graph", Ac);

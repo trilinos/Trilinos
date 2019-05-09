@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for ex_check_valid_file_id, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_var_int, etc
 #include <inttypes.h>     // for PRId64
 #include <stdio.h>        // for snprintf, NULL
 
@@ -109,7 +108,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
     entryptr = VAR_ELEM_SS(set_id_ndx);
     extraptr = VAR_SIDE_SS(set_id_ndx);
   }
-  if (set_type == EX_ELEM_SET) {
+  else if (set_type == EX_ELEM_SET) {
     entryptr = VAR_ELEM_ELS(set_id_ndx);
     extraptr = NULL;
   }

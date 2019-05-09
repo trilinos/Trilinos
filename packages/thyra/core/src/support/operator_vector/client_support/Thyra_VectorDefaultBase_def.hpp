@@ -337,6 +337,8 @@ VectorDefaultBase<Scalar>::nonconstColImpl(Ordinal j)
 #endif
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( j != 0 );
+#else
+  (void)j;
 #endif
   return Teuchos::rcp(this,false);
 }
@@ -680,6 +682,8 @@ void VectorDefaultBase<Scalar>::validateColRng( const Range1D &col_rng ) const
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(
     !( col_rng.full_range() || ( col_rng.lbound() == 0 && col_rng.ubound() == 0) ) );
+#else
+  (void)col_rng;
 #endif
 }
 
@@ -691,6 +695,8 @@ void VectorDefaultBase<Scalar>::validateColIndexes(
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( cols.size() != 1 || cols[0] != 0 );
+#else
+  (void)cols;
 #endif
 }
 

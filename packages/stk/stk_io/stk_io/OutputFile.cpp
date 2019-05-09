@@ -103,8 +103,9 @@
 
 namespace stk {
 namespace io {
+namespace impl {
 
-impl::OutputFile::~OutputFile()
+OutputFile::~OutputFile()
 {
     if(m_region->get_state() == Ioss::STATE_TRANSIENT)
     {
@@ -114,7 +115,7 @@ impl::OutputFile::~OutputFile()
     delete m_multiStateSuffixes;
 }
 
-Ioss::DatabaseIO *impl::OutputFile::get_output_database()
+Ioss::DatabaseIO *OutputFile::get_output_database()
 {
     if(m_region.get() == nullptr) {
         return nullptr;
@@ -123,7 +124,7 @@ Ioss::DatabaseIO *impl::OutputFile::get_output_database()
     return m_region->get_database();
 }
 
-bool impl::OutputFile::set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes)
+bool OutputFile::set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes)
 {
     if(nullptr != m_multiStateSuffixes) {
         delete m_multiStateSuffixes;
@@ -134,7 +135,7 @@ bool impl::OutputFile::set_multistate_suffixes(std::vector<std::string>& multiSt
     return true;
 }
 
-void impl::OutputFile::setup_output_params(OutputParams &params) const
+void OutputFile::setup_output_params(OutputParams &params) const
 {
     bool sort_stk_parts_by_name = false;
 
@@ -158,7 +159,7 @@ void impl::OutputFile::setup_output_params(OutputParams &params) const
     params.set_additional_attribute_fields(m_additionalAttributeFields);
 }
 
-void impl::OutputFile::set_input_region(const Ioss::Region *input_region)
+void OutputFile::set_input_region(const Ioss::Region *input_region)
 {
     ThrowErrorMsgIf (m_region.get() == input_region,
                      "Attempting to set the input region to the output region");
@@ -166,7 +167,7 @@ void impl::OutputFile::set_input_region(const Ioss::Region *input_region)
     m_inputRegion = input_region;
 }
 
-void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data,
+void OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data,
                                          const std::vector<std::vector<int>> &attributeOrdering)
 {
     if ( m_meshDefined == false )
@@ -210,7 +211,7 @@ void internal_fill_output_entities_for_sideblock(stk::io::OutputParams& params, 
     fill_data_for_side_block(params, *ge, part, parent_topology, elem_side_ids, sides);
 }
 
-std::vector<stk::mesh::Entity> impl::OutputFile::get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name)
+std::vector<stk::mesh::Entity> OutputFile::get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name)
 {
     stk::mesh::Part *part = nullptr;
     const stk::mesh::MetaData& meta = bulk_data.mesh_meta_data();
@@ -263,12 +264,12 @@ std::vector<stk::mesh::Entity> impl::OutputFile::get_output_entities(const stk::
     return entities;
 }
 
-void impl::OutputFile::flush_output() const
+void OutputFile::flush_output() const
 {
     m_region->get_database()->flush_database();
 }
 
-void impl::OutputFile::add_attribute_field(stk::mesh::FieldBase &field, const OutputVariableParams &var)
+void OutputFile::add_attribute_field(stk::mesh::FieldBase &field, const OutputVariableParams &var)
 {
     const std::string &alternate_name = var.name();
 
@@ -307,7 +308,7 @@ void impl::OutputFile::add_attribute_field(stk::mesh::FieldBase &field, const Ou
     }
 }
 
-void impl::OutputFile::add_field(stk::mesh::FieldBase &field, const OutputVariableParams &var, stk::mesh::EntityRank var_type)
+void OutputFile::add_field(stk::mesh::FieldBase &field, const OutputVariableParams &var, stk::mesh::EntityRank var_type)
 {
     const std::string &alternate_name = var.name();
 
@@ -361,7 +362,7 @@ void impl::OutputFile::add_field(stk::mesh::FieldBase &field, const OutputVariab
     }
 }
 
-void impl::OutputFile::add_user_data(const std::vector<std::string>& partNames, const std::string &alternate_name, stk::io::DataLocation loc)
+void OutputFile::add_user_data(const std::vector<std::string>& partNames, const std::string &alternate_name, stk::io::DataLocation loc)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "Attempting to add fields after fields have already been written to the database.");
@@ -384,7 +385,7 @@ void impl::OutputFile::add_user_data(const std::vector<std::string>& partNames, 
 
 }
 
-void impl::OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
+void OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -394,12 +395,12 @@ void impl::OutputFile::add_global_ref(const std::string &name, const boost::any 
     m_globalAnyFields.emplace_back(name, value, type);
 }
 
-bool impl::OutputFile::has_global(const std::string &globalVarName) const
+bool OutputFile::has_global(const std::string &globalVarName) const
 {
     return m_region->field_exists(globalVarName);
 }
 
-void impl::OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
+void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -409,7 +410,7 @@ void impl::OutputFile::add_global(const std::string &name, const boost::any &val
     internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
 }
 
-void impl::OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
+void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -418,7 +419,7 @@ void impl::OutputFile::add_global(const std::string &globalVarName, Ioss::Field:
     internal_add_global(m_region, globalVarName, "scalar", dataType);
 }
 
-void impl::OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
+void OutputFile::add_global(const std::string &globalVarName, int component_count, Ioss::Field::BasicType dataType)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -427,7 +428,7 @@ void impl::OutputFile::add_global(const std::string &globalVarName, int componen
     internal_add_global(m_region, globalVarName, component_count, dataType);
 }
 
-void impl::OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
+void OutputFile::add_global(const std::string &globalVarName, const std::string &storage, Ioss::Field::BasicType dataType)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -436,33 +437,33 @@ void impl::OutputFile::add_global(const std::string &globalVarName, const std::s
     internal_add_global(m_region, globalVarName, storage, dataType);
 }
 
-void impl::OutputFile::write_global(const std::string &globalVarName,
+void OutputFile::write_global(const std::string &globalVarName,
                                     const boost::any &value, stk::util::ParameterType::Type type)
 {
     internal_write_parameter(m_region, globalVarName, value, type);
 }
 
-void impl::OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
+void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)
 {
     internal_write_global(m_region, globalVarName, globalVarData);
 }
 
-void impl::OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
+void OutputFile::write_global(const std::string &globalVarName, std::vector<int>& globalVarData)
 {
     internal_write_global(m_region, globalVarName, globalVarData);
 }
 
-void impl::OutputFile::write_global(const std::string &globalVarName, int globalVarData)
+void OutputFile::write_global(const std::string &globalVarName, int globalVarData)
 {
     internal_write_global(m_region, globalVarName, globalVarData);
 }
 
-void impl::OutputFile::write_global(const std::string &globalVarName, double globalVarData)
+void OutputFile::write_global(const std::string &globalVarName, double globalVarData)
 {
     internal_write_global(m_region, globalVarName, globalVarData);
 }
 
-void impl::OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
+void OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
                                          Ioss::PropertyManager &property_manager, char const* type,
                                          bool openFileImmediately)
 {
@@ -486,7 +487,7 @@ void impl::OutputFile::setup_output_file(const std::string &filename, stk::Paral
         m_appendingToMesh = true;
 }
 
-void impl::OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data,
+void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_data,
                                          const std::vector<std::vector<int>> &attributeOrdering)
 {
     if (!m_fieldsDefined) {
@@ -515,7 +516,7 @@ void impl::OutputFile::begin_output_step(double time, const stk::mesh::BulkData&
 //
 // To export the data to the database, call
 // process_output_request().
-void impl::OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data,
+void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data,
                                             const std::vector<std::vector<int>> &attributeOrdering)
 {
     if(m_fieldsDefined) {
@@ -592,7 +593,7 @@ void impl::OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data
     m_fieldsDefined = true;
 }
 
-int impl::OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data,
+int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data,
                                              const std::vector<std::vector<int>> &attributeOrdering)
 {
     ThrowErrorMsgIf(m_anyGlobalVariablesDefined,
@@ -608,7 +609,7 @@ int impl::OutputFile::process_output_request(double time, const stk::mesh::BulkD
     return m_currentOutputStep;
 }
 
-int impl::OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::FieldState *state)
+int OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::FieldState *state)
 {
     Ioss::Region *region = m_region.get();
     ThrowErrorMsgIf (region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
@@ -680,7 +681,7 @@ int impl::OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bul
     return m_currentOutputStep;
 }
 
-int impl::OutputFile::write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
+int OutputFile::write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
                                                                       std::vector<stk::mesh::Part*>& selectOutputElementParts,
                                                                       const stk::mesh::FieldState *state)
 {
@@ -707,12 +708,12 @@ int impl::OutputFile::write_defined_output_fields_for_selected_subset(const stk:
     return m_currentOutputStep;
 }
 
-void impl::OutputFile::end_output_step()
+void OutputFile::end_output_step()
 {
     m_region->end_state(m_currentOutputStep);
 }
 
-void impl::OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
@@ -720,7 +721,7 @@ void impl::OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_
     m_subsetSelector = my_selector;
 }
 
-void impl::OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
@@ -728,7 +729,7 @@ void impl::OutputFile::set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_
     m_sharedSelector = my_selector;
 }
 
-void impl::OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector)
+void OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: On region named " << m_region->name() <<
@@ -741,87 +742,88 @@ void impl::OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::
     m_outputSelector[rank] = my_selector;
 }
 
-bool impl::OutputFile::use_nodeset_for_block_nodes_fields() const
+bool OutputFile::use_nodeset_for_block_nodes_fields() const
 {
     return m_useNodesetForBlockNodesFields;
 }
 
-void impl::OutputFile::use_nodeset_for_block_nodes_fields(bool true_false)
+void OutputFile::use_nodeset_for_block_nodes_fields(bool flag)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The use_nodeset_for_block_nodes_fields setting cannot be changed after "
                     "the mesh has already been written.");
-    m_useNodesetForBlockNodesFields = true_false;
+    m_useNodesetForBlockNodesFields = flag;
 }
 
-bool impl::OutputFile::use_nodeset_for_sideset_nodes_fields() const
+bool OutputFile::use_nodeset_for_sideset_nodes_fields() const
 {
     return m_useNodesetForSidesetNodesFields;
 }
 
-void impl::OutputFile::use_nodeset_for_sideset_nodes_fields(bool true_false)
+void OutputFile::use_nodeset_for_sideset_nodes_fields(bool flag)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The use_nodeset_for_sideset_nodes_fields setting cannot be changed after "
                     "the mesh has already been written.");
-    m_useNodesetForSidesetNodesFields = true_false;
+    m_useNodesetForSidesetNodesFields = flag;
 }
 
-bool impl::OutputFile::check_field_existence_when_creating_nodesets() const
+bool OutputFile::check_field_existence_when_creating_nodesets() const
 {
     return m_checkFieldExistenceWhenCreatingNodesets;
 }
 
-void impl::OutputFile::check_field_existence_when_creating_nodesets(bool true_false)
+void OutputFile::check_field_existence_when_creating_nodesets(bool flag)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The check_field_existence_when_creating_nodesets setting cannot be changed after "
                     "the mesh has already been written.");
-    m_checkFieldExistenceWhenCreatingNodesets = true_false;
+    m_checkFieldExistenceWhenCreatingNodesets = flag;
 }
 
-bool impl::OutputFile::use_part_id_for_output() const
+bool OutputFile::use_part_id_for_output() const
 {
     return m_usePartIdForOutput;
 }
 
-void impl::OutputFile::use_part_id_for_output(bool true_false)
+void OutputFile::use_part_id_for_output(bool flag)
 {
     ThrowErrorMsgIf(m_meshDefined,
                     "ERROR: The use_part_id_for_output setting cannot be changed after "
                     "the mesh has already been written.");
-    m_usePartIdForOutput = true_false;
+    m_usePartIdForOutput = flag;
 }
 
-bool impl::OutputFile::has_ghosting() const
+bool OutputFile::has_ghosting() const
 {
     return m_hasGhosting;
 }
 
-void impl::OutputFile::has_ghosting(bool hasGhosting)
+void OutputFile::has_ghosting(bool hasGhosting)
 {
     m_hasGhosting = hasGhosting;
 }
 
-bool impl::OutputFile::has_adaptivity() const
+bool OutputFile::has_adaptivity() const
 {
     return m_hasAdaptivity;
 }
 
-void impl::OutputFile::has_adaptivity(bool hasAdaptivity)
+void OutputFile::has_adaptivity(bool hasAdaptivity)
 {
     m_hasAdaptivity = hasAdaptivity;
 }
 
-bool impl::OutputFile::is_skin_mesh() const
+bool OutputFile::is_skin_mesh() const
 {
     return m_isSkinMesh;
 }
 
-void impl::OutputFile::is_skin_mesh(bool skinMesh)
+void OutputFile::is_skin_mesh(bool skinMesh)
 {
     m_isSkinMesh = skinMesh;
 }
 
+} // namespace impl
 } // namespace io
 } // namespace stk

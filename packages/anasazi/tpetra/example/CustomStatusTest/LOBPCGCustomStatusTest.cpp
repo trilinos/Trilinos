@@ -270,8 +270,7 @@ main (int argc, char* argv[])
   }
 
   // Get the matrix
-  Teuchos::RCP<Tpetra::Map<>::node_type> node; // for type deduction
-  RCP<const CrsMatrix> A = Reader::readSparseFile (fileA, comm, node);
+  RCP<const CrsMatrix> A = Reader::readSparseFile (fileA, comm);
 
   // Create the folded operator, K = A^2
   RCP<FoldOp> K = rcp (new FoldOp (A));

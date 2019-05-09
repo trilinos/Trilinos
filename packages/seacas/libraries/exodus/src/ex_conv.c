@@ -47,7 +47,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_file_item, EX_FATAL, etc
-#include "netcdf.h"       // for nc_inq_format, nc_type, etc
 #include <stdio.h>
 #include <stdlib.h> // for NULL, free, malloc
 
@@ -87,7 +86,7 @@ void ex_check_valid_file_id(int exoid, const char *func)
   if (exoid <= 0) {
     error = 1;
   }
-#if !defined EXODUS_IN_SIERRA
+#if !defined BUILT_IN_SIERRA
   else {
     struct ex_file_item *file = ex_find_file_item(exoid);
 
@@ -159,11 +158,14 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
   EX_FUNC_ENTER();
 
   /* check to make sure machine word sizes are sane */
-  if ((sizeof(float) != 4 && sizeof(float) != 8) || (sizeof(double) != 4 && sizeof(double) != 8)) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported compute word size for file id: %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
+/* If the following line causes a compile-time error, then there is a problem
+ * which will cause exodus to not work correctly on this platform.
+ *
+ * Contact Greg Sjaardema, gdsjaar@sandia.gov for asisstance.
+ */
+#define CT_ASSERT(e) extern char(*ct_assert(void))[sizeof(char[1 - 2 * !(e)])]
+  CT_ASSERT((sizeof(float) == 4 || sizeof(float) == 8) &&
+            (sizeof(double) == 4 || sizeof(double) == 8));
 
   /* check to see if requested word sizes are valid */
   if (!*io_wordsize) {
@@ -411,7 +413,7 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
   case EX_OPT_COMPRESSION_TYPE: /* Currently not used. GZip by default */ break;
   case EX_OPT_COMPRESSION_LEVEL: /* 0 (disabled/fastest) ... 9 (best/slowest) */
     /* Check whether file type supports compression... */
-    if (file->file_type == 2 || file->file_type == 3) {
+    if (file->is_hdf5) {
       int value = option_value;
       if (value > 9) {
         value = 9;
@@ -481,4 +483,33 @@ int ex_is_parallel(int exoid)
   }
   /* Stored as 1 for parallel, 0 for serial or file-per-processor */
   EX_FUNC_LEAVE(file->is_parallel);
+}
+
+/*! ex_set_parallel() sets the parallel setting for a file.
+ * returns 1 (true) or 0 (false) depending on the current setting.
+ * Do not use this unless you know what you are doing and why you
+ * are doing it.  One use is if calling ex_get_partial_set() in a
+ * serial mode (proc 0 only) on a file opened in parallel.
+ * Make sure to reset the value to original value after done with
+ * special case...
+ * \param exoid  integer which uniquely identifies the file of interest.
+ * \param is_parallel 1 if parallel, 0 if serial.
+ */
+int ex_set_parallel(int exoid, int is_parallel)
+{
+  EX_FUNC_ENTER();
+  int                  old_value = 0;
+  struct ex_file_item *file      = ex_find_file_item(exoid);
+
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d", exoid);
+    ex_err(__func__, errmsg, EX_BADFILEID);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  old_value         = file->is_parallel;
+  file->is_parallel = is_parallel;
+  /* Stored as 1 for parallel, 0 for serial or file-per-processor */
+  EX_FUNC_LEAVE(old_value);
 }

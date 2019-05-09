@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,7 +36,7 @@ C=======================================================================
 
 C   --*** WRTCSV *** (XYPLOT) Write curve to CSV neutral file
 C   --
-C   --WRTCSV writes the data for a curve to a neutral file which is 
+C   --WRTCSV writes the data for a curve to a neutral file which is
 C   --in a comma-separated format. The first
 C   --time the routine is called, the neutral file is opened.
 C   --
@@ -60,7 +60,7 @@ C   --
 
       include 'params.blk'
       include 'tpvars.blk'
-      
+
       CHARACTER*2048 filnam, errmsg
       INTEGER NPTS(*)
       REAL PTS(MAXPTS,*)
@@ -70,7 +70,7 @@ C   --
 
       CHARACTER*(MAXLEG) LEGEND
       CHARACTER*(MXLNLN) PV
-      
+
       IF (.NOT. CSVOPN) THEN
         filnam = basenam(:lenstr(basenam)) // '.csv'
 
@@ -86,7 +86,7 @@ C      --Open the csv neutral file and write the title line
           GOTO 170
         END IF
         CSVOPN = .TRUE.
-        
+
       END IF
 
       legend = 'TIME'
@@ -95,7 +95,7 @@ C      --Open the csv neutral file and write the title line
       else
         n = 2
       end if
-      
+
       do i = n, ncrv+n-1
         call tplabv(0, itvid(i), names(itvid(i)), itvne(i), pv,
      *    MAPEL, MAPND)
@@ -139,5 +139,5 @@ C      --Open the csv neutral file and write the title line
  170  continue
       RETURN
       END
-      
-      
+
+

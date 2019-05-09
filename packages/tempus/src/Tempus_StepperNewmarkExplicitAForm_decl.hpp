@@ -10,19 +10,64 @@
 #define Tempus_StepperNewmarkExplicitAForm_decl_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_Stepper.hpp"
+#include "Tempus_StepperExplicit.hpp"
 
 namespace Tempus {
 
 
-/** \brief Newmark Explicit time stepper.  This is the specific case of the
- *  more general Newmark time stepper in the case this stepper is explicit (beta = 0).
- *  Newmark Explicit is hence an explicit time stepper (i.e., no solver used).
+/** \brief Newmark Explicit time stepper.
+ *
+ *  This is the specific case of the more general Newmark time stepper
+ *  where this stepper is explicit (\f$\beta = 0\f$) (i.e., no solver used).
+ *
+ *  The governing equation is solved by this stepper is
+ *  \f[
+ *    \mathbf{M}\, \ddot{\mathbf{x}} + \mathbf{C}\, \dot{\mathbf{x}}
+ *    + \mathbf{K}\, \mathbf{x} = \mathbf{F}(t)
+ *  \f]
+ *  For the A-form (i.e., solving for the acceleration,
+ *  \f$\mathbf{a} = \ddot{\mathbf{x}}\f$), we have the following explicit ODE
+ *  \f[
+ *     \mathbf{a} = -\mathbf{M}^{-1}\left[ \mathbf{C}\, \mathbf{v}
+ *    + \mathbf{K}\, \mathbf{d} - \mathbf{F}(t) \right]
+ *    = \bar{\mathbf{f}}(\mathbf{d}, \mathbf{v}, t)
+ *  \f]
+ *  where \f$\mathbf{v} = \dot{\mathbf{x}}\f$ and \f$\mathbf{d} = \mathbf{x}\f$.
+ *
+ *  <b> Algorithm </b>
+ *  The algorithm for the Newmark explicit A-form is
+ *   - if ( !useFSAL )
+ *     - \f$\mathbf{a}^{n-1} =
+ *          \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})\f$
+ *   - \f$\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                            + \Delta t^2 \mathbf{a}^{n-1} / 2\f$
+ *   - \f$\mathbf{v}^{\ast} =
+ *        \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}\f$
+ *   - \f$\mathbf{a}^{\ast} =
+ *        \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})\f$
+ *   - \f$\mathbf{d}^n = \mathbf{d}^{\ast}\f$
+ *   - \f$\mathbf{v}^n =
+ *        \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}\f$
+ *   - if ( useFSAL )
+ *     - \f$\mathbf{a}^n =
+ *          \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)\f$
+ *
+ *  The default for Forward Euler is to use FSAL (useFSAL=true).
  */
 template<class Scalar>
-class StepperNewmarkExplicitAForm : virtual public Tempus::Stepper<Scalar>
+class StepperNewmarkExplicitAForm
+  : virtual public Tempus::StepperExplicit<Scalar>
 {
 public:
+
+  /** \brief Default constructor.
+   *
+   *  - Constructs with a default ParameterList.
+   *  - Can reset ParameterList with setParameterList().
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+  */
+  StepperNewmarkExplicitAForm();
 
   /// Constructor
   StepperNewmarkExplicitAForm(
@@ -31,37 +76,22 @@ public:
 
   /// \name Basic stepper methods
   //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual void setNonConstModel(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return appModel_;}
-
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return Teuchos::null; }
-
     virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
+      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
+
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
-
     virtual std::string getStepperType() const
-     { return stepperPL_->get<std::string>("Stepper Type"); }
+     { return this->stepperPL_->template get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -72,8 +102,8 @@ public:
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
     virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
-      {return std::numeric_limits<Scalar>::max();}
+        const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
+      {return Scalar(1.0e+99);}
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
@@ -81,6 +111,8 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+
+    virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   /// \name ParameterList methods
@@ -115,31 +147,9 @@ public:
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
-
-private:
-
-  /// Default Constructor -- not allowed
-
-private:
-
-  /// Default Constructor -- not allowed
-  StepperNewmarkExplicitAForm();
-
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  /// Explicit ODE ModelEvaluator
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
-
   Scalar gamma_;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out_;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
-
 
 };
 } // namespace Tempus

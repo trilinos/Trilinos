@@ -11,7 +11,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_SerialComm.h"
+#if defined(EPETRA_MPI)
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif // defined(EPETRA_MPI)
 
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -144,7 +148,7 @@ TEUCHOS_UNIT_TEST(Ifpack2BlockRelaxation, Performance)
     auto tmat = create_testmat_t(tmap);
 
     myOut << "Create Epetra test matrix" << std::endl;
-#ifdef EPETRA_MPI
+#if defined(EPETRA_MPI)
     Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 #else
     Epetra_SerialComm ecomm;

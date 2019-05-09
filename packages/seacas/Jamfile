@@ -2,7 +2,7 @@
 # Copyright (c) 2006--2017, National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #     * Neither the name of NTESS nor the names of its contributors may
 #       be used to endorse or promote products derived from this
 #       software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -76,127 +76,87 @@ project votd
   : build-dir $(seacas-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files =
+  algebra
+  aprepro
+  aprepro_lib_test
+  blot_x11
+  blot_pst
+  blot_xcps
+  blot_cps
+  blot_met
+  fastq_x11
+  fastq_pst
+  fastq_xcps
+  fastq_cps
+  fastq_met
+  conjoin
+  ejoin
+  epu
+  exodiff
+  exomatlab
+  exo_format
+  exotxt
+  ex1ex2v2
+  ex2ex1v2
+  exo2mat
+  mat2exo
+  gen3d
+  genshell
+  grepos
+  gjoin
+  explore
+  mapvar
+  mapvar_kd
+  nem_slice
+  nem_spread
+  numbers
+  txtexo
+  io_shell
+  io_info
+  shell_to_hex
+  cth_pressure_map
+  struc_to_unstruc
+  $(seacas-root)/scripts/blot
+  $(seacas-root)/scripts/decomp
+  $(seacas-root)/scripts/grope
+  $(seacas-root)/scripts/fastq
+  /tpl/netcdf//ncdump
+  /tpl/netcdf//ncgen
+  /tpl/matio//matdump
+  /tpl/hdf5//h5diff
+  /tpl/hdf5//h5dump
+  /tpl/hdf5//h5debug
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files =
+  Utst_ioel
+  Utst_superelement
+  Utst_database_io
+  Utst_sort
+  Utst_map
+  Utst_structured_decomp
+  ;
+
 #
 # SECTION 2: Development install
 #
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
-
 alias install-targets
-  : algebra
-    aprepro
-    aprepro_lib_test
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    Utst_ioel
-    Utst_superelement
-    Utst_database_io
-    Utst_sort
-    Utst_map
-    Utst_structured_decomp
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
-  : <target-os>bgq
-  :
-  : <target-os>bgq
-  ;
-
-alias install-targets
-  : algebra
-    aprepro
-    aprepro_lib_test
-    blot_x11
-    blot_pst
-    blot_xcps
-    blot_cps
-    blot_met
-    fastq_x11
-    fastq_pst
-    fastq_xcps
-    fastq_cps
-    fastq_met
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    Utst_ioel
-    Utst_superelement
-    Utst_database_io
-    Utst_sort
-    Utst_map
-    Utst_structured_decomp
-    $(seacas-root)/scripts/blot
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    $(seacas-root)/scripts/fastq
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
 
 #
@@ -205,7 +165,13 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include2b install-user-include3 install-user-include4 install-user-include5 ;
+alias install-user-include : install-user-include0
+                             install-user-include1
+                             install-user-include2
+                             install-user-include2b
+                             install-user-include3
+                             install-user-include4
+                             install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -287,35 +253,6 @@ install install-user-lib
     nemesis
     exodus_for
     exoIIv2for32
-    mapvarlib
-    aprepro_lib
-    ioex
-    ioex_fac
-    iopx
-    iofx
-    io_info_lib
-    iocgns
-    iopg
-    iohb
-    iogn
-    iogs
-    ioinit
-    ioss
-    iotr
-    iovs
-  : <target-os>bgq <location>$(install-root)/seacas/lib
-  ;
-
-install install-user-lib
-  : suplib
-    suplib_c
-    suplib_cpp
-    plt
-    chaco
-    exodus
-    nemesis
-    exodus_for
-    exoIIv2for32
     blotlib
     fastqlib
     mapvarlib
@@ -338,110 +275,21 @@ install install-user-lib
   ;
 
 
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
 explicit install-user-bin ;
-
 install install-user-bin
-  : algebra
-    aprepro
-    aprepro_lib_test
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    $(seacas-root)/scripts/blot
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    $(seacas-root)/scripts/fastq
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
-  : <target-os>bgq <location>$(install-bin-dir)
-  ;
-
-install install-user-bin
-  : algebra
-    aprepro
-    aprepro_lib_test
-    blot_x11
-    blot_pst
-    blot_xcps
-    blot_cps
-    blot_met
-    fastq_x11
-    fastq_pst
-    fastq_xcps
-    fastq_cps
-    fastq_met
-    conjoin
-    ejoin
-    epu
-    exodiff
-    exomatlab
-    exo_format
-    exotxt
-    ex1ex2v2
-    ex2ex1v2
-    exo2mat
-    mat2exo
-    gen3d
-    genshell
-    grepos
-    gjoin
-    explore
-    mapvar
-    mapvar_kd
-    nem_slice
-    nem_spread
-    numbers
-    txtexo
-    io_shell
-    io_info
-    shell_to_hex
-    cth_pressure_map
-    struc_to_unstruc
-    $(seacas-root)/scripts/blot
-    $(seacas-root)/scripts/decomp
-    $(seacas-root)/scripts/grope
-    $(seacas-root)/scripts/fastq
-    /tpl/netcdf//nc_test
-    /tpl/netcdf//ncdump
-    /tpl/netcdf//ncgen
-    /tpl/matio//matdump
-    /tpl/hdf5//h5diff
-    /tpl/hdf5//h5dump
-    /tpl/hdf5//h5debug
-    /tpl/hdf5//testhdf5
-    /tpl/hdf5//testphdf5
-  : <location>$(install-bin-dir)
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Executables listed here will only installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like
+        # unittest to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
   ;
 
 explicit install-exe-targets ;
@@ -462,7 +310,7 @@ lib ioex
     ioss
     exodus
     /tpl/netcdf//netcdf
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -481,7 +329,7 @@ lib ioex_fac
     ioss
     iopx
     iofx
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -502,7 +350,7 @@ lib iopx
     /tpl/parmetis//parmetis
     exodus
     /tpl/netcdf//netcdf
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -520,7 +368,7 @@ lib iofx
     ioex
     exodus
     /tpl/netcdf//netcdf
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -540,14 +388,12 @@ lib io_info_lib
     ioinit
     iocgns
     /mpi//mpi
-  : <define>USE_CGNS
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libio_info_lib.a
     ]
-  :
-  : <define>USE_CGNS
   ;
 
 lib iopg
@@ -560,7 +406,7 @@ lib iopg
     ioss
     /mpi//mpi
     /tpl/trilinos//pamgen
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -578,7 +424,7 @@ lib iocgns
     ioss
     /mpi//mpi
     /tpl/cgns//cgns
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -595,7 +441,7 @@ lib iohb
     ]
     ioss
     /mpi//mpi
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -611,7 +457,7 @@ lib iogn
     ]
     ioss
     /mpi//mpi
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -628,7 +474,7 @@ lib iogs
     ]
     ioss
     /mpi//mpi
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -655,7 +501,7 @@ lib ioinit
     iotr
     iovs
     /mpi//mpi
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -673,14 +519,14 @@ lib ioss
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
     /mpi//mpi
-  : <define>SIERRA_PARALLEL_MPI
+  : <define>BUILT_IN_SIERRA
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libioss.a
     ]
   :
-  : <define>SIERRA_PARALLEL_MPI
+  : <define>BUILT_IN_SIERRA
   ;
 
 lib iotr
@@ -692,7 +538,7 @@ lib iotr
     ]
     ioss
     /mpi//mpi
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -759,7 +605,7 @@ lib exodus
         [ glob $(seacas-root)/libraries/exodus/src/deprecated/*.c ]
     ]
     /tpl/netcdf//netcdf
-  : <define>EXODUS_IN_SIERRA
+  : <define>BUILT_IN_SIERRA
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -772,7 +618,7 @@ lib exodus
         <file>$(sierra-root)/seacas/lib/libexodus.a
     ]
   :
-  : <define>EXODUS_IN_SIERRA
+  : <define>BUILT_IN_SIERRA
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -813,7 +659,7 @@ lib exodus_for
         addrwrap
     ]
     exodus
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -834,7 +680,7 @@ lib exodus_for
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -858,14 +704,14 @@ lib exodus_for
 
 
 lib exoIIv2for32
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         $(seacas-root)/libraries/exoIIv2for32/src/exo_jack_32.c
     ]
     exodus
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -879,7 +725,7 @@ lib exoIIv2for32
     ]
     <define>DEFAULT_REAL_INT
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -903,7 +749,7 @@ lib nemesis
         $(seacas-root)/libraries/nemesis/nemesis_wrapper.c
     ]
     exodus
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -915,7 +761,7 @@ lib nemesis
         <file>$(sierra-root)/seacas/lib/libnemesis.a
     ]
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -939,7 +785,7 @@ lib suplib
         [ glob $(seacas-root)/libraries/suplib/*.F ]
     ]
     supes
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -960,7 +806,7 @@ lib suplib
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-WF,-D__XLF__ -qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -989,7 +835,7 @@ lib suplib_cpp
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/suplib_cpp/*.C ]
     ]
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1001,7 +847,7 @@ lib suplib_cpp
         <include>$(sierra-root)/seacas/include
     ]
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1021,7 +867,7 @@ lib suplib_c
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/suplib_c/*.c ]
     ]
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1033,7 +879,7 @@ lib suplib_c
         <include>$(sierra-root)/seacas/include
     ]
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1054,7 +900,7 @@ lib plt
         [ glob $(seacas-root)/libraries/plt/*.[cfF] ]
     ]
     svdi_cgi
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1075,7 +921,7 @@ lib plt
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1107,7 +953,7 @@ lib svdi_cdr
         [ glob $(seacas-root)/libraries/svdi/cdr/*.F ]
         [ glob $(seacas-root)/libraries/svdi/cdr/*.c ]
     ]
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1128,7 +974,7 @@ lib svdi_cdr
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1170,7 +1016,7 @@ lib svdi_cgi
     ]
     svdi_cdr
     /tpl/operating_system//X11
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1191,7 +1037,7 @@ lib svdi_cgi
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1286,7 +1132,7 @@ lib blotlib
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(sierra-root)/seacas/lib/libblotlib.a
-    ] 
+    ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>clang,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1297,12 +1143,12 @@ lib blotlib
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <include>$(sierra-root)/seacas/include
-    ] 
+    ]
     <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
     <toolset>clang,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
@@ -1327,7 +1173,7 @@ lib fastqlib
     supes
     suplib
     plt
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -1343,7 +1189,7 @@ lib fastqlib
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
@@ -1370,7 +1216,7 @@ lib mapvarlib
     suplib
     exodus_for
     supes
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1391,7 +1237,7 @@ lib mapvarlib
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1423,7 +1269,7 @@ lib supes
         [ glob $(seacas-root)/libraries/supes/mem_mgr/*.f ]
         [ glob $(seacas-root)/libraries/supes/mem_mgr/*.F ]
     ]
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1444,7 +1290,7 @@ lib supes
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
   :
-  : 
+  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1472,7 +1318,7 @@ lib aprepro_lib
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ set.difference
-            [ glob $(seacas-root)/libraries/aprepro_lib/*.cc ] 
+            [ glob $(seacas-root)/libraries/aprepro_lib/*.cc ]
             [ glob $(seacas-root)/libraries/aprepro_lib/*.c ] :
             [ glob $(seacas-root)/libraries/aprepro_lib/apr_test.cc ]
             [ glob $(seacas-root)/libraries/aprepro_lib/strings.cc ]
@@ -1544,7 +1390,7 @@ lib chaco
     # builds only and will not be present for developer builds.
         <file>$(sierra-root)/seacas/lib/libchaco.a
     ]
- : 
+ :
  :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -1840,7 +1686,7 @@ exe io_shell
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
     ioinit
     /mpi//mpi
-  : <define>USE_CGNS
+  :
     <tag>@sierra-exec-tag
   ;
 
@@ -1849,7 +1695,7 @@ exe io_info
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
     io_info_lib
     /mpi//mpi
-  : <define>USE_CGNS
+  :
     <tag>@sierra-exec-tag
   ;
 
@@ -1917,7 +1763,7 @@ exe Utst_superelement
     ioex
   : <tag>@sierra-exec-tag
   ;
-  
+
 
 exe Utst_database_io
   :
@@ -2054,7 +1900,7 @@ fexe fastq_met
     <tag>@utility-exec-tag
   ;
 
-alias blot_exe : 
+alias blot_exe :
  blot_x11
  blot_xcps
  blot_cps

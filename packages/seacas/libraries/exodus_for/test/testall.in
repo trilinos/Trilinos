@@ -2,23 +2,23 @@
 # Copyright (c) 2005-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
-# 
+#
 #     * Redistributions in binary form must reproduce the above
 #       copyright notice, this list of conditions and the following
 #       disclaimer in the documentation and/or other materials provided
-#       with the distribution.  
-# 
+#       with the distribution.
+#
 #     * Neither the name of NTESS nor the names of its
 #       contributors may be used to endorse or promote products derived
 #       from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,7 +30,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 
 # script to run all tests and compare them to saved dump files.
 #
@@ -101,7 +101,7 @@ ${PREFIX} ${BINDIR}/f_testrdd${SUFFIX} | grep -v version | grep -v _FillValue | 
 # testwt2 - single precision write 2 files (simultaneously open) test
 echo "testwt2 ..."
 echo "begin testwt2" >> test.output
-${PREFIX} ${BINDIR}/f_testwt2${SUFFIX} >> test.output | grep -v "property name string" 
+${PREFIX} ${BINDIR}/f_testwt2${SUFFIX} >> test.output | grep -v "property name string"
 echo "end testwt2" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-1.dmp | tee testwt2-1.res
 ${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-2.dmp | tee testwt2-2.res

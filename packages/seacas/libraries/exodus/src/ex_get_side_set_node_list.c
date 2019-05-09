@@ -68,10 +68,10 @@
  */
 static int check_valid_side(size_t side_num, size_t max_sides, char *topology, int exoid)
 {
-  char errmsg[MAX_ERR_LENGTH];
-  int  err_stat = EX_NOERR;
+  int err_stat = EX_NOERR;
 
   if (side_num + 1 < 1 || side_num + 1 > max_sides) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid %s edge number %" ST_ZU " in file id %d",
              topology, side_num + 1, exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
@@ -632,7 +632,11 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       get_nodes(exoid, side_set_node_list, node_pos, connect, connect_offset);
       break;
     }
-    case EX_EL_TRUSS:
+    case EX_EL_TRUSS: { /* Sideset for truss is single node at either end of trus */
+      get_nodes(exoid, side_set_node_list, node_pos, connect, connect_offset + side_num);
+      break;
+    }
+
     case EX_EL_BEAM: { /* Note: no side-node lookup table is used for this
                           simple case */
       for (i = 0; i < num_nodes_per_elem; i++) {
@@ -1049,7 +1053,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
                   connect_offset + hex16_table[side_num][4] - 1);
         get_nodes(exoid, side_set_node_list, node_pos + 3, connect,
                   connect_offset + hex16_table[side_num][5] - 1);
-        if (side_num == 5 || side_num == 6) {
+        if (side_num + 1 == 5 || side_num + 1 == 6) {
           get_nodes(exoid, side_set_node_list, node_pos++, connect,
                     connect_offset + hex16_table[side_num][6] - 1);
           get_nodes(exoid, side_set_node_list, node_pos++, connect,

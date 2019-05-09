@@ -156,6 +156,12 @@ lib stk_search
     # builds only and will not be present for developer builds.
         <file>$(stk_search-root)/lib/libstk_search.a
     ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+    ]
+
   ;
 
 # We do not want to build stk_search_integration_tester in release

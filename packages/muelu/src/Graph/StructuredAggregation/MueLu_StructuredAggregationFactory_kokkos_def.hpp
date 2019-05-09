@@ -43,217 +43,219 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DEF_HPP_
-#define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DEF_HPP_
+#ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP
+#define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
-#include <climits>
-
+// Xpetra includes
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_CrsGraph.hpp>
 
-#include "MueLu_UncoupledAggregationFactory_kokkos_decl.hpp"
-
-#include "MueLu_OnePtAggregationAlgorithm_kokkos.hpp"
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos.hpp"
-
-#include "MueLu_AggregationPhase1Algorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase2aAlgorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase2bAlgorithm_kokkos.hpp"
-#include "MueLu_AggregationPhase3Algorithm_kokkos.hpp"
-
+// MueLu generic includes
 #include "MueLu_Level.hpp"
-#include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
-#include "MueLu_Utilities.hpp" // for sum_all and similar stuff...
+#include "MueLu_Utilities.hpp"
+
+// MueLu specific includes (kokkos version)
+#include "MueLu_LWGraph_kokkos.hpp"
+#include "MueLu_Aggregates_kokkos.hpp"
+#include "MueLu_IndexManager_kokkos.hpp"
+#include "MueLu_AggregationStructuredAlgorithm_kokkos.hpp"
+
+#include "MueLu_StructuredAggregationFactory_kokkos_decl.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::UncoupledAggregationFactory_kokkos()
-  : bDefinitionPhase_(true)
-  { }
+  StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  StructuredAggregationFactory_kokkos() : bDefinitionPhase_(true) { }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<const ParameterList> StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    // Aggregation parameters (used in aggregation algorithms)
-    // TODO introduce local member function for each aggregation algorithm such that each aggregation algorithm can define its own parameters
-
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("aggregation: max agg size");
-    SET_VALID_ENTRY("aggregation: min agg size");
-    SET_VALID_ENTRY("aggregation: max selected neighbors");
-    SET_VALID_ENTRY("aggregation: ordering");
-    validParamList->getEntry("aggregation: ordering").setValidator(
-      rcp(new validatorType(Teuchos::tuple<std::string>("natural", "graph", "random"), "aggregation: ordering")));
-    SET_VALID_ENTRY("aggregation: enable phase 1");
-    SET_VALID_ENTRY("aggregation: phase 1 algorithm");
-    SET_VALID_ENTRY("aggregation: enable phase 2a");
-    SET_VALID_ENTRY("aggregation: enable phase 2b");
-    SET_VALID_ENTRY("aggregation: enable phase 3");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
+    SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 #undef  SET_VALID_ENTRY
 
-    // general variables needed in AggregationFactory
-    validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
-    validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+    // general variables needed in StructuredAggregationFactory
+    validParamList->set<std::string>            ("aggregation: output type", "Aggregates",
+                                                 "Type of object holding the aggregation data: Aggregtes or CrsGraph");
+    validParamList->set<std::string>            ("aggregation: coarsening rate", "{3}",
+                                                 "Coarsening rate per spatial dimensions");
+    validParamList->set<int>                    ("aggregation: coarsening order", 0,
+                                                  "The interpolation order used to construct grid transfer operators based off these aggregates.");
 
-    // special variables necessary for OnePtAggregationAlgorithm
-    validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
-    validParamList->set< std::string >           ("OnePt aggregate map factory",      "", "Generating factory of (DOF) map for single node aggregates.");
-    //validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    NoFactory::getRCP(), "Generating factory of (DOF) map for single node aggregates.");
+    validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
+                                                 "Graph of the matrix after amalgamation but without dropping.");
+    validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
+                                                 "Number of degrees of freedom per mesh node, provided by the coalsce drop factory.");
+    validParamList->set<RCP<const FactoryBase> >("numDimensions",           Teuchos::null,
+                                                 "Number of spatial dimension provided by CoordinatesTransferFactory.");
+    validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
+                                                 "Number of nodes per spatial dimmension provided by CoordinatesTransferFactory.");
 
     return validParamList;
-  }
+  } // GetValidParameterList()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
+  void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
     Input(currentLevel, "DofsPerNode");
 
-    const ParameterList& pL = GetParameterList();
-
-    // request special data necessary for OnePtAggregationAlgorithm
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
-    if (mapOnePtName.length() > 0) {
-      std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
-      if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
-        currentLevel.DeclareInput(mapOnePtName, NoFactory::get());
+    // Request the local number of nodes per dimensions
+    if(currentLevel.GetLevelID() == 0) {
+      if(currentLevel.IsAvailable("numDimensions", NoFactory::get())) {
+        currentLevel.DeclareInput("numDimensions", NoFactory::get(), this);
       } else {
-        RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
-        currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
+        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("numDimensions", NoFactory::get()),
+                                   Exceptions::RuntimeError,
+                                   "numDimensions was not provided by the user on level0!");
       }
+      if(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get())) {
+        currentLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
+                                   Exceptions::RuntimeError,
+                                   "lNodesPerDim was not provided by the user on level0!");
+      }
+    } else {
+      Input(currentLevel, "lNodesPerDim");
+      Input(currentLevel, "numDimensions");
     }
-  }
+  } // DeclareInput()
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UncoupledAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
+  void StructuredAggregationFactory_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
+
+    RCP<Teuchos::FancyOStream> out;
+    if(const char* dbg = std::getenv("MUELU_STRUCTUREDAGGREGATION_DEBUG")) {
+      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setShowAllFrontMatter(false).setShowProcRank(true);
+    } else {
+      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+    }
+
+    typedef typename LWGraph_kokkos::local_graph_type::device_type::execution_space execution_space;
+    typedef typename LWGraph_kokkos::local_graph_type::device_type::memory_space memory_space;
+
+    *out << "Entering structured aggregation" << std::endl;
 
     ParameterList pL = GetParameterList();
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
-    if (pL.get<int>("aggregation: max agg size") == -1)
-      pL.set("aggregation: max agg size", INT_MAX);
+    // General problem informations are gathered from data stored in the problem matix.
+    RCP<const LWGraph_kokkos> graph = Get<RCP<LWGraph_kokkos> >(currentLevel, "Graph");
+    RCP<const Map> fineMap          = graph->GetDomainMap();
+    const int myRank                = fineMap->getComm()->getRank();
+    const LO  dofsPerNode           = Get<LO>(currentLevel, "DofsPerNode");
 
-    // define aggregation algorithms
-    RCP<const FactoryBase> graphFact = GetFactory("Graph");
-
-    // TODO Can we keep different aggregation algorithms over more Build calls?
-    algos_.clear();
-    algos_.push_back(rcp(new PreserveDirichletAggregationAlgorithm_kokkos(graphFact)));
-    if (pL.get<bool>("aggregation: allow user-specified singletons") == true)   algos_.push_back(rcp(new OnePtAggregationAlgorithm_kokkos             (graphFact)));
-    if (pL.get<bool>("aggregation: enable phase 1" )                 == true)   algos_.push_back(rcp(new AggregationPhase1Algorithm_kokkos            (graphFact)));
-    if (pL.get<bool>("aggregation: enable phase 2a")                 == true)   algos_.push_back(rcp(new AggregationPhase2aAlgorithm_kokkos           (graphFact)));
-    if (pL.get<bool>("aggregation: enable phase 2b")                 == true)   algos_.push_back(rcp(new AggregationPhase2bAlgorithm_kokkos           (graphFact)));
-    if (pL.get<bool>("aggregation: enable phase 3" )                 == true)   algos_.push_back(rcp(new AggregationPhase3Algorithm_kokkos            (graphFact)));
-
-    std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
-    RCP<Map> OnePtMap = Teuchos::null;
-    if (mapOnePtName.length()) {
-      std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
-      if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
-        OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, NoFactory::get());
-      } else {
-        RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
-        OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, mapOnePtFact.get());
-      }
-    }
-
-    RCP<const LWGraph_kokkos> graph = Get< RCP<LWGraph_kokkos> >(currentLevel, "Graph");
-
-    // Build
-    RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(*graph));
-    aggregates->setObjectLabel("UC");
-
-    const LO numRows = graph->GetNodeNumVertices();
-
-    // construct aggStat information
-    std::vector<unsigned> aggStat(numRows, READY);
-
-    // TODO
-    //ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
-    ArrayRCP<const bool> dirichletBoundaryMap;
-
-    if (dirichletBoundaryMap != Teuchos::null)
-      for (LO i = 0; i < numRows; i++)
-        if (dirichletBoundaryMap[i] == true)
-          aggStat[i] = BOUNDARY;
-
-    LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
-    GO indexBase = graph->GetDomainMap()->getIndexBase();
-    if (OnePtMap != Teuchos::null) {
-      for (LO i = 0; i < numRows; i++) {
-        // reconstruct global row id (FIXME only works for contiguous maps)
-        GO grid = (graph->GetDomainMap()->getGlobalElement(i)-indexBase) * nDofsPerNode + indexBase;
-
-        for (LO kr = 0; kr < nDofsPerNode; kr++)
-          if (OnePtMap->isNodeGlobalElement(grid + kr))
-            aggStat[i] = ONEPT;
-      }
+    // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
+    // obtain a nodeMap.
+    const int interpolationOrder = pL.get<int>("aggregation: coarsening order");
+    std::string outputType = pL.get<std::string>("aggregation: output type");
+    const bool outputAggregates = (outputType == "Aggregates" ? true : false);
+    Array<LO> lFineNodesPerDir(3);
+    int numDimensions;
+    if(currentLevel.GetLevelID() == 0) {
+      // On level 0, data is provided by applications and has no associated factory.
+      lFineNodesPerDir = currentLevel.Get<Array<LO> >("lNodesPerDim", NoFactory::get());
+      numDimensions    = currentLevel.Get<int>("numDimensions", NoFactory::get());
+    } else {
+      // On level > 0, data is provided directly by generating factories.
+      lFineNodesPerDir = Get<Array<LO> >(currentLevel, "lNodesPerDim");
+      numDimensions    = Get<int>(currentLevel, "numDimensions");
     }
 
 
-    const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
-    GO numGlobalRows = 0;
-    if (IsPrint(Statistics1))
-      MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
-
-    LO numNonAggregatedNodes = numRows;
-    GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
-    for (size_t a = 0; a < algos_.size(); a++) {
-      std::string phase = algos_[a]->description();
-      SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
-
-      int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-      algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
-      algos_[a]->SetProcRankVerbose(oldRank);
-
-      if (IsPrint(Statistics1)) {
-        GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
-        GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
-        MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        MueLu_sumAll(comm, numLocalAggs,       numGlobalAggs);
-
-        double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
-        if (aggPercent > 99.99 && aggPercent < 100.00) {
-          // Due to round off (for instance, for 140465733/140466897), we could
-          // get 100.00% display even if there are some remaining nodes. This
-          // is bad from the users point of view. It is much better to change
-          // it to display 99.99%.
-          aggPercent = 99.99;
-        }
-        GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
-                                   << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
-                                   << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
-                                   << "  aggregates : " << numGlobalAggs-numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
-        numGlobalAggregatedPrev = numGlobalAggregated;
-        numGlobalAggsPrev       = numGlobalAggs;
+    // First make sure that input parameters are set logically based on dimension
+    for(int dim = 0; dim < 3; ++dim) {
+      if(dim >= numDimensions) {
+        lFineNodesPerDir[dim] = 1;
       }
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
+    // Get the coarsening rate
+    std::string coarseningRate = pL.get<std::string>("aggregation: coarsening rate");
+    Teuchos::Array<LO> coarseRate;
+    try {
+      coarseRate = Teuchos::fromStringToArray<LO>(coarseningRate);
+    } catch(const Teuchos::InvalidArrayStringRepresentation e) {
+      GetOStream(Errors,-1) << " *** \"aggregation: coarsening rate\" must be a string convertible into an array! *** "
+                            << std::endl;
+      throw e;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION((coarseRate.size() > 1) && (coarseRate.size() < numDimensions),
+                               Exceptions::RuntimeError,
+                               "\"aggregation: coarsening rate\" must have at least as many"
+                               " components as the number of spatial dimensions in the problem.");
 
-    aggregates->AggregatesCrossProcessors(false);
-    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
+    // Now that we have extracted info from the level, create the IndexManager
+    RCP<IndexManager_kokkos> geoData = rcp(new IndexManager_kokkos(numDimensions,
+                                                                   interpolationOrder, myRank,
+                                                                   lFineNodesPerDir,
+                                                                   coarseRate));
 
-    Set(currentLevel, "Aggregates", aggregates);
+    *out << "The index manager has now been built" << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
+                               != static_cast<size_t>(geoData->getNumLocalFineNodes()),
+                               Exceptions::RuntimeError,
+                               "The local number of elements in the graph's map is not equal to "
+                               "the number of nodes given by: lNodesPerDim!");
 
-    GetOStream(Statistics1) << aggregates->description() << std::endl;
-  }
+    // Now we are ready for the big loop over the fine node that will assign each
+    // node on the fine grid to an aggregate and a processor.
+    RCP<AggregationStructuredAlgorithm_kokkos> myStructuredAlgorithm
+      = rcp(new AggregationStructuredAlgorithm_kokkos());
+
+    if(interpolationOrder == 0 && outputAggregates){
+      RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(graph->GetDomainMap()));
+      aggregates->setObjectLabel("ST");
+      aggregates->SetIndexManager(geoData);
+      aggregates->AggregatesCrossProcessors(false);
+      aggregates->SetNumAggregates(geoData->getNumCoarseNodes());
+
+      LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
+      Kokkos::View<unsigned*, memory_space> aggStat("aggStat", numNonAggregatedNodes);
+      Kokkos::parallel_for("StructuredAggregation: initialize aggStat",
+                           Kokkos::RangePolicy<execution_space>(0, numNonAggregatedNodes),
+                           KOKKOS_LAMBDA(const LO nodeIdx) {aggStat(nodeIdx) = READY;});
+
+      myStructuredAlgorithm->BuildAggregates(pL, *graph, *aggregates, aggStat,
+                                             numNonAggregatedNodes);
+
+      *out << "numNonAggregatedNodes: " << numNonAggregatedNodes << std::endl;
+
+      TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
+                                 "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
+      aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
+      GetOStream(Statistics1) << aggregates->description() << std::endl;
+      Set(currentLevel, "Aggregates", aggregates);
+
+    } else {
+      // Create Coarse Data
+      RCP<CrsGraph> myGraph;
+      myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph);
+      Set(currentLevel, "prolongatorGraph", myGraph);
+    }
+
+    Set(currentLevel, "lCoarseNodesPerDim",       geoData->getCoarseNodesPerDirArray());
+    Set(currentLevel, "indexManager",             geoData);
+    Set(currentLevel, "interpolationOrder",       interpolationOrder);
+    Set(currentLevel, "numDimensions",            numDimensions);
+
+  } // Build()
 
 } //namespace MueLu
 
 #endif // HAVE_MUELU_KOKKOS_REFACTOR
-#endif /* MUELU_UNCOUPLEDAGGREGATIONFACTORY_DEF_HPP_ */
+#endif /* MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DEF_HPP */

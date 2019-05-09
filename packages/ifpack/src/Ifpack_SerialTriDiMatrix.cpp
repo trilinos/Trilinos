@@ -377,10 +377,10 @@ int Ifpack_SerialTriDiMatrix::Scale(double ScalarA) {
 }
 
 // //=========================================================================
-int Ifpack_SerialTriDiMatrix::Multiply (char TransA, char TransB, double ScalarAB,
-                                        const Ifpack_SerialTriDiMatrix& A_in,
-                                        const Ifpack_SerialTriDiMatrix& B,
-                                        double ScalarThis ) {
+int Ifpack_SerialTriDiMatrix::Multiply (char /* TransA */, char /* TransB */, double /* ScalarAB */,
+                                        const Ifpack_SerialTriDiMatrix& /* A_in */,
+                                        const Ifpack_SerialTriDiMatrix& /* B */,
+                                        double /* ScalarThis */ ) {
   throw ReportError("Ifpack_SerialTriDiMatrix::Multiply not implimented ",-2);
   // return(-1); // unreachable
 }

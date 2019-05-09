@@ -135,7 +135,7 @@ namespace FROSch {
             GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
             sortunique(tmpDirichletBoundaryDofs);            
             this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
-            this->DDInterface_->sortEntities(nodeList);
+            this->DDInterface_->sortVerticesEdgesFaces(nodeList);
         }
         return 0;
     }
@@ -147,7 +147,7 @@ namespace FROSch {
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             this->DDInterface_->divideUnconnectedEntities(matrix);
         }
-        this->DDInterface_->sortEntities(nodeList);
+        this->DDInterface_->sortVerticesEdgesFaces(nodeList);
         
         return 0;
     }
@@ -158,8 +158,7 @@ namespace FROSch {
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
-        
-        
+                
         // Maps
         LO numVerticesGlobal;
         if (UseVertices_) {

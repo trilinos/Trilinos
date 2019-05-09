@@ -317,6 +317,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${CRSMATRIX_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::FECrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(FECRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "FECrsMatrix" "FECRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${FECRSMATRIX_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::RowMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(ROWMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "RowMatrix" "ROWMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${ROWMATRIX_OUTPUT_FILES})
@@ -328,6 +332,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockCrsMatrix" "EXPERIMENTAL_BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::Experimental::BlockMultiVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKMULTIVECTOR_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Experimental_BlockMultiVector" "EXPERIMENTAL_BLOCKMULTIVECTOR" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${BLOCKMULTIVECTOR_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::Experimental::BlockCrsMatrix helpers.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_HELPER_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl"
@@ -377,6 +385,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "computeRowAndColumnOneNorms" "COMPUTEROWANDCOLUMNONENORMS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::replaceDiagonalCrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "replaceDiagonalCrsMatrix" "REPLACEDIAGONALCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES})
+
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
 
@@ -398,9 +410,9 @@ SET_PROPERTY(
   )
 
 #
-# Make a trivial change to this comment if you add / remove a file
-# either to / from this directory, or to / from the 'impl'
-# subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.  Here is another change,
-# and here is another one.
+# Make a trivial change to this comment if you add / remove a file either to
+# / from this directory, or to / from the 'impl' subdirectory.  That ensures
+# that running "make" will also rerun CMake in order to regenerate Makefiles.
+#
+# Here is another such change.  Verily, I make yet another change.  Another!
 #

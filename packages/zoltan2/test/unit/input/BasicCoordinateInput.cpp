@@ -124,10 +124,12 @@ int main(int narg, char *arg[])
 
   typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> mv_t;
   RCP<UserInputForTests> uinput;
-  std::string fname("simple");
+  Teuchos::ParameterList params;
+  params.set("input file", "simple");
+  params.set("file type", "Chaco");
 
   try{
-    uinput = rcp(new UserInputForTests(testDataFilePath, fname, comm, true));
+    uinput = rcp(new UserInputForTests(params, comm));
   }
   catch(std::exception &e){
     fail=1;

@@ -274,7 +274,7 @@ namespace Belos {
     /*! \brief This routine casts the MultiVec to GmresPolyMv to retrieve the MV.  Then the above
         apply method is called.
     */
-    void Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y, ETrans trans=NOTRANS ) const 
+    void Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y, ETrans /* trans */=NOTRANS ) const
     {
       const GmresPolyMv<ScalarType,MV>& x_in = dynamic_cast<const GmresPolyMv<ScalarType,MV>&>(x);
       GmresPolyMv<ScalarType,MV>& y_in = dynamic_cast<GmresPolyMv<ScalarType,MV>&>(y);

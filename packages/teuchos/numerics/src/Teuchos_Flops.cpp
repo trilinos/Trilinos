@@ -53,7 +53,7 @@ Flops::Flops(void) : flops_(0.0)
 
 // 2007/11/26: rabartl: Below, is it correct that flops_in does not have its
 // flops copied into the data member flops_?
-Flops::Flops(const Flops& flops_in) : flops_(0.0)
+Flops::Flops(const Flops& /* flops_in */) : flops_(0.0)
 {
 }
 

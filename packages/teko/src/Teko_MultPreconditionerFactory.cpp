@@ -51,7 +51,7 @@ namespace Teko {
 using Teuchos::RCP;
 
 void MultPrecsLinearOp::implicitApply(const Teko::BlockedMultiVector & r, Teko::BlockedMultiVector & y,
-                     const double alpha, const double beta) const 
+                     const double /* alpha */, const double /* beta */) const 
 { 
    // Casting is a bit delicate. We basically use 
    //

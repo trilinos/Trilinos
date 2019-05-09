@@ -260,16 +260,13 @@ private:
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
 
 public:
-  Gmres () :
-    Krylov<SC, MV, OP>::Krylov ()
-  {}
+  Gmres () = default;
 
   Gmres (const Teuchos::RCP<const OP>& A) :
     Krylov<SC, MV, OP>::Krylov (A)
   {}
 
-  virtual ~Gmres()
-  {}
+  virtual ~Gmres () = default;
 
   virtual void
   getParameters (Teuchos::ParameterList& params,

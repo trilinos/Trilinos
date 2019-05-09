@@ -15,7 +15,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
     long long * proc_ids,
     long long * data_array,
     long long num_comm_pairs,
-    long long  rank)
+    long long  /* rank */)
   /*****************************************************************************/
 {
 #ifdef HAVE_MPI
@@ -77,7 +77,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
 /*****************************************************************************/
 void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity * > > & topo_entities,
     long long * proc_ids,
-    long long  rank)
+    long long  /* rank */)
   /*****************************************************************************/
 {
 #ifdef HAVE_MPI
@@ -259,6 +259,8 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
   aname << rank;
   aname << ".txt";
   ofstream fout(aname.str().c_str());
+#else
+  (void)fname_string;
 #endif
 
   //need to sort the edges_or_face vectors by their sorted global node ids

@@ -51,12 +51,14 @@ inline const std::string IOSS_VECTOR_2D() { return std::string("vector_2d"); }
 inline const std::string IOSS_VECTOR_3D() { return std::string("vector_3d"); }
 inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33"); }
 
-#if defined(SIERRA_PARALLEL_MPI)
+#if defined(BUILT_IN_SIERRA)
 #define SEACAS_HAVE_MPI
-#define NO_DATAWAREHOUSE_SUPPORT
 /* #undef IOSS_THREADSAFE */
 /* #undef SEACAS_HAVE_KOKKOS */
+/* #undef SEACAS_HAVE_DATAWAREHOUSE */
+#define SEACAS_HAVE_EXODUS
 #define SEACAS_HAVE_CGNS
+#define SEACAS_HAVE_PAMGEN
 #define PARALLEL_AWARE_EXODUS
 #else
 #include <SEACASIoss_config.h>

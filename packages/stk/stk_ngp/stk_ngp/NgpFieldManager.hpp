@@ -46,71 +46,100 @@ namespace ngp {
 class FieldManager
 {
 public:
-  FieldManager(stk::mesh::BulkData & bulk)
-    : m_bulk(bulk)
+  FieldManager()
+    : m_bulk(nullptr)
   {
-    m_fields.resize(m_bulk.mesh_meta_data().get_fields().size(), nullptr);
+  }
+
+  FieldManager(const stk::mesh::BulkData & bulk)
+    : m_bulk(&bulk)
+  {
+    m_fields.resize(m_bulk->mesh_meta_data().get_fields().size(), nullptr);
   }
 
   ~FieldManager() {
-    for ( ngp::FieldBase * field : m_fields) {
-      delete field;
-    }
+    clear_fields();
   }
 
-  void add_fields( const std::vector<stk::mesh::FieldBase*> & fields ) {
-    if (m_bulk.mesh_meta_data().get_fields().size() != m_fields.size()) {
-      m_fields.resize(m_bulk.mesh_meta_data().get_fields().size());
+  FieldManager & operator=(const FieldManager & rhs) {
+    if (this != &rhs) {
+      clear_fields();
+      m_bulk = rhs.m_bulk;
+      m_fields = rhs.m_fields;
     }
-
-    for (stk::mesh::FieldBase * field : fields) {
-      const unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
-
-      if (field->type_is<double>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<double>(m_bulk, *field);
-      }
-      else if (field->type_is<int>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<int>(m_bulk, *field);
-      }
-      else if (field->type_is<unsigned int>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<unsigned int>(m_bulk, *field);
-      }
-      else if (field->type_is<long>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<long>(m_bulk, *field);
-      }
-      else if (field->type_is<unsigned long>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<unsigned long>(m_bulk, *field);
-      }
-      else if (field->type_is<long long>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<long long>(m_bulk, *field);
-      }
-      else if (field->type_is<unsigned long long>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<unsigned long long>(m_bulk, *field);
-      }
-      else if (field->type_is<short>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<short>(m_bulk, *field);
-      }
-      else if (field->type_is<unsigned short>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<unsigned short>(m_bulk, *field);
-      }
-      else if (field->type_is<float>()) {
-        m_fields[fieldOrdinal] = new ngp::Field<float>(m_bulk, *field);
-      }
-      else {
-        ThrowErrorMsg("Unsupported Field type: '" << field->data_traits().name << "'");
-      }
-    }
+    return *this;
   }
+
+  FieldManager(const FieldManager & rhs) = default;
 
   template <typename T>
   ngp::Field<T> & get_field(unsigned fieldOrdinal) const {
-    return *dynamic_cast<ngp::Field<T>*>(m_fields[fieldOrdinal]);
+    ThrowRequireMsg(m_bulk != nullptr, "FieldManager ERROR, m_bulk is null.");
+    if (m_bulk->mesh_meta_data().get_fields().size() != m_fields.size()) {
+      m_fields.resize(m_bulk->mesh_meta_data().get_fields().size(), nullptr);
+    }
+    ThrowRequireMsg(fieldOrdinal < m_fields.size(), "Invalid field ordinal (" << fieldOrdinal << ").  Only have " << m_fields.size() << " fields.");
+
+    if (m_fields[fieldOrdinal] == nullptr) {
+      construct_ngp_field(fieldOrdinal);
+    }
+
+    ngp::Field<T> * returnField = dynamic_cast<ngp::Field<T>*>(m_fields[fieldOrdinal]);
+    ThrowRequireMsg(returnField != nullptr, "Calling get_field() with the wrong data type for field '"
+                                             << m_bulk->mesh_meta_data().get_fields()[fieldOrdinal]->name() << "'");
+    return *returnField;
   }
 
+  const stk::mesh::BulkData& get_bulk() const {return *m_bulk;}
 
 private:
-  stk::mesh::BulkData & m_bulk;
-  std::vector<ngp::FieldBase*> m_fields;
+  void construct_ngp_field( stk::mesh::Ordinal fieldOrdinal ) const {
+    stk::mesh::FieldBase & field = *(m_bulk->mesh_meta_data().get_fields()[fieldOrdinal]);
+
+    if (field.type_is<double>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<double>(*m_bulk, field);
+    }
+    else if (field.type_is<int>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<int>(*m_bulk, field);
+    }
+    else if (field.type_is<unsigned int>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<unsigned int>(*m_bulk, field);
+    }
+    else if (field.type_is<long>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<long>(*m_bulk, field);
+    }
+    else if (field.type_is<unsigned long>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<unsigned long>(*m_bulk, field);
+    }
+    else if (field.type_is<long long>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<long long>(*m_bulk, field);
+    }
+    else if (field.type_is<unsigned long long>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<unsigned long long>(*m_bulk, field);
+    }
+    else if (field.type_is<short>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<short>(*m_bulk, field);
+    }
+    else if (field.type_is<unsigned short>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<unsigned short>(*m_bulk, field);
+    }
+    else if (field.type_is<float>()) {
+      m_fields[fieldOrdinal] = new ngp::Field<float>(*m_bulk, field);
+    }
+    else {
+      ThrowErrorMsg("Unsupported Field type: '" << field.data_traits().name << "'");
+    }
+  }
+
+  void clear_fields() {
+    for ( ngp::FieldBase * field : m_fields) {
+      delete field;
+    }
+    m_fields.clear();
+  }
+
+  const stk::mesh::BulkData * m_bulk;
+  mutable std::vector<ngp::FieldBase*> m_fields;
 
 };
 

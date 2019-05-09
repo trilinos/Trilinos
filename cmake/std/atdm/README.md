@@ -14,10 +14,12 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#parallel-build-and-test-processes">Parallel build and test processes</a>
 * <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#ctest-s-local-test-driversh">ctest-s-local-test-driver.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
+* <a href="#building-and-installing-trilinos-for-atdm-applications">Building and installing Trilinos for ATDM Applications</a>
 * <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
 * <a href="#disabling-failing-tests">Disabling failing tests</a>
@@ -75,7 +77,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<shared_static>-<release_debug>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -84,8 +86,9 @@ build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
 [`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
-[`<kokkos_thread>`](#kokkos_thread), [`<shared_static>`](#shared_static)
-and [`<release_debug>`](#release_debug), is described below.
+[`<kokkos_thread>`](#kokkos_thread), [`<rdc>`](#rdc), [`<fpic>`](#fpic),
+[`<complex>`](#complex), [`<shared_static>`](#shared_static),
+[`<release_debug>`](#release_debug), and [`<pt>`](#pt), are described below.
 
 <a name="system_name"/>
 
@@ -169,11 +172,46 @@ Kokkos threading / backend model variable `<NODE_TYPE>` (default is
 If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
 automatically set to `CUDA`.
 
+<a name="rdc"/>
+
+**`<rdc>`:** The following `<build-name>` keywords determine the value for the
+Trilinos CMake cache var `Kokkos_ENABLE_Cuda_Relocatable_Device_Code` in CUDA
+builds (does nothing in non-CUDA builds):
+
+* `rdc`: Set `Kokkos_ENABLE_Cuda_Relocatable_Device_Code=ON`
+* `no-rdc`: Set `Kokkos_ENABLE_Cuda_Relocatable_Device_Code=OFF`
+
+NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
+`--remove-duplicate-link-files` as well.
+
+<a name="fpic"/>
+
+**`<fpic>`:** The following `<build-name>` keyword will result in `-fPIC`
+being added to `CMAKE_CXX_FLAGS`:
+
+* `fpic`: Add `-fPIC` to `CMAKE_CXX_FLAGS`
+
+<a name="complex"/>
+
+**`<complex>`:** The following `<build-name>` keywords determine if support
+for the `complex<double>` scalar type is built into the code and is tested or
+not:
+
+* `complex`: Enable support for `complex<double>` scalar type (set
+  `Trilinos_ENABLE_COMPLEX=ON`)
+* `no-complex`: Do not enable support for `complex<double>` scalar type (set
+  `Trilinos_ENABLE_COMPLEX=ON`) (DEFAULT)
+
+NOTE: Setting `Trilinos_ENABLE_COMPLEX=ON` only enables `complex<double>` not
+`complex<float>` by default.
+
 <a name="shared_static"/>
 
-**`<shared_static>`:** The following `<build-name>` keywords specify debug if a shared or static library build of Trilinos is to be created (which also impacts if shared or stack TPL libs are linked to on some system):
+**`<shared_static>`:** The following `<build-name>` keywords specify debug if
+a shared or static library build of Trilinos is to be created (which also
+impacts if shared or stack TPL libs are linked to on some system):
 
-* `static`: `BUILD_SHARED_LIBS=OFF`, DEFAULT
+* `static`: `BUILD_SHARED_LIBS=OFF` (DEFAULT)
 * `shared`: `BUILD_SHARED_LIBS=ON`
 
 <a name="release_debug"/>
@@ -183,7 +221,7 @@ optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
 checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE_RELEASE`)
+* `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE-DEBUG`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build runs runtime checks to catch developer and user mistakes
@@ -196,6 +234,17 @@ checking (e.g. array bounds checking, pointer checking etc.)):
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build supports running in a debugger. 
+
+<a name="pt"/>
+
+**`<pt>`:** The following `<build-name>` keywords specify all Primary Tested
+(pt) packages are allowed to be enabled.  The default is to allow enable of
+Secondary Tested packages with disables for packages that the ATDM APPs do not
+use (as specified in the file `ATDMDisables.cmake`):
+
+* `-pt` or `_pt` and the very end of the `<build-name>` string: Allow enable
+  if all PT packages, don't disable any PT packages by default and enable
+  Fortran.
 
 All other strings in `<build-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<build-name>` string is defined in
@@ -259,39 +308,91 @@ using `INCLUDE()` to process the extra options contained within it.
 
 ## Installation and usage
 
-When including the `ATDMDevEnv.cmake` file (or `ATDMDevEnvSettings.cmake`) at
-configure time as described above, the cmake configure automatically sets up
-to install an environment script:
+When including the file `ATDMDevEnv.cmake` (or `ATDMDevEnvSettings.cmake`) in
+the CMake configuration as described above, the cmake configure automatically
+sets up to install a script:
 
 ```
-  <install-prefix>/<load-matching-env-sh>
+  <install-prefix>/load_matching_env.sh
 ```
 
-where `<install-prefix>` and `<load-matching-env-sh>` are set at
-configure-time using:
+which after installation can then be sourced by clients using:
+
+```
+$ source <install-prefix>/load_matching_env.sh
+``` 
+
+Sourcing this file loads the compilers, MPI, and TPLs and sets up the various
+`ATDM_CONG_` environment variables described above.  It also sets the
+environment variable:
+
+```
+$ export ATDM_TRILINOS_INSTALL_PREFIX=<install-prefix>
+```
+
+that clients can use to point back to the Trilinos installation directory.
+
+The install location `<install-prefix>` can be set using the CMake cache
+variable:
 
 ```
   -D CMAKE_INSTALL_PREFIX=<install-prefix> \
+```
+
+or by setting the environment variable:
+
+```
+$ export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX=<install-prefix>
+```
+
+If the environment variable `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX` is set,
+then it will be used to set `CMAKE_INSTALL_PREFIX` internally and override any
+value that might be passed in or set otherwise.  (This is a `FORCE`D cache
+variable set on `CMAKE_INSTALL_PREFIX` so this value will appear in the
+`CMakeCache.txt` file.)
+
+The name of the installed script `load_matching_env.sh` and the environment
+variable `ATDM_TRILINOS_INSTALL_PREFIX` that it exports can be changed at
+configure-time using the CMake cache variables:
+
+```
   -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
   -D ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME=<trilinos-install-prefix-var-name> \
 ```
 
-* If `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not specified then it is given the
-name `load_matching_env.sh` by default.
+where
 
-* If `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is not specified then it is
-given the name `ATDM_TRILINOS_INSTALL_PREFIX` by default.
+* If the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
+  specified, then it is given the name `load_matching_env.sh` by default.
 
-After installation with `make install`, a client can load the environment to
-use this ATDM configuration of Trilinos by running:
+* If the CMake cache variable `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is
+  not specified, then it is given the name `ATDM_TRILINOS_INSTALL_PREFIX` by
+  default.
 
-```
-$ source <install-prefix>/<load-matching-env-sh>
-```
 
-Sourcing this file sets all of the various `ATDM_CONG_` environment variables
-described above and also sets the environment variable
-`<trilinos-install-prefix-var-name>` to `<install-prefix>`.
+## Parallel build and test processes
+
+By default, each system's `<system_name>/environment.sh` script automatically
+selects the parallel build and test jobs by setting the env vars:
+
+* `ATDM_CONFIG_BUILD_COUNT`: Number of default parallel build jobs passed to
+  `ninja -j ${ATDM_CONFIG_BUILD_COUNT}`
+
+* `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT`: Max number of parallel processes
+  allowed to build object files with ninja (default is usually empty).
+
+* `ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT`: Max number of parallel processes
+  allowed to link libraries and executables (default is usually empty).
+
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`: Number passed to `ctest -j ${ATDM_CONFIG_CTEST_PARALLEL_LEVEL}`
+
+These values can be overridden by setting the following env vars before runnning
+`source cmake/std/atdm/load-env.sh <build-name>`:
+
+* `ATDM_CONFIG_BUILD_COUNT_OVERRIDE`
+* `ATDM_CONFIG_PARALLEL_COMPILE_JOBS_LIMIT_OVERRIDE`
+* `ATDM_CONFIG_PARALLEL_LINK_JOBS_LIMIT_OVERRIDE`
+* `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERRIDE`
 
 
 ## checkin-test-atdm.sh
@@ -464,7 +565,7 @@ example, skip configure, skip the build, skip running tests, etc.
 
 * <a href="#ridewhite">ride/white</a>
 * <a href="#shillerhansen">shiller/hansen</a>
-* <a href="#chamaserrano">chama/serrano</a>
+* <a href="#chamaserrano">chama/serrano/eclipse/ghost</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
@@ -565,12 +666,13 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 
 ### chama/serrano
 
-Once logged on to 'chama' or 'serrano', one can directly configure and build
-on the login node (being careful not to overload the node) using the `chama`
-and `serrano` envs, respectively.  But to run the tests, one must run on the
-compute nodes using the `srun` command.  For example, to configure, build and
-run the tests for say `MueLu` on 'serrano' or 'chama', (after cloning Trilinos
-on the `develop` branch) one would do:
+Once logged on to the TLCC-2 machine 'chama' or the CTS-1 'serrano', 'eclipse'
+or 'ghost' machines, one can directly configure and build on the login node
+(being careful not to overload the node) using the `chama` and `serrano` envs,
+respectively.  But to run the tests, one must run on the compute nodes using
+the `srun` command.  For example, to configure, build and run the tests for
+say `MueLu` on 'serrano', (after cloning Trilinos on the `develop` branch) one
+would do:
 
 
 ```
@@ -733,6 +835,13 @@ this can be overridden by setting the env var
 `ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` running `source
 cmake/std/atdm/load-env.sh <build_name>`.
 
+NOTE: The default Intel compiler license server can be overridded by setting
+the env var:
+
+```
+$ export ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE=<some-url>
+```
+
 
 ### CEE RHEL6 Environment
 
@@ -827,6 +936,90 @@ $ bsub -x -Is -n 20 \
 ```
 
 
+## Building and installing Trilinos for ATDM Applications
+
+The sections below describe how to configure, build, and install Trilinos for
+usage by the ATDM applications:
+
+* <a href="#building-and-installing-trilinos-for-empire">Building and installing Trilinos for EMPIRE</a>
+* <a href="#building-and-installing-trilinos-for-sparc">Building and installing Trilinos for SPARC</a>
+
+
+### Building and installing Trilinos for EMPIRE
+
+Configuring, building and installing Trilinos for EMPIRE and then building and testing EMPIRE against that Trilinos installation is an easy process.  To build the ATDM Trilinos configuration on any supported system just do:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name>
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/empire/EMPIRETrilinosPackagesEnables.cmake \
+  -DCMAKE_INSTALL_PREFIX=<trilinos-install-dir> \
+  $TRILINOS_DIR
+
+$ make NP=16  # Uses ninja -j16
+
+$ make NP=16 install
+```
+
+Once the Trilinos installation is complete, one can configure, build, and test EMPIRE with:
+
+```
+$ cd <empire-build-dir>/
+
+$ source <trilinos-install-dir>/load_matching_env.sh
+
+$ rm -r CMake*
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_INSTALL_DIR=${ATDM_TRILINOS_INSTALL_PREFIX} \
+  [other options] \
+  <empire-src-dir>
+
+$ ninja -j20
+
+$ ctest -j8
+```
+
+The EMPIRE configuration gets everything it needs from the sourced and loaded environment and from the Trilinos installation directory.  Easy as pie!
+
+Details on where to get the EMPIRE source repos and the exact CMake options to use when configuring EMPIRE are given at:
+
+* [Building and Testing EMPIRE against Local Trilinos Installation](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+Against+Local+Installs+of+Trilinos#BuildingATDMAPPsAgainstLocalInstallsofTrilinos-BuildingandTestingEMPIREagainstLocalTrilinosInstallation)
+
+
+### Building and installing Trilinos for SPARC
+
+
+To configure, build, and install Trilinos for usage by SPARC, one must use a very specific name for the installation directory or the CMake configure of SPARC will not pick it up.  Specific instructions and some helper scripts for building and installing Trilinos and then building and testing SPARC against Trilinos installation are given at:
+
+* [Building and Testing SPARC against Local Trilinos Installation](https://snl-wiki.sandia.gov/display/CoodinatedDevOpsATDM/Building+ATDM+APPs+Against+Local+Installs+of+Trilinos#BuildingATDMAPPsAgainstLocalInstallsofTrilinos-BuildingandTestingSPARCagainstLocalTrilinosInstallation)
+
+But for a specific build example on a CEE RHEL6 machine, one wouild configure, build, and install Triilnos for SPARC using:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel6-gnu-7.2.0-openmpi-1.10.2-serial-static-dbg
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake \
+  -DCMAKE_INSTALL_PREFIX=<base-dir>/cee-cpu_gcc-7.2.0_openmpi-1.10.2_serial_static_dbg
+  $TRILINOS_DIR
+
+$ make NP=16  # Uses ninja -j16
+
+$ make NP=16 install
+```
+
+In addition, configuring and building SPARC requires special CMake configure scripts be used.  Again, consult the above web page and helper scripts.
+
+
 ## Troubleshooting configuration problems
 
 There are situations were a particular developer on a particular system will
@@ -902,8 +1095,8 @@ contents:
     all_supported_builds.sh  # [Optional] List of all supported builds
     custom_bulds.sh  # [Optional] Special logic for compiler keywords, etc.
     tweaks/
-       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>-<KOKKOS_ARCH0>.cmake  # [Optional]
-       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>-<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER0>_<BUILD_TYPE0>_<NODE_TYPE0>_<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER1>_<BUILD_TYPE1>_<NODE_TYPE1>_<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
 ```
 
@@ -942,7 +1135,7 @@ directory contain special settings for specific builds for a specific system.
 Typically, this file contains (temporary) disables for tests for that given
 build.  When a configure is performed, the internal CMake variable
 `ATDM_BUILD_NAME_KEYS_STR` set to
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT) is
+`<COMPILER>_<BUILD_TYPE>_<NODE_TYPE>_<KOKKOS_ARCH>` (printed to STDOUT) is
 used to define a default file name:
 
 ```
@@ -956,9 +1149,9 @@ its options are read.  For example, this is what the output looks like on
 
 ```
 -- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
--- ATDM_BUILD_NAME_KEYS_STR='GNU-RELEASE-OPENMP-POWER9'
--- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake'
--- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake ...
+-- ATDM_BUILD_NAME_KEYS_STR='GNU_RELEASE_OPENMP_POWER9'
+-- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake'
+-- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU_RELEASE_OPENMP_POWER9.cmake ...
 ```
 
 
@@ -1041,7 +1234,7 @@ For example, for the `intel-debug-openmp-KNL` build on 'mutrino', the printout
 would be:
 
 ```
--- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL-DEBUG-OPENMP-KNL.cmake'
+-- ATDM_TWEAKS_FILES='.../Trilinos/cmake/std/atdm/mutrino/tweaks/INTEL_DEBUG_OPENMP_KNL.cmake'
 ```
 
 For example, Trilinos commit
@@ -1053,8 +1246,8 @@ shows the disable of the test:
 ATDM_SET_ENABLE(Stratimikos_test_aztecoo_thyra_driver_MPI_1_DISABLE ON)
 ```
 
-in both the files `cmake/std/atdm/shiller/tweaks/GNU-DEBUG-SERIAL.cmake` and
-`cmake/std/atdm/shiller/tweaks/GNU-RELEASE-SERIAL.cmake` (before `-HSW` was
+in both the files `cmake/std/atdm/shiller/tweaks/GNU_DEBUG_SERIAL.cmake` and
+`cmake/std/atdm/shiller/tweaks/GNU_RELEASE_SERIAL.cmake` (before `-HSW` was
 added to the names).
 
 NOTE: Adding a comment with the Trilinos GitHub Issue ID (`#2925` in this
@@ -1087,8 +1280,8 @@ and then the inclusion of that file in the specific tweak files for each CUDA
 build:
 
 ```
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-DEBUG-CUDA.cmake
-  Trilinos/cmake/std/atdm/ride/tweaks/CUDA-RELEASE-CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_DEBUG_CUDA.cmake
+  Trilinos/cmake/std/atdm/ride/tweaks/CUDA_RELEASE_CUDA.cmake
 ```
 
 (before `-POWER8-KEPLER37` was added to the names) using the inserted CMake
@@ -1153,20 +1346,21 @@ they support are:
 
 * `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
 
-* `chama/`: Supports SNL HPC machine `chama`.
+* `chama/`: Supports SNL HPC TLCC-2 machine 'chama'.
 
-* `mutrino/`: Supports SNL HPC machine `mutrino`.
+* `mutrino/`: Supports SNL HPC machine 'mutrino'.
 
-* `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
-  mirror SON machine `white`.
+* `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
+  mirror SON machine 'white'.
 
 * `sems-rhel6/`: SNL COE RHEL6 systems with the SEMS NFS environment
 
 * `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
 
-* `serrano/`: Supports SNL HPC machine `serrano`.
+* `serrano/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
+  'ghost'.
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
-  `shiller` and the mirror SON machine `hansen`.
+  'shiller' and the mirror SON machine 'hansen'.
 
-* `waterman/`: Supports GNU and CUDA builds on the SRN machine `waterman`.
+* `waterman/`: Supports GNU and CUDA builds on the SRN machine 'waterman'.

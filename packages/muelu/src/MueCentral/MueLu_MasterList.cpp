@@ -137,6 +137,8 @@ namespace MueLu {
     if (name == "tentative: calculate qr") { ss << "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
@@ -173,6 +175,7 @@ namespace MueLu {
   "<ParameterList name=\"coarse: params\"/>"
   "<Parameter name=\"coarse: overlap\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: type\" type=\"string\" value=\"uncoupled\"/>"
+  "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
@@ -204,12 +207,18 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"strength-of-connection: params\"/>"
+  "<Parameter name=\"aggregation: mesh layout\" type=\"string\" value=\"Global Lexicographic\"/>"
+  "<Parameter name=\"aggregation: output type\" type=\"string\" value=\"Aggregates\"/>"
+  "<Parameter name=\"aggregation: coarsening rate\" type=\"string\" value=\"{3}\"/>"
+  "<Parameter name=\"aggregation: number of spatial dimensions\" type=\"int\" value=\"3\"/>"
+  "<Parameter name=\"aggregation: coarsening order\" type=\"int\" value=\"0\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
@@ -220,8 +229,8 @@ namespace MueLu {
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
-  "<Parameter name=\"gmg: interpolation order\" type=\"int\" value=\"1\"/>"
-  "<Parameter name=\"gmg: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"interp: interpolation order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=\"\"/>"
@@ -242,8 +251,12 @@ namespace MueLu {
   "<Parameter name=\"repartition: partitioner\" type=\"string\" value=\"zoltan2\"/>"
   "<ParameterList name=\"repartition: params\"/>"
   "<Parameter name=\"repartition: start level\" type=\"int\" value=\"2\"/>"
+  "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"repartition: node id\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=\"800\"/>"
   "<Parameter name=\"repartition: target rows per proc\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"repartition: min rows per thread\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"repartition: target rows per thread\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=\"1.2\"/>"
   "<Parameter name=\"repartition: remap parts\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: remap num values\" type=\"int\" value=\"4\"/>"
@@ -252,13 +265,15 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: shift array\" type=\"Array(double)\" value=\"{}\"/>"
+  "<Parameter name=\"rap: cfl array\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
-  "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
   "<Parameter name=\"matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
   "<Parameter name=\"isMatrixMatrix_TransferAndFillComplete \" type=\"bool\" value=\"false\"/>"
@@ -498,6 +513,8 @@ namespace MueLu {
       
          ("aggregation: type","aggregation: type")
       
+         ("aggregation: mode","aggregation: mode")
+      
          ("aggregation: ordering","aggregation: ordering")
       
          ("aggregation: drop scheme","aggregation: drop scheme")
@@ -560,6 +577,16 @@ namespace MueLu {
       
          ("strength-of-connection: params","strength-of-connection: params")
       
+         ("aggregation: mesh layout","aggregation: mesh layout")
+      
+         ("aggregation: output type","aggregation: output type")
+      
+         ("aggregation: coarsening rate","aggregation: coarsening rate")
+      
+         ("aggregation: number of spatial dimensions","aggregation: number of spatial dimensions")
+      
+         ("aggregation: coarsening order","aggregation: coarsening order")
+      
          ("export data","export data")
       
          ("ML print initial list","print initial parameters")
@@ -571,6 +598,8 @@ namespace MueLu {
          ("use kokkos refactor","use kokkos refactor")
       
          ("synchronize factory timers","synchronize factory timers")
+      
+         ("rap: triple product","rap: triple product")
       
          ("energy minimization: enable","multigrid algorithm")
       
@@ -592,9 +621,9 @@ namespace MueLu {
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       
-         ("gmg: interpolation order","gmg: interpolation order")
+         ("interp: interpolation order","interp: interpolation order")
       
-         ("gmg: build coarse coordinates","gmg: build coarse coordinates")
+         ("interp: build coarse coordinates","interp: build coarse coordinates")
       
          ("transfer: params","transfer: params")
       
@@ -636,9 +665,17 @@ namespace MueLu {
       
          ("repartition: start level","repartition: start level")
       
+         ("repartition: node repartition level","repartition: node repartition level")
+      
+         ("repartition: node id","repartition: node id")
+      
          ("repartition: min per proc","repartition: min rows per proc")
       
          ("repartition: target rows per proc","repartition: target rows per proc")
+      
+         ("repartition: min rows per thread","repartition: min rows per thread")
+      
+         ("repartition: target rows per thread","repartition: target rows per thread")
       
          ("repartition: max min ratio","repartition: max imbalance")
       
@@ -656,6 +693,8 @@ namespace MueLu {
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
+         ("rap: relative diagonal floor","rap: relative diagonal floor")
+      
          ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("rap: fix zero diagonals threshold","rap: fix zero diagonals threshold")
@@ -666,9 +705,11 @@ namespace MueLu {
       
          ("rap: shift low storage","rap: shift low storage")
       
-         ("rap: algorithm","rap: algorithm")
+         ("rap: shift array","rap: shift array")
       
-         ("rap: triple product","rap: triple product")
+         ("rap: cfl array","rap: cfl array")
+      
+         ("rap: algorithm","rap: algorithm")
       
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
       

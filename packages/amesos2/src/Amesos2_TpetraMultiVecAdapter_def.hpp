@@ -160,17 +160,12 @@ namespace Amesos2 {
       if (exporter_.is_null () ||
           ! exporter_->getSourceMap ()->isSameAs (* (this->getMap ())) ||
           ! exporter_->getTargetMap ()->isSameAs (* distribution_map)) {
-
         // Since we're caching the Export object, and since the Export
         // needs to keep the distribution Map, we have to make a copy of
         // the latter in order to ensure that it will stick around past
         // the scope of this function call.  (Ptr is not reference
-        // counted.)  Map's clone() method suffices, even though it only
-        // makes a shallow copy of some of Map's data, because Map is
-        // immutable and those data are reference-counted (e.g.,
-        // ArrayRCP or RCP).
-        distMap = distribution_map->template clone<Node> (distribution_map->getNode ());
-
+        // counted.)  
+        distMap = rcp(new map_type(*distribution_map));
         // (Re)create the Export object.
         exporter_ = rcp (new export_type (this->getMap (), distMap));
       }
@@ -344,10 +339,7 @@ namespace Amesos2 {
         // needs to keep the source Map, we have to make a copy of the
         // latter in order to ensure that it will stick around past the
         // scope of this function call.  (Ptr is not reference counted.)
-        // Map's clone() method suffices, even though it only makes a
-        // shallow copy of some of Map's data, because Map is immutable
-        // and those data are reference-counted (e.g., ArrayRCP or RCP).
-        srcMap = source_map->template clone<Node> (source_map->getNode ());
+        srcMap = rcp(new map_type(*source_map));
         importer_ = rcp (new import_type (srcMap, this->getMap ()));
       }
       else {

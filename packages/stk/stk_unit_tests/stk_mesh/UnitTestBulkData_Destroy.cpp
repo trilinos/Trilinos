@@ -342,7 +342,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
-      if (bulk.connectivity_map().valid(stk::topology::NODE_RANK, irank)) {
+      if (bulk.num_connectivity(node_owned, irank) > 0) {
         stk::mesh::Entity const *to_b = bulk.begin(node_owned, irank);
         stk::mesh::Entity const *to_e = bulk.end(node_owned, irank);
         for ( ; to_b != to_e;

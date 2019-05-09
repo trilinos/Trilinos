@@ -25,6 +25,15 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 TRIBITS_ADD_TEST(
+    FEMAssembly
+    NAME FEMAssembly_InsertGlobalIndicesFESP
+    ARGS "--with-insert-global-indices-fe --with-StaticProfile --num-elements-x=200 --num-elements-y=200"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
   FEMAssembly
   NAME FEMAssembly_InsertGlobalIndicesDP
   ARGS "--with-insert-global-indices --with-DynamicProfile --num-elements-x=200 --num-elements-y=200"

@@ -110,7 +110,7 @@ unpackRow(typename PackTraits<GO, DT>::output_array_type& gids_out,
           typename PackTraits<ST, DT>::output_array_type& vals_out,
           const Kokkos::View<const char*, BDT>& imports,
           const size_t offset,
-          const size_t num_bytes,
+          const size_t /* num_bytes */,
           const size_t num_ent,
           const size_t num_bytes_per_value)
 {
@@ -202,7 +202,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     num_packets_per_lid_type;
   typedef Kokkos::View<const size_t*, DT> offsets_type;
   typedef Kokkos::View<const char*, BufferDeviceType> input_buffer_type;
-  typedef Kokkos::View<const LO*, DT> import_lids_type;
+  typedef Kokkos::View<const LO*, BufferDeviceType> import_lids_type;
 
   typedef Kokkos::View<LO*, DT> lids_scratch_type;
   typedef Kokkos::View<GO*, DT> gids_scratch_type;
@@ -256,10 +256,10 @@ struct UnpackCrsMatrixAndCombineFunctor {
     num_bytes_per_value (num_bytes_per_value_in),
     atomic (atomic_in),
     tokens (XS()),
-    lids_scratch ("pids_scratch", tokens.size() * max_num_ent),
-    gids_scratch ("gids_scratch", tokens.size() * max_num_ent),
-    pids_scratch ("lids_scratch", tokens.size() * max_num_ent),
-    vals_scratch ("vals_scratch", tokens.size() * max_num_ent)
+    lids_scratch (Kokkos::view_alloc("lids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
+    gids_scratch (Kokkos::view_alloc("gids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
+    pids_scratch (Kokkos::view_alloc("pids_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent),
+    vals_scratch (Kokkos::view_alloc("vals_scratch", Kokkos::WithoutInitializing), tokens.size() * max_num_ent)
   {}
 
   KOKKOS_INLINE_FUNCTION void init(value_type& dst) const
@@ -537,7 +537,7 @@ unpackAndCombineIntoCrsMatrix(
     const LocalMap& local_map,
     const Kokkos::View<const char*, BufferDeviceType>& imports,
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
-    const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type import_lids,
+    const typename PackTraits<typename LocalMap::local_ordinal_type, BufferDeviceType>::input_array_type import_lids,
     const Tpetra::CombineMode combine_mode,
     const bool unpack_pids,
     const bool atomic)
@@ -856,7 +856,7 @@ unpackAndCombineIntoCrsArrays2(
     const typename PackTraits<typename LocalMap::local_ordinal_type, typename LocalMap::device_type>::input_array_type& import_lids,
     const Kokkos::View<const char*, BufferDeviceType>& imports,
     const Kokkos::View<const size_t*, BufferDeviceType>& num_packets_per_lid,
-    const LocalMatrix& local_matrix,
+    const LocalMatrix& /* local_matrix */,
     const LocalMap /*& local_col_map*/,
     const int my_pid,
     const size_t num_bytes_per_value)
@@ -1104,8 +1104,8 @@ unpackCrsMatrixAndCombine(
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
-    size_t constantNumPackets,
-    Distributor & distor,
+    size_t /* constantNumPackets */,
+    Distributor & /* distor */,
     CombineMode combineMode,
     const bool atomic)
 {
@@ -1150,46 +1150,44 @@ unpackCrsMatrixAndCombine(
 template<typename ST, typename LO, typename GO, typename NT>
 void
 unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                              const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
-                              const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                              const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
-                              const size_t constantNumPackets,
-                              Distributor& distor,
+                              const Kokkos::DualView<const char*,
+                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& imports,
+                              const Kokkos::DualView<const size_t*,
+                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+                              const Kokkos::DualView<const LO*,
+                                typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
+                              const size_t /* constantNumPackets */,
+                              Distributor& /* distor */,
                               const CombineMode combineMode,
                               const bool atomic)
 {
   using Tpetra::Details::castAwayConstDualView;
   using Kokkos::View;
-  typedef typename NT::device_type device_type;
-  typedef CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef DistObject<char, LO, GO, NT> dist_object_type;
-  typedef typename dist_object_type::buffer_device_type buffer_device_type;
-  typedef typename buffer_device_type::memory_space BMS;
-  typedef typename device_type::memory_space MS;
+  using crs_matrix_type = CrsMatrix<ST, LO, GO, NT>;
+  using dist_object_type = DistObject<char, LO, GO, NT>;
+  using device_type = typename crs_matrix_type::device_type;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using buffer_device_type = typename dist_object_type::buffer_device_type;
 
-  static_assert (std::is_same<device_type,
-                   typename local_matrix_type::device_type>::value,
-                 "NT::device_type and LocalMatrix::device_type must be "
-                 "the same.");
+  static_assert
+    (std::is_same<device_type, typename local_matrix_type::device_type>::value,
+     "crs_matrix_type::device_type and local_matrix_type::device_type "
+     "must be the same.");
 
   {
     auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);
-    numPacketsPerLID_nc.template sync<BMS> ();
+    numPacketsPerLID_nc.sync_device ();
   }
-  auto num_packets_per_lid_d = numPacketsPerLID.template view<BMS> ();
+  auto num_packets_per_lid_d = numPacketsPerLID.view_device ();
 
-  {
-    auto importLIDs_nc = castAwayConstDualView (importLIDs);
-    importLIDs_nc.template sync<MS> ();
-  }
-  auto import_lids_d = importLIDs.template view<MS> ();
+  TEUCHOS_ASSERT( ! importLIDs.need_sync_device () );
+  auto import_lids_d = importLIDs.view_device ();
 
   {
     auto imports_nc = castAwayConstDualView (imports);
-    imports_nc.template sync<BMS> ();
+    imports_nc.sync_device ();
   }
-  auto imports_d = imports.template view<BMS> ();
+  auto imports_d = imports.view_device ();
 
   auto local_matrix = sourceMatrix.getLocalMatrix ();
   auto local_col_map = sourceMatrix.getColMap ()->getLocalMap ();
@@ -1266,9 +1264,9 @@ unpackAndCombineWithOwningPIDsCount (
     const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
     const Teuchos::ArrayView<const char> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    size_t constantNumPackets,
-    Distributor &distor,
-    CombineMode combineMode,
+    size_t /* constantNumPackets */,
+    Distributor &/* distor */,
+    CombineMode /* combineMode */,
     size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
@@ -1337,9 +1335,9 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-    const size_t constantNumPackets,
-    Distributor& distor,
-    const CombineMode combineMode,
+    const size_t /* constantNumPackets */,
+    Distributor& /* distor */,
+    const CombineMode /* combineMode */,
     const size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
@@ -1542,7 +1540,7 @@ unpackAndCombineIntoCrsArrays (
     const CrsMatrix<ST, LO, GO, NT>&, \
     const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
-    const Kokkos::DualView<const LO*, NT::device_type>&, \
+    const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const size_t, \
     Distributor&, \
     const CombineMode, \

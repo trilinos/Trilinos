@@ -42,11 +42,6 @@ These are the classes that user's of Tpetra will want to become familiar with:
   object with a new mapping. Supports local and global permutations, overlapping
   Schwarz operations and many other data movement operations.
 
-* Platform classes: These are mainly of legacy interest.
-  ``Tpetra::DefaultPlatform`` is useful for getting a default communicator
-  wrapper that wraps ``MPI_COMM_WORLD`` if building with MPI, and provides stub
-  communication functionality if not building with MPI.
-
 Examples
 ========
 

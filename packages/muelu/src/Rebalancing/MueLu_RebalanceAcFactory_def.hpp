@@ -75,13 +75,13 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &/* fineLevel */, Level &coarseLevel) const {
     Input(coarseLevel, "A");
     Input(coarseLevel, "Importer");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
+  void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &/* fineLevel */, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
     
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
@@ -104,9 +104,10 @@ namespace MueLu {
         XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
 	rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
 
-        if (!rebalancedAc.is_null())
+        if (!rebalancedAc.is_null()) {
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
-
+          std::ostringstream oss; oss << "A_" << coarseLevel.GetLevelID(); rebalancedAc->setObjectLabel(oss.str());
+        }
         Set(coarseLevel, "A", rebalancedAc);
       }
       if (!rebalancedAc.is_null() && IsPrint(Statistics2)) {

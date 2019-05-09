@@ -174,7 +174,7 @@ getTimeStepControl() const
 
 template<class Scalar>
 void IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0,
@@ -187,7 +187,6 @@ setInitialState(Scalar t0,
   using Thyra::VectorSpaceBase;
   using Thyra::assign;
   using Thyra::createMember;
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   //
   // Create and initialize product X, Xdot, Xdotdot
@@ -216,8 +215,8 @@ setInitialState(Scalar t0,
   else
     assign(Ydotdot->getNonconstMultiVector().ptr(), *ydotdot0);
 
-  state_integrator_->setInitialState(t0, x0, xdot0, xdotdot0);
-  sens_integrator_->setInitialState(t0, Y, Ydot, Ydotdot);
+  state_integrator_->initializeSolutionHistory(t0, x0, xdot0, xdotdot0);
+  sens_integrator_->initializeSolutionHistory(t0, Y, Ydot, Ydotdot);
 }
 
 template<class Scalar>

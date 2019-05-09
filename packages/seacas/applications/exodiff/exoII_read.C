@@ -679,24 +679,22 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Global_Results(int tim
     SMART_ASSERT(global_vals != nullptr);
   }
 
-  if (global_vals) {
-    for (unsigned j = 0; j < global_vars.size(); ++j) {
-      global_vals[j] = 0.0;
-    }
+  for (unsigned j = 0; j < global_vars.size(); ++j) {
+    global_vals[j] = 0.0;
+  }
 
-    int err = ex_get_var(file_id, time_step_num, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
+  int err = ex_get_var(file_id, time_step_num, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
 
-    if (err < 0) {
-      ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-            << "global variable values!  Aborting...\n");
-      exit(1);
-    }
-    else if (err > 0) {
-      std::ostringstream oss;
-      oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
-          << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
-      return oss.str();
-    }
+  if (err < 0) {
+    ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
+          << "global variable values!  Aborting...\n");
+    exit(1);
+  }
+  else if (err > 0) {
+    std::ostringstream oss;
+    oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
+        << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
+    return oss.str();
   }
   return "";
 }
@@ -724,31 +722,29 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
     SMART_ASSERT(global_vals2 != nullptr);
   }
 
-  if (global_vals) {
-    for (unsigned j = 0; j < global_vars.size(); ++j) {
-      global_vals[j] = 0.0;
-    }
+  for (unsigned j = 0; j < global_vars.size(); ++j) {
+    global_vals[j] = 0.0;
+  }
 
-    int err = ex_get_var(file_id, t1, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
+  int err = ex_get_var(file_id, t1, EX_GLOBAL, 1, 1, global_vars.size(), global_vals);
 
+  if (err < 0) {
+    ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
+          << "global variable values!  Aborting...\n");
+    exit(1);
+  }
+
+  if (t2 != t1) {
+    err = ex_get_var(file_id, t2, EX_GLOBAL, 1, 1, global_vars.size(), global_vals2);
     if (err < 0) {
       ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
             << "global variable values!  Aborting...\n");
       exit(1);
     }
 
-    if (t2 != t1) {
-      err = ex_get_var(file_id, t2, EX_GLOBAL, 1, 1, global_vars.size(), global_vals2);
-      if (err < 0) {
-        ERROR("ExoII_Read::Load_Global_Results(): Failed to get "
-              << "global variable values!  Aborting...\n");
-        exit(1);
-      }
-
-      // Do the interpolation...
-      for (size_t j = 0; j < global_vars.size(); j++) {
-        global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
-      }
+    // Do the interpolation...
+    for (size_t j = 0; j < global_vars.size(); j++) {
+      global_vals[j] = (1.0 - proportion) * global_vals[j] + proportion * global_vals2[j];
     }
   }
   return "";

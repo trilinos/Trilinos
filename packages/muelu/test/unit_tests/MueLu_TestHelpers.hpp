@@ -553,7 +553,7 @@ namespace MueLuTests {
         }
 
         return Coordinates;
-      }
+      } // BuildGeoCoordinates
 
       // Xpetra version of CreateMap
       static RCP<Map> BuildMap(Xpetra::UnderlyingLib lib, const std::set<GlobalOrdinal>& gids, Teuchos::RCP<const Teuchos::Comm<int> > comm) {

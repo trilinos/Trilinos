@@ -45,9 +45,10 @@
 
 #include <sstream>
 
-#include <Ifpack2_OverlappingRowMatrix_decl.hpp>
 #include <Ifpack2_Details_OverlappingRowGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Import.hpp>
+#include "Tpetra_Map.hpp"
 #include <Teuchos_CommHelpers.hpp>
 
 namespace Ifpack2 {
@@ -56,16 +57,13 @@ template<class MatrixType>
 OverlappingRowMatrix<MatrixType>::
 OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                       const int overlapLevel) :
-  A_ (A),
+  A_ (Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A, true)),
   OverlapLevel_ (overlapLevel)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::Array;
   using Teuchos::outArg;
-  using Teuchos::rcp_const_cast;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
   typedef Tpetra::global_size_t GST;
@@ -74,20 +72,17 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   TEUCHOS_TEST_FOR_EXCEPTION(
     OverlapLevel_ <= 0, std::runtime_error,
     "Ifpack2::OverlappingRowMatrix: OverlapLevel must be > 0.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error,
+     "Ifpack2::OverlappingRowMatrix: The input matrix must be a "
+     "Tpetra::CrsMatrix with the same scalar_type, local_ordinal_type, "
+     "global_ordinal_type, and device_type typedefs as MatrixType.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_->getComm()->getSize() == 1, std::runtime_error,
     "Ifpack2::OverlappingRowMatrix: Matrix must be "
     "distributed over more than one MPI process.");
 
-  RCP<const crs_matrix_type> ACRS =
-    rcp_dynamic_cast<const crs_matrix_type, const row_matrix_type> (A_);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ACRS.is_null (), std::runtime_error,
-    "Ifpack2::OverlappingRowMatrix: The input matrix must be a Tpetra::"
-    "CrsMatrix with matching template parameters.  This class currently "
-    "requires that CrsMatrix's fifth template parameter be the default.");
-  RCP<const crs_graph_type> A_crsGraph = ACRS->getCrsGraph ();
-
+  RCP<const crs_graph_type> A_crsGraph = A_->getCrsGraph ();
   const size_t numMyRowsA = A_->getNodeNumRows ();
   const global_ordinal_type global_invalid =
     Teuchos::OrdinalTraits<global_ordinal_type>::invalid ();
@@ -142,7 +137,7 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
       // globally least GID.
       TmpMap = rcp (new map_type (global_invalid, mylist (0, count),
                                   Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
-                                  A_->getComm (), A_->getNode ()));
+                                  A_->getComm ()));
       TmpGraph = rcp (new crs_graph_type (TmpMap, 0));
       TmpImporter = rcp (new import_type (A_->getRowMap (), TmpMap));
 
@@ -163,23 +158,24 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
 
   RowMap_ = rcp (new map_type (global_invalid, mylist (),
                                Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
-                               A_->getComm (), A_->getNode ()));
+                               A_->getComm ()));
+  Importer_ = rcp (new import_type (A_->getRowMap (), RowMap_));
   ColMap_ = RowMap_;
 
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
   ExtMap_ = rcp (new map_type (global_invalid, ExtElements (),
                                Teuchos::OrdinalTraits<global_ordinal_type>::zero (),
-                               A_->getComm (), A_->getNode ()));
-  ExtMatrix_ = rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
+                               A_->getComm ()));
   ExtImporter_ = rcp (new import_type (A_->getRowMap (), ExtMap_));
 
-  RCP<crs_matrix_type> ExtMatrixCRS =
-    rcp_dynamic_cast<crs_matrix_type, row_matrix_type> (ExtMatrix_);
-  ExtMatrixCRS->doImport (*ACRS, *ExtImporter_, Tpetra::INSERT);
-  ExtMatrixCRS->fillComplete (A_->getDomainMap (), RowMap_);
-
-  Importer_ = rcp (new import_type (A_->getRowMap (), RowMap_));
+  {
+    RCP<crs_matrix_type> ExtMatrix_nc =
+      rcp (new crs_matrix_type (ExtMap_, ColMap_, 0));
+    ExtMatrix_nc->doImport (*A_, *ExtImporter_, Tpetra::INSERT);
+    ExtMatrix_nc->fillComplete (A_->getDomainMap (), RowMap_);
+    ExtMatrix_ = ExtMatrix_nc; // we only need the const version after here
+  }
 
   // fix indices for overlapping matrix
   const size_t numMyRowsB = ExtMatrix_->getNodeNumRows ();
@@ -217,17 +213,14 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                                   NumGlobalRows_, // # global cols == # global rows
                                   NumGlobalNonzeros_,
                                   MaxNumEntries_,
-                                  rcp_const_cast<const import_type> (Importer_),
-                                  rcp_const_cast<const import_type> (ExtImporter_)));
-  graph_ = rcp_const_cast<const row_graph_type> (rcp_implicit_cast<row_graph_type> (graph));
+                                  Importer_,
+                                  ExtImporter_));
+  graph_ = Teuchos::rcp_const_cast<const row_graph_type>
+    (Teuchos::rcp_implicit_cast<row_graph_type> (graph));
   // Resize temp arrays
   Indices_.resize (MaxNumEntries_);
   Values_.resize (MaxNumEntries_);
 }
-
-
-template<class MatrixType>
-OverlappingRowMatrix<MatrixType>::~OverlappingRowMatrix() {}
 
 
 template<class MatrixType>
@@ -238,12 +231,15 @@ OverlappingRowMatrix<MatrixType>::getComm () const
 }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
+TPETRA_DEPRECATED 
 Teuchos::RCP<typename MatrixType::node_type>
 OverlappingRowMatrix<MatrixType>::getNode () const
 {
-  return A_->getNode();
+  return Teuchos::null;
 }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 template<class MatrixType>
@@ -564,86 +560,39 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
-  typedef scalar_type RangeScalar;
-  typedef scalar_type DomainScalar;
-  typedef Teuchos::ScalarTraits<RangeScalar> STRS;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    alpha != Teuchos::ScalarTraits<scalar_type>::one () ||
-    beta != Teuchos::ScalarTraits<scalar_type>::zero (), std::logic_error,
-    "Ifpack2::ReorderFilter::apply is only implemented for alpha = 1 and "
-    "beta = 0.  You set alpha = " << alpha << " and beta = " << beta << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-    "Ifpack2::OverlappingRowMatrix::apply: The input X and the output Y must "
-    "have the same number of columns.  X.getNumVectors() = "
-    << X.getNumVectors() << " != Y.getNumVectors() = " << Y.getNumVectors()
-    << ".");
-
-  // FIXME (mfh 13 July 2013) This would be a good candidate for a
-  // local parallel operator implementation.  That would obviate the
-  // need for getting views of the data and make the code below a lot
-  // simpler.
-
-  const RangeScalar zero = STRS::zero ();
-  ArrayRCP<ArrayRCP<const DomainScalar> > x_ptr = X.get2dView();
-  ArrayRCP<ArrayRCP<RangeScalar> >        y_ptr = Y.get2dViewNonConst();
-  Y.putScalar(zero);
-  size_t NumVectors = Y.getNumVectors();
-
-  const size_t numMyRowsA = A_->getNodeNumRows ();
-  for (size_t i = 0; i < numMyRowsA; ++i) {
-    size_t Nnz;
-    // Use this class's getrow to make the below code simpler
-    A_->getLocalRowCopy (i, Indices_ (),Values_ (), Nnz);
-    if (mode == Teuchos::NO_TRANS) {
-      for (size_t j = 0; j < Nnz; ++j)
-        for (size_t k = 0; k < NumVectors; ++k)
-          y_ptr[k][i] += as<RangeScalar> (Values_[j]) *
-            as<RangeScalar> (x_ptr[k][Indices_[j]]);
-    }
-    else if (mode == Teuchos::TRANS){
-      for (size_t j = 0; j < Nnz; ++j)
-        for (size_t k = 0; k < NumVectors; ++k)
-          y_ptr[k][Indices_[j]] += as<RangeScalar> (Values_[j]) *
-            as<RangeScalar> (x_ptr[k][i]);
-    }
-    else { // mode == Teuchos::CONJ_TRANS
-      for (size_t j = 0; j < Nnz; ++j)
-        for (size_t k = 0; k < NumVectors; ++k)
-          y_ptr[k][Indices_[j]] +=
-            STRS::conjugate (as<RangeScalar> (Values_[j])) *
-            as<RangeScalar> (x_ptr[k][i]);
-    }
+  using MV = Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type>;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+     "Ifpack2::OverlappingRowMatrix::apply: X.getNumVectors() = "
+     << X.getNumVectors() << " != Y.getNumVectors() = " << Y.getNumVectors()
+     << ".");
+  // Check whether X aliases Y.  In that case, we'll need to copy X.
+  auto X_d = X.getLocalViewDevice ();
+  auto Y_d = Y.getLocalViewDevice ();
+  bool aliases = true;
+  if (X_d.data () >= Y_d.data () + Y_d.span ()) {
+    aliases = false; // X starts after Y ends; no overlap
+  }
+  else if (Y_d.data () >= X_d.data () + X_d.span ()) {
+    aliases = false; // Y starts after X ends; no overlap
+  }
+  if (aliases) {
+    MV X_copy (X, Teuchos::Copy);
+    this->apply (X_copy, Y, mode, alpha, beta);
   }
 
-  const size_t numMyRowsB = ExtMatrix_->getNodeNumRows ();
-  for (size_t i = 0 ; i < numMyRowsB ; ++i) {
-    size_t Nnz;
-    // Use this class's getrow to make the below code simpler
-    ExtMatrix_->getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
-    if (mode == Teuchos::NO_TRANS) {
-      for (size_t j = 0; j < Nnz; ++j)
-        for (size_t k = 0; k < NumVectors; ++k)
-          y_ptr[k][numMyRowsA+i] += as<RangeScalar> (Values_[j]) *
-            as<RangeScalar> (x_ptr[k][Indices_[j]]);
-    }
-    else if (mode == Teuchos::TRANS) {
-      for (size_t j = 0; j < Nnz; ++j)
-        for (size_t k = 0; k < NumVectors; ++k)
-          y_ptr[k][numMyRowsA+Indices_[j]] += as<RangeScalar> (Values_[j]) *
-            as<RangeScalar> (x_ptr[k][i]);
-    }
-    else { // mode == Teuchos::CONJ_TRANS
-      for (size_t j = 0; j < Nnz; ++j)
-        for (size_t k = 0; k < NumVectors; ++k)
-          y_ptr[k][numMyRowsA+Indices_[j]] +=
-            STRS::conjugate (as<RangeScalar> (Values_[j])) *
-            as<RangeScalar> (x_ptr[k][i]);
-    }
-  }
+  const auto& rowMap0 = * (A_->getRowMap ());
+  const auto& colMap0 = * (A_->getColMap ());
+  MV X_0 (X, mode == Teuchos::NO_TRANS ? colMap0 : rowMap0, 0);
+  MV Y_0 (Y, mode == Teuchos::NO_TRANS ? rowMap0 : colMap0, 0);
+  A_->localApply (X_0, Y_0, mode, alpha, beta);
+
+  const auto& rowMap1 = * (ExtMatrix_->getRowMap ());
+  const auto& colMap1 = * (ExtMatrix_->getColMap ());
+  MV X_1 (X, mode == Teuchos::NO_TRANS ? colMap1 : rowMap1, 0);
+  MV Y_1 (Y, mode == Teuchos::NO_TRANS ? rowMap1 : colMap1, A_->getNodeNumRows ());
+  ExtMatrix_->localApply (X_1, Y_1, mode, alpha, beta);
 }
 
 

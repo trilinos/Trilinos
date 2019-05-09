@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -104,26 +104,22 @@ C *****************************************************************
 
       ELSE
 
-C              If there are no fields on the BLKCOL command line,
-C              toggle the ON/OFF flag.
-
+C        If there are no fields on the BLKCOL command line,
+C        toggle the ON/OFF flag.
          IF (INTYP(IFLD) .LE. -1) THEN
             BLKCOL(0) = -BLKCOL(0)
 
-C              Check for ON flag.
-
+C        Check for ON flag.
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'ON', 2)) THEN
             BLKCOL(0) = 1
             CALL FFADDC ('ON', INLINE(1))
 
-C              Check for OFF flag.
-
+C        Check for OFF flag.
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'OFF', 2)) THEN
             BLKCOL(0) = -1
             CALL FFADDC ('OFF', INLINE(1))
 
-C              Check for RESET flag.
-
+C        Check for RESET flag.
          ELSE IF (FFMATC (IFLD, INTYP, CFIELD, 'RESET', 2)) THEN
             CALL FFADDC ('RESET', INLINE(1))
             BLKCOL(0) = -1
@@ -138,7 +134,6 @@ C              Check for RESET flag.
 
 C                 Get numeric range identifying blocks whose colors
 C                 will be specified.
-
                NUMSPC = .FALSE.
   130          CONTINUE
 
@@ -148,7 +143,6 @@ C                 will be specified.
                NUMSPC = .TRUE.
 
 C                    Flag these blocks for color assignments.
-
                DO 140 I = IRNG(1), IRNG(2), IRNG(3)
                   IF (BLKCOL(I) .LT. 7) BLKCOL(I) = BLKCOL(I) + 10
   140          CONTINUE

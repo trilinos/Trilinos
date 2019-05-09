@@ -88,6 +88,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",          Teuchos::null, "Generating factory of the coarse map");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory of the coordinates");
+    validParamList->set< RCP<const FactoryBase> >("Node Comm",          Teuchos::null, "Generating factory of the node level communicator");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -98,7 +99,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
 
@@ -125,9 +126,9 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
@@ -137,6 +138,12 @@ namespace MueLu {
     RCP<RealValuedMultiVector> fineCoords;
     if(bTransferCoordinates_) {
       fineCoords = Get< RCP<RealValuedMultiVector> >(fineLevel, "Coordinates");
+    }
+
+    // FIXME: We should remove the NodeComm on levels past the threshold
+    if(fineLevel.IsAvailable("Node Comm")) {
+      RCP<const Teuchos::Comm<int> > nodeComm = Get<RCP<const Teuchos::Comm<int> > >(fineLevel,"Node Comm");
+      Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements(),
@@ -189,15 +196,15 @@ namespace MueLu {
 
       // Fill in coarse coordinates
       for (int dim = 0; dim < numDimensions; ++dim) {
-        ArrayRCP<const real_type> fineCoordsData = ghostedCoords->getData(dim);
-        ArrayRCP<real_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
+        ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
+        ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
 
         for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
           if (procWinner[lnode] == myPID &&
               lnode < vertex2AggID.size() &&
               lnode < fineCoordsData.size() &&
               vertex2AggID[lnode] < coarseCoordsData.size() &&
-              Teuchos::ScalarTraits<double>::isnaninf(fineCoordsData[lnode]) == false) {
+              Teuchos::ScalarTraits<coordinate_type>::isnaninf(fineCoordsData[lnode]) == false) {
             coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
           }
         }
@@ -211,9 +218,6 @@ namespace MueLu {
       BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
     else
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
-
-
-
 
     // If available, use striding information of fine level matrix A for range
     // map and coarseMap as domain map; otherwise use plain range map of

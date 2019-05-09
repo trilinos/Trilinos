@@ -63,6 +63,8 @@ struct CmdLineOpts
   bool saveMM;
   // StaticProfile
   bool useStaticProfile;
+  // execInsertGlobalIndicesFEDP - execute the FE Insert Global Indices kernel
+  bool execInsertGlobalIndicesFE;
   // execInsertGlobalIndicesDP - execute the Insert Global Indices kernel
   bool execInsertGlobalIndices;
   // execLocalElementLoopDP - execute the Local Element Loop kernel
@@ -90,9 +92,10 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
   opts.timing = true;
   opts.saveMM = false;
   opts.useStaticProfile  = true;
-  opts.execInsertGlobalIndices = false;
-  opts.execLocalElementLoop    = false;
-  opts.execTotalElementLoop    = false;
+  opts.execInsertGlobalIndices   = false;
+  opts.execInsertGlobalIndicesFE = false;
+  opts.execLocalElementLoop      = false;
+  opts.execTotalElementLoop      = false;
   opts.repetitions  = 1;
 
   clp.setOption("num-elements-x", &(opts.numElementsX), "Number of elements to generate in the X-directon of the 2D grid.");
@@ -104,6 +107,8 @@ void setCmdLineOpts(struct CmdLineOpts& opts, Teuchos::CommandLineProcessor& clp
 
   clp.setOption("with-StaticProfile", "with-DynamicProfile", &(opts.useStaticProfile), "Use StaticProfile or DynamicProfile");
 
+  clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
+                "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");
   clp.setOption("with-insert-global-indices", "without-insert-global-indices", &(opts.execInsertGlobalIndices),
                 "Execute the Insert Global Indices FEM Assembly kernel.");
   clp.setOption("with-local-element-loop",    "without-local-element-loop",    &(opts.execLocalElementLoop),
@@ -154,22 +159,23 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
 {
   int err = 0;
 
-  if( 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
+  if( !opts.useStaticProfile && 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
   {
     out << std::endl
         << "Please select one algorithm to run.  Options are:" << std::endl
-        << "  --with-insert-global-indices  :  Execute the Insert Global Indices example." << std::endl
-        << "  --with-local-element-loop     :  Execute the Local Element Loop example." << std::endl
-        << "  --with-total-element-loop     :  Execute the Total Element Loop example." << std::endl
+        << "  --with-insert-global-indices     :  Execute the Insert Global Indices example." << std::endl
+        << "  --with-local-element-loop        :  Execute the Local Element Loop example." << std::endl
+        << "  --with-total-element-loop        :  Execute the Total Element Loop example." << std::endl
         << std::endl;
     err = -1;
   }
   else
   {
     // Currently we only have StaticProfile for TotalElementLoop
-    if(opts.useStaticProfile && !(opts.execTotalElementLoop))
+    if(opts.useStaticProfile && 1 != (opts.execInsertGlobalIndicesFE + opts.execTotalElementLoop))
     {
       out << std::endl
+        << "  --with-insert-global-indices-fe  :  Execute the FE Insert Global Indices example." << std::endl
           << "StaticProfile is currently only implemented with Total Element Loop, please use:" << std::endl
           << "  --with-total-element-loop :  Execute the Total Element Loop example." << std::endl
           << std::endl;
@@ -219,9 +225,10 @@ int readCmdLineOpts(std::ostream& out, struct CmdLineOpts& opts, int argc, char*
           << "staticProfile: " << opts.useStaticProfile << endl
           << "repetitions  : " << opts.repetitions      << endl
           << endl
-          << "execInsertGlobalIndices: " << opts.execInsertGlobalIndices << endl
-          << "execLocalElementLoop   : " << opts.execLocalElementLoop    << endl
-          << "execTotalElementLoop   : " << opts.execTotalElementLoop    << endl
+          << "execInsertGlobalIndicesFE : " << opts.execInsertGlobalIndicesFE << endl
+          << "execInsertGlobalIndices   : " << opts.execInsertGlobalIndices << endl
+          << "execLocalElementLoop      : " << opts.execLocalElementLoop    << endl
+          << "execTotalElementLoop      : " << opts.execTotalElementLoop    << endl
           << endl;
     }
   }

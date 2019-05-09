@@ -335,7 +335,7 @@ private:
   {}
 
   //! Should not be used.
-  Ifpack_ICT& operator=(const Ifpack_ICT& rhs)
+  Ifpack_ICT& operator=(const Ifpack_ICT& /* rhs */)
   {
     return(*this);
   }

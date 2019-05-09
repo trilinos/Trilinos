@@ -1940,15 +1940,27 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
      TEUCHOS_ASSERT(blocked_opr->productDomain()->numBlocks() == numCols);
 
      RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_sum = Teuchos::rcp_dynamic_cast<Thyra::DefaultBlockedLinearOp<double>>(destOp);
-     if(blocked_sum.is_null())
+     if(blocked_sum.is_null()) {
+       // take care of the null case, this means we must alllocate memory
        blocked_sum = Thyra::defaultBlockedLinearOp<double>();
-     blocked_sum->beginBlockFill(numRows,numCols);
-     for(int r = 0; r < numRows; ++r)
-       for(int c = 0; c < numCols; ++c){
-         auto block = explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),Teuchos::null);
-         blocked_sum->setNonconstBlock(r,c,block);
+
+       blocked_sum->beginBlockFill(numRows,numCols);
+       for(int r = 0; r < numRows; ++r) {
+         for(int c = 0; c < numCols; ++c) {
+           auto block = explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),Teuchos::null);
+           blocked_sum->setNonconstBlock(r,c,block);
+         }
        }
-     blocked_sum->endBlockFill();
+       blocked_sum->endBlockFill();
+
+     }
+     else {
+       // in this case memory can be reused
+       for(int r = 0; r < numRows; ++r)
+         for(int c = 0; c < numCols; ++c)
+           explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),blocked_sum->getNonconstBlock(r,c));
+     }
+
      return blocked_sum;
    }
 
@@ -2476,6 +2488,8 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
   prober.probe(Mwrap,*Mat);
   return Thyra::epetraLinearOp(Mat);    
 #else
+  (void)G;
+  (void)Op;
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Probe requires Isorropia");
 #endif
 }

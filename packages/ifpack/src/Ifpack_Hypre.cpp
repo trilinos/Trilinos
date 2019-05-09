@@ -252,6 +252,13 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solve
 } //SetParameter() - int* function pointer
 
 //==============================================================================
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int**), int** parameter){
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
+} //SetParameter() - int** function pointer
+
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
   if(chooser == Solver){
     SolverType_ = solver;
@@ -299,7 +306,7 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors
-  if(X.Pointers() == Y.Pointers()){
+  if(X.Pointers() == Y.Pointers() || (NumVectors == 1 && X[0] == Y[0])){
     SameVectors = true;
   }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
@@ -355,7 +362,7 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors
-  if(X.Pointers() == Y.Pointers()){
+  if(X.Pointers() == Y.Pointers() || (NumVectors == 1 && X[0] == Y[0])){
     SameVectors = true;
   }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {

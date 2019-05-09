@@ -39,7 +39,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -79,7 +79,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
-  SOURCE_FILES A.mm B.mm simple.xml
+  SOURCE_FILES A.mm B.mm coords.mm simple.xml
 )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
@@ -124,6 +124,14 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverEpetra_Rerun"
+      ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )    
 
     TRIBITS_ADD_TEST(
       Driver
@@ -227,6 +235,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
       TRIBITS_ADD_TEST(
         Driver
+        NAME "DriverTpetra_Rerun"
+        ARGS "--linAlgebra=Tpetra --xml=scaling-with-rerun.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
         NAME "DriverTpetra_WithGlobalConstants"
         ARGS "--linAlgebra=Tpetra --xml=scaling-complex-withglobalconstants.xml"
         NUM_MPI_PROCS 4
@@ -237,6 +253,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         Driver
         NAME "DriverTpetra"
         ARGS "--linAlgebra=Tpetra --xml=scaling.xml"
+        NUM_MPI_PROCS 4
+        COMM mpi # HAVE_MPI required
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverTpetraSingleReduceCG"
+        ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\""
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
@@ -399,22 +423,17 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       COMM serial mpi
       )
 
-    TRIBITS_ADD_EXECUTABLE(
-      MatvecKernelDriver
-      SOURCES MatvecKernelDriver.cpp
-      COMM serial mpi
-      )
-  
-
-    TRIBITS_ADD_TEST(
-      MatvecKernelDriver
-      NAME "MatvecKernelDriver"
-      ARGS "--linAlgebra=Tpetra"
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-      )
   ENDIF()
 ENDIF()
 
+
+# remove this from Experimental it requires Galeri + Tpetra
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    MatvecKernelDriver
+    SOURCES MatvecKernelDriver.cpp
+    COMM serial mpi
+    )
+ENDIF()
 
 ENDIF() # Galeri

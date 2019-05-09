@@ -46,7 +46,6 @@
 
 #include "netcdf.h"
 
-#define NC_HAVE_META_H
 #if defined(NC_HAVE_META_H)
 #include "netcdf_meta.h"
 #if NC_HAS_PARALLEL
@@ -69,8 +68,8 @@
 #endif
 
 /* EXODUS version number */
-#define EX_API_VERS 7.17f
-#define EX_API_VERS_NODOT 717
+#define EX_API_VERS 7.19f
+#define EX_API_VERS_NODOT 719
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -632,10 +631,6 @@ EXODUS_EXPORT int     ex_set_int64_status(int exoid, int mode);
 
 EXODUS_EXPORT void ex_print_config(void);
 
-/** Note that the max name length setting is global at this time; not specific
- * to a particular database; however, the exoid option is passed to give
- * flexibility in the future to implement this on a database-by-database basis.
- */
 EXODUS_EXPORT int ex_set_max_name_length(int exoid, int length);
 
 EXODUS_EXPORT int ex_set_option(int exoid, ex_option_type option, int option_value);
@@ -1639,6 +1634,7 @@ EXODUS_EXPORT int exerrval; /**< shared error return value                */
 
 EXODUS_EXPORT char *ex_name_of_object(ex_entity_type obj_type);
 EXODUS_EXPORT ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
+EXODUS_EXPORT int            ex_set_parallel(int exoid, int is_parallel);
 
 /* Should be internal use only, but was in external include file for
    nemesis and some codes are using the function

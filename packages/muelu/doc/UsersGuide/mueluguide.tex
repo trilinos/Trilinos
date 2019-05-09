@@ -22,8 +22,10 @@
 \usepackage{booktabs}
 \usepackage{calc}
 \usepackage{color}
+\usepackage[table]{xcolor}
 \usepackage{eso-pic}
 \usepackage{fancyhdr}
+\usepackage{float}
 \usepackage{ifthen}
 \usepackage{indentfirst}
 \usepackage{geometry}
@@ -36,7 +38,7 @@
              menucolor={blue},
              pagecolor={red},
              plainpages=false,pdfpagelabels,
-             pdfauthor={Jonathan J. Hu, Andrey Prokopenko, Tobias Wiesner, Chris Siefert, Ray Tuminaro},
+             pdfauthor={Luc Berger-Vergiat, Christian A. Glusa, Jonathan J. Hu, Andrey Prokopenko, Christopher M. Siefert, Raymond S. Tuminaro, Tobias A. Wiesner},
              pdftitle={MueLu User's Guide},
              pdfkeywords={MueLu,AMG,multigrid,guide,user},
              urlcolor={blue}]{hyperref}
@@ -73,46 +75,63 @@
 %
 % Set the title, author, and date
 %
-\title{MueLu User's Guide 1.0}
+\title{MueLu User's Guide}
 
-\author{Andrey Prokopenko \\
-  Scalable Algorithms \\
+\author{
+  Luc Berger-Vergiat\\
+  Computational Mathematics\\
   Sandia National Laboratories\\
-  Mailstop 1318 \\
-  P.O.~Box 5800 \\
-  Albuquerque, NM 87185-1318\\
-  aprokop@sandia.gov\\
+  Mailstop 1320, P.O.~Box 5800 \\
+  Albuquerque, NM 87185-1322\\
+  lberge@sandia.gov
   \and
-  Tobias Wiesner \\
-  Institute for Computational Mechanics \\
-  Technische Universit\"at M\"unchen\\
-  Boltzmanstra\ss e 15 \\
-  85747 Garching, Germany\\
-  wiesner@lnm.mw.tum.de\\
+  Christian A. Glusa \\
+  Scalable Algorithms\\
+  Sandia National Laboratories\\
+  Mailstop 1318, P.O.~Box 5800 \\
+  Albuquerque, NM 87185-1322\\
+  caglusa@sandia.gov
   \and
   Jonathan J. Hu \\
   Scalable Algorithms \\
   Sandia National Laboratories\\
-  Mailstop 9159 \\
-  P.O.~Box 0969 \\
+  Mailstop 9159, P.O.~Box 0969 \\
   Livermore, CA 94551-0969\\
   jhu@sandia.gov
   \and
+  Matthias Mayr \\
+  Institute for Mathematics \\
+  \& Computer-Based Simulation\\
+  University of the Bundeswehr Munich\\
+  Werner-Heisenberg-Weg 39\\
+  85577 Neubiberg, Germany\\
+  matthias.mayr@unibw.de
+  \and
+  Andrey Prokopenko \\
+  Oak Ridge National Laboratory\\
+  P.O.~Box 2008\\
+  Bldg 5700, MS 6164\\
+  Oak Ridge, TN 37831\\
+  \and
   Christopher M. Siefert\\
-  Computational Multiphysics\\
+  Scalable Algorithms\\
   Sandia National Laboratories\\
-  Mailstop 1322 \\
-  P.O.~Box 5800 \\
+  Mailstop 1322, P.O.~Box 5800 \\
   Albuquerque, NM 87185-1322\\
   csiefer@sandia.gov
   \and
   Raymond S. Tuminaro\\
   Computational Mathematics\\
   Sandia National Laboratories\\
-  Mailstop 9159 \\
-  P.O.~Box 0969 \\
+  Mailstop 9159, P.O.~Box 0969 \\
   Livermore, CA 94551-0969\\
   rstumin@sandia.gov
+  \and
+  Tobias Wiesner \\
+  Leica Geosystems AG\\
+  Heinrich-Wild-Strasse 201\\
+  9435 Heerbrugg, Switzerland\\
+  tobias.wiesner@leica-geosystems.com
 }
 
 % There is a "Printed" date on the title page of a SAND report, so
@@ -136,6 +155,7 @@
 \definecolor{hellgelb}{rgb}{1,1,0.8}   % background color for C++ listings
 \definecolor{darkgreen}{rgb}{0.0, 0.2, 0.13}
 %\definecolor{hellrot}{HTML}{FFA4C2}    % background color for xml files
+\definecolor{SANDgreen}{RGB}{163, 213, 199}
 
 % settings for listings package
 \lstset{
@@ -163,9 +183,9 @@
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2014-18874}
-\SANDprintDate{October 2014}
-\SANDauthor{Andrey Prokopenko, Jonathan J. Hu, Tobias A. Wiesner, Christopher M. Siefert, Raymond S. Tuminaro}
+\SANDnum{SAND2019-0537}
+\SANDprintDate{January 2019}
+\SANDauthor{Luc Berger-Vergiat, Christian A. Glusa, Jonathan J. Hu, Matthias Mayr, Andrey Prokopenko, Christopher M. Siefert, Raymond S. Tuminaro, Tobias A. Wiesner}
 
 
 % ---------------------------------------------------------------------------- %

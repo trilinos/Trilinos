@@ -1,23 +1,23 @@
 C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C * Redistributions of source code must retain the above copyright
 C    notice, this list of conditions and the following disclaimer.
-C           
+C
 C * Redistributions in binary form must reproduce the above
 C   copyright notice, this list of conditions and the following
 C   disclaimer in the documentation and/or other materials provided
 C   with the distribution.
-C                         
+C
 C * Neither the name of NTESS nor the names of its
 C   contributors may be used to endorse or promote products derived
 C   from this software without specific prior written permission.
-C                                                 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -78,7 +78,7 @@ C   --   Uses NUMEL, NELBLK of /DBNUMS/
       IF (NERR .GT. 0) GOTO 30
 
 C ... Set all entries in the LINK array to -1.
-C     This is a kludge, but lets us discriminate between quads, tris, 
+C     This is a kludge, but lets us discriminate between quads, tris,
 C     and shells in other parts of the program (newess)
       CALL INIINT(4*NUMEL, -1, LINK)
 
@@ -97,13 +97,13 @@ C     expects
      *      MAXNQ = numelb(ielb)*numlnk(ielb)
         end if
  5    continue
-      
+
       if (maxnq .gt. 0) then
         call mdrsrv('LINTMP', klntmp, maxnq)
         call mdstat (nerr, mem)
         IF (NERR .GT. 0) GOTO 20
       end if
-      
+
       IEND = 0
       DO 10 IELB = 1, NELBLK
          ISTART = IEND + 1

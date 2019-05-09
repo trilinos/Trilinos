@@ -89,7 +89,7 @@ namespace {
 	  std::cerr << "\nDecomposition for " << proc_count << " processors; Total work = " << total_work << " Average = " << avg_work << "\n";
 	  for (const auto zone : zones) {
 	    std::cerr << "Zone " << zone->m_name << "\tProc: " << zone->m_proc
-		      << "\tOrdinal: " << zone->m_ordinal[0] << "x" << zone->m_ordinal[1] << "x" << zone->m_ordinal[2] 
+		      << "\tOrdinal: " << zone->m_ordinal[0] << "x" << zone->m_ordinal[1] << "x" << zone->m_ordinal[2]
 		      << " \tWork: " << zone->work() << "\n";
 	  }
 #endif
@@ -131,13 +131,13 @@ namespace {
           }
         }
 
-        // Zone Grid Connectivity intra_block instances must be symmetric...
+        // Zone Grid Connectivity from_decomp instances must be symmetric...
         // The GUID encodes the id and the processor,
         std::map<std::pair<size_t, size_t>, int> is_symm;
         for (auto &zone : zones) {
           if (zone->is_active()) {
             for (const auto &zgc : zone->m_zoneConnectivity) {
-              if (zgc.is_active() && zgc.is_intra_block()) {
+              if (zgc.is_active() && zgc.is_from_decomp()) {
                 is_symm[std::make_pair(std::min(zgc.m_ownerGUID, zgc.m_donorGUID),
                                        std::max(zgc.m_ownerGUID, zgc.m_donorGUID))]++;
               }

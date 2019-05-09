@@ -105,6 +105,6 @@ IF(PyTrilinos_ENABLE_NOX)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
 # The LOCA module employs namespaces, so include the LOCA directory
-IF(PyTrilinos_ENABLE_LOCA)
+IF(NOX_ENABLE_LOCA)
   ADD_SUBDIRECTORY(LOCA)
-ENDIF(PyTrilinos_ENABLE_LOCA)
+ENDIF(NOX_ENABLE_LOCA)

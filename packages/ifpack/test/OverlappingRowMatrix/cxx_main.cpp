@@ -56,10 +56,12 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Ifpack_OverlappingRowMatrix.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_Utils.h"
+#include <sstream>
+#include <stdexcept>
 
 int main(int argc, char *argv[])
 {
@@ -84,8 +86,10 @@ int main(int argc, char *argv[])
   GaleriList.set("n", nx * nx);
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
-  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Linear", Comm, GaleriList) );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
+  Teuchos::RCP<Epetra_Map> Map
+    (Galeri::CreateMap ("Linear", Comm, GaleriList));
+  Teuchos::RCP<Epetra_CrsMatrix> A
+    (Galeri::CreateCrsMatrix ("Laplace2D", Map.getRawPtr (), GaleriList));
 
   int OverlapLevel = 5;
   Epetra_Time Time(Comm);
@@ -135,8 +139,21 @@ int main(int argc, char *argv[])
   // simple checks on global quantities
   int NumGlobalRowsC = C.NumGlobalRows();
   int NumGlobalNonzerosC = C.NumGlobalNonzeros();
-  assert (NumGlobalRowsB == NumGlobalRowsC);
-  assert (NumGlobalNonzerosB == NumGlobalNonzerosC);
+
+  if (NumGlobalRowsB != NumGlobalRowsC) {
+    std::ostringstream os;
+    os << "NumGlobalRowsB = " << NumGlobalRowsB
+       << " != NumGlobalRowsC = " << NumGlobalRowsC
+       << "." << std::endl;
+    throw std::logic_error (os.str ());
+  }
+  if (NumGlobalNonzerosB != NumGlobalNonzerosC) {
+    std::ostringstream os;
+    os << "NumGlobalNonzerosB = " << NumGlobalNonzerosB
+       << " != NumGlobalNonzerosC = " << NumGlobalNonzerosC
+       << "." << std::endl;
+    throw std::logic_error (os.str ());
+  }
 
   Epetra_Vector ExtX_C(C.RowMatrixRowMap());
   Epetra_Vector ExtY_C(C.RowMatrixRowMap());

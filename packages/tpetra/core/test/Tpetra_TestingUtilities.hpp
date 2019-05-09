@@ -57,6 +57,21 @@
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+#define TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)  \
+  { \
+    int tgscLclSuccess = success ? 1 : 0; \
+    int tgscGblSuccess = 1; \
+    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MIN, tgscLclSuccess, Teuchos::outArg (tgscGblSuccess)); \
+    if (tgscGblSuccess == 1) { \
+      out << "Succeeded on all processes!" << endl; \
+    } else { \
+      out << "FAILED on at least one process!" << endl; \
+    } \
+    TEST_EQUALITY_CONST(tgscGblSuccess, 1);  \
+    success = (bool) tgscGblSuccess; \
+  }
+
+
 namespace Tpetra {
   namespace TestingUtilities {
 
@@ -102,15 +117,18 @@ namespace Tpetra {
       }
     }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get the default Kokkos(Classic) Node for Tpetra tests.
     /// \tparam Node The Kokkos(Classic) Node type.
     ///
     /// \warning This function is an implementation detail of Tpetra.
     ///   Users must not call this function or rely on its behavior.
     template <class Node>
+    TPETRA_DEPRECATED
     Teuchos::RCP<Node> getNode () {
-      return Teuchos::rcp (new Node);
+      return Teuchos::null;
     }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   } // namespace TestingUtilities
 } // namespace Tpetra

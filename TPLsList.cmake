@@ -95,6 +95,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CGNS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Pnetcdf         "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Netcdf          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
+  ADIOS2          "packages/seacas/cmake/tpls/"    EX
   y12m            "cmake/TPLs/"    ST
   SuperLUDist     "cmake/TPLs/"    ST
   SuperLUMT	  "cmake/TPLs/"	   ST
@@ -162,6 +163,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   ViennaCL        "cmake/TPLs/"    EX
   Avatar          "cmake/TPLs/"    EX
   pebbl           "cmake/TPLs/"    EX
+  MAGMASparse     "cmake/TPLs/"    EX
   )
 
 # NOTES:

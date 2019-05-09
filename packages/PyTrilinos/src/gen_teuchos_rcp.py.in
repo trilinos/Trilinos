@@ -437,6 +437,8 @@ def get_import_directives(teuchos_rcps):
     for classname in teuchos_rcps:
         filename = form_class_filename(parse_class(classname))
         swig_directive = '%import "' + filename + '"'
+        if "Mpi" in filename:
+            swig_directive = "#ifdef HAVE_MPI\n" + swig_directive + "\n#endif"
         if swig_directive not in result:
             result.append(swig_directive)
 
@@ -505,8 +507,15 @@ def main():
     print('"')
     print("%enddef")
     print("")
-    print('%module(package   = "PyTrilinos.Teuchos",')
-    print("        docstring = %teuchos_rcp_docstring) RCP")
+    print("%define %teuchos_import_code")
+    print('"')
+    print("from . import RCP")
+    print('"')
+    print("%enddef")
+    print("")
+    print('%module(package       = "PyTrilinos.Teuchos",')
+    print("        moduleinclude = %teuchos_import_code,")
+    print("        docstring     = %teuchos_rcp_docstring) RCP")
     print("")
 
     # Specify include files directly into the wrapper file
@@ -637,13 +646,14 @@ def main():
     # Note: reverse teuchos_rcps to define functions for the base classes last
     for classname in reversed(teuchos_rcps):
         print("// %s" % classname)
+        if "Mpi" in classname: print("#ifdef HAVE_MPI")
         print("bool is_null(      Teuchos::RCP< %s > & object){ return object.is_null()      ; }" % classname)
         print("bool is_valid_ptr( Teuchos::RCP< %s > & object){ return object.is_valid_ptr() ; }" % classname)
         print("bool has_ownership(Teuchos::RCP< %s > & object){ return object.has_ownership(); }" % classname)
         print("int  strong_count( Teuchos::RCP< %s > & object){ return object.strong_count() ; }" % classname)
-        #print('int  strong_count( Teuchos::RCP< %s > & object){ std::cout << "%s" << std::endl; return object.strong_count() ; }' % (classname, classname))
         print("int  weak_count(   Teuchos::RCP< %s > & object){ return object.weak_count()   ; }" % classname)
         print("int  total_count(  Teuchos::RCP< %s > & object){ return object.total_count()  ; }" % classname)
+        if "Mpi" in classname: print("#endif")
         print("")
     print("}")
 

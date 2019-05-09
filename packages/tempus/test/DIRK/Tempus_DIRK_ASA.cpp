@@ -130,7 +130,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
       // Initial Conditions
       // During the Integrator construction, the initial SolutionState
       // is set by default to model->getNominalVales().get_x().  However,
-      // the application can set it also by integrator->setInitialState.
+      // the application can set it also by integrator->initializeSolutionHistory.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
       const int num_param = model->get_p_space(0)->dim();
@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
                       *(model->getExactSensSolution(i, 0.0).get_x()));
-      integrator->setInitialState(0.0, x0, Teuchos::null, Teuchos::null,
+      integrator->initializeSolutionHistory(0.0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax
@@ -187,7 +187,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
         for (int i=0; i<solutionHistory->getNumStates(); i++) {
           RCP<const SolutionState<double> > solutionState =
             (*solutionHistory)[i];
-          const double time = solutionState->getTime();
+          const double time_i = solutionState->getTime();
           RCP<const DPV> x_prod_plot =
             Teuchos::rcp_dynamic_cast<const DPV>(solutionState->getX());
           RCP<const Thyra::VectorBase<double> > x_plot =
@@ -197,9 +197,9 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
           RCP<const Thyra::MultiVectorBase<double> > adjoint_plot =
             adjoint_prod_plot->getMultiVector();
           RCP<const Thyra::VectorBase<double> > x_exact_plot =
-            model->getExactSolution(time).get_x();
+            model->getExactSolution(time_i).get_x();
           ftmp << std::fixed << std::setprecision(7)
-               << time
+               << time_i
                << std::setw(11) << get_ele(*(x_plot), 0)
                << std::setw(11) << get_ele(*(x_plot), 1)
                << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 0)

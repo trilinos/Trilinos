@@ -99,7 +99,7 @@ TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
               , size_t ny
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
-              , ConnectivityMap const* connectivity_map
+              , ConnectivityMap const* /*connectivity_map*/
             )
   : m_spatial_dimension(DIM),
     m_meta_p( new MetaData(m_spatial_dimension) ),
@@ -107,9 +107,9 @@ TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
         pm,
         autoAuraOption,
 #ifdef SIERRA_MIGRATION
-        false,
+        false
 #endif
-        connectivity_map) ),
+        ) ),
     m_nx(nx),
     m_ny(ny),
     m_meta( *m_meta_p ),

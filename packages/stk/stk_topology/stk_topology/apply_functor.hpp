@@ -86,6 +86,8 @@ struct topology::apply_host_functor
     case BEAM_3:       return m_functor( topology_type< BEAM_3       >() );
     case SHELL_LINE_2: return m_functor( topology_type< SHELL_LINE_2 >() );
     case SHELL_LINE_3: return m_functor( topology_type< SHELL_LINE_3 >() );
+    case SPRING_2:     return m_functor( topology_type< SPRING_2     >() );
+    case SPRING_3:     return m_functor( topology_type< SPRING_3     >() );
     case TRI_3_2D:     return m_functor( topology_type< TRI_3_2D     >() );
     case TRI_4_2D:     return m_functor( topology_type< TRI_4_2D     >() );
     case TRI_6_2D:     return m_functor( topology_type< TRI_6_2D     >() );
@@ -137,6 +139,8 @@ struct topology::apply_host_functor
     case BEAM_3:       return m_functor( topology_type< BEAM_3       >() );
     case SHELL_LINE_2: return m_functor( topology_type< SHELL_LINE_2 >() );
     case SHELL_LINE_3: return m_functor( topology_type< SHELL_LINE_3 >() );
+    case SPRING_2:     return m_functor( topology_type< SPRING_2     >() );
+    case SPRING_3:     return m_functor( topology_type< SPRING_3     >() );
     case TRI_3_2D:     return m_functor( topology_type< TRI_3_2D     >() );
     case TRI_4_2D:     return m_functor( topology_type< TRI_4_2D     >() );
     case TRI_6_2D:     return m_functor( topology_type< TRI_6_2D     >() );
@@ -207,6 +211,8 @@ struct topology::apply_functor
     case BEAM_3:       return m_functor( topology_type< BEAM_3       >() );
     case SHELL_LINE_2: return m_functor( topology_type< SHELL_LINE_2 >() );
     case SHELL_LINE_3: return m_functor( topology_type< SHELL_LINE_3 >() );
+    case SPRING_2:     return m_functor( topology_type< SPRING_2     >() );
+    case SPRING_3:     return m_functor( topology_type< SPRING_3     >() );
     case TRI_3_2D:     return m_functor( topology_type< TRI_3_2D     >() );
     case TRI_4_2D:     return m_functor( topology_type< TRI_4_2D     >() );
     case TRI_6_2D:     return m_functor( topology_type< TRI_6_2D     >() );
@@ -259,6 +265,8 @@ struct topology::apply_functor
     case BEAM_3:       return m_functor( topology_type< BEAM_3       >() );
     case SHELL_LINE_2: return m_functor( topology_type< SHELL_LINE_2 >() );
     case SHELL_LINE_3: return m_functor( topology_type< SHELL_LINE_3 >() );
+    case SPRING_2:     return m_functor( topology_type< SPRING_2     >() );
+    case SPRING_3:     return m_functor( topology_type< SPRING_3     >() );
     case TRI_3_2D:     return m_functor( topology_type< TRI_3_2D     >() );
     case TRI_4_2D:     return m_functor( topology_type< TRI_4_2D     >() );
     case TRI_6_2D:     return m_functor( topology_type< TRI_6_2D     >() );

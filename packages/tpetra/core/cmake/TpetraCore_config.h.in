@@ -2,8 +2,8 @@
 #define TPETRACORE_CONFIG_H
 /* CMake uses this file to generate TpetraCore_config.h automatically */
 
-/* define if new form of std::count is supported */
-#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
+/* Define whether Tpetra enables deprecated code at compile time. */
+#cmakedefine TPETRA_ENABLE_DEPRECATED_CODE
 
 /* Define if want to build with epetra enabled */
 #cmakedefine HAVE_TPETRACORE_EPETRA
@@ -105,6 +105,9 @@
 #  define HAVE_TPETRACORE_KOKKOSMPICOMM
 #  define HAVE_TPETRA_KOKKOSMPICOMM
 #endif // HAVE_TPETRACORE_TEUCHOSKOKKOSCOMM
+
+/* Define when enabling TeuchosNumerics in TpetraCore */
+#cmakedefine HAVE_TPETRACORE_TEUCHOSNUMERICS
 
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT

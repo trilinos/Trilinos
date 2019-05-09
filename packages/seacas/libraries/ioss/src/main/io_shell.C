@@ -187,7 +187,7 @@ namespace {
       }
 
       if (mem_stats) {
-        dbi->util().progress("Database Creation");
+        dbi->progress("Database Creation");
       }
       if (!interface.lower_case_variable_names) {
         dbi->set_lower_case_variable_names(false);
@@ -401,9 +401,9 @@ namespace {
         }
       }
       if (mem_stats) {
-        dbi->util().progress("Prior to Memory Released... ");
+        dbi->progress("Prior to Memory Released... ");
         dbi->release_memory();
-        dbi->util().progress("Memory Released... ");
+        dbi->progress("Memory Released... ");
       }
     } // loop over input files
   }
@@ -439,16 +439,23 @@ namespace {
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interface.shuffle)));
     }
 
-    if (interface.compose_output == "external") {
+    if (interface.compose_output == "default") {
+      if (interface.outFiletype == "cgns") {
+        properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
+        properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
+      }
+      else {
+        properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
+        properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
+      }
+    }
+    else if (interface.compose_output == "external") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "NO"));
     }
     else if (interface.compose_output != "none") {
       properties.add(Ioss::Property("COMPOSE_RESULTS", "YES"));
       properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
-      if (interface.compose_output != "default") {
-        properties.add(Ioss::Property("PARALLEL_IO_MODE", interface.compose_output));
-      }
     }
 
     if (interface.file_per_state) {
@@ -472,7 +479,7 @@ namespace {
     }
 
     if (interface.memory_statistics) {
-      properties.add(Ioss::Property("DECOMP_SHOW_PROGRESS", 1));
+      properties.add(Ioss::Property("ENABLE_TRACING", 1));
     }
 
     if (!interface.decomp_method.empty()) {

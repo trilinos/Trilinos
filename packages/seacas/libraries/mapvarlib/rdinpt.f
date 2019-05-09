@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
       SUBROUTINE RDINPT (TIMES,IDA,IDB,MP,SEABMP,IMP,MBLK)
@@ -118,7 +118,7 @@ C
       WRITE (NOUT, 1061)
 C
     5 CONTINUE
-      CALL FREFLD (0,0,'CMD >',MFIELD,IOSTAT,NFIELD,KVALUE,CVAL,     
+      CALL FREFLD (0,0,'CMD >',MFIELD,IOSTAT,NFIELD,KVALUE,CVAL,
      1IVALUE,RVALUE)
 C
       if (iostat .ne. 0) go to 100
@@ -159,7 +159,7 @@ C Help
 C
       IF (NFIELD .EQ. 1)THEN
         GO TO 4
-      ELSE IF (CVAL(2)(1:3) .EQ. 'TIM') THEN 
+      ELSE IF (CVAL(2)(1:3) .EQ. 'TIM') THEN
         WRITE(NOUT,2000)
         GO TO 5
       ELSE IF (CVAL(2)(1:3) .EQ. 'LIS') THEN
@@ -305,7 +305,7 @@ C
              WRITE(NOUT,6001)'Overall', TOLSHL
              WRITE(NTPOUT,6001)'Overall', TOLSHL
           end if
-          
+
         ELSE
           WRITE(NOUT,6010)CVAL(2)
         END IF
@@ -353,7 +353,7 @@ C
         WRITE(NOUT,6510) CVAL(3)
       END IF
       GO TO 5
-      
+
    70 CONTINUE
 C
 C Deformed vs undeformed processing
@@ -375,7 +375,7 @@ C
         ELSE IF (IDEF .EQ. 2) THEN
           WRITE(NOUT,7035)idef
         END IF
-      ELSE 
+      ELSE
         WRITE(NOUT,7040)idef
       END IF
       GO TO 5
@@ -392,7 +392,7 @@ C
       WRITE(NOUT,7006) IDEBUG
       WRITE(NTPOUT,7006) IDEBUG
       GO TO 5
-      
+
    80 CONTINUE
 C
 C Map definition - donor mesh e-block to recipient mesh e-block
@@ -432,7 +432,7 @@ C save global scheme value
         END IF
 C process input for search box size for this map
         SEABOX = -1.0
-        IF ( ( KVALUE( 5) .EQ. 0) .AND. 
+        IF ( ( KVALUE( 5) .EQ. 0) .AND.
      &       ( CVAL( 5)(1:3) .EQ. 'SEA')) THEN
           IF ( KVALUE( 6) .EQ. 1) THEN
             SEABOX = RVALUE( 6)
@@ -440,7 +440,7 @@ C process input for search box size for this map
             SEABOX = IVALUE( 6)
           END IF
         END IF
-        IF ( ( KVALUE( 7) .EQ. 0) .AND. 
+        IF ( ( KVALUE( 7) .EQ. 0) .AND.
      &       ( CVAL( 7)(1:3) .EQ. 'SEA')) THEN
           IF ( KVALUE( 8) .EQ. 1) THEN
             SEABOX = RVALUE( 8)
@@ -495,7 +495,7 @@ C restore global scheme value
         END IF
 C process input for search box size for this map
         SEABOX = -1.0
-        IF ( ( KVALUE( 5) .EQ. 0) .AND. 
+        IF ( ( KVALUE( 5) .EQ. 0) .AND.
      &       ( CVAL( 5)(1:3) .EQ. 'SEA')) THEN
           IF ( KVALUE( 6) .EQ. 1) THEN
             SEABOX = RVALUE( 6)
@@ -503,7 +503,7 @@ C process input for search box size for this map
             SEABOX = IVALUE( 6)
           END IF
         END IF
-        IF ( ( KVALUE( 7) .EQ. 0) .AND. 
+        IF ( ( KVALUE( 7) .EQ. 0) .AND.
      &       ( CVAL( 7)(1:3) .EQ. 'SEA')) THEN
           IF ( KVALUE( 8) .EQ. 1) THEN
             SEABOX = RVALUE( 8)
@@ -554,7 +554,7 @@ C ... Check for valid id
         END IF
 C process input for search box size for this map
         SEABOX = -1.0
-        IF ( ( KVALUE( 5) .EQ. 0) .AND. 
+        IF ( ( KVALUE( 5) .EQ. 0) .AND.
      &       ( CVAL( 5)(1:3) .EQ. 'SEA')) THEN
           IF ( KVALUE( 6) .EQ. 1) THEN
             SEABOX = RVALUE( 6)
@@ -562,7 +562,7 @@ C process input for search box size for this map
             SEABOX = IVALUE( 6)
           END IF
         END IF
-        IF ( ( KVALUE( 7) .EQ. 0) .AND. 
+        IF ( ( KVALUE( 7) .EQ. 0) .AND.
      &       ( CVAL( 7)(1:3) .EQ. 'SEA')) THEN
           IF ( KVALUE( 8) .EQ. 1) THEN
             SEABOX = RVALUE( 8)
@@ -590,7 +590,7 @@ C ... Check for valid ids
         IMP2 = IMP2 + 1
         if (imp2 .gt. mblk) then
            CALL ERROR('RDINPT','Too many block mappings entered',
-     $          'Entered', imp2,'Maximum',mblk,' ',' ',1) 
+     $          'Entered', imp2,'Maximum',mblk,' ',' ',1)
         end if
         IMP = IMP2
         MP(1,IMP2) = IVALUE(2)
@@ -641,15 +641,15 @@ C
       WRITE(NOUT,9000)
       WRITE(NTPOUT,9000)
       CALL ERROR('RDINPT','YOU ELECTED TO TERMINATE THE PROGRAM',' ',
-     &           0,' ',0,' ',' ',1) 
+     &           0,' ',0,' ',' ',1)
 C
   100 CONTINUE
 C
 C Continue execution (run)
-C 
+C
 C sort map array (MP) on second entry (recipient mesh element block)
 C this is required because of way mapping of multiple donor mesh
-C element blocks into one recipient mesh element blocks is 
+C element blocks into one recipient mesh element blocks is
 C implemented (required to have all such maps located sequentially)
 C a simple sort on the 2nd entry accomplishes this and is easier
 C than rewriting the offending algorithm
@@ -755,7 +755,7 @@ C
      3' CHEck <int>           - CHECK ACCURACY OF MAPPING',/,
      3' RUN                   - END INPUT - RESUME PROGRAM',/,
      3' QUIT                  - TERMINATES THE PROGRAM',/,
-     4' STOP                  - TERMINATES THE PROGRAM')  
+     4' STOP                  - TERMINATES THE PROGRAM')
 C
  1100 FORMAT(5X,'UNKNOWN INPUT - READING',A20,/,
      1'          PLEASE TRY AGAIN')
@@ -826,7 +826,7 @@ C
      *'<real> SCHeme <int>',//,
      6'           THE MAP COMMAND ALLOWS THE USER TO DEFINE THE',/,
      7'           DONOR MESH ELEMENT BLOCK I.D. TO BE MAPPED INTO',/,
-     8'           THE RECIPIENT MESH ELEMENT BLOCK I.D. ALONG WITH',/, 
+     8'           THE RECIPIENT MESH ELEMENT BLOCK I.D. ALONG WITH',/,
      9'           THE SCHEME AND SEARCHBOX TO USE FOR THIS MAPPING.',/,
      *'           IF THE VALUE "ALL" IS ENTERED THE OTHER BLOCK I.D.',/,
      *'           FIELD MUST CONTAIN AN INTEGER. THE SCHEME AND',/,
@@ -998,7 +998,7 @@ C
 
       subroutine pmap(imp, mp, seabmp, nout)
       DIMENSION MP(3,*), SEABMP(*)
-      
+
       DO 86 I = 1, IMP
          IF ( SEABMP( I) .GT. 0.0) THEN
             WRITE(NOUT,8051)MP(1,I),MP(2,I),MP(3,I),SEABMP(I)

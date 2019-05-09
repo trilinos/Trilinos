@@ -370,6 +370,8 @@ namespace Belos {
     static constexpr int verbosity_default_ = Belos::Errors;
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * resNorm_default_ = "TwoNorm";
+    static constexpr bool foldConvergenceDetectionIntoAllreduce_default_ = false;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "DGKS";
@@ -402,6 +404,7 @@ namespace Belos {
     int blockSize_, verbosity_, outputStyle_, outputFreq_;
     bool adaptiveBlockSize_, showMaxResNormOnly_, useSingleReduction_;
     std::string orthoType_, resScale_;
+    bool foldConvergenceDetectionIntoAllreduce_;
 
     //! Prefix label for all the timers.
     std::string label_;
@@ -432,6 +435,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
   useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
   resScale_(resScale_default_),
+  foldConvergenceDetectionIntoAllreduce_(foldConvergenceDetectionIntoAllreduce_default_),
   label_(label_default_),
   isSet_(false)
 {}
@@ -458,6 +462,7 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   useSingleReduction_(useSingleReduction_default_),
   orthoType_(orthoType_default_),
   resScale_(resScale_default_),
+  foldConvergenceDetectionIntoAllreduce_(foldConvergenceDetectionIntoAllreduce_default_),
   label_(label_default_),
   isSet_(false)
 {
@@ -516,6 +521,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Check if the user is requesting the single-reduction version of CG (only for blocksize == 1)
   if (params->isParameter("Use Single Reduction")) {
     useSingleReduction_ = params->get("Use Single Reduction", useSingleReduction_default_);
+    if (useSingleReduction_)
+      foldConvergenceDetectionIntoAllreduce_ = params->get("Fold Convergence Detection Into Allreduce",
+                                                           foldConvergenceDetectionIntoAllreduce_default_);
   }
 
   // Check to see if the timer label changed.
@@ -686,6 +694,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
       if (! convTest_.is_null ()) {
         try {
+          NormType normType = Belos::TwoNorm;
+          if (params->isParameter("Residual Norm")) {
+            if (params->isType<std::string> ("Residual Norm")) {
+              normType = convertStringToNormType(params->get<std::string> ("Residual Norm"));
+            }
+          }
+          convTest_->defineResForm(StatusTestResNorm_t::Implicit, normType);
           convTest_->defineScaleForm (resScaleType, Belos::TwoNorm);
         }
         catch (std::exception& e) {
@@ -704,7 +719,16 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_.is_null () || newResTest) {
+
+    NormType normType = Belos::TwoNorm;
+    if (params->isParameter("Residual Norm")) {
+      if (params->isType<std::string> ("Residual Norm")) {
+        normType = convertStringToNormType(params->get<std::string> ("Residual Norm"));
+      }
+    }
+
     convTest_ = rcp (new StatusTestResNorm_t (convtol_, 1, showMaxResNormOnly_));
+    convTest_->defineResForm(StatusTestResNorm_t::Implicit, normType);
     convTest_->defineScaleForm (convertStringToScaleType (resScale_), Belos::TwoNorm);
   }
 
@@ -807,6 +831,11 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
+    pl->set("Residual Norm",static_cast<const char *>(resNorm_default_),
+      "Norm used for the convergence check on the residual.");
+    pl->set("Fold Convergence Detection Into Allreduce",static_cast<bool>(foldConvergenceDetectionIntoAllreduce_default_),
+      "Merge the allreduce for convergence detection with the one for CG.\n"
+      "This saves one all-reduce, but incurs more computation.");
     validPL = pl;
   }
   return validPL;
@@ -888,9 +917,11 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     // block size of 1.  A single reduction iteration can also be used
     // if collectives are more expensive than vector updates.
     if (useSingleReduction_) {
+      plist.set("Fold Convergence Detection Into Allreduce",
+                foldConvergenceDetectionIntoAllreduce_);
       block_cg_iter =
         rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
-                                                    outputTest_, plist));
+                                                    outputTest_, convTest_, plist));
     }
     else {
       block_cg_iter =

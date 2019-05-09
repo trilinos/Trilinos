@@ -44,12 +44,14 @@
 #include "elb_err.h"    // for Gen_Error, error_lev
 #include "elb_format.h" // for ST_ZU
 #include "elb_inp.h"
-#include "elb_util.h"     // for strip_string, token_compare, etc
-#include "getopt.h"       // for getopt
-#include "md_getsubopt.h" // for md_getsubopt
+#include "elb_util.h" // for strip_string, token_compare, etc
+#include "getopt.h"   // for getopt
 #include "scopeguard.h"
-#include <cstddef>    // for size_t
-#include <cstdio>     // for nullptr, sprintf, printf, etc
+#include <cstddef> // for size_t
+#include <cstdio>  // for nullptr, sprintf, printf, etc
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif
 #include <cstdlib>    // for malloc, exit, free
 #include <cstring>    // for strcmp, strstr, strchr, etc
 #include <exodusII.h> // for ex_close, EX_READ, etc
@@ -99,7 +101,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 {
   int   opt_let, iret, el_blk, wgt, max_dim = 0, i;
   char *sub_opt = nullptr, *value = nullptr, *cptr = nullptr, *cptr2 = nullptr;
-  char  ctemp[1024];
+  char  ctemp[2048];
 
   extern char *optarg;
   extern int   optind;
@@ -193,7 +195,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       /* Weighting options */
       sub_opt = optarg;
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (md_getsubopt(&sub_opt, weight_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)weight_subopts, &value)) {
         case READ_EXO:
           if (value == nullptr) {
             sprintf(ctemp, "FATAL: must specify a file name with %s", weight_subopts[READ_EXO]);
@@ -337,7 +339,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(md_getsubopt(&sub_opt, weight_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sub_opt, weight_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
 
@@ -384,7 +386,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       while (sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
-        switch (md_getsubopt(&sub_opt, mach_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
         case HCUBE:
         case HYPERCUBE:
           if (machine->type < 0) {
@@ -471,7 +473,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
         default: Gen_Error(0, "FATAL: unknown machine type"); return 0;
 
-        } /* End "switch(md_getsubopt(&sub_opt, mach_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sub_opt, mach_subopts, &value))" */
 
       } /* End "while(*sub_opt != '\0')" */
 
@@ -484,7 +486,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         string_to_lower(sub_opt, '\0');
       }
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (md_getsubopt(&sub_opt, lb_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
         case MULTIKL: lb->type = MULTIKL; break;
 
         case SPECTRAL: lb->type = SPECTRAL; break;
@@ -513,7 +515,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             return 0;
           }
           char tmpstr[2048];
-          iret     = sscanf(value, "%s", tmpstr);
+          iret     = sscanf(value, "%2047s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
             Gen_Error(0, "FATAL: invalid value associated with file");
@@ -547,7 +549,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             Gen_Error(0, "FATAL: need to specify a value with outfile");
             return 0;
           }
-          iret     = sscanf(value, "%s", tmpstr);
+          iret     = sscanf(value, "%2047s", tmpstr);
           lb->file = tmpstr;
           if (iret != 1) {
             Gen_Error(0, "FATAL: invalid value associated with outfile");
@@ -561,7 +563,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
           Gen_Error(0, ctemp);
           return 0;
 
-        } /* End "switch(md_getsubopt(&sup_opt, mach_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sup_opt, mach_subopts, &value))" */
 
       } /* End "while(*sup_opt != '\0')" */
 
@@ -576,7 +578,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
         string_to_lower(sub_opt, '\0');
       }
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (md_getsubopt(&sub_opt, solve_subopts, &value)) {
+        switch (::getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
         case TOLER:
           if (value == nullptr) {
             fprintf(stderr, "FATAL: tolerance specification requires \
@@ -616,7 +618,7 @@ value\n");
 
         default: fprintf(stderr, "FATAL: unknown solver option\n"); return 0;
 
-        } /* End "switch(md_getsubopt(&sub_opt, solve_subopts, &value))" */
+        } /* End "switch(::getsubopt(&sub_opt, solve_subopts, &value))" */
 
       } /* End "while(sub_opt != '\0')" */
 
@@ -686,7 +688,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                   Weight_Description<INT> *weight)
 {
   FILE *inp_fd;
-  char  ctemp[1024], inp_line[MAX_INP_LINE];
+  char  ctemp[2048], inp_line[MAX_INP_LINE];
   char  inp_copy[MAX_INP_LINE];
   char *cptr, *cptr2;
 
@@ -823,7 +825,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 }
 
                 cptr2++;
-                iret     = sscanf(cptr2, "%s", tmpstr);
+                iret     = sscanf(cptr2, "%2047s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
                   Gen_Error(0, "FATAL: invalid value for infile");
@@ -875,7 +877,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
                 }
 
                 cptr2++;
-                iret     = sscanf(cptr2, "%s", tmpstr);
+                iret     = sscanf(cptr2, "%2047s", tmpstr);
                 lb->file = tmpstr;
                 if (iret != 1) {
                   Gen_Error(0, "FATAL: invalid value for outfile");
@@ -1703,13 +1705,10 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     /* Free up memory */
-    if (nvars > 0) {
-      for (cnt = 0; cnt < nvars; cnt++) {
-        free(var_names[cnt]);
-      }
-
-      free(var_names);
+    for (cnt = 0; cnt < nvars; cnt++) {
+      free(var_names[cnt]);
     }
+    free(var_names);
 
     /*
      * If there is still no valid index then the variable name does
@@ -1727,12 +1726,6 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     if (nvars < weight->exo_vindx) {
       Gen_Error(0, "FATAL: requested variable index is larger than number in"
                    " ExodusII weighting file");
-      return 0;
-    }
-
-    if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "FATAL: variable index must be in the range [1,%d]", nvars);
-      Gen_Error(0, ctemp);
       return 0;
     }
 

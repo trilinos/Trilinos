@@ -51,7 +51,6 @@
 
 #include "exodusII.h"     // for ex_init_params, ex_err, etc
 #include "exodusII_int.h" // for nc_flt_code, etc
-#include "netcdf.h"       // for NC_NOERR, nc_def_dim, etc
 #include <stddef.h>       // for size_t, NULL
 #include <stdio.h>        // for snprintf
 #include <stdlib.h>       // for free, malloc
@@ -530,10 +529,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   /* leave define mode */
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete variable definitions in file id %d",
-             exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
+  if ((status = ex_leavedef(exoid, __func__)) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -597,10 +593,8 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
     invalidate_id_status(exoid, 0, VAR_FAM_PROP(1), model->num_face_maps, invalid_ids);
     invalidate_id_status(exoid, 0, VAR_EM_PROP(1), model->num_elem_maps, invalid_ids);
 
-    if (invalid_ids != NULL) {
-      free(invalid_ids);
-      invalid_ids = NULL;
-    }
+    free(invalid_ids);
+    invalid_ids = NULL;
   }
 
   /* Write dummy values to the names arrays to avoid corruption issues on some
@@ -622,10 +616,6 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
 /* Fatal error: exit definition mode and return */
 error_ret:
-  if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
-  {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, status);
-  }
+  ex_leavedef(exoid, __func__);
   EX_FUNC_LEAVE(EX_FATAL);
 }

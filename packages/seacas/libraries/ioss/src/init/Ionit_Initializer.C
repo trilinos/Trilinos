@@ -33,7 +33,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
 
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
 #include <exo_fac/Ioex_IOFactory.h>
 #endif
 
@@ -41,11 +41,15 @@
 #include <generated/Iogn_DatabaseIO.h>
 #include <heartbeat/Iohb_DatabaseIO.h>
 
-#if !defined(NO_PAMGEN_SUPPORT)
+#ifdef HAVE_SEACASIOSS_ADIOS2
+#include <adios/Ioad_Initializer.h>
+#endif
+
+#if defined(SEACAS_HAVE_PAMGEN)
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
-#if !defined(NO_DATAWAREHOUSE_SUPPORT)
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
 #include <data_warehouse/Iodw_DatabaseIO.h>
 #endif
 
@@ -82,13 +86,13 @@ namespace Ioss {
     {
       IOSS_FUNC_ENTER(m_);
 
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
       Ioex::IOFactory::factory(); // Exodus
 #endif
-#if !defined(NO_PAMGEN_SUPPORT)
+#if defined(SEACAS_HAVE_PAMGEN)
       Iopg::IOFactory::factory(); // Pamgen
 #endif
-#if !defined(NO_DATAWAREHOUSE_SUPPORT)
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
       Iodw::IOFactory::factory(); // DataWarehouse
 #endif
 #if defined(SEACAS_HAVE_CGNS)
@@ -102,6 +106,9 @@ namespace Ioss {
       Ioss::StorageInitializer();
       Ioss::Initializer();
       Iotr::Initializer();
+      #ifdef HAVE_SEACASIOSS_ADIOS2
+      Ioad::Initializer(); // ADIOS2
+      #endif
     }
 
     Initializer::~Initializer()

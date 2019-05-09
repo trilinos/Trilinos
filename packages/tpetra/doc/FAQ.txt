@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-12-14 09:39:50 mhoemme"
+#+DATE: Time-stamp: "2019-04-16 09:58:15 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -392,27 +392,14 @@ GO types it enables by default.
 ** How does Tpetra pick which GO types to enable by default?
 
 By default, Tpetra currently enables ~GO = int~ and ~GO = long long~.
-Some build options affect Tpetra's default behavior; see below.
+If users enable ~GO = long~ (by setting ~Tpetra_INST_INT_LONG:BOOL=ON~
+explicitly), then Tpetra does not enable ~GO = long long~ by default.
 Tpetra prefers ~GO = long long~, because the C++11 standard requires
 that ~long long~ have at least 64 bits.  Depending on the platform,
 ~long~ could be either 32 or 64 bits.  Tpetra does not enable more
 types by default, because that would increase build times and library
 sizes.  Bug 6358 (in the Bugzilla bug tracking system) prevents Tpetra
 from disabling ~GO = int~ by default.
-
-Two build options control Tpetra's default-enabled GO types:
-
-  - If users enable ~GO = long~ (by setting
-    ~Tpetra_INST_INT_LONG:BOOL=ON~ explicitly), then Tpetra does not
-    enable ~GO = long long~ by default.
-  - Tpetra currently requires Teuchos to have support for ~long long~.
-    Specifically, the CMake option ~Teuchos_ENABLE_LONG_LONG_INT~ must
-    be ON (or ~NOT DEFINED~).  If it is ~DEFINED~ but OFF, then Tpetra
-    enables ~long~ by default instead.
-
-These two options help Tpetra work around environments that lack
-correct ~long long~ support.  (This used to be the case for CUDA,
-but is not true any more.  See GitHub issue #1683.)
 
 ** What Scalar types does Tpetra allow?
 

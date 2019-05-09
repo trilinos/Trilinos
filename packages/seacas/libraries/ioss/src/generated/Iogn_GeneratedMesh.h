@@ -92,8 +92,8 @@ namespace Iogn {
        Node Count (total)    = 1287
        Element Count (total) = 1152
        Block Count           = 3
-       Nodeset Count         = 3
-       Sideset Count         = 3
+       NodeSet Count         = 3
+       SideSet Count         = 3
        \endcode
 
        - tets -- no argument - specifies that each hex should be

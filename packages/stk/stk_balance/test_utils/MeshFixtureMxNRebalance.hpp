@@ -79,7 +79,7 @@ protected:
     void create_field_on_entire_mesh(const std::string& fieldName)
     {
         targetDecompField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field_on_mesh(*targetDecompField, get_meta().universal_part(), nullptr);
+        stk::mesh::put_field_on_mesh(*targetDecompField, get_meta().universal_part(), static_cast<double*>(nullptr));
     }
 
     void create_target_decomp_field_on_entire_mesh()

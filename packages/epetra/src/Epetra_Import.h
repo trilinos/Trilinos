@@ -298,6 +298,8 @@ in the above example to do an export operation to y, adding the contributions th
 
   Epetra_Distributor & Distributor() const {return(*Distor_);};
 
+  const Epetra_Distributor * DistributorPtr() const {return(Distor_);}
+
   //! @name Print object to an output stream
   //@{
   virtual void Print(std::ostream & os) const;

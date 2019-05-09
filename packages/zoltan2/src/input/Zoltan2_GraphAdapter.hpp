@@ -176,7 +176,7 @@ public:
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
    */
   virtual void getVertexWeightsView(const scalar_t *&weights, int &stride,
-                                    int idx = 0) const
+                                    int /* idx */ = 0) const
   {
     weights = NULL;
     stride = 0;
@@ -187,7 +187,7 @@ public:
   /*! \brief Indicate whether vertex weight with index idx should be the
    *         global degree of the vertex
    */
-  virtual bool useDegreeAsVertexWeight(int idx) const
+  virtual bool useDegreeAsVertexWeight(int /* idx */) const
   {
     return false;
   }
@@ -203,7 +203,7 @@ public:
       \param idx ranges from zero to one less than getNumWeightsPerEdge().
    */
   virtual void getEdgeWeightsView(const scalar_t *&weights, int &stride,
-                                  int idx = 0) const
+                                  int /* idx */ = 0) const
   {
     weights = NULL;
     stride = 0;

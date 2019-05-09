@@ -77,7 +77,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("Graph input file: ");
     }
-    (void)scanf("%s", inname);
+    (void)scanf("%256s", inname);
 
     *fin = fopen(inname, "r");
     if (*fin == NULL) {
@@ -90,7 +90,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("Assignment output file: ");
     }
-    (void)scanf("%s", outassignname);
+    (void)scanf("%256s", outassignname);
   }
 
   /* Name output results file. */
@@ -98,7 +98,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("File name for saving run results: ");
     }
-    (void)scanf("%s", outfilename);
+    (void)scanf("%256s", outfilename);
   }
 
   /* Initialize the method flags */
@@ -132,7 +132,7 @@ void input_queries(FILE **fin,           /* input file */
       if (PROMPT) {
         printf("Assignment input file: ");
       }
-      (void)scanf("%s", inassignname);
+      (void)scanf("%256s", inassignname);
 
       *finassign = fopen(inassignname, "r");
       if (*finassign == NULL) {
@@ -146,7 +146,7 @@ void input_queries(FILE **fin,           /* input file */
       if (PROMPT) {
         printf("Geometry input file name: ");
       }
-      (void)scanf("%s", geomname);
+      (void)scanf("%256s", geomname);
 
       *fingeom = fopen(geomname, "r");
       if (*fingeom == NULL) {
@@ -170,7 +170,7 @@ void input_queries(FILE **fin,           /* input file */
           if (PROMPT) {
             printf("Geometry input file name: ");
           }
-          (void)scanf("%s", geomname);
+          (void)scanf("%256s", geomname);
 
           *fingeom = fopen(geomname, "r");
           if (*fingeom == NULL) {
@@ -194,7 +194,7 @@ void input_queries(FILE **fin,           /* input file */
         if (PROMPT) {
           printf("Geometry input file name: ");
         }
-        (void)scanf("%s", geomname);
+        (void)scanf("%256s", geomname);
 
         *fingeom = fopen(geomname, "r");
         if (*fingeom == NULL) {

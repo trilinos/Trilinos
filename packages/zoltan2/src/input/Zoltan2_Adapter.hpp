@@ -131,7 +131,7 @@ public:
       \param ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &ids) const {
+  virtual void getIDsKokkosView(Kokkos::View<gno_t *> &/* ids */) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -159,8 +159,8 @@ public:
   // *   getNumWeightsPerID > 0.
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
-  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &wgt, 
-                              int idx = 0) const {
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t *> &/* wgt */, 
+                              int /* idx */ = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -202,8 +202,126 @@ public:
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+protected:
+
+  // Write Chaco-formatted graph and assign files echoing adapter input
+  // This routine is serial and may be slow; use it only for debugging
+  // This function does not write edge info to the graph file, as the
+  // BaseAdapter does not know about edge info; it writes
+  // only the Chaco header and vertex weights (if applicable).
+  void generateWeightFileOnly(const char* fileprefix, 
+                              const Teuchos::Comm<int> &comm) const;
+
 };
+
+template <typename User>
+void BaseAdapter<User>::generateWeightFileOnly(
+  const char *fileprefix,
+  const Teuchos::Comm<int> &comm
+) const
+{
+  int np = comm.getSize();
+  int me = comm.getRank();
+
+  size_t nLocalIDs = this->getLocalNumIDs();
+
+  // Write .graph file:  header and weights only (no edges)
+  // Adapters with edges have to implement their own generateFiles function
+  // to provide edge info.
+  {
+    // append suffix to filename
+    std::string filenamestr = fileprefix;
+    filenamestr = filenamestr + ".graph";
+    const char *filename = filenamestr.c_str();
+
+    size_t nGlobalIDs;
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &nLocalIDs, &nGlobalIDs);
+
+    int nWgts = this->getNumWeightsPerID();
+
+    for (int p = 0; p < np; p++) {
+
+      // Is it this processor's turn to write to files?
+      if (me == p) {
+
+        std::ofstream fp;
+
+        if (me == 0) {
+          // open file for writing
+          fp.open(filename, std::ios::out);
+          // write Chaco header info
+          // this function assumes no edges
+          fp << nGlobalIDs << " " << 0 << " " 
+             << (nWgts ? "010" : "000") << " "
+             << (nWgts > 1 ? std::to_string(nWgts) : " ") << std::endl;
+        }
+        else {
+          // open file for appending
+          fp.open(filename, std::ios::app);
+        }
+
+        if (nWgts) {
+
+          // get weight data
+          const scalar_t **wgts = new const scalar_t *[nWgts];
+          int *strides = new int[nWgts];
+          for (int n = 0; n < nWgts; n++)
+            getWeightsView(wgts[n], strides[n], n);
   
+          // write weights to file
+          for (size_t i = 0; i < nLocalIDs; i++) {
+            for (int n = 0; n < nWgts; n++)
+              fp << wgts[n][i*strides[n]] << " ";
+            fp << "\n";
+          }
+  
+          delete [] strides;
+          delete [] wgts;
+        }
+  
+        fp.close();
+      }
+  
+      comm.barrier();
+    }
+  }
+
+  // write assignments file
+  {
+    std::string filenamestr = fileprefix;
+    filenamestr = filenamestr + ".assign";
+    const char *filename = filenamestr.c_str();
+
+    for (int p = 0; p < np; p++) {
+
+      // Is it this processor's turn to write to files?
+      if (me == p) {
+  
+        std::ofstream fp;
+  
+        if (me == 0) {
+          // open file for writing
+          fp.open(filename, std::ios::out);
+        }
+        else {
+          // open file for appending
+          fp.open(filename, std::ios::app);
+        }
+  
+        const part_t *parts;
+        this->getPartsView(parts);
+       
+        for (size_t i = 0; i < nLocalIDs; i++) {
+          fp << (parts != NULL ? parts[i] : me) << "\n";
+        }
+        fp.close();
+      }
+  
+      comm.barrier();
+    }
+  }
+}
+
 }  //namespace Zoltan2
   
 #endif

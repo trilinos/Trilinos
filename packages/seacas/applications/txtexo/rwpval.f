@@ -1,23 +1,23 @@
 C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
       subroutine rwpval(ntxt, ndb, a, ia, c, nelblk, numnps, numess,
      &  idelb, idnps, idess, *)
@@ -39,10 +39,10 @@ C
       character*1 c(*)
       integer idelb(*), idnps(*), idess(*)
       integer cerr
-      
+
 C ... Skip comment record
       read (ntxt, *, end=100, err=100)
-      
+
 C ... Element block properties
       read (ntxt, *, end=110, err=110) numebp
 
@@ -54,10 +54,10 @@ C ... Element block properties
          call memerr()
          return 1
        end if
-       
+
        call rwpval1(ntxt, ndb, EXEBLK, numebp, nelblk, idelb,
      &   c(iebpn), a(iebpv), *200)
-       
+
        call mcdel ('EBPNAM')
        call mddel ('EBPVAL')
       call mdstat (nerr, mem)
@@ -77,7 +77,7 @@ C ... Node set properties
          return 1
       end if
 
-      call rwpval1 (ntxt, ndb, EXNSET, numnsp, numnps, idnps, 
+      call rwpval1 (ntxt, ndb, EXNSET, numnsp, numnps, idnps,
      &             c(inspn), a(inspv), *200)
 
       call mcdel ('NSPNAM')
@@ -87,8 +87,8 @@ C ... Node set properties
          call memerr()
          return 1
       end if
-      
-C ... Side set properties      
+
+C ... Side set properties
       read (ntxt, *, end=120, err=120) numssp
       call mcrsrv ('SSPNAM', isspn, numssp * mxstln)
       call mdrsrv ('SSPVAL', isspv, numssp * numess)
@@ -119,4 +119,4 @@ C ... Side set properties
 
 
 
-      
+

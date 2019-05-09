@@ -50,6 +50,7 @@ INCLUDE(TribitsAddTestHelpers)
 INCLUDE(TribitsVerbosePrintVar)
 INCLUDE(TribitsProcessEnabledTpl)
 INCLUDE(TribitsInstallHeaders)
+INCLUDE(TribitsGetVersionDate)
 
 # Standard TriBITS utilities includes
 INCLUDE(TribitsAddOptionAndDefine)
@@ -271,6 +272,28 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Skip the Fortran/C++ compatibility test"
     OFF )
 
+  IF (NOT CMAKE_VERSION VERSION_LESS 3.11.0)
+
+    ADVANCED_SET(
+      ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE
+      "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT}"
+      CACHE BOOL
+      "If TRUE, the directory and file permissions on the installed directories and files will be set to world readable.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+      )
+  
+    IF ("${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}" STREQUAL "")
+      SET(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT
+        "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE}")
+    ENDIF()
+    ADVANCED_SET(
+      ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
+      "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE_DEFAULT}"
+      CACHE BOOL
+      "If TRUE, the directory and file permissions on the installed directories and files will be set to group readable.  Setting ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE=ON implies this is 'ON' as well.  NOTE: Empty '' (the default) leaves default CMake permissions in place."
+      )
+
+  ENDIF()
+
   IF ("${${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_SET_INSTALL_RPATH_DEFAULT TRUE)
   ELSE()
@@ -315,6 +338,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   IF ("${${PROJECT_NAME}_WRITE_NINJA_MAKEFILES}" STREQUAL "")
     SET(${PROJECT_NAME}_WRITE_NINJA_MAKEFILES OFF)
   ENDIF()
+
+  ADVANCED_SET(${PROJECT_NAME}_PARALLEL_COMPILE_JOBS_LIMIT "" CACHE STRING
+    "If not empty '', gives an integer for the max number of object compile jobs for Ninja builds. (Default empty for no limit)")
+
+  ADVANCED_SET(${PROJECT_NAME}_PARALLEL_LINK_JOBS_LIMIT "" CACHE STRING
+    "If not empty '', gives an integer for the max number of lib and exe link jobs for Ninja builds. (Default empty for no limit)")
   
   IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
     SET(${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT ON)
@@ -560,7 +589,16 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     ${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE
     ${${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT}
     CACHE BOOL
-    "Generate a <ProjectName>RepoVersion.txt file.")
+    "Generate the ${PROJECT_NAME}RepoVersion.txt file.")
+
+  IF ("${${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES_DEFAULT OFF)
+  ENDIF()
+  ADVANCED_SET(
+    ${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES
+    ${${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES_DEFAULT}
+    CACHE BOOL
+    "Generate VersionDate.cmake and <RepoName>_version_date.h files.")
 
   IF ("${DART_TESTING_TIMEOUT_DEFAULT}"  STREQUAL "")
     SET(DART_TESTING_TIMEOUT_DEFAULT  1500)
@@ -889,6 +927,64 @@ MACRO(TRIBITS_SETUP_INSTALLATION_PATHS)
   STRING(REPLACE ":" ";" CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}")
   PRINT_VAR(CMAKE_INSTALL_RPATH)
 
+  #
+  # E) Set permissions on created installation directories
+  #
+
+  IF (
+    (NOT "${${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE}" STREQUAL "")
+    OR
+    (NOT "${${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE}" STREQUAL "")
+    )
+
+    IF (NOT CMAKE_VERSION VERSION_LESS 3.11.0)
+
+      PRINT_VAR(${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE)
+      PRINT_VAR(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE)
+  
+      # Group permissions
+      IF (${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE 
+        OR ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE
+        )
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_GROUP
+          GROUP_READ GROUP_EXECUTE)
+      ELSE()
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_GROUP) # Empty
+      ENDIF()
+  
+      # World permissions
+      IF (${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE)
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_WORLD
+          WORLD_READ WORLD_EXECUTE)
+      ELSE()
+        SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_WORLD) # Empty
+      ENDIF()
+  
+      # Directory permissions
+      SET(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        ${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_GROUP}
+        ${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_WORLD}
+        )
+  
+      # Print the permissions in a way that allows for strong testing
+      STRING(REPLACE ";" " " CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_W_SPACES
+        "${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS}" )
+      MESSAGE("-- " "CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS = "
+       "(${CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS_W_SPACES})")
+
+    ELSE()
+
+      MESSAGE("NOTE: CMAKE_VERSION = ${CMAKE_VERSION} < 3.11.0 and"
+        " the options ${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE"
+        " and ${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE are no-ops"
+        " because CMake does not support the var"
+        " CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS!" )
+
+    ENDIF()
+
+  ENDIF()
+
 ENDMACRO()
 
 
@@ -1079,7 +1175,7 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
    SINGLE_REPO_VERSION_STRING_OUT
   )
 
-  IF (NOT GIT_EXEC)
+  IF (NOT GIT_EXECUTABLE)
     MESSAGE(SEND_ERROR "ERROR, the program '${GIT_NAME}' could not be found!"
       "  We can not generate the repo version file!")
   ENDIF()
@@ -1087,7 +1183,7 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
   # A) Get the basic version info.
 
   EXECUTE_PROCESS(
-    COMMAND ${GIT_EXEC} log -1 --pretty=format:"%h [%ad] <%ae>"
+    COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:"%h [%ad] <%ae>"
     WORKING_DIRECTORY ${GIT_REPO_DIR}
     RESULT_VARIABLE GIT_RETURN
     OUTPUT_VARIABLE GIT_OUTPUT
@@ -1097,7 +1193,7 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
   # strip them out later :-(
 
   IF (NOT GIT_RETURN STREQUAL 0)
-    MESSAGE(FATAL_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0"
+    MESSAGE(FATAL_ERROR "ERROR, ${GIT_EXECUTABLE} command returned ${GIT_RETURN}!=0"
       " for extra repo ${GIT_REPO_DIR}!")
     SET(GIT_VERSION_INFO "Error, could not get version info!")
   ELSE()
@@ -1111,14 +1207,14 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
   # B) Get the first 80 chars of the summary message for more info
 
   EXECUTE_PROCESS(
-    COMMAND ${GIT_EXEC} log -1 --pretty=format:"%s"
+    COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:"%s"
     WORKING_DIRECTORY ${GIT_REPO_DIR}
     RESULT_VARIABLE GIT_RETURN
     OUTPUT_VARIABLE GIT_OUTPUT
     )
 
   IF (NOT GIT_RETURN STREQUAL 0)
-    MESSAGE(FATAL_ERROR "ERROR, ${GIT_EXEC} command returned ${GIT_RETURN}!=0"
+    MESSAGE(FATAL_ERROR "ERROR, ${GIT_EXECUTABLE} command returned ${GIT_RETURN}!=0"
       " for extra repo ${GIT_REPO_DIR}!")
     SET(GIT_VERSION_SUMMARY "Error, could not get version summary!")
   ELSE()
@@ -1242,9 +1338,6 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
       SET(PROJECT_SOURCE_IS_GIT_REPO FALSE)
     ENDIF()
     IF (PROJECT_SOURCE_IS_GIT_REPO)
-      # Find git first here so we  don't have to find it in called function so
-      # it can be unit tested.
-      FIND_PROGRAM(GIT_EXEC ${GIT_NAME})
       # Get repo versions, print to stdout and write file
       TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE()
       # Add install target for this file
@@ -1372,7 +1465,7 @@ MACRO(TRIBITS_READ_EXTRA_REPOSITORIES_LISTS)
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
             "\n***"
-            "\n*** WARNING!  Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
+            "\n*** NOTE: Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
             "\n***\n")
             # ToDo: TriBITS:73: Shorten above message to just one line
         ELSE()
@@ -1401,7 +1494,7 @@ MACRO(TRIBITS_READ_EXTRA_REPOSITORIES_LISTS)
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
             "\n***"
-            "\n*** WARNING!  Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
+            "\n*** NOTE: Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
             "\n***\n")
           # ToDo: TriBITS:73: Shorten above warning to just one line
         ELSE()
@@ -2032,6 +2125,20 @@ MACRO(TRIBITS_SETUP_ENV)
       "\nTotal time to probe and setup the environment")
   ENDIF()
 
+  # Set ninja compile and link parallel job limits
+
+  IF (${PROJECT_NAME}_PARALLEL_COMPILE_JOBS_LIMIT)
+    SET_PROPERTY(GLOBAL APPEND PROPERTY JOB_POOLS
+      compile_job_pool=${${PROJECT_NAME}_PARALLEL_COMPILE_JOBS_LIMIT})
+    SET(CMAKE_JOB_POOL_COMPILE compile_job_pool)
+  ENDIF()
+  
+  IF (${PROJECT_NAME}_PARALLEL_LINK_JOBS_LIMIT)
+    SET_PROPERTY(GLOBAL APPEND PROPERTY JOB_POOLS
+      link_job_pool=${${PROJECT_NAME}_PARALLEL_LINK_JOBS_LIMIT})
+    SET(CMAKE_JOB_POOL_LINK link_job_pool)
+  ENDIF()
+
 ENDMACRO()
 
 
@@ -2216,6 +2323,7 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
     IF (TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE_DEBUG_DUMP)
       MESSAGE("-- Writing the file ${OUTPUT_VERSION_HEADER_FILE} ...")
     ENDIF()
+    TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  CONFIGURE  "${OUTPUT_VERSION_HEADER_FILE}")
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_PACKAGE_ARCH_DIR}/Tribits_version.h.in
       ${OUTPUT_VERSION_HEADER_FILE})
@@ -2244,6 +2352,95 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES)
     TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME}  ${REPO_DIR}  TRUE
       "${${PROJECT_NAME}_BINARY_DIR}/${REPO_DIR}/${REPO_NAME}_version.h")
   ENDFOREACH()
+ENDFUNCTION()
+
+
+#
+# Function that generates the VersionDate.cmake and
+# ${REPO_NAME}_version_date.h files.
+#
+# NOTE: This is done as a function so that the read-in version variables don't
+# bleed into the outer scope.
+#
+FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_DATE_FILES
+  REPOSITORY_NAME  REPOSITORY_DIR  ADD_INSTALL_TARGET
+  )
+
+  IF (TRIBITS_REPOSITORY_CONFIGURE_VERSION_DATE_FILES_DEBUG_DUMP)
+    MESSAGE("TRIBITS_REPOSITORY_CONFIGURE_VERSION_DATE_FILES: "
+      "'${REPOSITORY_NAME}'  '${REPOSITORY_DIR}" )
+  ENDIF()
+
+  STRING(TOUPPER ${REPOSITORY_NAME} REPOSITORY_NAME_UC)
+
+  TRIBITS_SET_BASE_REPO_DIR(${PROJECT_SOURCE_DIR} ${REPOSITORY_DIR}
+    REPO_SOURCE_ABS_DIR)
+
+  TRIBITS_SET_BASE_REPO_DIR(${PROJECT_BINARY_DIR} ${REPOSITORY_DIR}
+    REPO_BINARY_ABS_DIR)
+
+  SET(REPO_GIT_VERSION_DATE)
+  IF (NOT IS_DIRECTORY "${REPO_SOURCE_ABS_DIR}/.git")
+    MESSAGE("-- NOTE: Can't fill in version date files for ${REPOSITORY_NAME} since"
+      " ${REPO_SOURCE_ABS_DIR}/.git/ does not exist!")
+  ELSEIF (GIT_VERSION_STRING VERSION_LESS "2.10.0")
+    MESSAGE("-- NOTE: Can't fill in version date files for ${REPOSITORY_NAME} since"
+      " GIT_VERSION_STRING=${GIT_VERSION_STRING} < 2.10.0")
+  ELSE()
+    # Generate the version date integer
+    TRIBITS_GET_RAW_GIT_COMMIT_UTC_TIME("${REPO_SOURCE_ABS_DIR}" "HEAD"
+      REPO_GIT_COMMIT_UTC_TIME)
+    TRIBITS_GET_VERSION_DATE_FROM_RAW_GIT_COMMIT_UTC_TIME("${REPO_GIT_COMMIT_UTC_TIME}"
+      REPO_GIT_VERSION_DATE )
+  ENDIF()
+
+  IF (REPO_GIT_VERSION_DATE)
+    # Configure the VersionDate.cmake file in the repo binary dir and include it
+    SET(REPO_VERSION_DATE_CMAKE_FILE "${REPO_BINARY_ABS_DIR}/VersionDate.cmake")
+    CONFIGURE_FILE(
+      "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_PACKAGE_ARCH_DIR}/VersionDate.cmake.in"
+      "${REPO_VERSION_DATE_CMAKE_FILE}" )
+    TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE  "${REPO_VERSION_DATE_CMAKE_FILE}")
+    INCLUDE(${REPO_VERSION_DATE_CMAKE_FILE})
+  ENDIF()
+
+  # Configure the <RepoName>_version_date.h file in the repo binary dir
+  IF (REPO_GIT_VERSION_DATE)
+    SET(REPOSITORY_VERSION_DATE_MACRO_DEF
+      "#define ${REPOSITORY_NAME_UC}_VERSION_DATE ${REPO_GIT_VERSION_DATE}" )
+  ELSE()
+    SET(REPOSITORY_VERSION_DATE_MACRO_DEF
+      "#undef ${REPOSITORY_NAME_UC}_VERSION_DATE" )
+  ENDIF()
+  SET(REPO_VERSION_DATE_HEADER_FILE "${REPO_BINARY_ABS_DIR}/${REPOSITORY_NAME}_version_date.h")
+  TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  CONFIGURE  "${REPO_VERSION_DATE_HEADER_FILE}")
+  CONFIGURE_FILE(
+    "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_PACKAGE_ARCH_DIR}/Tribits_version_date.h.in"
+    "${REPO_VERSION_DATE_HEADER_FILE}" )
+
+  # Add the install target for <RepoName>_version_date.h
+  IF (ADD_INSTALL_TARGET)
+    TRIBITS_INSTALL_HEADERS(HEADERS  ${REPO_VERSION_DATE_HEADER_FILE})
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
+# Configure each of the Repositories version date files
+#
+
+FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_DATE_FILES)
+  #PRINT_VAR(ARGN)
+  IF (${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES)
+    FOREACH(REPO ${ARGN})
+      TRIBITS_GET_REPO_NAME_DIR(${REPO}  REPO_NAME  REPO_DIR)
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("Considering configuring version date files for '${REPO_NAME}'")
+      ENDIF()
+      TRIBITS_REPOSITORY_CONFIGURE_VERSION_DATE_FILES(${REPO_NAME} ${REPO_DIR} TRUE)
+    ENDFOREACH()
+  ENDIF()
 ENDFUNCTION()
 
 
@@ -2704,6 +2901,30 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
     ENDIF()
 
   ENDIF()
+
+  # Create custom 'install/package_by_package' target
+
+  SET(TRIBITS_ENABLED_PACKAGES_BINARY_DIRS)
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    LIST(APPEND TRIBITS_ENABLED_PACKAGES_BINARY_DIRS "${${TRIBITS_PACKAGE}_BINARY_DIR}")
+  ENDFOREACH()
+
+  CONFIGURE_FILE(
+    ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/cmake_pbp_install.cmake.in
+    cmake_pbp_install.cmake
+    @ONLY
+    )
+
+  ADVANCED_SET(${PROJECT_NAME}_INSTALL_PBP_RUNNER "" CACHE FILEPATH
+    "Program used to run cmake -P cmake_pbp_install.cmake to change user for 'install_package_by_package' target")
+  PRINT_VAR(${PROJECT_NAME}_INSTALL_PBP_RUNNER)
+
+
+  ADD_CUSTOM_TARGET(install_package_by_package
+   ${${PROJECT_NAME}_INSTALL_PBP_RUNNER}
+    ${CMAKE_COMMAND} -P cmake_pbp_install.cmake
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
 
 ENDMACRO()
 

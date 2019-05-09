@@ -1,23 +1,23 @@
 C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C              
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C                            
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C                                                    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -37,7 +37,7 @@ C=======================================================================
      &     NUMEL, link, nnodes, nelblk, volume, ISEVOK, SUM,
      &     nsel)
 C=======================================================================
-      
+
       include 'exodusII.inc'
       include 'nu_varcnt.blk'
 
@@ -51,17 +51,17 @@ C=======================================================================
       real volume(*)
       REAL SUM(*)
       integer nsel(*)
-      
+
       CHARACTER*32 STRA
       CHARACTER*132 STRTMP, STRB
       CHARACTER*16  ENGNOT, ENG1, ENG2, ENG3, ENG4
-      
+
       include 'nu_io.blk'
       include 'nu_ptim.blk'
       include 'nu_ndisp.blk'
-      
+
       NLAST = 0
-      
+
       IF (AVER) THEN
          IF (DOABS) THEN
             STRA = 'Average absolute value of'
@@ -96,7 +96,7 @@ C=======================================================================
      *     '(2 PI Radius Multiplier) ',A)
  30   FORMAT (/4X,A,' ',A,' on selected elements ',A)
  40   FORMAT (/,4X,'Time        Total  ',32(I8,4x))
-      
+
 C ... Determine number of selected elements in each block
       DO 45 iblk = 1, nelblk
          if (mat(5, iblk) .eq. 1) then
@@ -117,8 +117,8 @@ C ... Determine number of selected elements in each block
          NLAST = 0
          GO TO 120
       ELSE IF (ITMSEL(NLAST)) THEN
-         
-         
+
+
 C     ... If by density, then calculate volume of elements
          IF (DODENS) THEN
 C     ... READ THE STEP AND STORE DISPLACEMENTS
@@ -135,7 +135,7 @@ C     ... Zero the volume of all non-selected elements
          do 55 iel = 1, numel
             if (.not. elmsel(iel)) volume(iel) = 0.0
  55      continue
-         
+
 C     ... Read and store the element variable
          call inirea(numel, 0.0, svar)
          ioff = 1
@@ -146,12 +146,12 @@ C     ... Read and store the element variable
            end if
  56      continue
          TREAD = TIME(NLAST)
-         
-         
+
+
          DO 60 I = 1, NELBLK+1
             SUM(I) = 0.0
  60      CONTINUE
-         
+
          neb1 = nelblk + 1
          do 90 iblk = 1, nelblk
             if (mat(5, iblk) .ne. 1) goto 80
@@ -176,22 +176,22 @@ C ... Note that volume is set to zero for all non-selected elements
          if (aver) then
             sum(neb1) = sum(neb1) / rsel
          end if
-         
+
          DO 100 IO=IOMIN,IOMAX
             WRITE (IO, 110) TREAD, sum(nelblk+1), (SUM(i),i=1, nelblk)
  100     CONTINUE
  110     FORMAT (1X,32(1PE15.8,2X))
-         
+
       END IF
       GO TO 50
-C     
+C
  120  CONTINUE
       RETURN
-      
+
  140  FORMAT ('Minimum = ',A16,' at time ',A16,', Maximum = ',A16,
      *     ' at time ',A16,'.')
  150  FORMAT (/,1X,A)
-      
+
  160  CONTINUE
       CALL PRTERR ('PROGRAM',
      *     'Internal code error, contact sponsor')

@@ -41,6 +41,8 @@
 namespace stk {
 namespace mesh {
 
+class BulkData;
+
 namespace impl {
 
 struct LowerConnectivityCompare
@@ -52,12 +54,12 @@ struct LowerConnectivityCompare
   }
 };
 
-template <typename BulkData>
+template <typename BULKDATA>
 struct LowerConnectivitityRankSensitiveCompare
 {
-  LowerConnectivitityRankSensitiveCompare(const BulkData &bulk_data) : m_mesh(bulk_data) { }
+  LowerConnectivitityRankSensitiveCompare(const BULKDATA &bulk_data) : m_mesh(bulk_data) { }
 
-  const BulkData &m_mesh;
+  const BULKDATA &m_mesh;
 
   bool operator()(Entity first_entity, ConnectivityOrdinal first_ordinal,
                   Entity second_entity, ConnectivityOrdinal second_ordinal) const;
@@ -73,12 +75,12 @@ struct HigherConnectivityCompare
   }
 };
 
-template <typename BulkData>
+template <typename BULKDATA>
 struct HigherConnectivityRankSensitiveCompare
 {
-  HigherConnectivityRankSensitiveCompare(const BulkData &bulk_data) : m_mesh(bulk_data) { }
+  HigherConnectivityRankSensitiveCompare(const BULKDATA &bulk_data) : m_mesh(bulk_data) { }
 
-  const BulkData &m_mesh;
+  const BULKDATA &m_mesh;
 
   bool operator()(Entity first_entity, ConnectivityOrdinal first_ordinal, Entity second_entity,
                   ConnectivityOrdinal second_ordinal) const;
@@ -218,7 +220,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   bool add_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal, Permutation permutation = INVALID_PERMUTATION)
   {
     ThrowAssertMsg(ordinal < m_num_connectivity,
-                   "Ordinal " <<  ordinal << " exceeds topological limit: " << m_num_connectivity);
+                   "Ordinal " <<  (uint32_t)ordinal << " exceeds topological limit: " << m_num_connectivity);
     impl::check_bucket_ordinal(bucket_ordinal, this);
 #ifndef NDEBUG
     // TODO - Add topology invariant; target entity should match a sub topology
@@ -238,15 +240,13 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
       m_permutations[index] = permutation;
     }
 
-    invariant_check_helper(bucket_ordinal);
-
     return true;
   }
 
   bool remove_connectivity(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal)
   {
     ThrowAssertMsg(ordinal < m_num_connectivity,
-                   "Ordinal " <<  ordinal << " exceeds topological limit: " << m_num_connectivity);
+                   "Ordinal " <<  (uint32_t)ordinal << " exceeds topological limit: " << m_num_connectivity);
     impl::check_bucket_ordinal(bucket_ordinal, this);
 
     unsigned index = m_num_connectivity*bucket_ordinal + ordinal;
@@ -260,16 +260,14 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
       m_permutations[index] = INVALID_PERMUTATION;
     }
 
-    invariant_check_helper(bucket_ordinal);
-
     return true;
   }
 
   void begin_modification()
   {}
 
-  template <typename BulkData> // hack to get around dependency
-  void end_modification(BulkData* mesh = NULL);
+  template <typename BULKDATA> // hack to get around dependency
+  void end_modification(BULKDATA* mesh = NULL);
 
   void add_entity()
   {
@@ -279,8 +277,6 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     if (has_permutation()) {
       m_permutations.resize(new_conn_size, INVALID_PERMUTATION);
     }
-
-    invariant_check_helper();
   }
 
   // Always removes last entity
@@ -293,8 +289,6 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     if (has_permutation()) {
       m_permutations.resize(new_conn_size);
     }
-
-    invariant_check_helper();
   }
 
   void copy_entity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal=-1u)
@@ -308,9 +302,6 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
     // Copy connectivity to other BucketConnectivity
     copy_connectivity(from_ordinal, to, to_ordinal);
-
-    invariant_check_helper();
-    to.invariant_check_helper();
   }
 
   void copy_to_fixed(unsigned from_ordinal, SelfType& to)
@@ -359,102 +350,6 @@ private:
                 m_permutations.begin() + from_offset + m_num_connectivity,
                 to.m_permutations.begin() + to_offset);
     }
-  }
-
-  void invariant_check_helper(unsigned bucket_ordinal) const
-  {
-
-  #ifdef STK_INVARIANCE_CHECK
-    const Entity* keys_begin = begin(bucket_ordinal);
-    const Entity* keys_end   = end(bucket_ordinal);
-    const ConnectivityOrdinal* ordinals_begin = begin_ordinals(bucket_ordinal);
-    const ConnectivityOrdinal* ordinals_end   = end_ordinals(bucket_ordinal);
-    const Permutation* permutations_begin = begin_permutations(bucket_ordinal);
-    const Permutation* permutations_end   = end_permutations(bucket_ordinal);
-
-    ThrowAssertMsg(keys_end - keys_begin == m_num_connectivity,
-                   "Expected data to be of size " << m_num_connectivity << ", " << bucket_ordinal << " has keys " << keys_end - keys_begin);
-
-    ThrowAssertMsg(keys_end - keys_begin == ordinals_end - ordinals_begin,
-                   "Num keys, " << keys_end - keys_begin << ", does not match num ordinals, " << ordinals_end - ordinals_begin);
-    if (has_permutation()) {
-      ThrowAssertMsg(keys_end - keys_begin == permutations_end - permutations_begin,
-                     "Num keys, " << keys_end - keys_begin << ", does not match num permutations, " << permutations_end - permutations_begin);
-    }
-    else {
-      ThrowAssertMsg(permutations_end - permutations_begin == 0,
-                     "Expected 0 permutations for node connectivity, found: " << permutations_end - permutations_begin);
-    }
-
-    const Entity*               kitr = keys_begin;
-    const ConnectivityOrdinal*  oitr = ordinals_begin;
-    const Permutation*          pitr = permutations_begin;
-    for ( ; kitr != keys_end; ++kitr, ++oitr) {
-      if (*kitr != Entity()) {
-        ThrowAssertMsg(*oitr == kitr - keys_begin,
-                       "For bucket_ordinal " << bucket_ordinal << ", connectivity to entity " << kitr->local_offset() <<
-                       ", found out-of-order connectivity at index " << kitr - keys_begin << ", its ordinal is " << *oitr);
-        // TODO
-        //entity_rank to_rank  = topology_rank(kitr->topology(), m_spatial_dimension);
-        //ThrowAssertMsg(to_rank() == TargetRank,
-        //                 (debug_message() << "Found connectivity to wrong rank " << to_rank << ", expected " << entity_rank::create(TargetRank)));
-      }
-      else {
-        if (has_permutation()) {
-          ThrowAssertMsg(*pitr == INVALID_PERMUTATION, "If key is invalid, then permutation should be invalid");
-        }
-      }
-
-      if (has_permutation()) {
-        ++pitr;
-      }
-      // TODO - Anything else we can check here?
-    }
-#endif
-
-  }
-
-  void invariant_check_helper() const
-  {
-
-  #ifdef STK_INVARIANCE_CHECK
-    ThrowAssertMsg(static_cast<unsigned>(m_ordinals.size()) == m_num_connectivity,
-                   "Total size of ordinals " << m_ordinals.size() << " does not match num_connectivity " << m_num_connectivity);
-
-    if (has_permutation()) {
-      ThrowAssertMsg(m_permutations.size() == m_targets.size(),
-                     "Total size of permutations " << m_permutations.size() << " does not match size of keys " << m_targets.size());
-    }
-    else {
-      ThrowAssertMsg(m_permutations.empty(), "Permutations should be empty for nodal connectivity");
-    }
-  #endif
-
-  }
-
-  // Call this at the end of modification
-  template <typename BulkData>
-  void invariant_check_helper(BulkData* mesh = NULL) const
-  {
-
-  #ifdef STK_INVARIANCE_CHECK
-    invariant_check_helper();
-
-    if (mesh != NULL) {
-      for (size_t i = 0, e = m_targets.size(); i < e; ++i) {
-        Entity entity = m_targets[i];
-        if (mesh->is_valid(entity)) {
-          //        // TODO
-          //        const EntityKey key_converted_from_partition_index =
-          //            mesh->convert<EntityKey>(m_target_by_partition_index[i]);
-          //        ThrowAssertMsg(key == key_converted_from_partition_index,
-          //            (debug_message() << "Key converted from partition index " << key_converted_from_partition_index
-          //                << " does not match expected key " << key));
-        }
-      }
-    }
-  #endif
-
   }
 
   // Illegal
@@ -722,16 +617,14 @@ public:
       }
     }
 
-    invariant_check_helper(bucket_ordinal);
-
     return found_idx != ~0u;
   }
 
   void begin_modification()
   {}
 
-  template <typename BulkData>
-  void end_modification(BulkData* mesh = NULL);
+  template <typename BULKDATA>
+  void end_modification(BULKDATA* mesh = NULL);
 
   void add_entity()
   {
@@ -743,8 +636,6 @@ public:
     else {
       ++m_num_inactive;
     }
-
-    invariant_check_helper();
   }
 
   void remove_entity()
@@ -760,15 +651,12 @@ public:
     else {
       --m_num_inactive;
     }
-
-    invariant_check_helper();
   }
 
   void copy_entity(unsigned from_ordinal, SelfType& to, unsigned to_ordinal=-1u)
   {
     ThrowAssert(m_from_rank == to.m_from_rank);
     impl::check_bucket_ordinal(from_ordinal, this);
-    invariant_check_helper(from_ordinal);
 
     if (to_ordinal == -1u) {
       to_ordinal = to.size();
@@ -818,10 +706,6 @@ public:
       }
       copy_connectivity(from_ordinal, to, to_ordinal);
     }
-
-    invariant_check_helper();
-    to.invariant_check_helper();
-    to.invariant_check_helper(to_ordinal);
   }
 
   void copy_to_fixed(unsigned from_ordinal, OtherType& to)
@@ -854,9 +738,6 @@ public:
                 m_permutations.begin() + from_offset + num_conn_to_move,
                 to.m_permutations.begin() + to_offset);
     }
-
-    invariant_check_helper();
-    to.invariant_check_helper();
   }
 
   void copy_to_fixed(unsigned from_ordinal, SelfType& to)
@@ -891,7 +772,7 @@ public:
       }
       out << "      Index is: " << idx << ", Num is: " << num << "\n";
       for (int j = idx, je = idx + num; j < je; ++j) {
-        out << "        (target:" << m_targets[j].local_offset() << ", ordinal:" << m_ordinals[j] << ")\n";
+        out << "        (target:" << m_targets[j].local_offset() << ", ordinal:" << (uint32_t)m_ordinals[j] << ")\n";
       }
     }
     else {
@@ -1142,161 +1023,7 @@ private:
       }
     }
 
-    invariant_check_helper(bucket_ordinal);
-
     return rv;
-  }
-
-  void invariant_check_helper(unsigned bucket_ordinal) const
-  {
-  #ifdef STK_INVARIANCE_CHECK
-    const Entity* keys_begin = begin(bucket_ordinal);
-    const Entity* keys_end   = end(bucket_ordinal);
-    const ConnectivityOrdinal* ordinals_begin = begin_ordinals(bucket_ordinal);
-    const ConnectivityOrdinal* ordinals_end   = end_ordinals(bucket_ordinal);
-    const Permutation* permutations_begin = begin_permutations(bucket_ordinal);
-    const Permutation* permutations_end   = end_permutations(bucket_ordinal);
-
-    ThrowAssertMsg(m_last_capacity == m_targets.capacity(), "Expected " << m_last_capacity << " found " << m_targets.capacity());
-    ThrowAssertMsg((keys_end - keys_begin) == num_connectivity(bucket_ordinal),
-                   "Expected data to be of size " << num_connectivity(bucket_ordinal) << ", " << bucket_ordinal << " has keys " << keys_end - keys_begin);
-
-    ThrowAssertMsg(keys_end - keys_begin == ordinals_end - ordinals_begin,
-                   "Num keys, " << keys_end - keys_begin << ", does not match num ordinals, " << ordinals_end - ordinals_begin);
-    if (has_permutation()) {
-      ThrowAssertMsg(keys_end - keys_begin == permutations_end - permutations_begin,
-                     "Num keys, " << keys_end - keys_begin << ", does not match num permutations, " << permutations_end - permutations_begin);
-    }
-    else {
-      ThrowAssertMsg(permutations_end - permutations_begin == 0,
-                     "Expected 0 permutations for node connectivity, found: " << permutations_end - permutations_begin);
-    }
-
-    const Entity*               kitr = keys_begin;
-    const ConnectivityOrdinal*  oitr = ordinals_begin;
-    for ( ; kitr != keys_end; ++kitr, ++ oitr) {
-      ThrowAssertMsg(*kitr != Entity(),
-                     "Should not have invalid connectivity for dynamic connectivity");
-      // TODO
-      //entity_rank to_rank  = topology_rank(kitr->topology(), m_spatial_dimension);
-      //ThrowAssertMsg(to_rank() == ToEntityRank::value,
-      //               (debug_message() << "Found connectivity to wrong rank " << to_rank << ", expected " << entity_rank::create(ToEntityRank::value)));
-      if (kitr + 1 != keys_end) {
-        if (m_direction == Higher) { // back rel
-          if (target_rank <= stk::topology::ELEMENT_RANK) {
-            ThrowAssertMsg(HigherConnectivityCompare()(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
-                           "\nis (ordinal:" << *oitr << ", local_offset:" << kitr->local_offset() << ")" <<
-                           ",\ndata at next slot is (ordinal:" << *(oitr + 1) << ", local_offset:" << (kitr + 1)->local_offset() << ")" <<
-                           "\nConnectivity id is: " << m_id);
-          }
-          else {
-            ThrowAssertMsg(m_rank_sensitive_higher_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
-                           "\nis (" << *oitr << ", " << kitr->local_offset() << ")" <<
-                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" <<
-                           "\nConnectivity id is: " << m_id);
-          }
-        }
-        else {
-          if (target_rank <= stk::topology::ELEMENT_RANK) {
-            ThrowAssertMsg(LowerConnectivityCompare()(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
-                           "\nis (" << *oitr << ", " << kitr->local_offset() << ")" <<
-                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" <<
-                           "\nConnectivity id is: " << m_id);
-          }
-          else {
-            ThrowAssertMsg(m_rank_sensitive_lower_connectivity_cmp(*kitr, *oitr, *(kitr + 1), *(oitr + 1)),
-                           "Connectivity out of order for bucket_ordinal " << bucket_ordinal << "; data at " << kitr - keys_begin <<
-                           "\nis (" << *oitr << ", " << kitr->local_offset() << ")" <<
-                           ",\ndata at next slot is (" << *(oitr + 1) << ", " << (kitr + 1)->local_offset() << ")" <<
-                           "\nConnectivity id is: " << m_id);
-          }
-        }
-      }
-      // TODO - Anything else we can check here?
-    }
-
-    invariant_check_helper();
-  #endif
-
-  }
-
-  void invariant_check_helper() const
-  {
-
-  #ifdef STK_INVARIANCE_CHECK
-    if (!m_active) {
-      ThrowAssertMsg(m_num_connectivities.size() == 0, "Expect empty data if inactive");
-    }
-
-    ThrowAssertMsg(m_last_capacity == m_targets.capacity(), "Expected " << m_last_capacity << " found " << m_targets.capacity());
-
-    unsigned connectivities_sum = 0;
-    size_t lim = m_num_connectivities.size();
-    for (size_t i = 0; i < lim; ++i)
-    {
-      connectivities_sum += m_num_connectivities[i];
-    }
-    ThrowAssertMsg(m_total_connectivities == connectivities_sum,
-                   "Expected m_total_connectivities == " << connectivities_sum << ", found " << m_total_connectivities);
-
-    ThrowAssertMsg(m_num_connectivities.size() == m_indices.size(),
-                   "Expected m_num_connectivities to be of size " << m_indices.size() << ", found " << m_num_connectivities.size());
-
-    ThrowAssertMsg(m_targets.size() == m_ordinals.size(),
-                   "Total size of keys " << m_targets.size() << " does not match size of ordinals " << m_ordinals.size());
-
-    if (has_permutation()) {
-      ThrowAssertMsg(m_permutations.size() == m_targets.size(),
-                     "Total size of permutationss " << m_permutations.size() << " does not match size of keys " << m_targets.size());
-    }
-    else {
-      ThrowAssertMsg(m_permutations.empty(), "Permutations should be empty for nodal connectivity");
-    }
-
-    for (size_t o = 1, e = m_indices.size(); o < e; ++o) {
-      const size_t curr_index = m_indices[o];
-      ThrowAssertMsg(curr_index <= m_targets.size(),
-                     "Index is wrong, " << curr_index << " is beyond max " << m_targets.size());
-      if (!m_needs_shrink_to_fit) {
-        const size_t index_diff     = curr_index - m_indices[o-1];
-        const size_t prior_num_conn = num_chunks(num_connectivity(o-1)) * chunk_size;
-        ThrowAssertMsg(prior_num_conn == index_diff,
-                       "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
-      }
-    }
-  #endif
-
-  }
-
-  // Call after modification end
-  template <typename BulkData>
-  void invariant_check_helper(BulkData* mesh = NULL) const
-  {
-
-  #ifdef STK_INVARIANCE_CHECK
-    invariant_check_helper();
-
-    ThrowAssert(!m_active || !m_needs_shrink_to_fit);
-
-    for (size_t o = 0, e = m_indices.size(); o < e; ++o) {
-      invariant_check_helper(o);
-      if (o > 0) {
-        const size_t curr_index     = m_indices[o];
-        const size_t index_diff     = curr_index - m_indices[o-1];
-        const size_t prior_num_conn = num_connectivity(o-1);
-        ThrowAssertMsg(prior_num_conn == index_diff,
-                       "For offset " << o << ", num_connectivity/index mismatch, index_diff is " << index_diff << ", num conn is " << prior_num_conn);
-      }
-    }
-
-    // Check that connectivity is in-sync
-    ThrowAssertMsg(m_targets.size() == m_ordinals.size(),
-                   "Total size of partition indices " << m_targets.size() << " does not match size of ordinals " << m_ordinals.size());
-  #endif
-
   }
 
   // Illegal
@@ -1340,9 +1067,9 @@ private:
 //
 
 template <EntityRank TargetRank>
-template <typename BulkData> // hack to get around dependency
+template <typename BULKDATA> // hack to get around dependency
 inline
-void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(BulkData* mesh)
+void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(BULKDATA* mesh)
 {
   //TODO: If bucket is blocked, no longer need to shrink to fit!
 
@@ -1359,13 +1086,12 @@ void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(
     }
   }
 
-  invariant_check_helper(mesh);
 }
 
 template <EntityRank TargetRank>
-template <typename BulkData>
+template <typename BULKDATA>
 inline
-void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modification(BulkData* mesh)
+void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modification(BULKDATA* mesh)
 {
   if (m_active && m_needs_shrink_to_fit) {
     resize_and_order_by_index();
@@ -1382,13 +1108,11 @@ void impl::BucketConnectivity<TargetRank, DYNAMIC_CONNECTIVITY>::end_modificatio
 
     m_needs_shrink_to_fit = false;
   }
-
-  invariant_check_helper(mesh);
 }
 
-template <typename BulkData>
+template <typename BULKDATA>
 inline
-bool impl::LowerConnectivitityRankSensitiveCompare<BulkData>::operator()(Entity first_entity, ConnectivityOrdinal first_ordinal,
+bool impl::LowerConnectivitityRankSensitiveCompare<BULKDATA>::operator()(Entity first_entity, ConnectivityOrdinal first_ordinal,
                                                                          Entity second_entity, ConnectivityOrdinal second_ordinal) const
 {
   const EntityRank first_rank = m_mesh.entity_rank(first_entity);
@@ -1398,9 +1122,9 @@ bool impl::LowerConnectivitityRankSensitiveCompare<BulkData>::operator()(Entity 
          || ((first_rank == second_rank) && (first_ordinal < second_ordinal));
 }
 
-template <typename BulkData>
+template <typename BULKDATA>
 inline
-bool impl::HigherConnectivityRankSensitiveCompare<BulkData>::operator()(Entity first_entity, ConnectivityOrdinal first_ordinal, Entity second_entity, ConnectivityOrdinal second_ordinal) const
+bool impl::HigherConnectivityRankSensitiveCompare<BULKDATA>::operator()(Entity first_entity, ConnectivityOrdinal first_ordinal, Entity second_entity, ConnectivityOrdinal second_ordinal) const
 {
   const EntityRank first_rank = m_mesh.entity_rank(first_entity);
   const EntityRank second_rank = m_mesh.entity_rank(second_entity);

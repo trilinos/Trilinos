@@ -106,6 +106,22 @@ STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum) {
   return ret;
 }
 
+STK_MATH_FORCE_INLINE double reduce_max(const Double& x, const int sumNum) {
+  double max = x[0];
+  for (int i=1; i<sumNum; ++i){
+    max = max > x[i] ? max : x[i];
+  }
+  return max;
+}
+
+STK_MATH_FORCE_INLINE double reduce_min(const Double& x, const int sumNum) {
+  double min = x[0];
+  for (int i=1; i<sumNum; ++i){
+    min = min < x[i] ? min : x[i];
+  }
+  return min;
+}
+
 //
 //  Masked +/=:
 //
@@ -197,6 +213,22 @@ STK_MATH_FORCE_INLINE float reduce_sum(const Float& x, const int sumNum ) {
     ret += x[i];
   }
   return ret;
+}
+
+STK_MATH_FORCE_INLINE float reduce_max(const Float& x, const int sumNum ) {
+  float max = x[0];
+  for (int i=1; i<sumNum; ++i){
+    max = max > x[i] ? max : x[i];
+  }
+  return max;
+}
+
+STK_MATH_FORCE_INLINE float reduce_min(const Float& x, const int sumNum ) {
+  float min = x[0];
+  for (int i=1; i<sumNum; ++i){
+    min = min < x[i] ? min : x[i];
+  }
+  return min;
 }
 
 STK_MATH_FORCE_INLINE bool are_all(const Boolf& a, const int sumNum=nfloats) {

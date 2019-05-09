@@ -359,10 +359,9 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::contigSubViewImpl(
 
   const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
     tpetraVectorSpace<Scalar>(
-        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
           tpetraView->getNumVectors(),
-          tpetraView->getMap()->getComm(),
-          tpetraView->getMap()->getNode()
+          tpetraView->getMap()->getComm()
           )
         );
 
@@ -390,10 +389,9 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstContigSubView
 
   const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
     tpetraVectorSpace<Scalar>(
-        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
           tpetraView->getNumVectors(),
-          tpetraView->getMap()->getComm(),
-          tpetraView->getMap()->getNode()
+          tpetraView->getMap()->getComm()
           )
         );
 
@@ -424,10 +422,9 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonContigSubViewImpl(
 
   const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
     tpetraVectorSpace<Scalar>(
-        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
           tpetraView->getNumVectors(),
-          tpetraView->getMap()->getComm(),
-          tpetraView->getMap()->getNode()
+          tpetraView->getMap()->getComm()
           )
         );
 
@@ -458,10 +455,9 @@ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconstNonContigSubV
 
   const RCP<const ScalarProdVectorSpaceBase<Scalar> > viewDomainSpace =
     tpetraVectorSpace<Scalar>(
-        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+        Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
           tpetraView->getNumVectors(),
-          tpetraView->getMap()->getComm(),
-          tpetraView->getMap()->getNode()
+          tpetraView->getMap()->getComm()
           )
         );
 

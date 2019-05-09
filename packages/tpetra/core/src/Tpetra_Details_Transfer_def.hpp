@@ -44,13 +44,231 @@
 
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_ImportExportData.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include <sstream>
 
+namespace { // (anonymous)
+
+  // Assume that dv is sync'd.
+  template<class ElementType, class DeviceType>
+  Teuchos::ArrayView<const ElementType>
+  makeConstArrayViewFromDualView (const Kokkos::DualView<ElementType*, DeviceType>& dv)
+  {
+    TEUCHOS_ASSERT( ! dv.need_sync_host () );
+    auto hostView = dv.view_host ();
+    const auto size = hostView.extent (0);
+    return Teuchos::ArrayView<const ElementType> (size == 0 ? nullptr : hostView.data (), size);
+  }
+
+} // namespace (anonymous)
+
 namespace Tpetra {
 namespace Details {
+
+template <class LO, class GO, class NT>
+Transfer<LO, GO, NT>::
+Transfer (const Teuchos::RCP<const map_type>& source,
+	  const Teuchos::RCP<const map_type>& target,
+          const Teuchos::RCP<Teuchos::FancyOStream>& out,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist,
+	  const std::string& className) :
+  TransferData_ (new ImportExportData<LO, GO, NT> (source, target, out, plist))
+{
+  TEUCHOS_ASSERT( ! TransferData_->out_.is_null () );
+  this->setParameterList (plist, className);
+}
+
+template <class LO, class GO, class NT>
+Transfer<LO, GO, NT>::
+Transfer (const Transfer<LO, GO, NT>& rhs, reverse_tag)
+{
+  TEUCHOS_ASSERT( ! (rhs.TransferData_).is_null () );
+  this->TransferData_ = rhs.TransferData_->reverseClone ();
+  TEUCHOS_ASSERT( ! this->TransferData_->out_.is_null () );  
+}
+
+template <class LO, class GO, class NT>
+void
+Transfer<LO, GO, NT>::
+setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist,
+		  const std::string& className)
+{
+  using ::Tpetra::Details::Behavior;
+
+  const bool verboseEnv = Behavior::verbose (className.c_str ()) ||
+    Behavior::verbose ((std::string ("Tpetra::") + className).c_str ());
+  
+  bool verboseParam = false;
+  if (! plist.is_null ()) {
+    // FIXME (mfh 03 Feb 2019) Phase out these parameters in favor of
+    // TPETRA_VERBOSE.
+    if (plist->isType<bool> ("Verbose")) {
+      verboseParam = plist->get<bool> ("Verbose");
+    }
+    else if (plist->isType<bool> ("Debug")) { // backwards compat
+      verboseParam = plist->get<bool> ("Debug");
+    }
+  }
+  this->TransferData_->verbose_ = verboseEnv || verboseParam;
+}
+
+template <class LO, class GO, class NT>
+size_t
+Transfer<LO, GO, NT>::
+getNumSameIDs () const {
+  return TransferData_->numSameIDs_;
+}
+
+template <class LO, class GO, class NT>
+size_t
+Transfer<LO, GO, NT>::
+getNumPermuteIDs () const {
+  return static_cast<size_t> (TransferData_->permuteFromLIDs_.extent (0));
+}
+
+template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getPermuteFromLIDs_dv () const {
+  const auto& dv = TransferData_->permuteFromLIDs_;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteFromLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteFromLIDs_dv: "
+     "DualView needs sync to host" );
+  return dv;
+}
+  
+template <class LO, class GO, class NT>  
+Teuchos::ArrayView<const LO>
+Transfer<LO, GO, NT>::
+getPermuteFromLIDs () const {
+  return makeConstArrayViewFromDualView (TransferData_->permuteFromLIDs_);    
+}
+
+template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getPermuteToLIDs_dv () const {
+  const auto& dv = TransferData_->permuteToLIDs_;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteToLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getPermuteToLIDs_dv: "
+     "DualView needs sync to host" );
+  return dv;
+}
+  
+template <class LO, class GO, class NT>  
+Teuchos::ArrayView<const LO>
+Transfer<LO, GO, NT>::
+getPermuteToLIDs () const {
+  return makeConstArrayViewFromDualView (TransferData_->permuteToLIDs_);
+}
+
+template <class LO, class GO, class NT>  
+size_t
+Transfer<LO, GO, NT>::
+getNumRemoteIDs () const {
+  return static_cast<size_t> (TransferData_->remoteLIDs_.extent (0));
+}
+
+template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getRemoteLIDs_dv () const {
+  const auto& dv = TransferData_->remoteLIDs_;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getRemoteLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getRemoteLIDs_dv: "
+     "DualView needs sync to host" );
+  return dv;
+}
+  
+template <class LO, class GO, class NT>  
+Teuchos::ArrayView<const LO>
+Transfer<LO, GO, NT>::
+getRemoteLIDs () const {
+  return makeConstArrayViewFromDualView (TransferData_->remoteLIDs_);
+}
+
+template <class LO, class GO, class NT>
+size_t
+Transfer<LO, GO, NT>::
+getNumExportIDs () const {
+  return static_cast<size_t> (TransferData_->exportLIDs_.extent (0));
+}
+
+template <class LO, class GO, class NT>  
+Kokkos::DualView<const LO*, typename Transfer<LO, GO, NT>::device_type>
+Transfer<LO, GO, NT>::
+getExportLIDs_dv () const {
+  const auto& dv = TransferData_->exportLIDs_;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_device (), std::logic_error,
+     "Tpetra::Details::Transfer::getExportLIDs_dv: "
+     "DualView needs sync to device" );  
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (dv.need_sync_host (), std::logic_error,
+     "Tpetra::Details::Transfer::getExportLIDs_dv: "
+     "DualView needs sync to host" );
+  return dv;
+}
+  
+template <class LO, class GO, class NT>
+Teuchos::ArrayView<const LO>
+Transfer<LO, GO, NT>::
+getExportLIDs () const {
+  return makeConstArrayViewFromDualView (TransferData_->exportLIDs_);
+}
+
+template <class LO, class GO, class NT>
+Teuchos::ArrayView<const int>
+Transfer<LO, GO, NT>::
+getExportPIDs () const {
+  return TransferData_->exportPIDs_ ();
+}
+
+template <class LO, class GO, class NT>
+Teuchos::RCP<const typename Transfer<LO, GO, NT>::map_type>
+Transfer<LO, GO, NT>::
+getSourceMap () const {
+  return TransferData_->source_;
+}
+
+template <class LO, class GO, class NT>
+Teuchos::RCP<const typename Transfer<LO, GO, NT>::map_type>
+Transfer<LO, GO, NT>::
+getTargetMap () const {
+  return TransferData_->target_;
+}
+
+template <class LO, class GO, class NT>
+::Tpetra::Distributor&
+Transfer<LO, GO, NT>::
+getDistributor () const {
+  return TransferData_->distributor_;
+}
+
+template <class LO, class GO, class NT>
+bool
+Transfer<LO, GO, NT>::
+isLocallyComplete () const {
+  return TransferData_->isLocallyComplete_;
+}
 
 template <class LO, class GO, class NT>
 void
@@ -59,6 +277,23 @@ describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
   this->describeImpl (out, "Tpetra::Details::Transfer", verbLevel);
+}
+
+template<class LO, class GO, class NT>
+Teuchos::FancyOStream&
+Transfer<LO, GO, NT>::
+verboseOutputStream () const
+{
+  Teuchos::FancyOStream* outPtr = TransferData_->out_.getRawPtr ();
+  TEUCHOS_ASSERT( outPtr != nullptr );
+  return *outPtr;
+}
+
+template<class LO, class GO, class NT>
+bool
+Transfer<LO, GO, NT>::
+verbose () const {
+  return TransferData_->verbose_;
 }
 
 template<class LO, class GO, class NT>

@@ -59,7 +59,7 @@ bool PreconditionerFactoryBase<Scalar>::applySupportsConj(EConj conj) const
 
 template<class Scalar>
 bool
-PreconditionerFactoryBase<Scalar>::applyTransposeSupportsConj(EConj conj) const
+PreconditionerFactoryBase<Scalar>::applyTransposeSupportsConj(EConj /* conj */) const
 {
   return false;
 }

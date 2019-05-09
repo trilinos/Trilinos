@@ -208,8 +208,9 @@ namespace Belos {
      *   bigger than the "Block Size" parameter.
      * - "Orthogonalization" (\c std::string): The desired
      *   orthogonalization method.  Currently accepted values are
-     *   "DGKS", "ICGS", and "IMGS".  Please refer to Belos'
-     *   documentation for more details.
+     *   "DGKS", "ICGS", "IMGS", and optionally "TSQR" (depending on
+     *   build settings).  Please refer to Belos' documentation for
+     *   more details.
      *
      * For an explanation of "implicit" vs. "explicit" residuals,
      * please see the documentation of isLOADetected().  The
@@ -502,7 +503,7 @@ namespace Belos {
     static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.
@@ -1137,7 +1138,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
-      "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+      "The type of orthogonalization to use.");
     pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");

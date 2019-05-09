@@ -153,8 +153,10 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
                Bor_Elem_Num, Node_Comm_Num, Elem_Comm_Num, Title);
 
   /* Allocate memory for the communication map arrays */
-  globals.N_Comm_Map = (NODE_COMM_MAP<INT> **)malloc(Proc_Info[2] * sizeof(NODE_COMM_MAP<INT> *));
-  globals.E_Comm_Map = (ELEM_COMM_MAP<INT> **)malloc(Proc_Info[2] * sizeof(ELEM_COMM_MAP<INT> *));
+  globals.N_Comm_Map =
+      static_cast<NODE_COMM_MAP<INT> **>(malloc(Proc_Info[2] * sizeof(NODE_COMM_MAP<INT> *)));
+  globals.E_Comm_Map =
+      static_cast<ELEM_COMM_MAP<INT> **>(malloc(Proc_Info[2] * sizeof(ELEM_COMM_MAP<INT> *)));
   if (!globals.N_Comm_Map || !globals.E_Comm_Map) {
     fprintf(stderr, "ERROR: Insufficient memory!\n");
     exit(1);
@@ -177,8 +179,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
     else {
 
       /* Always allocate at least one and initialize the counts to 0 */
-      globals.N_Comm_Map[iproc] = (NODE_COMM_MAP<INT> *)malloc(
-          PEX_MAX(1, globals.Num_N_Comm_Maps[iproc]) * sizeof(NODE_COMM_MAP<INT>));
+      globals.N_Comm_Map[iproc] = static_cast<NODE_COMM_MAP<INT> *>(
+          malloc(PEX_MAX(1, globals.Num_N_Comm_Maps[iproc]) * sizeof(NODE_COMM_MAP<INT>)));
       if (globals.N_Comm_Map[iproc] == nullptr && globals.Num_N_Comm_Maps[iproc] > 0) {
         fprintf(stderr, "%s: ERROR. Insufficient memory for nodal comm. map!\n", yo);
         exit(1);
@@ -188,8 +190,8 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
         ((globals.N_Comm_Map[iproc]) + ijump)->node_cnt = 0;
       }
 
-      globals.E_Comm_Map[iproc] = (ELEM_COMM_MAP<INT> *)malloc(
-          PEX_MAX(1, globals.Num_E_Comm_Maps[iproc]) * sizeof(ELEM_COMM_MAP<INT>));
+      globals.E_Comm_Map[iproc] = static_cast<ELEM_COMM_MAP<INT> *>(
+          malloc(PEX_MAX(1, globals.Num_E_Comm_Maps[iproc]) * sizeof(ELEM_COMM_MAP<INT>)));
       if (globals.E_Comm_Map[iproc] == nullptr && globals.Num_E_Comm_Maps[iproc] > 0) {
         fprintf(stderr, "%s: ERROR. Insufficient memory for elemental comm. map!\n", yo);
         exit(1);
@@ -610,8 +612,9 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
    * If debugging is not on go ahead and report errors from init. This
    * will show version mismatch information by default.
    */
+  int old_opt = 0;
   if (Debug_Flag == 0) {
-    ex_opts(EX_VERBOSE);
+    old_opt = ex_opts(EX_VERBOSE);
   }
 
   /* Read the title of the LB File and about the size of the mesh */
@@ -622,18 +625,18 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
   check_exodus_error(error, "ex_get_init");
 
   if (Debug_Flag == 0) {
-    ex_opts(!EX_VERBOSE);
+    ex_opts(old_opt);
   }
 
 #ifdef DEBUG
   if (Debug_Flag >= 2) {
-    printf("---------------------------------------------------------\n");
-    printf("\t\tLoad balance file global information\n");
-    printf("---------------------------------------------------------\n");
-    printf("\tNumber of nodes: %d\n", num_nodes);
-    printf("\tNumber of elements: %d\n", num_elem);
-    printf("\tNumber of element blocks: %d\n", num_elem_blk);
-    printf("---------------------------------------------------------\n");
+    std::cout << "---------------------------------------------------------\n"
+              << "\t\tLoad balance file global information\n"
+              << "---------------------------------------------------------\n"
+              << "\tNumber of nodes: " << num_nodes << "\n"
+              << "\tNumber of elements: " << num_elem << "\n"
+              << "\tNumber of element blocks: " << num_elem_blk << "\n"
+              << "---------------------------------------------------------\n";
   }
 #endif
 
@@ -687,19 +690,19 @@ in mesh file",
 #ifdef DEBUG
     if (Debug_Flag >= 5) {
       if (i == 0) {
-        printf("--------------------------------------------------------\n");
-        printf("\t\tLoad balance parameters as read by Processor 0\n");
-        printf("--------------------------------------------------------\n");
+        std::cout << "--------------------------------------------------------\n"
+                  << "\t\tLoad balance parameters as read by Processor 0\n"
+                  << "--------------------------------------------------------\n";
       }
-      printf("Read on processor 0 for processor %d:\n", i);
-      printf("\tNumber internal nodes: %d\n", Int_Node_Num[i]);
-      printf("\tNumber border nodes: %d\n", Bor_Node_Num[i]);
-      printf("\tNumber external nodes: %d\n", Ext_Node_Num[i]);
-      printf("\tNumber internal elements: %d\n", Int_Elem_Num[i]);
-      printf("\tNumber border elements: %d\n", Bor_Elem_Num[i]);
-      printf("\tNumber of nodal comm maps: %d\n", Node_Comm_Num[i]);
-      printf("\tNumber of elemental comm maps: %d\n", Elem_Comm_Num[i]);
-      printf("--------------------------------------------------------\n");
+      std::cout << "Read on processor 0 for processor " << i << "\n"
+                << "\tNumber internal nodes: " << Int_Node_Num[i] << "\n"
+                << "\tNumber border nodes: " << Bor_Node_Num[i] << "\n"
+                << "\tNumber external nodes: " << Ext_Node_Num[i] << "\n"
+                << "\tNumber internal elements: " << Int_Elem_Num[i] << "\n"
+                << "\tNumber border elements: " << Bor_Elem_Num[i] << "\n"
+                << "\tNumber of nodal comm maps: " << Node_Comm_Num[i] << "\n"
+                << "\tNumber of elemental comm maps: " << Elem_Comm_Num[i] << "\n"
+                << "--------------------------------------------------------\n";
     }
 #endif /* DEBUG */
 

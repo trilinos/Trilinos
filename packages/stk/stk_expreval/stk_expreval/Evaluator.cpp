@@ -301,6 +301,7 @@ Node::eval() const
           return (*m_data.function.function[i])(argc, argv);
         }
       }
+      throw expression_evaluation_exception();
     }
 
   default: // Unknown opcode

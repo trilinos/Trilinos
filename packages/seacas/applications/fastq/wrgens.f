@@ -1,23 +1,23 @@
 C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
 C $Id: wrgens.f,v 1.9 1998/03/23 05:17:54 gdsjaar Exp $
 C $Log: wrgens.f,v $
@@ -62,10 +62,10 @@ c Rewrote indexing for reads and writes
 c
 c Revision 1.1.1.1  90/11/30  11:17:52  gdsjaar
 c FASTQ Version 2.0X
-c 
+c
 c Revision 1.1  90/11/30  11:17:51  gdsjaar
 c Initial revision
-c 
+c
 C
 CC* FILE: [.MAIN]WRGENS.FOR
 CC* MODIFIED BY: TED BLACKER
@@ -139,7 +139,7 @@ C
       IJK = 2
       IVERS = 1
 C ... Fix up side set nodes for 8 and 9 node elements.
-C ... At this point, they are treated as two linear segments, 
+C ... At this point, they are treated as two linear segments,
 C ... They should be ends followed by middle
 
 C    1-----3-----2 Now: 1 3 3 2 Correct: 1 2 3
@@ -232,7 +232,7 @@ C  WRITE OUT SIDE BOUNDARY FLAGS
 C
 
 C ... Fix up side set nodes and elements for 8 and 9 node elements.
-C ... At this point, they are treated as two linear segments, 
+C ... At this point, they are treated as two linear segments,
 C ... They should be ends followed by middle
 
 C    1-----3-----2 Now: 1 3 3 2 Correct: 1 2 3

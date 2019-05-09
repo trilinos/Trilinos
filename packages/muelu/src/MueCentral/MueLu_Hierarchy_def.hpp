@@ -836,11 +836,13 @@ namespace MueLu {
     std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
     std::string levelSuffix1 = " (level=" + toString(startLevel+1) + ")";
 
+    bool useStackedTimer = !Teuchos::TimeMonitor::getStackedTimer().is_null();
+
     RCP<Monitor>     iterateTime;
     RCP<TimeMonitor> iterateTime1;
     if (startLevel == 0)
       iterateTime  = rcp(new Monitor(*this, "Solve", label, (nIts == 1) ? None : Runtime0, Timings0));
-    else
+    else if (!useStackedTimer)
       iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
     std::string iterateLevelTimeLabel = prefix + "Solve" + levelSuffix;
@@ -851,8 +853,6 @@ namespace MueLu {
     RCP<Operator> A    = Fine->Get< RCP<Operator> >("A");
     using namespace Teuchos;
     RCP<Time> CompCoarse  = Teuchos::TimeMonitor::getNewCounter(prefix + "Coarse: Computational Time");
-
-    const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
     if (A.is_null()) {
       // This processor does not have any data for this process on coarser
@@ -952,7 +952,9 @@ namespace MueLu {
         RCP<Level> Coarse = Levels_[startLevel+1];
         {
           // ============== PRESMOOTHING ==============
-          RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
+          RCP<TimeMonitor> STime;
+          if (!useStackedTimer)
+            STime                     = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
           RCP<TimeMonitor> SLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing" + levelSuffix, Timings0));
 
           if (Fine->IsAvailable("PreSmoother")) {
@@ -963,7 +965,9 @@ namespace MueLu {
 
         RCP<MultiVector> residual;
         {
-          RCP<TimeMonitor> ATime      = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
+          RCP<TimeMonitor> ATime;
+          if (!useStackedTimer)
+          ATime                       = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)"      , Timings0));
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
           Utilities::Residual(*A, X, B,*residual_[startLevel]);
           residual = residual_[startLevel];
@@ -977,7 +981,9 @@ namespace MueLu {
         //        const bool initializeWithZeros = true;
         {
           // ============== RESTRICTION ==============
-          RCP<TimeMonitor> RTime      = rcp(new TimeMonitor(*this, prefix + "Solve : restriction (total)"      , Timings0));
+          RCP<TimeMonitor> RTime;
+          if (!useStackedTimer)
+            RTime                     = rcp(new TimeMonitor(*this, prefix + "Solve : restriction (total)"      , Timings0));
           RCP<TimeMonitor> RLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : restriction" + levelSuffix, Timings0));
           coarseRhs = coarseRhs_[startLevel];
 
@@ -994,9 +1000,11 @@ namespace MueLu {
         if (Coarse->IsAvailable("Importer"))
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
-        coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
+        coarseX = coarseX_[startLevel];
         if (!doPRrebalance_ && !importer.is_null()) {
-          RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"       , Timings0));
+          RCP<TimeMonitor> ITime;
+          if (!useStackedTimer)
+            ITime                     = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"       , Timings0));
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix1, Timings0));
 
           // Import: range map of R --> domain map of rebalanced Ac (before subcomm replacement)
@@ -1030,7 +1038,9 @@ namespace MueLu {
         }
 
         if (!doPRrebalance_ && !importer.is_null()) {
-          RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      ,  Timings0));
+          RCP<TimeMonitor> ITime;
+          if (!useStackedTimer)
+            ITime                     = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      ,  Timings0));
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix1, Timings0));
 
           // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
@@ -1046,7 +1056,9 @@ namespace MueLu {
         RCP<MultiVector> correction = correction_[startLevel];
         {
           // ============== PROLONGATION ==============
-          RCP<TimeMonitor> PTime      = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation (total)"      , Timings0));
+          RCP<TimeMonitor> PTime;
+          if (!useStackedTimer)
+            PTime                     = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation (total)"      , Timings0));
           RCP<TimeMonitor> PLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation" + levelSuffix, Timings0));
           P->apply(*coarseX, *correction, Teuchos::NO_TRANS, one, zero);
         }
@@ -1054,7 +1066,9 @@ namespace MueLu {
 
         {
           // ============== POSTSMOOTHING ==============
-          RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
+          RCP<TimeMonitor> STime;
+          if (!useStackedTimer)
+            STime                     = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
           RCP<TimeMonitor> SLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing" + levelSuffix, Timings0));
 
           if (Fine->IsAvailable("PostSmoother")) {
@@ -1392,7 +1406,7 @@ namespace MueLu {
       return;
     }
 
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> xdMV;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> xdMV;
 
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
@@ -1441,14 +1455,14 @@ namespace MueLu {
       }
     }
 
-    Array<ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> >      coordDataView;
-    std::vector<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coordData;
+    Array<ArrayView<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> >      coordDataView;
+    std::vector<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> > coordData;
     for (size_t i = 0; i < coords->getNumVectors(); i++) {
       coordData.push_back(coords->getData(i));
       coordDataView.push_back(coordData[i]());
     }
 
-    RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
+    RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
     level.Set("Coordinates", newCoords);
   }
 

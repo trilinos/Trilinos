@@ -5,14 +5,17 @@ various ATDM test platforms using Jenkins jobs and submit results to the
 Trilinos CDash site.
 
 **Outline:**
-* <a href="#base-ctestcdash-configuration">Base CTest/CDash configuration</a>
-* <a href="#system-specific-driver-files">System-specific driver files</a>
-* <a href="#split-ctest--s-drivers-and-submits-to-cdash">Split ctest -S drivers and submits to CDash</a>
-* <a href="#running-locally-and-debugging">Running locally and debugging</a>
-* <a href="#setting-up-jenkins-jobs">Setting up Jenkins jobs</a>
-* <a href="#specific-system_name-directories">Specific <system_name> directories</a>
-* <a href="#how-add-a-new-system">How add a new system</a>
+* <a href="#base-ctest-cdash-config">Base CTest/CDash configuration</a>
+* <a href="#system-specific-drivers">System-specific driver files</a>
+* <a href="#split-ctest-s-drivers">Split ctest -S drivers and submits to CDash</a>
+* <a href="#run-locally-and-debug">Running locally and debugging</a>
+* <a href="#installing">Installing as a byproduct of of running ctest -S drivers</a>
+* <a href="#setup-jenkins-jobs">Setting up Jenkins jobs</a>
+* <a href="#specific-system-directories">Specific <system_name> directories</a>
+* <a href="#howto-add-new-system">How add a new system</a>
 
+
+<a name="base-ctest-cdash-config"/>
 
 ## Base CTest/CDash configuration
 
@@ -22,8 +25,9 @@ The base directory:
   Trilinos/cmake/ctest/drivers/atdm/
 ```
 
-contains files that are used for driving builds on all machines.  These files
-define common behavior and reduces duplication to ease maintenance.
+contains files that are used for driving ATDM builds on various machines.
+These files define common behavior and reduces duplication to ease
+maintenance.
 
 This directory contains the file:
 
@@ -44,7 +48,7 @@ name.  (Therefore, the Jenkins `JOB_NAME` is the same as the CDash build name
 for all of these Trilinos ATDM builds.)  It also other CMake and CTest options
 that are pulled out of the environment set by the
 `cmake/std/atdm/<system_name>/environment.sh` script.  (See `$ENV{<varName>}`
-to see what variables are pulled out of the env.)
+to see what variables are pulled out of the environment.)
 
 This directory contains a CTest -S driver script:
 
@@ -70,7 +74,7 @@ This directory contains the file:
 
 which sets up and runs `ctest -S .../atdm/ctest-driver.cmake`.  (Note, there
 are also `ctest-s-driver-config-build.sh` and `ctest-s-driver-test.sh` drivers
-as explained <a href="#split-ctest--s-drivers-and-submits-to-cdash">below</a>.)
+as explained <a href="#split-ctest-s-drivers">below</a>.)
 
 This base directly also contains the script:
 
@@ -87,9 +91,11 @@ which just runs:
 for that current system for the given job name.
 
 
+<a name="system-specific-drivers"/>
+
 ## System-specific driver files
 
-Each system `<system_name>` is given a subdirectory under this directory:
+Each system `<system_name>` is given a sub-directory under this directory:
 
 ```
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/
@@ -125,6 +131,8 @@ anything about a particular ATDM build of Trilinos without having to touch the
 Jenkins job configuration (which is not under any type of version control).
 
 
+<a name="split-ctest-s-drivers"/>
+
 ## Split ctest -S drivers and submits to CDash
 
 On some machines (e.g. the SNL HPC machines), the update, configure and build
@@ -153,6 +161,8 @@ going to the same build (i.e. row) on CDash.  For older versions of CMake, the
 test results show up as a separate build (same `site` and `build name` but
 different `build stamp`).
 
+
+<a name="run-locally-and-debug"/>
 
 ## Running locally and debugging
 
@@ -225,7 +235,7 @@ If things look good after all of that testing, then the builds are ready to be
 set up as Jenkins (or GitLab CI or cron, etc.) jobs.
 
 NOTE: When one is running on a loaded/shared machine and therefore needs to
-use less processes to build and test, one can use the env vars
+use less processes to build and test, one can use the environment variables
 `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE` and use them as, for example:
 
@@ -244,6 +254,128 @@ and CEE RHEL6 machines, for example, that may have more or less hardware
 cores.
 
 
+<a name="installing"/>
+
+## Installing as a byproduct of running ctest -S drivers
+
+These scripts support installing Trilinos as a byproduct of running the `ctest
+-S` driver scripts.  These installations are often done as the `jenkins`
+entity account from the `jenkins-srn.sandia.gov` site (but other setups are
+possible as well).  In order to protect installations of Trilinos, a strategy
+is implemented that performs the final install using the `atdm-devops-admin`
+account using a setuid program called `run-as-atdm-devops-admin` that in
+installed on each system.  The setup of that program under the
+`atdm-devops-admin` user account is described in:
+
+* https://gitlab.sandia.gov/atdm-devops-admin/run-as-atdm-devops-admin/blob/master/README.md
+
+This documentation assumes that the program 'run-as-atdm-devops-admin'
+correctly installed on each given system.
+
+The following (bash) environment variables determine the behavior of the ATDM
+`ctest -S` scripts for building and installing Trilinos using this scheme:
+
+* `ATDM_CONFIG_WORKSPACE_BASE=<workspace-base>`: Defines a different base
+  workspace directory under which the subdir `SRC_AND_BUILD` is created and
+  used (and the scripts 'cd' into that workspace).  This directory
+  `<workspace-base>` must be owned and be writable by the
+  `wg-run-as-atdm-devops` group and must be given the sticky group bit
+  `chmod g+s <workspace-base>` so that the 'jenkins' account can create files
+  and directories under this directory.  If not set, then `WORKSPACE` (set by
+  the Jenkins job) is used as the base working directory. (If
+  `ATDM_CONFIG_WORKSPACE_BASE==""` and
+  `ATDM_CONFIG_WORKSPACE_BASE_DEFAULT!=""` and
+  `ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT=="1"`, then
+  `ATDM_CONFIG_WORKSPACE_BASE` is set to
+  `${ATDM_CONFIG_WORKSPACE_BASE_DEFAULT}`.)
+
+* `ATDM_CONFIG_INSTALL_PBP_RUNNER=<base-dir>/run-as-atdm-devops-admin`:
+  Defines an executable that is used to run the install command in the target
+  `install_package_by_package`.  This allows inserting the
+  `run-as-atdm-devops-admin` setuid program to run the install command as the
+  'atdm-devops-admin' user.  (If `ATDM_CONFIG_INSTALL_PBP_RUNNER==""` and
+  `ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT!=""` and
+  `ATDM_CONFIG_USE_INSTALL_PBP_RUNNER_DEFAULT=="1"`, then
+  `ATDM_CONFIG_INSTALL_PBP_RUNNER` is set to
+  `${ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT}`)
+
+* `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE=<install-prefix-base>`:
+  Defines the base directory installs of Trilinos under
+  `<install-prefix-base>/<date>/<system-build-name>`.  This directory must be
+  owned by the 'atdm-devops-admin' user and should be world readable (but not
+  group or world writable).  (If
+  `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE==""` and
+  `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT!=""` and
+  `ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=="1"`, then
+  `ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE` is set to
+  `${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT}`.)
+
+* `ATDM_CONFIG_USE_JENKINS_INSTALL_DEFAULTS=[0|1]`: Set to '1' to use the
+  defaults for the above three variables (i.e. this sets the environment variables
+  `ATDM_CONFIG_USE_WORKSPACE_BASE_DEFAULT=1`,
+  `ATDM_CONFIG_USE_INSTALL_PBP_RUNNER_DEFAULT=1`,
+  `ATDM_CONFIG_USE_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=1`).
+
+The variables `ATDM_CONFIG_WORKSPACE_BASE_DEFAULT`,
+`ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT` and
+`ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT` are meant to be set
+in the `atdm/<system_name>/environment.sh` file as, for example:
+
+```
+export ATDM_CONFIG_WORKSPACE_BASE_DEFAULT=/home/atdm-devops-admin/jenkins
+export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/home/atdm-devops-admin/trilinos_installs
+export ATDM_CONFIG_INSTALL_PBP_RUNNER_DEFAULT=/home/atdm-devops-admin/tools/run-as-atdm-devops-admin
+```
+
+Then the jenkins driver jobs can activate the usage of these defaults and
+perform installs as a bi-product by running:
+
+```
+export ATDM_CONFIG_USE_JENKINS_INSTALL_DEFAULTS=1
+export CTEST_DO_INSTALL=ON
+${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh
+```
+
+This will result in the alternate workspace directory being create as:
+
+```
+export WORKSPACE=${ATDM_CONFIG_WORKSPACE_BASE}/${ATDM_CONFIG_KNOWN_SYSTEM_NAME}/${JOB_NAME}
+```
+
+The inner clone of Trilinos and the build of Trilinos will be performed under
+that subdir.
+
+That will result in the install of Trilinos as the 'atdm-devops-admin' user
+under:
+
+```
+<install-prefix-base>/<date>/<system-build-name>/
+```
+
+where:
+
+* The `<date>` in the format `YYYY-MM-DD` is automatically determined to
+  correspond to the CDash `date=<date>` field for the given build of Trilinos
+  (assuming that `ctest_start()` is called almost immediately which it should
+  be within a second or less).
+
+* The build name `<system-build-name>` is taken from the full build name
+  stored in the environment variable `${JOB_NAME}` (with `Trilinos-atdm-`
+  removed from the beginning of the Jenkins job name).
+
+Internally, for each build, the environment variable
+`ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX` is set to this full install path
+(which then gets picked up in the `ATDMDevEnvSettings.cmake` file during the
+CMake configure step).
+
+**WARNING:** Do **NOT** directly set the environment variable
+`ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX`.  That would result in every Trilinos
+build getting installed on top of each other in the same installation
+directory!
+
+
+<a name="setup-jenkins-jobs"/>
+
 ## Setting up Jenkins jobs
 
 To set up a Jenkins build, you must set the following in the Jenkins build
@@ -251,8 +383,8 @@ configuration GUI:
 
 * "Source Code Management"
   * "Git"
-    * "Repository URL": `https://github.com/trilinos/Trilinos.git` (until we
-         can figure out how to clone from `sofware.sandia.gov:/git/nightly/Trilinos` with Jenkins)
+    * "Repository URL": `https://github.com/trilinos/Trilinos.git
+    * "Branch": `develop`
 * "Build Triggers"
   * "Build Periodically" (**checked**)
     * "Schedule": `H 0 ***`
@@ -269,6 +401,8 @@ But be careful not to put any additional settings that what is absolutely
 necessary because Jenkins configurations are not under version control and
 there is no tractability for changes in these settings!
 
+
+<a name="specific-system-directories"/>
 
 ## Specific <system_name> directories
 
@@ -302,7 +436,9 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
   `waterman`.
 
 
-## How add a new system
+<a name="howto-add-new-system"/>
+
+## How to add a new system
 
 To add a new system, first add a new `elseif` statement for the new system in
 the file:
@@ -320,7 +456,7 @@ The variable `ATDM_HOSTNAME` (set to exported variable
 so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
 is important for the CDash 'next' and 'previous' relationships to work.  (But
 for `CTEST_TEST_TYPE=Experimental` builds, the real `hostname` is used which
-is stored in the exported env variable `ATDM_CONFIG_REAL_HOSTNAME`.  This
+is stored in the exported environment variable `ATDM_CONFIG_REAL_HOSTNAME`.  This
 ensures that queries with `cdash/queryTests.php` don't accidentally pick up
 tests from "Experimental" builds.)
 
@@ -426,7 +562,7 @@ and fill in the list of builds that are going to be supported on this machine.  
 ```
 
 The names
-`"${ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX}${ATDM_CONFIG_ALL_SUPPORTED_BUILDS[i]}.sh"
+`${ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX}${ATDM_CONFIG_ALL_SUPPORTED_BUILDS[i]}.sh`
 must match the ctest -S driver files under:
 
 ```
@@ -467,7 +603,7 @@ and one or more smart Jenkins driver files:
 
 Use examples from other `Trilinos/cmake/ctest/drivers/atdm/<system_name>/`
 directories for inspiration.  Then test the configurations one at a time as
-described <a href="#running-locally-and-debugging">above</a>.
+described <a href="#run-locally-and-debug">above</a>.
 
 Once the basic configurations seem to be working, then commit your changes on
 a topic branch and [submit a pull request (PR) to
@@ -475,9 +611,10 @@ Trilinos](https://github.com/trilinos/Trilinos/wiki/Submitting-a-Trilinos-Pull-R
 Make sure and mention `@fryeguy52` and add the label `ATDM`.
 
 Once the PR has been has been merged, then set up the Jenkins jobs to run the
-builds as described <a href="#setting-up-jenkins-jobs">above</a>. Please note that the 
-variable `JOB_NAME` is set by Jenkins and is the name of currently running job.  Your 
-driver files in `Trilinos/cmake/ctest/drivers/atdm/<new_system_name>/drivers/` must 
-be named to exactly match the Jenkins `JOB_NAME` variable.
+builds as described <a href="#setup-jenkins-jobs">above</a>. Please note
+that the variable `JOB_NAME` is set by Jenkins and is the name of currently
+running job.  Your driver files in
+`Trilinos/cmake/ctest/drivers/atdm/<new_system_name>/drivers/` must be named
+to exactly match the Jenkins `JOB_NAME` variable.
 
 ToDo: Fill in more detail, add an FAQ, etc.

@@ -46,7 +46,7 @@ extern "C" {
 #include <cstddef>  // for size_t
 #include <cstdio>   // for sprintf, nullptr
 #include <cstdlib>  // for exit, EXIT_FAILURE
-#include <cstring>  // for strlen, strncpy, strcpy, etc
+#include <cstring>  // for strlen
 #include <netcdf.h> // for NC_NOERR, nc_def_var, etc
 #include <ostream>  // for operator<<, etc
 #include <string>   // for string, operator==, etc
@@ -88,9 +88,8 @@ namespace {
   int conditional_define_variable(int exodusFilePtr, const char *var, int dimid, int *varid,
                                   nc_type type);
 
-  constexpr size_t max_string_length() { return MAX_STR_LENGTH; }
-  int              put_int_array(int exoid, const char *var_type, const std::vector<int> &array);
-  int              put_id_array(int exoid, const char *var_type, const std::vector<entity_id> &ids);
+  int put_int_array(int exoid, const char *var_type, const std::vector<int> &array);
+  int put_id_array(int exoid, const char *var_type, const std::vector<entity_id> &ids);
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension,
                              int dim_dim, int str_dim);
   template <typename T>
@@ -183,9 +182,8 @@ EdgeBlock::EdgeBlock(const Ioss::EdgeBlock &other)
     el_type = other.get_property("original_topology_type").get_string();
   }
 
-  std::strncpy(elType, el_type.c_str(), max_string_length());
-  elType[max_string_length()] = 0;
-  procOffset                  = 0;
+  Ioss::Utils::copy_string(elType, el_type);
+  procOffset = 0;
 }
 
 EdgeBlock &EdgeBlock::operator=(const EdgeBlock &other)
@@ -196,7 +194,7 @@ EdgeBlock &EdgeBlock::operator=(const EdgeBlock &other)
   nodesPerEntity = other.nodesPerEntity;
   attributeCount = other.attributeCount;
   procOffset     = other.procOffset;
-  std::strcpy(elType, other.elType);
+  Ioss::Utils::copy_string(elType, other.elType);
   return *this;
 }
 
@@ -232,9 +230,8 @@ FaceBlock::FaceBlock(const Ioss::FaceBlock &other)
     el_type = other.get_property("original_topology_type").get_string();
   }
 
-  std::strncpy(elType, el_type.c_str(), max_string_length());
-  elType[max_string_length()] = 0;
-  procOffset                  = 0;
+  Ioss::Utils::copy_string(elType, el_type);
+  procOffset = 0;
 }
 
 FaceBlock &FaceBlock::operator=(const FaceBlock &other)
@@ -246,7 +243,7 @@ FaceBlock &FaceBlock::operator=(const FaceBlock &other)
   edgesPerEntity = other.edgesPerEntity;
   attributeCount = other.attributeCount;
   procOffset     = other.procOffset;
-  std::strcpy(elType, other.elType);
+  Ioss::Utils::copy_string(elType, other.elType);
   return *this;
 }
 
@@ -291,8 +288,7 @@ ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
     el_type = other.get_property("original_topology_type").get_string();
   }
 
-  std::strncpy(elType, el_type.c_str(), max_string_length());
-  elType[max_string_length()] = 0;
+  Ioss::Utils::copy_string(elType, el_type);
 
   // Fixup an exodusII kluge.  For triangular elements, the same
   // name is used for 2D elements and 3D shell elements.  Convert
@@ -300,7 +296,7 @@ ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
   // stays the same, the 3D name becomes 'trishell#'
   // Here, we need to map back to the 'triangle' name...
   if (std::strncmp(elType, "trishell", 8) == 0) {
-    std::strncpy(elType, "triangle", max_string_length());
+    Ioss::Utils::copy_string(elType, "triangle");
   }
   procOffset = 0;
 }
@@ -316,7 +312,7 @@ ElemBlock &ElemBlock::operator=(const ElemBlock &other)
   attributeCount = other.attributeCount;
   offset_        = other.offset_;
   procOffset     = other.procOffset;
-  std::strcpy(elType, other.elType);
+  Ioss::Utils::copy_string(elType, other.elType);
   return *this;
 }
 
@@ -625,7 +621,7 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
       }
     }
 
-    if (var_params.num_eset > 0) {
+    if (var_params.num_fset > 0) {
       if (define_netcdf_vars(exodusFilePtr, "face set", mesh.facesets.size(), DIM_NUM_FS,
                              VAR_FS_STAT, VAR_FS_IDS, VAR_NAME_FS) != EX_NOERR) {
         return (EX_FATAL);
@@ -807,7 +803,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Nodesets ...
+  // NodeSets ...
   {
     const Ioss::NodeSetContainer &node_sets = region->get_nodesets();
     for (auto &set : node_sets) {
@@ -816,7 +812,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Edgesets ...
+  // EdgeSets ...
   {
     const Ioss::EdgeSetContainer &edge_sets = region->get_edgesets();
     for (auto &set : edge_sets) {
@@ -825,7 +821,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Facesets ...
+  // FaceSets ...
   {
     const Ioss::FaceSetContainer &face_sets = region->get_facesets();
     for (auto &set : face_sets) {
@@ -834,7 +830,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Elementsets ...
+  // ElementSets ...
   {
     const Ioss::ElementSetContainer &element_sets = region->get_elementsets();
     for (auto &set : element_sets) {

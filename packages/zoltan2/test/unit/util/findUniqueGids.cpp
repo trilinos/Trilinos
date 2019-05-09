@@ -73,6 +73,7 @@ struct type_name
   template<> struct type_name<x> { static const char* name() {return #x;} }
 
 DECL_TYPE_NAME(int);
+DECL_TYPE_NAME(long);
 DECL_TYPE_NAME(long long);
 
 ///////////////////////////////////////////////////////////////////////////
@@ -507,6 +508,19 @@ int main(int narg, char *arg[])
   if (comm->getRank() == 0) 
     std::cout << "Skipping int tests because Tpetra is not build with "
               << "GO == int" << std::endl;
+#endif
+
+#ifdef HAVE_TPETRA_INT_LONG
+  test1<long>(comm);
+  test2<long>(comm);
+  test3<long>(comm);
+  test4<long>(comm);
+  test5<long>(comm);
+  test6<long>(comm);
+#else
+  if (comm->getRank() == 0) 
+    std::cout << "Skipping long tests because Tpetra is not build with "
+              << "GO == long " << std::endl;
 #endif
 
 #ifdef HAVE_TPETRA_INT_LONG_LONG

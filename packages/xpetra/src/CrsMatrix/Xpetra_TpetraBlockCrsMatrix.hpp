@@ -319,9 +319,20 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) {
+      XPETRA_MONITOR("TpetraCrsMatrix::setObjectLabel");
+      Teuchos::LabeledObject::setObjectLabel(objectLabel);
+      mtx_->setObjectLabel(objectLabel);
+    }
+    //@}
+
     //! Deep copy constructor
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     TpetraBlockCrsMatrix(const TpetraBlockCrsMatrix& matrix)
       : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
+#endif
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
@@ -369,6 +380,10 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
+    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix::replaceDiag: function not implemented");
+    }
+
     //! Left scale operator with given vector values
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
@@ -410,10 +425,12 @@ namespace Xpetra {
 
     // @}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const {
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const {
       return RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(mtx_->clone(node2)));
     }
+#endif
 
     //! @name Xpetra specific
     //@{
@@ -733,6 +750,8 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
+    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
 
@@ -768,8 +787,10 @@ namespace Xpetra {
 
     // @}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+#endif
 
     //! @name Xpetra specific
     //@{
@@ -1081,6 +1102,8 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
+    void replaceDiag(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {    }
+
     void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
     void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
 
@@ -1115,8 +1138,10 @@ namespace Xpetra {
 
     // @}
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
     template<class Node2>
-    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+    RCP<TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node2> > XPETRA_DEPRECATED clone(const RCP<Node2> &node2) const { return Teuchos::null; }
+#endif
 
     //! @name Xpetra specific
     //@{

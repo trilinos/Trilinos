@@ -12,11 +12,6 @@ INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_BINARY_DIR}/../"
 )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_SEACASExodus)
-IF (NOT ${PACKAGE_NAME}_ENABLE_SEACASExodus)
-ADD_DEFINITIONS(-DNO_EXODUS_SUPPORT)
-ENDIF()
-
 TRIBITS_ADD_LIBRARY(
   io_info_lib
   HEADERS io_info.h info_interface.h
@@ -83,6 +78,7 @@ if (TPL_ENABLE_MPI)
   endif()
 endif()
 
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
@@ -138,7 +134,7 @@ ELSE()
   )
 ENDIF()
 ENDIF()
-
+ENDIF()
 
 install_executable(cth_pressure_map)
 IF (TPL_ENABLE_CGNS)
@@ -191,8 +187,9 @@ TRIBITS_ADD_ADVANCED_TEST(exodus64_to_unstructured_cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld 8-block64.cgns
-     OUTPUT_FILE exodus64_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus64_to_unstructured_cgns.out
+     OUTPUT_FILE exodus64_to_unstructured_cgns.tmp
+   TEST_2 CMND grep ARGS -v Information exodus64_to_unstructured_cgns.tmp OUTPUT_FILE exodus64_to_unstructured_cgns.out
+   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus64_to_unstructured_cgns.out
   COMM mpi serial
   )
 
@@ -201,8 +198,9 @@ TRIBITS_ADD_ADVANCED_TEST(generated32_to_unstructured_cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld generated32.cgns
-     OUTPUT_FILE generated32_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated32_to_unstructured_cgns.out
+     OUTPUT_FILE generated32_to_unstructured_cgns.tmp
+   TEST_2 CMND grep ARGS -v Information generated32_to_unstructured_cgns.tmp OUTPUT_FILE generated32_to_unstructured_cgns.out
+   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated32_to_unstructured_cgns.out
   COMM mpi serial
   )
 
@@ -211,8 +209,9 @@ TRIBITS_ADD_ADVANCED_TEST(generated64_to_unstructured_cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld generated64.cgns
-     OUTPUT_FILE generated64_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated64_to_unstructured_cgns.out
+     OUTPUT_FILE generated64_to_unstructured_cgns.tmp
+   TEST_2 CMND grep ARGS -v Information generated64_to_unstructured_cgns.tmp OUTPUT_FILE generated64_to_unstructured_cgns.out
+   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated64_to_unstructured_cgns.out
   COMM mpi serial
   )
 
@@ -221,12 +220,14 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld 8-block32.cgns
-     OUTPUT_FILE exodus32_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus32_to_unstructured_cgns.out
+     OUTPUT_FILE exodus32_to_unstructured_cgns.tmp
+   TEST_2 CMND grep ARGS -v Information exodus32_to_unstructured_cgns.tmp OUTPUT_FILE exodus32_to_unstructured_cgns.out
+   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus32_to_unstructured_cgns.out
   COMM mpi serial
   )
 endif()
 
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns
      NOEXEPREFIX NOEXESUFFIX
@@ -284,6 +285,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
   COMM serial
   )
 ENDIF()
+ENDIF()
 
 if ( CGNS_CGNSDIFF_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_with_flush
@@ -294,6 +296,15 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_with_flush
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc2.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_self_looping
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-grid.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/self-looping-grid.cgns self-looping-grid.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
   )

@@ -67,8 +67,8 @@ void fillMeshfor3Elem2ProcMoveRightAndTest(stk::unit_test_util::BulkDataTester &
 
     mesh.modification_end();
 
-    stk::mesh::Part * quad_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    stk::mesh::Part * node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    stk::mesh::Part * quad_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    stk::mesh::Part * node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part * universal_part = &meta_data.universal_part();
     Part * owned_part     = &meta_data.locally_owned_part();
     Part * shared_part    = &meta_data.globally_shared_part();
@@ -261,8 +261,8 @@ void checkStatesAfterCEO_3Elem2ProcMoveRight(stk::unit_test_util::BulkDataTester
     stk::mesh::MetaData & meta_data = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta_data.get_part("elem_part");
     stk::mesh::Part * node_part = meta_data.get_part("node_part");
-    stk::mesh::Part * quad_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    stk::mesh::Part * node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    stk::mesh::Part * quad_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    stk::mesh::Part * node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part * universal_part = &meta_data.universal_part();
     Part * owned_part     = &meta_data.locally_owned_part();
     Part * shared_part    = &meta_data.globally_shared_part();
@@ -439,8 +439,8 @@ void checkStatesAfterCEOME_3Elem2ProcMoveRight(stk::unit_test_util::BulkDataTest
     stk::mesh::MetaData & meta_data = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta_data.get_part("elem_part");
     stk::mesh::Part * node_part = meta_data.get_part("node_part");
-    stk::mesh::Part * quad_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    stk::mesh::Part * node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    stk::mesh::Part * quad_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    stk::mesh::Part * node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part * universal_part = &meta_data.universal_part();
     Part * owned_part     = &meta_data.locally_owned_part();
     Part * shared_part    = &meta_data.globally_shared_part();
@@ -686,8 +686,8 @@ void fillMeshfor3Elem2ProcMoveLeftAndTest(stk::unit_test_util::BulkDataTester &m
 
     mesh.modification_end();
 
-    stk::mesh::Part * quad_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    stk::mesh::Part * node_topo_part = &meta_data.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    stk::mesh::Part * quad_topo_part = &meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
+    stk::mesh::Part * node_topo_part = &meta_data.get_topology_root_part(stk::topology::NODE);
     Part * universal_part = &meta_data.universal_part();
     Part * owned_part     = &meta_data.locally_owned_part();
     Part * shared_part    = &meta_data.globally_shared_part();
@@ -879,8 +879,8 @@ void checkStatesAfterCEO_3Elem2ProcMoveLeft(stk::unit_test_util::BulkDataTester 
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
     stk::mesh::Part * node_part = meta.get_part("node_part");
-    stk::mesh::Part * quad_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    stk::mesh::Part * node_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    stk::mesh::Part * quad_topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
+    stk::mesh::Part * node_topo_part = &meta.get_topology_root_part(stk::topology::NODE);
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
     Part * shared_part    = &meta.globally_shared_part();
@@ -1050,8 +1050,8 @@ void checkStatesAfterCEOME_3Elem2ProcMoveLeft(stk::unit_test_util::BulkDataTeste
     stk::mesh::MetaData & meta = mesh.mesh_meta_data();
     stk::mesh::Part * elem_part = meta.get_part("elem_part");
     stk::mesh::Part * node_part = meta.get_part("node_part");
-    stk::mesh::Part * quad_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
-    stk::mesh::Part * node_topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+    stk::mesh::Part * quad_topo_part = &meta.get_topology_root_part(stk::topology::QUAD_4_2D);
+    stk::mesh::Part * node_topo_part = &meta.get_topology_root_part(stk::topology::NODE);
     Part * universal_part = &meta.universal_part();
     Part * owned_part     = &meta.locally_owned_part();
     Part * shared_part    = &meta.globally_shared_part();

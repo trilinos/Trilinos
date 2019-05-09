@@ -479,6 +479,16 @@ void cdrwfs();
 void cdrcfs();
 void cdroab();
 
+static char *copy_string(char *dest, char const *source, long int elements)
+{
+  char *d;
+  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
+    *d = *source;
+  }
+  *d = '\0';
+  return d;
+}
+
 /*-------------------------------------------------------------*/
 /* >> GLOBAL VARIABLE DECLARATIONS                             */
 /*-------------------------------------------------------------*/
@@ -1179,8 +1189,7 @@ static void xcqid(anything **params, anything **surf_list)
     vdiqdc(&qdc_index, &value);
     cgi_devid = get_devid_char(value);
     if (cgi_devid != NULL) {
-      strncpy(dev_descrip.dev_id, cgi_devid, 3);
-      dev_descrip.dev_id[3] = '\0';
+      copy_string(dev_descrip.dev_id, cgi_devid, 4);
     }
 
   } /* end if not set */
@@ -1193,8 +1202,7 @@ static void xcqid(anything **params, anything **surf_list)
 
   /* return device id */
   maxchr = (*(int *)params[1] > 3) ? 3 : *(int *)params[1];
-  strncpy((char *)params[4], dev_descrip.dev_id, maxchr);
-  *((char *)params[4] + maxchr) = '\0';
+  copy_string((char *)params[4], dev_descrip.dev_id, maxchr);
 
 } /* end xcqid */
 
@@ -2069,9 +2077,6 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
     if (np <= 0) {
       break;
     }
-
-    x = *(float *)params[1];
-    y = *(float *)params[2];
 
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->text_color);

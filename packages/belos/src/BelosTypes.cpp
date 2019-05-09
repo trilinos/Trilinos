@@ -84,6 +84,24 @@ namespace Belos {
     }
   }
 
+  NormType
+  convertStringToNormType (const std::string& normType)
+  {
+    if (normType == "OneNorm") {
+      return Belos::OneNorm;
+    } else if (normType == "TwoNorm") {
+      return Belos::TwoNorm;
+    } else if (normType == "InfNorm") {
+       return Belos::InfNorm;
+    } else if (normType == "PreconditionerNorm") {
+      return Belos::PreconditionerNorm;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "Belos::convertStringToNormType(): Invalid norm type \""
+        << normType << "\".");
+    }
+  }
+
   ScaleType
   convertStringToScaleType (const std::string& scaleType)
   {
@@ -188,6 +206,15 @@ namespace Belos {
         << result << ".");
     }
   }
+
+  // Initialize DefaultSolverParameters.  Has to be done this way because
+  // the "static consexpr double blah = ...;" pattern can create ODR-used
+  // linking errors (usually in debug builds).
+  const double DefaultSolverParameters::convTol = 1.0e-8;
+  const double DefaultSolverParameters::polyTol = 1.0e-12;
+  const double DefaultSolverParameters::orthoKappa = -1.0;
+  const double DefaultSolverParameters::resScaleFactor = 1.0;
+  const double DefaultSolverParameters::impTolScale = 10.0;
 
 } // end Belos namespace
 

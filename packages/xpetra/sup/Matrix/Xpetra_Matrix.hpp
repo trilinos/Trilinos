@@ -420,8 +420,8 @@ namespace Xpetra {
     */
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const =0;
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
-    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
+    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
+    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing
       the zero and non-zero diagonals owned by this node. */
     virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const =0;
 
@@ -509,11 +509,16 @@ namespace Xpetra {
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
     //@}
 
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    virtual void setObjectLabel( const std::string &objectLabel ) =0;
+    //@}
+
     // JG: Added:
 
     //! Supports the getCrsGraph() call
     virtual bool hasCrsGraph() const =0;
-    
+
     //! Returns the CrsGraph associated with this matrix.
     virtual RCP<const CrsGraph> getCrsGraph() const =0;
 

@@ -1,6 +1,15 @@
 #ifndef KOKKOSKERNELS_CONFIG_H
 #define KOKKOSKERNELS_CONFIG_H
 
+
+/* Define Fortran mangle from Trilinos macro definition */
+#ifndef F77_BLAS_MANGLE                                                                                       
+# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@                                                                     
+#endif 
+
+/* Define if fortran blas 1 function can return complex type */
+#cmakedefine KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX
+
 /* Define if building in debug mode */
 #cmakedefine HAVE_KOKKOSKERNELS_DEBUG
 

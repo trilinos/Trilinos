@@ -44,7 +44,7 @@
 
 #include "Piro_ObserverToRythmosIntegrationObserverAdapter.hpp"
 #include "Piro_ValidPiroParameters.hpp"
-#include "Piro_MatrixFreeDecorator.hpp" 
+#include "Piro_MatrixFreeDecorator.hpp"
 
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ForwardEulerStepper.hpp"
@@ -120,15 +120,15 @@ Piro::RythmosSolver<Scalar>::RythmosSolver(
 {
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
   if (jacobianSource == "Matrix-Free") {
-    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
+    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > mf_model;
     if (appParams->isParameter("Matrix-Free Perturbation")) {
-      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model,
+      mf_model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model,
                            appParams->get<double>("Matrix-Free Perturbation")));
     }
-    else model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
-    initialize(appParams, model, observer);
+    else mf_model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model));
+    initialize(appParams, mf_model, observer);
   }
-  else 
+  else
     initialize(appParams, in_model, observer);
 }
 
@@ -231,10 +231,10 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdStateStepper->setInitialCondition(model->getNominalValues());
 
   } else if (stepperType == "Theta Stepper") {
-    
-    Teuchos::RCP<Teuchos::ParameterList> CrankNicholsonPL = 
+
+    Teuchos::RCP<Teuchos::ParameterList> CrankNicholsonPL =
       Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
-    fwdStateStepper = Rythmos::thetaStepper<Scalar>(model, fwdTimeStepSolver, CrankNicholsonPL);    
+    fwdStateStepper = Rythmos::thetaStepper<Scalar>(model, fwdTimeStepSolver, CrankNicholsonPL);
   }
   else {
     // first (before failing) check to see if the user has added stepper factory
@@ -386,15 +386,15 @@ void Piro::RythmosSolver<Scalar>::initialize(
      // C.1) Create the underlying Thyra::ModelEvaluator
      // already constructed as "model". Decorate if needed.
      if (
-      stepperType == "Explicit RK" || 
-      stepperType == "Forward Euler" || 
+      stepperType == "Explicit RK" ||
+      stepperType == "Forward Euler" ||
       stepperType == "Explicit Taylor Polynomial") {
 
-      bool invertMassMatrix = rythmosSolverPL->get("Invert Mass Matrix", false); 
+      bool invertMassMatrix = rythmosSolverPL->get("Invert Mass Matrix", false);
       if (!invertMassMatrix) {
-        *out << "\n WARNING in Piro::RythmosSolver!  You are attempting to run \n" 
-             << " Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n" 
-             << "This option should be set to 'true' unless your mass matrix is the identiy.\n"; 
+        *out << "\n WARNING in Piro::RythmosSolver!  You are attempting to run \n"
+             << " Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n"
+             << "This option should be set to 'true' unless your mass matrix is the identiy.\n";
       }
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;

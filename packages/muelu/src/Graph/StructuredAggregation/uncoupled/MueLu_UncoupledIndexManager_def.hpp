@@ -90,10 +90,10 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodesData(const RCP<const Map>fineMap,
+  getGhostedNodesData(const RCP<const Map>/* fineMap */,
                       Array<LO>&  ghostedNodeCoarseLIDs,
                       Array<int>& ghostedNodeCoarsePIDs,
-                      Array<GO>&  ghostedNodeCoarseGIDs) const {
+                      Array<GO>&  /* ghostedNodeCoarseGIDs */) const {
 
     // First we allocate memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
@@ -151,7 +151,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getFineNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
+  getFineNodeGlobalTuple(const GO /* myGID */, GO& /* i */, GO& /* j */, GO& /* k */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -180,17 +180,17 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getFineNodeGID(const GO i, const GO j, const GO k, GO& myGID) const {
+  getFineNodeGID(const GO /* i */, const GO /* j */, const GO /* k */, GO& /* myGID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getFineNodeLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getFineNodeLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeGlobalTuple(const GO myGID, GO& i, GO& j, GO& k) const {
+  getCoarseNodeGlobalTuple(const GO /* myGID */, GO& /* i */, GO& /* j */, GO& /* k */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -205,12 +205,12 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeGID(const GO i, const GO j, const GO k, GO& myGID) const {
+  getCoarseNodeGID(const GO /* i */, const GO /* j */, const GO /* k */, GO& /* myGID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getCoarseNodeLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -221,17 +221,17 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getCoarseNodeFineLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getGhostedNodeFineLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const {
+  getGhostedNodeCoarseLID(const LO /* i */, const LO /* j */, const LO /* k */, LO& /* myLID */) const {
   }
 
 } //namespace MueLu

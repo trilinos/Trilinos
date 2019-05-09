@@ -81,13 +81,13 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
   // Define where fields exist on the mesh:
   Part & universal = m_fem_metaData.universal_part();
 
-  put_field( m_coordinates_field , universal , nullptr);
-  put_field( m_centroid_field , universal , nullptr);
-  put_field( m_temperature_field, universal , nullptr);
-  put_field( m_volume_field, m_block_hex , nullptr);
-  put_field( m_volume_field, m_block_wedge , nullptr);
-  put_field( m_volume_field, m_block_tet , nullptr);
-  put_field( m_volume_field, m_block_pyramid , nullptr);
+  put_field_on_mesh( m_coordinates_field , universal , nullptr);
+  put_field_on_mesh( m_centroid_field , universal , nullptr);
+  put_field_on_mesh( m_temperature_field, universal , nullptr);
+  put_field_on_mesh( m_volume_field, m_block_hex , nullptr);
+  put_field_on_mesh( m_volume_field, m_block_wedge , nullptr);
+  put_field_on_mesh( m_volume_field, m_block_tet , nullptr);
+  put_field_on_mesh( m_volume_field, m_block_pyramid , nullptr);
 
   if (doCommit)
     m_fem_metaData.commit();

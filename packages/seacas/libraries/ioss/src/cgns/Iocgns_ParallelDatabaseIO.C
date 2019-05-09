@@ -66,6 +66,7 @@
 #include "Ioss_ElementTopology.h"
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"
+#include "Ioss_FileInfo.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
 #include "Ioss_ParallelUtils.h"
@@ -220,9 +221,21 @@ namespace Iocgns {
   {
     if (m_cgnsFilePtr < 0) {
       int mode = is_input() ? CG_MODE_READ : CG_MODE_WRITE;
-      if (!is_input() && m_cgnsFilePtr == -2) {
-        // Writing multiple steps with a "flush" (cg_close() / cg_open())
-        mode = CG_MODE_MODIFY;
+      if (!is_input()) {
+        if (m_cgnsFilePtr == -2) {
+          // Writing multiple steps with a "flush" (cg_close() / cg_open())
+          mode = CG_MODE_MODIFY;
+        }
+        else {
+          // Check whether appending to existing file...
+          if (open_create_behavior() == Ioss::DB_APPEND) {
+            // Append to file if it already exists -- See if the file exists.
+            Ioss::FileInfo file = Ioss::FileInfo(decoded_filename());
+            if (file.exists()) {
+              mode = CG_MODE_MODIFY;
+            }
+          }
+        }
       }
 
       bool do_timer = false;
@@ -271,6 +284,9 @@ namespace Iocgns {
         set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
+      if (mode == CG_MODE_MODIFY) {
+	Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, false);
+      }
 #if 0
       // This isn't currently working since CGNS currently has chunking
       // disabled for HDF5 files and compression requires chunking.
@@ -301,7 +317,19 @@ namespace Iocgns {
   void ParallelDatabaseIO::closeDatabase__() const
   {
     if (m_cgnsFilePtr != -1) {
+      bool do_timer = false;
+      Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
+      double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+
       CGCHECKM(cgp_close(m_cgnsFilePtr));
+
+      if (do_timer) {
+        double t_end    = Ioss::Utils::timer();
+        double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
+        if (myProcessor == 0) {
+          std::cerr << "File Close Time = " << duration << "\n";
+        }
+      }
     }
     m_cgnsFilePtr = -1;
   }
@@ -369,7 +397,7 @@ namespace Iocgns {
 
     get_step_times__();
 
-    m_zoneType = Utils::check_zone_type(get_file_pointer());
+    m_meshType = Utils::check_mesh_type(get_file_pointer());
 
     // In CGNS, there are duplicated nodes at block boundaries.
     // We typically only want to retain one copy of these and ignore the other.
@@ -384,13 +412,23 @@ namespace Iocgns {
           new DecompositionData<int>(properties, util().communicator()));
     }
     assert(decomp != nullptr);
-    decomp->decompose_model(get_serial_file_pointer(), get_file_pointer(), m_zoneType);
+    decomp->decompose_model(get_serial_file_pointer(), get_file_pointer(), m_meshType);
 
-    if (m_zoneType == CG_Structured) {
+    if (m_meshType == Ioss::MeshType::STRUCTURED) {
       handle_structured_blocks();
     }
-    else if (m_zoneType == CG_Unstructured) {
+    else if (m_meshType == Ioss::MeshType::UNSTRUCTURED) {
       handle_unstructured_blocks();
+    }
+#if IOSS_ENABLE_HYBRID
+    else if (mesh_type == Ioss::MeshType::HYBRID) {
+    }
+#endif
+    else {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: CGNS: Mesh is not Unstructured or Structured "
+                "which are the only types currently supported";
+      IOSS_ERROR(errmsg);
     }
 
     Utils::add_transient_variables(get_file_pointer(), m_timesteps, get_region(),
@@ -979,7 +1017,7 @@ namespace Iocgns {
 
   const Ioss::Map &ParallelDatabaseIO::get_map(entity_type type) const
   {
-    if (m_zoneType == CG_Unstructured) {
+    if (m_meshType == Ioss::MeshType::UNSTRUCTURED) {
       switch (type) {
       case entity_type::NODE: {
         size_t offset = decomp->decomp_node_offset();

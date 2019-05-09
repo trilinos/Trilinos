@@ -5,8 +5,8 @@
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Trsm_Decl.hpp"
-#include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_SolveLU_Decl.hpp"
+#include "KokkosBatched_SolveLU_Serial_Impl.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -67,92 +67,6 @@ namespace KokkosBatched {
       return r_val;
     }
 #endif
-
-    template<>
-    template<typename AViewType,
-             typename WViewType>
-    KOKKOS_INLINE_FUNCTION
-    int
-    SerialInverseLU<Algo::InverseLU::Unblocked>::
-    invoke(const AViewType &A, 
-           const WViewType &W) {
-        static_assert(AViewType::rank == 2, "A should have two dimensions");
-        static_assert(WViewType::rank == 1, "W should have one dimension");
-        static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
-        static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
-        assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
-        assert(A.extent(0)==A.extent(1));
-
-        typedef typename AViewType::value_type ScalarType;
-               
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
-        
-        const ScalarType one(1.0);
-        
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-        for (size_t i=0;i<A.extent(1);++i) {
-            B(i,i) = one;
-        }
-        
-        //First, compute L inverse by solving the system L*Linv = I for Linv
-        SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Unblocked>::invoke(one, A, B);
-        //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
-        SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Unblocked>::invoke(one, A, B);
-		
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-        for (size_t i=0;i<A.extent(0);++i)
-            for (size_t j=0;j<A.extent(1);++j)
-                A(i,j) = B(i,j);
-        
-        return 0;
-    }
-    
-    template<>
-    template<typename AViewType,
-             typename WViewType>
-    KOKKOS_INLINE_FUNCTION
-    int
-    SerialInverseLU<Algo::InverseLU::Blocked>::
-    invoke(const AViewType &A,
-           const WViewType &W) {
-        static_assert(AViewType::rank == 2, "A should have two dimensions");
-        static_assert(WViewType::rank == 1, "W should have one dimension");
-        static_assert(std::is_same<typename AViewType::memory_space, typename WViewType::memory_space>::value, "A and W should be on the same memory space");
-        static_assert(!std::is_same<typename WViewType::array_layout, Kokkos::LayoutStride>::value, "W should be an contiguous 1D array");
-        assert(A.extent(0)*A.extent(1)*sizeof(typename AViewType::value_type) <= W.span()*sizeof(typename WViewType::value_type));
-        assert(A.extent(0)==A.extent(1));
-
-        typedef typename AViewType::value_type ScalarType;
-        
-        auto B = Kokkos::View<ScalarType**, Kokkos::LayoutLeft, typename WViewType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >(W.data(), A.extent(0), A.extent(1));
-        
-        const ScalarType one(1.0);
-
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-        for (size_t i=0;i<A.extent(1);++i) {
-            B(i,i) = one;
-        }
-
-        //First, compute L inverse by solving the system L*Linv = I for Linv
-        SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,Algo::Trsm::Blocked>::invoke(one, A, B);
-        //Second, compute A inverse by solving the system U*Ainv = Linv for Ainv
-        SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,Algo::Trsm::Blocked>::invoke(one, A, B);
-
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-        for (size_t i=0;i<A.extent(0);++i)
-            for (size_t j=0;j<A.extent(1);++j)
-                A(i,j) = B(i,j);
-
-        return 0;
-    }
 
   }
 }

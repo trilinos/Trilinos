@@ -35,7 +35,6 @@
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
-#include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
 #include <inttypes.h>     // for PRId64
 #include <stddef.h>       // for size_t
 #include <stdio.h>
@@ -153,7 +152,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     num_ed_per_elem = 0;
     if ((elem_edge_conn != 0) &&
-        (status = nc_inq_dimlen(exoid, nedpereldim, &num_ed_per_elem) != NC_NOERR)) {
+        ((status = nc_inq_dimlen(exoid, nedpereldim, &num_ed_per_elem)) != NC_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of edges/elem in block %" PRId64 " in file id %d",
                blk_id, exoid);
@@ -163,7 +162,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     num_fa_per_elem = 0;
     if ((elem_face_conn != 0) &&
-        (status = nc_inq_dimlen(exoid, nfapereldim, &num_fa_per_elem) != NC_NOERR)) {
+        ((status = nc_inq_dimlen(exoid, nfapereldim, &num_fa_per_elem)) != NC_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of faces/elem in block %" PRId64 " in file id %d",
                blk_id, exoid);

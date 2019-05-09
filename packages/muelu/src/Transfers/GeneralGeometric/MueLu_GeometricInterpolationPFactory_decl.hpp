@@ -67,7 +67,7 @@ namespace MueLu{
   public:
 
     // Declare useful types
-    using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+    using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
     using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LO,GO,Node>;
 
     //! @name Constructors/Destructors.
@@ -98,8 +98,8 @@ namespace MueLu{
     //@}
 
   private:
-    void BuildConstantP(RCP<Matrix>& P, RCP<CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
-    void BuildLinearP(RCP<Matrix>& A, RCP<CrsGraph>& prolongatorGraph,
+    void BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
+    void BuildLinearP(RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
                       RCP<realvaluedmultivector_type>& fineCoordinates,
                       RCP<realvaluedmultivector_type>& ghostCoordinates,
                       const int numDimensions, RCP<Matrix>& P) const;

@@ -167,13 +167,24 @@ public:
    *  - The maximum number of entities per bucket may be supplied.
    *  - The bulk data is in the synchronized or "locked" state.
    */
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 5 2019
+  STK_DEPRECATED BulkData(   MetaData & mesh_meta_data
+            , ParallelMachine parallel
+            , enum AutomaticAuraOption auto_aura_option
+#ifdef SIERRA_MIGRATION
+            , bool add_fmwk_data
+#endif
+            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated
+            , FieldDataManager *field_dataManager
+            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
+            );
+#endif
   BulkData(   MetaData & mesh_meta_data
             , ParallelMachine parallel
             , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , ConnectivityMap const* arg_connectivity_map_no_longer_used_and_soon_to_be_deprecated = NULL
             , FieldDataManager *field_dataManager = NULL
             , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
@@ -194,7 +205,9 @@ public:
   /** \brief  Rank of the parallel machine's local processor */
   int parallel_rank()   const { return m_parallel.parallel_rank() ; }
 
-  const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
+#ifndef STK_HIDE_DEPRECATED_CODE //Delete after April 5 2019
+  STK_DEPRECATED const ConnectivityMap & connectivity_map() const { return m_bucket_repository.connectivity_map(); }
+#endif
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -350,6 +363,10 @@ public:
   Entity declare_constraint(EntityId id, const PARTVECTOR& parts);
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part); // Mod Mark
 
+  template<typename IDVECTOR>
+  void declare_entities(stk::topology::rank_t rank, const IDVECTOR& new_ids,
+                        const PartVector &parts, EntityVector &requested_entities);
+
   /** This overloading of declare_entity that doesn't take a part
    * creates the new entity in the 'universal' part.
    */
@@ -502,12 +519,25 @@ public:
       const RelationIdentifier local_id,
       Permutation permutation = stk::mesh::Permutation::INVALID_PERMUTATION);
 
-  void declare_relation( Entity e_from , // Mod Mark
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after March 14, 2019
+  STK_DEPRECATED void declare_relation( Entity e_from ,
       Entity e_to ,
       const RelationIdentifier local_id,
       Permutation permutation,
       OrdinalVector& ordinal_scratch,
       PartVector& part_scratch);
+#endif
+
+  //it's ugly to have 3 scratch-space vectors in the API, but for now
+  //it is a big performance improvement. TODO: improve the internals to remove
+  //the need for these vectors.
+  void declare_relation( Entity e_from ,
+                         Entity e_to ,
+                         const RelationIdentifier local_id ,
+                         Permutation permut,
+                         OrdinalVector& scratch1,
+                         OrdinalVector& scratch2,
+                         OrdinalVector& scratch3);
 
   /** \brief  Remove all relations between two entities.
    *
@@ -784,8 +814,8 @@ public:
 
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
-  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer);
-  void unregister_observer(std::shared_ptr<ModificationObserver> observer);
+  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer) const;
+  void unregister_observer(std::shared_ptr<ModificationObserver> observer) const;
   template<typename ObserverType>
   bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }
   template<typename ObserverType>
@@ -906,7 +936,7 @@ protected: //functions
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel); // Mod Mark
 
   void internal_declare_relation( Entity entity, const std::vector<Relation> & rel,
-                         OrdinalVector& ordinal_scratch); // Mod Mark
+                         OrdinalVector& scratch1); // Mod Mark
 
   bool internal_declare_relation(Entity e_from, Entity e_to,
                                  RelationIdentifier local_id, Permutation permut); // Mod Mark
@@ -918,7 +948,8 @@ protected: //functions
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
                                      stk::mesh::impl::MeshModification::modification_optimization mod_optimization = stk::mesh::impl::MeshModification::MOD_END_SORT );  // Mod Mark
 
-  void internal_change_entity_parts_without_propogating_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed);
+  void internal_change_entity_parts_without_propogating_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
+  void internal_determine_inducible_parts(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& parts_removed, OrdinalVector& inducible_parts_added, OrdinalVector& inducible_parts_removed);
   void internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& parts_removed);
 
   /*  Entity modification consequences:
@@ -928,7 +959,8 @@ protected: //functions
    */
   void internal_change_entity_parts( Entity ,
                                      const OrdinalVector& add_parts ,
-                                     const OrdinalVector& remove_parts); // Mod Mark
+                                     const OrdinalVector& remove_parts,
+                                     OrdinalVector& scratchOrdinalVec, OrdinalVector& scratchSpace); // Mod Mark
 
   bool internal_destroy_entity_with_notification(Entity entity, bool wasGhost = false); // Mod Mark
   virtual bool internal_destroy_entity(Entity entity, bool wasGhost = false);
@@ -1253,9 +1285,6 @@ private:
 
   void internal_sync_comm_list_owners();
 
-  void addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
-         const PartVector &rem, const PartVector &add, EntityVector &requested_entities);
-
   // Forbidden
   BulkData();
   BulkData( const BulkData & );
@@ -1290,7 +1319,7 @@ private:
                                  Entity e_to ,
                                  const RelationIdentifier local_id ,
                                  Permutation permut,
-                                 OrdinalVector& ordinal_scratch); // Mod Mark
+                                 OrdinalVector& scratch1, OrdinalVector& scratch2, OrdinalVector& scratch3); // Mod Mark
 
   int determine_new_owner( Entity ) const;  // Mod Mark
 
@@ -1331,7 +1360,8 @@ private:
                                                            const OrdinalVector & remove_parts,
                                                            OrdinalVector &newBucketPartList,
                                                            OrdinalVector &parts_removed);
-  void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList); // Mod Mark
+  void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList,
+                                          OrdinalVector& scratchSpace); // Mod Mark
 
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity entity ,
@@ -1440,9 +1470,9 @@ private:
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
-  ModificationNotifier notifier;
 
 protected: //data
+  mutable ModificationNotifier notifier;
   static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;

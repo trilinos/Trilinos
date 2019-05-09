@@ -1,23 +1,23 @@
 C Copyright (C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C 
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
       PROGRAM POST
 c
@@ -91,7 +91,7 @@ C               into TEXT one character or 8 bits at a time.  This means that
 C               TEXT will contain ascii characters, one per word, right
 C               justified and zero filled, just what VDTEXT needs.
 C ESNUMB(100) - Is a list of known VDI escape codes with numeric arguments.
-C NUMESC      - The number of elements in 
+C NUMESC      - The number of elements in
 C IFRAM       - Draws every Ith frame.
 C ARGS(2000)  - A real array to hold the arguments of the escape code.
 C EOFOK       - Always .TRUE.  When requesting the next few bits from the file,
@@ -158,12 +158,12 @@ C
 C          NON COLOR DATA STATEMENTS
 C
       DATA NUMESC   /     58  /
-      DATA (ESNUMB(I),I=1,58) 
+      DATA (ESNUMB(I),I=1,58)
      +  / 99, 100, 101, 200, 201, 202, 203, 204, 205, 206,
-     +   206, 208, 209, 210, 211, 212, 213, 214, 215, 216, 
-     +   302, 400, 401, 402, 501, 502, 600, 601, 700, 701, 
+     +   206, 208, 209, 210, 211, 212, 213, 214, 215, 216,
+     +   302, 400, 401, 402, 501, 502, 600, 601, 700, 701,
      +   702, 703, 704, 705, 706, 707, 708, 900, 1020, 1021,
-     +   1022, 1023, 1024, 1025, 1026, 1400, 1505, 1506,1507, 
+     +   1022, 1023, 1024, 1025, 1026, 1400, 1505, 1506,1507,
      +   1508, 1509, 1510, 1700, 2100, 2101, 2300, 2305, 2306 /
       DATA DOFISH   / .FALSE. /
       DATA EOFOK    /  .TRUE. /
@@ -502,7 +502,7 @@ C
       TABLE(2,INDEX) = AMIN1(IG/256.+IY/256.+IC/256.+IW/256.,1.)
       TABLE(3,INDEX) = AMIN1(IB/256.+IC/256.+IM/256.+IW/256.,1.)
 C
-C          IF THE LINK HAS ALREADY BEEN ESTABLISHED, THEN WE MAY WANT TO 
+C          IF THE LINK HAS ALREADY BEEN ESTABLISHED, THEN WE MAY WANT TO
 C          CHANGE THE COLOR DYNAMICALLY.
 C
       IF(COLMAP(INDEX).NE.-1) THEN
@@ -625,7 +625,7 @@ C
 C
       drawn = .true.
       CALL VDPOLY(XARRAY,YARRAY,NPTS)
-      GOTO 3    
+      GOTO 3
 C
 C          B0 -- TEXT STRING
 C
@@ -765,7 +765,7 @@ C                    JUSTIFIED, ZERO FILLED.  OR, IF AN END OF FILE IS OK,
 C                    AND ENCOUNTERED, RESULT CONTAINS AN HEX 86 TO SIGNIFY
 C                    END OF FILE.
 C
-C NARRATIVE        - 
+C NARRATIVE        -
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C

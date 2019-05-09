@@ -26,6 +26,8 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -58,8 +60,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
 
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  RCP<SinCosModel<double> > model =
-    Teuchos::rcp(new SinCosModel<double> (scm_pl));
+  auto model = rcp(new SinCosModel<double> (scm_pl));
 
   RCP<ParameterList> tempusPL  = sublist(pList, "Tempus", true);
 
@@ -71,7 +72,14 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -83,7 +91,13 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 }
 #endif // TEST_PARAMETERLIST
@@ -104,16 +118,15 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-  RCP<SinCosModel<double> > model =
-    Teuchos::rcp(new SinCosModel<double>(scm_pl));
+  auto model = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup Stepper for field solve ----------------------------
-  RCP<Tempus::StepperForwardEuler<double> > stepper =
-    Teuchos::rcp(new Tempus::StepperForwardEuler<double>(model));
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
-  RCP<Tempus::TimeStepControl<double> > timeStepControl =
-    Teuchos::rcp(new Tempus::TimeStepControl<double>());
+  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Demo Integrator")
                            .sublist("Time Step Control");
   timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
@@ -126,18 +139,15 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
   // Setup initial condition SolutionState --------------------
   Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
     stepper->getModel()->getNominalValues();
-  RCP<Thyra::VectorBase<double> > icSolution =
-    Teuchos::rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  RCP<Tempus::SolutionState<double> > icState =
-      Teuchos::rcp(new Tempus::SolutionState<double>(icSolution));
+  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+  auto icState = rcp(new Tempus::SolutionState<double>(icSolution));
   icState->setTime    (timeStepControl->getInitTime());
   icState->setIndex   (timeStepControl->getInitIndex());
   icState->setTimeStep(0.0);
   icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
   // Setup SolutionHistory ------------------------------------
-  RCP<Tempus::SolutionHistory<double> > solutionHistory =
-    Teuchos::rcp(new Tempus::SolutionHistory<double>());
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
   solutionHistory->setName("Forward States");
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
@@ -216,8 +226,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     // Setup the SinCosModel
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
     //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-    RCP<SinCosModel<double> > model =
-      Teuchos::rcp(new SinCosModel<double> (scm_pl));
+    auto model = rcp(new SinCosModel<double> (scm_pl));
 
     dt /= 2;
 
@@ -230,17 +239,17 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
     // Test PhysicsState
-    Teuchos::RCP<Tempus::PhysicsState<double> > physicsState =
+    RCP<Tempus::PhysicsState<double> > physicsState =
       integrator->getSolutionHistory()->getCurrentState()->getPhysicsState();
     TEST_EQUALITY(physicsState->getName(), "Tempus::PhysicsState");
 
@@ -261,14 +270,12 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
         integrator->getSolutionHistory();
       writeSolution("Tempus_ForwardEuler_SinCos.dat", solutionHistory);
 
-      RCP<Tempus::SolutionHistory<double> > solnHistExact =
-        Teuchos::rcp(new Tempus::SolutionHistory<double>());
+      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        double time = (*solutionHistory)[i]->getTime();
-        RCP<Tempus::SolutionState<double> > state =
-          Teuchos::rcp(new Tempus::SolutionState<double>(
-            model->getExactSolution(time).get_x(),
-            model->getExactSolution(time).get_x_dot()));
+        double time_i = (*solutionHistory)[i]->getTime();
+        auto state = rcp(new Tempus::SolutionState<double>(
+            model->getExactSolution(time_i).get_x(),
+            model->getExactSolution(time_i).get_x_dot()));
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
@@ -285,13 +292,13 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
-      auto solution = Thyra::createMember(model->get_x_space());
-      Thyra::copy(*(model->getExactSolution(time).get_x()),solution.ptr());
-      solutions.push_back(solution);
-      auto solutionDot = Thyra::createMember(model->get_x_space());
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
-                  solutionDot.ptr());
-      solutionsDot.push_back(solutionDot);
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
     }
   }
 
@@ -337,8 +344,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
 
     // Setup the VanDerPolModel
     RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
-    RCP<VanDerPolModel<double> > model =
-      Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+    auto model = rcp(new VanDerPolModel<double>(vdpm_pl));
 
     // Set the step size
     dt /= 2;
@@ -397,18 +403,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   //TEST_FLOATING_EQUALITY( xDotSlope,       1.74898, 0.10   );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 1.0038, 1.0e-4 );
 
-  // Calculate the error - use the most temporally refined mesh for
-  // the reference solution.
-  auto ref_solution = solutions[solutions.size()-1];
-  std::vector<double> StepSizeCheck;
-  for (std::size_t i=0; i < (solutions.size()-1); ++i) {
-    auto tmp = solutions[i];
-    Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solution);
-    const double L2norm = Thyra::norm_2(*tmp);
-    StepSizeCheck.push_back(StepSize[i]);
-    xErrorNorm.push_back(L2norm);
-  }
-
   Teuchos::TimeMonitor::summarize();
 }
 #endif // TEST_VANDERPOL
@@ -432,8 +426,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
 
     // Setup the VanDerPolModel
     RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
-    RCP<VanDerPolModel<double> > model =
-      Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+    auto model = rcp(new VanDerPolModel<double>(vdpm_pl));
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);

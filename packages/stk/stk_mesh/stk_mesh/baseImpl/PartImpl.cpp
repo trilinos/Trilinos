@@ -48,14 +48,14 @@ namespace mesh {
 
 namespace impl {
 
-void PartImpl::add_part_to_subset( Part & part)
+bool PartImpl::add_part_to_subset( Part & part)
 {
-  insert( m_subsets, part );
+  return insert( m_subsets, part );
 }
 
-void PartImpl::add_part_to_superset( Part & part )
+bool PartImpl::add_part_to_superset( Part & part )
 {
-  insert( m_supersets, part );
+  return insert( m_supersets, part );
 }
 
 // Subset part constructor:

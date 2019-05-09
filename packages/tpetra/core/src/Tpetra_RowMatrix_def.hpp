@@ -62,7 +62,6 @@ namespace Tpetra {
        const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
     using Teuchos::Array;
-    using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -184,7 +183,7 @@ namespace Tpetra {
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
       const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
-      ArrayRCP<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
+      Array<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
       if (alpha != STS::zero ()) {
@@ -202,10 +201,10 @@ namespace Tpetra {
       }
       // Construct the result matrix C.
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile));
       } else {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow,
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
                                       StaticProfile, constructorSublist));
       }
       // Since A and B have the same row Maps, we could add them
@@ -216,12 +215,21 @@ namespace Tpetra {
     }
     else { // the row Maps of A and B are not the same
       // Construct the result matrix C.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       if (constructorSublist.is_null ()) {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile));
       } else {
         C = rcp (new crs_matrix_type (C_rowMap, 0, DynamicProfile,
                                       constructorSublist));
       }
+#else
+      // true: !A_rowMap->isSameAs (*B_rowMap)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+				 std::invalid_argument,
+				 "Tpetra::RowMatrix::add: The row maps must be the same for statically "
+				 "allocated matrices in order to be sure that there is sufficient space "
+				 "to do the addition");
+#endif
     }
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -487,7 +495,7 @@ namespace Tpetra {
             Teuchos::Array<char>& exports,
             const Teuchos::ArrayView<size_t>& numPacketsPerLID,
             size_t& constantNumPackets,
-            Distributor& distor) const
+            Distributor& /* distor */) const
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;

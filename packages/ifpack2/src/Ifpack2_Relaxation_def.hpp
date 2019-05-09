@@ -47,19 +47,12 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
-#include "Ifpack2_Relaxation_decl.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include <cstdlib>
 #include <sstream>
 #include "KokkosSparse_gauss_seidel.hpp"
-
-
-// mfh 28 Mar 2013: Uncomment out these three lines to compute
-// statistics on diagonal entries in compute().
-// #ifndef IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
-// #  define IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS 1
-// #endif // IFPACK2_RELAXATION_COMPUTE_DIAGONAL_STATS
 
 namespace {
   // Validate that a given int is nonnegative.
@@ -154,7 +147,7 @@ template<class MatrixType>
 void Relaxation<MatrixType>::updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > & map, size_t numVecs) const{
   // Allocate a multivector if the cached one isn't perfect
   // Note: We check for map pointer equality here since it is much cheaper than isSameAs()
-  if(cachedMV_.is_null() || &*map != &*cachedMV_->getMap() || cachedMV_->getNumVectors() !=numVecs) 
+  if(cachedMV_.is_null() || &*map != &*cachedMV_->getMap() || cachedMV_->getNumVectors() !=numVecs)
     cachedMV_ = Teuchos::rcp(new Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(map, numVecs, false));
 }
 
@@ -755,7 +748,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::reduceAll;
   typedef local_ordinal_type LO;
   typedef typename node_type::device_type device_type;
-  
+
   const std::string timerName ("Ifpack2::Relaxation::computeBlockCrs");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
@@ -1885,8 +1878,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
       // Just use the cached column Map multivector for that.
       // force=true means fill with zeros, so no need to fill
       // remote entries (not in domain Map) with zeros.
-      //X_colMap = crsMat->getColumnMapMultiVector (X, true);
-      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+      X_colMap = cachedMV_;
       // X_domainMap is always a domain Map view of the column Map
       // multivector.  In this case, the domain and column Maps are
       // the same, so X_domainMap _is_ X_colMap.
@@ -1916,8 +1909,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
     }
   }
   else { // Column Map and domain Map are _not_ the same.
-    //X_colMap = crsMat->getColumnMapMultiVector (X);
-    X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+    updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+    X_colMap = cachedMV_;
 
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 

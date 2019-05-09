@@ -16,7 +16,7 @@ int main()
 {
 
   const int idist = 1;
-  int seed[4] = { 0.0, 0.0, 0.0, 1.0 };
+  int seed[4] = { 0, 0, 0, 1 };
 
   double val = DLARND_F77(&idist, seed);
 

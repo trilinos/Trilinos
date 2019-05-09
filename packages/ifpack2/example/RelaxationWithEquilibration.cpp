@@ -18,8 +18,11 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosBlas3_gemm.hpp"
 
-#if defined(HAVE_IFPACK2_AZTECOO) && defined(HAVE_IFPACK2_EPETRA)
+#if defined(HAVE_IFPACK2_AZTECOO)
 #  include "AztecOO.h"
+#endif // defined(HAVE_IFPACK2_AZTECOO)
+
+#if defined(HAVE_IFPACK2_EPETRA)
 #  include "Epetra_Comm.h"
 #  if defined(HAVE_MPI)
 #    include "mpi.h"
@@ -33,7 +36,7 @@
 #  if defined(HAVE_TPETRACORE_MPI)
 #    include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
 #  endif // HAVE_TPETRACORE_MPI
-#endif // defined(HAVE_IFPACK2_AZTECOO) && defined(HAVE_IFPACK2_EPETRA)
+#endif // defined(HAVE_IFPACK2_EPETRA)
 
 #include <algorithm> // std::transform
 #include <cctype> // std::toupper
@@ -84,7 +87,7 @@ tpetraToEpetraComm (const Teuchos::Comm<int>& tpetraComm)
 template<class LO, class GO, class NT>
 Epetra_Map
 tpetraToEpetraMap (const Tpetra::Map<LO, GO, NT>& map_t,
-		   const Epetra_Comm& comm_e)
+                   const Epetra_Comm& comm_e)
 {
   const int gblNumInds = static_cast<int> (map_t.getGlobalNumElements ());
   const int lclNumInds = static_cast<int> (map_t.getNodeNumElements ());
@@ -130,17 +133,10 @@ getRankSafelyFromTpetraDistObject (const TpetraDistObjectType& X)
 template<class LO, class GO, class NT>
 std::pair<int, std::string>
 deep_copy (Epetra_Vector& X_e,
-	   const Tpetra::Vector<double, LO, GO, NT>& X_t)
+           const Tpetra::Vector<double, LO, GO, NT>& X_t)
 {
-  using vec_type = Tpetra::Vector<double, LO, GO, NT>;
-  using device_type = typename vec_type::device_type;
-  using memory_space = typename device_type::memory_space;
-  using host_execution_space =
-    typename Kokkos::View<double*, Kokkos::LayoutLeft,
-			  device_type>::HostMirror::execution_space;
-  using host_memory_space = Kokkos::HostSpace;
-  using host_device_type = Kokkos::Device<host_execution_space, host_memory_space>;
-  using host_view_type = Kokkos::View<double*, Kokkos::LayoutLeft, host_device_type>;
+  using host_view_type = Kokkos::View<double*, Kokkos::LayoutLeft,
+    Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   int lclErrCode = 0;
 
@@ -151,7 +147,7 @@ deep_copy (Epetra_Vector& X_e,
     std::ostringstream errStrm;
     errStrm << "Proc " << myRank << ": deep_copy(Vector): X_t.getLocalLength()"
       " = " << X_t.getLocalLength () << " != map_e.NumMyElements() = "
-	    << lclNumRows << "." << std::endl;
+            << lclNumRows << "." << std::endl;
     return {lclErrCode, errStrm.str ()};
   }
 
@@ -162,8 +158,8 @@ deep_copy (Epetra_Vector& X_e,
     const int myRank = getRankSafelyFromTpetraDistObject (X_t);
     std::ostringstream errStrm;
     errStrm << "Proc " << myRank << ": deep_copy(Vector): "
-	    << "Epetra_Vector::ExtractView failed with nonzero error code "
-	    << curErrCode << std::endl;
+            << "Epetra_Vector::ExtractView failed with nonzero error code "
+            << curErrCode << std::endl;
     return {lclErrCode, errStrm.str ()};
   }
   if (X_e_lcl_raw == nullptr && lclNumRows != 0) {
@@ -178,13 +174,13 @@ deep_copy (Epetra_Vector& X_e,
   }
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
-  if (X_t.template need_sync<memory_space> ()) {
-    auto X_t_lcl_2d = X_t.template getLocalView<host_memory_space> ();
+  if (X_t.need_sync_device ()) {
+    auto X_t_lcl_2d = X_t.getLocalViewHost ();
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_e_lcl, X_t_lcl);
   }
   else {
-    auto X_t_lcl_2d = X_t.template getLocalView<memory_space> ();
+    auto X_t_lcl_2d = X_t.getLocalViewDevice ();
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_e_lcl, X_t_lcl);
   }
@@ -195,18 +191,11 @@ deep_copy (Epetra_Vector& X_e,
 template<class LO, class GO, class NT>
 std::pair<int, std::string>
 deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
-	   const Epetra_Vector& X_e)
+           const Epetra_Vector& X_e)
 {
-  using vec_type = Tpetra::Vector<double, LO, GO, NT>;
-  using device_type = typename vec_type::device_type;
-  using memory_space = typename device_type::memory_space;
-  using host_execution_space =
-    typename Kokkos::View<double*, Kokkos::LayoutLeft,
-			  device_type>::HostMirror::execution_space;
-  using host_memory_space = Kokkos::HostSpace;
-  using host_device_type = Kokkos::Device<host_execution_space, host_memory_space>;
   using host_view_type = Kokkos::View<const double*, Kokkos::LayoutLeft,
-				      host_device_type>;
+    Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+
   int lclErrCode = 0;
 
   const int lclNumRows = X_e.Map ().NumMyElements ();
@@ -216,7 +205,7 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
     std::ostringstream errStrm;
     errStrm << "Proc " << myRank << ": deep_copy(Vector): X_t.getLocalLength()"
       " = " << X_t.getLocalLength () << " != map_e.NumMyElements() = "
-	    << lclNumRows << "." << std::endl;
+            << lclNumRows << "." << std::endl;
     return {lclErrCode, errStrm.str ()};
   }
 
@@ -227,8 +216,8 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
     const int myRank = getRankSafelyFromTpetraDistObject (X_t);
     std::ostringstream errStrm;
     errStrm << "Proc " << myRank << ": deep_copy(Vector): "
-	    << "Epetra_Vector::ExtractView failed with nonzero error code "
-	    << curErrCode << std::endl;
+            << "Epetra_Vector::ExtractView failed with nonzero error code "
+            << curErrCode << std::endl;
     return {lclErrCode, errStrm.str ()};
   }
   if (X_e_lcl_raw == nullptr && lclNumRows != 0) {
@@ -243,15 +232,15 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
   }
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
-  if (X_t.template need_sync<memory_space> ()) {
-    X_t.template modify<host_memory_space> ();
-    auto X_t_lcl_2d = X_t.template getLocalView<host_memory_space> ();
+  if (X_t.need_sync_device ()) {
+    X_t.modify_host ();
+    auto X_t_lcl_2d = X_t.getLocalViewHost ();
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }
   else {
-    X_t.template modify<memory_space> ();
-    auto X_t_lcl_2d = X_t.template getLocalView<memory_space> ();
+    X_t.modify_device ();
+    auto X_t_lcl_2d = X_t.getLocalViewDevice ();
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }
@@ -262,7 +251,7 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
 template<class LO, class GO, class NT>
 std::pair<int, std::string>
 deep_copy (Epetra_MultiVector& X_e,
-	   const Tpetra::MultiVector<double, LO, GO, NT>& X_t)
+           const Tpetra::MultiVector<double, LO, GO, NT>& X_t)
 {
   const int myRank = getRankSafelyFromTpetraDistObject (X_t);
   std::ostringstream errStrm;
@@ -289,10 +278,10 @@ deep_copy (Epetra_MultiVector& X_e,
       auto X_t_cur = X_t.getVector (col);
       const std::pair<int, std::string> result = deep_copy (*X_e_cur, *X_t_cur);
       if (result.first != 0) {
-	errStrm << "Proc " << myRank << ": deep_copy(MultiVector): For column "
-	  << col << ", deep_copy failed with local error code " << lclErrCode
-	  << " and the following message: " << result.second;
-	return {lclErrCode, errStrm.str ()};
+        errStrm << "Proc " << myRank << ": deep_copy(MultiVector): For column "
+          << col << ", deep_copy failed with local error code " << lclErrCode
+          << " and the following message: " << result.second;
+        return {lclErrCode, errStrm.str ()};
       }
     }
     return {lclErrCode, ""};
@@ -302,7 +291,7 @@ deep_copy (Epetra_MultiVector& X_e,
 template<class LO, class GO, class NT>
 std::pair<int, std::string>
 deep_copy (Tpetra::MultiVector<double, LO, GO, NT>& X_t,
-	   const Epetra_MultiVector& X_e)
+           const Epetra_MultiVector& X_e)
 {
   const int myRank = getRankSafelyFromTpetraDistObject (X_t);
   std::ostringstream errStrm;
@@ -329,10 +318,10 @@ deep_copy (Tpetra::MultiVector<double, LO, GO, NT>& X_t,
       auto X_t_cur = X_t.getVectorNonConst (col);
       const std::pair<int, std::string> result = deep_copy (*X_t_cur, *X_e_cur);
       if (result.first != 0) {
-	errStrm << "Proc " << myRank << ": deep_copy(MultiVector): For column "
-	  << col << ", deep_copy failed with local error code " << lclErrCode
-	  << " and the following message: " << result.second;
-	return {lclErrCode, errStrm.str ()};
+        errStrm << "Proc " << myRank << ": deep_copy(MultiVector): For column "
+          << col << ", deep_copy failed with local error code " << lclErrCode
+          << " and the following message: " << result.second;
+        return {lclErrCode, errStrm.str ()};
       }
     }
     return {lclErrCode, ""};
@@ -342,7 +331,7 @@ deep_copy (Tpetra::MultiVector<double, LO, GO, NT>& X_t,
 template<class LO, class GO, class NT>
 Epetra_Vector
 tpetraToEpetraVector (const Tpetra::MultiVector<double, LO, GO, NT>& X_t,
-		      const Epetra_Map& map_e)
+                      const Epetra_Map& map_e)
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (X_t.getNumVectors () != std::size_t (1), std::invalid_argument,
@@ -381,10 +370,10 @@ tpetraToEpetraVector (const Tpetra::MultiVector<double, LO, GO, NT>& X_t,
 template<class LO, class GO, class NT>
 Epetra_CrsMatrix
 tpetraToEpetraCrsMatrix (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
-			 const Epetra_Map& rowMap,
-			 const Epetra_Map& colMap,
-			 const Epetra_Map& domMap,
-			 const Epetra_Map& ranMap)
+                         const Epetra_Map& rowMap,
+                         const Epetra_Map& colMap,
+                         const Epetra_Map& domMap,
+                         const Epetra_Map& ranMap)
 {
   static_assert (std::is_same<LO, int>::value, "This code only works when LO = int.");
   const LO lclNumRows = rowMap.NumMyElements ();
@@ -421,7 +410,7 @@ tpetraToEpetraCrsMatrix (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
   using Teuchos::REDUCE_MIN;
   int gblErrCode = 0; // output argument
   reduceAll<int, int> (* (A_t.getMap ()->getComm ()), REDUCE_MIN,
-		       lclErrCode, outArg (gblErrCode));
+                       lclErrCode, outArg (gblErrCode));
   TEUCHOS_TEST_FOR_EXCEPTION
     (gblErrCode != 0, std::runtime_error, "tpetraToEpetraCrsMatrix: "
      "InsertMyValues failed on some process!");
@@ -437,7 +426,7 @@ tpetraToEpetraCrsMatrix (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
     lclErrCode = -lclErrCode; // make sure that REDUCE_MIN works
   }
   reduceAll<int, int> (* (A_t.getMap ()->getComm ()), REDUCE_MIN,
-		       lclErrCode, outArg (gblErrCode));
+                       lclErrCode, outArg (gblErrCode));
   TEUCHOS_TEST_FOR_EXCEPTION
     (gblErrCode != 0, std::runtime_error, "tpetraToEpetraCrsMatrix: "
      "Epetra_CrsMatrix::FillComplete failed on some process!");
@@ -449,8 +438,8 @@ tpetraToEpetraCrsMatrix (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
 template<class LO, class GO, class NT>
 std::tuple<Epetra_CrsMatrix, Epetra_Vector, Epetra_Vector>
 tpetraToEpetraLinearSystem (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
-			    const Tpetra::MultiVector<double, LO, GO, NT>& x_t,
-			    const Tpetra::MultiVector<double, LO, GO, NT>& b_t)
+                            const Tpetra::MultiVector<double, LO, GO, NT>& x_t,
+                            const Tpetra::MultiVector<double, LO, GO, NT>& b_t)
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (! A_t.isFillComplete (), std::invalid_argument,
@@ -478,7 +467,7 @@ tpetraToEpetraLinearSystem (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
   Epetra_Map ranMap_e = tpetraToEpetraMap (* (A_t.getRangeMap ()), *comm_e);
 
   Epetra_CrsMatrix A_e = tpetraToEpetraCrsMatrix (A_t, rowMap_e, colMap_e,
-						  domMap_e, ranMap_e);
+                                                  domMap_e, ranMap_e);
   Epetra_Vector x_e = tpetraToEpetraVector (x_t, domMap_e);
   Epetra_Vector b_e = tpetraToEpetraVector (b_t, ranMap_e);
 
@@ -493,9 +482,9 @@ tpetraToEpetraLinearSystem (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
 
 std::tuple<double, int, bool>
 solveEpetraLinearSystemWithAztecOO (std::tuple<Epetra_CrsMatrix, Epetra_Vector, Epetra_Vector>& sys,
-				    const std::string& solverType,
-				    const double convTol,
-				    const int maxNumIters)
+                                    const std::string& solverType,
+                                    const double convTol,
+                                    const int maxNumIters)
 {
   using std::get;
   Epetra_CrsMatrix& A = get<0> (sys);
@@ -533,7 +522,7 @@ solveEpetraLinearSystemWithAztecOO (std::tuple<Epetra_CrsMatrix, Epetra_Vector, 
   if (errCode != 0) {
     // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
     //return {-1.0, 0, false};
-    return std::make_tuple (-1.0, 0, false); 
+    return std::make_tuple (-1.0, 0, false);
   }
 
   errCode = solver.Iterate (maxNumIters, convTol);
@@ -558,15 +547,14 @@ template<class MV>
 typename MV::dot_type accurate_dot (const MV& X, const MV& Y)
 {
   using LO = typename MV::local_ordinal_type;
-  using DMS = typename MV::device_type::memory_space;
   using dot_type = typename MV::dot_type;
 
   const LO lclNumRows = X.getLocalLength ();
-  const_cast<MV&> (X).template sync<Kokkos::HostSpace> ();
-  auto X_lcl_2d = X.template getLocalView<Kokkos::HostSpace> ();
+  const_cast<MV&> (X).sync_host ();
+  auto X_lcl_2d = X.getLocalViewHost();
   auto X_lcl = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
-  const_cast<MV&> (Y).template sync<Kokkos::HostSpace> ();
-  auto Y_lcl_2d = Y.template getLocalView<Kokkos::HostSpace> ();
+  const_cast<MV&> (Y).sync_host ();
+  auto Y_lcl_2d = Y.getLocalViewHost();
   auto Y_lcl = Kokkos::subview (Y_lcl_2d, Kokkos::ALL (), 0);
 
   long double sum = 0.0;
@@ -576,8 +564,8 @@ typename MV::dot_type accurate_dot (const MV& X, const MV& Y)
     sum = std::fma (x_i, y_i, sum);
   }
 
-  const_cast<MV&> (X).template sync<DMS> ();
-  const_cast<MV&> (Y).template sync<DMS> ();
+  const_cast<MV&> (X).sync_device ();
+  const_cast<MV&> (Y).sync_device ();
 
   return dot_type (sum);
 }
@@ -621,11 +609,11 @@ AZ_breakdown_f (MV& v, MV& w, const typename MV::dot_type v_dot_w)
 template<class MV, class OP>
 std::tuple<typename MV::mag_type, int, bool>
 bicgstab_aztecoo (MV& x,
-		  const OP& A,
-		  const OP* const M,
-		  const MV& b,
-		  const int max_it,
-		  const typename MV::mag_type tol)
+                  const OP& A,
+                  const OP* const M,
+                  const MV& b,
+                  const int max_it,
+                  const typename MV::mag_type tol)
 {
   using STS = Teuchos::ScalarTraits<typename MV::scalar_type>;
   using STM = Teuchos::ScalarTraits<typename MV::mag_type>;
@@ -637,7 +625,6 @@ bicgstab_aztecoo (MV& x,
   bool brkdown_will_occur = false;
   dot_type alpha = STS::one ();
   dot_type beta = STS::zero ();
-  mag_type true_scaled_r = STM::zero ();
   dot_type omega = STS::one ();
   dot_type rhonm1 = STS::one ();
   dot_type rhon = STS::zero ();
@@ -694,17 +681,17 @@ bicgstab_aztecoo (MV& x,
       std::cerr << "Uh oh, breakdown" << std::endl;
       // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
       //return {scaled_r_norm, iter, false};
-      return std::make_tuple (scaled_r_norm, iter, false); 
+      return std::make_tuple (scaled_r_norm, iter, false);
     }
 
     beta = (rhon / rhonm1) * (alpha / omega);
 
     if (STS::magnitude (rhon) < brkdown_tol) {
       if (AZ_breakdown_f(r, r_tld, rhon)) {
-	brkdown_will_occur = true;
+        brkdown_will_occur = true;
       }
       else {
-	brkdown_tol = 0.1 * STS::magnitude (rhon);
+        brkdown_tol = 0.1 * STS::magnitude (rhon);
       }
     }
 
@@ -726,15 +713,15 @@ bicgstab_aztecoo (MV& x,
 
     if (STS::magnitude (sigma) < brkdown_tol) {
       if (AZ_breakdown_f(r_tld, v, sigma)) { // actual break down
-	residual (v, b, A, x); // v = b - A*x;
-	actual_residual = norm (v);
-	scaled_r_norm = actual_residual / b_norm;
-	// Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
-	//return {scaled_r_norm, iter, false};
-	return std::make_tuple (scaled_r_norm, iter, false);
+        residual (v, b, A, x); // v = b - A*x;
+        actual_residual = norm (v);
+        scaled_r_norm = actual_residual / b_norm;
+        // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+        //return {scaled_r_norm, iter, false};
+        return std::make_tuple (scaled_r_norm, iter, false);
       }
       else {
-	brkdown_tol = 0.1 * STS::magnitude (sigma);
+        brkdown_tol = 0.1 * STS::magnitude (sigma);
       }
     }
 
@@ -788,10 +775,10 @@ bicgstab_aztecoo (MV& x,
 template<class MV, class OP>
 std::tuple<typename MV::mag_type, int, bool>
 bicgstab_no_prec_paper (MV& x,
-			const OP& A,
-			const MV& b,
-			const int max_it,
-			const typename MV::mag_type tol)
+                        const OP& A,
+                        const MV& b,
+                        const int max_it,
+                        const typename MV::mag_type tol)
 {
   using dot_type = typename MV::dot_type;
   using mag_type = typename MV::mag_type;
@@ -890,10 +877,10 @@ bicgstab_no_prec_paper (MV& x,
 
 template<class SC, class LO, class GO, class NT>
 std::pair<Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NT> >,
-	  Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NT> > >
+          Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NT> > >
 gatherCrsMatrixAndMultiVector (LO& errCode,
-			       const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-			       const Tpetra::MultiVector<SC, LO, GO, NT>& B)
+                               const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
+                               const Tpetra::MultiVector<SC, LO, GO, NT>& B)
 {
   using Tpetra::Details::computeGatherMap;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
@@ -904,8 +891,8 @@ gatherCrsMatrixAndMultiVector (LO& errCode,
   export_type exp (A.getRowMap (), rowMap_gathered);
   auto A_gathered =
     Teuchos::rcp (new crs_matrix_type (rowMap_gathered,
-				       A.getGlobalMaxNumRowEntries (),
-				       Tpetra::StaticProfile));
+                                       A.getGlobalMaxNumRowEntries (),
+                                       Tpetra::StaticProfile));
   A_gathered->doExport (A, exp, Tpetra::INSERT);
   auto domainMap_gathered = computeGatherMap (A.getDomainMap (), Teuchos::null);
   auto rangeMap_gathered = computeGatherMap (A.getRangeMap (), Teuchos::null);
@@ -921,19 +908,19 @@ gatherCrsMatrixAndMultiVector (LO& errCode,
 using host_device_type = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
 
 template<class SC = Tpetra::MultiVector<>::scalar_type,
-	 class LO = Tpetra::MultiVector<>::local_ordinal_type,
-	 class GO = Tpetra::MultiVector<>::global_ordinal_type,
-	 class NT = Tpetra::MultiVector<>::node_type>
+         class LO = Tpetra::MultiVector<>::local_ordinal_type,
+         class GO = Tpetra::MultiVector<>::global_ordinal_type,
+         class NT = Tpetra::MultiVector<>::node_type>
 using HostDenseMatrix =
   Kokkos::View<typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type**,
-	       Kokkos::LayoutLeft,
-	       host_device_type>;
+               Kokkos::LayoutLeft,
+               host_device_type>;
 
 template<class SC, class LO, class GO, class NT>
 HostDenseMatrix<SC, LO, GO, NT>
 densifyGatheredCrsMatrix (LO& errCode,
-			  const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-			  const std::string& label)
+                          const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
+                          const std::string& label)
 {
   const LO numRows = LO (A.getRangeMap ()->getNodeNumElements ());
   const LO numCols = LO (A.getDomainMap ()->getNodeNumElements ());
@@ -951,10 +938,10 @@ densifyGatheredCrsMatrix (LO& errCode,
     }
     else {
       for (LO k = 0; k < numEnt; ++k) {
-	const LO lclCol = lclColInds[k];
-	using impl_scalar_type =
-	  typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
-	A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
+        const LO lclCol = lclColInds[k];
+        using impl_scalar_type =
+          typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
+        A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
       }
     }
   }
@@ -965,26 +952,25 @@ densifyGatheredCrsMatrix (LO& errCode,
 template<class SC, class LO, class GO, class NT>
 HostDenseMatrix<SC, LO, GO, NT>
 copyGatheredMultiVector (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-			 const std::string& label)
+                         const std::string& label)
 {
   using dense_matrix_type = HostDenseMatrix<SC, LO, GO, NT>;
-  using dev_memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;
 
-  X.template sync<Kokkos::HostSpace> ();
-  auto X_lcl = X.template getLocalView<Kokkos::HostSpace> ();
+  X.sync_host ();
+  auto X_lcl = X.getLocalViewHost ();
   dense_matrix_type X_copy (label, X.getLocalLength (), X.getNumVectors ());
   Kokkos::deep_copy (X_copy, X_lcl);
 
-  X.template sync<dev_memory_space> ();
+  X.sync_device ();
   return X_copy;
 }
 
 template<class SC, class LO, class GO, class NT>
 LO
 gatherAndDensify (HostDenseMatrix<SC, LO, GO, NT>& A_dense,
-		  HostDenseMatrix<SC, LO, GO, NT>& B_dense,
-		  const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-		  Tpetra::MultiVector<SC, LO, GO, NT>& B)
+                  HostDenseMatrix<SC, LO, GO, NT>& B_dense,
+                  const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
+                  Tpetra::MultiVector<SC, LO, GO, NT>& B)
 {
   LO errCode = 0;
   auto A_and_B_gathered = gatherCrsMatrixAndMultiVector (errCode, A, B);
@@ -999,8 +985,8 @@ gatherAndDensify (HostDenseMatrix<SC, LO, GO, NT>& A_dense,
 template<class DenseMatrixType>
 void
 solveLeastSquaresProblemAndReport (DenseMatrixType A,
-				   DenseMatrixType B,
-				   const double RCOND = -1.0 /* negative means use machine precision */)
+                                   DenseMatrixType B,
+                                   const double RCOND = -1.0 /* negative means use machine precision */)
 {
   const int numRows = int (A.extent (0));
   const int numCols = int (A.extent (1));
@@ -1030,8 +1016,8 @@ solveLeastSquaresProblemAndReport (DenseMatrixType A,
 
   std::vector<double> WORK (1);
   lapack.GELSS (numRows, numCols, NRHS, A_copy.data (), LDA,
-		B_copy.data (), LDB,
-		S.data (), RCOND, &RANK, WORK.data (), LWORK, &INFO);
+                B_copy.data (), LDB,
+                S.data (), RCOND, &RANK, WORK.data (), LWORK, &INFO);
   if (INFO != 0) {
     cerr << "DGELSS returned INFO = " << INFO << " != 0." << endl;
     return;
@@ -1043,8 +1029,8 @@ solveLeastSquaresProblemAndReport (DenseMatrixType A,
   }
   WORK.resize (LWORK);
   lapack.GELSS (numRows, numCols, NRHS, A_copy.data (), LDA,
-		B_copy.data (), LDB,
-		S.data (), RCOND, &RANK, WORK.data (), LWORK, &INFO);
+                B_copy.data (), LDB,
+                S.data (), RCOND, &RANK, WORK.data (), LWORK, &INFO);
 
   cout << "Results:" << endl
        << "  INFO: " << INFO << endl
@@ -1059,7 +1045,7 @@ solveLeastSquaresProblemAndReport (DenseMatrixType A,
     std::vector<double> B_norms (NRHS);
     for (int k = 0; k < NRHS; ++k) {
       B_norms[k] =
-	KokkosBlas::nrm2 (Kokkos::subview (B, Kokkos::ALL (), k));
+        KokkosBlas::nrm2 (Kokkos::subview (B, Kokkos::ALL (), k));
     }
 
     auto X = B_copy;
@@ -1070,14 +1056,14 @@ solveLeastSquaresProblemAndReport (DenseMatrixType A,
     std::vector<double> explicitResidualNorms (NRHS);
     for (int k = 0; k < NRHS; ++k) {
       explicitResidualNorms[k] =
-	KokkosBlas::nrm2 (Kokkos::subview (R, Kokkos::ALL (), k));
+        KokkosBlas::nrm2 (Kokkos::subview (R, Kokkos::ALL (), k));
     }
 
     for (int j = 0; j < NRHS; ++j) {
       cout << "  For right-hand side " << j
-	   << ": ||B-A*X||_2 = "
-	   << explicitResidualNorms[j]
-	   << ", ||B||_2 = " << B_norms[j] << endl;
+           << ": ||B-A*X||_2 = "
+           << explicitResidualNorms[j]
+           << ", ||B||_2 = " << B_norms[j] << endl;
     }
     cout << endl;
   }
@@ -1109,8 +1095,8 @@ findEigenvaluesAndReport (DenseMatrixType A)
   int LWORK = -1; // workspace query
   Teuchos::LAPACK<int, double> lapack;
   lapack.GEEV ('N', 'N', N, A_copy.data (), LDA, realParts.data (),
-	       imagParts.data (), nullptr, 1, nullptr, 1, WORK.data (),
-	       LWORK, nullptr, &INFO);
+               imagParts.data (), nullptr, 1, nullptr, 1, WORK.data (),
+               LWORK, nullptr, &INFO);
   if (INFO != 0) {
     cerr << "DGELSS returned INFO = " << INFO << " != 0." << endl;
     return;
@@ -1125,8 +1111,8 @@ findEigenvaluesAndReport (DenseMatrixType A)
   cout << "Solver:" << endl
        << "  Solver type: LAPACK's DGEEV" << endl;
   lapack.GEEV ('N', 'N', N, A_copy.data (), LDA, realParts.data (),
-	       imagParts.data (), nullptr, 1, nullptr, 1, WORK.data (),
-	       LWORK, nullptr, &INFO);
+               imagParts.data (), nullptr, 1, nullptr, 1, WORK.data (),
+               LWORK, nullptr, &INFO);
 
   cout << "Results:" << endl
        << "  INFO: " << INFO << endl
@@ -1339,18 +1325,15 @@ elementWiseMultiplyMultiVector (MultiVectorType& X,
                                       typename ScalingFactorsViewType::non_const_value_type
                                     >::value)
 {
-  using device_type = typename MultiVectorType::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   using index_type = typename MultiVectorType::local_ordinal_type;
-
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
-  if (X.template need_sync<dev_memory_space> ()) {
-    X.template sync<dev_memory_space> ();
+  if (X.need_sync_device ()) {
+    X.sync_device ();
   }
-  X.template modify<dev_memory_space> ();
+  X.modify_device ();
 
-  auto X_lcl = X.template getLocalView<dev_memory_space> ();
+  auto X_lcl = X.getLocalViewDevice ();
   if (static_cast<std::size_t> (X.getNumVectors ()) == std::size_t (1)) {
     using pair_type = Kokkos::pair<index_type, index_type>;
     auto X_lcl_1d = Kokkos::subview (X_lcl, pair_type (0, lclNumRows), 0);
@@ -1545,18 +1528,15 @@ elementWiseDivideMultiVector (MultiVectorType& X,
                                     typename ScalingFactorsViewType::non_const_value_type
                                   >::value)
 {
-  using device_type = typename MultiVectorType::device_type;
-  using dev_memory_space = typename device_type::memory_space;
   using index_type = typename MultiVectorType::local_ordinal_type;
-
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
-  if (X.template need_sync<dev_memory_space> ()) {
-    X.template sync<dev_memory_space> ();
+  if (X.need_sync_device ()) {
+    X.sync_device ();
   }
-  X.template modify<dev_memory_space> ();
+  X.modify_device ();
 
-  auto X_lcl = X.template getLocalView<dev_memory_space> ();
+  auto X_lcl = X.getLocalViewDevice ();
   if (static_cast<std::size_t> (X.getNumVectors ()) == std::size_t (1)) {
     using pair_type = Kokkos::pair<index_type, index_type>;
     auto X_lcl_1d = Kokkos::subview (X_lcl, pair_type (0, lclNumRows), 0);
@@ -1696,19 +1676,19 @@ getCmdLineArgs (CmdLineArgs& args, int argc, char* argv[])
   cmdp.setOption ("lapack", "no-lapack",
                   &args.useLapack,
                   "Whether to compare against LAPACK's LU factorization "
-		  "(expert driver).  If --equilibration, then use "
-		  "equilibration in LAPACK too.");
+                  "(expert driver).  If --equilibration, then use "
+                  "equilibration in LAPACK too.");
   cmdp.setOption ("custom-bicgstab", "no-custom-bicgstab",
                   &args.useCustomBicgstab,
                   "Whether to compare against a hand-rolled BiCGSTAB "
-		  "implementation.");
+                  "implementation.");
   cmdp.setOption ("aztecoo", "no-aztecoo",
                   &args.useAztecOO,
                   "Whether to compare against AztecOO.");
   cmdp.setOption ("printSolution", "dontPrintSolution",
                   &args.printSolution,
                   "Whether to print the solution vector(s), "
-		  "for each solution method.");
+                  "for each solution method.");
   cmdp.setOption ("useReorderingInIfpack2", "dontUseReorderingInIfpack2",
                   &args.useReorderingInIfpack2,
                   "Whether to use reordering in Ifpack2.");
@@ -2095,7 +2075,7 @@ solveAndReport (BelosIfpack2Solver<CrsMatrixType>& solver,
     precParams->set ("schwarz: subdomain solver name", "RELAXATION");
     {
       ParameterList& relaxParams =
-	precParams->sublist ("schwarz: subdomain solver parameters", false);
+        precParams->sublist ("schwarz: subdomain solver parameters", false);
       relaxParams.set ("relaxation: type", "Symmetric Gauss-Seidel");
     }
     precParams->set ("schwarz: overlap level", int (0));
@@ -2228,9 +2208,9 @@ main (int argc, char* argv[])
   if (args.useAztecOO) {
     if (comm->getRank () == 0) {
       cerr << "In order to solve AztecOO, you must have built with the AztecOO "
-	"and Epetra packages enabled.  Please reconfigure Trilinos (i.e., "
-	"rerun CMake) with the CMake options Trilinos_ENABLE_AztecOO:BOOL=ON "
-	"and Trilinos_ENABLE_Epetra:BOOL=ON set." << endl;
+        "and Epetra packages enabled.  Please reconfigure Trilinos (i.e., "
+        "rerun CMake) with the CMake options Trilinos_ENABLE_AztecOO:BOOL=ON "
+        "and Trilinos_ENABLE_Epetra:BOOL=ON set." << endl;
     }
     return EXIT_FAILURE;
   }
@@ -2341,7 +2321,7 @@ main (int argc, char* argv[])
     Teuchos::broadcast (*comm, 0, Teuchos::inOutArg (lapackSolveOk));
     if (lapackSolveOk != 1) {
       if (comm->getRank () == 0) {
-	cerr << "Gathering and densification for LAPACK solve FAILED!" << endl;
+        cerr << "Gathering and densification for LAPACK solve FAILED!" << endl;
       }
     }
 
@@ -2354,118 +2334,118 @@ main (int argc, char* argv[])
 
       // cout << "The matrix A, in dense format:" << endl;
       // for (int i = 0; i < numRows; ++i) {
-      // 	for (int j = 0; j < numCols; ++j) {
-      // 	  cout << A_lapack(i,j);
-      // 	  if (j + 1 < numCols) {
-      // 	    cout << " ";
-      // 	  }
-      // 	}
-      // 	cout << endl;
+      //        for (int j = 0; j < numCols; ++j) {
+      //          cout << A_lapack(i,j);
+      //          if (j + 1 < numCols) {
+      //            cout << " ";
+      //          }
+      //        }
+      //        cout << endl;
       // }
       // cout << endl;
 
       // cout << "The right-hand side(s) B, in dense format:" << endl;
       // for (int i = 0; i < numRows; ++i) {
-      // 	for (int j = 0; j < NRHS; ++j) {
-      // 	  cout << B_lapack(i,j);
-      // 	  if (j + 1 < NRHS) {
-      // 	    cout << " ";
-      // 	  }
-      // 	}
-      // 	cout << endl;
+      //        for (int j = 0; j < NRHS; ++j) {
+      //          cout << B_lapack(i,j);
+      //          if (j + 1 < NRHS) {
+      //            cout << " ";
+      //          }
+      //        }
+      //        cout << endl;
       // }
       // cout << endl;
 
       if (numRows != numCols) {
-	cerr << "Matrix is not square, so we can't use LAPACK's LU factorization on it!" << endl;
-	lapackSolveOk = 0;
+        cerr << "Matrix is not square, so we can't use LAPACK's LU factorization on it!" << endl;
+        lapackSolveOk = 0;
       }
       else {
-	findEigenvaluesAndReport (A_lapack);
-	solveLeastSquaresProblemAndReport (A_lapack, B_lapack);
+        findEigenvaluesAndReport (A_lapack);
+        solveLeastSquaresProblemAndReport (A_lapack, B_lapack);
 
-	Teuchos::LAPACK<int, double> lapack;
+        Teuchos::LAPACK<int, double> lapack;
 
-	int INFO = 0;
+        int INFO = 0;
 
-	lapack_matrix_type AF_lapack ("AF", numRows, numCols);
-	lapack_matrix_type X_lapack ("X_lapack", numCols, NRHS);
-	const int LDAF = (numRows == 0) ? 1 : AF_lapack.stride (1);
-	const int LDX = (numRows == 0) ? 1 : X_lapack.stride (1);
+        lapack_matrix_type AF_lapack ("AF", numRows, numCols);
+        lapack_matrix_type X_lapack ("X_lapack", numCols, NRHS);
+        const int LDAF = (numRows == 0) ? 1 : AF_lapack.stride (1);
+        const int LDX = (numRows == 0) ? 1 : X_lapack.stride (1);
 
-	// Save norms of columns of B, since _GESVX may modify B.
-	std::vector<double> B_norms (NRHS);
-	for (int k = 0; k < NRHS; ++k) {
-	  B_norms[k] =
-	    KokkosBlas::nrm2 (Kokkos::subview (B_lapack, Kokkos::ALL (), k));
-	}
+        // Save norms of columns of B, since _GESVX may modify B.
+        std::vector<double> B_norms (NRHS);
+        for (int k = 0; k < NRHS; ++k) {
+          B_norms[k] =
+            KokkosBlas::nrm2 (Kokkos::subview (B_lapack, Kokkos::ALL (), k));
+        }
 
-	// Save a copy of A for later.
-	lapack_matrix_type A_copy ("A_copy", numRows, numCols);
-	Kokkos::deep_copy (A_copy, A_lapack);
+        // Save a copy of A for later.
+        lapack_matrix_type A_copy ("A_copy", numRows, numCols);
+        Kokkos::deep_copy (A_copy, A_lapack);
 
-	// Save a copy of B for later.
-	lapack_matrix_type R_lapack ("R_lapack", numRows, NRHS);
-	Kokkos::deep_copy (R_lapack, B_lapack);
+        // Save a copy of B for later.
+        lapack_matrix_type R_lapack ("R_lapack", numRows, NRHS);
+        Kokkos::deep_copy (R_lapack, B_lapack);
 
-	std::vector<int> IPIV (numCols);
-	std::vector<double> R (numRows);
-	std::vector<double> C (numCols);
-	std::vector<double> FERR (NRHS);
-	std::vector<double> BERR (NRHS);
-	std::vector<double> WORK (4*numRows);
-	std::vector<int> IWORK (numRows);
-	INFO = 0;
+        std::vector<int> IPIV (numCols);
+        std::vector<double> R (numRows);
+        std::vector<double> C (numCols);
+        std::vector<double> FERR (NRHS);
+        std::vector<double> BERR (NRHS);
+        std::vector<double> WORK (4*numRows);
+        std::vector<int> IWORK (numRows);
+        INFO = 0;
 
-	const char FACT ('E');
-	const char TRANS ('N');
-	char EQUED[1];
-	EQUED[0] = args.equilibrate ? 'B' : 'N';
-	double RCOND = 1.0;
+        const char FACT ('E');
+        const char TRANS ('N');
+        char EQUED[1];
+        EQUED[0] = args.equilibrate ? 'B' : 'N';
+        double RCOND = 1.0;
 
-	cout << "Solver:" << endl
-	     << "  Solver type: LAPACK's _GESVX" << endl
-	     << "  Equilibrate: " << (args.equilibrate ? "YES" : "NO") << endl;
-	lapack.GESVX (FACT, TRANS, numRows, NRHS, A_lapack.data (), LDA,
-		      AF_lapack.data (), LDAF, IPIV.data (), EQUED, R.data (),
-		      C.data (), B_lapack.data (), LDB, X_lapack.data (), LDX,
-		      &RCOND, FERR.data (), BERR.data (), WORK.data (),
-		      IWORK.data (), &INFO);
+        cout << "Solver:" << endl
+             << "  Solver type: LAPACK's _GESVX" << endl
+             << "  Equilibrate: " << (args.equilibrate ? "YES" : "NO") << endl;
+        lapack.GESVX (FACT, TRANS, numRows, NRHS, A_lapack.data (), LDA,
+                      AF_lapack.data (), LDAF, IPIV.data (), EQUED, R.data (),
+                      C.data (), B_lapack.data (), LDB, X_lapack.data (), LDX,
+                      &RCOND, FERR.data (), BERR.data (), WORK.data (),
+                      IWORK.data (), &INFO);
 
-	cout << "Results:" << endl
-	     << "  INFO: " << INFO << endl
-	     << "  RCOND: " << RCOND << endl;
-	if (NRHS > 0) {
-	  cout << "  Pivot growth factor: " << WORK[0] << endl;
-	}
-	for (int j = 0; j < NRHS; ++j) {
-	  cout << "  For right-hand side " << j
-	       << ": forward error is " << FERR[j]
-	       << ", backward error is " << BERR[j] << endl;
-	}
+        cout << "Results:" << endl
+             << "  INFO: " << INFO << endl
+             << "  RCOND: " << RCOND << endl;
+        if (NRHS > 0) {
+          cout << "  Pivot growth factor: " << WORK[0] << endl;
+        }
+        for (int j = 0; j < NRHS; ++j) {
+          cout << "  For right-hand side " << j
+               << ": forward error is " << FERR[j]
+               << ", backward error is " << BERR[j] << endl;
+        }
 
-	// Compute the explicit residual norm(s).
-	KokkosBlas::gemm ("N", "N", -1.0, A_copy, X_lapack, +1.0, R_lapack);
-	std::vector<double> explicitResidualNorms (NRHS);
-	for (int k = 0; k < NRHS; ++k) {
-	  explicitResidualNorms[k] =
-	    KokkosBlas::nrm2 (Kokkos::subview (R_lapack, Kokkos::ALL (), k));
-	}
+        // Compute the explicit residual norm(s).
+        KokkosBlas::gemm ("N", "N", -1.0, A_copy, X_lapack, +1.0, R_lapack);
+        std::vector<double> explicitResidualNorms (NRHS);
+        for (int k = 0; k < NRHS; ++k) {
+          explicitResidualNorms[k] =
+            KokkosBlas::nrm2 (Kokkos::subview (R_lapack, Kokkos::ALL (), k));
+        }
 
-	for (int j = 0; j < NRHS; ++j) {
-	  cout << "  For right-hand side " << j
-	       << ": ||B-A*X||_2 = "
-	       << explicitResidualNorms[j]
-	       << ", ||B||_2 = " << B_norms[j] << endl;
-	}
-	cout << endl;
+        for (int j = 0; j < NRHS; ++j) {
+          cout << "  For right-hand side " << j
+               << ": ||B-A*X||_2 = "
+               << explicitResidualNorms[j]
+               << ", ||B||_2 = " << B_norms[j] << endl;
+        }
+        cout << endl;
       }
     }
 
     Teuchos::broadcast (*comm, 0, Teuchos::inOutArg (lapackSolveOk));
     if (lapackSolveOk != 1) {
       if (comm->getRank () == 0) {
-	cerr << "LAPACK solve FAILED!" << endl;
+        cerr << "LAPACK solve FAILED!" << endl;
       }
     }
   }
@@ -2473,70 +2453,70 @@ main (int argc, char* argv[])
   if (args.useCustomBicgstab) {
     for (double convTol : convergenceToleranceValues) {
       for (int maxIters : maxIterValues) {
-	MV X_copy (*X, Teuchos::Copy);
-	MV B_copy (*B, Teuchos::Copy);
-	const Tpetra::Operator<>* M = nullptr;
-	const Tpetra::Operator<>& A_ref = static_cast<const Tpetra::Operator<>& > (*A);
-	auto result = bicgstab_aztecoo (X_copy, A_ref, M, B_copy, maxIters, convTol);
+        MV X_copy (*X, Teuchos::Copy);
+        MV B_copy (*B, Teuchos::Copy);
+        const Tpetra::Operator<>* M = nullptr;
+        const Tpetra::Operator<>& A_ref = static_cast<const Tpetra::Operator<>& > (*A);
+        auto result = bicgstab_aztecoo (X_copy, A_ref, M, B_copy, maxIters, convTol);
 
-	MV R (*B, Teuchos::Copy);
-	A->apply (X_copy, R, Teuchos::NO_TRANS, -1.0, 1.0);
-	const double B_norm = norm (B_copy);
-	const double R_norm = norm (R);
-	const double explicitRelResNorm = R_norm / B_norm;
+        MV R (*B, Teuchos::Copy);
+        A->apply (X_copy, R, Teuchos::NO_TRANS, -1.0, 1.0);
+        const double B_norm = norm (B_copy);
+        const double R_norm = norm (R);
+        const double explicitRelResNorm = R_norm / B_norm;
 
-	if (comm->getRank () == 0) {
-	  using std::cout;
-	  using std::endl;
-	  cout << "Solver:" << endl
-	       << "  Solver type: AztecOO-imitating custom BiCGSTAB" << endl
-	       << "  Preconditioner type: NONE" << endl
-	       << "  Convergence tolerance: " << convTol << endl
-	       << "  Maximum number of iterations: " << maxIters << endl
-	       << "Results:" << endl
-	       << "  Converged: " << std::get<2> (result) << endl
-	       << "  Number of iterations: " << std::get<1> (result) << endl
-	       << "  Achieved tolerance: " << std::get<0> (result) << endl
-	       << "  ||B-A*X||_2 / ||B||_2: " << explicitRelResNorm << endl
-	       << endl;
-	}
-	if (args.printSolution) {
-	  writer_type::writeDense (std::cout, X_copy, "X", "AztecOO-imitating custom BiCGSTAB solution");
-	}
+        if (comm->getRank () == 0) {
+          using std::cout;
+          using std::endl;
+          cout << "Solver:" << endl
+               << "  Solver type: AztecOO-imitating custom BiCGSTAB" << endl
+               << "  Preconditioner type: NONE" << endl
+               << "  Convergence tolerance: " << convTol << endl
+               << "  Maximum number of iterations: " << maxIters << endl
+               << "Results:" << endl
+               << "  Converged: " << std::get<2> (result) << endl
+               << "  Number of iterations: " << std::get<1> (result) << endl
+               << "  Achieved tolerance: " << std::get<0> (result) << endl
+               << "  ||B-A*X||_2 / ||B||_2: " << explicitRelResNorm << endl
+               << endl;
+        }
+        if (args.printSolution) {
+          writer_type::writeDense (std::cout, X_copy, "X", "AztecOO-imitating custom BiCGSTAB solution");
+        }
       }
     }
 
     for (double convTol : convergenceToleranceValues) {
       for (int maxIters : maxIterValues) {
-	MV X_copy (*X, Teuchos::Copy);
-	MV B_copy (*B, Teuchos::Copy);
-	const Tpetra::Operator<>& A_ref = static_cast<const Tpetra::Operator<>& > (*A);
-	auto result = bicgstab_no_prec_paper (X_copy, A_ref, B_copy, maxIters, convTol);
+        MV X_copy (*X, Teuchos::Copy);
+        MV B_copy (*B, Teuchos::Copy);
+        const Tpetra::Operator<>& A_ref = static_cast<const Tpetra::Operator<>& > (*A);
+        auto result = bicgstab_no_prec_paper (X_copy, A_ref, B_copy, maxIters, convTol);
 
-	MV R (*B, Teuchos::Copy);
-	A->apply (X_copy, R, Teuchos::NO_TRANS, -1.0, 1.0);
-	const double B_norm = norm (B_copy);
-	const double R_norm = norm (R);
-	const double explicitRelResNorm = R_norm / B_norm;
+        MV R (*B, Teuchos::Copy);
+        A->apply (X_copy, R, Teuchos::NO_TRANS, -1.0, 1.0);
+        const double B_norm = norm (B_copy);
+        const double R_norm = norm (R);
+        const double explicitRelResNorm = R_norm / B_norm;
 
-	if (comm->getRank () == 0) {
-	  using std::cout;
-	  using std::endl;
-	  cout << "Solver:" << endl
-	       << "  Solver type: Original paper BiCGSTAB" << endl
-	       << "  Preconditioner type: NONE" << endl
-	       << "  Convergence tolerance: " << convTol << endl
-	       << "  Maximum number of iterations: " << maxIters << endl
-	       << "Results:" << endl
-	       << "  Converged: " << std::get<2> (result) << endl
-	       << "  Number of iterations: " << std::get<1> (result) << endl
-	       << "  Achieved tolerance: " << std::get<0> (result) << endl
-	       << "  ||B-A*X||_2 / ||B||_2: " << explicitRelResNorm << endl
-	       << endl;
-	}
-	if (args.printSolution) {
-	  writer_type::writeDense (std::cout, X_copy, "X", "Original paper BiCGSTAB solution");
-	}
+        if (comm->getRank () == 0) {
+          using std::cout;
+          using std::endl;
+          cout << "Solver:" << endl
+               << "  Solver type: Original paper BiCGSTAB" << endl
+               << "  Preconditioner type: NONE" << endl
+               << "  Convergence tolerance: " << convTol << endl
+               << "  Maximum number of iterations: " << maxIters << endl
+               << "Results:" << endl
+               << "  Converged: " << std::get<2> (result) << endl
+               << "  Number of iterations: " << std::get<1> (result) << endl
+               << "  Achieved tolerance: " << std::get<0> (result) << endl
+               << "  ||B-A*X||_2 / ||B||_2: " << explicitRelResNorm << endl
+               << endl;
+        }
+        if (args.printSolution) {
+          writer_type::writeDense (std::cout, X_copy, "X", "Original paper BiCGSTAB solution");
+        }
       }
     }
   }
@@ -2549,38 +2529,38 @@ main (int argc, char* argv[])
 
     for (std::string solverType : solverTypes) {
       for (double convTol : convergenceToleranceValues) {
-	for (int maxIters : maxIterValues) {
-	  auto result =
-	    solveEpetraLinearSystemWithAztecOO (epetraLinSys, solverType,
-						convTol, maxIters);
-	  const auto& X_epetra = std::get<1> (epetraLinSys);
-	  deep_copy (X_copy, X_epetra);
+        for (int maxIters : maxIterValues) {
+          auto result =
+            solveEpetraLinearSystemWithAztecOO (epetraLinSys, solverType,
+                                                convTol, maxIters);
+          const auto& X_epetra = std::get<1> (epetraLinSys);
+          deep_copy (X_copy, X_epetra);
 
-	  MV R (B_copy, Teuchos::Copy);
-	  A->apply (X_copy, R, Teuchos::NO_TRANS, -1.0, 1.0);
-	  const double B_norm = norm (B_copy);
-	  const double R_norm = norm (R);
-	  const double explicitRelResNorm = R_norm / B_norm;
+          MV R (B_copy, Teuchos::Copy);
+          A->apply (X_copy, R, Teuchos::NO_TRANS, -1.0, 1.0);
+          const double B_norm = norm (B_copy);
+          const double R_norm = norm (R);
+          const double explicitRelResNorm = R_norm / B_norm;
 
-	  if (comm->getRank () == 0) {
-	    using std::cout;
-	    using std::endl;
-	    cout << "Solver:" << endl
-		 << "  Solver type: AztecOO " << solverType << endl
-		 << "  Preconditioner type: NONE" << endl
-		 << "  Convergence tolerance: " << convTol << endl
-		 << "  Maximum number of iterations: " << maxIters << endl
-		 << "Results:" << endl
-		 << "  Converged: " << std::get<2> (result) << endl
-		 << "  Number of iterations: " << std::get<1> (result) << endl
-		 << "  Achieved tolerance: " << std::get<0> (result) << endl
-		 << "  ||B-A*X||_2 / ||B||_2: " << explicitRelResNorm << endl
-		 << endl;
-	  }
-	  if (args.printSolution) {
-	    writer_type::writeDense (std::cout, X_copy, "X", "AztecOO solution");
-	  }
-	}
+          if (comm->getRank () == 0) {
+            using std::cout;
+            using std::endl;
+            cout << "Solver:" << endl
+                 << "  Solver type: AztecOO " << solverType << endl
+                 << "  Preconditioner type: NONE" << endl
+                 << "  Convergence tolerance: " << convTol << endl
+                 << "  Maximum number of iterations: " << maxIters << endl
+                 << "Results:" << endl
+                 << "  Converged: " << std::get<2> (result) << endl
+                 << "  Number of iterations: " << std::get<1> (result) << endl
+                 << "  Achieved tolerance: " << std::get<0> (result) << endl
+                 << "  ||B-A*X||_2 / ||B||_2: " << explicitRelResNorm << endl
+                 << endl;
+          }
+          if (args.printSolution) {
+            writer_type::writeDense (std::cout, X_copy, "X", "AztecOO solution");
+          }
+        }
       }
     }
   }

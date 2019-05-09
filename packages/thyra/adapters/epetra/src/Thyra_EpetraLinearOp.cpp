@@ -158,7 +158,7 @@ void EpetraLinearOp::partiallyInitialize(
 }
 
 
-void EpetraLinearOp::setFullyInitialized(bool isFullyInitialized)
+void EpetraLinearOp::setFullyInitialized(bool /* isFullyInitialized */)
 {
   // ToDo: Validate that everything matches up!
   isFullyInitialized_ = true;
@@ -599,7 +599,7 @@ void EpetraLinearOp::getRowStatImpl(
 RCP< const SpmdVectorSpaceBase<double> > 
 EpetraLinearOp::allocateDomain(
   const RCP<Epetra_Operator> &op,
-  EOpTransp op_trans
+  EOpTransp /* op_trans */
   ) const
 {
   return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
@@ -612,7 +612,7 @@ EpetraLinearOp::allocateDomain(
 RCP<const SpmdVectorSpaceBase<double> > 
 EpetraLinearOp::allocateRange(
   const RCP<Epetra_Operator> &op,
-  EOpTransp op_trans
+  EOpTransp /* op_trans */
   ) const
 {
   return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(

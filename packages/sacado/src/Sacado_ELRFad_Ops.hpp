@@ -895,9 +895,9 @@ FAD_BINARYOP_MACRO(pow,
                    expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
                    expr1.val() == value_type(0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
                    expr1.val() == value_type(0) ? value_type(0) : value_type(expr2.dx(i)*std::log(expr1.val())*std::pow(expr1.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())),
+                   expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())),
                    expr1.val() == value_type(0) ? value_type(0) : value_type(expr2.fastAccessDx(i)*std::log(expr1.val())*std::pow(expr1.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(expr2.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())))
+                   expr1.val() == value_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),expr2.val())))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    expr1.val() >= expr2.val() ? expr1.val() : expr2.val(),

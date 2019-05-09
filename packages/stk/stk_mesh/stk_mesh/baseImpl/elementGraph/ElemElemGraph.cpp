@@ -287,7 +287,7 @@ void ElemElemGraph::insert_edge_between_elements(impl::LocalId local_elem_id,
                                                  const impl::SerialElementData& otherElem,
                                                  std::vector<stk::mesh::GraphEdge>& graphEdges) const
 {
-    graphEdges.push_back(stk::mesh::GraphEdge(local_elem_id, side_index, otherElem.get_element_local_id(), otherElem.get_element_side_index()));
+    graphEdges.emplace_back(local_elem_id, side_index, otherElem.get_element_local_id(), otherElem.get_element_side_index());
 }
 
 void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex,
@@ -326,11 +326,15 @@ void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &m
 template <typename GraphType>
 void add_edges_to_graph(const std::vector<stk::mesh::GraphEdge> &newGraphEdges, GraphType &graph)
 {
+  if (!newGraphEdges.empty())
+  {
+    graph.reserve_edges(newGraphEdges[0].elem1(), newGraphEdges.size());
     for(const stk::mesh::GraphEdge &graphEdge : newGraphEdges)
     {
         graph.add_edge(graphEdge);
         graph.add_edge(create_symmetric_edge(graphEdge));
     }
+  }
 }
 
 void ElemElemGraph::fill_graph()
@@ -536,8 +540,8 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
     stk::mesh::EntityVector localElemSideNodes;
     impl::fill_element_side_nodes_from_topology(m_bulk_data, localElem, side_index, localElemSideNodes);
 
-    std::pair<bool,unsigned> permutationIfConnected = stk::mesh::side_equivalent(m_bulk_data, localElem, side_index, sideNodes.data());
-    ThrowRequireWithSierraHelpMsg(permutationIfConnected.first);
+    stk::EquivalentPermutation permutationIfConnected = stk::mesh::side_equivalent(m_bulk_data, localElem, side_index, sideNodes.data());
+    ThrowRequireWithSierraHelpMsg(permutationIfConnected.is_equivalent);
 
     impl::LocalId local_elem_id = get_local_element_id(localElem);
     impl::LocalId negSgnRemoteElemId = -1 * static_cast<impl::LocalId>(receivedSharedEdge.get_remote_element_global_id());
@@ -546,7 +550,7 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
     m_graph.add_edge(graphEdge);
 
     impl::ParallelInfo parInfo(receivedSharedEdge.get_remote_processor_rank(),
-                                permutationIfConnected.second,
+                                permutationIfConnected.permutation_number,
                                 receivedSharedEdge.m_remoteElementTopology);
 
     m_parallelInfoForGraphEdges.insert_parallel_info_for_graph_edge(graphEdge, parInfo);

@@ -278,7 +278,6 @@ static double avg_dist_interval(int set1_low,  /* lowest point for first interva
     }
     else if (set2_low < set1_low) {
       val += .5 * (set1_high - set1_low + 1) * (set1_low - set2_low) * (set1_high - set2_low + 1);
-      set2_low = set1_low;
     }
     val += (set1_high - set1_low) * (set1_high - set1_low + 1) * (set1_high - set1_low + 2) / 3.0;
 

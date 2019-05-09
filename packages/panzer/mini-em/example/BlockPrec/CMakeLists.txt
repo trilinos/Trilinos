@@ -23,6 +23,25 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
 
+# rather than list all files like above, I glob all xmls
+FILE(GLOB ${PACKAGE_NAME}_InputFiles *.xml)
+
+# allow the user to override the install location and
+# provide a simple defintion for the default
+# EXAMPLE_INSTALL_DIR/Panzer/
+IF (NOT DEFINED ${PACKAGE_NAME}_INSTALL_PREFIX)
+  SET(${PACKAGE_NAME}_INSTALL_PREFIX "${${PROJECT_NAME}_INSTALL_EXAMPLE_DIR}/${PACKAGE_NAME}/")
+ELSE()
+  # inform the user where it will go, since they overrode the default
+  PRINT_VAR(${PACKAGE_NAME}_INSTALL_PREFIX)
+ENDIF()
+
+INSTALL(FILES ${${PACKAGE_NAME}_InputFiles}
+        DESTINATION ${${PACKAGE_NAME}_INSTALL_PREFIX}
+       )
+INSTALL(TARGETS "${PACKAGE_NAME}_BlockPrec"
+        COMPONENT ${PACKAGE_NAME} RUNTIME DESTINATION ${${PACKAGE_NAME}_INSTALL_PREFIX})
+
 #################################################
 # Augmentation solver
 

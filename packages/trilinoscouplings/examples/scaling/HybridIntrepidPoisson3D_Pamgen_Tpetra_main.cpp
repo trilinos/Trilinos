@@ -122,7 +122,6 @@ main (int argc, char *argv[])
 
     // Get the default communicator and Kokkos Node instance
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-    RCP<Node> node = Teuchos::null;
 
     // Did the user specify --help at the command line to print help
     // with command-line arguments?
@@ -266,7 +265,7 @@ main (int argc, char *argv[])
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
         makeMatrixAndRightHandSide (A, B, X_exact, X, coordsArray, lNodesPerDim,
-                                    comm, node, meshInput, out, err, verbose, debug);
+                                    comm, meshInput, out, err, verbose, debug);
       }
 
       // Optionally dump the matrix and/or its row Map to files.
@@ -311,6 +310,7 @@ main (int argc, char *argv[])
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
+      RCP<operator_type> opA(A);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
@@ -324,9 +324,9 @@ main (int argc, char *argv[])
           userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
           userParamList.set< RCP<Tpetra::MultiVector<double,LO,GO,Node>> >("Coordinates", coordinates);
           userParamList.set< std::string >("string aggregationRegionType", regionType);
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA, mueluParams);
 	    } else {
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(opA);
 	    }
 	  }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU

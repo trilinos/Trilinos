@@ -4,6 +4,8 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBatched_Util.hpp"
+#include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -50,9 +52,38 @@ namespace KokkosBatched {
              const ScalarType beta,
              const CViewType &C);
     };
-  
-    // specialized for different m and n
-    // C(mxn) += alpha * A(mxk) B(kxn)
+
+
+    ///
+    /// Selective Interface
+    ///
+    template<typename MemberType,
+             typename ArgTransA,
+             typename ArgTransB,
+             typename ArgMode,
+             typename ArgAlgo>
+    struct Gemm {
+      template<typename ScalarType,
+               typename AViewType,
+               typename BViewType,
+               typename CViewType>
+      KOKKOS_FORCEINLINE_FUNCTION
+      static int
+      invoke(const MemberType &member,
+             const ScalarType alpha,
+             const AViewType &A,
+             const BViewType &B,
+             const ScalarType beta,
+             const CViewType &C) {
+        int r_val = 0;
+        if (std::is_same<ArgMode,Mode::Serial>::value) {
+          r_val = SerialGemm<ArgTransA,ArgTransB,ArgAlgo>::invoke(alpha, A, B, beta, C);
+        } else if (std::is_same<ArgMode,Mode::Team>::value) {
+          r_val = TeamGemm<MemberType,ArgTransA,ArgTransB,ArgAlgo>::invoke(member, alpha, A, B, beta, C);
+        } 
+        return r_val;
+      }
+    };      
 
   }
 }

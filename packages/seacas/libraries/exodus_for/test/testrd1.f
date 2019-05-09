@@ -1,23 +1,23 @@
 C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C        * Redistributions of source code must retain the above copyright
 C          notice, this list of conditions and the following disclaimer.
-C    
+C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.  
-C    
+C          with the distribution.
+C
 C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 
       program testrd1
 
@@ -46,8 +46,8 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       integer exoid, num_dim, num_nodes, num_elem, num_elem_blk
       integer num_node_sets
       integer num_side_sets
-      integer i, j, k, elem_map(10), connect(10), node_list(100) 
-      integer elem_list(100), side_list(100), ids(10), node_map(100) 
+      integer i, j, k, elem_map(10), connect(10), node_list(100)
+      integer elem_list(100), side_list(100), ids(10), node_map(100)
       integer num_elem_per_set(10), num_nodes_per_set(10)
       integer num_df_per_set(10)
       integer num_df_in_set, num_sides_in_set
@@ -99,7 +99,7 @@ c
 c read database parameters
 c
 
-      call exgini (exoid, titl, num_dim, num_nodes, num_elem, 
+      call exgini (exoid, titl, num_dim, num_nodes, num_elem,
      1             num_elem_blk, num_node_sets, num_side_sets, ierr)
       write (iout, '(/"after exgini, error = ", i3)' ) ierr
 
@@ -141,7 +141,7 @@ c
 
       call exgcon (exoid, coord_names, ierr)
       write (iout, '(/"after exgcon, error = ", i3)' ) ierr
- 
+
       write (iout, '("x coord name = ", a9)') coord_names(1)
       write (iout, '("y coord name = ", a9)') coord_names(2)
 
@@ -155,7 +155,7 @@ c
 c
 c read element maps
 c
- 
+
       call exgpa (exoid, EXEMAP, "ID", ids, ierr)
       write (iout, '(/"after exgpa, error = ", i3)' ) ierr
 
@@ -163,7 +163,7 @@ c
 
          call exgem (exoid, ids(j), elem_map, ierr)
          write (iout, '(/"after exgem, error = ", i3)' ) ierr
- 
+
          write (iout, '(/"element map id = ", i3)' ) ids(j)
 
          do 24 i = 1, num_elem
@@ -207,7 +207,7 @@ c
 c
 c read node maps
 c
- 
+
       call exgpa (exoid, EXNMAP, "ID", ids, ierr)
       write (iout, '(/"after exgpa, error = ", i3)' ) ierr
 
@@ -215,7 +215,7 @@ c
 
          call exgnm (exoid, ids(j), node_map, ierr)
          write (iout, '(/"after exgnm, error = ", i3)' ) ierr
- 
+
          write (iout, '(/"node map id = ", i3)' ) ids(j)
 
          do 32 i = 1, num_nodes
@@ -268,7 +268,7 @@ c
      2                  "num_elem_in_block = ", i2,/
      3                  "num_nodes_per_elem = ", i2,/
      4                  "num_attr = ", i2)')
-     5                  ids(i), typ, num_elem_in_block(i), 
+     5                  ids(i), typ, num_elem_in_block(i),
      6                  num_nodes_per_elem(i), num_attr(i)
 
 40    continue
@@ -305,7 +305,7 @@ c
 
          call exgelc (exoid, ids(i), connect, ierr)
          write (iout, '(/"after exgelc, error = ", i3)' ) ierr
- 
+
          write (iout, '("connect array for elem block ", i2)') ids(i)
 
          do 50 j = 1, num_nodes_per_elem(i)
@@ -325,7 +325,7 @@ c
 
          call exgean (exoid, ids(i), num_attr(i), attrib_names, ierr)
          write (iout, '(/"after exgean, error = ", i3)' ) ierr
- 
+
          write (iout,
      *     '("element block ", i2, " has ",i2," attribute(s) and ",
      *     i2, " element(s):")')
@@ -348,7 +348,7 @@ c
 
       do 100 i = 1, num_node_sets
 
-         call exgnp (exoid, ids(i), num_nodes_in_set, 
+         call exgnp (exoid, ids(i), num_nodes_in_set,
      1               num_df_in_set, ierr)
          write (iout, '(/"after exgnp, error = ", i3)' ) ierr
 
@@ -364,7 +364,7 @@ c
 	 endif
 
          write (iout, '(/"node list for node set ", i2)') ids(i)
- 
+
          do 80 j = 1, num_nodes_in_set
             write (iout, '(i3)') node_list(j)
 80       continue
@@ -413,17 +413,17 @@ c
          list_len = exinqi (exoid, EXNSNL)
          write(iout,'(/"after EXNSNL =",i3," exinq, error = ",i3)')
      1			list_len,ierr
- 
+
          list_len = exinqi (exoid, EXNSDF)
          write(iout,'(/"after EXNSDF =",i3," exinq, error = ",i3)')
      1			list_len,ierr
- 
+
          call exgcns (exoid, ids, num_nodes_per_set, num_df_per_set,
      1                node_ind, df_ind, node_list, dist_fact, ierr)
          write (iout, '(/"after exgcns, error = ", i3)' ) ierr
- 
+
          write (iout, '(/"concatenated node set info")')
- 
+
          write (iout, '("ids = ")')
 
          do 110 i = 1, num_node_sets
@@ -468,12 +468,12 @@ c
          call exgsp (exoid, ids(i), num_sides_in_set, num_df_in_set,
      1               ierr)
          write (iout, '(/"after exgsp, error = ", i3)' ) ierr
- 
+
          write (iout, '("side set ", i2, " parameters:",/
      2          "num_sides = ", i3,/
      3          "num_dist_factors = ", i3)')
      4          ids(i), num_sides_in_set, num_df_in_set
- 
+
          call exgss (exoid, ids(i), elem_list, side_list, ierr)
          write (iout, '(/"after exgss, error = ", i3)' ) ierr
 
@@ -545,16 +545,16 @@ c     read side set properties
       num_side_sets = exinqi (exoid, EXSIDS)
       write (iout, '(/"after exinq: EXSIDS =",i3,", error = ",i3)')
      1		num_side_sets,ierr
- 
+
       if (num_side_sets .gt. 0) then
          elem_list_len = exinqi (exoid, EXSSEL)
          write (iout, '(/"after exinq: EXSSEL =",i3,", error = ",i3)')
      1		elem_list_len,ierr
- 
+
          node_list_len = exinqi (exoid, EXSSNL)
          write (iout, '(/"after exinq: EXSSNL =",i3,", error = ",i3)')
      1		node_list_len,ierr
- 
+
          df_list_len = exinqi (exoid, EXSSDF)
          write (iout, '(/"after exinq: EXSSDF =",i3,", error = ",i3)')
      1		df_list_len,ierr
@@ -562,13 +562,13 @@ c
 c read concatenated side sets; this produces the same information as
 c the above code which reads individual side sets
 c
-         call exgcss (exoid, ids, num_elem_per_set, num_df_per_set, 
+         call exgcss (exoid, ids, num_elem_per_set, num_df_per_set,
      1             elem_ind, df_ind, elem_list, side_list, dist_fact,
      2             ierr)
          write (iout, '(/"after exgcss, error = ", i3)' ) ierr
- 
+
          write (iout, '("concatenated side set info")')
- 
+
          write (iout, '("ids = ")')
 
          do 200 i = 1, num_side_sets
@@ -622,9 +622,9 @@ c
 c read QA records
 c
       num_qa_rec = exinqi (exoid, EXQA)
-      call exgqa (exoid, qa_record, ierr) 
+      call exgqa (exoid, qa_record, ierr)
       write (iout, '(/"after exgqa, error = ", i3)' ) ierr
- 
+
       write (iout, '("QA records = ")')
 
       do 290 i = 1, num_qa_rec
@@ -637,7 +637,7 @@ c
 c read information records
 c
       num_info = exinqi (exoid, EXINFO)
-      call exginf (exoid, inform, ierr) 
+      call exginf (exoid, inform, ierr)
       write (iout, '(/"after exginf, error = ", i3)' ) ierr
 
       write (iout, '("info records = ")')
@@ -647,14 +647,14 @@ c
 300   continue
 
 c
-c read global variables parameters and names 
+c read global variables parameters and names
 c
       call exgvp (exoid, "g", num_glo_vars, ierr)
       write (iout, '(/"after exgvp, error = ", i3)' ) ierr
- 
+
       call exgvnm (exoid, "g", 1, var_names(1), ierr)
       write (iout, '(/"after exgvnm, error = ", i3)' ) ierr
- 
+
       write (iout, '("There are ",i2," global variables; their names ",
      1                "are :")')  num_glo_vars
 
@@ -667,10 +667,10 @@ c read nodal variables parameters and names
 c
       call exgvp (exoid, "n", num_nod_vars, ierr)
       write (iout, '(/"after exgvp, error = ", i3)' ) ierr
- 
+
       call exgvan (exoid, "n", num_nod_vars, var_names, ierr)
       write (iout, '(/"after exgvan, error = ", i3)' ) ierr
- 
+
       write (iout, '("There are ",i2," nodal variables; their names ",
      1                "are :")')  num_nod_vars
 
@@ -683,10 +683,10 @@ c read element variables parameters and names
 c
       call exgvp (exoid, "e", num_ele_vars, ierr)
       write (iout, '(/"after exgvp, error = ", i3)' ) ierr
- 
+
       call exgvan (exoid, "e", num_ele_vars, var_names, ierr)
       write (iout, '(/"after exgvan, error = ", i3)' ) ierr
- 
+
       write (iout, '("There are ",i2," element variables; their names ",
      1                "are :")')  num_ele_vars
 
@@ -712,7 +712,7 @@ c
 c determine how many time steps are stored
 c
       num_time_steps = exinqi (exoid, EXTIMS)
-      write (iout, '("There are ",i2," time steps in the database.")') 
+      write (iout, '("There are ",i2," time steps in the database.")')
      1       num_time_steps
 c
 c read time value at one time step
@@ -720,15 +720,15 @@ c
       time_step = 3
       call exgtim (exoid, time_step, time_value, ierr)
       write (iout, '(/"after exgtim, error = ", i3)' ) ierr
- 
-      write (iout, '("time value at time step ",i2," = ", f5.3)') 
+
+      write (iout, '("time value at time step ",i2," = ", f5.3)')
      1       time_step, time_value
 c
 c read time values at all time steps
 c
       call exgatm (exoid, time_values, ierr)
       write (iout, '(/"after exgatm, error = ", i3)' ) ierr
- 
+
       write (iout, '("time values at all time steps are:")')
 
       do 370 i = 1, num_time_steps
@@ -743,8 +743,8 @@ c read all global variables at one time step
 c
       call exggv (exoid, time_step, num_glo_vars, var_values, ierr)
       write (iout, '(/"after exggv, error = ", i3)' ) ierr
- 
-      write (iout, '("global variable values at time step ",i2)') 
+
+      write (iout, '("global variable values at time step ",i2)')
      1       time_step
 
       do 400 i = 1, num_glo_vars
@@ -757,7 +757,7 @@ c
       call exggvt (exoid, var_index, beg_time, end_time, var_values,
      1             ierr)
       write (iout, '(/"after exggvt, error = ", i3)' ) ierr
- 
+
       write (iout, '("global variable ",i2," values through time:")')
      1       var_index
 
@@ -772,7 +772,7 @@ c
      1            ierr)
       write (iout, '(/"after exgnv, error = ", i3)' ) ierr
 
-      write (iout, '("nodal variable ",i2," values at time step ",i2)') 
+      write (iout, '("nodal variable ",i2," values at time step ",i2)')
      1       var_index, time_step
 
       do 420 i = 1, num_nodes
@@ -784,10 +784,10 @@ c read a nodal variable through time
 c
       node_num = 1
 
-      call exgnvt (exoid, var_index, node_num, beg_time, end_time, 
+      call exgnvt (exoid, var_index, node_num, beg_time, end_time,
      1             var_values, ierr)
       write (iout, '(/"after exgnvt, error = ", i3)' ) ierr
- 
+
       write (iout, '("nodal variable ",i2," values for node ",i2,
      1               " through time:")') var_index, node_num
 
@@ -803,10 +803,10 @@ c
 
       do 450 i = 1, num_elem_blk
 
-         call exgev (exoid, time_step, var_index, ids(i), 
+         call exgev (exoid, time_step, var_index, ids(i),
      1               num_elem_in_block(i), var_values, ierr)
          write (iout, '(/"after exgev, error = ", i3)' ) ierr
- 
+
          if (ierr .eq. 0) then
             write (iout, '("element variable ",i2," values of element ",
      1                     "block ",i2," at time step ",i2)')
@@ -825,10 +825,10 @@ c
       var_index = 2
       elem_num = 2
 
-      call exgevt (exoid, var_index, elem_num, beg_time, end_time, 
+      call exgevt (exoid, var_index, elem_num, beg_time, end_time,
      1             var_values, ierr)
       write (iout, '(/"after exgevt, error = ", i3)' ) ierr
- 
+
       write (iout, '("element variable ",i2," values for element ",i2,
      1               " through time:")') var_index, elem_num
 

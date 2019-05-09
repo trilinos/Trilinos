@@ -56,7 +56,7 @@ struct is_view_fad_contiguous { static const bool value = false; };
 template <typename view_type>
 KOKKOS_INLINE_FUNCTION
 constexpr unsigned
-dimension_scalar(const view_type& view) {
+dimension_scalar(const view_type& /* view */) {
   return 0;
 }
 
@@ -1040,7 +1040,9 @@ class ViewMapping< Traits , /* View internal mapping */
         std::is_same< typename Traits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    )>::type >
+    )
+    , typename Traits::specialize
+    >::type >
 {
 private:
 
@@ -1430,15 +1432,18 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFad >::value
-  )>::type >
+
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template< class DstType >
   KOKKOS_INLINE_FUNCTION static
@@ -1522,7 +1527,9 @@ class ViewMapping< DstTraits , SrcTraits ,
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
                 , ViewSpecializeSacadoFad >::value
-  )>::type >
+  )
+  , typename DstTraits::specialize
+  >::type >
 {
 public:
 
@@ -1530,8 +1537,8 @@ public:
 
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
 
   // Helpers to assign, and generate if necessary, ViewOffset to the dst map
@@ -1684,7 +1691,8 @@ struct ViewMapping
         std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutStride >::value
       )
-    )>::type
+    )
+    >::type
   , SrcTraits
   , Args ... >
 {
@@ -1768,11 +1776,11 @@ public:
 
 
   KOKKOS_INLINE_FUNCTION
-  static void assign( ViewMapping< traits_type , void > & dst
-                    , ViewMapping< SrcTraits , void > const & src
+  static void assign( ViewMapping< traits_type , typename traits_type::specialize > & dst
+                    , ViewMapping< SrcTraits ,typename SrcTraits::specialize > const & src
                     , Args ... args )
     {
-      typedef ViewMapping< traits_type , void > DstType ;
+      typedef ViewMapping< traits_type , typename traits_type::specialize > DstType ;
       typedef typename DstType::offset_type  dst_offset_type ;
       typedef typename DstType::array_offset_type  dst_array_offset_type ;
       typedef typename DstType::handle_type  dst_handle_type ;

@@ -35,7 +35,6 @@
 
 #include "exodusII.h" // for exoptval, MAX_ERR_LENGTH, etc
 #include "exodusII_int.h"
-#include "netcdf.h" // for NC_EAXISTYPE, NC_EBADDIM, etc
 #include <stdio.h>  // for fprintf, stderr, fflush
 #include <stdlib.h> // for exit
 #include <string.h> // for strcpy
@@ -106,8 +105,8 @@ EX_errval_t *ex_errval = NULL;
 #else
 int exerrval = 0; /* clear initial global error code value */
 
-static char last_pname[MAX_ERR_LENGTH];
-static char last_errmsg[MAX_ERR_LENGTH];
+static char last_pname[MAX_ERR_LENGTH + 1];
+static char last_errmsg[MAX_ERR_LENGTH + 1];
 static int  last_err_num;
 
 #define EX_PNAME last_pname
@@ -133,12 +132,10 @@ void ex_err(const char *module_name, const char *message, int err_num)
 
   /* save the error message for replays */
   if (message != NULL) {
-    strncpy(EX_ERRMSG, message, MAX_ERR_LENGTH);
-    EX_ERRMSG[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH + 1);
   }
   if (module_name != NULL) {
-    strncpy(EX_PNAME, module_name, MAX_ERR_LENGTH);
-    EX_PNAME[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH + 1);
   }
 
   if (err_num == EX_PRTLASTMSG) {
@@ -190,12 +187,10 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
 
   /* save the error message for replays */
   if (message != NULL) {
-    strncpy(EX_ERRMSG, message, MAX_ERR_LENGTH);
-    EX_ERRMSG[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH + 1);
   }
   if (module_name != NULL) {
-    strncpy(EX_PNAME, module_name, MAX_ERR_LENGTH);
-    EX_PNAME[MAX_ERR_LENGTH - 1] = '\0';
+    ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH + 1);
   }
 
   if (err_num == EX_PRTLASTMSG) {
@@ -208,17 +203,16 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
       char *path = NULL;
       if (pathlen > 0) {
         path = malloc(pathlen + 1);
-        nc_inq_path(exoid, NULL, path);
-        fprintf(stderr, "    exerrval = %d in file '%s'\n", EX_ERR_NUM, path);
-        free(path);
-      }
-      else {
-        fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
+        if (path != NULL) {
+          nc_inq_path(exoid, NULL, path);
+          fprintf(stderr, "    in file '%s'", path);
+          free(path);
+        }
       }
     }
-    else {
-      fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
-    }
+
+    fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
+
     if (EX_ERR_NUM < 0) {
       fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
     }
@@ -276,10 +270,8 @@ void ex_set_err(const char *module_name, const char *message, int err_num)
 {
   EX_FUNC_ENTER_INT();
   /* save the error message for replays */
-  strncpy(EX_ERRMSG, message, MAX_ERR_LENGTH);
-  strncpy(EX_PNAME, module_name, MAX_ERR_LENGTH);
-  EX_ERRMSG[MAX_ERR_LENGTH - 1] = '\0';
-  EX_PNAME[MAX_ERR_LENGTH - 1]  = '\0';
+  ex_copy_string(EX_ERRMSG, message, MAX_ERR_LENGTH + 1);
+  ex_copy_string(EX_PNAME, module_name, MAX_ERR_LENGTH + 1);
   if (err_num != EX_LASTERR) {
     /* Use last set error number, but add new function and message */
     EX_ERR_NUM = err_num;

@@ -1119,6 +1119,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
       return result;
 #else // no MUELU_ML
+      (void)epA;
+      (void)epB;
+      (void)fos;
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "No ML multiplication available. This feature is currently not supported by Xpetra.");
        TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -1734,9 +1737,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
     // Michael Gee's MLMultiply
-    static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
-                                                     const Epetra_CrsMatrix& epB,
-                                                     Teuchos::FancyOStream& fos) {
+    static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(const Epetra_CrsMatrix& /* epA */,
+                                                     const Epetra_CrsMatrix& /* epB */,
+                                                     Teuchos::FancyOStream& /* fos */) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "No ML multiplication available. This feature is currently not supported by Xpetra.");
       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);

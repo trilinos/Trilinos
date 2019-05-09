@@ -15,6 +15,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+set(SEACASExodus_ENABLE_STATIC_DEFAULT "OFF")
+if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+  if (BUILD_SHARED_LIBS)
+    set(SEACASExodus_ENABLE_STATIC_DEFAULT "ON")
+  endif()
+endif()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  SEACASExodus_ENABLE_STATIC
+  EXODUS_STATIC
+  "Build static version of Exodus in addition to shared version."
+  ${SEACASExodus_ENABLE_STATIC_DEFAULT}
+  )
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   SEACASIoss_ENABLE_THREADSAFE
   IOSS_THREADSAFE
@@ -100,7 +113,7 @@ ADD_SUBDIRECTORY(scripts)
 TRIBITS_EXCLUDE_FILES(
   doc
   )
-  
+
 #
 # D) Do standard postprocessing
 #

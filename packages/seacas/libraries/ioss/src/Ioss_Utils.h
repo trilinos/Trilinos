@@ -164,6 +164,24 @@ namespace Ioss {
 #endif
     }
 
+    static void copy_string(char *dest, char const *source, size_t elements);
+
+    static void copy_string(char *dest, const std::string &source, size_t elements)
+    {
+      copy_string(dest, source.c_str(), elements);
+    }
+
+    template <size_t size> static void copy_string(char (&output)[size], const std::string &source)
+    {
+      copy_string(output, source.c_str(), size);
+    }
+
+    template <size_t size> static void copy_string(char (&output)[size], const char *source)
+    {
+      // Copy the string — don’t copy too many bytes.
+      copy_string(output, source, size);
+    }
+
     template <typename T> static void clear(std::vector<T> &vec)
     {
       vec.clear();
@@ -264,8 +282,6 @@ namespace Ioss {
     // Return amount of memory being used on this processor
     static size_t get_memory_info();
     static size_t get_hwm_memory_info();
-
-    static void abort();
 
     // Return a filename relative to the specified working directory (if any)
     // of the current execution. Working_directory must end with '/' or be empty.

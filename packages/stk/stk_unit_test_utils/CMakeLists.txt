@@ -5,11 +5,7 @@ ADD_SUBDIRECTORY(comparison)
 INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR})
 
 FILE(GLOB HEADERS *.hpp)
-#disabling due to creation of circular dependency on stk_unit_tests mesh_fixture
-LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/unittestMeshUtils.hpp")
 FILE(GLOB SOURCES *.cpp)
-#disabling due to creation of circular dependency on stk_unit_tests mesh_fixture
-LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/unittestMeshUtils.cpp")
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/)
@@ -31,8 +27,9 @@ IF (STK_ENABLE_UnitMain)
 
   TRIBITS_ADD_LIBRARY(
     stk_unit_main
+    DEPLIBS
+    TESTONLY
     SOURCES ${UNIT_MAIN_SOURCES}
-    DEPLIBS stk_unit_test_utils
   )
 ENDIF()
 

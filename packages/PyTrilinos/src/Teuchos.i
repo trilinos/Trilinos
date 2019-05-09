@@ -42,56 +42,17 @@
 // ***********************************************************************
 // @HEADER
 
-%define %teuchos_docstring
+%define %teuchos_base_importcode
 "
-PyTrilinos.Teuchos is the python interface to the Trilinos tools and
-utilities package Teuchos:
-
-    http://trilinos.sandia.gov/packages/teuchos
-
-The purpose of Teuchos is to provide a number of utilities often
-needed by numerical applications, but that are not necessarily
-numerical by nature.  The python version of the Teuchos package
-supports the following classes:
-
-    * SerialComm              - Serial communicator
-    * MpiComm                 - MPI communicator
-    * DefaultComm             - Default communicator facility
-    * ParameterList           - List of arbitrarily-typed values,
-                                keyed by strings
-    * XMLObject               - Object-oriented interface to XML
-                                objects
-    * XMLParameterListReader  - ParameterList input from XML
-    * XMLParameterListWriter  - ParameterList output to XML
-    * XMLInputSource          - Base class for converting a stream
-                                to XML
-    * FileInputSource         - Class for converting file contents
-                                to XML
-    * StringInputSource       - Class for converting string contents
-                                to XML
-    * ScalarTraits            - Function factory for ScalarTraits<...>
-                                classes
-    * Time                    - Wall-clock timer class
-
-The ParameterList class matches string keys to arbitrarily-typed
-values.  In python, the Teuchos.ParameterList is tightly integrated
-with python dictionaries -- PyTrilinos methods that expect a
-ParameterList will accept a python dictionary.
+from . import _Base
 "
 %enddef
 
-%define %teuchos_import_code
-"
-from . import _Teuchos
-"
-%enddef
-
-%module(package      = "PyTrilinos",
+%module(package      = "PyTrilinos.Teuchos",
 	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
-        moduleimport = %teuchos_import_code,
-	docstring    = %teuchos_docstring) Teuchos
+        moduleimport = %teuchos_base_importcode) Base
 
 // Include Files
 %{
@@ -116,13 +77,6 @@ using Teuchos::RCP;
 
 // Namespace flattening
 using std::string;
-
-// Pull the RCP module into the Teuchos package
-%pythoncode
-%{
-__all__ = ["RCP"]
-import RCP
-%}
 
 // Standard exception handling
 %include "exception.i"

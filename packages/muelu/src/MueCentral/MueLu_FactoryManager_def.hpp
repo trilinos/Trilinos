@@ -160,6 +160,7 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, factory);
       }
       if (varName == "Coordinates")                     return GetFactory("Ptent");
+      if (varName == "Node Comm")                       return GetFactory("Ptent");
 
       if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -180,6 +181,7 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
+      if (varName == "repartition: heuristic target rows per process") return GetFactory("number of partitions");
 
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
@@ -195,6 +197,7 @@ namespace MueLu {
       if (varName == "K")                               return GetFactory("A");
       if (varName == "M")                               return GetFactory("A");
       if (varName == "Mdiag")                           return GetFactory("A");
+      if (varName == "cfl-based shift array")           return GetFactory("A");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");

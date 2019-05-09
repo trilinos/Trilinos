@@ -38,7 +38,7 @@ namespace KokkosBatched {
     // vector, scalar
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
@@ -51,7 +51,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, typename T2, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
@@ -65,7 +65,7 @@ namespace KokkosBatched {
     // scalar, vector
     
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
@@ -78,7 +78,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, typename T2, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
@@ -92,7 +92,7 @@ namespace KokkosBatched {
     // vector, vector
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MISC_RETURN_TYPE(T,l)
     conditional_assign(const Vector<SIMD<bool>,l> &cond,
@@ -105,7 +105,7 @@ namespace KokkosBatched {
     }
 
     template<typename T0, typename T1, typename T2, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     KOKKOSKERNELS_SIMD_MISC_CONVERTIBLE_RETURN_VOID_TYPE(T0,T1,T2,l)
     conditional_assign(/* */ Vector<SIMD<T0>,l> &r_val,
@@ -117,7 +117,7 @@ namespace KokkosBatched {
     }
     
     template<typename T, int l, typename BinaryOp>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     T
     reduce(const Vector<SIMD<T>,l> &val, const BinaryOp &func) {
@@ -128,7 +128,7 @@ namespace KokkosBatched {
     }
 
     template<typename T, int l, typename BinaryOp>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     T
     reduce(const Vector<SIMD<T>,l> &val, const BinaryOp &func, const T init) {
@@ -139,7 +139,7 @@ namespace KokkosBatched {
     }
 
     template<int l>
-    inline    
+    KOKKOS_INLINE_FUNCTION    
     static
     bool
     is_all_true(const Vector<SIMD<bool>,l> &cond) {
@@ -149,7 +149,7 @@ namespace KokkosBatched {
     } 
 
     template<int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     bool
     is_any_true(const Vector<SIMD<bool>,l> &cond) {
@@ -159,27 +159,29 @@ namespace KokkosBatched {
     } 
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     T
     min(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
-          return min(left,right);
+          const auto tmp = left < right;
+          return tmp*left + !tmp*right;
         });
     } 
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     T
     max(const Vector<SIMD<T>,l> &val) {
       return reduce(val, [](const T left, const T right) -> T {
-          return max(left,right);
+          const auto tmp = left > right;
+          return tmp*left + !tmp*right;
         });
     } 
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     T
     sum(const Vector<SIMD<T>,l> &val) {
@@ -189,7 +191,7 @@ namespace KokkosBatched {
     } 
 
     template<typename T, int l>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static
     T
     prod(const Vector<SIMD<T>,l> &val) {

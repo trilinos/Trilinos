@@ -75,7 +75,7 @@ int ilog2i(size_t n)
 {
   size_t       i  = 0;
   unsigned int n1 = n;
-  while (n1 >>= 1 != 0u) {
+  while ((n1 >>= 1) != 0u) {
     ++i;
   }
 
@@ -263,8 +263,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       size_t cnt = 0;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
 
-        if (mesh->elem_type[ecnt] != SPHERE ||
-            (mesh->elem_type[ecnt] == SPHERE && problem->no_sph == 1)) {
+        if (mesh->elem_type[ecnt] != SPHERE || problem->no_sph == 1) {
           /*
            * for our purposes, the coordinate of the element will
            * be the average of the coordinates of the nodes that make
@@ -623,7 +622,6 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
             tmpdim[0] = nprocg[iloop];
             tmpdim[1] = 1;
             tmpdim[2] = 1;
-            totalproc = nprocg[iloop];
           }
           else {
             num_level = nprocg[iloop];
@@ -1068,8 +1066,6 @@ namespace {
     size_t           count;
     size_t           num_found = 0;
 
-    int nhold2, nsides2;
-
     std::vector<int> list_ptr;
     int              end;
 
@@ -1316,17 +1312,18 @@ namespace {
                      * diagonals due to triangular shells
                      */
 
-                    nsides2 = get_elem_info(NSIDES, etype2);
+                    int nsides2 = get_elem_info(NSIDES, etype2);
 
                     count = 0;
                     for (int cnt = 0; cnt < nsides2; cnt++) {
 
                       ss_to_node_list(etype2, mesh->connect[el2], (cnt + 1), side_nodes2);
 
-                      nhold2 = find_inter(graph->sur_elem[side_nodes2[0]].data(),
-                                          graph->sur_elem[side_nodes2[1]].data(),
-                                          graph->sur_elem[side_nodes2[0]].size(),
-                                          graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
+                      int nhold2 =
+                          find_inter(graph->sur_elem[side_nodes2[0]].data(),
+                                     graph->sur_elem[side_nodes2[1]].data(),
+                                     graph->sur_elem[side_nodes2[0]].size(),
+                                     graph->sur_elem[side_nodes2[1]].size(), pt_list.data());
 
                       for (int i = 0; i < nhold2; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];

@@ -64,6 +64,9 @@ namespace FROSch {
         typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::Array<MapPtr> MapPtrVec;
         
+        typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
+        typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
         typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         typedef Teuchos::Array<MultiVectorPtr> MultiVectorPtrVec;
@@ -72,8 +75,12 @@ namespace FROSch {
         
         typedef unsigned UN;
         
+        typedef Teuchos::Array<LO> LOVec;
+        typedef Teuchos::Array<GO> GOVec;        
         typedef Teuchos::ArrayRCP<LO> LOVecPtr;
         typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
+        
+        typedef Teuchos::Array<SC> SCVec;
         
         
         CoarseSpace();
@@ -83,13 +90,25 @@ namespace FROSch {
         
         int assembleCoarseSpace();
         
+        int buildGlobalBasisMatrix(ConstMapPtr rowMap,
+                                   ConstMapPtr repeatedMap,
+                                   SC treshold);
+        
         int clearCoarseSpace();
         
         int checkForLinearDependencies();
         
+        bool hasBasisMap() const;
+        
         MapPtr getBasisMap() const;
         
-        MultiVectorPtr getLocalBasis() const;
+        bool hasAssembledBasis() const;
+        
+        MultiVectorPtr getAssembledBasis() const;
+        
+        bool hasGlobalBasisMatrix() const;
+        
+        CrsMatrixPtr getGlobalBasisMatrix() const;
         
     protected:
         
@@ -102,6 +121,8 @@ namespace FROSch {
         MapPtr AssembledBasisMap_;
         
         MultiVectorPtr AssembledBasis_;
+        
+        CrsMatrixPtr GlobalBasisMatrix_;
         
     };
     

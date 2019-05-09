@@ -42,6 +42,38 @@ inline float reduce_sum(const Float& x) {
          x[4]+x[5]+x[6]+x[7];
 }
 
+inline double reduce_max(const Double& x) {
+  double max = x[0];
+  for (int i=1; i<4; ++i){
+    max = max > x[i] ? max : x[i];
+  }
+  return max;
+}
+
+inline float reduce_max(const Float& x) {
+  float max = x[0];
+  for (int i=1; i<8; ++i){
+    max = max > x[i] ? max : x[i];
+  }
+  return max;
+}
+
+inline double reduce_min(const Double& x) {
+  double max = x[0];
+  for (int i=1; i<4; ++i){
+    max = max < x[i] ? max : x[i];
+  }
+  return max;
+}
+
+inline float reduce_min(const Float& x) {
+  float max = x[0];
+  for (int i=1; i<8; ++i){
+    max = max < x[i] ? max : x[i];
+  }
+  return max;
+}
+
 }
 }
 

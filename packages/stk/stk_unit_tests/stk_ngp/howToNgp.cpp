@@ -43,7 +43,8 @@ void set_field_on_device_and_copy_back(stk::mesh::BulkData &bulk,
     {
         ngpQuadField.get(entity, 0) = fieldVal;
     });
-    ngpQuadField.copy_device_to_host(bulk, quadField);
+    ngpQuadField.modify_on_device();
+    ngpQuadField.sync_to_host();
 }
 
 class NgpHowTo : public stk::unit_test_util::MeshFixture {};
@@ -64,8 +65,72 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
     set_field_on_device_and_copy_back(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
 
     for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, shellQuadPart))
+    {
         for(stk::mesh::Entity elem : *bucket)
+        {
             EXPECT_EQ(fieldVal, *stk::mesh::field_data(shellQuadField, elem));
+        }
+    }
+}
+
+template<typename MeshType, typename FieldType>
+void test_field_on_subset_of_mesh(const stk::mesh::BulkData& bulk, const FieldType& field,
+                                  stk::mesh::PartOrdinal partThatHasField,
+                                  stk::mesh::PartOrdinal partThatDoesntHaveField)
+{
+    MeshType ngpMesh(bulk);
+
+    typedef Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
+    const auto& teamPolicy = Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK), Kokkos::AUTO);
+
+    Kokkos::parallel_for(teamPolicy, KOKKOS_LAMBDA (const TeamHandleType& team)
+    {
+        const typename MeshType::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, team.league_rank());
+        unsigned numElems = bucket.size();
+
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
+        {
+            stk::mesh::Entity elem = bucket[i];
+            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
+            if (bucket.member(partThatHasField)) {
+                NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) > 0);
+            }
+            if (bucket.member(partThatDoesntHaveField)) {
+                NGP_ThrowRequire(field.get_num_components_per_entity(elemIndex) == 0);
+            }
+        });
+    });
+}
+
+TEST_F(NgpHowTo, fieldOnSubsetOfMesh)
+{
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::Part &shellQuadPart = get_meta().get_topology_root_part(stk::topology::SHELL_QUAD_4);
+    const stk::mesh::Part &hex8Part = get_meta().get_topology_root_part(stk::topology::HEX_8);
+
+    auto &shellQuadField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
+    double init = 0.0;
+    stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, &init);
+    std::string meshDesc =
+        "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
+         0,2,SHELL_QUAD_4,5,6,7,8";
+    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+
+    double fieldVal = 13.0;
+    set_field_on_device_and_copy_back(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
+
+#ifndef KOKKOS_ENABLE_CUDA
+    ngp::StkFieldAdapter<double> ngpShellFieldAdapter(get_bulk(), shellQuadField);
+
+    test_field_on_subset_of_mesh<ngp::StkMeshAdapter,ngp::StkFieldAdapter<double> >(
+                      get_bulk(), ngpShellFieldAdapter,
+                      shellQuadPart.mesh_meta_data_ordinal(), hex8Part.mesh_meta_data_ordinal());
+#endif
+
+    ngp::StaticField<double> ngpShellField(get_bulk(), shellQuadField);
+    test_field_on_subset_of_mesh<ngp::StaticMesh, ngp::StaticField<double> >(
+                      get_bulk(), ngpShellField,
+                      shellQuadPart.mesh_meta_data_ordinal(), hex8Part.mesh_meta_data_ordinal());
 }
 
 TEST_F(NgpHowTo, loopOverAllMeshNodes)
@@ -157,10 +222,59 @@ TEST_F(NgpHowTo, loopOverElemNodes)
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
     stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
     run_connected_node_test<ngp::StkMeshAdapter>(get_bulk());
 #endif
     run_connected_node_test<ngp::StaticMesh>(get_bulk());
+}
+
+template<typename MeshType>
+void run_id_test(const stk::mesh::BulkData& bulk)
+{
+    MeshType ngpMesh(bulk);
+
+    typedef Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
+    const auto& teamPolicy = Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK), Kokkos::AUTO);
+
+    Kokkos::parallel_for(teamPolicy, KOKKOS_LAMBDA (const TeamHandleType& team)
+    {
+        const typename MeshType::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, team.league_rank());
+        unsigned numElems = bucket.size();
+        NGP_EXPECT_EQ(1u, numElems);
+
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
+        {
+            stk::mesh::Entity elem = bucket[i];
+            NGP_EXPECT_EQ(1u, ngpMesh.identifier(elem));
+            NGP_EXPECT_EQ(1u, ngpMesh.entity_key(elem).id());
+            NGP_EXPECT_EQ(stk::topology::ELEM_RANK, ngpMesh.entity_rank(elem));
+            NGP_EXPECT_EQ(stk::topology::ELEM_RANK, ngpMesh.entity_key(elem).rank());
+
+            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
+            typename MeshType::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndex);
+            for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+              NGP_EXPECT_EQ(inode+1, ngpMesh.identifier(nodes[inode]));
+              NGP_EXPECT_EQ(inode+1, ngpMesh.entity_key(nodes[inode]).id());
+              NGP_EXPECT_EQ(stk::topology::NODE_RANK, ngpMesh.entity_rank(nodes[inode]));
+              NGP_EXPECT_EQ(stk::topology::NODE_RANK, ngpMesh.entity_key(nodes[inode]).rank());
+            }
+        });
+    });
+}
+
+NGP_TEST_F(NgpHowTo, checkElemNodeIds)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+
+#ifndef KOKKOS_ENABLE_CUDA
+    run_id_test<ngp::StkMeshAdapter>(get_bulk());
+#endif
+    run_id_test<ngp::StaticMesh>(get_bulk());
 }
 
 void run_connected_face_test(const stk::mesh::BulkData& bulk)
@@ -288,7 +402,7 @@ TEST_F(NgpHowTo, loopOverElemFaceOrdinals)
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     setup_mesh("generated:1x1x1|sideset:xXyYzZ", stk::mesh::BulkData::NO_AUTO_AURA);
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
     run_connected_face_ordinal_test<ngp::StkMeshAdapter>(get_bulk());
 #endif
     run_connected_face_ordinal_test<ngp::StaticMesh>(get_bulk());
@@ -371,7 +485,7 @@ TEST_F(NgpHowTo, loopOverElemFacePermutations)
     bool connectFacesToEdges = true;
     stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), {&sidePart}, connectFacesToEdges);
 
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
     run_connected_face_permutation_test<ngp::StkMeshAdapter>(get_bulk());
 #endif
     run_connected_face_permutation_test<ngp::StaticMesh>(get_bulk());
@@ -445,22 +559,29 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
                          stk::mesh::Field<double>& field1,
                          stk::mesh::Field<double>& field2)
 {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   using DeviceSpace = Kokkos::CudaSpace;
 #else
   using DeviceSpace = Kokkos::HostSpace;
 #endif
-  using FieldViewType = Kokkos::View<ngp::Field<double>*,DeviceSpace>;
+  using FieldViewType = Kokkos::View<ngp::StaticField<double>*,DeviceSpace>;
 
-  FieldViewType fields("fields",2);
+  FieldViewType fields(Kokkos::ViewAllocateWithoutInitializing("fields"),2);
   FieldViewType::HostMirror hostFields = Kokkos::create_mirror_view(fields);
-  hostFields(0) = ngp::Field<double>(bulk, field1);
-  hostFields(1) = ngp::Field<double>(bulk, field2);
+
+  Kokkos::parallel_for(2, KOKKOS_LAMBDA(const unsigned& i)
+  {
+    new (&fields(i)) ngp::StaticField<double>();
+  });
+
+  hostFields(0) = ngp::StaticField<double>(bulk, field1);
+  hostFields(1) = ngp::StaticField<double>(bulk, field2);
+
   Kokkos::deep_copy(fields, hostFields);
 
   unsigned numResults = 2;
   IntViewType result = ngp_unit_test_utils::create_dualview<IntViewType>("result",numResults);
-  
+
   Kokkos::parallel_for(2, KOKKOS_LAMBDA(const unsigned& i)
   {
     result.d_view(i) = fields(i).get_ordinal() == i ? 1 : 0;
@@ -473,7 +594,11 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   EXPECT_EQ(1, result.h_view(1));
 }
 
-TEST_F(NgpHowTo, viewOfFields)
+// Disabled because ngp::Field now contains a Kokkos::DualView, which is not
+// properly constructible on the device in the old version of Kokkos that we
+// currently have in Sierra.  Versions after at least 2018-12-10 work fine, so
+// this can be re-enabled after our next Trilinos pull.
+TEST_F(NgpHowTo, DISABLED_viewOfFields)
 {
     auto &field1 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField1");
     auto &field2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField2");
@@ -533,7 +658,7 @@ unsigned count_num_elems(ngp::Mesh ngpMesh,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   using DeviceSpace = Kokkos::CudaSpace;
 #else
   using DeviceSpace = Kokkos::HostSpace;
@@ -561,7 +686,8 @@ void set_num_elems_in_field_on_device_and_copy_back(stk::mesh::BulkData &bulk,
     {
         ngpField.get(entity, 0) = numElems;
     });
-    ngpField.copy_device_to_host(bulk, field);
+    ngpField.modify_on_device();
+    ngpField.sync_to_host();
 }
 
 TEST_F(NgpHowTo, exerciseAura)
@@ -599,14 +725,18 @@ stk::mesh::Field<int> &create_field(stk::mesh::MetaData &meta)
 }
 
 void verify_state_new_has_value(stk::mesh::BulkData &bulk,
+                                const ngp::Mesh& ngpMesh,
                                 stk::mesh::Field<int>& field,
                                 ngp::MultistateField<int> &ngpMultistateField,
                                 int np1Value)
 {
-    ngpMultistateField.copy_device_to_host(bulk, field);
-    for(const stk::mesh::Bucket* bucket : bulk.buckets(stk::topology::ELEM_RANK))
-        for(stk::mesh::Entity elem : *bucket)
+    ngpMultistateField.sync_to_host();
+
+    for(const stk::mesh::Bucket* bucket : bulk.buckets(stk::topology::ELEM_RANK)) {
+        for(stk::mesh::Entity elem : *bucket) {
             EXPECT_EQ(np1Value, *static_cast<int*>(stk::mesh::field_data(*field.field_state(stk::mesh::StateNP1), elem)));
+        }
+    }
 }
 
 void set_new_as_old_plus_one_on_device(ngp::Mesh &ngpMesh,
@@ -614,6 +744,7 @@ void set_new_as_old_plus_one_on_device(ngp::Mesh &ngpMesh,
                                        stk::mesh::Selector sel,
                                        ngp::MultistateField<int> &ngpMultistateField)
 {
+    ngpMultistateField.sync_to_device();
     int component = 0;
     ngp::for_each_entity_run(ngpMesh, rank, sel, KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
     {
@@ -621,6 +752,7 @@ void set_new_as_old_plus_one_on_device(ngp::Mesh &ngpMesh,
         ngp::Field<int> stateNp1Field = ngpMultistateField.get_field_new_state();
         stateNp1Field.get(entity, component) = stateNField.get(entity, component) + 1;
     });
+    ngpMultistateField.modify_on_device();
 }
 
 TEST_F(NgpHowTo, useMultistateFields)
@@ -635,14 +767,14 @@ TEST_F(NgpHowTo, useMultistateFields)
 
     set_new_as_old_plus_one_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
     int newStateValue = 1;
-    verify_state_new_has_value(get_bulk(), stkField, ngpMultistateField, newStateValue);
+    verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 
     get_bulk().update_field_data_states();
     ngpMultistateField.increment_state();
 
     set_new_as_old_plus_one_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
     newStateValue = 2;
-    verify_state_new_has_value(get_bulk(), stkField, ngpMultistateField, newStateValue);
+    verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 }
 
 void set_new_as_old_plus_one_in_convenient_field_on_device(ngp::Mesh &ngpMesh,
@@ -655,6 +787,7 @@ void set_new_as_old_plus_one_in_convenient_field_on_device(ngp::Mesh &ngpMesh,
     {
         ngpMultistateField.get_new(entity, component) = ngpMultistateField.get_old(stk::mesh::StateOld, entity, component) + 1;
     });
+    ngpMultistateField.modify_on_device();
 }
 
 TEST_F(NgpHowTo, useConvenientMultistateFields)
@@ -669,14 +802,14 @@ TEST_F(NgpHowTo, useConvenientMultistateFields)
 
     set_new_as_old_plus_one_in_convenient_field_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
     int newStateValue = 1;
-    verify_state_new_has_value(get_bulk(), stkField, ngpMultistateField, newStateValue);
+    verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 
     get_bulk().update_field_data_states();
     ngpMultistateField.increment_state();
 
     set_new_as_old_plus_one_in_convenient_field_on_device(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(), ngpMultistateField);
     newStateValue = 2;
-    verify_state_new_has_value(get_bulk(), stkField, ngpMultistateField, newStateValue);
+    verify_state_new_has_value(get_bulk(), ngpMesh, stkField, ngpMultistateField, newStateValue);
 }
 
 TEST_F(NgpHowTo, setAllFieldValues)
@@ -713,48 +846,33 @@ protected:
             fieldData[0] = get_bulk().identifier(elem);
         }
         ngpMesh = ngp::Mesh(get_bulk());
-        ngpElemField = ngp::Field<int>(get_bulk(), elemField);
+        ngpElemField = ngp::StaticField<int>(get_bulk(), elemField);
     }
     int get_num_elems()
     {
         return stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::ELEM_RANK));
     }
     ngp::Mesh ngpMesh;
-    ngp::Field<int> ngpElemField;
+    ngp::StaticField<int> ngpElemField;
 };
 
-int get_min_field_value(ngp::Mesh &ngpMesh, ngp::Field<int> &ngpElemField, stk::mesh::Selector sel)
-{
-    return ngp::get_field_min(ngpMesh, ngpElemField, sel);
-}
 TEST_F(NgpReduceHowTo, getMinFieldValue)
 {
     int expectedMinVal = 1;
-    EXPECT_EQ(expectedMinVal, get_min_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+    EXPECT_EQ(expectedMinVal, ngp::get_field_min(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
 }
 
-int get_max_field_value(ngp::Mesh &ngpMesh, ngp::Field<int> &ngpElemField, stk::mesh::Selector sel)
-{
-    return ngp::get_field_max(ngpMesh, ngpElemField, sel);
-}
 TEST_F(NgpReduceHowTo, getMaxFieldValue)
 {
-    EXPECT_EQ(get_num_elems(), get_max_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+    EXPECT_EQ(get_num_elems(), ngp::get_field_max(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
 }
 
-int get_sum_field_value(ngp::Mesh &ngpMesh, ngp::Field<int> &ngpElemField, stk::mesh::Selector sel)
-{
-    return ngp::get_field_sum(ngpMesh, ngpElemField, sel);
-}
 TEST_F(NgpReduceHowTo, getSumFieldValue)
 {
     int numElems = get_num_elems();
     int expectedSum = numElems*(numElems+1)/2;
-    EXPECT_EQ(expectedSum, get_sum_field_value(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
+    EXPECT_EQ(expectedSum, ngp::get_field_sum(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part()));
 }
-
-
-
 
 template <typename T>
 void fill_field_on_device(stk::mesh::BulkData & bulk,
@@ -769,6 +887,7 @@ void fill_field_on_device(stk::mesh::BulkData & bulk,
     {
         field.get(entity, 0) = fieldValue;
     });
+    field.modify_on_device();
 }
 
 template <typename T>
@@ -779,14 +898,15 @@ void check_field_on_device(stk::mesh::BulkData & bulk,
                            T expectedFieldValue)
 {
     ngp::Field<T> & field = fieldManager.get_field<T>(fieldOrdinal);
+    field.sync_to_device();
 
     ngp::for_each_entity_run(mesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), KOKKOS_LAMBDA(ngp::Mesh::MeshIndex entity)
     {
-        NGP_ThrowRequire(field.get(entity, 0) == expectedFieldValue);
+        NGP_EXPECT_EQ(field.get(entity, 0), expectedFieldValue);
     });
 }
 
-TEST_F(NgpHowTo, ReuseNgpField)
+NGP_TEST_F(NgpHowTo, ReuseNgpField)
 {
     int numStates = 1;
     stk::mesh::Field<short>                  &shortStkField = create_field_with_num_states_and_init(get_meta(), "field01", numStates, (short)0);
@@ -804,16 +924,6 @@ TEST_F(NgpHowTo, ReuseNgpField)
 
     ngp::Mesh ngpMesh(get_bulk());
     ngp::FieldManager fieldManager(get_bulk());
-    fieldManager.add_fields( {&shortStkField,
-                              &ushortStkField,
-                              &intStkField,
-                              &uintStkField,
-                              &longStkField,
-                              &ulongStkField,
-                              &longLongStkField,
-                              &ulongLongStkField,
-                              &floatStkField,
-                              &doubleStkField} );
 
     fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  shortStkField.mesh_meta_data_ordinal(), (short)42);
     check_field_on_device(get_bulk(), ngpMesh, fieldManager, shortStkField.mesh_meta_data_ordinal(), (short)42);
@@ -844,4 +954,97 @@ TEST_F(NgpHowTo, ReuseNgpField)
 
     fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
     check_field_on_device(get_bulk(), ngpMesh, fieldManager, doubleStkField.mesh_meta_data_ordinal(), (double)3.141);
+}
+
+NGP_TEST_F(NgpHowTo, ReuseNgpFieldNewFieldManager)
+{
+    int numStates = 1;
+    double initialValue = 0.0;
+    stk::mesh::Field<double> & stkField = create_field_with_num_states_and_init(get_meta(), "field01", numStates, initialValue);
+
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
+    ngp::Mesh ngpMesh(get_bulk());
+    ngp::FieldManager fieldManager(get_bulk());
+
+    double specialValue = 42.0;
+    fill_field_on_device(get_bulk(), ngpMesh, fieldManager,  stkField.mesh_meta_data_ordinal(), specialValue);
+    check_field_on_device(get_bulk(), ngpMesh, fieldManager, stkField.mesh_meta_data_ordinal(), specialValue);
+
+    // Reassign the FieldManager, which will blow away the internal ngp::Field instances
+    fieldManager = ngp::FieldManager(get_bulk());
+
+#ifdef KOKKOS_ENABLE_CUDA
+    // On the GPU, the new ngp::Field instances will get the initial values from the stk Fields
+    const double expectedValue = initialValue;
+#else
+    // On the CPU, the new ngp::Field instances are just wrappers around stk Fields, so the values
+    // assigned above will persist.
+    const double expectedValue = specialValue;
+#endif
+
+    check_field_on_device(get_bulk(), ngpMesh, fieldManager, stkField.mesh_meta_data_ordinal(), expectedValue);
+}
+
+
+template<typename MeshType>
+void run_part_membership_test(const stk::mesh::BulkData& bulk, stk::mesh::PartOrdinal partOrdinal)
+{
+    MeshType ngpMesh(bulk);
+
+    typedef Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace, ngp::ScheduleType>::member_type TeamHandleType;
+    const auto& teamPolicy = Kokkos::TeamPolicy<ngp::Mesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK), Kokkos::AUTO);
+
+    Kokkos::parallel_for(teamPolicy, KOKKOS_LAMBDA (const TeamHandleType& team)
+    {
+        const typename MeshType::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, team.league_rank());
+        unsigned numElems = bucket.size();
+
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
+        {
+            stk::mesh::Entity elem = bucket[i];
+            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
+            typename MeshType::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndex);
+
+            for(unsigned nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+                stk::mesh::Entity node = nodes[nodeIndex];
+                stk::mesh::FastMeshIndex meshIndex = ngpMesh.fast_mesh_index(node);
+                const typename MeshType::BucketType& nodeBucket = ngpMesh.get_bucket(stk::topology::NODE_RANK, meshIndex.bucket_id);
+                if(ngpMesh.identifier(node) == 1 || ngpMesh.identifier(node) == 2) {
+                    NGP_ThrowRequire(nodeBucket.member(partOrdinal) == true);
+                } else {
+                    NGP_ThrowRequire(nodeBucket.member(partOrdinal) == false);
+                }
+            }
+        });
+    });
+}
+
+TEST_F(NgpHowTo, checkPartMembership)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
+    double init = 0.0;
+    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+
+    stk::mesh::Part& testPart = get_meta().declare_part("testPart", stk::topology::NODE_RANK);
+
+    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+    stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
+
+    stk::mesh::Entity node1 = get_bulk().get_entity(stk::topology::NODE_RANK, 1u);
+    stk::mesh::Entity node2 = get_bulk().get_entity(stk::topology::NODE_RANK, 2u);
+
+    get_bulk().modification_begin();
+    get_bulk().change_entity_parts(node1, stk::mesh::PartVector{&testPart}, {});
+    get_bulk().change_entity_parts(node2, stk::mesh::PartVector{&testPart}, {});
+    get_bulk().modification_end();
+
+#ifndef KOKKOS_ENABLE_CUDA
+    run_part_membership_test<ngp::StkMeshAdapter>(get_bulk(), testPart.mesh_meta_data_ordinal());
+#endif
+    run_part_membership_test<ngp::StaticMesh>(get_bulk(), testPart.mesh_meta_data_ordinal());
 }

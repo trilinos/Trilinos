@@ -34,17 +34,16 @@
 #define _STK_NGP_MESH_HPP_
 
 #include <stk_util/stk_config.h>
-#include <Kokkos_Core.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
+#include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_topology/topology.hpp"
+#include <Kokkos_Core.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/ModificationObserver.hpp>
 #include <string>
-
-#include "stk_mesh/base/Bucket.hpp"
-#include "stk_mesh/base/Field.hpp"
+#include <memory>
 
 #include <stk_ngp/NgpSpaces.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
@@ -108,24 +107,131 @@ inline stk::NgpVector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
     return bucketIds;
 }
 
+struct StkBucketAdapter {
+    typedef Entities<const stk::mesh::Entity> ConnectedNodes;
+    typedef Entities<const stk::mesh::Entity> ConnectedEntities;
+    typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
+    typedef Entities<const stk::mesh::Permutation> Permutations;
+
+    StkBucketAdapter(const stk::mesh::Bucket& bucket)
+     : stkBucket(&bucket)
+    {}
+
+    StkBucketAdapter()
+     : stkBucket(nullptr)
+    {}
+
+    unsigned bucket_id() const { return stkBucket->bucket_id(); }
+
+    size_t size() const { return stkBucket->size(); }
+
+    stk::mesh::EntityRank entity_rank() const { return stkBucket->entity_rank(); }
+
+    stk::topology topology() const { return stkBucket->topology(); }
+
+    unsigned get_num_nodes_per_entity() const { return stkBucket->topology().num_nodes(); }
+
+    ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
+        return ConnectedEntities(stkBucket->begin(offsetIntoBucket, connectedRank),
+                                 stkBucket->num_connectivity(offsetIntoBucket, connectedRank));
+    }
+
+    ConnectedOrdinals get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
+        return ConnectedOrdinals(stkBucket->begin_ordinals(offsetIntoBucket, connectedRank),
+                                 stkBucket->num_connectivity(offsetIntoBucket, connectedRank));
+    }
+
+    ConnectedNodes get_nodes(unsigned offsetIntoBucket) const {
+        return get_connected_entities(offsetIntoBucket, stk::topology::NODE_RANK);
+    }
+
+    ConnectedEntities get_edges(unsigned offsetIntoBucket) const {
+        return get_connected_entities(offsetIntoBucket, stk::topology::EDGE_RANK);
+    }
+
+    ConnectedEntities get_faces(unsigned offsetIntoBucket) const {
+        return get_connected_entities(offsetIntoBucket, stk::topology::FACE_RANK);
+    }
+
+    ConnectedEntities get_elements(unsigned offsetIntoBucket) const {
+        return get_connected_entities(offsetIntoBucket, stk::topology::ELEM_RANK);
+    }
+
+    stk::mesh::Entity operator[](unsigned offsetIntoBucket) const {
+        return (*stkBucket)[offsetIntoBucket];
+    }
+
+    stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
+        return (*stkBucket)[offsetIntoBucket];
+    }
+
+    bool member(stk::mesh::PartOrdinal partOrdinal) const {
+        const stk::mesh::MetaData& meta = stkBucket->mesh().mesh_meta_data();
+        const stk::mesh::Part* part = meta.get_parts()[partOrdinal];
+        return stkBucket->member(*part);
+    }
+
+    operator const stk::mesh::Bucket&() const { return *stkBucket; }
+
+private:
+    const stk::mesh::Bucket* stkBucket;
+};
+
+struct StkMeshAdapterIndex
+{
+    const StkBucketAdapter *bucket;
+    size_t bucketOrd;
+};
+
+class StkMeshAdapterUpdater;
 
 class StkMeshAdapter
 {
 public:
     typedef ngp::HostExecSpace MeshExecSpace;
 
-    typedef stk::mesh::ConstMeshIndex MeshIndex;
-    typedef stk::mesh::Bucket BucketType;
+    typedef StkMeshAdapterIndex MeshIndex;
+    typedef StkBucketAdapter BucketType;
     typedef Entities<const stk::mesh::Entity> ConnectedNodes;
     typedef Entities<const stk::mesh::Entity> ConnectedEntities;
     typedef Entities<const stk::mesh::ConnectivityOrdinal> ConnectedOrdinals;
     typedef Entities<const stk::mesh::Permutation> Permutations;
 
-    StkMeshAdapter() : bulk(nullptr)
+    void register_observer();
+    void unregister_observer();
+
+    StkMeshAdapter() : bulk(nullptr), modificationCount(0)
     {
+
     }
-    StkMeshAdapter(const stk::mesh::BulkData& b) : bulk(&b)
+
+    StkMeshAdapter(const stk::mesh::BulkData& b) : bulk(&b), modificationCount(0)
     {
+        register_observer();
+        update_buckets();
+    }
+
+    ~StkMeshAdapter()
+    {
+        unregister_observer();
+    }
+
+    void update_buckets() const
+    {
+        if(modificationCount < bulk->synchronized_count()) {
+            stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
+            bucketAdapters.resize(numRanks);
+            for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {
+                bucketAdapters[rank].clear();
+                const stk::mesh::BucketVector& buckets = bulk->buckets(rank);
+                bucketAdapters[rank].resize(buckets.size());
+                for(unsigned i = 0; i<buckets.size(); i++) {
+                    bucketAdapters[rank][i] = StkBucketAdapter(*buckets[i]);
+                }
+            }
+
+            modificationCount = bulk->synchronized_count();
+        }
     }
 
     unsigned get_spatial_dimension() const
@@ -133,9 +239,25 @@ public:
         return bulk->mesh_meta_data().spatial_dimension();
     }
 
-    ConnectedNodes get_nodes(const stk::mesh::ConstMeshIndex &elem) const
+    stk::mesh::EntityId identifier(stk::mesh::Entity entity) const
     {
-        return ConnectedNodes(elem.bucket->begin_nodes(elem.bucketOrd), elem.bucket->num_nodes(elem.bucketOrd));
+        return bulk->identifier(entity);
+    }
+
+    stk::mesh::EntityRank entity_rank(stk::mesh::Entity entity) const
+    {
+        return bulk->entity_rank(entity);
+    }
+
+    stk::mesh::EntityKey entity_key(stk::mesh::Entity entity) const
+    {
+        return bulk->entity_key(entity);
+    }
+
+    ConnectedNodes get_nodes(const MeshIndex &elem) const
+    {
+        const stk::mesh::Bucket& bucket = *elem.bucket;
+        return ConnectedNodes(bucket.begin_nodes(elem.bucketOrd), bucket.num_nodes(elem.bucketOrd));
     }
 
     ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
@@ -232,20 +354,63 @@ public:
         return bulk->buckets(rank).size();
     }
 
-    const stk::mesh::Bucket & get_bucket(stk::mesh::EntityRank rank, unsigned i) const
+    const BucketType & get_bucket(stk::mesh::EntityRank rank, unsigned i) const
     {
-        return *bulk->buckets(rank)[i];
+        update_buckets();
+#ifndef NDEBUG
+        stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
+        NGP_ThrowAssert(rank < numRanks);
+        NGP_ThrowAssert(i < bucketAdapters[rank].size());
+#endif
+        return bucketAdapters[rank][i];
     }
 
 private:
     const stk::mesh::BulkData *bulk;
+    typedef std::vector<StkBucketAdapter> StkBucketAdapterVector;
+    mutable std::vector<StkBucketAdapterVector> bucketAdapters;
+    mutable size_t modificationCount;
+    std::shared_ptr<StkMeshAdapterUpdater> updater;
 };
 
 
+class StkMeshAdapterUpdater : public stk::mesh::ModificationObserver
+{
+public:
+
+    StkMeshAdapterUpdater(StkMeshAdapter* adapter)
+    : m_adapter(adapter)
+    {
+    }
+
+    void finished_modification_end_notification() override {
+        m_adapter->update_buckets();
+    }
+
+private:
+    StkMeshAdapter* m_adapter;
+};
+
+inline void StkMeshAdapter::register_observer()
+{
+    updater = std::make_shared<StkMeshAdapterUpdater>(this);
+    bulk->register_observer(updater);
+}
+
+inline void StkMeshAdapter::unregister_observer()
+{
+    if(nullptr != updater.get()) {
+        bulk->unregister_observer(updater);
+    }
+}
+
+typedef Kokkos::View<stk::mesh::EntityKey*, MemSpace> EntityKeyViewType;
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
 typedef Kokkos::View<unsigned*, MemSpace> UnsignedViewType;
+typedef Kokkos::View<bool*, MemSpace> BoolViewType;
 typedef Kokkos::View<stk::mesh::ConnectivityOrdinal*, MemSpace> OrdinalViewType;
+typedef Kokkos::View<stk::mesh::PartOrdinal*, MemSpace> PartOrdinalViewType;
 typedef Kokkos::View<stk::mesh::Permutation*, MemSpace> PermutationViewType;
 
 class StaticMesh;
@@ -263,13 +428,13 @@ struct StaticBucket {
        owningMesh(nullptr)
     {}
 
-    void initialize(unsigned bucket_id_in, stk::mesh::EntityRank rank, stk::topology topo,
-                    unsigned numEntities, unsigned numNodesPerEntity) {
-        bucketId = bucket_id_in;
-        entityRank = rank;
-        bucketTopology = topo;
-        const std::string bktIdStr(std::to_string(bucket_id_in));
-        entities = EntityViewType(Kokkos::ViewAllocateWithoutInitializing("BucketEntities"+bktIdStr), numEntities);
+    void initialize(const stk::mesh::Bucket &bucket) {
+        unsigned numNodesPerEntity = bucket.topology().num_nodes();
+        bucketId = bucket.bucket_id();
+        entityRank = bucket.entity_rank();
+        bucketTopology = bucket.topology();
+        const std::string bktIdStr(std::to_string(bucketId));
+        entities = EntityViewType(Kokkos::ViewAllocateWithoutInitializing("BucketEntities"+bktIdStr), bucket.size());
         hostEntities = Kokkos::create_mirror_view(entities);
         nodeConnectivity = BucketConnectivityType(Kokkos::ViewAllocateWithoutInitializing("BucketConnectivity"+bktIdStr), bucketSize, numNodesPerEntity);
         hostNodeConnectivity = Kokkos::create_mirror_view(nodeConnectivity);
@@ -279,6 +444,13 @@ struct StaticBucket {
         {
             hostNodeOrdinals(i) = static_cast<stk::mesh::ConnectivityOrdinal>(i);
         }
+        const stk::mesh::PartVector& parts = bucket.supersets();
+        partOrdinals = PartOrdinalViewType(Kokkos::ViewAllocateWithoutInitializing("PartOrdinals"+bktIdStr), parts.size());
+        hostPartOrdinals = Kokkos::create_mirror_view(partOrdinals);
+        for(unsigned i=0; i<parts.size(); ++i)
+        {
+            hostPartOrdinals(i) = parts[i]->mesh_meta_data_ordinal();
+        }
     }
 
     void copy_to_device()
@@ -286,6 +458,7 @@ struct StaticBucket {
         Kokkos::deep_copy(entities, hostEntities);
         Kokkos::deep_copy(nodeConnectivity, hostNodeConnectivity);
         Kokkos::deep_copy(nodeOrdinals, hostNodeOrdinals);
+        Kokkos::deep_copy(partOrdinals, hostPartOrdinals);
     }
 
     STK_FUNCTION
@@ -338,6 +511,16 @@ struct StaticBucket {
         return hostEntities(offsetIntoBucket);
     }
 
+    STK_FUNCTION
+    bool member(stk::mesh::PartOrdinal partOrdinal) const {
+        for(unsigned i=0; i<partOrdinals.size(); i++) {
+            if(partOrdinals(i) == partOrdinal) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     unsigned bucketId;
     stk::mesh::EntityRank entityRank;
     stk::topology bucketTopology;
@@ -350,6 +533,9 @@ struct StaticBucket {
 
     OrdinalViewType nodeOrdinals;
     OrdinalViewType::HostMirror hostNodeOrdinals;
+
+    PartOrdinalViewType partOrdinals;
+    PartOrdinalViewType::HostMirror hostPartOrdinals;
 
     const ngp::StaticMesh* owningMesh;
 };
@@ -377,6 +563,8 @@ public:
     explicit StaticMesh(const stk::mesh::BulkData& b)
      : bulk(&b), spatial_dimension(b.mesh_meta_data().spatial_dimension())
     {
+        set_entity_keys(b);
+        copy_entity_keys_to_device();
         set_bucket_entity_offsets(b);
         copy_bucket_entity_offsets_to_device();
         fill_sparse_connectivities(b);
@@ -401,6 +589,24 @@ public:
     unsigned get_spatial_dimension() const
     {
         return spatial_dimension;
+    }
+
+    STK_FUNCTION
+    stk::mesh::EntityId identifier(stk::mesh::Entity entity) const
+    {
+        return entityKeys[entity.local_offset()].id();
+    }
+
+    STK_FUNCTION
+    stk::mesh::EntityRank entity_rank(stk::mesh::Entity entity) const
+    {
+        return entityKeys[entity.local_offset()].rank();
+    }
+
+    STK_FUNCTION
+    stk::mesh::EntityKey entity_key(stk::mesh::Entity entity) const
+    {
+        return entityKeys[entity.local_offset()];
     }
 
     STK_FUNCTION
@@ -588,6 +794,26 @@ public:
 
 private:
 
+    void set_entity_keys(const stk::mesh::BulkData& bulk_in)
+    {
+        unsigned totalNumEntityKeys = bulk_in.get_size_of_entity_index_space();
+        stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk_in.mesh_meta_data().entity_rank_count());
+
+        entityKeys = Kokkos::View<stk::mesh::EntityKey*,MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>(Kokkos::ViewAllocateWithoutInitializing("entityKeys"), totalNumEntityKeys);
+        hostEntityKeys = Kokkos::create_mirror_view(entityKeys);
+
+        for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < endRank; ++rank) {
+            const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
+            for (unsigned i = 0; i < stkBuckets.size(); ++i) {
+                const stk::mesh::Bucket & bucket = *stkBuckets[i];
+                for (unsigned j = 0; j < bucket.size(); ++j) {
+                    stk::mesh::Entity entity = bucket[j];
+                    hostEntityKeys[entity.local_offset()] = bulk_in.entity_key(entity);
+                }
+            }
+        }
+    }
+
     void set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
     {
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
@@ -648,7 +874,7 @@ private:
                 hostSparsePermutations[rank][connectedRank] = Kokkos::create_mirror_view(sparsePermutations[rank][connectedRank]);
             }
             int entriesOffsets[stk::topology::NUM_RANKS] = {0};
-            int myOffset = 0;
+            unsigned myOffset = 0;
             for(unsigned iBucket=0; iBucket<stkBuckets.size(); ++iBucket)
             {
                 const stk::mesh::Bucket& stkBucket = *stkBuckets[iBucket];
@@ -683,7 +909,10 @@ private:
             }
             for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endConnectedRank; connectedRank++)
             {
-                hostEntityConnectivityOffset[rank][connectedRank](myOffset+1) = entriesOffsets[connectedRank];
+                if (hostEntityConnectivityOffset[rank][connectedRank].size() > myOffset+1)
+                {
+                    hostEntityConnectivityOffset[rank][connectedRank](myOffset+1) = entriesOffsets[connectedRank];
+                }
             }
         }
     }
@@ -703,7 +932,7 @@ private:
             unsigned bucketId = stkBucket.bucket_id();
             unsigned nodesPerElem = stkBucket.topology().num_nodes();
             BucketType& bucket = bucketsOfRank(bucketId);
-            bucket.initialize(stkBucket.bucket_id(), bucketRank, stkBucket.topology(), stkBucket.size(), nodesPerElem);
+            bucket.initialize(stkBucket);
 
             for(unsigned iEntity = 0; iEntity < stkBucket.size(); ++iEntity)
             {
@@ -735,6 +964,11 @@ private:
                 hostMeshIndices[bkt[i].local_offset()] = stk::mesh::FastMeshIndex{bktId, i};
             }
         }
+    }
+
+    void copy_entity_keys_to_device()
+    {
+        Kokkos::deep_copy(entityKeys, hostEntityKeys);
     }
 
     void copy_mesh_indices_to_device()
@@ -779,6 +1013,10 @@ private:
     typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketView;
     const stk::mesh::BulkData *bulk;
     unsigned spatial_dimension;
+
+    EntityKeyViewType::HostMirror hostEntityKeys;
+    EntityKeyViewType entityKeys;
+
     BucketView buckets[stk::topology::NUM_RANKS];
     Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror hostMeshIndices;
     Kokkos::View<const stk::mesh::FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
@@ -825,5 +1063,5 @@ StaticBucket::get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::Entit
 
 }
 
-
 #endif /* STK_NGP_MESH_HPP_ */
+

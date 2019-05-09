@@ -1,14 +1,14 @@
 C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,7 +31,7 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 C=======================================================================
       SUBROUTINE SHDSPH (LENE, LINK, NUMLNK, NUMATR, XN, YN, ZN, ATRIB,
-     *  BLKCOL, IDELB, ISPSOR, RAD, 
+     *  BLKCOL, IDELB, ISPSOR, RAD,
      *  IELBST, ISPBLK, SHDCOL, ISHDCL, HIDENP, *)
 C=======================================================================
 
@@ -96,7 +96,7 @@ C     SHDCOL(4-7,*) - Future Use
       REAL SHDCOL(7,NELBLK)
 C ... ISHDCL(1, *) = -1 if color not set, >0 if color set
 C     ISHDCL(2, *) = Number of colors to use for this block (SET if 0)
-C     ISHDCL(3, *) = Starting location in color map (SET)      
+C     ISHDCL(3, *) = Starting location in color map (SET)
       INTEGER ISHDCL(3,NELBLK)
       LOGICAL HIDENP(*)
 
@@ -144,7 +144,7 @@ C ... Determine dot product of surface normal and light vector.
       DO 40 ip = 1, npoly
         SHADE(IP) = SHADE(IP) * SHDMX
  40   continue
-      
+
       iel = 0
       IRAD = 1
       ILNK = 1
@@ -180,7 +180,7 @@ C ... Determine if portion of sphere is in viewing window
  104  continue
       numsph = iel
 C ... Sort elements from smallest Z coord to largest.
-C     Sort is based on element center. 
+C     Sort is based on element center.
       call indexx (zn, ispsor, numsph, .FALSE.)
 
 C ... Set colors for all blocks
@@ -195,7 +195,7 @@ C ... Plotting of spheres starts here.
         ielb   = ispblk(node)
         mincol = ishdcl(3,ielb)
         ncol   = ishdcl(2,ielb)
-        
+
         do 120 ip = 1, npoly
           do 118 in = 1, 4
             xsi(in) = xc + rd * xpts(icon(in,ip))
@@ -211,6 +211,6 @@ C ... Plotting of spheres starts here.
       call pltflu
 C
       CALL GRCOLU('STANDARD')
-      
+
       RETURN
       END

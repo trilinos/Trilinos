@@ -367,18 +367,18 @@ Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank 
   return declare_part(internal_name, rank);
 }
 
-void MetaData::declare_part_subset( Part & superset , Part & subset )
+void MetaData::declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
   if (!is_initialized()) {
     // can't do any topology stuff yet
-    return internal_declare_part_subset(superset, subset);
+    return internal_declare_part_subset(superset, subset, verifyFieldRestrictions);
   }
 
   stk::topology superset_stkTopo = get_topology(superset);
 
   const bool no_superset_topology = (superset_stkTopo == stk::topology::INVALID_TOPOLOGY);
   if ( no_superset_topology ) {
-    internal_declare_part_subset(superset,subset);
+    internal_declare_part_subset(superset,subset, verifyFieldRestrictions);
     return;
   }
 
@@ -401,7 +401,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
       << " coming from the subset part");
 
   // Everything is Okay!
-  internal_declare_part_subset(superset,subset);
+  internal_declare_part_subset(superset,subset, verifyFieldRestrictions);
   // Update PartTopologyVector for "subset" and same-rank subsets, ad nauseum
   if (subset.primary_entity_rank() == superset.primary_entity_rank()) {
     assign_topology(subset, superset_stkTopo);
@@ -414,7 +414,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   }
 }
 
-void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
+void MetaData::internal_declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
   require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
@@ -422,9 +422,12 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset )
 
   m_part_repo.declare_subset( superset, subset );
 
-  // The new superset / subset relationship can cause a
-  // field restriction to become incompatible or redundant.
-  m_field_repo.verify_and_clean_restrictions(superset, subset);
+  if (verifyFieldRestrictions)
+  {
+    // The new superset / subset relationship can cause a
+    // field restriction to become incompatible or redundant.
+    m_field_repo.verify_and_clean_restrictions(superset, subset);
+  }
 }
 
 //----------------------------------------------------------------------
@@ -518,6 +521,8 @@ void MetaData::internal_declare_known_cell_topology_parts()
     register_topology(stk::topology::LINE_2_1D);
     register_topology(stk::topology::LINE_3_1D);
 
+    register_topology(stk::topology::SPRING_2);
+    register_topology(stk::topology::SPRING_3);
   }
 
   else if (m_spatial_dimension == 2) {
@@ -540,6 +545,9 @@ void MetaData::internal_declare_known_cell_topology_parts()
 
     register_topology(stk::topology::SHELL_LINE_2);
     register_topology(stk::topology::SHELL_LINE_3);
+
+    register_topology(stk::topology::SPRING_2);
+    register_topology(stk::topology::SPRING_3);
   }
 
   else if (m_spatial_dimension == 3) {
@@ -559,6 +567,9 @@ void MetaData::internal_declare_known_cell_topology_parts()
 
     register_topology(stk::topology::BEAM_2);
     register_topology(stk::topology::BEAM_3);
+
+    register_topology(stk::topology::SPRING_2);
+    register_topology(stk::topology::SPRING_3);
 
     register_topology(stk::topology::TET_4);
     register_topology(stk::topology::TET_8);
@@ -663,6 +674,11 @@ Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
     TopologyPartMap::const_iterator iter = m_topologyPartMap.find(stkTopo);
     ThrowRequireMsg(iter != m_topologyPartMap.end(), "MetaData::get_topology_root_part ERROR, failed to map topology "<<stkTopo<<" to a part.");
     return *iter->second;
+}
+
+bool MetaData::has_topology_root_part(stk::topology stkTopo) const
+{
+    return (m_topologyPartMap.find(stkTopo) != m_topologyPartMap.end());
 }
 
 Part &MetaData::get_cell_topology_root_part(const shards::CellTopology cell_topology) const
@@ -950,11 +966,21 @@ stk::topology get_topology( shards::CellTopology shards_topology, unsigned spati
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellLine<3> >()) )
     t = stk::topology::SHELL_LINE_3;
 
+  //NOTE: shards does not define a spring 2
+  //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Spring<2> >()) )
+  //  t = stk::topology::SPRING_2;
+
+  //NOTE: shards does not define a spring 3
+  //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::Spring<3> >()) )
+  //  t = stk::topology::SPRING_3;
+
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >()) )
     t = stk::topology::SHELL_TRI_3;
+
   //NOTE: shards does not define a shell triangle 4
   //else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<4> >()) )
   //  t = stk::topology::SHELL_TRI_4;
+
   else if ( shards_topology == shards::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<6> >()) )
     t = stk::topology::SHELL_TRI_6;
 
@@ -1043,6 +1069,12 @@ shards::CellTopology get_cell_topology(stk::topology t)
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellLine<2>          >() );
   case stk::topology::SHELL_LINE_3:
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellLine<3>          >() );
+  case stk::topology::SPRING_2: break;
+    //NOTE: shards does not define a topology for a 2-noded spring element
+    //return shards::CellTopology( shards::getCellTopologyData< shards::Spring<2>             >() );
+  case stk::topology::SPRING_3: break;
+    //NOTE: shards does not define a topology for a 3-noded spring element
+    //return shards::CellTopology( shards::getCellTopologyData< shards::Spring<3>             >() );
   case stk::topology::TRI_3_2D:
       return shards::CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
   case stk::topology::TRI_4_2D:
@@ -1057,9 +1089,9 @@ shards::CellTopology get_cell_topology(stk::topology t)
       return shards::CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
   case stk::topology::SHELL_TRI_3:
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
-  case stk::topology::SHELL_TRI_4:break;
+  case stk::topology::SHELL_TRI_4: break;
     //NOTE: shards does not define a topology for a 4-noded triangular shell
-    //return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
+    //return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>      >() );
   case stk::topology::SHELL_TRI_6:
       return shards::CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
   case stk::topology::SHELL_QUAD_4:

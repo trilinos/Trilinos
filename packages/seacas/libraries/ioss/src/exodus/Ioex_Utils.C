@@ -275,7 +275,6 @@ namespace Ioex {
     // we don't overwrite an existing one.
 
     // Avoid a few string constructors/destructors
-    static std::string prop_name("name");
     static std::string id_prop("id");
 
     bool succeed = false;
@@ -310,7 +309,7 @@ namespace Ioex {
     std::size_t found  = str_id.find_first_not_of("0123456789");
     if (found == std::string::npos) {
       // All digits...
-      return std::stoi(str_id);
+      return std::stoll(str_id);
     }
 
     return 0;

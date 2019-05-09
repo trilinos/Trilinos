@@ -1,7 +1,7 @@
 // ISSUES:
 // 1. Does not handle unconnected nodes (not connected to any element)
 //
-// 2. Sideset distribution factors are klugy and may not fully work in
+// 2. SideSet distribution factors are klugy and may not fully work in
 //    strange cases
 //
 //
@@ -304,9 +304,8 @@ namespace Iopx {
                                         bool abort_if_error) const
   {
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = exodusFilePtr;
     assert(isParallel);
-    global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+    int global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
 
     if (global_file_ptr < 0) {
       if (write_message || error_msg != nullptr || bad_count != nullptr) {
@@ -503,9 +502,6 @@ namespace Iopx {
         else {
           mode |= EX_ALL_INT64_DB;
         }
-      }
-      if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF) {
-        par_mode = EX_MPIIO;
       }
       exodusFilePtr = ex_create_par(filename.c_str(), mode | par_mode, &cpu_word_size,
                                     &dbRealWordSize, util().communicator(), info);
@@ -772,7 +768,7 @@ namespace Iopx {
     }
 
     Ioss::Region *this_region = get_region();
-    for (int i = 0; i < timestep_count; i++) {
+    for (int i = 0; i < max_step; i++) {
       if (tsteps[i] <= last_time) {
         this_region->add_state(tsteps[i] * timeScaleFactor);
       }
@@ -1303,19 +1299,19 @@ namespace Iopx {
                                    Ioss::Field::MESH, number_sides);
 
             Ioss::IntVector e32(number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
-            std::copy(e32.begin(), e32.end(), sides.begin());
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, TOPTR(e32));
             std::copy(e32.begin(), e32.end(), element.begin());
+            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(e32));
+            std::copy(e32.begin(), e32.end(), sides.begin());
           }
           else {
             Ioss::Field side_field("sides", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
                                    number_sides);
             Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
                                    number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field,
                                      TOPTR(element));
+            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
           }
 
           if (!blockOmissions.empty() || !blockInclusions.empty()) {
@@ -4259,12 +4255,11 @@ void DatabaseIO::write_meta_data()
   // Title...
   if (region->property_exists("title")) {
     std::string title_str = region->get_property("title").get_string();
-    std::strncpy(the_title, title_str.c_str(), max_line_length);
+    Ioss::Utils::copy_string(the_title, title_str);
   }
   else {
-    std::strncpy(the_title, "IOSS Output Default Title", max_line_length);
+    Ioss::Utils::copy_string(the_title, "IOSS Output Default Title");
   }
-  the_title[max_line_length] = '\0';
 
   // Edge Blocks --
   {
@@ -4319,7 +4314,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
   }
 
-  // Nodesets ...
+  // NodeSets ...
   {
     const Ioss::NodeSetContainer &nodesets = region->get_nodesets();
     for (auto &set : nodesets) {
@@ -4332,7 +4327,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_NODE_SET] = nodesets.size();
   }
 
-  // Edgesets ...
+  // EdgeSets ...
   {
     const Ioss::EdgeSetContainer &edgesets = region->get_edgesets();
     for (auto &set : edgesets) {
@@ -4345,7 +4340,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_EDGE_SET] = edgesets.size();
   }
 
-  // Facesets ...
+  // FaceSets ...
   {
     const Ioss::FaceSetContainer &facesets = region->get_facesets();
     for (auto &set : facesets) {
@@ -4358,7 +4353,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_FACE_SET] = facesets.size();
   }
 
-  // Elementsets ...
+  // ElementSets ...
   {
     const Ioss::ElementSetContainer &elementsets = region->get_elementsets();
     for (auto &set : elementsets) {

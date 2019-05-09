@@ -76,7 +76,7 @@ namespace Test {
       expected_result += ScalarC(b*h_z(i) + a*h_x(i)*h_y(i)) * ScalarC(b*h_z(i) + a*h_x(i)*h_y(i));
 
     //KokkosBlas::mult(b,z,a,x,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamMult", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -85,7 +85,7 @@ namespace Test {
  
     Kokkos::deep_copy(b_z,b_org_z);
     //KokkosBlas::mult(b,z,a,x,c_y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamMult", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -94,7 +94,7 @@ namespace Test {
 
     Kokkos::deep_copy(b_z,b_org_z);
     //KokkosBlas::mult(b,z,a,c_x,c_y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamMult", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), a, Kokkos::subview(c_x,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)), Kokkos::subview(c_y,Kokkos::make_pair(teamId*team_data_siz,(teamId < M-1)?(teamId+1)*team_data_siz:N)));
     } );
@@ -171,7 +171,7 @@ namespace Test {
     Kokkos::View<ScalarC*,Kokkos::HostSpace> r("Dot::Result",K);
 
     //KokkosBlas::mult(b,z,a,x,y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamMult", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::ALL(),teamId), a, x, Kokkos::subview(y,Kokkos::ALL(),teamId));
     } );
@@ -183,7 +183,7 @@ namespace Test {
 
     Kokkos::deep_copy(b_z,b_org_z);
     //KokkosBlas::mult(b,z,a,x,c_y);
-    Kokkos::parallel_for( policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
+    Kokkos::parallel_for( "KokkosBlas::Test::TeamMult", policy, KOKKOS_LAMBDA ( const team_member &teamMember ) {
        const int teamId = teamMember.league_rank();
        KokkosBlas::Experimental::mult(teamMember, b, Kokkos::subview(z,Kokkos::ALL(),teamId), a, x, Kokkos::subview(c_y,Kokkos::ALL(),teamId));
     } );
@@ -208,8 +208,8 @@ int test_team_mult() {
   typedef Kokkos::View<ScalarC*, Kokkos::LayoutLeft, Device> view_type_c_ll;
   Test::impl_test_team_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(0);
   Test::impl_test_team_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(13);
-  Test::impl_test_team_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(1024);
-  Test::impl_test_team_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231);
+  Test::impl_test_team_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(124);
+  //Test::impl_test_team_mult<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -218,8 +218,8 @@ int test_team_mult() {
   typedef Kokkos::View<ScalarC*, Kokkos::LayoutRight, Device> view_type_c_lr;
   Test::impl_test_team_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(0);
   Test::impl_test_team_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(13);
-  Test::impl_test_team_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(1024);
-  Test::impl_test_team_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231);
+  Test::impl_test_team_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(124);
+  //Test::impl_test_team_mult<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -228,13 +228,13 @@ int test_team_mult() {
   typedef Kokkos::View<ScalarC*, Kokkos::LayoutStride, Device> view_type_c_ls;
   Test::impl_test_team_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(0);
   Test::impl_test_team_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(13);
-  Test::impl_test_team_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(1024);
-  Test::impl_test_team_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231);
+  Test::impl_test_team_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(124);
+  //Test::impl_test_team_mult<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_team_mult<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(1024);
-  Test::impl_test_team_mult<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(1024);
+  Test::impl_test_team_mult<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(124);
+  Test::impl_test_team_mult<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(124);
 #endif
 
   return 1;
@@ -249,8 +249,8 @@ int test_team_mult_mv() {
   typedef Kokkos::View<ScalarC**, Kokkos::LayoutLeft, Device> view_type_c_ll;
   Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(0,5);
   Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(13,5);
-  Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(1024,5);
-  Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231,5);
+  Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(124,5);
+  //Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -259,8 +259,8 @@ int test_team_mult_mv() {
   typedef Kokkos::View<ScalarC**, Kokkos::LayoutRight, Device> view_type_c_lr;
   Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(0,5);
   Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(13,5);
-  Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(1024,5);
-  Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231,5);
+  Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(124,5);
+  //Test::impl_test_team_mult_mv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(132231,5);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTSTRIDE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -269,13 +269,13 @@ int test_team_mult_mv() {
   typedef Kokkos::View<ScalarC**, Kokkos::LayoutStride, Device> view_type_c_ls;
   Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(0,5);
   Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(13,5);
-  Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(1024,5);
-  Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231,5);
+  Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(124,5);
+  //Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(132231,5);
 #endif
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
-  Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(1024,5);
-  Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(1024,5);
+  Test::impl_test_team_mult_mv<view_type_a_ls, view_type_b_ll, view_type_c_lr, Device>(124,5);
+  Test::impl_test_team_mult_mv<view_type_a_ll, view_type_b_ls, view_type_c_lr, Device>(124,5);
 #endif
 
   return 1;

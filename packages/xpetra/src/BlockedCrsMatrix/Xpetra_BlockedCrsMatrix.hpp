@@ -171,7 +171,7 @@ namespace Xpetra {
      * \param npr extimated number of entries per row in each block(!)
      * \param pftype Xpetra profile type
      */
-    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& /* comm */)
       : is_diagonal_(true), thyraOp_(thyraOp)
     {
       // extract information from Thyra blocked operator and rebuilt information
@@ -1245,6 +1245,21 @@ namespace Xpetra {
           } else out << "Block(" << r << "," << c << ") = null" << std::endl;
         }
     }
+
+    //! @name Overridden from Teuchos::LabeledObject
+    //@{
+    void setObjectLabel( const std::string &objectLabel ) { 
+      XPETRA_MONITOR("TpetraBlockedCrsMatrix::setObjectLabel"); 
+      for (size_t r = 0; r < Rows(); ++r)
+        for (size_t c = 0; c < Cols(); ++c) {
+          if(getMatrix(r,c)!=Teuchos::null) {
+            std::ostringstream oss; oss<< objectLabel << "(" << r << "," << c << ")";
+            getMatrix(r,c)->setObjectLabel(oss.str());
+          }
+        }   
+    }
+    //@}
+
 
     //! Supports the getCrsGraph() call
     bool hasCrsGraph() const {

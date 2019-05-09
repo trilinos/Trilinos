@@ -50,11 +50,10 @@
 
 #include "exodusII.h"     // for ex_init_params, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
-#include "netcdf.h"       // for NC_NOERR, nc_get_att_text, etc
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 #include <stdlib.h>    // for free, malloc
-#include <string.h>    // for strncpy
+#include <string.h>    // for ex_copy_string
 #include <sys/types.h> // for int64_t
 
 /* Used to reduce repeated code below */
@@ -197,7 +196,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
     if (title_len > MAX_LINE_LENGTH) {
       char *title = malloc(title_len + 1);
       if ((status = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
-        strncpy(info->title, title, MAX_LINE_LENGTH + 1);
+        ex_copy_string(info->title, title, MAX_LINE_LENGTH + 1);
         info->title[MAX_LINE_LENGTH] = '\0';
       }
       free(title);

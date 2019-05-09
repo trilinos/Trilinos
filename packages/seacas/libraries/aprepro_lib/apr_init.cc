@@ -40,7 +40,6 @@
 #include "apr_builtin.h"
 #include "aprepro.h"      // for symrec, Aprepro, etc
 #include "init_structs.h" // for array_a_init, array_c_init, etc
-#include <cstring>        // for strncpy
 #include <string>         // for string
 
 namespace SEAMS {
@@ -92,8 +91,8 @@ namespace SEAMS {
       {nullptr, nullptr, nullptr, nullptr}};
 
   init_dd arith_dd_fncts[] = {
-      {"atan2", do_atan2, "atan2(x,y)", "Inverse tangent of y/x, returns radians."},
-      {"atan2d", do_atan2d, "atan2d(x,y)", "Inverse tangent of y/x, returns degrees."},
+      {"atan2", do_atan2, "atan2(y,x)", "Inverse tangent of y/x, returns radians."},
+      {"atan2d", do_atan2d, "atan2d(y,x)", "Inverse tangent of y/x, returns degrees."},
       {"dim", do_dim, "dim(x,y)", "x - min(x,y)"},
       {"fmod", do_fmod, "fmod(x,y)", "Floating-point remainder of x/y."},
       {"hypot", do_hypot, "hypot(x,y)", "sqrt(x^2+y^2)."},
@@ -119,21 +118,22 @@ namespace SEAMS {
       {"dist", do_dist, "dist(x1,y1, x2,y2)", "sqrt((x1-x2)^2 + (y1-y2)^2)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_cc arith_cc_fncts[] = {
-      {"word_count", do_word_count, "word_count(svar,del)",
-       "Number of words in svar. Words are separated by one or more of the characters in the "
-       "string variable 'del'."},
-      {nullptr, nullptr, nullptr, nullptr}};
+  init_cc arith_cc_fncts[] = {{"word_count", do_word_count, "word_count(svar,del)",
+                               "Number of words in svar. Words are separated by one or more of the "
+                               "characters\n\t\t\tin the "
+                               "string variable 'del'."},
+                              {nullptr, nullptr, nullptr, nullptr}};
 
-  init_ccc arith_ccc_fncts[] = {{"find_word", do_find_word, "find_word(word,svar,del)",
-                                 "Find the 1-based index of 'word' in 'svar'. Words are separated "
-                                 "by one or more of the characters in the "
-                                 "string variable 'del'. Returns 0 if not found."},
-                                {nullptr, nullptr, nullptr, nullptr}};
+  init_ccc arith_ccc_fncts[] = {
+      {"find_word", do_find_word, "find_word(w,s,d)",
+       "Find the 1-based index of word 'w' in variable 's'. Words are separated "
+       "by one or more of the\n\t\t\tcharacters in the "
+       "string variable 'd'. Returns 0 if not found."},
+      {nullptr, nullptr, nullptr, nullptr}};
 
   init_c arith_c_fncts[] = {{"strtod", do_strtod, "strtod(svar)",
                              "Returns a double-precision floating-point number "
-                             "equal to the value represented by the character "
+                             "equal to the value represented by the\n\t\t\tcharacter "
                              "string pointed to by svar."},
                             {nullptr, nullptr, nullptr, nullptr}};
 
@@ -144,9 +144,8 @@ namespace SEAMS {
       {"julday", do_julday, "julday(mm, dd, yy)", "Julian day corresponding to mm/dd/yy. "},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_dddddd arith_dddddd_fncts[] = {{"juldayhms", do_juldayhms,
-                                       "juldayhms(mm, dd, yy, hh, mm, ss)",
-                                       "Julian day corresponding to mm/dd/yy at hh:mm:ss "},
+  init_dddddd arith_dddddd_fncts[] = {{"juldayhms", do_juldayhms, "juldayhms(m,d,y,h,m,s)",
+                                       "Julian day corresponding to m/d/y at h:m:s "},
                                       {nullptr, nullptr, nullptr, nullptr}};
 
   str_init string_fncts[] = {
@@ -192,7 +191,7 @@ namespace SEAMS {
        "resulting string. "},
       {"getenv", do_getenv, "getenv(svar)",
        "Returns a string containing the value of the environment variable svar. If the environment "
-       "variable is not defined, an empty string is returned. "},
+       "\n\t\t\tvariable is not defined, an empty string is returned. "},
       {"file_to_string", do_file_to_string, "file_to_string(fn)",
        "Opens the file specified by fn and returns the contents as a multi-line string."},
       {"error", do_error, "error(svar)",
@@ -201,16 +200,18 @@ namespace SEAMS {
        "svar is parsed and executed as if it were a line read from the input file."},
       {"output", do_output, "output(filename)",
        "Creates the file specified by filename and sends "
-       "all subsequent output from aprepro to that file."},
+       "\n\t\t\tall subsequent output from aprepro to that file."},
       {"output_append", do_append, "output_append(fn)",
-       "If file with name fn exists, append output to it; otherwise create the file and send all "
+       "If file with name fn exists, append output to it; otherwise create the file and "
+       "send\n\t\t\tall "
        "subsequent output from aprepro to that file."},
       {"rescan", do_rescan, "rescan(svar)",
        "The difference between execute(sv1) and rescan(sv2) "
-       "is that sv1 must be a valid expression, but sv2 can "
+       "is that sv1 must be a valid expression,\n\t\t\tbut sv2 can "
        "contain zero or more expressions. "},
       {"include_path", do_include_path, "include_path(path)",
-       "Specify an optional path to be prepended to a filename when opening a file. Can also be "
+       "Specify an optional path to be prepended to a filename when opening a file.\n\t\t\tCan "
+       "also be "
        "specified via the -I command line option when executing aprepro."},
       {"Units", do_Units, "Units(svar)",
        "See manual. svar is one of the defined units "
@@ -253,19 +254,19 @@ namespace SEAMS {
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
-       "nonzero is true. Eats leading whitespace. (deprecated, use "
+       "nonzero is true.\n\t\t\tEats leading whitespace. (deprecated, use "
        "if)"},
       {"_ifndef", do_notif, "ifndef(x)",
        "Handles the if statements. x can be any valid "
-       "expression; nonzero is true. Eats leading whitespace. "
+       "expression; nonzero is true.\n\t\t\tEats leading whitespace. "
        "(deprecated, use if)"},
       {"switch", do_switch, "switch(x)",
        "Switch statement. Select from the following case "
-       "statements which matches 'x' and execute that one. End "
+       "statements which matches 'x' and execute that one.\n\t\t\tEnd "
        "with endswitch"},
       {"Switch", do_switch, "Switch(x)",
        "Switch statement. Select from the following case "
-       "statements which matches 'x' and execute that one. End "
+       "statements which matches 'x' and execute that one.\n\t\t\tEnd "
        "with endswitch"},
       {"case", do_case, "case(x)",
        "Switch statement. A case used in a containing switch statement."},
@@ -276,13 +277,14 @@ namespace SEAMS {
   str_dcc_init string_dcc_fncts[] = {
       {"get_word", do_get_word, "get_word(n,svar,del)",
        "Returns a string containing the nth word of svar. The words are separated by one or more "
-       "of the characters in the string variable del "},
+       "\n\t\t\tcharacters in the string variable del "},
       {nullptr, nullptr, nullptr, nullptr}};
 
   str_ccc_init string_ccc_fncts[] = {
       {"extract", do_extract, "extract(s, b, e)",
        "Return substring [b,e). 'b' is included; 'e' is not. If 'b' not found, return empty; If "
-       "'e' not found, return rest of string. If 'b' empty, start at beginning; if 'e' empty, "
+       "'e' not found,\n\t\t\treturn rest of string. If 'b' empty, start at beginning; if 'e' "
+       "empty, "
        "return rest of string."},
 #if defined(EXODUS_SUPPORT)
       {"exodus_info", do_exodus_info_range, "exodus_info(ex_fn, beg, end)",
@@ -308,7 +310,8 @@ namespace SEAMS {
   array_cd_init array_cd_fncts[] = {
       {"csv_array", do_csv_array, "csv_array(filename, [skip])",
        "Create a 2D array from the data in a csv file optionally skipping rows."
-       " If skip is integer skip that many rows; if skip is a character, skip lines beginning with "
+       " If skip is integer\n\t\t\tskip that many rows; if skip is a character, skip lines "
+       "beginning with "
        "that character"},
       {nullptr, nullptr, nullptr, nullptr}};
 
@@ -319,8 +322,16 @@ namespace SEAMS {
        "that character"},
       {"array_from_string", do_array_from_string, "array_from_string(string, delim)",
        "Create a 1D array from the data in a delimited string."
-       " The array double values are separated by one or more of the characters in the string "
+       " The array double values are\n\t\t\tseparated by one or more of the characters in the "
+       "string "
        "variable delim."},
+      {nullptr, nullptr, nullptr, nullptr}};
+
+  array_ddd_init array_ddd_fncts[] = {
+      {"linear_array", do_linear_array, "linear_array(init, final, count)",
+       "Create a 1D array of 'count' rows. Values linearly spaced from 'init' to 'final'."},
+      {"make_array", do_make_array_init, "make_array(rows, cols, init=0)",
+       "Create a 2D array of size 'rows' by 'cols' initialized to 'init'. 0 if not specified."},
       {nullptr, nullptr, nullptr, nullptr}};
 
   array_dd_init array_dd_fncts[] = {
@@ -399,8 +410,9 @@ namespace SEAMS {
     internal_init_table(array_c_fncts,      arrfnct_c,      SYMBOL_TYPE::ARRAY_FUNCTION);
     internal_init_table(array_cc_fncts,     arrfnct_cc,     SYMBOL_TYPE::ARRAY_FUNCTION);
     internal_init_table(array_cd_fncts,     arrfnct_cd,     SYMBOL_TYPE::ARRAY_FUNCTION);
-    internal_init_table(array_dd_fncts,     arrfnct_dd,     SYMBOL_TYPE::ARRAY_FUNCTION);
     internal_init_table(array_d_fncts,      arrfnct_d,      SYMBOL_TYPE::ARRAY_FUNCTION);
+    internal_init_table(array_dd_fncts,     arrfnct_dd,     SYMBOL_TYPE::ARRAY_FUNCTION);
+    internal_init_table(array_ddd_fncts,    arrfnct_ddd,    SYMBOL_TYPE::ARRAY_FUNCTION);
     internal_init_table(array_a_fncts,      arrfnct_a,      SYMBOL_TYPE::ARRAY_FUNCTION);
     // clang-format on
 

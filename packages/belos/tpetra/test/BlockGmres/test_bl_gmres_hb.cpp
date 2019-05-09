@@ -88,9 +88,7 @@ int main(int argc, char *argv[]) {
 
     int MyPID = 0;
 
-    typedef Tpetra::Map<>::node_type Node;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-    RCP<Node> node; // only for type deduction; null ok
     //
     // Get test parameters from command-line processor
     //
@@ -133,7 +131,7 @@ int main(int argc, char *argv[]) {
     // Get the data from the HB file and build the Map,Matrix
     //
     RCP<CrsMatrix<ST> > A;
-    Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+    Tpetra::Utils::readHBMatrix(filename,comm,A);
     RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
@@ -157,6 +155,8 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    belosList.set( "Flexible Gmres", true );               // DON'T DO THIS IN PRACTICE, it is not true.  
+                                                           // Just make sure the solver doesn't error out.
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {
       verbLevel += Belos::Debug;
@@ -174,6 +174,7 @@ int main(int argc, char *argv[]) {
     // Construct an unpreconditioned linear problem instance.
     //
     Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    problem.setInitResVec( B );
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)

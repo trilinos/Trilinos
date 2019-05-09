@@ -71,13 +71,13 @@ bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
   return supports_[arg];
 }
 
-bool ModelEvaluator::InArgs::supports(EInArgs_p_sg arg, int l) const
+bool ModelEvaluator::InArgs::supports(EInArgs_p_sg /* arg */, int l) const
 {
   assert_l(l);
   return supports_p_sg_[l];
 }
 
-bool ModelEvaluator::InArgs::supports(EInArgs_p_mp arg, int l) const
+bool ModelEvaluator::InArgs::supports(EInArgs_p_mp /* arg */, int l) const
 {
   assert_l(l);
   return supports_p_mp_[l];
@@ -92,13 +92,13 @@ void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supportsIt )
   supports_[arg] = supportsIt;
 }
 
-void ModelEvaluator::InArgs::_setSupports(EInArgs_p_sg arg, int l, bool supportsIt)
+void ModelEvaluator::InArgs::_setSupports(EInArgs_p_sg /* arg */, int l, bool supportsIt)
 {
   assert_l(l);
   supports_p_sg_[l] = supportsIt;
 }
 
-void ModelEvaluator::InArgs::_setSupports(EInArgs_p_mp arg, int l, bool supportsIt)
+void ModelEvaluator::InArgs::_setSupports(EInArgs_p_mp /* arg */, int l, bool supportsIt)
 {
   assert_l(l);
   supports_p_mp_[l] = supportsIt;
@@ -114,7 +114,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
     );
 }
 
-void ModelEvaluator::InArgs::assert_supports(EInArgs_p_sg arg, int l) const
+void ModelEvaluator::InArgs::assert_supports(EInArgs_p_sg /* arg */, int l) const
 {
   assert_l(l);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -125,7 +125,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgs_p_sg arg, int l) const
     );
 }
 
-void ModelEvaluator::InArgs::assert_supports(EInArgs_p_mp arg, int l) const
+void ModelEvaluator::InArgs::assert_supports(EInArgs_p_mp /* arg */, int l) const
 {
   assert_l(l);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -171,7 +171,7 @@ bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDfDp arg, int l) const
+ModelEvaluator::OutArgs::supports(EOutArgsDfDp /* arg */, int l) const
 {
   assert_l(l);
   return supports_DfDp_[l];
@@ -179,7 +179,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDfDp arg, int l) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_dot_[j];
@@ -187,7 +187,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_dotdot_[j];
@@ -195,7 +195,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_[j];
@@ -203,21 +203,21 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDp /* arg */, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
   return supports_DgDp_[ j*Np() + l ];
 }
 
-bool ModelEvaluator::OutArgs::supports(EOutArgs_g_sg arg, int j) const
+bool ModelEvaluator::OutArgs::supports(EOutArgs_g_sg /* arg */, int j) const
 {
   assert_j(j);
   return supports_g_sg_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDfDp_sg arg, int l) const
+ModelEvaluator::OutArgs::supports(EOutArgsDfDp_sg /* arg */, int l) const
 {
   assert_l(l);
   return supports_DfDp_sg_[l];
@@ -225,7 +225,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDfDp_sg arg, int l) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_sg arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_sg /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_dot_sg_[j];
@@ -233,7 +233,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_sg arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot_sg arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot_sg /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_dotdot_sg_[j];
@@ -241,28 +241,28 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot_sg arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_sg arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_sg /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_sg_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDp_sg arg, int j, int l) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDp_sg /* arg */, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
   return supports_DgDp_sg_[ j*Np() + l ];
 }
 
-bool ModelEvaluator::OutArgs::supports(EOutArgs_g_mp arg, int j) const
+bool ModelEvaluator::OutArgs::supports(EOutArgs_g_mp /* arg */, int j) const
 {
   assert_j(j);
   return supports_g_mp_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDfDp_mp arg, int l) const
+ModelEvaluator::OutArgs::supports(EOutArgsDfDp_mp /* arg */, int l) const
 {
   assert_l(l);
   return supports_DfDp_mp_[l];
@@ -270,7 +270,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDfDp_mp arg, int l) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_mp arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_mp /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_dot_mp_[j];
@@ -278,7 +278,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_mp arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot_mp arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot_mp /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_dotdot_mp_[j];
@@ -286,14 +286,14 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dotdot_mp arg, int j) const
 
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDx_mp arg, int j) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_mp /* arg */, int j) const
 {
   assert_j(j);
   return supports_DgDx_mp_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
-ModelEvaluator::OutArgs::supports(EOutArgsDgDp_mp arg, int j, int l) const
+ModelEvaluator::OutArgs::supports(EOutArgsDgDp_mp /* arg */, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
@@ -446,113 +446,113 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supportsIt
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp /* arg */, int l, const DerivativeSupport& theSupports )
 {
   assert_l(l);
   supports_DfDp_[l] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_dot_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_dotdot_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp /* arg */, int j, int l, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   assert_l(l);
   supports_DgDp_[ j*Np() + l ] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_sg arg, int j, bool supportsIt )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_sg /* arg */, int j, bool supportsIt )
 {
   assert_j(j);
   supports_g_sg_[j] = supportsIt;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_sg /* arg */, int l, const DerivativeSupport& theSupports )
 {
   assert_l(l);
   supports_DfDp_sg_[l] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_sg /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_dot_sg_[j] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_sg arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_sg /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_dotdot_sg_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_sg /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_sg_[j] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg /* arg */, int j, int l, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   assert_l(l);
   supports_DgDp_sg_[ j*Np() + l ] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_mp arg, int j, bool supportsIt )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_mp /* arg */, int j, bool supportsIt )
 {
   assert_j(j);
   supports_g_mp_[j] = supportsIt;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_mp /* arg */, int l, const DerivativeSupport& theSupports )
 {
   assert_l(l);
   supports_DfDp_mp_[l] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_mp /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_dot_mp_[j] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_mp arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dotdot_mp /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_dotdot_mp_[j] = theSupports;
 }
 
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_mp arg, int j, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_mp /* arg */, int j, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   supports_DgDx_mp_[j] = theSupports;
 }
 
-void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_mp arg, int j, int l, const DerivativeSupport& theSupports )
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_mp /* arg */, int j, int l, const DerivativeSupport& theSupports )
 {
   assert_j(j);
   assert_l(l);
@@ -680,7 +680,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp /* arg */, int l) const
 {
   assert_l(l);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -692,7 +692,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -704,7 +704,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot arg, int j) const
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -716,7 +716,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot arg, int j) co
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -728,7 +728,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp /* arg */, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
@@ -740,7 +740,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
     );
 }
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_sg arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_sg /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -751,7 +751,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_sg arg, int j) const
     );
 }
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg /* arg */, int l) const
 {
   assert_l(l);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -763,7 +763,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -775,7 +775,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) co
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot_sg arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot_sg /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -787,7 +787,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot_sg arg, int j)
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -798,7 +798,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg arg, int j) const
     );
 }
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg arg, int j, int l) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg /* arg */, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
@@ -810,7 +810,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg arg, int j, int l)
     );
 }
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_mp arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_mp /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -821,7 +821,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_mp arg, int j) const
     );
 }
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp arg, int l) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp /* arg */, int l) const
 {
   assert_l(l);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -833,7 +833,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp arg, int l) const
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -845,7 +845,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp arg, int j) co
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot_mp arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot_mp /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -857,7 +857,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dotdot_mp arg, int j)
 }
 
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_mp arg, int j) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_mp /* arg */, int j) const
 {
   assert_j(j);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -868,7 +868,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_mp arg, int j) const
     );
 }
 
-void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_mp arg, int j, int l) const
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_mp /* arg */, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
@@ -928,19 +928,19 @@ ModelEvaluator::~ModelEvaluator()
 
 
 Teuchos::RCP<const Epetra_Map>
-ModelEvaluator::get_p_map(int l) const
+ModelEvaluator::get_p_map(int /* l */) const
 { return Teuchos::null; }
 
 Teuchos::RCP<const Teuchos::Array<std::string> >
-ModelEvaluator::get_p_names(int l) const
+ModelEvaluator::get_p_names(int /* l */) const
 { return Teuchos::null; }
 
 Teuchos::RCP<const Epetra_Map>
-ModelEvaluator::get_g_map(int j) const
+ModelEvaluator::get_g_map(int /* j */) const
 { return Teuchos::null; }
 
 Teuchos::ArrayView<const std::string>
-ModelEvaluator::get_g_names(int j) const
+ModelEvaluator::get_g_names(int /* j */) const
 { return Teuchos::null; }
 
 
@@ -960,7 +960,7 @@ ModelEvaluator::get_x_dotdot_init() const
 { return Teuchos::null; }
 
 Teuchos::RCP<const Epetra_Vector>
-ModelEvaluator::get_p_init(int l) const
+ModelEvaluator::get_p_init(int /* l */) const
 { return Teuchos::null; }
 
 double ModelEvaluator::get_t_init() const
@@ -987,12 +987,12 @@ ModelEvaluator::get_x_upper_bounds() const
 
 
 Teuchos::RCP<const Epetra_Vector>
-ModelEvaluator::get_p_lower_bounds(int l) const
+ModelEvaluator::get_p_lower_bounds(int /* l */) const
 { return Teuchos::null; }
 
 
 Teuchos::RCP<const Epetra_Vector>
-ModelEvaluator::get_p_upper_bounds(int l) const
+ModelEvaluator::get_p_upper_bounds(int /* l */) const
 { return Teuchos::null; }
 
 
@@ -1016,23 +1016,23 @@ ModelEvaluator::create_WPrec() const
 { return Teuchos::null; }
 
 Teuchos::RCP<Epetra_Operator>
-ModelEvaluator::create_DfDp_op(int l) const
+ModelEvaluator::create_DfDp_op(int /* l */) const
 { return Teuchos::null; }
 
 Teuchos::RCP<Epetra_Operator>
-ModelEvaluator::create_DgDx_dot_op(int j) const
+ModelEvaluator::create_DgDx_dot_op(int /* j */) const
 { return Teuchos::null; }
 
 Teuchos::RCP<Epetra_Operator>
-ModelEvaluator::create_DgDx_dotdot_op(int j) const
+ModelEvaluator::create_DgDx_dotdot_op(int /* j */) const
 { return Teuchos::null; }
 
 Teuchos::RCP<Epetra_Operator>
-ModelEvaluator::create_DgDx_op(int j) const
+ModelEvaluator::create_DgDx_op(int /* j */) const
 { return Teuchos::null; }
 
 Teuchos::RCP<Epetra_Operator>
-ModelEvaluator::create_DgDp_op( int j, int l ) const
+ModelEvaluator::create_DgDp_op( int /* j */, int /* l */ ) const
 { return Teuchos::null; }
 
 } // namespace EpetraExt

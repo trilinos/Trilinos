@@ -239,8 +239,8 @@ namespace MueLu {
 #ifdef HAVE_MPI
     RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(origComm);
     MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
-#endif
     int root = 0;
+#endif
 
     std::string outstr;
     ParameterList absList;
@@ -289,7 +289,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CommPattern(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
+  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CommPattern(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> /* params */) {
     if (!CheckMatrix(A))
       return "";
 

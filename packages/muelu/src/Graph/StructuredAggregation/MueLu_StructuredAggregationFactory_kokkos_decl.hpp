@@ -43,56 +43,28 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
-#define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
+#ifndef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
+#define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_Exceptions.hpp"
+
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_AggregationStructuredAlgorithm_kokkos_fwd.hpp"
 
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-
-#include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
-
-#include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_AggregationAlgorithmBase_kokkos.hpp"
-#include "MueLu_AggregationPhase1Algorithm_kokkos_fwd.hpp"
-#include "MueLu_AggregationPhase2aAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_AggregationPhase2bAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_AggregationPhase3Algorithm_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Exceptions.hpp"
-#include "MueLu_IsolatedNodeAggregationAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_LWGraph_kokkos.hpp"
-#include "MueLu_OnePtAggregationAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_PreserveDirichletAggregationAlgorithm_kokkos_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
 
 namespace MueLu {
 
 /*!
-    @class UncoupledAggregationFactory class.
-    @brief Factory for building uncoupled aggregates.
+    @class StructuredAggregationFactory_kokkos class.
+    @brief Factory for building structured aggregates or CrsGraph for interpolation base prolongator.
 
-    Factory for creating uncoupled aggregates from the amalgamated graph of A. The uncoupled aggregation method
-    uses several aggregation phases which put together all nodes into aggregates.
+    Factory for creating structured aggregates or CrsGraph of the prolongator from the amalgamated graph of A.
 
-    ## Aggregation phases ##
-    AggregationAlgorithm | Short description
-    ---------------------|------------------
-    PreserveDirichletAggregationAlgorithm |  Handle Dirichlet nodes. Decide whether to drop/ignore them in the aggregation or keep them as singleton nodes.
-    OnePtAggregationAlgorithm | Special handling for nodes with status ONEPT. A user can mark special nodes for singleton aggregates or a user-specified handling. This aggregation phase has to be switched on by the user if necessary (default = off).
-    AggregationPhase1Algorithm | Build new aggregates
-    AggregationPhase2aAlgorithm | Build aggregates of reasonable size from leftover nodes
-    AggregationPhase2bAlgorithm | Add leftover nodes to existing aggregates
-    AggregationPhase3Algorithm | Handle leftover nodes. Try to avoid singletons
-    IsolatedNodeAggregationAlgorithm | Drop/ignore leftover nodes
-
-    Internally, each node has a status which can be one of the following:
+    When Aggregates are requested, each node has a status which can be one of the following:
 
     Node status | Meaning
     ------------|---------
@@ -104,45 +76,39 @@ namespace MueLu {
 
     @ingroup Aggregation
 
-    ## Input/output of UncoupledAggregationFactory ##
+    ## Input/output of StructuredAggregationFactory_kokkos ##
 
-    ### User parameters of UncoupledAggregationFactory ###
+    ### User parameters of StructuredAggregationFactory_kokkos ###
     Parameter | type | default | master.xml | validated | requested | description
     ----------|------|---------|:----------:|:---------:|:---------:|------------
      Graph              | Factory | null |   | * | * | Generating factory of the graph of A
      DofsPerNode        | Factory | null |   | * | * | Generating factory for variable 'DofsPerNode', usually the same as for 'Graph'
-     OnePt aggregate map name  | string |  | | * | * | Name of input map for single node aggregates (default=''). Makes only sense if the parameter 'aggregation: allow user-specified singletons' is set to true.
-     OnePt aggregate map factory | Factory | null |   | * | * | Generating factory of (DOF) map for single node aggregates.  Makes only sense if the parameter 'aggregation: allow user-specified singletons' is set to true.
-     aggregation: max agg size | int | see master.xml | * | * |  | Maximum number of nodes per aggregate.
-     aggregation: min agg size | int | see master.xml | * | * |  | Minimum number of nodes necessary to build a new aggregate.
-     aggregation: max selected neighbors | int | see master.xml | * | * |  | Maximum number of neighbor nodes already in aggregate (needed in Phase1)
-     aggregation: ordering | string | "natural" | * | * |  | Ordering of node aggregation (can be either "natural", "graph" or "random").
-     aggregation: enable phase 1 | bool | true | * | * |   |Turn on/off phase 1 aggregation
-     aggregation: enable phase 2a | bool | true | * | * |  |Turn on/off phase 2a aggregation
-     aggregation: enable phase 2b | bool | true | * | * |  |Turn on/off phase 2b aggregation
-     aggregation: enable phase 3 | bool | true | * | * |   |Turn on/off phase 3 aggregation
-     aggregation: preserve Dirichlet points | bool | false | * | * |   | preserve Dirichlet points as singleton nodes (default=false, i.e., drop Dirichlet nodes during aggregation)
-     aggregation: allow user-specified singletons | bool | false | * | * |  | Turn on/off OnePtAggregationAlgorithm (default=false)
+     lNodesPerDim       | Factory | null |   | * | * | Generating factory for variable 'lNodesPerDim', usually *this
+     aggregation: output type | std::string | see master.xml | * | * |  | Type of output this factory will generate: Aggregates or CrsGraph
+     aggregation: coarsening rate | std::string | see master.xml | * | * |  | A string interpretable as an array used to set the corasening rate in each spatial direction.
+     aggregation: number of spatial dimensions | int | see master.xml | * | * |  | Number of spatial dimensions in the problem
+     aggregation: coarsening order | int | 0 | * | * |  | The interpolation order used to construct grid transfer operators based off these aggregates.
 
 
     The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
-    The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see UncoupledAggregationFactory::GetValidParameters).<br>
-    The * in the @c requested column states that the data is requested as input with all dependencies (see UncoupledAggregationFactory::DeclareInput).
+    The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see StructuredAggregationFactory_kokkos::GetValidParameters).<br>
+    The * in the @c requested column states that the data is requested as input with all dependencies (see StructuredAggregationFactory_kokkos::DeclareInput).
 
-    ### Variables provided by UncoupledAggregationFactory ###
+    ### Variables provided by StructuredAggregationFactory_kokkos ###
 
-    After UncoupledAggregationFactory::Build the following data is available (if requested)
+    After StructuredAggregationFactory_kokkos::Build the following data is available (if requested)
 
     Parameter | generated by | description
     ----------|--------------|------------
-    | Aggregates   | UncoupledAggregationFactory   | Container class with aggregation information. See also Aggregates.
+    | Aggregates   | StructuredAggregationFactory_kokkos   | Container class with aggregation information. See also Aggregates.
+    | CrsGraph     | StructuredAggregationFactory_kokkos   | CrsGraph of the prolongator
 */
 
   template <class LocalOrdinal = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class UncoupledAggregationFactory_kokkos : public SingleLevelFactoryBase {
-#undef MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
+  class StructuredAggregationFactory_kokkos : public SingleLevelFactoryBase {
+#undef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
@@ -150,10 +116,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    UncoupledAggregationFactory_kokkos();
+    StructuredAggregationFactory_kokkos();
 
     //! Destructor.
-    virtual ~UncoupledAggregationFactory_kokkos() { }
+    virtual ~StructuredAggregationFactory_kokkos() { }
 
     RCP<const ParameterList> GetValidParameterList() const;
 
@@ -161,41 +127,10 @@ namespace MueLu {
 
     //! @name Set/get methods.
     //@{
-
-    // Options shared by all aggregation algorithms
-
-    // deprecated
-    void SetOrdering(const std::string& ordering) {
-      SetParameter("aggregation: ordering", ParameterEntry(ordering));
-    }
-    // deprecated
-    void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) {
-      SetParameter("aggregation: max selected neighbors", ParameterEntry(Teuchos::as<LocalOrdinal>(maxNeighAlreadySelected))); // revalidate
-    }
-    // deprecated
-    void SetMinNodesPerAggregate(int minNodesPerAggregate) {
-      SetParameter("aggregation: min agg size", ParameterEntry(Teuchos::as<LocalOrdinal>(minNodesPerAggregate))); // revalidate
-    }
     // set information about 1-node aggregates (map name and generating factory)
     void SetOnePtMapName(const std::string name, Teuchos::RCP<const FactoryBase> mapFact) {
       SetParameter("OnePt aggregate map name", ParameterEntry(std::string(name))); // revalidate
       SetFactory("OnePt aggregate map factory",mapFact);
-    }
-
-    // deprecated
-    const std::string& GetOrdering() const {
-      const ParameterList& pL = GetParameterList();
-      return pL.get<std::string>("aggregation: ordering");
-    }
-    // deprecated
-    int GetMaxNeighAlreadySelected() const {
-      const ParameterList& pL = GetParameterList();
-      return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: max selected neighbors"));
-    }
-    // deprecated
-    int GetMinNodesPerAggregate() const {
-      const ParameterList& pL = GetParameterList();
-      return Teuchos::as<int>(pL.get<LocalOrdinal>("aggregation: min agg size"));
     }
 
     //@}
@@ -203,7 +138,7 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level& currentLevel) const;
 
     //@}
 
@@ -211,35 +146,21 @@ namespace MueLu {
     //@{
 
     /*! @brief Build aggregates. */
-    void Build(Level &currentLevel) const;
+    void Build(Level& currentLevel) const;
 
-    //@}
-
-    //! @name Definition methods
-    //@{
-
-    /*! @brief Append a new aggregation algorithm to list of aggregation algorithms */
-    //void Append(const RCP<MueLu::AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node> > & alg);
-
-    /*! @brief Remove all aggregation algorithms from list */
-    //void ClearAggregationAlgorithms() { algos_.clear(); }
     //@}
 
   private:
-
-    //! aggregation algorithms
-    // will be filled in Build routine
-    mutable std::vector<RCP<MueLu::AggregationAlgorithmBase_kokkos<LocalOrdinal, GlobalOrdinal, Node> > > algos_;
 
     //! boolean flag: definition phase
     //! if true, the aggregation algorithms still can be set and changed.
     //! if false, no change in aggregation algorithms is possible any more
     mutable bool bDefinitionPhase_;
 
-  }; // class UncoupledAggregationFactory_kokkos
+  }; // class StructuredAggregationFactory
 
 }
 
-#define MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_SHORT
+#define MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
 #endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_UNCOUPLEDAGGREGATIONFACTORY_KOKKOS_DECL_HPP

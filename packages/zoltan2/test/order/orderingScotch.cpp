@@ -427,8 +427,30 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
       if (testReturn) return testReturn;
     }
 
-    // TODO How do we validate TreeTab?
-    //      TreeTab root has -1, other values < NumBlocks
+    // How do we validate TreeTab?
+    // TreeTab root has -1, other values < NumBlocks
+    if (rank == 0 ) {
+      std::cout << "Checking Separator Tree" << std::endl;
+    }
+
+    if (checkLength) {
+      testReturn = (TreeTab[0] != -1);
+    }
+
+    if (testReturn) {
+      std::cout << "TreeTab[0] = " << TreeTab[0] << " != -1" << std::endl;
+      return testReturn;
+    }
+
+    for (size_t i=1; i< checkLength; i++){
+      testReturn = !(TreeTab[i] < NumBlocks);
+      if (testReturn) {
+        std::cout << "TreeTab[" << i << "] = " << TreeTab[i] << " >= NumBlocks "
+                  << " = " << NumBlocks << std::endl;
+        return testReturn;
+      }
+    }
+
     if (rank == 0 ) {
       std::cout << "Going to compute the bandwidth" << std::endl;
     }

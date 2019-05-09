@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       SUBROUTINE CKESS (NUMESS, LESSEL, LESSNL, NUMEL, NUMNP,
      &   IDESS, NEESS, NNESS, IXEESS, IXNESS,
@@ -77,7 +77,7 @@ C   --   RCHECK - SCRATCH - size = NUMNP
       INTEGER MAPEL(*)
       INTEGER MAPND(*)
       LOGICAL DIDHEAD, ALLSAM
-      
+
       CHARACTER*1024 STRA
 
 C   --Check for unique identifier
@@ -117,7 +117,7 @@ C   --Check all elements in element side sets are within element range
 C   --Check all element faces in element side sets are within range
 C ... Since we don't know (or don't want to expend the effort...) the
 C     the number of faces for each element, we assume that the maximum
-C     number of faces is 4 for 2D and 6 for 3D      
+C     number of faces is 4 for 2D and 6 for 3D
       CALL CHKRNG (LTSESS, LESSEL, 2*NDIM, NZERO, NERR)
       IF (NERR .GT. 0) THEN
         CALL PRTERR ('FATAL',
@@ -127,7 +127,7 @@ C     number of faces is 4 for 2D and 6 for 3D
         CALL PRTERR ('FATAL',
      &    'Element side set faces are zero')
       END IF
-      
+
 C ... Check for duplicate element/sides in a sideset. This causes
 C     problems with some analysis codes
       do iess = 1, numess
@@ -139,8 +139,8 @@ C     problems with some analysis codes
           ifa = ltsess(indx+j)
           if (btest(icheck(iel), ifa)) then
             write (stra, 10000) iel, ifa, idess(iess)
-10000       FORMAT('SIDESET ERROR: The element face pair ',I10,'.',I1,
-     $        ' is duplicated in sideset ', I10,'.')
+10000       FORMAT('SIDESET ERROR: The element face pair ',I12,'.',I1,
+     $        ' is duplicated in sideset ', I12,'.')
             call sqzstr(stra, lstra)
             CALL PRTERR ('WARNING', STRA(:lstra))
           else
@@ -155,9 +155,9 @@ C     in the sideset...
         call exgsp(ndb, idess(iess), nsess, ndfss, ierr)
         if (nness(iess) .ne. ndfss .and. ndfss .gt. 0) then
            write (stra, 10001) idess(iess), ndfss, nness(iess)
-10002      FORMAT('SIDESET ERROR: In sideset ', I10,
-     *          ' the number of distribution factors (', I10,
-     *          ') does not match the sideset node count (', I10, ')')
+10002      FORMAT('SIDESET ERROR: In sideset ', I12,
+     *          ' the number of distribution factors (', I12,
+     *          ') does not match the sideset node count (', I12, ')')
            call sqzstr(stra, lstra)
            CALL PRTERR ('WARNING', STRA(:lstra))
         end if
@@ -169,16 +169,16 @@ C     in the sideset...
            end do
            if (ndfss .ne. numnod) then
               write (stra, 10001) idess(iess), ndfss, numnod
-10001         FORMAT('SIDESET ERROR: In sideset ', I10,
-     *             ' the number of distribution factors (', I10,
+10001         FORMAT('SIDESET ERROR: In sideset ', I12,
+     *             ' the number of distribution factors (', I12,
      *             ') does not match the computed sideset node count (',
-     *             I10, ')')
+     *             I12, ')')
               call sqzstr(stra, lstra)
               CALL PRTERR ('WARNING', STRA(:lstra))
            endif
         end if
       end do
-      
+
 c ... Check for discontinuous sideset distribution factors on a sideset.
 C     That is, if node 42 on side 15 has a different df value than node 42 on side 11.
 C     This is allowed for in exodus, but most users want a c1 continuous field defined.
@@ -201,9 +201,9 @@ C     ... See if all values are the same
 
           if (.not. allsam) then
 C ... Get the number of df/nodes per face and the nodes on the face
-C ... NOTE: facess is contiguous over all sidesets, 
-C           nscr is the number of nodes/df per face 
-C           icheck is the nodes for the faces.              
+C ... NOTE: facess is contiguous over all sidesets,
+C           nscr is the number of nodes/df per face
+C           icheck is the nodes for the faces.
             call exgssn(ndb, idess(iess), nscr, icheck, ierr)
             ISE = IXEESS(IESS)
             IEE = ISE + NEESS(IESS) - 1
@@ -236,9 +236,9 @@ C           icheck is the nodes for the faces.
           end if
         END IF
       end do
-10040 FORMAT('SIDESET DF CONTINUITY ERRORS For Sideset ',I10)
-10050 FORMAT('Element ',I10,', Side ',I1, ', Node ',I10,
+10040 FORMAT('SIDESET DF CONTINUITY ERRORS For Sideset ',I12)
+10050 FORMAT('Element ',I12,', Side ',I1, ', Node ',I12,
      *  ': Previous Value = ',1PE11.4,'  Current Value = ',1PE11.4)
-      
+
       RETURN
       END

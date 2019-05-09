@@ -221,8 +221,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int NumLidEntries, ZOLTAN_ID_PTR gids,
-                           ZOLTAN_ID_PTR lids, int wgtDim, float *weights, int *ierr) {
+  GetLocalNumberOfNonzeros(void *data, int NumGidEntries, int /* NumLidEntries */, ZOLTAN_ID_PTR gids,
+                           ZOLTAN_ID_PTR /* lids */, int /* wgtDim */, float *weights, int *ierr) {
     if (data == NULL || NumGidEntries < 1) {
       *ierr = ZOLTAN_FATAL;
       return;
@@ -280,15 +280,15 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ZoltanInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetProblemGeometry(void *data, int numGIDEntries, int numLIDEntries, int numObjectIDs,
-                     ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int dim, double *coordinates, int *ierr)
+  GetProblemGeometry(void *data, int /* numGIDEntries */, int /* numLIDEntries */, int numObjectIDs,
+                     ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR /* lids */, int dim, double *coordinates, int *ierr)
   {
     if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return;
     }
 
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
     double_multivector_type *Coords = (double_multivector_type*) data;
 
     if (dim != Teuchos::as<int>(Coords->getNumVectors())) {
@@ -299,7 +299,7 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != Teuchos::as<int>(Coords->getLocalLength()), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
 
-    ArrayRCP<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > CoordsData(dim);
+    ArrayRCP<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> > CoordsData(dim);
     for (int j = 0; j < dim; ++j)
       CoordsData[j] = Coords->getData(j);
 

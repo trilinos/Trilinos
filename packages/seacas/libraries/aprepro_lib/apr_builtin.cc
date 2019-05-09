@@ -67,10 +67,6 @@
 #define PI 3.141592653589793238462643
 #endif
 
-namespace SEAMS {
-  unsigned hash_symbol(const char *symbol);
-}
-
 namespace {
   std::unordered_map<size_t, std::vector<std::string>> tokenized_strings;
 
@@ -682,14 +678,8 @@ namespace SEAMS {
     }
     else {
       std::ostream *output = new std::ofstream(filename);
-      if (output != nullptr) {
-        aprepro->outputStream.push(output);
-
-        aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
-      }
-      else {
-        aprepro->error("Could not open output file '" + std::string(filename) + "'.\n", false);
-      }
+      aprepro->outputStream.push(output);
+      aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
     }
     return (nullptr);
   }
@@ -709,15 +699,9 @@ namespace SEAMS {
     }
     else {
       auto output = new std::ofstream(filename, std::ios_base::app); // Append
-      if (output != nullptr) {
-        aprepro->outputStream.push(output);
+      aprepro->outputStream.push(output);
 
-        aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
-      }
-      else {
-        aprepro->error(
-            "Could not open output file '" + std::string(filename) + "' for appending.\n", false);
-      }
+      aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
     }
     return (nullptr);
   }
@@ -978,12 +962,9 @@ namespace SEAMS {
       }
     }
 
-    auto tmpstr = new char[len + 1];
-    std::strncpy(tmpstr, start, len);
-    tmpstr[len] = '\0';
-    char *tmp;
-    new_string(tmpstr, &tmp);
-    delete[] tmpstr;
+    std::string tmpstr(start, 0, len);
+    char *      tmp;
+    new_string(tmpstr.c_str(), &tmp);
     return tmp;
   }
 
@@ -1046,6 +1027,16 @@ namespace SEAMS {
     return array_data;
   }
 
+  array *do_make_array_init(double rows, double cols, double init)
+  {
+    auto array_data = new array(rows, cols);
+    int  isize      = (int)rows * int(cols);
+    for (int i = 0; i < isize; i++) {
+      array_data->data[i] = init;
+    }
+    return array_data;
+  }
+
   array *do_identity(double size)
   {
     int  i;
@@ -1054,6 +1045,20 @@ namespace SEAMS {
 
     for (i = 0; i < isize; i++) {
       array_data->data[i * isize + i] = 1.0;
+    }
+    return array_data;
+  }
+
+  array *do_linear_array(double init, double final, double count)
+  {
+    // Create 1D array with `count` rows and 1 column.
+    // Values are linearly spaced from `init` to `final`
+    int  isize      = count;
+    auto array_data = new array(count, 1);
+
+    double inc = (final - init) / (count - 1);
+    for (int i = 0; i < isize; i++) {
+      array_data->data[i] = init + (double)i * inc;
     }
     return array_data;
   }
@@ -1123,12 +1128,12 @@ namespace SEAMS {
 
   array *do_csv_array2(const char *filename, const char *comment)
   {
-    const char *  delim = ",\t ";
-    std::fstream *file  = aprepro->open_file(filename, "r");
+    std::fstream *file = aprepro->open_file(filename, "r");
     if (file != nullptr) {
 
-      size_t rows = 0;
-      size_t cols = 0;
+      size_t      rows  = 0;
+      size_t      cols  = 0;
+      const char *delim = ",\t ";
 
       std::string line;
       while (std::getline(*file, line)) {

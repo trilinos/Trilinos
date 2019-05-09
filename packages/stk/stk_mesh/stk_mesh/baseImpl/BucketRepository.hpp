@@ -42,6 +42,7 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class EntitySorterBase; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
 
@@ -78,7 +79,7 @@ public:
   {
     static const BucketVector emptyBucketVector;
 
-    if( rank < m_buckets.size() )
+    if( rank < static_cast<EntityRank>(m_buckets.size()) )
     {
       if (m_need_sync_from_partitions[rank])
       {
@@ -117,14 +118,16 @@ public:
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,
-                                        const OrdinalVector &parts);
+                                        const OrdinalVector &parts,
+                                        std::vector<unsigned>& scratchSpace);
 
-  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts);
+  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts,
+                                     std::vector<unsigned>& scratchSpace);
 
   void remove_entity(const MeshIndex &meshIndex);
 
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
-                                     const OrdinalVector &parts);
+                                     const OrdinalVector &parts, std::vector<unsigned>& scratchSpace);
 
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();

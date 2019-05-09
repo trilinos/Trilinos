@@ -189,7 +189,7 @@ namespace {
                      int ordinal, int rank)
   {
     for (auto zgc : parent->m_zoneConnectivity) {
-      if (!zgc.is_intra_block() || zgc_overlaps(child, zgc)) {
+      if (!zgc.is_from_decomp() || zgc_overlaps(child, zgc)) {
         // Modify source and donor range to subset it to new block ranges.
         zgc_subset_ranges(child, zgc);
         zgc.m_ownerZone = child->m_zone;
@@ -286,9 +286,9 @@ namespace Iocgns {
     if (m_lineOrdinal == 2 || m_ordinal[2] == 1)
       work2 = 0;
 
-    auto delta0 = std::make_pair(abs((double)work0 - avg_work), -(int)m_ordinal[0]);
-    auto delta1 = std::make_pair(abs((double)work1 - avg_work), -(int)m_ordinal[1]);
-    auto delta2 = std::make_pair(abs((double)work2 - avg_work), -(int)m_ordinal[2]);
+    auto delta0 = std::make_pair(std::abs((double)work0 - avg_work), -(int)m_ordinal[0]);
+    auto delta1 = std::make_pair(std::abs((double)work1 - avg_work), -(int)m_ordinal[1]);
+    auto delta2 = std::make_pair(std::abs((double)work2 - avg_work), -(int)m_ordinal[2]);
 
     auto min_ordinal = 0;
     auto min_delta   = delta0;

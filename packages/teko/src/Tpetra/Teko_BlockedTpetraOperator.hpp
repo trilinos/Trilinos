@@ -128,10 +128,10 @@ public:
    // attribute set methods
    
    // don't use transpose...ever!
-   virtual int SetUseTranspose(bool useTranspose)
+   virtual int SetUseTranspose(bool /* useTranspose */)
    { return -1; }
 
-   virtual int ApplyInverse(const Tpetra::MultiVector<ST,LO,GO,NT> &X, Tpetra::MultiVector<ST,LO,GO,NT> &Y) const
+   virtual int ApplyInverse(const Tpetra::MultiVector<ST,LO,GO,NT> &/* X */, Tpetra::MultiVector<ST,LO,GO,NT> &/* Y */) const
    { TEUCHOS_ASSERT(false); return -1; }
 
    virtual double NormInf() const

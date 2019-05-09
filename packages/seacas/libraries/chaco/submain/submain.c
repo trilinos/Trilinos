@@ -143,7 +143,7 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   void              setrandom(long int seed);
   int               check_input(), refine_part();
   void              connect_enforce();
-  void              setrandom(), makevwsqrt(), balance(), countup();
+  void              makevwsqrt(), balance(), countup();
   void              force_internal(), sequence(), reflect_input();
   void              machine_params(), assign_out(), refine_map();
   void              time_out(), time_kernels(), strout();

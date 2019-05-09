@@ -223,7 +223,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
 
 template<class Scalar>
 bool DefaultSpmdVectorSpace<Scalar>::hasInCoreView(
-  const Range1D& rng_in, const EViewType viewType, const EStrideType strideType
+  const Range1D& rng_in, const EViewType /* viewType */, const EStrideType /* strideType */
   ) const
 {
   const Range1D rng = full_range(rng_in,0,this->dim()-1);

@@ -140,11 +140,17 @@ lib stk_unit_test_utils
     [ ifdevbuild
       [ glob $(stk_unit_test_utils-root)/*.cpp ]
       /sierra/stk_io//stk_io
+      /sierra/stk_ngp_test//stk_ngp_test
       /tpl/gtest//gtest
     ]
   : 
     [ ifuserbuild
       <file>$(stk_unit_test_utils-root)/lib/libstk_unit_test_utils.a
+    ]
+    [ ifdevbuild
+        # Any parameters within this 'ifdevbuild' block apply to development
+        # builds only and will not be present for user builds.
+        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
   :
   :

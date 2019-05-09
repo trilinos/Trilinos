@@ -921,6 +921,32 @@ than 3.7.0 will not work since features were added to CMake 3.7.0+ that allow
 for the generation of these makefiles.
 
 
+Limiting parallel compile and link jobs for Ninja builds
+--------------------------------------------------------
+
+When the CMake generator Ninja is used (i.e. ``-GNinja``), one can limit the
+number of parallel jobs that are used for compiling object files by setting::
+
+  -D <Project>_PARALLEL_COMPILE_JOBS_LIMIT=<N>
+
+and/or limit the number of parallel jobs that are used for linking libraries
+and executables by setting::
+
+  -D <Project>_PARALLEL_LINK_JOBS_LIMIT=<M>
+
+where ``<N>`` and ``<M>`` are integers like ``20`` and ``4``.  If these are
+not set, then the number of parallel jobs will be determined by the ``-j<P>``
+argument passed to ``ninja -j<P>`` or by ninja automatically according to
+machine load when running ``ninja``.
+
+Limiting the number of link jobs can be useful, for example, for certain
+builds of large projects where linking many jobs in parallel can consume all
+of the RAM on a given system and crash the build.
+
+NOTE: These options are ignored when using Makefiles or other CMake
+generators.  They only work for the Ninja generator.
+
+
 Enabling support for C++11
 --------------------------
 
@@ -1934,6 +1960,21 @@ did not get added, then this line will show why the test was not added
 ``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
 arguments).
 
+
+Enable advanced test start and end times and timing blocks
+----------------------------------------------------------
+
+For tests added using ``TRIBITS_ADD_ADVANCED_TEST()``, one can see start and
+end times for the tests and the timing for each ``TEST_<IDX>`` block in the
+detailed test output by configuring with::
+
+  -D<Project>_SHOW_TEST_START_END_DATE_TIME=ON
+
+The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
+and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
+systems and not native Windows systems.
+
+
 .. _DART_TESTING_TIMEOUT:
 
 Setting test timeouts at configure time
@@ -2118,9 +2159,12 @@ packages from a file, configure with::
   -D<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
 
 Specifying extra repositories through an extra repos file allows greater
-flexibility in the specification of extra repos.  This is not helpful for a
-basic configure of the project but is useful in automated testing using the
-``TribitsCTestDriverCore.cmake`` script and the ``checkin-test.py`` script.
+flexibility in the specification of extra repos.  This is not needed for a
+basic configure of the project but is useful in generating version information
+using `<Project>_GENERATE_VERSION_DATE_FILES`_ and
+`<Project>_GENERATE_REPO_VERSION_FILE`_ as well as in automated testing using
+the ctest -S scripts with the ``TRIBITS_CTEST_DRIVER()`` function and the
+``checkin-test.py`` tool.
 
 The valid values of ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
 ``Continuous``, ``Nightly``, and ``Experimental``.  Only repositories listed
@@ -2281,19 +2325,93 @@ NOTES:
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
 
+.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 Generating a project repo version file
 --------------------------------------
 
-In development mode working with local git repos for the project sources, on
-can generate a <Project>RepoVersion.txt file which lists all of the repos and
-their current versions using::
+When working with local git repos for the project sources, one can generate a
+``<Project>RepoVersion.txt`` file which lists all of the repos and their
+current versions using::
 
    -D <Project>_GENERATE_REPO_VERSION_FILE=ON
 
-This will cause a <Project>RepoVersion.txt file to get created in the binary
-directory, get installed in the install directory, and get included in the
-source distribution tarball.
+This will cause a ``<Project>RepoVersion.txt`` file to get created in the
+binary directory, get installed in the install directory, and get included in
+the source distribution tarball.
+
+NOTE: If the base ``.git/`` directory is missing, then no
+``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
+printed to cmake STDOUT.
+
+.. _<Project>_GENERATE_VERSION_DATE_FILES:
+
+Generating git version date files
+---------------------------------
+
+When working with local git repos for the project sources, one can generate
+the files ``VersionDate.cmake`` and ``<Project>_version_date.h`` in the build
+directory by setting::
+
+   -D <Project>_GENERATE_VERSION_DATE_FILES=ON
+
+These files are generated in the build directory and the file
+``<Project>_version_date.h`` is installed in the installation directory.  (In
+addition, these files are also generated for each extra repository that are
+also version-controlled repos, see `<Project>_EXTRAREPOS_FILE`_.)
+
+These files contain ``<PROJECT_NAME_UC>_VERSION_DATE`` which is a 10-digit
+date-time version integer.  This integer is created by first using git to
+extract the commit date for ``HEAD`` using the command::
+
+  env TZ=GMT git log --format="%cd" --date=iso-local -1 HEAD
+
+which returns the date and time for the commit date of ``HEAD`` in the form::
+
+  "YYYY-MM-DD hh:mm:ss +0000"
+
+This git commit date is then is used to create a 10-digit date/time integer of
+the form::
+
+  YYYYMMDDhh
+
+This 10-digit integer is set to a CMake variable
+``<PROJECT_NAME_UC>_VERSION_DATE`` in the generated ``VersionDate.cmake`` file
+and a C/C++ preprocessor macro ``<PROJECT_NAME_UC>_VERSION_DATE`` in the
+generated ``<Project>_version_date.h`` header file.
+
+This 10-digit date/time integer ``YYYYMMDDhh`` will fit in a signed 32-bit
+integer with a maximum value of ``2^32 / 2 - 1`` = ``2147483647``.  Therefore,
+the maximum date that can be handled is the year 2147 with the max date/time
+of ``2147 12 31 23`` = ``2147123123``.
+
+The file ``<Project>_version_date.h`` is meant to be included by downstream
+codes to determine the version of ``<Project>`` being used and allows
+``<PROJECT_NAME_UC>_VERSION_DATE`` to be used in C/C++ ``ifdefs`` like::
+
+  #if defined(<PROJECT_NAME_UC>_VERSION_DATE) && <PROJECT_NAME_UC>_VERSION_DATE >= 2019032704
+    /* The version is newer than 2019-03-27 04:00:00 UTC */
+    ...
+  #else
+    /* The version is older than 2019-03-27 04:00:00 UTC */
+    ...
+  #endif
+
+This allows downstream codes to know the fine-grained version of <Project> at
+configure and build time to adjust for the addition of new features,
+deprecation of code, or breaks in backward compatibility (which occur in
+specific commits with unique commit dates).
+
+NOTE: If the branch is not hard-reset then the first-parent commits on that
+branch will have monotonically increasing git commit dates (adjusted for UTC).
+This assumption is required for the correct usage of the
+``<PROJECT_NAME_UC>_VERSION_DATE`` macro as demonstrated above.
+
+NOTE: If the base ``.git/`` directory is missing or the version of git is not
+2.10.0 or greater (needed for the ``--date=iso-local`` argument), then the
+``<Project>_version_date.h`` file will still get generated but will have an
+undefined macro ``<PROJECT_NAME_UC>_VERSION_DATE`` and a ``NOTE`` message will
+be printed to cmake STDOUT.
 
 
 CMake configure-time development mode and debug checking
@@ -2912,6 +3030,44 @@ WARNING: To overwrite default relative paths, you must use the data type
 current binary directory for the base path.  Otherwise, if you want to specify
 absolute paths, use the data type ``PATH`` as shown above.
 
+Setting install directory permissions
+-------------------------------------
+
+By default, when installing with the ``install`` target, any directories
+created are given the default permissions for the user that runs the install
+command (just as if they typed ``mkdir <some-dir>``).  (On Unix/Linux systems,
+one can use ``umask`` and set the default group and the group sticky bit to
+control how directories are created.)  However, for versions of CMake 3.11.0+,
+CMake supports the CMake variable
+``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` which will result in directory
+permissions according to these and not the user/system defaults.  To make this
+easier to use, the ``<Project>`` CMake build system defines the options::
+
+  -D <Project>_MAKE_INSTALL_GROUP_READABLE=[TRUE|FALSE] \
+  -D <Project>_MAKE_INSTALL_WORLD_READABLE=[TRUE|FALSE] \
+
+that automatically sets up ``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS``
+with the correct permissions according to these options when either of these
+two variables are set to non-empty.  To make the install group and world
+readable, set::
+
+  -D <Project>_MAKE_INSTALL_WORLD_READABLE=TRUE
+
+To make the install group readable but not world readable, set::
+
+  -D <Project>_MAKE_INSTALL_GROUP_READABLE=TRUE
+
+(In that case, make sure and set the desired group in the base install
+directory and set the group sticky bit using ``chmod g+s <base-install-dir>``
+before running the ``install`` target.)
+
+When both of these variables are empty,
+``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` is not set and therefore the
+default user/system directory permissions are used for new directories.  When
+the version of CMake is less than 3.11.0, then setting these variables and
+``CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS`` have no effect and the default
+user/system directory permissions are used.
+
 Setting install RPATH
 ---------------------
 
@@ -3148,28 +3304,28 @@ To install the software, type::
 
   $ make install
 
-Note that CMake actually puts in the build dependencies for installed targets
-so in some cases you can just type ``make -j<N> install`` and it will also
-build the software before installing.  However, it is advised to always build
-and test the software first before installing with::
+Note that by default CMake actually puts in the build dependencies for
+installed targets so in some cases you can just type ``make -j<N> install``
+and it will also build the software before installing (but this can be
+disabled by setting ``-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON``).  It is
+advised to always build and test the software first before installing with::
 
   $ make -j<N> && ctest -j<N> && make -j<N> install
 
 This will ensure that everything is built correctly and all tests pass before
 installing.
 
-**WARNING:** When using shared libraries, one must be careful to avoid the
-error **"RegularExpression::compile(): Expression too big."** when using RPATH
-and when RPATH gets stripped out on install.  To avoid this error, use the
-shortest build directory you can, like::
+If there are build failures in any packages and one wants to still install the
+packages that do build correctly, then configure with::
 
-  $HOME/<Project>_BUILD/
+  -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON
 
-This has been shown to allow even the most complex TriBITS-based CMake
-projects to successfully install and avoid this error.
+and run the custom install target::
 
-NOTE: This problem has been resolved in CMake versions 3.6.0+ and does not
-require a short build directory path.
+  $ make install_package_by_package
+
+This will ensure that every package that builds correctly will get installed.
+(The default 'install' target aborts on the first file install failure.)
 
 
 Packaging

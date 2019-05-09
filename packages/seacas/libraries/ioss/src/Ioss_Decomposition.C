@@ -183,8 +183,11 @@ namespace Ioss {
     m_method = get_decomposition_method(props, m_processor);
 
     Utils::check_set_bool_property(props, "RETAIN_FREE_NODES", m_retainFreeNodes);
-    Utils::check_set_bool_property(props, "DECOMP_SHOW_PROGRESS", m_showProgress);
     Utils::check_set_bool_property(props, "DECOMP_SHOW_HWM", m_showHWM);
+    Utils::check_set_bool_property(props, "DECOMP_SHOW_PROGRESS", m_showProgress);
+    if (!m_showProgress) {
+      Utils::check_set_bool_property(props, "ENABLE_TRACING", m_showProgress);
+    }
   }
 
   template bool                Decomposition<int64_t>::needs_centroids() const;

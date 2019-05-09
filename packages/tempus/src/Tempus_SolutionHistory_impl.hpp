@@ -453,7 +453,7 @@ void SolutionHistory<Scalar>::setParameterList(
     break;
   }
   case STORAGE_TYPE_UNLIMITED: {
-    storage_limit = std::numeric_limits<int>::max();
+    storage_limit = 1000000000;
     break;
   }
   }
