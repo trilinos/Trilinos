@@ -349,7 +349,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const size_t maxNumEntriesPerRow,
-	      const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+              const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -2579,7 +2579,8 @@ namespace Tpetra {
   {
     using Teuchos::rcp;
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
+    const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
+    return rcp (new graph_type (map, maxNumEntriesPerRow, pftype, params));
   }
 
   /// \brief Nonmember CrsGraph constructor that fuses Import and fillComplete().

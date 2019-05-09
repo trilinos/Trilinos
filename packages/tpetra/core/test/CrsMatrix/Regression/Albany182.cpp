@@ -1002,10 +1002,13 @@ namespace { // (anonymous)
       out << "Target matrix is correct!" << endl;
     }
 
-    using Tpetra::ProfileType;
-    using Tpetra::DynamicProfile;
-    using Tpetra::StaticProfile;
-    for (ProfileType profileType : {DynamicProfile, StaticProfile}) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    const Tpetra::ProfileType pftypes[2] = {Tpetra::DynamicProfile, Tpetra::StaticProfile};
+#else
+    const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    for (Tpetra::ProfileType profileType : pftypes) {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       out << ">>> Target matrix is {";
       if (profileType == Tpetra::DynamicProfile) {
         out << "DynamicProfile";
@@ -1014,6 +1017,9 @@ namespace { // (anonymous)
         out << "StaticProfile";
       }
       out << ", locally indexed}" << endl;
+#else
+      out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
       Teuchos::OSTab tab2 (out);
 
       const size_t maxNumEntPerRow = 10; // needs to be an upper bound
@@ -1219,5 +1225,3 @@ namespace { // (anonymous)
 #endif // HAVE_TPETRA_INST_INT_LONG_LONG
 
 } // namespace (anonymous)
-
-

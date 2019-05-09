@@ -140,15 +140,6 @@ namespace {
   using Tpetra::Import;
   using Tpetra::global_size_t;
   using Tpetra::createContigMapWithNode;
-  using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
-  using Tpetra::OptimizeOption;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::GloballyDistributed;
-  using Tpetra::INSERT;
 
 
   double errorTolSlack = 1e+1;
@@ -366,7 +357,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
-      MAT matrix(map,map,0,DynamicProfile);
+      Tpetra::ProfileType pftype = Tpetra::TPETRA_DEFAULT_PROFILE_TYPE;
+      MAT matrix(map,map,1,pftype);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -401,7 +393,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
-      MAT matrix(map,map,0,DynamicProfile);
+      Tpetra::ProfileType pftype = Tpetra::TPETRA_DEFAULT_PROFILE_TYPE;
+      MAT matrix(map,map,1,pftype);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -610,7 +603,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
-    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, DynamicProfile);
+    Tpetra::ProfileType pftype = Tpetra::TPETRA_DEFAULT_PROFILE_TYPE;
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1, pftype);
     A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
     A.fillComplete (map, map);
 
